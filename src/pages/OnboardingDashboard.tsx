@@ -176,7 +176,7 @@ const OnboardingDashboard: React.FC = () => {
               <div>
                 <CardTitle className="text-2xl text-blue-700">Treatment Center AI Implementation Guide</CardTitle>
                 <p className="text-muted-foreground">
-                  Specialized 9-slide presentation for treatment center onboarding and AI automation
+                  Complete 16-slide AI automation platform for treatment center onboarding and AI implementation
                 </p>
               </div>
             </div>

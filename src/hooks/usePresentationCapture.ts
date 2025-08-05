@@ -48,31 +48,49 @@ export const usePresentationCapture = () => {
       navigationCallback(i);
       
       // Wait for slide transition and rendering
-      await new Promise(resolve => setTimeout(resolve, 500));
+      await new Promise(resolve => setTimeout(resolve, 800));
       
-      // Find the actual slide container with more specific selectors
-      const slideContainer = document.querySelector('[data-slide-content]');
+      // Find the actual slide container - try multiple selectors
+      let slideContainer = document.querySelector('[data-slide-content]');
+      
+      if (!slideContainer) {
+        slideContainer = document.querySelector('.absolute.inset-0');
+      }
+      
+      if (!slideContainer) {
+        slideContainer = document.querySelector('[data-slide-index="' + i + '"]');
+      }
       
       if (slideContainer) {
-        // Clone the container and all its computed styles
+        // Clone the container with all its content
         const clonedSlide = slideContainer.cloneNode(true) as HTMLElement;
         
-        // Preserve all computed styles
+        // Preserve all computed styles recursively
         const preserveStyles = (element: HTMLElement, original: HTMLElement) => {
+          if (!element || !original) return;
+          
           const computedStyle = window.getComputedStyle(original);
           let styleText = '';
           
-          // Copy all computed styles
-          for (let j = 0; j < computedStyle.length; j++) {
-            const prop = computedStyle[j];
+          // Copy important layout and visual styles
+          const importantProps = [
+            'display', 'position', 'width', 'height', 'margin', 'padding',
+            'background', 'background-color', 'background-image', 'background-size',
+            'color', 'font-family', 'font-size', 'font-weight', 'line-height',
+            'text-align', 'border', 'border-radius', 'box-shadow',
+            'flex', 'flex-direction', 'justify-content', 'align-items',
+            'grid', 'grid-template-columns', 'gap'
+          ];
+          
+          importantProps.forEach(prop => {
             const value = computedStyle.getPropertyValue(prop);
-            if (value) {
+            if (value && value !== 'initial' && value !== 'normal') {
               styleText += `${prop}: ${value}; `;
             }
-          }
+          });
           
           if (styleText) {
-            element.style.cssText = styleText;
+            element.style.cssText = element.style.cssText + ' ' + styleText;
           }
           
           // Recursively apply to all children
@@ -87,51 +105,43 @@ export const usePresentationCapture = () => {
         preserveStyles(clonedSlide, slideContainer as HTMLElement);
         
         // Remove interactive elements but keep their visual representation
-        clonedSlide.querySelectorAll('button, .controls, .no-print, [data-no-export]').forEach(el => {
-          const parent = el.parentNode;
-          if (parent) {
-            // Replace button with a span to maintain layout
-            const span = document.createElement('span');
-            span.innerHTML = el.innerHTML;
-            span.className = el.className;
-            span.style.cssText = window.getComputedStyle(el).cssText;
-            parent.replaceChild(span, el);
-          }
+        clonedSlide.querySelectorAll('button').forEach(button => {
+          const span = document.createElement('div');
+          span.innerHTML = button.innerHTML;
+          span.className = button.className;
+          span.style.cssText = window.getComputedStyle(button).cssText;
+          button.parentNode?.replaceChild(span, button);
         });
+        
+        // Remove control elements
+        clonedSlide.querySelectorAll('.controls, .no-print, [data-no-export]').forEach(el => el.remove());
         
         slideContents.push({
           html: clonedSlide.outerHTML,
           title: slides[i].title || `Slide ${i + 1}`,
           subtitle: slides[i].subtitle
         });
+        
+        console.log(`Captured slide ${i + 1}: ${slides[i].title}`);
       } else {
-        // Enhanced fallback - capture the whole visible content
-        const mainContent = document.querySelector('.container, main, body > div, [role="main"]');
-        if (mainContent) {
-          const cloned = mainContent.cloneNode(true) as HTMLElement;
-          slideContents.push({
-            html: cloned.innerHTML,
-            title: slides[i].title || `Slide ${i + 1}`,
-            subtitle: slides[i].subtitle
-          });
-        } else {
-          slideContents.push({
-            html: `
-              <div style="padding: 2rem; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
-                <h2 style="color: #1e293b; margin-bottom: 1rem;">${slides[i].title || `Slide ${i + 1}`}</h2>
-                ${slides[i].subtitle ? `<p style="color: #64748b; font-size: 1.125rem;">${slides[i].subtitle}</p>` : ''}
-                <p style="color: #374151;">This slide contains interactive content that has been preserved in the export.</p>
-              </div>
-            `,
-            title: slides[i].title || `Slide ${i + 1}`,
-            subtitle: slides[i].subtitle
-          });
-        }
+        console.warn(`Could not find slide container for slide ${i + 1}`);
+        slideContents.push({
+          html: `
+            <div style="padding: 2rem; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: white; border-radius: 8px;">
+              <h2 style="color: #1e293b; margin-bottom: 1rem; font-size: 2rem;">${slides[i].title || `Slide ${i + 1}`}</h2>
+              ${slides[i].subtitle ? `<p style="color: #64748b; font-size: 1.125rem; margin-bottom: 1rem;">${slides[i].subtitle}</p>` : ''}
+              <p style="color: #374151; font-size: 1rem;">This slide contains interactive content that has been preserved in the export.</p>
+            </div>
+          `,
+          title: slides[i].title || `Slide ${i + 1}`,
+          subtitle: slides[i].subtitle
+        });
       }
     }
     
     // Navigate back to original slide
     navigationCallback(originalSlide);
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     return { slideContents, allStyles };
   }, []);
@@ -262,14 +272,14 @@ export const usePresentationCapture = () => {
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Agentic AI Presentation - PDF Export (${slides.length} Slides)</title>
+            <title>Treatment Center AI Implementation Guide - PDF Export (${slides.length} Slides)</title>
             <script src="https://cdn.tailwindcss.com"></script>
             ${css}
           </head>
           <body>
             <div class="export-header">
-              <h1>🤖 Agentic AI & Automation Platform</h1>
-              <p>Complete AI Agent Implementation for Healthcare Onboarding</p>
+              <h1>🏥 Treatment Center AI Implementation Guide</h1>
+              <p>Complete 16-Slide AI Agent Implementation for Healthcare Onboarding</p>
               <p><strong>PDF Export - ${slides.length} Slides Captured</strong></p>
               <p>Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
             </div>
@@ -382,14 +392,14 @@ export const usePresentationCapture = () => {
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Agentic AI Presentation - HTML Export (${slides.length} Slides)</title>
+            <title>Treatment Center AI Implementation Guide - HTML Export (${slides.length} Slides)</title>
             <script src="https://cdn.tailwindcss.com"></script>
             ${css}
           </head>
           <body>
             <div class="export-header">
-              <h1>🤖 Agentic AI & Automation Platform</h1>
-              <p>Live HTML Export - Exact Content Capture</p>
+              <h1>🏥 Treatment Center AI Implementation Guide</h1>
+              <p>Complete 16-Slide HTML Export - Exact Content Capture</p>
               <p><strong>${slides.length} Slides Preserved</strong> | Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
               <p>This export contains the exact same content, styling, and layout as the live presentation</p>
             </div>
@@ -554,16 +564,16 @@ export const usePresentationCapture = () => {
           <head>
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
-            <title>Agentic AI Presentation - PPT Format (${slides.length} Slides)</title>
+            <title>Treatment Center AI Implementation Guide - PPT Format (${slides.length} Slides)</title>
             <script src="https://cdn.tailwindcss.com"></script>
             ${css}
           </head>
           <body>
             <div class="ppt-container">
               <div class="ppt-title-page">
-                <h1>🤖 Agentic AI & Automation Platform</h1>
-                <p>Complete AI Agent Implementation</p>
-                <p>Healthcare Onboarding Solution</p>
+                <h1>🏥 Treatment Center AI Implementation Guide</h1>
+                <p>Complete 16-Slide AI Agent Implementation</p>
+                <p>Healthcare Onboarding & Automation Solution</p>
                 <p><strong>PowerPoint Format Export - ${slides.length} Slides</strong></p>
                 <p>Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
               </div>
