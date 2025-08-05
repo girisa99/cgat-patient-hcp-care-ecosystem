@@ -4,6 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useEnhancedPresentationDownload } from '@/hooks/useEnhancedPresentationDownload';
 
 interface Slide {
   id: number;
@@ -2556,6 +2557,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const { downloadEnhancedPDF, downloadEnhancedHTML } = useEnhancedPresentationDownload();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -2829,11 +2831,11 @@ export const AgenticAIPresentation: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={downloadAsHTML}>
+          <Button variant="outline" size="sm" onClick={() => downloadEnhancedHTML(slides)}>
             <Download className="w-4 h-4 mr-2" />
             HTML
           </Button>
-          <Button variant="outline" size="sm" onClick={downloadAsPDF}>
+          <Button variant="outline" size="sm" onClick={() => downloadEnhancedPDF(slides)}>
             <FileText className="w-4 h-4 mr-2" />
             PDF
           </Button>
