@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useEnhancedPresentationDownload } from '@/hooks/useEnhancedPresentationDownload';
+import { usePresentationCapture } from '@/hooks/usePresentationCapture';
 
 interface Slide {
   id: number;
@@ -2557,7 +2557,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { downloadEnhancedPDF, downloadEnhancedHTML } = useEnhancedPresentationDownload();
+  const { downloadActualPDF, downloadActualHTML } = usePresentationCapture();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -2831,11 +2831,11 @@ export const AgenticAIPresentation: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => downloadEnhancedHTML(slides)}>
+          <Button variant="outline" size="sm" onClick={() => downloadActualHTML(slides)}>
             <Download className="w-4 h-4 mr-2" />
             HTML
           </Button>
-          <Button variant="outline" size="sm" onClick={() => downloadEnhancedPDF(slides)}>
+          <Button variant="outline" size="sm" onClick={() => downloadActualPDF(slides)}>
             <FileText className="w-4 h-4 mr-2" />
             PDF
           </Button>
@@ -2873,7 +2873,7 @@ export const AgenticAIPresentation: React.FC = () => {
             )}
           </div>
           
-          <div className="flex-1 min-h-0">
+          <div className="flex-1 min-h-0" data-presentation-content>
             {slides[currentSlide].content}
           </div>
         </div>
