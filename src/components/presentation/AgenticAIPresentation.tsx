@@ -3374,10 +3374,9 @@ export const AgenticAIPresentation: React.FC = () => {
 
   return (
     <div className={containerClass} data-presentation-content data-current-slide={currentSlide}>
-      {/* Presentation Header */}
+      {/* Slide Navigation Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">
-          <h2 className="text-2xl font-bold text-primary">Treatment Center AI Implementation Guide</h2>
           <Badge variant="secondary">{currentSlide + 1} / {slides.length}</Badge>
         </div>
         
