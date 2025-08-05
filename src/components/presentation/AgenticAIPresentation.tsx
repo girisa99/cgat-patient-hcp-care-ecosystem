@@ -23,14 +23,41 @@ const slides: Slide[] = [
     content: (
       <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
         <div className="text-center space-y-6">
-          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center animate-pulse">
-            <div className="text-4xl">🤖</div>
+          <div className="relative">
+            <div className="w-40 h-40 mx-auto bg-gradient-to-br from-primary via-blue-500 to-purple-600 rounded-full flex items-center justify-center animate-pulse shadow-2xl">
+              <div className="text-6xl">🤖</div>
+              <div className="absolute -top-2 -right-2 w-8 h-8 bg-green-500 rounded-full flex items-center justify-center animate-bounce">
+                <div className="w-3 h-3 bg-white rounded-full"></div>
+              </div>
+            </div>
+            <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-60 h-60 bg-primary/10 rounded-full -z-10 animate-ping"></div>
           </div>
-          <div className="space-y-4">
-            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
-              Complete 21-slide AI automation platform for treatment centers featuring advanced AI agent platform 
-              with autonomous decision-making, intelligent automation, and seamless integration
+          <div className="space-y-6">
+            <h3 className="text-2xl font-bold text-primary animate-fade-in delay-200">
+              Revolutionary AI Platform for Healthcare
+            </h3>
+            <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed animate-fade-in delay-300">
+              Transform your treatment center with our comprehensive 21-slide AI automation platform featuring 
+              advanced AI agent technology, autonomous decision-making, intelligent workflow automation, 
+              and seamless integration with existing healthcare systems.
             </p>
+            <div className="grid grid-cols-3 gap-6 mt-8 animate-fade-in delay-500">
+              <div className="bg-card p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-2xl mb-2">⚡</div>
+                <div className="font-semibold">Lightning Fast</div>
+                <div className="text-sm text-muted-foreground">95% faster deployment</div>
+              </div>
+              <div className="bg-card p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-2xl mb-2">🔒</div>
+                <div className="font-semibold">HIPAA Compliant</div>
+                <div className="text-sm text-muted-foreground">Enterprise security</div>
+              </div>
+              <div className="bg-card p-4 rounded-lg border shadow-sm hover:shadow-md transition-shadow">
+                <div className="text-2xl mb-2">📈</div>
+                <div className="font-semibold">400% ROI</div>
+                <div className="text-sm text-muted-foreground">Proven results</div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -42,24 +69,77 @@ const slides: Slide[] = [
     title: "Complete AI Agent Architecture",
     subtitle: "Comprehensive System Design & Interactive Data Flow",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
         <div className="grid grid-cols-4 gap-6">
-          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
-            <h4 className="font-bold text-blue-700 text-base mb-2">Frontend Layer</h4>
-            <p className="text-sm text-muted-foreground">Visual Agent Builder</p>
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 hover:scale-105 transition-transform animate-fade-in delay-100">
+            <div className="text-3xl mb-3">🎨</div>
+            <h4 className="font-bold text-blue-700 text-base mb-3">Frontend Layer</h4>
+            <p className="text-sm text-muted-foreground mb-3">Visual Agent Builder</p>
+            <ul className="text-xs space-y-1">
+              <li>• Drag & Drop Interface</li>
+              <li>• Component Library</li>
+              <li>• Real-time Preview</li>
+              <li>• Custom Branding</li>
+            </ul>
           </Card>
-          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
-            <h4 className="font-bold text-green-700 text-base mb-2">Protocol Layer</h4>
-            <p className="text-sm text-muted-foreground">MCP Integration Hub</p>
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30 hover:scale-105 transition-transform animate-fade-in delay-200">
+            <div className="text-3xl mb-3">🔗</div>
+            <h4 className="font-bold text-green-700 text-base mb-3">Protocol Layer</h4>
+            <p className="text-sm text-muted-foreground mb-3">MCP Integration Hub</p>
+            <ul className="text-xs space-y-1">
+              <li>• Model Communication</li>
+              <li>• Context Sharing</li>
+              <li>• Session Management</li>
+              <li>• API Gateway</li>
+            </ul>
           </Card>
-          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
-            <h4 className="font-bold text-purple-700 text-base mb-2">AI Processing</h4>
-            <p className="text-sm text-muted-foreground">Small LLMs + RAG</p>
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 hover:scale-105 transition-transform animate-fade-in delay-300">
+            <div className="text-3xl mb-3">🧠</div>
+            <h4 className="font-bold text-purple-700 text-base mb-3">AI Processing</h4>
+            <p className="text-sm text-muted-foreground mb-3">Small LLMs + RAG</p>
+            <ul className="text-xs space-y-1">
+              <li>• Multi-Model Inference</li>
+              <li>• Vector Search</li>
+              <li>• Knowledge Retrieval</li>
+              <li>• Context Enhancement</li>
+            </ul>
           </Card>
-          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30">
-            <h4 className="font-bold text-orange-700 text-base mb-2">Data Layer</h4>
-            <p className="text-sm text-muted-foreground">Supabase + Vector DB</p>
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30 hover:scale-105 transition-transform animate-fade-in delay-400">
+            <div className="text-3xl mb-3">💾</div>
+            <h4 className="font-bold text-orange-700 text-base mb-3">Data Layer</h4>
+            <p className="text-sm text-muted-foreground mb-3">Supabase + Vector DB</p>
+            <ul className="text-xs space-y-1">
+              <li>• Real-time Database</li>
+              <li>• Vector Embeddings</li>
+              <li>• Authentication</li>
+              <li>• Edge Functions</li>
+            </ul>
           </Card>
+        </div>
+        <div className="mt-8 text-center animate-fade-in delay-500">
+          <div className="flex justify-center items-center space-x-4">
+            <div className="flex-1 h-0.5 bg-gradient-to-r from-transparent to-blue-500"></div>
+            <div className="text-sm font-medium text-muted-foreground">Data Flow</div>
+            <div className="flex-1 h-0.5 bg-gradient-to-l from-transparent to-orange-500"></div>
+          </div>
+          <div className="mt-4 flex justify-center space-x-8">
+            <div className="text-xs text-center">
+              <div className="w-3 h-3 bg-blue-500 rounded-full mx-auto mb-1 animate-pulse"></div>
+              <span>User Input</span>
+            </div>
+            <div className="text-xs text-center">
+              <div className="w-3 h-3 bg-green-500 rounded-full mx-auto mb-1 animate-pulse delay-100"></div>
+              <span>Processing</span>
+            </div>
+            <div className="text-xs text-center">
+              <div className="w-3 h-3 bg-purple-500 rounded-full mx-auto mb-1 animate-pulse delay-200"></div>
+              <span>AI Analysis</span>
+            </div>
+            <div className="text-xs text-center">
+              <div className="w-3 h-3 bg-orange-500 rounded-full mx-auto mb-1 animate-pulse delay-300"></div>
+              <span>Response</span>
+            </div>
+          </div>
         </div>
       </div>
     ),
@@ -70,16 +150,60 @@ const slides: Slide[] = [
     title: "Agent Creation Journey Overview",
     subtitle: "5-Step Process for Building AI Agents",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <div className="grid grid-cols-5 gap-4">
-          {[1,2,3,4,5].map((step) => (
-            <Card key={step} className="p-4 text-center">
-              <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center mx-auto mb-2">
-                <span className="text-white text-sm">{step}</span>
+      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
+        <div className="text-center mb-8">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium">Complete Implementation Journey</span>
+          </div>
+        </div>
+        
+        <div className="relative">
+          {/* Progress Line */}
+          <div className="absolute top-8 left-0 right-0 h-0.5 bg-gradient-to-r from-blue-500 via-green-500 via-purple-500 via-orange-500 to-red-500 animate-fade-in delay-200"></div>
+          
+          <div className="grid grid-cols-5 gap-4">
+            {[
+              { step: 1, title: "Wizard Setup", icon: "🧙‍♂️", color: "blue", description: "Initial Configuration" },
+              { step: 2, title: "Canvas Design", icon: "🎨", color: "green", description: "Visual Interface" },
+              { step: 3, title: "Actions Config", icon: "⚙️", color: "purple", description: "System Integration" },
+              { step: 4, title: "AI Assignment", icon: "🤖", color: "orange", description: "Model Selection" },
+              { step: 5, title: "Multi-Channel", icon: "📡", color: "red", description: "Deployment" }
+            ].map((item, index) => (
+              <Card key={item.step} className={`p-6 text-center hover:scale-105 transition-all duration-300 animate-fade-in border-2 bg-gradient-to-br from-${item.color}-500/10 to-${item.color}-500/5 border-${item.color}-500/30`} style={{animationDelay: `${100 * index}ms`}}>
+                <div className={`w-16 h-16 bg-gradient-to-br from-${item.color}-500 to-${item.color}-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg`}>
+                  <span className="text-2xl">{item.icon}</span>
+                </div>
+                <div className="text-lg font-bold text-primary mb-2">{item.title}</div>
+                <div className="text-xs text-muted-foreground mb-3">{item.description}</div>
+                <div className={`w-8 h-8 bg-${item.color}-500 rounded-full flex items-center justify-center mx-auto`}>
+                  <span className="text-white text-sm font-bold">{item.step}</span>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+        
+        <div className="text-center mt-8 animate-fade-in delay-500">
+          <div className="bg-card p-6 rounded-lg border shadow-sm">
+            <h3 className="text-xl font-bold mb-3 text-primary">Complete Journey Time</h3>
+            <div className="flex justify-center items-center gap-8">
+              <div className="text-center">
+                <div className="text-3xl font-bold text-green-600">15</div>
+                <div className="text-sm text-muted-foreground">Minutes Setup</div>
               </div>
-              <div className="text-sm font-medium">Step {step}</div>
-            </Card>
-          ))}
+              <div className="w-px h-8 bg-border"></div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-blue-600">95%</div>
+                <div className="text-sm text-muted-foreground">Success Rate</div>
+              </div>
+              <div className="w-px h-8 bg-border"></div>
+              <div className="text-center">
+                <div className="text-3xl font-bold text-purple-600">24/7</div>
+                <div className="text-sm text-muted-foreground">Support</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     ),
