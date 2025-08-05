@@ -2,6 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
 import { 
   Activity, 
   Users,
@@ -12,7 +13,8 @@ import {
   AlertTriangle,
   CheckCircle,
   Plus,
-  Settings
+  Settings,
+  Presentation
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRealTimeUserStats } from '@/hooks/useRealTimeUserStats';
@@ -21,6 +23,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
 export const Dashboard: React.FC = () => {
+  const [showPresentation, setShowPresentation] = React.useState(false);
   const { data: userStats, isLoading: userStatsLoading } = useRealTimeUserStats();
   
   // Fetch real activity data from audit logs
