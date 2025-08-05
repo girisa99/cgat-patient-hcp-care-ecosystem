@@ -2222,6 +2222,334 @@ const slides: Slide[] = [
     ),
     animation: 'zoom'
   },
+  {
+    id: 11,
+    title: "Advanced AI Models, Vision Systems & Studio Labeling",
+    subtitle: "Extended AI Capabilities, Vision Language Models & Data Preparation",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="text-center mb-6">
+          <div className="w-24 h-24 bg-gradient-to-br from-indigo-600 to-indigo-700 rounded-full flex items-center justify-center mx-auto mb-4">
+            <span className="text-white text-3xl">🔬</span>
+          </div>
+          <h3 className="text-2xl font-bold text-indigo-600">Advanced AI Models & Vision Systems</h3>
+          <p className="text-muted-foreground">Comprehensive AI model ecosystem with vision capabilities and data labeling</p>
+        </div>
+
+        {/* Other AI Models Section */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🤖</span> Additional AI Models
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h5 className="font-semibold text-blue-700 mb-3">OpenAI Models</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">GPT-4.1-2025 (flagship model)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">O3-2025 (reasoning model)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">O4-mini (fast reasoning)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">GPT Image-1 (image generation)</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h5 className="font-semibold text-blue-700 mb-3">Anthropic Claude Models</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">Claude Opus-4 (most capable)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">Claude Sonnet-4 (high performance)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">Claude Haiku-3.5 (fastest)</span>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Badge className="bg-blue-100 text-blue-700 text-xs">Multi-modal Support</Badge>
+                <Badge className="bg-blue-100 text-blue-700 text-xs">200K Context Window</Badge>
+                <Badge className="bg-blue-100 text-blue-700 text-xs">Healthcare Specialized</Badge>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500">
+            <h4 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">👁️</span> Vision Language Models
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h5 className="font-semibold text-purple-700 mb-3">Vision Capabilities</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Document analysis & OCR</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Medical image interpretation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Chart & graph understanding</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Form processing automation</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h5 className="font-semibold text-purple-700 mb-3">Use Cases in Healthcare</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Patient ID verification</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Insurance document processing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Treatment progress visualization</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Compliance documentation review</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Studio Labeling & Test Data */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <Card className="p-6 bg-gradient-to-br from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500">
+            <h4 className="font-bold text-orange-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🏷️</span> Studio Labeling System
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h5 className="font-semibold text-orange-700 mb-3">Data Annotation Tools</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Medical text classification</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Entity recognition labeling</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Sentiment analysis training</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Image annotation for vision models</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h5 className="font-semibold text-orange-700 mb-3">Labeling Workflow</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Quality assurance protocols</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Multi-annotator consensus</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Active learning integration</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-green-500/15 to-green-500/5 border-l-4 border-green-500">
+            <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🧪</span> Test Data & Training Sets
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h5 className="font-semibold text-green-700 mb-3">Healthcare Training Data</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">De-identified patient conversations</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Treatment center documentation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Regulatory compliance examples</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Multi-language healthcare terms</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h5 className="font-semibold text-green-700 mb-3">Test Data Requirements</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">HIPAA-compliant datasets</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Diverse demographic representation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Edge case scenario coverage</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Model Usage & Integration */}
+        <div className="bg-gradient-to-r from-indigo-500/10 via-purple-500/10 to-orange-500/10 rounded-xl p-6 border-2 border-indigo-500/20">
+          <h4 className="text-xl font-bold mb-6 text-center">AI Model Integration & Usage Pipeline</h4>
+          <div className="grid grid-cols-6 gap-3">
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">📊</div>
+              <p className="text-xs font-medium">Data Collection</p>
+              <p className="text-xs text-muted-foreground">Gather training data</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-orange-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">🏷️</div>
+              <p className="text-xs font-medium">Studio Labeling</p>
+              <p className="text-xs text-muted-foreground">Annotate & classify</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">👁️</div>
+              <p className="text-xs font-medium">Vision Processing</p>
+              <p className="text-xs text-muted-foreground">Image understanding</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">🧪</div>
+              <p className="text-xs font-medium">Model Testing</p>
+              <p className="text-xs text-muted-foreground">Validate performance</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">🚀</div>
+              <p className="text-xs font-medium">Deploy Models</p>
+              <p className="text-xs text-muted-foreground">Production ready</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">📈</div>
+              <p className="text-xs font-medium">Monitor & Improve</p>
+              <p className="text-xs text-muted-foreground">Continuous learning</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance Metrics & Requirements */}
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-indigo-500/15 to-indigo-500/5 border-l-4 border-indigo-500">
+            <h4 className="font-bold text-indigo-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">📋</span> Data Requirements
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm">10K+ labeled healthcare interactions</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm">5K+ medical document images</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm">HIPAA-compliant anonymization</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-indigo-500 rounded-full"></div>
+                <span className="text-sm">Multi-center validation sets</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-teal-500/15 to-teal-500/5 border-l-4 border-teal-500">
+            <h4 className="font-bold text-teal-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🎯</span> Model Performance
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                <span className="text-sm">98% accuracy on medical NER</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                <span className="text-sm">95% vision model precision</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                <span className="text-sm">Sub-second inference time</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                <span className="text-sm">Multi-modal integration</span>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-rose-500/15 to-rose-500/5 border-l-4 border-rose-500">
+            <h4 className="font-bold text-rose-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🛡️</span> Security & Compliance
+            </h4>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm">HIPAA-compliant processing</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm">End-to-end encryption</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm">Audit trail logging</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-rose-500 rounded-full"></div>
+                <span className="text-sm">Data residency controls</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    ),
+    animation: 'fade'
+  }
 ];
 
 export const AgenticAIPresentation: React.FC = () => {
