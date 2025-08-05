@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bot, Network, Users, Settings } from 'lucide-react';
+import { Bot, Network, Users, Settings, Presentation } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { Button } from '@/components/ui/button';
+import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
 
 // Import the ecosystem components
 import AgenticEcosystem from './AgenticEcosystem';
@@ -77,6 +79,7 @@ const AgentSettingsView = () => {
 const Agents = () => {
   console.log('🚀 Agents page rendering...');
   const [activeTab, setActiveTab] = useState('agentic-ecosystem');
+  const [showPresentation, setShowPresentation] = useState(false);
   const { userRoles } = useMasterAuth();
   console.log('🎭 User roles:', userRoles);
 
@@ -168,7 +171,22 @@ const Agents = () => {
                 }
               </p>
             </div>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowPresentation(!showPresentation)}
+              className="flex items-center gap-2"
+            >
+              <Presentation className="w-4 h-4" />
+              {showPresentation ? 'Hide' : 'Show'} AI Presentation
+            </Button>
           </div>
+
+          {/* AI Presentation Display */}
+          {showPresentation && (
+            <div className="mb-8">
+              <AgenticAIPresentation />
+            </div>
+          )}
 
           {/* Dynamic Tabs based on role */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
