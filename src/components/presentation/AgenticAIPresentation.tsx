@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2 } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface Slide {
@@ -2584,6 +2584,130 @@ export const AgenticAIPresentation: React.FC = () => {
     setIsFullscreen(!isFullscreen);
   };
 
+  const downloadAsPDF = () => {
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      const css = `
+        <style>
+          @media print {
+            body { margin: 0; padding: 20px; font-family: Arial, sans-serif; }
+            .slide { page-break-after: always; padding: 40px; min-height: 90vh; }
+            .slide:last-child { page-break-after: avoid; }
+            .slide-title { font-size: 28px; font-weight: bold; margin-bottom: 10px; }
+            .slide-subtitle { font-size: 18px; color: #666; margin-bottom: 30px; }
+            .slide-content { font-size: 14px; line-height: 1.6; }
+            .card { border: 1px solid #ddd; padding: 16px; margin: 16px 0; border-radius: 8px; }
+            .badge { display: inline-block; padding: 4px 8px; background: #f0f0f0; border-radius: 4px; margin: 2px; }
+            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+            .grid-4 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 20px; }
+            .space-y-4 > * + * { margin-top: 16px; }
+            .space-y-6 > * + * { margin-top: 24px; }
+            .text-center { text-align: center; }
+            .font-bold { font-weight: bold; }
+            .text-sm { font-size: 12px; }
+            .text-xs { font-size: 10px; }
+            .mb-4 { margin-bottom: 16px; }
+            .mb-6 { margin-bottom: 24px; }
+          }
+        </style>
+      `;
+      
+      const slidesHTML = slides.map((slide, index) => `
+        <div class="slide">
+          <div class="slide-title">Slide ${index + 1}: ${slide.title}</div>
+          ${slide.subtitle ? `<div class="slide-subtitle">${slide.subtitle}</div>` : ''}
+          <div class="slide-content">
+            <p>Content summary: This slide covers ${slide.title.toLowerCase()}</p>
+            <p>Key topics and features are presented in this section.</p>
+          </div>
+        </div>
+      `).join('');
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>Agentic AI Presentation</title>
+            ${css}
+          </head>
+          <body>
+            <h1 style="text-align: center; margin-bottom: 40px;">Agentic AI & Automation Platform</h1>
+            <p style="text-align: center; margin-bottom: 40px;">Complete AI Agent Implementation for Healthcare Onboarding</p>
+            ${slidesHTML}
+          </body>
+        </html>
+      `);
+      printWindow.document.close();
+      printWindow.focus();
+      setTimeout(() => {
+        printWindow.print();
+      }, 1000);
+    }
+  };
+
+  const downloadAsHTML = () => {
+    const css = `
+      <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
+        .presentation { max-width: 1200px; margin: 0 auto; }
+        .slide { background: white; padding: 40px; margin: 20px 0; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+        .slide-title { font-size: 28px; font-weight: bold; margin-bottom: 10px; color: #333; }
+        .slide-subtitle { font-size: 18px; color: #666; margin-bottom: 30px; }
+        .slide-content { font-size: 16px; line-height: 1.6; }
+        .slide-number { position: absolute; top: 10px; right: 20px; background: #007acc; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px; }
+        .header { text-align: center; margin-bottom: 40px; padding: 60px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border-radius: 8px; }
+        .header h1 { font-size: 36px; margin-bottom: 16px; }
+        .header p { font-size: 20px; }
+      </style>
+    `;
+    
+    const slidesHTML = slides.map((slide, index) => `
+      <div class="slide">
+        <div class="slide-number">Slide ${index + 1} of ${slides.length}</div>
+        <div class="slide-title">${slide.title}</div>
+        ${slide.subtitle ? `<div class="slide-subtitle">${slide.subtitle}</div>` : ''}
+        <div class="slide-content">
+          <p><strong>Key Focus:</strong> ${slide.title}</p>
+          ${slide.subtitle ? `<p><strong>Details:</strong> ${slide.subtitle}</p>` : ''}
+          <p>This slide presents comprehensive information about ${slide.title.toLowerCase()}, including implementation details, features, and benefits for healthcare onboarding automation.</p>
+        </div>
+      </div>
+    `).join('');
+
+    const fullHTML = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Agentic AI Presentation - Complete Export</title>
+          <meta charset="UTF-8">
+          <meta name="viewport" content="width=device-width, initial-scale=1.0">
+          ${css}
+        </head>
+        <body>
+          <div class="presentation">
+            <div class="header">
+              <h1>Agentic AI & Automation Platform</h1>
+              <p>Complete AI Agent Implementation for Healthcare Onboarding</p>
+              <p>Total Slides: ${slides.length}</p>
+            </div>
+            ${slidesHTML}
+          </div>
+        </body>
+      </html>
+    `;
+
+    const blob = new Blob([fullHTML], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'agentic-ai-presentation.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   const containerClass = isFullscreen 
     ? "fixed inset-0 z-50 bg-background" 
     : "w-full max-w-6xl mx-auto";
@@ -2598,6 +2722,14 @@ export const AgenticAIPresentation: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
+          <Button variant="outline" size="sm" onClick={downloadAsHTML}>
+            <Download className="w-4 h-4 mr-2" />
+            HTML
+          </Button>
+          <Button variant="outline" size="sm" onClick={downloadAsPDF}>
+            <FileText className="w-4 h-4 mr-2" />
+            PDF
+          </Button>
           <Button variant="outline" size="sm" onClick={resetPresentation}>
             <RotateCcw className="w-4 h-4 mr-2" />
             Reset
