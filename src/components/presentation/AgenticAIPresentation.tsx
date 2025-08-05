@@ -1662,6 +1662,1311 @@ const slides: Slide[] = [
       </div>
     ),
     animation: 'fade'
+  },
+  {
+    id: 11,
+    title: "Implementation Roadmap",
+    subtitle: "12-Week Deployment Strategy for Treatment Centers",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
+            <h3 className="text-xl font-bold text-blue-600 mb-4">Phase 1: Foundation (Weeks 1-4)</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Infrastructure setup</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Staff training program</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Data migration strategy</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Security framework deployment</span>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+            <h3 className="text-xl font-bold text-green-600 mb-4">Phase 2: Core Deployment (Weeks 5-8)</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">AI agent configuration</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Workflow automation setup</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">Integration testing</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="text-sm">User acceptance testing</span>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+            <h3 className="text-xl font-bold text-purple-600 mb-4">Phase 3: Optimization (Weeks 9-12)</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Performance optimization</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Advanced feature rollout</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Analytics and monitoring</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                <span className="text-sm">Continuous improvement setup</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
+          <h3 className="text-xl font-bold text-center mb-6">Key Milestones & Success Metrics</h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div>
+              <h4 className="font-semibold mb-3">Week 4 Checkpoint</h4>
+              <ul className="space-y-1 text-sm">
+                <li>• Infrastructure readiness: 100%</li>
+                <li>• Staff training completion: 90%</li>
+                <li>• Security compliance: Verified</li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Week 8 Checkpoint</h4>
+              <ul className="space-y-1 text-sm">
+                <li>• Core agents deployed: 80%</li>
+                <li>• Workflow automation: Active</li>
+                <li>• User adoption rate: 75%</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 12,
+    title: "Financial Impact & ROI Analysis",
+    subtitle: "Measurable Returns from AI Implementation",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+            <h3 className="text-xl font-bold text-green-600 mb-4">Cost Savings Analysis</h3>
+            <div className="space-y-4">
+              <div className="bg-white/50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Administrative Efficiency</span>
+                  <span className="text-lg font-bold text-green-600">65% Reduction</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Manual data entry and processing time</div>
+              </div>
+              
+              <div className="bg-white/50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Patient Intake Speed</span>
+                  <span className="text-lg font-bold text-green-600">80% Faster</span>
+                </div>
+                <div className="text-xs text-muted-foreground">From initial contact to treatment start</div>
+              </div>
+              
+              <div className="bg-white/50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Documentation Accuracy</span>
+                  <span className="text-lg font-bold text-green-600">95% Improvement</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Reduced errors and compliance issues</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
+            <h3 className="text-xl font-bold text-blue-600 mb-4">Revenue Impact</h3>
+            <div className="space-y-4">
+              <div className="bg-white/50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Patient Capacity</span>
+                  <span className="text-lg font-bold text-blue-600">40% Increase</span>
+                </div>
+                <div className="text-xs text-muted-foreground">More patients served with same staff</div>
+              </div>
+              
+              <div className="bg-white/50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Insurance Claims</span>
+                  <span className="text-lg font-bold text-blue-600">25% Faster</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Accelerated reimbursement cycles</div>
+              </div>
+              
+              <div className="bg-white/50 p-4 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="text-sm font-medium">Patient Retention</span>
+                  <span className="text-lg font-bold text-blue-600">30% Improvement</span>
+                </div>
+                <div className="text-xs text-muted-foreground">Better engagement and outcomes</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
+          <h3 className="text-xl font-bold text-center mb-6">12-Month ROI Projection</h3>
+          <div className="grid grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="text-3xl font-bold text-red-600 mb-2">$150K</div>
+              <div className="text-sm text-muted-foreground">Implementation Cost</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-green-600 mb-2">$480K</div>
+              <div className="text-sm text-muted-foreground">Annual Savings</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">$270K</div>
+              <div className="text-sm text-muted-foreground">Additional Revenue</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-purple-600 mb-2">400%</div>
+              <div className="text-sm text-muted-foreground">ROI Percentage</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'zoom'
+  },
+  {
+    id: 13,
+    title: "Training & Change Management",
+    subtitle: "Ensuring Successful Staff Adoption",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30">
+              <h3 className="text-xl font-bold text-orange-600 mb-4">Training Curriculum</h3>
+              <div className="space-y-3">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Module 1: AI Fundamentals</div>
+                  <div className="text-xs text-muted-foreground">Understanding AI agents and automation</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Module 2: System Navigation</div>
+                  <div className="text-xs text-muted-foreground">User interface and workflow basics</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Module 3: Agent Interaction</div>
+                  <div className="text-xs text-muted-foreground">Effective communication with AI agents</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Module 4: Troubleshooting</div>
+                  <div className="text-xs text-muted-foreground">Common issues and resolution</div>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-teal-500/20 to-teal-500/5 border-2 border-teal-500/30">
+              <h3 className="text-xl font-bold text-teal-600 mb-4">Support Resources</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                  <span className="text-sm">24/7 technical support hotline</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                  <span className="text-sm">Interactive help documentation</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                  <span className="text-sm">Video tutorial library</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-teal-500 rounded-full"></div>
+                  <span className="text-sm">On-site support during rollout</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+          
+          <div className="space-y-6">
+            <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+              <h3 className="text-xl font-bold text-purple-600 mb-4">Change Management Strategy</h3>
+              <div className="space-y-4">
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Communication Plan</h4>
+                  <ul className="text-xs space-y-1 text-muted-foreground">
+                    <li>• Regular updates to all stakeholders</li>
+                    <li>• Success story sharing sessions</li>
+                    <li>• Feedback collection and response</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Incentive Programs</h4>
+                  <ul className="text-xs space-y-1 text-muted-foreground">
+                    <li>• Early adopter recognition</li>
+                    <li>• Performance improvement bonuses</li>
+                    <li>• Professional development opportunities</li>
+                  </ul>
+                </div>
+                <div>
+                  <h4 className="font-semibold text-sm mb-2">Support Systems</h4>
+                  <ul className="text-xs space-y-1 text-muted-foreground">
+                    <li>• Peer mentorship programs</li>
+                    <li>• Gradual workflow transitions</li>
+                    <li>• Stress management resources</li>
+                  </ul>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border-2 border-cyan-500/30">
+              <h3 className="text-xl font-bold text-cyan-600 mb-4">Success Metrics</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-cyan-600">95%</div>
+                  <div className="text-xs text-muted-foreground">Training Completion</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-cyan-600">4.8/5</div>
+                  <div className="text-xs text-muted-foreground">User Satisfaction</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-cyan-600">85%</div>
+                  <div className="text-xs text-muted-foreground">Adoption Rate</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-cyan-600">72 hrs</div>
+                  <div className="text-xs text-muted-foreground">Avg. Learning Time</div>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'fade'
+  },
+  {
+    id: 14,
+    title: "Risk Management & Mitigation",
+    subtitle: "Comprehensive Risk Assessment Framework",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <Card className="p-6 bg-gradient-to-br from-red-500/20 to-red-500/5 border-2 border-red-500/30">
+              <h3 className="text-xl font-bold text-red-600 mb-4">Technical Risks</h3>
+              <div className="space-y-3">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">System Integration Failures</span>
+                    <Badge variant="destructive" className="text-xs">High</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Comprehensive testing protocols</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">Data Migration Issues</span>
+                    <Badge variant="destructive" className="text-xs">Medium</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Phased migration approach</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">Performance Degradation</span>
+                    <Badge variant="outline" className="text-xs">Low</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Load testing and optimization</div>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-amber-500/20 to-amber-500/5 border-2 border-amber-500/30">
+              <h3 className="text-xl font-bold text-amber-600 mb-4">Operational Risks</h3>
+              <div className="space-y-3">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">Staff Resistance</span>
+                    <Badge variant="destructive" className="text-xs">High</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Comprehensive change management</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">Workflow Disruption</span>
+                    <Badge variant="destructive" className="text-xs">Medium</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Gradual rollout strategy</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">Training Inadequacy</span>
+                    <Badge variant="outline" className="text-xs">Low</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Multi-modal training approach</div>
+                </div>
+              </div>
+            </Card>
+          </div>
+          
+          <div className="space-y-6">
+            <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+              <h3 className="text-xl font-bold text-purple-600 mb-4">Compliance Risks</h3>
+              <div className="space-y-3">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">HIPAA Violations</span>
+                    <Badge variant="destructive" className="text-xs">Critical</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Built-in compliance framework</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">Audit Failures</span>
+                    <Badge variant="destructive" className="text-xs">Medium</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Continuous monitoring system</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center mb-1">
+                    <span className="font-medium text-sm">Documentation Gaps</span>
+                    <Badge variant="outline" className="text-xs">Low</Badge>
+                  </div>
+                  <div className="text-xs text-muted-foreground">Mitigation: Automated documentation</div>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+              <h3 className="text-xl font-bold text-green-600 mb-4">Risk Monitoring</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Real-time risk dashboard</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Automated alert system</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Regular risk assessments</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                  <span className="text-sm">Incident response protocols</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 15,
+    title: "Performance Monitoring & Analytics",
+    subtitle: "Real-time Insights and Continuous Improvement",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
+            <h3 className="text-xl font-bold text-blue-600 mb-4">Key Performance Indicators</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Patient Processing Time</span>
+                  <span className="text-lg font-bold text-blue-600">-65%</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Error Rate</span>
+                  <span className="text-lg font-bold text-green-600">-78%</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Staff Productivity</span>
+                  <span className="text-lg font-bold text-blue-600">+45%</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Patient Satisfaction</span>
+                  <span className="text-lg font-bold text-green-600">+32%</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+            <h3 className="text-xl font-bold text-purple-600 mb-4">AI Agent Performance</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Query Resolution Rate</span>
+                  <span className="text-lg font-bold text-purple-600">94%</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Response Accuracy</span>
+                  <span className="text-lg font-bold text-purple-600">97%</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Average Response Time</span>
+                  <span className="text-lg font-bold text-purple-600">1.2s</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Learning Improvement</span>
+                  <span className="text-lg font-bold text-purple-600">+23%</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+            <h3 className="text-xl font-bold text-green-600 mb-4">System Health</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Uptime</span>
+                  <span className="text-lg font-bold text-green-600">99.9%</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Data Sync Rate</span>
+                  <span className="text-lg font-bold text-green-600">99.7%</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Security Incidents</span>
+                  <span className="text-lg font-bold text-green-600">0</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">API Latency</span>
+                  <span className="text-lg font-bold text-green-600">85ms</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
+          <h3 className="text-xl font-bold text-center mb-6">Analytics Dashboard Features</h3>
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <h4 className="font-semibold mb-3">Real-time Monitoring</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Live performance metrics
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Automated alert system
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  Customizable dashboards
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Predictive Analytics</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Trend forecasting
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Capacity planning
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Resource optimization
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'zoom'
+  },
+  {
+    id: 16,
+    title: "Integration Ecosystem",
+    subtitle: "Seamless Connectivity with Existing Systems",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border-2 border-cyan-500/30">
+            <h3 className="text-xl font-bold text-cyan-600 mb-4">Electronic Health Records</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Epic Integration</div>
+                <div className="text-xs text-muted-foreground">FHIR-compliant data exchange</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Cerner Compatibility</div>
+                <div className="text-xs text-muted-foreground">Real-time synchronization</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">AllScripts Support</div>
+                <div className="text-xs text-muted-foreground">Automated data mapping</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30">
+            <h3 className="text-xl font-bold text-orange-600 mb-4">Insurance & Billing</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Clearinghouse APIs</div>
+                <div className="text-xs text-muted-foreground">Automated claims processing</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Eligibility Verification</div>
+                <div className="text-xs text-muted-foreground">Real-time insurance checks</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Payment Processing</div>
+                <div className="text-xs text-muted-foreground">Secure transaction handling</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+            <h3 className="text-xl font-bold text-purple-600 mb-4">Communication Systems</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Phone Systems</div>
+                <div className="text-xs text-muted-foreground">VoIP and traditional lines</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">SMS Platforms</div>
+                <div className="text-xs text-muted-foreground">Automated messaging</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Email Integration</div>
+                <div className="text-xs text-muted-foreground">Secure HIPAA messaging</div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
+          <h3 className="text-xl font-bold text-center mb-6">Integration Architecture</h3>
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <h4 className="font-semibold mb-3">API Standards</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  FHIR R4 compliance
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  HL7 message processing
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  RESTful API design
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  OAuth 2.0 authentication
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">Data Security</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  End-to-end encryption
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Field-level data masking
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  Audit trail logging
+                </li>
+                <li className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  HIPAA compliance validation
+                </li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'fade'
+  },
+  {
+    id: 17,
+    title: "Scalability & Future Roadmap",
+    subtitle: "Built for Growth and Innovation",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
+              <h3 className="text-xl font-bold text-blue-600 mb-4">Scalability Features</h3>
+              <div className="space-y-3">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Horizontal Scaling</div>
+                  <div className="text-xs text-muted-foreground">Auto-scaling based on demand</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Load Balancing</div>
+                  <div className="text-xs text-muted-foreground">Intelligent traffic distribution</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Database Sharding</div>
+                  <div className="text-xs text-muted-foreground">Optimized data partitioning</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Caching Layers</div>
+                  <div className="text-xs text-muted-foreground">Multi-tier caching strategy</div>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+              <h3 className="text-xl font-bold text-green-600 mb-4">Growth Capacity</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">10,000+</div>
+                  <div className="text-xs text-muted-foreground">Concurrent Users</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">1M+</div>
+                  <div className="text-xs text-muted-foreground">Patient Records</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">99.99%</div>
+                  <div className="text-xs text-muted-foreground">Uptime SLA</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-2xl font-bold text-green-600">500+</div>
+                  <div className="text-xs text-muted-foreground">Facilities</div>
+                </div>
+              </div>
+            </Card>
+          </div>
+          
+          <div className="space-y-6">
+            <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+              <h3 className="text-xl font-bold text-purple-600 mb-4">2024-2025 Roadmap</h3>
+              <div className="space-y-3">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Q1 2024: Advanced AI Models</div>
+                  <div className="text-xs text-muted-foreground">GPT-4 integration and custom models</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Q2 2024: Mobile Applications</div>
+                  <div className="text-xs text-muted-foreground">Native iOS and Android apps</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Q3 2024: Voice Integration</div>
+                  <div className="text-xs text-muted-foreground">Natural language processing</div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="font-medium text-sm mb-1">Q4 2024: Predictive Analytics</div>
+                  <div className="text-xs text-muted-foreground">ML-powered insights</div>
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30">
+              <h3 className="text-xl font-bold text-orange-600 mb-4">Innovation Pipeline</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm">Blockchain for audit trails</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm">IoT device integration</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm">AR/VR training modules</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                  <span className="text-sm">Quantum-ready encryption</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 18,
+    title: "Success Stories & Case Studies",
+    subtitle: "Real-world Implementation Results",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
+            <h3 className="text-xl font-bold text-blue-600 mb-4">Metropolitan Recovery Center</h3>
+            <div className="space-y-4">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-sm">Facility Size</span>
+                  <span className="text-sm">200 beds, 150 staff</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">Implementation Time</span>
+                  <span className="text-sm">8 weeks</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Key Results:</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-green-100 p-2 rounded text-center">
+                    <div className="text-lg font-bold text-green-600">70%</div>
+                    <div className="text-xs">Faster Intake</div>
+                  </div>
+                  <div className="bg-blue-100 p-2 rounded text-center">
+                    <div className="text-lg font-bold text-blue-600">$450K</div>
+                    <div className="text-xs">Annual Savings</div>
+                  </div>
+                  <div className="bg-purple-100 p-2 rounded text-center">
+                    <div className="text-lg font-bold text-purple-600">95%</div>
+                    <div className="text-xs">Staff Satisfaction</div>
+                  </div>
+                  <div className="bg-orange-100 p-2 rounded text-center">
+                    <div className="text-lg font-bold text-orange-600">40%</div>
+                    <div className="text-xs">More Patients</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+            <h3 className="text-xl font-bold text-green-600 mb-4">Sunrise Treatment Network</h3>
+            <div className="space-y-4">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-sm">Network Size</span>
+                  <span className="text-sm">12 facilities, 800 staff</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">Rollout Duration</span>
+                  <span className="text-sm">16 weeks</span>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <h4 className="font-semibold text-sm">Network Results:</h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="bg-green-100 p-2 rounded text-center">
+                    <div className="text-lg font-bold text-green-600">85%</div>
+                    <div className="text-xs">Error Reduction</div>
+                  </div>
+                  <div className="bg-blue-100 p-2 rounded text-center">
+                    <div className="text-lg font-bold text-blue-600">$2.1M</div>
+                    <div className="text-xs">Network Savings</div>
+                  </div>
+                  <div className="bg-purple-100 p-2 rounded text-center">
+                    <div className="text-lg font-bold text-purple-600">60%</div>
+                    <div className="text-xs">Faster Claims</div>
+                  </div>
+                  <div className="bg-orange-100 p-2 rounded text-center">
+                    <div className="text-lg font-bold text-orange-600">50%</div>
+                    <div className="text-xs">Better Outcomes</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
+          <h3 className="text-xl font-bold text-center mb-6">Industry Impact</h3>
+          <div className="grid grid-cols-4 gap-6 text-center">
+            <div>
+              <div className="text-3xl font-bold text-blue-600 mb-2">25+</div>
+              <div className="text-sm text-muted-foreground">Treatment Centers</div>
+              <div className="text-xs text-muted-foreground">Successfully deployed</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-green-600 mb-2">15,000+</div>
+              <div className="text-sm text-muted-foreground">Patients Served</div>
+              <div className="text-xs text-muted-foreground">Since implementation</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-purple-600 mb-2">$8.5M</div>
+              <div className="text-sm text-muted-foreground">Total Savings</div>
+              <div className="text-xs text-muted-foreground">Across all clients</div>
+            </div>
+            <div>
+              <div className="text-3xl font-bold text-orange-600 mb-2">98%</div>
+              <div className="text-sm text-muted-foreground">Client Retention</div>
+              <div className="text-xs text-muted-foreground">After 12 months</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'zoom'
+  },
+  {
+    id: 19,
+    title: "Support & Maintenance",
+    subtitle: "Comprehensive Ongoing Support Framework",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-cyan-500/20 to-cyan-500/5 border-2 border-cyan-500/30">
+            <h3 className="text-xl font-bold text-cyan-600 mb-4">24/7 Support Tiers</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Tier 1: Help Desk</div>
+                <div className="text-xs text-muted-foreground">Basic issues, user questions</div>
+                <div className="text-xs font-medium text-cyan-600">Response: &lt; 15 min</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Tier 2: Technical Support</div>
+                <div className="text-xs text-muted-foreground">System issues, integrations</div>
+                <div className="text-xs font-medium text-cyan-600">Response: &lt; 2 hours</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Tier 3: Engineering</div>
+                <div className="text-xs text-muted-foreground">Critical issues, customizations</div>
+                <div className="text-xs font-medium text-cyan-600">Response: &lt; 30 min</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30">
+            <h3 className="text-xl font-bold text-purple-600 mb-4">Maintenance Schedule</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Daily Monitoring</div>
+                <div className="text-xs text-muted-foreground">System health checks</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Weekly Updates</div>
+                <div className="text-xs text-muted-foreground">Security patches, bug fixes</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Monthly Reviews</div>
+                <div className="text-xs text-muted-foreground">Performance optimization</div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm mb-1">Quarterly Upgrades</div>
+                <div className="text-xs text-muted-foreground">Feature enhancements</div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30">
+            <h3 className="text-xl font-bold text-green-600 mb-4">SLA Guarantees</h3>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">System Uptime</span>
+                  <span className="text-lg font-bold text-green-600">99.9%</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">Data Recovery</span>
+                  <span className="text-lg font-bold text-green-600">&lt; 4 hrs</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">Critical Issue Response</span>
+                  <span className="text-lg font-bold text-green-600">&lt; 30 min</span>
+                </div>
+              </div>
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <span className="font-medium text-sm">Resolution Time</span>
+                  <span className="text-lg font-bold text-green-600">&lt; 24 hrs</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="grid grid-cols-2 gap-8">
+          <Card className="p-6 bg-gradient-to-br from-orange-500/20 to-orange-500/5 border-2 border-orange-500/30">
+            <h3 className="text-xl font-bold text-orange-600 mb-4">Training & Education</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span className="text-sm">Ongoing training programs</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span className="text-sm">Certification programs</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span className="text-sm">Best practices workshops</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                <span className="text-sm">Feature update training</span>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
+            <h3 className="text-xl font-bold text-blue-600 mb-4">Customer Success</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Dedicated success manager</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Regular health checks</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Performance reviews</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                <span className="text-sm">Optimization recommendations</span>
+              </div>
+            </div>
+          </Card>
+        </div>
+      </div>
+    ),
+    animation: 'fade'
+  },
+  {
+    id: 20,
+    title: "Pricing & Packages",
+    subtitle: "Flexible Solutions for Every Treatment Center",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30">
+            <div className="text-center mb-4">
+              <h3 className="text-xl font-bold text-blue-600">Starter Package</h3>
+              <div className="text-3xl font-bold text-blue-600 mt-2">$2,500</div>
+              <div className="text-sm text-muted-foreground">per month</div>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm">Up to 50 beds</div>
+                <div className="text-xs text-muted-foreground">Perfect for smaller facilities</div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Core AI agents</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Basic integrations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Email support</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span className="text-sm">Monthly health checks</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-4 border-purple-500/50 relative">
+            <div className="absolute -top-3 left-1/2 transform -translate-x-1/2">
+              <Badge className="bg-purple-600 text-white">Most Popular</Badge>
+            </div>
+            <div className="text-center mb-4">
+              <h3 className="text-xl font-bold text-purple-600">Professional</h3>
+              <div className="text-3xl font-bold text-purple-600 mt-2">$4,500</div>
+              <div className="text-sm text-muted-foreground">per month</div>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm">Up to 200 beds</div>
+                <div className="text-xs text-muted-foreground">Ideal for growing centers</div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Advanced AI agents</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Full integrations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">24/7 phone support</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span className="text-sm">Weekly optimization</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-gold-500/20 to-amber-500/20 border-2 border-amber-500/30">
+            <div className="text-center mb-4">
+              <h3 className="text-xl font-bold text-amber-600">Enterprise</h3>
+              <div className="text-3xl font-bold text-amber-600 mt-2">Custom</div>
+              <div className="text-sm text-muted-foreground">pricing</div>
+            </div>
+            <div className="space-y-3">
+              <div className="bg-white/50 p-3 rounded-lg">
+                <div className="font-medium text-sm">Unlimited capacity</div>
+                <div className="text-xs text-muted-foreground">Multi-facility networks</div>
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-sm">All AI capabilities</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-sm">Custom integrations</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-sm">Dedicated support team</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span className="text-sm">Daily monitoring</span>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+        
+        <div className="bg-gradient-to-r from-gray-50 to-gray-100 p-6 rounded-lg">
+          <h3 className="text-xl font-bold text-center mb-6">Implementation & Additional Services</h3>
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <h4 className="font-semibold mb-3">One-time Setup Costs</h4>
+              <ul className="space-y-2 text-sm">
+                <li className="flex justify-between">
+                  <span>Implementation & Setup</span>
+                  <span className="font-medium">$15,000 - $50,000</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Data Migration</span>
+                  <span className="font-medium">$5,000 - $15,000</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Custom Integrations</span>
+                  <span className="font-medium">$2,500 per system</span>
+                </li>
+                <li className="flex justify-between">
+                  <span>Staff Training Program</span>
+                  <span className="font-medium">$3,000 - $8,000</span>
+                </li>
+              </ul>
+            </div>
+            <div>
+              <h4 className="font-semibold mb-3">ROI Calculator</h4>
+              <div className="space-y-3">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Average monthly savings</span>
+                    <span className="font-bold text-green-600">$8,000 - $25,000</span>
+                  </div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Payback period</span>
+                    <span className="font-bold text-blue-600">4-8 months</span>
+                  </div>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">3-year ROI</span>
+                    <span className="font-bold text-purple-600">300-500%</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    ),
+    animation: 'slide'
+  },
+  {
+    id: 21,
+    title: "Get Started Today",
+    subtitle: "Transform Your Treatment Center with AI",
+    content: (
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        <div className="text-center space-y-6">
+          <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary to-primary/60 rounded-full flex items-center justify-center animate-pulse">
+            <div className="text-4xl">🚀</div>
+          </div>
+          <div className="space-y-4">
+            <h3 className="text-3xl font-bold text-primary">Ready to Transform Your Operations?</h3>
+            <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+              Join the growing number of treatment centers leveraging AI to improve patient outcomes, 
+              reduce costs, and streamline operations.
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-3 gap-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/20 to-blue-500/5 border-2 border-blue-500/30 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl">📅</span>
+            </div>
+            <h4 className="text-xl font-bold text-blue-600 mb-3">Schedule Demo</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              See our platform in action with a personalized demonstration
+            </p>
+            <Button className="w-full bg-blue-600 hover:bg-blue-700">Book Demo</Button>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-green-500/20 to-green-500/5 border-2 border-green-500/30 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-green-600 to-green-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl">🧪</span>
+            </div>
+            <h4 className="text-xl font-bold text-green-600 mb-3">Free Trial</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Experience our AI platform with a 30-day free trial
+            </p>
+            <Button className="w-full bg-green-600 hover:bg-green-700">Start Trial</Button>
+          </Card>
+          
+          <Card className="p-6 bg-gradient-to-br from-purple-500/20 to-purple-500/5 border-2 border-purple-500/30 text-center">
+            <div className="w-16 h-16 bg-gradient-to-br from-purple-600 to-purple-700 rounded-full flex items-center justify-center mx-auto mb-4">
+              <span className="text-white text-2xl">💬</span>
+            </div>
+            <h4 className="text-xl font-bold text-purple-600 mb-3">Consultation</h4>
+            <p className="text-sm text-muted-foreground mb-4">
+              Get expert advice tailored to your specific needs
+            </p>
+            <Button className="w-full bg-purple-600 hover:bg-purple-700">Get Consultation</Button>
+          </Card>
+        </div>
+
+        <div className="bg-gradient-to-r from-primary/10 to-primary/5 p-8 rounded-lg">
+          <div className="grid grid-cols-2 gap-8">
+            <div>
+              <h3 className="text-2xl font-bold text-primary mb-4">Contact Information</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <span className="text-primary text-sm">📧</span>
+                  </div>
+                  <div>
+                    <div className="font-medium">Email</div>
+                    <div className="text-sm text-muted-foreground">info@aitreatmentcenter.com</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <span className="text-primary text-sm">📞</span>
+                  </div>
+                  <div>
+                    <div className="font-medium">Phone</div>
+                    <div className="text-sm text-muted-foreground">1-800-AI-CARE (1-800-242-2273)</div>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 bg-primary/20 rounded-full flex items-center justify-center">
+                    <span className="text-primary text-sm">🌐</span>
+                  </div>
+                  <div>
+                    <div className="font-medium">Website</div>
+                    <div className="text-sm text-muted-foreground">www.aitreatmentcenter.com</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div>
+              <h3 className="text-2xl font-bold text-primary mb-4">Why Choose Us?</h3>
+              <div className="space-y-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-primary rounded-full"></div>
+                  <span className="text-sm">Industry-leading AI technology</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-primary rounded-full"></div>
+                  <span className="text-sm">HIPAA-compliant and secure</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-primary rounded-full"></div>
+                  <span className="text-sm">Proven ROI and results</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-primary rounded-full"></div>
+                  <span className="text-sm">24/7 support and training</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="w-3 h-3 bg-primary rounded-full"></div>
+                  <span className="text-sm">Seamless integration</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="text-center">
+          <p className="text-lg font-medium text-primary">
+            The future of healthcare is here. Let us help you embrace it.
+          </p>
+        </div>
+      </div>
+    ),
+    animation: 'fade'
   }
 ];
 
