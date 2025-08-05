@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { usePresentationDownloader } from '@/hooks/usePresentationDownloader';
+import { usePresentationExporter } from '@/hooks/usePresentationExporter';
 import './PresentationStyles.css';
 
 interface Slide {
@@ -3109,7 +3109,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { downloadPDF, downloadHTML, downloadPPT } = usePresentationDownloader();
+  const { exportHTML, exportPDF, exportPPT } = usePresentationExporter();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -3382,15 +3382,15 @@ export const AgenticAIPresentation: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => downloadHTML(slides, setCurrentSlide)}>
+          <Button variant="outline" size="sm" onClick={() => exportHTML(slides, setCurrentSlide)}>
             <Download className="w-4 h-4 mr-2" />
             HTML
           </Button>
-          <Button variant="outline" size="sm" onClick={() => downloadPDF(slides, setCurrentSlide)}>
+          <Button variant="outline" size="sm" onClick={() => exportPDF(slides, setCurrentSlide)}>
             <FileText className="w-4 h-4 mr-2" />
             PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={() => downloadPPT(slides, setCurrentSlide)}>
+          <Button variant="outline" size="sm" onClick={() => exportPPT(slides, setCurrentSlide)}>
             <Presentation className="w-4 h-4 mr-2" />
             PPT
           </Button>
