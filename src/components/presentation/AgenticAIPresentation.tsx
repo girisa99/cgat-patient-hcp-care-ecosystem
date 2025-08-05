@@ -2553,7 +2553,8 @@ const slides: Slide[] = [
     ),
     animation: 'fade'
   },
-    {
+  {
+    id: 12,
     title: "Real-Time Performance Analytics & Monitoring",
     subtitle: "Comprehensive Agent Performance Tracking & System Health Monitoring",
     content: (
