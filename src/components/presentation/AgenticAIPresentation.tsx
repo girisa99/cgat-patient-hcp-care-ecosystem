@@ -2822,7 +2822,7 @@ export const AgenticAIPresentation: React.FC = () => {
     : "w-full max-w-6xl mx-auto";
 
   return (
-    <div className={containerClass}>
+    <div className={containerClass} data-presentation-content>
       {/* Presentation Header */}
       <div className="flex items-center justify-between p-4 border-b">
         <div className="flex items-center gap-4">
@@ -2877,7 +2877,7 @@ export const AgenticAIPresentation: React.FC = () => {
             )}
           </div>
           
-          <div className="flex-1 min-h-0" data-presentation-content>
+          <div className="flex-1 min-h-0">
             {slides[currentSlide].content}
           </div>
         </div>
