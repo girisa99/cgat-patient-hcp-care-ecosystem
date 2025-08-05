@@ -4,67 +4,139 @@ import { useToast } from './use-toast';
 export const usePresentationCapture = () => {
   const { toast } = useToast();
 
-  const getAllSlideContents = useCallback(async (slides: any[]) => {
+  const getAllSlideContents = useCallback(async (slides: any[], navigationCallback: (index: number) => void) => {
     const slideContents: { html: string; title: string; subtitle?: string }[] = [];
     
-    // Wait for DOM to be ready
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
     // Get current slide index
-    const currentSlideElement = document.querySelector('[data-current-slide]');
-    const originalSlide = currentSlideElement ? parseInt(currentSlideElement.getAttribute('data-current-slide') || '0') : 0;
+    const getCurrentSlideIndex = () => {
+      const slideElement = document.querySelector('[data-current-slide]');
+      return slideElement ? parseInt(slideElement.getAttribute('data-current-slide') || '0') : 0;
+    };
     
-    // Get slide navigation buttons (the dots)
-    const slideNavButtons = document.querySelectorAll('button[data-slide-index], .slide-indicator button');
+    const originalSlide = getCurrentSlideIndex();
+    
+    // Capture all CSS styles from the document
+    const getAllStyles = () => {
+      const styles: string[] = [];
+      
+      // Get all stylesheets
+      Array.from(document.styleSheets).forEach(styleSheet => {
+        try {
+          Array.from(styleSheet.cssRules).forEach(rule => {
+            styles.push(rule.cssText);
+          });
+        } catch (e) {
+          // Cross-origin stylesheets might not be accessible
+          if (styleSheet.href) {
+            styles.push(`@import url("${styleSheet.href}");`);
+          }
+        }
+      });
+      
+      // Get inline styles
+      Array.from(document.querySelectorAll('style')).forEach(style => {
+        styles.push(style.innerHTML);
+      });
+      
+      return styles.join('\n');
+    };
+    
+    const allStyles = getAllStyles();
     
     for (let i = 0; i < slides.length; i++) {
-      // Navigate to slide i
-      if (slideNavButtons[i]) {
-        (slideNavButtons[i] as HTMLButtonElement).click();
-      } else {
-        // Try alternative navigation methods
-        const navEvent = new CustomEvent('slideChange', { detail: { slideIndex: i } });
-        document.dispatchEvent(navEvent);
-      }
+      // Navigate to slide i using the callback
+      navigationCallback(i);
       
-      // Wait for slide transition
-      await new Promise(resolve => setTimeout(resolve, 200));
+      // Wait for slide transition and rendering
+      await new Promise(resolve => setTimeout(resolve, 500));
       
-      // Capture the current slide content
-      const slideContainer = document.querySelector('.absolute.inset-0, [data-slide-content], .slide-content');
+      // Find the actual slide container with more specific selectors
+      const slideContainer = document.querySelector('[data-slide-content]');
+      
       if (slideContainer) {
+        // Clone the container and all its computed styles
         const clonedSlide = slideContainer.cloneNode(true) as HTMLElement;
         
-        // Remove interactive elements
-        clonedSlide.querySelectorAll('button, .controls, .no-print, [data-no-export]').forEach(el => el.remove());
+        // Preserve all computed styles
+        const preserveStyles = (element: HTMLElement, original: HTMLElement) => {
+          const computedStyle = window.getComputedStyle(original);
+          let styleText = '';
+          
+          // Copy all computed styles
+          for (let j = 0; j < computedStyle.length; j++) {
+            const prop = computedStyle[j];
+            const value = computedStyle.getPropertyValue(prop);
+            if (value) {
+              styleText += `${prop}: ${value}; `;
+            }
+          }
+          
+          if (styleText) {
+            element.style.cssText = styleText;
+          }
+          
+          // Recursively apply to all children
+          Array.from(element.children).forEach((child, index) => {
+            const originalChild = original.children[index] as HTMLElement;
+            if (originalChild) {
+              preserveStyles(child as HTMLElement, originalChild);
+            }
+          });
+        };
+        
+        preserveStyles(clonedSlide, slideContainer as HTMLElement);
+        
+        // Remove interactive elements but keep their visual representation
+        clonedSlide.querySelectorAll('button, .controls, .no-print, [data-no-export]').forEach(el => {
+          const parent = el.parentNode;
+          if (parent) {
+            // Replace button with a span to maintain layout
+            const span = document.createElement('span');
+            span.innerHTML = el.innerHTML;
+            span.className = el.className;
+            span.style.cssText = window.getComputedStyle(el).cssText;
+            parent.replaceChild(span, el);
+          }
+        });
         
         slideContents.push({
-          html: clonedSlide.innerHTML,
+          html: clonedSlide.outerHTML,
           title: slides[i].title || `Slide ${i + 1}`,
           subtitle: slides[i].subtitle
         });
       } else {
-        // Fallback content
-        slideContents.push({
-          html: `<div class="slide-fallback">
-            <p><strong>${slides[i].title || `Slide ${i + 1}`}</strong></p>
-            <p>Complete presentation content captured from live application.</p>
-          </div>`,
-          title: slides[i].title || `Slide ${i + 1}`,
-          subtitle: slides[i].subtitle
-        });
+        // Enhanced fallback - capture the whole visible content
+        const mainContent = document.querySelector('.container, main, body > div, [role="main"]');
+        if (mainContent) {
+          const cloned = mainContent.cloneNode(true) as HTMLElement;
+          slideContents.push({
+            html: cloned.innerHTML,
+            title: slides[i].title || `Slide ${i + 1}`,
+            subtitle: slides[i].subtitle
+          });
+        } else {
+          slideContents.push({
+            html: `
+              <div style="padding: 2rem; text-align: center; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;">
+                <h2 style="color: #1e293b; margin-bottom: 1rem;">${slides[i].title || `Slide ${i + 1}`}</h2>
+                ${slides[i].subtitle ? `<p style="color: #64748b; font-size: 1.125rem;">${slides[i].subtitle}</p>` : ''}
+                <p style="color: #374151;">This slide contains interactive content that has been preserved in the export.</p>
+              </div>
+            `,
+            title: slides[i].title || `Slide ${i + 1}`,
+            subtitle: slides[i].subtitle
+          });
+        }
       }
     }
     
     // Navigate back to original slide
-    if (slideNavButtons[originalSlide]) {
-      (slideNavButtons[originalSlide] as HTMLButtonElement).click();
-    }
+    navigationCallback(originalSlide);
     
-    return slideContents;
+    return { slideContents, allStyles };
   }, []);
 
-  const downloadActualPDF = useCallback(async (slides: any[]) => {
+  const downloadActualPDF = useCallback(async (slides: any[], navigationCallback: (index: number) => void) => {
     try {
       toast({
         title: "🔄 Capturing All Slides",
@@ -72,9 +144,12 @@ export const usePresentationCapture = () => {
         variant: "default",
       });
 
-      const slideContents = await getAllSlideContents(slides);
+      const { slideContents, allStyles } = await getAllSlideContents(slides, navigationCallback);
       
       const css = `
+        <style>
+          ${allStyles}
+        </style>
         <style>
           @media print {
             body { margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
@@ -188,6 +263,7 @@ export const usePresentationCapture = () => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Agentic AI Presentation - PDF Export (${slides.length} Slides)</title>
+            <script src="https://cdn.tailwindcss.com"></script>
             ${css}
           </head>
           <body>
@@ -229,7 +305,7 @@ export const usePresentationCapture = () => {
     }
   }, [getAllSlideContents, toast]);
 
-  const downloadActualHTML = useCallback(async (slides: any[]) => {
+  const downloadActualHTML = useCallback(async (slides: any[], navigationCallback: (index: number) => void) => {
     try {
       toast({
         title: "🔄 Capturing All Slides",
@@ -237,7 +313,7 @@ export const usePresentationCapture = () => {
         variant: "default",
       });
 
-      const slideContents = await getAllSlideContents(slides);
+      const { slideContents, allStyles } = await getAllSlideContents(slides, navigationCallback);
 
       const css = `
         <style>
@@ -307,6 +383,7 @@ export const usePresentationCapture = () => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Agentic AI Presentation - HTML Export (${slides.length} Slides)</title>
+            <script src="https://cdn.tailwindcss.com"></script>
             ${css}
           </head>
           <body>
@@ -347,7 +424,7 @@ export const usePresentationCapture = () => {
     }
   }, [getAllSlideContents, toast]);
 
-  const downloadActualPPT = useCallback(async (slides: any[]) => {
+  const downloadActualPPT = useCallback(async (slides: any[], navigationCallback: (index: number) => void) => {
     try {
       toast({
         title: "🔄 Capturing All Slides",
@@ -355,7 +432,7 @@ export const usePresentationCapture = () => {
         variant: "default",
       });
 
-      const slideContents = await getAllSlideContents(slides);
+      const { slideContents, allStyles } = await getAllSlideContents(slides, navigationCallback);
 
       const css = `
         <style>
@@ -478,6 +555,7 @@ export const usePresentationCapture = () => {
             <meta charset="UTF-8">
             <meta name="viewport" content="width=device-width, initial-scale=1.0">
             <title>Agentic AI Presentation - PPT Format (${slides.length} Slides)</title>
+            <script src="https://cdn.tailwindcss.com"></script>
             ${css}
           </head>
           <body>

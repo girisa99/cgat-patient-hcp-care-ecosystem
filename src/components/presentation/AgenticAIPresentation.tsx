@@ -2831,15 +2831,15 @@ export const AgenticAIPresentation: React.FC = () => {
         </div>
         
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => downloadActualHTML(slides)}>
+          <Button variant="outline" size="sm" onClick={() => downloadActualHTML(slides, setCurrentSlide)}>
             <Download className="w-4 h-4 mr-2" />
             HTML
           </Button>
-          <Button variant="outline" size="sm" onClick={() => downloadActualPDF(slides)}>
+          <Button variant="outline" size="sm" onClick={() => downloadActualPDF(slides, setCurrentSlide)}>
             <FileText className="w-4 h-4 mr-2" />
             PDF
           </Button>
-          <Button variant="outline" size="sm" onClick={() => downloadActualPPT(slides)}>
+          <Button variant="outline" size="sm" onClick={() => downloadActualPPT(slides, setCurrentSlide)}>
             <Presentation className="w-4 h-4 mr-2" />
             PPT
           </Button>
