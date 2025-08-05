@@ -198,39 +198,39 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* AI Presentation Banner */}
-        <Card className="bg-gradient-to-r from-primary/20 via-secondary/20 to-accent/20 border-primary/30">
+        {/* AI Presentation Banner for SuperAdmin */}
+        <Card className="bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-red-500/20 border-purple-500/30">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-primary rounded-full flex items-center justify-center">
-                  <Presentation className="w-8 h-8 text-white" />
+                <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center">
+                  <Settings className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl text-primary">Agentic AI Implementation Presentation</CardTitle>
+                  <CardTitle className="text-2xl text-purple-700">SuperAdmin AI Platform Overview</CardTitle>
                   <p className="text-muted-foreground">
-                    Complete 9-slide presentation covering MCP, RAG, Templates, and AI Architecture
+                    Complete system-wide AI implementation and management dashboard
                   </p>
                 </div>
               </div>
               <div className="flex gap-3">
                 <Button 
                   onClick={() => setShowPresentation(!showPresentation)}
-                  className="flex items-center gap-2"
+                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
                 >
                   <Presentation className="w-4 h-4" />
-                  {showPresentation ? 'Hide' : 'View'} Presentation
+                  {showPresentation ? 'Hide' : 'View'} System Overview
                 </Button>
                 <Button 
                   variant="outline"
-                  onClick={() => downloadPDF()}
+                  onClick={downloadPDF}
                   className="flex items-center gap-2"
                 >
                   📄 Download PDF
                 </Button>
                 <Button 
                   variant="outline"
-                  onClick={() => downloadPPT()}
+                  onClick={downloadPPT}
                   className="flex items-center gap-2"
                 >
                   📊 Download PPT
@@ -249,9 +249,9 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
 
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-foreground">Dashboard</h1>
+            <h1 className="text-3xl font-bold text-foreground">SuperAdmin Dashboard</h1>
             <p className="text-muted-foreground mt-2">
-              Healthcare system overview and key metrics
+              System-wide healthcare management and AI platform oversight
             </p>
           </div>
         </div>
