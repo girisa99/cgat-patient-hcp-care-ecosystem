@@ -544,141 +544,228 @@ const slides: Slide[] = [
   },
   {
     id: 6,
-    title: "Step 3: Actions Configuration",
-    subtitle: "Define Your Agent's Capabilities and Integrations",
+    title: "Step 3: Actions Configuration & System Integration",
+    subtitle: "Define Actions, Connect Systems, Setup Knowledge Base & Configure API Endpoints",
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-slide-in-right">
         <div className="text-center mb-6">
           <div className="w-24 h-24 bg-gradient-to-br from-green-600 to-green-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-3xl">⚙️</span>
           </div>
-          <h3 className="text-2xl font-bold text-green-600">Actions Configuration</h3>
-          <p className="text-muted-foreground">Set up your agent's core functionality and system integrations</p>
+          <h3 className="text-2xl font-bold text-green-600">Actions Configuration & System Integration</h3>
+          <p className="text-muted-foreground">Comprehensive setup of actions, connectors, knowledge base, and API endpoints</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
-          <div className="space-y-4">
-            <Card className="p-6 bg-gradient-to-br from-green-500/15 to-green-500/5 border-l-4 border-green-500">
-              <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2">
-                <span className="text-xl">🔧</span> Core Actions
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Patient data processing</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Onboarding workflows</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Document generation</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span className="text-sm">Notification systems</span>
+        {/* System Connectors Section */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
+            <h4 className="font-bold text-blue-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🔗</span> System Connectors
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h5 className="font-semibold text-blue-700 mb-3">Pre-built Connectors</h5>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>EHR Systems (Epic, Cerner)</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Payment Gateways</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Slack/Teams Integration</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span>Email/SMS Services</span>
+                  </div>
                 </div>
               </div>
-            </Card>
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <h5 className="font-semibold text-blue-700 mb-3">Custom Connectors</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">REST API integration builder</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">GraphQL endpoint support</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">Database direct connections</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
 
-            <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
-              <h4 className="font-bold text-blue-600 mb-4 flex items-center gap-2">
-                <span className="text-xl">🔗</span> System Connectors
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Electronic Health Records</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Payment processing systems</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Communication platforms</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span className="text-sm">Third-party APIs</span>
-                </div>
-              </div>
-            </Card>
-          </div>
-
-          <div className="space-y-4">
-            <Card className="p-6 bg-gradient-to-br from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500">
-              <h4 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
-                <span className="text-xl">🧠</span> Knowledge Base Setup
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm">Document upload and processing</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm">Vector embeddings creation</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm">RAG system configuration</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                  <span className="text-sm">Semantic search optimization</span>
+          <Card className="p-6 bg-gradient-to-br from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500">
+            <h4 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🧠</span> Knowledge Base & RAG Setup
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h5 className="font-semibold text-purple-700 mb-3">Document Processing</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">PDF, DOC, HTML, Markdown support</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Auto-chunking and indexing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Vector embeddings generation</span>
+                  </div>
                 </div>
               </div>
-            </Card>
-
-            <Card className="p-6 bg-gradient-to-br from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500">
-              <h4 className="font-bold text-orange-600 mb-4 flex items-center gap-2">
-                <span className="text-xl">📋</span> Templates & Workflows
-              </h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm">Pre-built healthcare templates</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm">Custom workflow builder</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm">Conditional logic setup</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
-                  <span className="text-sm">Approval workflows</span>
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h5 className="font-semibold text-purple-700 mb-3">RAG Configuration</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Semantic search algorithms</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Context relevance scoring</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Real-time content updates</span>
+                  </div>
                 </div>
               </div>
-            </Card>
-          </div>
+            </div>
+          </Card>
         </div>
 
-        <div className="bg-gradient-to-r from-green-500/10 to-blue-500/10 rounded-xl p-6 border-2 border-green-500/20">
-          <h4 className="text-xl font-bold mb-4 text-center">Configuration Flow</h4>
-          <div className="flex items-center justify-between">
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">1</div>
+        {/* Manual Actions & Task Assignment */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
+          <Card className="p-6 bg-gradient-to-br from-green-500/15 to-green-500/5 border-l-4 border-green-500">
+            <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🔧</span> Manual Actions & Tasks
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h5 className="font-semibold text-green-700 mb-3">Action Types</h5>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Data processing tasks</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Document generation</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Approval workflows</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span>Notification sending</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h5 className="font-semibold text-green-700 mb-3">Task Assignment</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Assign tasks to system connectors</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Priority-based execution order</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Conditional task routing</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6 bg-gradient-to-br from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500">
+            <h4 className="font-bold text-orange-600 mb-4 flex items-center gap-2">
+              <span className="text-xl">🌐</span> API Endpoints & Visibility
+            </h4>
+            <div className="space-y-4">
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h5 className="font-semibold text-orange-700 mb-3">Auto-Generated APIs</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">REST endpoints for each action</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">OpenAPI/Swagger documentation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Authentication & rate limiting</span>
+                  </div>
+                </div>
+              </div>
+              <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
+                <h5 className="font-semibold text-orange-700 mb-3">API Management</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Real-time monitoring dashboard</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Usage analytics & logs</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Version control & rollbacks</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Configuration Flow */}
+        <div className="bg-gradient-to-r from-green-500/10 via-blue-500/10 to-purple-500/10 rounded-xl p-6 border-2 border-green-500/20">
+          <h4 className="text-xl font-bold mb-6 text-center">Comprehensive Configuration Journey</h4>
+          <div className="grid grid-cols-5 gap-4">
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-green-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto animate-pulse">🔧</div>
               <p className="text-sm font-medium">Define Actions</p>
+              <p className="text-xs text-muted-foreground">Create manual & automated tasks</p>
             </div>
-            <div className="text-2xl text-green-600">→</div>
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">2</div>
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto animate-pulse">🔗</div>
               <p className="text-sm font-medium">Connect Systems</p>
+              <p className="text-xs text-muted-foreground">Setup system connectors</p>
             </div>
-            <div className="text-2xl text-blue-600">→</div>
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">3</div>
-              <p className="text-sm font-medium">Setup Knowledge</p>
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto animate-pulse">🧠</div>
+              <p className="text-sm font-medium">Knowledge Base</p>
+              <p className="text-xs text-muted-foreground">Configure RAG system</p>
             </div>
-            <div className="text-2xl text-purple-600">→</div>
-            <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-orange-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto animate-pulse">🌐</div>
+              <p className="text-sm font-medium">API Endpoints</p>
+              <p className="text-xs text-muted-foreground">Generate & manage APIs</p>
+            </div>
+            <div className="text-center space-y-3">
+              <div className="w-16 h-16 bg-red-600 rounded-full flex items-center justify-center text-white text-2xl mx-auto animate-pulse">✓</div>
               <p className="text-sm font-medium">Ready for AI</p>
+              <p className="text-xs text-muted-foreground">Assignment & deployment</p>
             </div>
           </div>
         </div>
@@ -688,151 +775,217 @@ const slides: Slide[] = [
   },
   {
     id: 7,
-    title: "Step 4: AI Assignment & Model Selection",
-    subtitle: "Intelligent Model Assignment with Manual Override Options",
+    title: "Step 4: AI Assignment, Task Execution & Multi-Channel Deployment",
+    subtitle: "Intelligent Assignment, System Connector Execution & Channel-Specific Deployment",
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-slide-in-right">
         <div className="text-center mb-6">
           <div className="w-24 h-24 bg-gradient-to-br from-orange-600 to-orange-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <span className="text-white text-3xl">🤖</span>
           </div>
-          <h3 className="text-2xl font-bold text-orange-600">AI Assignment</h3>
-          <p className="text-muted-foreground">Intelligent model selection and task assignment configuration</p>
+          <h3 className="text-2xl font-bold text-orange-600">AI Assignment & Multi-Channel Execution</h3>
+          <p className="text-muted-foreground">Complete task assignment, connector execution, and deployment orchestration</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        {/* AI Assignment & Task Execution */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
           <Card className="p-6 bg-gradient-to-br from-orange-500/15 to-orange-500/5 border-l-4 border-orange-500">
             <h4 className="font-bold text-orange-600 mb-4 flex items-center gap-2">
-              <span className="text-xl">🧠</span> Auto-Suggest AI Models
+              <span className="text-xl">🧠</span> Intelligent AI Assignment
             </h4>
             <div className="space-y-4">
               <div className="bg-orange-50 p-4 rounded-lg border border-orange-200">
-                <h5 className="font-semibold text-orange-700 mb-2">Intelligent Selection</h5>
+                <h5 className="font-semibold text-orange-700 mb-3">Auto-Suggestion Engine</h5>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-sm">Analyzes your agent's requirements</span>
+                    <span className="text-xs">Analyzes task complexity & requirements</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-sm">Suggests optimal model combinations</span>
+                    <span className="text-xs">Suggests optimal model combinations</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
-                    <span className="text-sm">Considers performance and cost</span>
+                    <span className="text-xs">Performance & cost optimization</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                    <span className="text-xs">Real-time model switching</span>
                   </div>
                 </div>
               </div>
               <div className="space-y-2">
-                <Badge className="bg-orange-100 text-orange-700">Small LLMs for Speed</Badge>
-                <Badge className="bg-orange-100 text-orange-700">Large LLMs for Complex Tasks</Badge>
-                <Badge className="bg-orange-100 text-orange-700">Specialized Models for Domain Tasks</Badge>
+                <Badge className="bg-orange-100 text-orange-700 text-xs">Small LLMs for Speed</Badge>
+                <Badge className="bg-orange-100 text-orange-700 text-xs">Large LLMs for Complex Tasks</Badge>
+                <Badge className="bg-orange-100 text-orange-700 text-xs">Domain-Specific Models</Badge>
               </div>
             </div>
           </Card>
 
           <Card className="p-6 bg-gradient-to-br from-blue-500/15 to-blue-500/5 border-l-4 border-blue-500">
             <h4 className="font-bold text-blue-600 mb-4 flex items-center gap-2">
-              <span className="text-xl">⚙️</span> Manual Override Options
+              <span className="text-xl">🔗</span> System Connector Execution
             </h4>
             <div className="space-y-4">
               <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
-                <h5 className="font-semibold text-blue-700 mb-2">Full Control</h5>
+                <h5 className="font-semibold text-blue-700 mb-3">Task Assignment to Connectors</h5>
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm">Override AI suggestions</span>
+                    <span className="text-xs">Assign manual actions to system connectors</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm">Custom model selection</span>
+                    <span className="text-xs">Priority-based execution queuing</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                    <span className="text-sm">Fine-tune parameters</span>
+                    <span className="text-xs">Conditional task routing logic</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                    <span className="text-xs">Error handling & retry mechanisms</span>
                   </div>
                 </div>
               </div>
               <div className="space-y-2">
-                <Badge className="bg-blue-100 text-blue-700">Expert Mode</Badge>
-                <Badge className="bg-blue-100 text-blue-700">Custom Configurations</Badge>
-                <Badge className="bg-blue-100 text-blue-700">Advanced Settings</Badge>
+                <Badge className="bg-blue-100 text-blue-700 text-xs">Real-time Execution</Badge>
+                <Badge className="bg-blue-100 text-blue-700 text-xs">Parallel Processing</Badge>
+                <Badge className="bg-blue-100 text-blue-700 text-xs">Failure Recovery</Badge>
               </div>
             </div>
           </Card>
         </div>
 
-        <div className="grid grid-cols-2 gap-6">
+        {/* Multi-Channel Deployment */}
+        <div className="grid grid-cols-2 gap-6 mb-6">
           <Card className="p-6 bg-gradient-to-br from-purple-500/15 to-purple-500/5 border-l-4 border-purple-500">
             <h4 className="font-bold text-purple-600 mb-4 flex items-center gap-2">
-              <span className="text-xl">📋</span> Task Assignment Strategy
+              <span className="text-xl">🚀</span> Multi-Channel Deployment
             </h4>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm">Role-based task distribution</span>
+            <div className="space-y-4">
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h5 className="font-semibold text-purple-700 mb-3">Channel Types</h5>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span>Web Portal</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span>Mobile App</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span>Slack/Teams</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span>WhatsApp/SMS</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span>Voice/Phone</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span>Email Integration</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm">Workload balancing algorithms</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm">Priority-based assignment</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-purple-500 rounded-full"></div>
-                <span className="text-sm">Automated escalation rules</span>
+              <div className="bg-purple-50 p-4 rounded-lg border border-purple-200">
+                <h5 className="font-semibold text-purple-700 mb-3">Deployment Features</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Channel-specific UI optimization</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                    <span className="text-xs">Cross-channel context preservation</span>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
 
           <Card className="p-6 bg-gradient-to-br from-green-500/15 to-green-500/5 border-l-4 border-green-500">
             <h4 className="font-bold text-green-600 mb-4 flex items-center gap-2">
-              <span className="text-xl">🎯</span> Performance Optimization
+              <span className="text-xl">🌐</span> API Endpoint Management
             </h4>
-            <div className="space-y-3">
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Real-time performance monitoring</span>
+            <div className="space-y-4">
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h5 className="font-semibold text-green-700 mb-3">Endpoint Availability</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Auto-generated REST APIs for all actions</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Real-time API status monitoring</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">OpenAPI/Swagger documentation</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Authentication & rate limiting</span>
+                  </div>
+                </div>
               </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Adaptive model switching</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Cost optimization algorithms</span>
-              </div>
-              <div className="flex items-center gap-3">
-                <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                <span className="text-sm">Quality assurance metrics</span>
+              <div className="bg-green-50 p-4 rounded-lg border border-green-200">
+                <h5 className="font-semibold text-green-700 mb-3">Visibility & Management</h5>
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Live API usage dashboard</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                    <span className="text-xs">Performance metrics & analytics</span>
+                  </div>
+                </div>
               </div>
             </div>
           </Card>
         </div>
 
-        <div className="bg-gradient-to-r from-orange-500/10 to-purple-500/10 rounded-xl p-6 border-2 border-orange-500/20">
-          <h4 className="text-xl font-bold mb-4 text-center">AI Assignment Process</h4>
-          <div className="flex items-center justify-between">
+        {/* Execution & Deployment Flow */}
+        <div className="bg-gradient-to-r from-orange-500/10 via-blue-500/10 via-purple-500/10 to-green-500/10 rounded-xl p-6 border-2 border-orange-500/20">
+          <h4 className="text-xl font-bold mb-6 text-center">Complete Assignment & Deployment Journey</h4>
+          <div className="grid grid-cols-6 gap-3">
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold">🔍</div>
-              <p className="text-sm font-medium">Analyze Requirements</p>
+              <div className="w-14 h-14 bg-orange-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">🔍</div>
+              <p className="text-xs font-medium">Analyze Tasks</p>
+              <p className="text-xs text-muted-foreground">Requirements analysis</p>
             </div>
-            <div className="text-2xl text-orange-600">→</div>
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold">🤖</div>
-              <p className="text-sm font-medium">AI Suggestions</p>
+              <div className="w-14 h-14 bg-blue-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">🤖</div>
+              <p className="text-xs font-medium">AI Assignment</p>
+              <p className="text-xs text-muted-foreground">Model selection</p>
             </div>
-            <div className="text-2xl text-blue-600">→</div>
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold">⚙️</div>
-              <p className="text-sm font-medium">Manual Override</p>
+              <div className="w-14 h-14 bg-indigo-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">🔗</div>
+              <p className="text-xs font-medium">Connector Setup</p>
+              <p className="text-xs text-muted-foreground">Task assignment</p>
             </div>
-            <div className="text-2xl text-purple-600">→</div>
             <div className="text-center space-y-2">
-              <div className="w-12 h-12 bg-green-600 rounded-full flex items-center justify-center text-white font-bold">✓</div>
-              <p className="text-sm font-medium">Optimized Setup</p>
+              <div className="w-14 h-14 bg-purple-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">🚀</div>
+              <p className="text-xs font-medium">Deploy Channels</p>
+              <p className="text-xs text-muted-foreground">Multi-platform launch</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">🌐</div>
+              <p className="text-xs font-medium">API Endpoints</p>
+              <p className="text-xs text-muted-foreground">Auto-generated APIs</p>
+            </div>
+            <div className="text-center space-y-2">
+              <div className="w-14 h-14 bg-emerald-600 rounded-full flex items-center justify-center text-white text-xl mx-auto animate-pulse">✓</div>
+              <p className="text-xs font-medium">Live System</p>
+              <p className="text-xs text-muted-foreground">Production ready</p>
             </div>
           </div>
         </div>
