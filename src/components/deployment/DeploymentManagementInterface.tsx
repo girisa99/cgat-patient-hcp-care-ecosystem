@@ -69,8 +69,9 @@ export const DeploymentManagementInterface: React.FC = () => {
   const [deploymentAssignments, setDeploymentAssignments] = useState<DeploymentAssignment[]>([]);
   const [activeId, setActiveId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'deployed' | 'ready' | 'draft'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'deployed' | 'ready' | 'ready_to_deploy'>('ready_to_deploy');
   const [selectedVoiceAdapters, setSelectedVoiceAdapters] = useState<string[]>([]);
+  const [selectedEnvironment, setSelectedEnvironment] = useState<'dev' | 'test' | 'uat' | 'prod'>('dev');
   const [isVoiceConfigOpen, setIsVoiceConfigOpen] = useState(false);
 
   // DnD Kit sensors
@@ -81,15 +82,21 @@ export const DeploymentManagementInterface: React.FC = () => {
     })
   );
 
-  // Filter agents based on search and status
-  const filteredAgents = (userSessions || []).filter((agent: AgentSession) => {
+  // Filter agents for deployment - only show agents ready for deployment
+  const deploymentReadyAgents = (userSessions || []).filter((agent: AgentSession) => {
+    // Only show agents that are ready for deployment and have basic configuration
+    return agent.status === 'ready_to_deploy' || agent.status === 'deployed' && agent.name && agent.description;
+  });
+
+  // Filter agents based on search and status for deployment view
+  const filteredAgents = deploymentReadyAgents.filter((agent: AgentSession) => {
     const matchesSearch = agent.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       (agent.description && agent.description.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesFilter = selectedFilter === 'all' || 
       (selectedFilter === 'deployed' && agent.status === 'deployed') ||
       (selectedFilter === 'ready' && agent.status === 'ready_to_deploy') ||
-      (selectedFilter === 'draft' && agent.status === 'draft');
+      (selectedFilter === 'ready_to_deploy' && agent.status === 'ready_to_deploy');
 
     return matchesSearch && matchesFilter;
   });
@@ -333,16 +340,128 @@ export const deployAgents = async () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="agents" className="space-y-6">
+        <Tabs defaultValue="deployment-ready" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="agents">Agent Management</TabsTrigger>
+            <TabsTrigger value="deployment-ready">Deployment Ready Agents</TabsTrigger>
             <TabsTrigger value="channels">Channel Assignment</TabsTrigger>
             <TabsTrigger value="channel-manager">Channel Manager</TabsTrigger>
             <TabsTrigger value="voice-config">Voice Configuration</TabsTrigger>
-            <TabsTrigger value="deployments">Active Deployments</TabsTrigger>
+            <TabsTrigger value="active-deployments">Active Deployments</TabsTrigger>
+            <TabsTrigger value="all-agents">All Agent Management</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="agents" className="space-y-6">
+          <TabsContent value="deployment-ready" className="space-y-6">
+            {/* Environment Selection */}
+            <div className="flex items-center gap-4 mb-6">
+              <div className="flex items-center gap-2">
+                <label className="text-sm font-medium">Target Environment:</label>
+                <div className="flex gap-1">
+                  {(['dev', 'test', 'uat', 'prod'] as const).map((env) => (
+                    <Button
+                      key={env}
+                      variant={selectedEnvironment === env ? "default" : "outline"}
+                      size="sm"
+                      onClick={() => setSelectedEnvironment(env)}
+                      className="capitalize"
+                    >
+                      {env.toUpperCase()}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+
+            {/* Search and Filter for Deployment Ready */}
+            <div className="flex gap-4">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                <Input
+                  placeholder="Search deployment-ready agents..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+              <div className="flex gap-2">
+                {(['all', 'deployed', 'ready', 'ready_to_deploy'] as const).map((filter) => (
+                  <Button
+                    key={filter}
+                    variant={selectedFilter === filter ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setSelectedFilter(filter)}
+                    className="capitalize"
+                  >
+                    {filter.replace('_', ' ')}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Deployment Ready Agent Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {filteredAgents.length > 0 ? (
+                filteredAgents.map((agent: AgentSession) => {
+                  const deployment = getAgentDeployment(agent.id);
+                  return (
+                    <DraggableAgentCard
+                      key={agent.id}
+                      agent={agent}
+                      isDeployed={!!deployment}
+                      deploymentChannel={deployment ? getChannelName(deployment.channelId) : undefined}
+                      metrics={deployment ? getMockMetrics(agent.id) : undefined}
+                      onConfigure={() => {
+                        toast({
+                          title: "Configure Agent",
+                          description: `Opening configuration for ${agent.name}...`
+                        });
+                      }}
+                      onToggleStatus={() => {
+                        toast({
+                          title: deployment ? "Pause Agent" : "Deploy Agent",
+                          description: `${deployment ? 'Pausing' : 'Deploying'} ${agent.name} to ${selectedEnvironment.toUpperCase()}...`
+                        });
+                      }}
+                    />
+                  );
+                })
+              ) : (
+                <div className="col-span-full">
+                  <Card className="text-center py-12">
+                    <CardContent>
+                      <Bot className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                      <h3 className="text-lg font-medium mb-2">No deployment-ready agents</h3>
+                      <p className="text-muted-foreground mb-4">
+                        Agents must be activated and configured before they appear here for deployment
+                      </p>
+                      <Button 
+                        onClick={() => toast({
+                          title: "Navigate to Agent Management",
+                          description: "Use the 'All Agent Management' tab to create and configure agents"
+                        })}
+                        variant="outline"
+                      >
+                        Go to Agent Management
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+              )}
+            </div>
+
+            {deploymentReadyAgents.length > 0 && (
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-medium mb-2">Deployment Instructions</h4>
+                <p className="text-sm text-muted-foreground">
+                  • Drag agents to channels in the "Channel Assignment" tab to deploy them<br/>
+                  • Configure voice settings in the "Voice Configuration" tab<br/>
+                  • Monitor active deployments in the "Active Deployments" tab<br/>
+                  • Current target environment: <strong>{selectedEnvironment.toUpperCase()}</strong>
+                </p>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="all-agents" className="space-y-6">
             <AgentManagementPanel 
               agents={agents || []}
               onRefresh={() => {
@@ -395,63 +514,8 @@ export const deployAgents = async () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="agents-library" className="space-y-6">
-            {/* Search and Filter */}
-            <div className="flex gap-4">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search agents..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-              <div className="flex gap-2">
-                {(['all', 'deployed', 'ready', 'draft'] as const).map((filter) => (
-                  <Button
-                    key={filter}
-                    variant={selectedFilter === filter ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setSelectedFilter(filter)}
-                    className="capitalize"
-                  >
-                    {filter}
-                  </Button>
-                ))}
-              </div>
-            </div>
 
-            {/* Agent Library */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {filteredAgents.map((agent: AgentSession) => {
-                const deployment = getAgentDeployment(agent.id);
-                return (
-                  <DraggableAgentCard
-                    key={agent.id}
-                    agent={agent}
-                    isDeployed={!!deployment}
-                    deploymentChannel={deployment ? getChannelName(deployment.channelId) : undefined}
-                    metrics={deployment ? getMockMetrics(agent.id) : undefined}
-                    onConfigure={() => {
-                      toast({
-                        title: "Configure Agent",
-                        description: `Opening configuration for ${agent.name}...`
-                      });
-                    }}
-                    onToggleStatus={() => {
-                      toast({
-                        title: deployment ? "Pause Agent" : "Deploy Agent",
-                        description: `${deployment ? 'Pausing' : 'Deploying'} ${agent.name}...`
-                      });
-                    }}
-                  />
-                );
-              })}
-            </div>
-          </TabsContent>
-
-          <TabsContent value="deployments" className="space-y-6">
+          <TabsContent value="active-deployments" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {deploymentAssignments.map((assignment) => {
                 const agent = userSessions?.find((a: AgentSession) => a.id === assignment.agentId);

@@ -16,7 +16,8 @@ import {
   Settings,
   MoreVertical,
   Power,
-  PowerOff
+  PowerOff,
+  Rocket
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useAgents } from '@/hooks/useAgents';
@@ -208,6 +209,58 @@ export const AgentManagementPanel: React.FC<AgentManagementPanelProps> = ({
     }
   };
 
+  const handleCleanupDraftAgents = async () => {
+    const draftAgents = transformedAgents.filter(agent => agent.status === 'draft');
+    
+    if (draftAgents.length === 0) {
+      toast({
+        title: "No Draft Agents",
+        description: "There are no draft agents to clean up."
+      });
+      return;
+    }
+
+    if (!confirm(`Are you sure you want to delete all ${draftAgents.length} draft agents? This action cannot be undone.`)) {
+      return;
+    }
+    
+    try {
+      const promises = draftAgents.map(agent => deleteAgent(agent.id));
+      await Promise.all(promises);
+      
+      onRefresh?.();
+      
+      toast({
+        title: "Draft Agents Cleaned",
+        description: `Successfully deleted ${draftAgents.length} draft agents`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to clean up draft agents",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleMarkReady = async (agent: Agent) => {
+    try {
+      await updateAgent(agent.id, { status: 'active' });
+      onRefresh?.();
+      
+      toast({
+        title: "Agent Ready",
+        description: `${agent.name} is now ready for deployment`
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to mark agent as ready",
+        variant: "destructive"
+      });
+    }
+  };
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'active': return 'bg-green-100 text-green-800';
@@ -238,6 +291,14 @@ export const AgentManagementPanel: React.FC<AgentManagementPanelProps> = ({
           </p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            className="gap-2 text-red-600 hover:text-red-700" 
+            onClick={handleCleanupDraftAgents}
+          >
+            <Trash2 className="h-4 w-4" />
+            Clean Drafts
+          </Button>
           <Dialog open={isDraftGeneratorOpen} onOpenChange={setIsDraftGeneratorOpen}>
             <DialogTrigger asChild>
               <Button variant="outline" className="gap-2">
@@ -380,6 +441,12 @@ export const AgentManagementPanel: React.FC<AgentManagementPanelProps> = ({
                         <Copy className="h-4 w-4 mr-2" />
                         Clone
                       </DropdownMenuItem>
+                      {agent.status === 'draft' && (
+                        <DropdownMenuItem onClick={() => handleMarkReady(agent)}>
+                          <Rocket className="h-4 w-4 mr-2" />
+                          Mark Ready
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem 
                         onClick={() => handleDeleteAgent(agent)}
                         className="text-red-600"
