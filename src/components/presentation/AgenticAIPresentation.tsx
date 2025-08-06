@@ -1097,122 +1097,134 @@ const slides: Slide[] = [
     title: "Knowledge Base & RAG Implementation",
     subtitle: "Comprehensive Document Management, Auto-Creation, Upload, Crawl & RAG for Content Approval",
     content: (
-      <div className="h-[420px] overflow-y-auto space-y-2">
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="text-center mb-2">
-          <div className="inline-flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <span className="text-xs font-medium">Complete Knowledge Base & RAG System</span>
+            <span className="text-sm font-medium">Complete Knowledge Base & RAG System</span>
           </div>
         </div>
 
         {/* Main Implementation Grid */}
-        <div className="grid grid-cols-2 gap-2 h-28">
+        <div className="grid grid-cols-2 gap-6">
           {/* Auto-Creation & Upload */}
-          <Card className="p-2 overflow-hidden">
-            <div className="text-center mb-1">
-              <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-1">
-                <span className="text-xs">📚</span>
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">📚</span>
               </div>
-              <h3 className="text-xs font-bold text-blue-700">Auto-Creation & Upload</h3>
+              <h3 className="text-lg font-bold text-blue-700">Auto-Creation & Upload</h3>
             </div>
-            <div className="space-y-1">
-              <div className="p-1 bg-blue-50 rounded border">
-                <h4 className="font-semibold text-blue-800 text-xs">🤖 Auto-Generation</h4>
-                <p className="text-xs text-blue-700">OpenAI API</p>
+            <div className="space-y-3">
+              <div className="p-4 bg-blue-50 rounded-lg border">
+                <h4 className="font-semibold text-blue-800 mb-2">🤖 Auto-Generation</h4>
+                <p className="text-sm text-blue-700">OpenAI API integration for intelligent content generation</p>
               </div>
-              <div className="p-1 bg-green-50 rounded border">
-                <h4 className="font-semibold text-green-800 text-xs">📁 File Upload</h4>
-                <p className="text-xs text-green-700">Supabase storage</p>
+              <div className="p-4 bg-green-50 rounded-lg border">
+                <h4 className="font-semibold text-green-800 mb-2">📁 File Upload</h4>
+                <p className="text-sm text-green-700">Supabase storage with drag & drop functionality</p>
               </div>
             </div>
           </Card>
 
           {/* Web Crawling */}
-          <Card className="p-2 overflow-hidden">
-            <div className="text-center mb-1">
-              <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-1">
-                <span className="text-xs">🌐</span>
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🌐</span>
               </div>
-              <h3 className="text-xs font-bold text-purple-700">Web Crawling & Data</h3>
+              <h3 className="text-lg font-bold text-purple-700">Web Crawling & Data</h3>
             </div>
-            <div className="space-y-1">
-              <div className="p-1 bg-purple-50 rounded border">
-                <h4 className="font-semibold text-purple-800 text-xs">🔥 Firecrawl API</h4>
-                <p className="text-xs text-purple-700">Multi-URL scraping</p>
+            <div className="space-y-3">
+              <div className="p-4 bg-purple-50 rounded-lg border">
+                <h4 className="font-semibold text-purple-800 mb-2">🔥 Firecrawl API</h4>
+                <p className="text-sm text-purple-700">Multi-URL scraping with intelligent parsing</p>
               </div>
-              <div className="p-1 bg-orange-50 rounded border">
-                <h4 className="font-semibold text-orange-800 text-xs">🗃️ Source Manager</h4>
-                <p className="text-xs text-orange-700">Auto-sync</p>
+              <div className="p-4 bg-orange-50 rounded-lg border">
+                <h4 className="font-semibold text-orange-800 mb-2">🗃️ Source Manager</h4>
+                <p className="text-sm text-orange-700">Auto-sync and content validation</p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* RAG Implementation */}
-        <div className="grid grid-cols-2 gap-2 h-28">
-          <Card className="p-2 overflow-hidden">
-            <div className="text-center mb-1">
-              <div className="w-5 h-5 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-1">
-                <span className="text-xs">🔍</span>
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🔍</span>
               </div>
-              <h3 className="text-xs font-bold text-emerald-700">RAG Implementation</h3>
+              <h3 className="text-lg font-bold text-emerald-700">RAG Implementation</h3>
             </div>
-            <div className="space-y-1">
-              <div className="p-1 bg-emerald-50 rounded border">
-                <h4 className="font-semibold text-emerald-800 text-xs">🧠 Vector Database</h4>
-                <p className="text-xs text-emerald-700">pgvector search</p>
+            <div className="space-y-3">
+              <div className="p-4 bg-emerald-50 rounded-lg border">
+                <h4 className="font-semibold text-emerald-800 mb-2">🧠 Vector Database</h4>
+                <p className="text-sm text-emerald-700">pgvector for semantic search and context retrieval</p>
               </div>
-              <div className="p-1 bg-cyan-50 rounded border">
-                <h4 className="font-semibold text-cyan-800 text-xs">🎯 Context Retrieval</h4>
-                <p className="text-xs text-cyan-700">Smart chunking</p>
+              <div className="p-4 bg-cyan-50 rounded-lg border">
+                <h4 className="font-semibold text-cyan-800 mb-2">🎯 Context Retrieval</h4>
+                <p className="text-sm text-cyan-700">Smart chunking and relevance scoring</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-2 overflow-hidden">
-            <div className="text-center mb-1">
-              <div className="w-5 h-5 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-1">
-                <span className="text-xs">✅</span>
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">✅</span>
               </div>
-              <h3 className="text-xs font-bold text-indigo-700">Content Approval</h3>
+              <h3 className="text-lg font-bold text-indigo-700">Content Approval</h3>
             </div>
-            <div className="space-y-1">
-              <div className="p-1 bg-indigo-50 rounded border">
-                <h4 className="font-semibold text-indigo-800 text-xs">🔄 Approval Workflow</h4>
-                <p className="text-xs text-indigo-700">Multi-stage</p>
+            <div className="space-y-3">
+              <div className="p-4 bg-indigo-50 rounded-lg border">
+                <h4 className="font-semibold text-indigo-800 mb-2">🔄 Approval Workflow</h4>
+                <p className="text-sm text-indigo-700">Multi-stage validation and review process</p>
               </div>
-              <div className="p-1 bg-pink-50 rounded border">
-                <h4 className="font-semibold text-pink-800 text-xs">⚡ Auto-Generation</h4>
-                <p className="text-xs text-pink-700">Context-aware</p>
+              <div className="p-4 bg-pink-50 rounded-lg border">
+                <h4 className="font-semibold text-pink-800 mb-2">⚡ Auto-Generation</h4>
+                <p className="text-sm text-pink-700">Context-aware content creation</p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* Technical Implementation Stack */}
-        <Card className="p-2 mt-2">
-          <h3 className="text-xs font-bold text-primary mb-2">⚙️ Technical Implementation Stack</h3>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            <div className="p-1">
-              <div className="text-xs font-semibold text-primary">Storage</div>
-              <div className="text-xs text-muted-foreground">Supabase</div>
-              <div className="text-xs text-muted-foreground">Vector DB</div>
+        <Card className="p-6">
+          <h3 className="text-xl font-bold text-primary mb-6">⚙️ Technical Implementation Stack</h3>
+          <div className="grid grid-cols-4 gap-6 text-center">
+            <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-2">Storage</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Supabase Database</div>
+                <div className="text-sm text-muted-foreground">Vector Storage</div>
+                <div className="text-sm text-muted-foreground">File Management</div>
+              </div>
             </div>
-            <div className="p-1">
-              <div className="text-xs font-semibold text-primary">Functions</div>
-              <div className="text-xs text-muted-foreground">Generation</div>
-              <div className="text-xs text-muted-foreground">Crawling</div>
+            <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-2">Functions</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Content Generation</div>
+                <div className="text-sm text-muted-foreground">Web Crawling</div>
+                <div className="text-sm text-muted-foreground">Processing Pipeline</div>
+              </div>
             </div>
-            <div className="p-1">
-              <div className="text-xs font-semibold text-primary">Components</div>
-              <div className="text-xs text-muted-foreground">Enhanced KB</div>
-              <div className="text-xs text-muted-foreground">Manager</div>
+            <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-2">Components</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Enhanced KB Manager</div>
+                <div className="text-sm text-muted-foreground">Upload Interface</div>
+                <div className="text-sm text-muted-foreground">Search Engine</div>
+              </div>
             </div>
-            <div className="p-1">
-              <div className="text-xs font-semibold text-primary">APIs</div>
-              <div className="text-xs text-muted-foreground">OpenAI</div>
-              <div className="text-xs text-muted-foreground">Firecrawl</div>
+            <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-2">APIs</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">OpenAI Integration</div>
+                <div className="text-sm text-muted-foreground">Firecrawl Service</div>
+                <div className="text-sm text-muted-foreground">Vector Search</div>
+              </div>
             </div>
           </div>
         </Card>
@@ -1225,128 +1237,140 @@ const slides: Slide[] = [
     title: "Multi-Channel Deployment System",
     subtitle: "Complete Implementation - Drag & Drop, Agent Assignment, Multi-Channel & Omni-Channel Support",
     content: (
-      <div className="h-[420px] overflow-y-auto space-y-2">
+      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
         {/* Header */}
-        <div className="text-center mb-2">
-          <div className="inline-flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
-            <span className="text-xs font-medium">Advanced Deployment Management System</span>
+            <span className="text-sm font-medium">Advanced Deployment Management System</span>
           </div>
         </div>
 
         {/* Drag & Drop Implementation */}
-        <div className="grid grid-cols-2 gap-2 h-28">
-          <Card className="p-2 overflow-hidden">
-            <div className="text-center mb-1">
-              <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-1">
-                <span className="text-xs">🎯</span>
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🎯</span>
               </div>
-              <h3 className="text-xs font-bold text-blue-700">Drag & Drop Agent Assignment</h3>
+              <h3 className="text-lg font-bold text-blue-700">Drag & Drop Agent Assignment</h3>
             </div>
-            <div className="space-y-1">
-              <div className="p-1 bg-blue-50 rounded border">
-                <h4 className="font-semibold text-blue-800 text-xs">🎨 DraggableAgentCard</h4>
-                <p className="text-xs text-blue-700">@dnd-kit/core</p>
+            <div className="space-y-3">
+              <div className="p-4 bg-blue-50 rounded-lg border">
+                <h4 className="font-semibold text-blue-800 mb-2">🎨 DraggableAgentCard</h4>
+                <p className="text-sm text-blue-700">Built with @dnd-kit/core for smooth interactions</p>
               </div>
-              <div className="p-1 bg-purple-50 rounded border">
-                <h4 className="font-semibold text-purple-800 text-xs">📋 DroppableChannel</h4>
-                <p className="text-xs text-purple-700">Capacity management</p>
+              <div className="p-4 bg-purple-50 rounded-lg border">
+                <h4 className="font-semibold text-purple-800 mb-2">📋 DroppableChannel</h4>
+                <p className="text-sm text-purple-700">Capacity management and validation</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-2 overflow-hidden">
-            <div className="text-center mb-1">
-              <div className="w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-1">
-                <span className="text-xs">🌐</span>
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🌐</span>
               </div>
-              <h3 className="text-xs font-bold text-green-700">Multi-Channel & Omni-Channel</h3>
+              <h3 className="text-lg font-bold text-green-700">Multi-Channel & Omni-Channel</h3>
             </div>
-            <div className="space-y-1">
-              <div className="p-1 bg-green-50 rounded border">
-                <h4 className="font-semibold text-green-800 text-xs">📱 Channel Types</h4>
-                <p className="text-xs text-green-700">Voice, Web, Email, SMS</p>
+            <div className="space-y-3">
+              <div className="p-4 bg-green-50 rounded-lg border">
+                <h4 className="font-semibold text-green-800 mb-2">📱 Channel Types</h4>
+                <p className="text-sm text-green-700">Voice, Web, Email, SMS integration</p>
               </div>
-              <div className="p-1 bg-emerald-50 rounded border">
-                <h4 className="font-semibold text-emerald-800 text-xs">🔄 Omni-Channel</h4>
-                <p className="text-xs text-emerald-700">Unified journey</p>
+              <div className="p-4 bg-emerald-50 rounded-lg border">
+                <h4 className="font-semibold text-emerald-800 mb-2">🔄 Omni-Channel</h4>
+                <p className="text-sm text-emerald-700">Unified customer journey tracking</p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* Agent Assignment Options */}
-        <div className="grid grid-cols-2 gap-2 h-28">
-          <Card className="p-2 overflow-hidden">
-            <div className="text-center mb-1">
-              <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-1">
-                <span className="text-xs">🤖</span>
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🤖</span>
               </div>
-              <h3 className="text-xs font-bold text-purple-700">Agent Assignment Options</h3>
+              <h3 className="text-lg font-bold text-purple-700">Agent Assignment Options</h3>
             </div>
-            <div className="space-y-1">
-              <div className="p-1 bg-indigo-50 rounded border">
-                <h4 className="font-semibold text-indigo-800 text-xs">1️⃣ Single → Single</h4>
-                <p className="text-xs text-indigo-700">Specialized expertise</p>
+            <div className="space-y-3">
+              <div className="p-4 bg-indigo-50 rounded-lg border">
+                <h4 className="font-semibold text-indigo-800 mb-2">1️⃣ Single → Single</h4>
+                <p className="text-sm text-indigo-700">Specialized expertise for specific channels</p>
               </div>
-              <div className="p-1 bg-blue-50 rounded border">
-                <h4 className="font-semibold text-blue-800 text-xs">🔢 Single → Multi</h4>
-                <p className="text-xs text-blue-700">Cross-channel</p>
+              <div className="p-4 bg-blue-50 rounded-lg border">
+                <h4 className="font-semibold text-blue-800 mb-2">🔢 Single → Multi</h4>
+                <p className="text-sm text-blue-700">Cross-channel agent deployment</p>
               </div>
-              <div className="p-1 bg-cyan-50 rounded border">
-                <h4 className="font-semibold text-cyan-800 text-xs">👥 Multi → Multi</h4>
-                <p className="text-xs text-cyan-700">Load balancing</p>
+              <div className="p-4 bg-cyan-50 rounded-lg border">
+                <h4 className="font-semibold text-cyan-800 mb-2">👥 Multi → Multi</h4>
+                <p className="text-sm text-cyan-700">Load balancing across teams</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-2 overflow-hidden">
-            <div className="text-center mb-1">
-              <div className="w-5 h-5 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-1">
-                <span className="text-xs">🔌</span>
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🔌</span>
               </div>
-              <h3 className="text-xs font-bold text-orange-700">System Connector Assignment</h3>
+              <h3 className="text-lg font-bold text-orange-700">System Connector Assignment</h3>
             </div>
-            <div className="space-y-1">
-              <div className="p-1 bg-orange-50 rounded border">
-                <h4 className="font-semibold text-orange-800 text-xs">⚡ Single Connector</h4>
-                <p className="text-xs text-orange-700">Dedicated API</p>
+            <div className="space-y-3">
+              <div className="p-4 bg-orange-50 rounded-lg border">
+                <h4 className="font-semibold text-orange-800 mb-2">⚡ Single Connector</h4>
+                <p className="text-sm text-orange-700">Dedicated API integration</p>
               </div>
-              <div className="p-1 bg-red-50 rounded border">
-                <h4 className="font-semibold text-red-800 text-xs">🔗 Multiple Connectors</h4>
-                <p className="text-xs text-red-700">API chains</p>
+              <div className="p-4 bg-red-50 rounded-lg border">
+                <h4 className="font-semibold text-red-800 mb-2">🔗 Multiple Connectors</h4>
+                <p className="text-sm text-red-700">API chain orchestration</p>
               </div>
-              <div className="p-1 bg-yellow-50 rounded border">
-                <h4 className="font-semibold text-yellow-800 text-xs">🎯 Assignment Manager</h4>
-                <p className="text-xs text-yellow-700">Config management</p>
+              <div className="p-4 bg-yellow-50 rounded-lg border">
+                <h4 className="font-semibold text-yellow-800 mb-2">🎯 Assignment Manager</h4>
+                <p className="text-sm text-yellow-700">Configuration management interface</p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* Technical Implementation Components */}
-        <Card className="p-2 mt-2">
-          <h3 className="text-xs font-bold text-primary mb-2">⚙️ Technical Implementation Components</h3>
-          <div className="grid grid-cols-4 gap-2 text-center">
-            <div className="p-1">
-              <div className="text-xs font-semibold text-primary">Core Components</div>
-              <div className="text-xs text-muted-foreground">DeploymentChannels</div>
-              <div className="text-xs text-muted-foreground">DraggableAgentCard</div>
+        <Card className="p-6">
+          <h3 className="text-xl font-bold text-primary mb-6">⚙️ Technical Implementation Components</h3>
+          <div className="grid grid-cols-4 gap-6 text-center">
+            <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-2">Core Components</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">DeploymentChannels</div>
+                <div className="text-sm text-muted-foreground">DraggableAgentCard</div>
+                <div className="text-sm text-muted-foreground">ChannelManager</div>
+              </div>
             </div>
-            <div className="p-1">
-              <div className="text-xs font-semibold text-primary">Hooks & Logic</div>
-              <div className="text-xs text-muted-foreground">useAgentDeployments</div>
-              <div className="text-xs text-muted-foreground">Drag & Drop Kit</div>
+            <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-2">Hooks & Logic</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">useAgentDeployments</div>
+                <div className="text-sm text-muted-foreground">Drag & Drop Kit</div>
+                <div className="text-sm text-muted-foreground">State Management</div>
+              </div>
             </div>
-            <div className="p-1">
-              <div className="text-xs font-semibold text-primary">Data Management</div>
-              <div className="text-xs text-muted-foreground">Agent Deployments</div>
-              <div className="text-xs text-muted-foreground">Channel Assignments</div>
+            <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-2">Data Management</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Agent Deployments</div>
+                <div className="text-sm text-muted-foreground">Channel Assignments</div>
+                <div className="text-sm text-muted-foreground">Configuration Storage</div>
+              </div>
             </div>
-            <div className="p-1">
-              <div className="text-xs font-semibold text-primary">Features</div>
-              <div className="text-xs text-muted-foreground">Health Monitoring</div>
-              <div className="text-xs text-muted-foreground">Metrics & Config</div>
+            <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-2">Features</div>
+              <div className="space-y-1">
+                <div className="text-sm text-muted-foreground">Health Monitoring</div>
+                <div className="text-sm text-muted-foreground">Metrics & Analytics</div>
+                <div className="text-sm text-muted-foreground">Configuration Panel</div>
+              </div>
             </div>
           </div>
         </Card>
