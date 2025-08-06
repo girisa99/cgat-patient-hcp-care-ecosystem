@@ -1,15 +1,27 @@
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bot, Network, Users, Settings, Presentation, Rocket } from 'lucide-react';
-import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { Button } from '@/components/ui/button';
-import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
+import AgenticEcosystem from '@/pages/AgenticEcosystem';
 import { DeploymentManagementInterface } from '@/components/deployment/DeploymentManagementInterface';
-
-// Import the ecosystem components
-import AgenticEcosystem from './AgenticEcosystem';
-import AgenticAPIEcosystem from './AgenticAPIEcosystem';
+import { AgentTestingInterface } from '@/components/agent-testing/AgentTestingInterface';
+import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer';
+import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
+import AgenticAPIEcosystem from '@/pages/AgenticAPIEcosystem';
+import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { 
+  Bot, 
+  Settings, 
+  Users, 
+  Presentation,
+  X,
+  TestTube,
+  UserCog,
+  Grid,
+  Rocket,
+  Network
+} from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 // Role-specific components - defined before use to avoid React error #185
 const OnboardingAgentsView = () => {
@@ -79,7 +91,7 @@ const AgentSettingsView = () => {
 
 const Agents = () => {
   console.log('🚀 Agents page rendering...');
-  const [activeTab, setActiveTab] = useState('agentic-ecosystem');
+  const [activeTab, setActiveTab] = useState('ecosystem');
   const [showPresentation, setShowPresentation] = useState(false);
   const { userRoles } = useMasterAuth();
   console.log('🎭 User roles:', userRoles);
@@ -89,76 +101,17 @@ const Agents = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Determine available tabs based on role
-  const getAvailableTabs = () => {
-    const tabs = [];
-    
-    // Base tabs available to all roles
-    tabs.push({
-      value: 'agentic-ecosystem',
-      label: 'Agentic Ecosystem',
-      icon: Bot,
-      component: <AgenticEcosystem />
-    });
-
-    // Deployment tab - available to superAdmin and onboardingTeam
-    if (isSuperAdmin || isOnboardingTeam) {
-      tabs.push({
-        value: 'deployment',
-        label: 'Deployment',
-        icon: Rocket,
-        component: <DeploymentManagementInterface />
-      });
-    }
-
-    // SuperAdmin and Admin only tabs
-    if (isSuperAdmin || isAdmin) {
-      tabs.push({
-        value: 'agentic-api-ecosystem',
-        label: 'Agentic API Ecosystem',
-        icon: Network,
-        component: <AgenticAPIEcosystem />
-      });
-    }
-
-    // OnboardingTeam specific tabs
-    if (isOnboardingTeam) {
-      tabs.push({
-        value: 'onboarding-agents',
-        label: 'Onboarding Agents',
-        icon: Users,
-        component: <OnboardingAgentsView />
-      });
-    }
-
-    // SuperAdmin exclusive tabs
-    if (isSuperAdmin) {
-      tabs.push({
-        value: 'agent-settings',
-        label: 'Agent Settings',
-        icon: Settings,
-        component: <AgentSettingsView />
-      });
-    }
-
-    return tabs;
-  };
-
-  const availableTabs = getAvailableTabs();
-
-  // Default tab is already set to 'agentic-ecosystem' in useState
-
-  // Get grid class based on number of tabs
-  const getGridClass = (tabCount: number) => {
-    switch(tabCount) {
-      case 1: return 'grid-cols-1';
-      case 2: return 'grid-cols-2';
-      case 3: return 'grid-cols-3';
-      case 4: return 'grid-cols-4';
-      case 5: return 'grid-cols-5';
-      default: return 'grid-cols-auto';
-    }
-  };
+  // Generate available tabs based on user roles
+  const availableTabs = [
+    { id: 'ecosystem', label: 'Agentic Ecosystem', component: 'AgenticEcosystem' },
+    { id: 'deployment', label: 'Deployment Management', component: 'DeploymentManagementInterface' },
+    { id: 'testing', label: 'Agent Testing', component: 'AgentTestingInterface' },
+    { id: 'live-transfer', label: 'Live Agent Transfer', component: 'LiveAgentTransfer' },
+    { id: 'assignment-matrix', label: 'Channel Assignment', component: 'AgentChannelAssignmentMatrix' },
+    { id: 'api', label: 'Agentic API Ecosystem', component: 'AgenticAPIEcosystem' },
+    ...(isOnboardingTeam ? [{ id: 'onboarding', label: 'Onboarding Agents', component: 'OnboardingAgentsView' }] : []),
+    ...(isSuperAdmin ? [{ id: 'settings', label: 'Agent Settings', component: 'AgentSettingsView' }] : []),
+  ];
 
   // Add error boundary for debugging
   try {
@@ -174,7 +127,7 @@ const Agents = () => {
               <p className="text-muted-foreground mt-2">
                 {isOnboardingTeam && !isSuperAdmin 
                   ? 'Manage agents for treatment center onboarding workflows'
-                  : 'Manage and deploy intelligent agents for healthcare automation'
+                  : 'Manage, deploy, and test intelligent agents for healthcare automation'
                 }
               </p>
             </div>
@@ -197,24 +150,58 @@ const Agents = () => {
 
           {/* Dynamic Tabs based on role */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className={`grid w-full ${getGridClass(availableTabs.length)}`}>
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
               {availableTabs.map((tab) => (
-                <TabsTrigger 
-                  key={tab.value} 
-                  value={tab.value} 
-                  className="flex items-center gap-2"
-                >
-                  <tab.icon className="h-4 w-4" />
-                  {tab.label}
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+                  {tab.id === 'ecosystem' && <Bot className="h-4 w-4" />}
+                  {tab.id === 'deployment' && <Rocket className="h-4 w-4" />}
+                  {tab.id === 'testing' && <TestTube className="h-4 w-4" />}
+                  {tab.id === 'live-transfer' && <UserCog className="h-4 w-4" />}
+                  {tab.id === 'assignment-matrix' && <Grid className="h-4 w-4" />}
+                  {tab.id === 'api' && <Network className="h-4 w-4" />}
+                  {tab.id === 'onboarding' && <Users className="h-4 w-4" />}
+                  {tab.id === 'settings' && <Settings className="h-4 w-4" />}
+                  <span className="hidden lg:inline">{tab.label}</span>
+                  <span className="lg:hidden">{tab.label.split(' ')[0]}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
 
-            {availableTabs.map((tab) => (
-              <TabsContent key={tab.value} value={tab.value} className="space-y-4">
-                {tab.component}
+            <TabsContent value="ecosystem">
+              <AgenticEcosystem />
+            </TabsContent>
+            
+            <TabsContent value="deployment">
+              <DeploymentManagementInterface />
+            </TabsContent>
+
+            <TabsContent value="testing">
+              <AgentTestingInterface />
+            </TabsContent>
+
+            <TabsContent value="live-transfer">
+              <LiveAgentTransfer />
+            </TabsContent>
+
+            <TabsContent value="assignment-matrix">
+              <AgentChannelAssignmentMatrix />
+            </TabsContent>
+            
+            <TabsContent value="api">
+              <AgenticAPIEcosystem />
+            </TabsContent>
+            
+            {isOnboardingTeam && (
+              <TabsContent value="onboarding">
+                <OnboardingAgentsView />
               </TabsContent>
-            ))}
+            )}
+            
+            {isSuperAdmin && (
+              <TabsContent value="settings">
+                <AgentSettingsView />
+              </TabsContent>
+            )}
           </Tabs>
         </div>
       </AppLayout>
