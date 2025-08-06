@@ -1336,6 +1336,138 @@ const slides: Slide[] = [
           </Card>
         </div>
 
+        {/* Current Implementation - Communication Channels */}
+        <Card className="p-6">
+          <h3 className="text-xl font-bold text-primary mb-6">📡 Current Implementation - Communication Channels</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-3">📞 Voice & Messaging</div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Twilio Voice API</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                  <span>SMS Integration</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
+                  <span>WhatsApp Business</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
+                  <span>Alexa Skills</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-3">💬 Conversational AI</div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-indigo-500 rounded-full"></div>
+                  <span>Chatbot Engine</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <span>Facebook Messenger</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-orange-500 rounded-full"></div>
+                  <span>Google Assistant</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-teal-500 rounded-full"></div>
+                  <span>Digital Health Portal</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg border">
+              <div className="text-lg font-semibold text-primary mb-3">🌐 Web & Integration</div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-cyan-500 rounded-full"></div>
+                  <span>Web Chat Widget</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-pink-500 rounded-full"></div>
+                  <span>Email Automation</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-violet-500 rounded-full"></div>
+                  <span>Mobile App SDK</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <span>API Webhooks</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
+        {/* Plug & Play Adapter System */}
+        <Card className="p-6">
+          <h3 className="text-xl font-bold text-primary mb-6">🔌 Plug & Play Adapter System</h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-2xl">🏗️</span>
+                </div>
+                <h4 className="text-lg font-bold text-indigo-700">Contact Center Platforms</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-indigo-50 rounded-lg border border-indigo-200">
+                  <div className="font-semibold text-indigo-800 text-sm">📞 Avaya</div>
+                  <div className="text-xs text-indigo-600">Enterprise contact center</div>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <div className="font-semibold text-blue-800 text-sm">☁️ Twilio Flex</div>
+                  <div className="text-xs text-blue-600">Cloud contact center</div>
+                </div>
+                <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                  <div className="font-semibold text-purple-800 text-sm">🌐 Genesys Cloud</div>
+                  <div className="text-xs text-purple-600">Omnichannel orchestration</div>
+                </div>
+                <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                  <div className="font-semibold text-orange-800 text-sm">📡 Vonage</div>
+                  <div className="text-xs text-orange-600">Communication APIs</div>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <span className="text-2xl">🤖</span>
+                </div>
+                <h4 className="text-lg font-bold text-emerald-700">AI & Voice Platforms</h4>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="p-3 bg-emerald-50 rounded-lg border border-emerald-200">
+                  <div className="font-semibold text-emerald-800 text-sm">🎙️ Voxinplant</div>
+                  <div className="text-xs text-emerald-600">Voice AI platform</div>
+                </div>
+                <div className="p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                  <div className="font-semibold text-cyan-800 text-sm">🧠 Google Dialogflow</div>
+                  <div className="text-xs text-cyan-600">Conversational AI</div>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                  <div className="font-semibold text-green-800 text-sm">📊 Vertex AI</div>
+                  <div className="text-xs text-green-600">ML platform integration</div>
+                </div>
+                <div className="p-3 bg-teal-50 rounded-lg border border-teal-200">
+                  <div className="font-semibold text-teal-800 text-sm">🔧 Custom APIs</div>
+                  <div className="text-xs text-teal-600">Bespoke integrations</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+
         {/* Technical Implementation Components */}
         <Card className="p-6">
           <h3 className="text-xl font-bold text-primary mb-6">⚙️ Technical Implementation Components</h3>
@@ -1346,22 +1478,25 @@ const slides: Slide[] = [
                 <div className="text-sm text-muted-foreground">DeploymentChannels</div>
                 <div className="text-sm text-muted-foreground">DraggableAgentCard</div>
                 <div className="text-sm text-muted-foreground">ChannelManager</div>
+                <div className="text-sm text-muted-foreground">AdapterFactory</div>
               </div>
             </div>
             <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg border">
               <div className="text-lg font-semibold text-primary mb-2">Hooks & Logic</div>
               <div className="space-y-1">
                 <div className="text-sm text-muted-foreground">useAgentDeployments</div>
+                <div className="text-sm text-muted-foreground">useVoiceProviders</div>
                 <div className="text-sm text-muted-foreground">Drag & Drop Kit</div>
                 <div className="text-sm text-muted-foreground">State Management</div>
               </div>
             </div>
             <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg border">
-              <div className="text-lg font-semibold text-primary mb-2">Data Management</div>
+              <div className="text-lg font-semibold text-primary mb-2">Adapter System</div>
               <div className="space-y-1">
-                <div className="text-sm text-muted-foreground">Agent Deployments</div>
-                <div className="text-sm text-muted-foreground">Channel Assignments</div>
-                <div className="text-sm text-muted-foreground">Configuration Storage</div>
+                <div className="text-sm text-muted-foreground">VoiceProviderFactory</div>
+                <div className="text-sm text-muted-foreground">BaseVoiceAdapter</div>
+                <div className="text-sm text-muted-foreground">Channel Connectors</div>
+                <div className="text-sm text-muted-foreground">API Integrations</div>
               </div>
             </div>
             <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-lg border">
@@ -1370,6 +1505,7 @@ const slides: Slide[] = [
                 <div className="text-sm text-muted-foreground">Health Monitoring</div>
                 <div className="text-sm text-muted-foreground">Metrics & Analytics</div>
                 <div className="text-sm text-muted-foreground">Configuration Panel</div>
+                <div className="text-sm text-muted-foreground">Real-time Updates</div>
               </div>
             </div>
           </div>
