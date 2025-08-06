@@ -265,7 +265,7 @@ const AgenticEcosystem = () => {
         // Persist tab state to localStorage
         localStorage.setItem('agenticEcosystem_activeTab', value);
       }} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview">
             <Settings className="h-4 w-4 mr-2" />
             Overview
@@ -281,10 +281,6 @@ const AgenticEcosystem = () => {
           <TabsTrigger value="actions">
             <Plus className="h-4 w-4 mr-2" />
             Actions & Configuration
-          </TabsTrigger>
-          <TabsTrigger value="deploy">
-            <Rocket className="h-4 w-4 mr-2" />
-            Deploy
           </TabsTrigger>
         </TabsList>
 
@@ -328,7 +324,7 @@ const AgenticEcosystem = () => {
                               size="sm" 
                               onClick={() => setActiveTab('basic_info')}
                             >
-                              <Rocket className="h-4 w-4 mr-2" />
+                              <Settings className="h-4 w-4 mr-2" />
                               Edit
                             </Button>
                           )}
@@ -374,9 +370,6 @@ const AgenticEcosystem = () => {
             <EnhancedAgentBuilder step="actions" />
           </TabsContent>
 
-          <TabsContent value="deploy" className="mt-6">
-            <EnhancedAgentBuilder step="deploy" />
-          </TabsContent>
 
       </Tabs>
     </div>

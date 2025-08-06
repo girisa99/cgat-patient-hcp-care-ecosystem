@@ -126,8 +126,8 @@ const Agents = () => {
               </h1>
               <p className="text-muted-foreground mt-2">
                 {isOnboardingTeam && !isSuperAdmin 
-                  ? 'Manage agents for treatment center onboarding workflows'
-                  : 'Manage, deploy, and test intelligent agents for healthcare automation'
+                  ? 'Create, configure, and deploy agents for treatment center onboarding workflows. Use Deployment Management to deploy agents to live channels.'
+                  : 'Create, configure, and deploy intelligent agents for healthcare automation across multiple channels.'
                 }
               </p>
             </div>
