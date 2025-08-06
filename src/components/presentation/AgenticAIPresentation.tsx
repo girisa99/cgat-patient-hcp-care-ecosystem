@@ -905,23 +905,23 @@ const slides: Slide[] = [
     title: "Step 3: Actions Configuration & System Connectors",
     subtitle: "Auto-Assign Templates & External System Integration",
     content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <div className="grid grid-cols-2 gap-6">
+      <div className="h-full flex flex-col space-y-4 animate-fade-in">
+        <div className="grid grid-cols-2 gap-4 flex-1">
           {/* Left Column - AI Templates & Actions */}
-          <Card className="p-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl">🤖</span>
+          <Card className="p-4 h-full overflow-hidden">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                <span className="text-xl">🤖</span>
               </div>
-              <h3 className="text-xl font-bold text-purple-700 mb-3">AI Template System</h3>
+              <h3 className="text-lg font-bold text-purple-700 mb-2">AI Template System</h3>
             </div>
             
-            <div className="space-y-4">
-              <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
-                <h4 className="font-semibold text-purple-700 mb-2 flex items-center gap-2">
-                  <span className="text-lg">⚡</span> Auto-Assign AI Templates
+            <div className="space-y-3 overflow-y-auto flex-1">
+              <div className="p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                <h4 className="font-semibold text-purple-700 mb-1 flex items-center gap-2">
+                  <span className="text-sm">⚡</span> Auto-Assign AI Templates
                 </h4>
-                <ul className="text-sm space-y-1 text-gray-700">
+                <ul className="text-xs space-y-1 text-gray-700">
                   <li>• Context-aware action suggestions</li>
                   <li>• Agent type & purpose analysis</li>
                   <li>• Score-based connector matching</li>
@@ -929,11 +929,11 @@ const slides: Slide[] = [
                 </ul>
               </div>
               
-              <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
-                  <span className="text-lg">🎨</span> Custom Template Creation
+              <div className="p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-700 mb-1 flex items-center gap-2">
+                  <span className="text-sm">🎨</span> Custom Template Creation
                 </h4>
-                <ul className="text-sm space-y-1 text-gray-700">
+                <ul className="text-xs space-y-1 text-gray-700">
                   <li>• Wizard-guided setup</li>
                   <li>• Dynamic configuration forms</li>
                   <li>• Multi-step validation</li>
@@ -941,11 +941,11 @@ const slides: Slide[] = [
                 </ul>
               </div>
               
-              <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <h4 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
-                  <span className="text-lg">📋</span> Task Assignment Engine
+              <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-green-700 mb-1 flex items-center gap-2">
+                  <span className="text-sm">📋</span> Task Assignment Engine
                 </h4>
-                <ul className="text-sm space-y-1 text-gray-700">
+                <ul className="text-xs space-y-1 text-gray-700">
                   <li>• Intelligent connector assignment</li>
                   <li>• Type-based matching algorithm</li>
                   <li>• Category alignment scoring</li>
@@ -956,20 +956,20 @@ const slides: Slide[] = [
           </Card>
 
           {/* Right Column - AI Models & Implementation */}
-          <Card className="p-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl">🧠</span>
+          <Card className="p-4 h-full overflow-hidden">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
+                <span className="text-xl">🧠</span>
               </div>
-              <h3 className="text-xl font-bold text-emerald-700 mb-3">AI Models Implementation</h3>
+              <h3 className="text-lg font-bold text-emerald-700 mb-2">AI Models Implementation</h3>
             </div>
             
-            <div className="space-y-4">
-              <div className="p-4 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                  <span className="text-lg">🚀</span> Large Language Models
+            <div className="space-y-3 overflow-y-auto flex-1">
+              <div className="p-3 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2">
+                  <span className="text-sm">🚀</span> Large Language Models
                 </h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
+                <ul className="text-xs space-y-1 text-muted-foreground">
                   <li>• GPT-4 for complex reasoning</li>
                   <li>• Claude for healthcare compliance</li>
                   <li>• Multi-model orchestration</li>
@@ -977,11 +977,11 @@ const slides: Slide[] = [
                 </ul>
               </div>
               
-              <div className="p-4 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                  <span className="text-lg">⚡</span> Small Language Models
+              <div className="p-3 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2">
+                  <span className="text-sm">⚡</span> Small Language Models
                 </h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
+                <ul className="text-xs space-y-1 text-muted-foreground">
                   <li>• Llama 3.1 8B for efficiency</li>
                   <li>• Phi-3 Mini for quick responses</li>
                   <li>• Gemma 2B for lightweight tasks</li>
@@ -989,11 +989,11 @@ const slides: Slide[] = [
                 </ul>
               </div>
               
-              <div className="p-4 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
-                  <span className="text-lg">👁️</span> Vision & MCP Protocol
+              <div className="p-3 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2">
+                  <span className="text-sm">👁️</span> Vision & MCP Protocol
                 </h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
+                <ul className="text-xs space-y-1 text-muted-foreground">
                   <li>• GPT-4V for image analysis</li>
                   <li>• MCP SDK integration</li>
                   <li>• OCR document processing</li>
@@ -1005,50 +1005,50 @@ const slides: Slide[] = [
         </div>
 
         {/* Bottom Section - System Connectors & Knowledge Base */}
-        <div className="grid grid-cols-2 gap-6">
-          <Card className="p-6">
-            <h3 className="text-lg font-bold mb-4 text-primary flex items-center gap-2">
-              <span className="text-xl">🔌</span> Implemented System Connectors
+        <div className="grid grid-cols-2 gap-4 h-64">
+          <Card className="p-4 h-full overflow-hidden">
+            <h3 className="text-md font-bold mb-3 text-primary flex items-center gap-2">
+              <span className="text-lg">🔌</span> System Connectors
             </h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
-                <div className="font-medium text-blue-800 flex items-center gap-1">
-                  <Database className="h-4 w-4" />
+            <div className="grid grid-cols-2 gap-2 h-48 overflow-y-auto">
+              <div className="p-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                <div className="font-medium text-blue-800 flex items-center gap-1 text-xs">
+                  <Database className="h-3 w-3" />
                   Database
                 </div>
                 <div className="text-xs text-blue-600">Oracle • MySQL • PostgreSQL</div>
               </div>
-              <div className="p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
-                <div className="font-medium text-green-800 flex items-center gap-1">
-                  <Cloud className="h-4 w-4" />
+              <div className="p-2 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+                <div className="font-medium text-green-800 flex items-center gap-1 text-xs">
+                  <Cloud className="h-3 w-3" />
                   REST API
                 </div>
                 <div className="text-xs text-green-600">HTTP endpoints • Webhooks</div>
               </div>
-              <div className="p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
-                <div className="font-medium text-purple-800 flex items-center gap-1">
-                  <MessageSquare className="h-4 w-4" />
+              <div className="p-2 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                <div className="font-medium text-purple-800 flex items-center gap-1 text-xs">
+                  <MessageSquare className="h-3 w-3" />
                   Messaging
                 </div>
                 <div className="text-xs text-purple-600">Kafka • RabbitMQ • SQS</div>
               </div>
-              <div className="p-3 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
-                <div className="font-medium text-orange-800 flex items-center gap-1">
-                  <FileText className="h-4 w-4" />
+              <div className="p-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                <div className="font-medium text-orange-800 flex items-center gap-1 text-xs">
+                  <FileText className="h-3 w-3" />
                   File System
                 </div>
                 <div className="text-xs text-orange-600">FTP • SFTP • S3 Storage</div>
               </div>
-              <div className="p-3 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200">
-                <div className="font-medium text-red-800 flex items-center gap-1">
-                  <Globe className="h-4 w-4" />
+              <div className="p-2 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200">
+                <div className="font-medium text-red-800 flex items-center gap-1 text-xs">
+                  <Globe className="h-3 w-3" />
                   External Services
                 </div>
                 <div className="text-xs text-red-600">Salesforce • Workday</div>
               </div>
-              <div className="p-3 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200">
-                <div className="font-medium text-indigo-800 flex items-center gap-1">
-                  <Zap className="h-4 w-4" />
+              <div className="p-2 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200">
+                <div className="font-medium text-indigo-800 flex items-center gap-1 text-xs">
+                  <Zap className="h-3 w-3" />
                   AI Models
                 </div>
                 <div className="text-xs text-indigo-600">OpenAI • Anthropic</div>
@@ -1056,32 +1056,32 @@ const slides: Slide[] = [
             </div>
           </Card>
 
-          <Card className="p-6">
-            <h3 className="text-lg font-bold mb-4 text-primary flex items-center gap-2">
-              <span className="text-xl">🧠</span> Knowledge Base & Integration
+          <Card className="p-4 h-full overflow-hidden">
+            <h3 className="text-md font-bold mb-3 text-primary flex items-center gap-2">
+              <span className="text-lg">🧠</span> Knowledge Base & Integration
             </h3>
-            <div className="space-y-3">
-              <div className="p-3 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200">
-                <div className="font-medium text-indigo-800 flex items-center gap-2">
-                  <span className="text-sm">📚</span> Supabase Integration
+            <div className="space-y-2 h-48 overflow-y-auto">
+              <div className="p-2 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200">
+                <div className="font-medium text-indigo-800 flex items-center gap-2 text-xs">
+                  <span className="text-xs">📚</span> Supabase Integration
                 </div>
                 <div className="text-xs text-indigo-600">Vector embeddings • Real-time data • Auth</div>
               </div>
-              <div className="p-3 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-lg border border-cyan-200">
-                <div className="font-medium text-cyan-800 flex items-center gap-2">
-                  <span className="text-sm">🔍</span> RAG Implementation
+              <div className="p-2 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-lg border border-cyan-200">
+                <div className="font-medium text-cyan-800 flex items-center gap-2 text-xs">
+                  <span className="text-xs">🔍</span> RAG Implementation
                 </div>
                 <div className="text-xs text-cyan-600">Context retrieval • Smart suggestions</div>
               </div>
-              <div className="p-3 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
-                <div className="font-medium text-emerald-800 flex items-center gap-2">
-                  <span className="text-sm">⚡</span> Auto-Assignment Features
+              <div className="p-2 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
+                <div className="font-medium text-emerald-800 flex items-center gap-2 text-xs">
+                  <span className="text-xs">⚡</span> Auto-Assignment Features
                 </div>
                 <div className="text-xs text-emerald-600">Smart matching • Performance tracking</div>
               </div>
-              <div className="p-3 bg-gradient-to-r from-violet-50 to-violet-100 rounded-lg border border-violet-200">
-                <div className="font-medium text-violet-800 flex items-center gap-2">
-                  <span className="text-sm">🔧</span> Configuration Wizard
+              <div className="p-2 bg-gradient-to-r from-violet-50 to-violet-100 rounded-lg border border-violet-200">
+                <div className="font-medium text-violet-800 flex items-center gap-2 text-xs">
+                  <span className="text-xs">🔧</span> Configuration Wizard
                 </div>
                 <div className="text-xs text-violet-600">Step-by-step setup • Validation</div>
               </div>
