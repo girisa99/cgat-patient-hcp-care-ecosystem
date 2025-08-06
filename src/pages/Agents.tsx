@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Bot, Network, Users, Settings, Presentation } from 'lucide-react';
+import { Bot, Network, Users, Settings, Presentation, Rocket } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { Button } from '@/components/ui/button';
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
+import { DeploymentManagementInterface } from '@/components/deployment/DeploymentManagementInterface';
 
 // Import the ecosystem components
 import AgenticEcosystem from './AgenticEcosystem';
@@ -100,6 +101,16 @@ const Agents = () => {
       component: <AgenticEcosystem />
     });
 
+    // Deployment tab - available to superAdmin and onboardingTeam
+    if (isSuperAdmin || isOnboardingTeam) {
+      tabs.push({
+        value: 'deployment',
+        label: 'Deployment',
+        icon: Rocket,
+        component: <DeploymentManagementInterface />
+      });
+    }
+
     // SuperAdmin and Admin only tabs
     if (isSuperAdmin || isAdmin) {
       tabs.push({
@@ -144,7 +155,8 @@ const Agents = () => {
       case 2: return 'grid-cols-2';
       case 3: return 'grid-cols-3';
       case 4: return 'grid-cols-4';
-      default: return 'grid-cols-2';
+      case 5: return 'grid-cols-5';
+      default: return 'grid-cols-auto';
     }
   };
 

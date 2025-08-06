@@ -66,7 +66,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
       ['/', '/patients'].includes(tab.to)
     ),
     agents: availableTabs.filter(tab => 
-      ['/agents', '/deployment'].includes(tab.to)
+      ['/agents'].includes(tab.to)
     ),
     management: availableTabs.filter(tab => 
       ['/users', '/facilities', '/modules', '/role-management'].includes(tab.to)

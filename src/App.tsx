@@ -144,11 +144,6 @@ const AppContent = () => {
                   } />
                   
                   {/* Technical/Admin routes - SuperAdmin only */}
-                  <Route path="/deployment" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
-                      <DeploymentManagement />
-                    </ProtectedRoute>
-                  } />
                   <Route path="/modules" element={
                     <ProtectedRoute requiredRoles={['superAdmin']}>
                       <Modules />
