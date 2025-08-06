@@ -161,6 +161,20 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
+                  <Route path="/agent-testing" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                      <Suspense fallback={<PageLoading message="Loading agent testing..." />}>
+                        {React.createElement(React.lazy(() => import('@/components/agent-testing/AgentTestingInterface').then(m => ({ default: m.AgentTestingInterface }))))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/live-agent-transfer" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                      <Suspense fallback={<PageLoading message="Loading live agent transfer..." />}>
+                        {React.createElement(React.lazy(() => import('@/components/agent-testing/LiveAgentTransfer').then(m => ({ default: m.LiveAgentTransfer }))))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/ngrok" element={
                     <ProtectedRoute requiredRoles={['superAdmin']}>
                       <NgrokIntegration />
