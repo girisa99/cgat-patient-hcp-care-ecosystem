@@ -191,6 +191,11 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
     });
   };
 
+  // Filter out draft agents - only show deployment-ready agents
+  const deploymentReadyAgents = agents?.filter(agent => 
+    agent.status !== 'draft' && agent.status !== 'in_progress'
+  ) || [];
+
   if (agentsLoading || deploymentsLoading) {
     return <div className="flex justify-center p-8">Loading assignment matrix...</div>;
   }
@@ -202,6 +207,12 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
         <p className="text-sm text-muted-foreground">
           Click cells to deploy agents to channels or manage existing deployments
         </p>
+        <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+          <p className="text-sm text-blue-700">
+            📋 <strong>Deployment Ready Agents Only:</strong> Only agents with status 'ready_to_deploy' or 'deployed' are shown. 
+            Draft agents must be completed and marked as ready before appearing here.
+          </p>
+        </div>
       </CardHeader>
       
       <CardContent>
@@ -224,61 +235,73 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
               </TableRow>
             </TableHeader>
             <TableBody>
-              {agents?.map((agent) => (
-                <TableRow key={agent.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex flex-col gap-1">
-                      <span>{agent.name}</span>
-                      <Badge variant="outline" className="text-xs w-fit">
-                        {agent.status}
-                      </Badge>
+              {deploymentReadyAgents.length > 0 ? (
+                deploymentReadyAgents.map((agent) => (
+                  <TableRow key={agent.id}>
+                    <TableCell className="font-medium">
+                      <div className="flex flex-col gap-1">
+                        <span>{agent.name}</span>
+                        <Badge variant="outline" className="text-xs w-fit">
+                          {agent.status}
+                        </Badge>
+                      </div>
+                    </TableCell>
+                    {channels.map((channel) => {
+                      const deployment = getDeployment(agent.id, channel.id);
+                      return (
+                        <TableCell 
+                          key={`${agent.id}-${channel.id}`}
+                          className="text-center p-2"
+                        >
+                          <Button
+                            variant={deployment ? "secondary" : "ghost"}
+                            size="sm"
+                            className="w-full h-16 flex flex-col gap-1 relative"
+                            onClick={() => handleCellClick(agent.id, channel.id)}
+                          >
+                            {deployment ? (
+                              <>
+                                {/* Status indicator dot */}
+                                <div 
+                                  className={`absolute top-1 right-1 w-2 h-2 rounded-full ${getStatusColor(deployment.deployment_status)}`} 
+                                />
+                                
+                                {/* Status icon */}
+                                {getStatusIcon(deployment.deployment_status)}
+                                
+                                {/* Deployment info */}
+                                <div className="text-xs">
+                                  <div>Priority {deployment.priority}</div>
+                                  {deployment.performance_metrics?.active_sessions !== undefined && (
+                                    <div className="text-muted-foreground">
+                                      {deployment.performance_metrics.active_sessions} sessions
+                                    </div>
+                                  )}
+                                </div>
+                              </>
+                            ) : (
+                              <>
+                                <Plus className="h-4 w-4 text-muted-foreground" />
+                                <span className="text-xs text-muted-foreground">Deploy</span>
+                              </>
+                            )}
+                          </Button>
+                        </TableCell>
+                      );
+                    })}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={channels.length + 1} className="text-center py-8">
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <AlertTriangle className="h-8 w-8" />
+                      <p className="text-sm">No deployment-ready agents available</p>
+                      <p className="text-xs">Complete agent configuration and mark them as ready to see them here</p>
                     </div>
                   </TableCell>
-                  {channels.map((channel) => {
-                    const deployment = getDeployment(agent.id, channel.id);
-                    return (
-                      <TableCell 
-                        key={`${agent.id}-${channel.id}`}
-                        className="text-center p-2"
-                      >
-                        <Button
-                          variant={deployment ? "secondary" : "ghost"}
-                          size="sm"
-                          className="w-full h-16 flex flex-col gap-1 relative"
-                          onClick={() => handleCellClick(agent.id, channel.id)}
-                        >
-                          {deployment ? (
-                            <>
-                              {/* Status indicator dot */}
-                              <div 
-                                className={`absolute top-1 right-1 w-2 h-2 rounded-full ${getStatusColor(deployment.deployment_status)}`} 
-                              />
-                              
-                              {/* Status icon */}
-                              {getStatusIcon(deployment.deployment_status)}
-                              
-                              {/* Deployment info */}
-                              <div className="text-xs">
-                                <div>Priority {deployment.priority}</div>
-                                {deployment.performance_metrics?.active_sessions !== undefined && (
-                                  <div className="text-muted-foreground">
-                                    {deployment.performance_metrics.active_sessions} sessions
-                                  </div>
-                                )}
-                              </div>
-                            </>
-                          ) : (
-                            <>
-                              <Plus className="h-4 w-4 text-muted-foreground" />
-                              <span className="text-xs text-muted-foreground">Deploy</span>
-                            </>
-                          )}
-                        </Button>
-                      </TableCell>
-                    );
-                  })}
                 </TableRow>
-              ))}
+              )}
             </TableBody>
           </Table>
         </div>
