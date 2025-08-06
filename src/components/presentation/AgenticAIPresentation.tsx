@@ -1097,9 +1097,9 @@ const slides: Slide[] = [
     title: "Knowledge Base & RAG Implementation",
     subtitle: "Comprehensive Document Management, Auto-Creation, Upload, Crawl & RAG for Content Approval",
     content: (
-      <div className="space-y-3">
+      <div className="h-[420px] overflow-y-auto space-y-2">
         {/* Header */}
-        <div className="text-center">
+        <div className="text-center mb-2">
           <div className="inline-flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
             <span className="text-xs font-medium">Complete Knowledge Base & RAG System</span>
@@ -1107,11 +1107,11 @@ const slides: Slide[] = [
         </div>
 
         {/* Main Implementation Grid */}
-        <div className="grid grid-cols-2 gap-3 h-32">
+        <div className="grid grid-cols-2 gap-2 h-28">
           {/* Auto-Creation & Upload */}
-          <Card className="p-2">
+          <Card className="p-2 overflow-hidden">
             <div className="text-center mb-1">
-              <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-1">
+              <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-1">
                 <span className="text-xs">📚</span>
               </div>
               <h3 className="text-xs font-bold text-blue-700">Auto-Creation & Upload</h3>
@@ -1119,19 +1119,19 @@ const slides: Slide[] = [
             <div className="space-y-1">
               <div className="p-1 bg-blue-50 rounded border">
                 <h4 className="font-semibold text-blue-800 text-xs">🤖 Auto-Generation</h4>
-                <p className="text-xs text-blue-700">OpenAI API • Topic-based creation</p>
+                <p className="text-xs text-blue-700">OpenAI API</p>
               </div>
               <div className="p-1 bg-green-50 rounded border">
                 <h4 className="font-semibold text-green-800 text-xs">📁 File Upload</h4>
-                <p className="text-xs text-green-700">Drag-drop • Supabase storage</p>
+                <p className="text-xs text-green-700">Supabase storage</p>
               </div>
             </div>
           </Card>
 
           {/* Web Crawling */}
-          <Card className="p-2">
+          <Card className="p-2 overflow-hidden">
             <div className="text-center mb-1">
-              <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-1">
+              <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-1">
                 <span className="text-xs">🌐</span>
               </div>
               <h3 className="text-xs font-bold text-purple-700">Web Crawling & Data</h3>
@@ -1139,21 +1139,21 @@ const slides: Slide[] = [
             <div className="space-y-1">
               <div className="p-1 bg-purple-50 rounded border">
                 <h4 className="font-semibold text-purple-800 text-xs">🔥 Firecrawl API</h4>
-                <p className="text-xs text-purple-700">Enhanced scraping • Multi-URL</p>
+                <p className="text-xs text-purple-700">Multi-URL scraping</p>
               </div>
               <div className="p-1 bg-orange-50 rounded border">
                 <h4 className="font-semibold text-orange-800 text-xs">🗃️ Source Manager</h4>
-                <p className="text-xs text-orange-700">URLs • Documents • Auto-sync</p>
+                <p className="text-xs text-orange-700">Auto-sync</p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* RAG Implementation */}
-        <div className="grid grid-cols-2 gap-3 h-32">
-          <Card className="p-2">
+        <div className="grid grid-cols-2 gap-2 h-28">
+          <Card className="p-2 overflow-hidden">
             <div className="text-center mb-1">
-              <div className="w-6 h-6 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-1">
+              <div className="w-5 h-5 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-1">
                 <span className="text-xs">🔍</span>
               </div>
               <h3 className="text-xs font-bold text-emerald-700">RAG Implementation</h3>
@@ -1161,18 +1161,18 @@ const slides: Slide[] = [
             <div className="space-y-1">
               <div className="p-1 bg-emerald-50 rounded border">
                 <h4 className="font-semibold text-emerald-800 text-xs">🧠 Vector Database</h4>
-                <p className="text-xs text-emerald-700">pgvector • Semantic search</p>
+                <p className="text-xs text-emerald-700">pgvector search</p>
               </div>
               <div className="p-1 bg-cyan-50 rounded border">
                 <h4 className="font-semibold text-cyan-800 text-xs">🎯 Context Retrieval</h4>
-                <p className="text-xs text-cyan-700">Smart chunking • Relevance scoring</p>
+                <p className="text-xs text-cyan-700">Smart chunking</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-2">
+          <Card className="p-2 overflow-hidden">
             <div className="text-center mb-1">
-              <div className="w-6 h-6 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-1">
+              <div className="w-5 h-5 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-1">
                 <span className="text-xs">✅</span>
               </div>
               <h3 className="text-xs font-bold text-indigo-700">Content Approval</h3>
@@ -1180,35 +1180,39 @@ const slides: Slide[] = [
             <div className="space-y-1">
               <div className="p-1 bg-indigo-50 rounded border">
                 <h4 className="font-semibold text-indigo-800 text-xs">🔄 Approval Workflow</h4>
-                <p className="text-xs text-indigo-700">Knowledge-based • Multi-stage</p>
+                <p className="text-xs text-indigo-700">Multi-stage</p>
               </div>
               <div className="p-1 bg-pink-50 rounded border">
                 <h4 className="font-semibold text-pink-800 text-xs">⚡ Auto-Generation</h4>
-                <p className="text-xs text-pink-700">RAG-enhanced • Context-aware</p>
+                <p className="text-xs text-pink-700">Context-aware</p>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Technical Stack */}
-        <Card className="p-2">
+        {/* Technical Implementation Stack */}
+        <Card className="p-2 mt-2">
           <h3 className="text-xs font-bold text-primary mb-2">⚙️ Technical Implementation Stack</h3>
           <div className="grid grid-cols-4 gap-2 text-center">
-            <div>
+            <div className="p-1">
               <div className="text-xs font-semibold text-primary">Storage</div>
-              <div className="text-xs text-muted-foreground">Supabase • Vector DB</div>
+              <div className="text-xs text-muted-foreground">Supabase</div>
+              <div className="text-xs text-muted-foreground">Vector DB</div>
             </div>
-            <div>
+            <div className="p-1">
               <div className="text-xs font-semibold text-primary">Functions</div>
-              <div className="text-xs text-muted-foreground">Generation • Crawling</div>
+              <div className="text-xs text-muted-foreground">Generation</div>
+              <div className="text-xs text-muted-foreground">Crawling</div>
             </div>
-            <div>
+            <div className="p-1">
               <div className="text-xs font-semibold text-primary">Components</div>
-              <div className="text-xs text-muted-foreground">Enhanced KB • Manager</div>
+              <div className="text-xs text-muted-foreground">Enhanced KB</div>
+              <div className="text-xs text-muted-foreground">Manager</div>
             </div>
-            <div>
+            <div className="p-1">
               <div className="text-xs font-semibold text-primary">APIs</div>
-              <div className="text-xs text-muted-foreground">OpenAI • Firecrawl</div>
+              <div className="text-xs text-muted-foreground">OpenAI</div>
+              <div className="text-xs text-muted-foreground">Firecrawl</div>
             </div>
           </div>
         </Card>
@@ -1221,9 +1225,9 @@ const slides: Slide[] = [
     title: "Multi-Channel Deployment System",
     subtitle: "Complete Implementation - Drag & Drop, Agent Assignment, Multi-Channel & Omni-Channel Support",
     content: (
-      <div className="space-y-3">
+      <div className="h-[420px] overflow-y-auto space-y-2">
         {/* Header */}
-        <div className="text-center">
+        <div className="text-center mb-2">
           <div className="inline-flex items-center gap-2 bg-primary/10 px-3 py-1 rounded-full">
             <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
             <span className="text-xs font-medium">Advanced Deployment Management System</span>
@@ -1231,10 +1235,10 @@ const slides: Slide[] = [
         </div>
 
         {/* Drag & Drop Implementation */}
-        <div className="grid grid-cols-2 gap-3 h-32">
-          <Card className="p-2">
+        <div className="grid grid-cols-2 gap-2 h-28">
+          <Card className="p-2 overflow-hidden">
             <div className="text-center mb-1">
-              <div className="w-6 h-6 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-1">
+              <div className="w-5 h-5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-1">
                 <span className="text-xs">🎯</span>
               </div>
               <h3 className="text-xs font-bold text-blue-700">Drag & Drop Agent Assignment</h3>
@@ -1242,18 +1246,18 @@ const slides: Slide[] = [
             <div className="space-y-1">
               <div className="p-1 bg-blue-50 rounded border">
                 <h4 className="font-semibold text-blue-800 text-xs">🎨 DraggableAgentCard</h4>
-                <p className="text-xs text-blue-700">@dnd-kit/core • Status visualization • Metrics</p>
+                <p className="text-xs text-blue-700">@dnd-kit/core</p>
               </div>
               <div className="p-1 bg-purple-50 rounded border">
                 <h4 className="font-semibold text-purple-800 text-xs">📋 DroppableChannel</h4>
-                <p className="text-xs text-purple-700">Capacity management • Drop indicators • Validation</p>
+                <p className="text-xs text-purple-700">Capacity management</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-2">
+          <Card className="p-2 overflow-hidden">
             <div className="text-center mb-1">
-              <div className="w-6 h-6 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-1">
+              <div className="w-5 h-5 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-1">
                 <span className="text-xs">🌐</span>
               </div>
               <h3 className="text-xs font-bold text-green-700">Multi-Channel & Omni-Channel</h3>
@@ -1261,84 +1265,88 @@ const slides: Slide[] = [
             <div className="space-y-1">
               <div className="p-1 bg-green-50 rounded border">
                 <h4 className="font-semibold text-green-800 text-xs">📱 Channel Types</h4>
-                <p className="text-xs text-green-700">Voice • Web Chat • Email • SMS • WhatsApp</p>
+                <p className="text-xs text-green-700">Voice, Web, Email, SMS</p>
               </div>
               <div className="p-1 bg-emerald-50 rounded border">
                 <h4 className="font-semibold text-emerald-800 text-xs">🔄 Omni-Channel</h4>
-                <p className="text-xs text-emerald-700">Cross-channel context • Unified journey</p>
+                <p className="text-xs text-emerald-700">Unified journey</p>
               </div>
             </div>
           </Card>
         </div>
 
         {/* Agent Assignment Options */}
-        <div className="grid grid-cols-2 gap-3 h-32">
-          <Card className="p-2">
+        <div className="grid grid-cols-2 gap-2 h-28">
+          <Card className="p-2 overflow-hidden">
             <div className="text-center mb-1">
-              <div className="w-6 h-6 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-1">
+              <div className="w-5 h-5 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-1">
                 <span className="text-xs">🤖</span>
               </div>
               <h3 className="text-xs font-bold text-purple-700">Agent Assignment Options</h3>
             </div>
             <div className="space-y-1">
               <div className="p-1 bg-indigo-50 rounded border">
-                <h4 className="font-semibold text-indigo-800 text-xs">1️⃣ Single Agent → Single Channel</h4>
-                <p className="text-xs text-indigo-700">Dedicated assignment • Specialized expertise</p>
+                <h4 className="font-semibold text-indigo-800 text-xs">1️⃣ Single → Single</h4>
+                <p className="text-xs text-indigo-700">Specialized expertise</p>
               </div>
               <div className="p-1 bg-blue-50 rounded border">
-                <h4 className="font-semibold text-blue-800 text-xs">🔢 Single Agent → Multi-Channel</h4>
-                <p className="text-xs text-blue-700">Cross-channel deployment • Context consistency</p>
+                <h4 className="font-semibold text-blue-800 text-xs">🔢 Single → Multi</h4>
+                <p className="text-xs text-blue-700">Cross-channel</p>
               </div>
               <div className="p-1 bg-cyan-50 rounded border">
-                <h4 className="font-semibold text-cyan-800 text-xs">👥 Multi-Agent → Single/Multi</h4>
-                <p className="text-xs text-cyan-700">Load balancing • Redundancy & failover</p>
+                <h4 className="font-semibold text-cyan-800 text-xs">👥 Multi → Multi</h4>
+                <p className="text-xs text-cyan-700">Load balancing</p>
               </div>
             </div>
           </Card>
 
-          <Card className="p-2">
+          <Card className="p-2 overflow-hidden">
             <div className="text-center mb-1">
-              <div className="w-6 h-6 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-1">
+              <div className="w-5 h-5 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-1">
                 <span className="text-xs">🔌</span>
               </div>
               <h3 className="text-xs font-bold text-orange-700">System Connector Assignment</h3>
             </div>
             <div className="space-y-1">
               <div className="p-1 bg-orange-50 rounded border">
-                <h4 className="font-semibold text-orange-800 text-xs">⚡ Single Connector → Task</h4>
-                <p className="text-xs text-orange-700">Dedicated API • Task-specific config</p>
+                <h4 className="font-semibold text-orange-800 text-xs">⚡ Single Connector</h4>
+                <p className="text-xs text-orange-700">Dedicated API</p>
               </div>
               <div className="p-1 bg-red-50 rounded border">
                 <h4 className="font-semibold text-red-800 text-xs">🔗 Multiple Connectors</h4>
-                <p className="text-xs text-red-700">Workflow orchestration • API chains</p>
+                <p className="text-xs text-red-700">API chains</p>
               </div>
               <div className="p-1 bg-yellow-50 rounded border">
-                <h4 className="font-semibold text-yellow-800 text-xs">🎯 APIAssignmentManager</h4>
-                <p className="text-xs text-yellow-700">Real-time tracking • Config management</p>
+                <h4 className="font-semibold text-yellow-800 text-xs">🎯 Assignment Manager</h4>
+                <p className="text-xs text-yellow-700">Config management</p>
               </div>
             </div>
           </Card>
         </div>
 
-        {/* Technical Implementation */}
-        <Card className="p-2">
+        {/* Technical Implementation Components */}
+        <Card className="p-2 mt-2">
           <h3 className="text-xs font-bold text-primary mb-2">⚙️ Technical Implementation Components</h3>
           <div className="grid grid-cols-4 gap-2 text-center">
-            <div>
+            <div className="p-1">
               <div className="text-xs font-semibold text-primary">Core Components</div>
-              <div className="text-xs text-muted-foreground">DeploymentChannels • DraggableAgentCard</div>
+              <div className="text-xs text-muted-foreground">DeploymentChannels</div>
+              <div className="text-xs text-muted-foreground">DraggableAgentCard</div>
             </div>
-            <div>
+            <div className="p-1">
               <div className="text-xs font-semibold text-primary">Hooks & Logic</div>
-              <div className="text-xs text-muted-foreground">useAgentDeployments • Drag & Drop Kit</div>
+              <div className="text-xs text-muted-foreground">useAgentDeployments</div>
+              <div className="text-xs text-muted-foreground">Drag & Drop Kit</div>
             </div>
-            <div>
+            <div className="p-1">
               <div className="text-xs font-semibold text-primary">Data Management</div>
-              <div className="text-xs text-muted-foreground">Agent Deployments • Channel Assignments</div>
+              <div className="text-xs text-muted-foreground">Agent Deployments</div>
+              <div className="text-xs text-muted-foreground">Channel Assignments</div>
             </div>
-            <div>
+            <div className="p-1">
               <div className="text-xs font-semibold text-primary">Features</div>
-              <div className="text-xs text-muted-foreground">Health Monitoring • Metrics • Config Dialog</div>
+              <div className="text-xs text-muted-foreground">Health Monitoring</div>
+              <div className="text-xs text-muted-foreground">Metrics & Config</div>
             </div>
           </div>
         </Card>
