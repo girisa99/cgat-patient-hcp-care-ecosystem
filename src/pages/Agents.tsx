@@ -135,12 +135,7 @@ const Agents = () => {
 
   const availableTabs = getAvailableTabs();
 
-  // Set default tab based on role
-  useEffect(() => {
-    if (isOnboardingTeam && !isSuperAdmin) {
-      setActiveTab('onboarding-agents');
-    }
-  }, [isOnboardingTeam, isSuperAdmin]);
+  // Default tab is already set to 'agentic-ecosystem' in useState
 
   // Get grid class based on number of tabs
   const getGridClass = (tabCount: number) => {
