@@ -27,6 +27,15 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
   const { user, profile, availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation();
   const { signOut } = useMasterAuth();
 
+  console.log('🚀 Navigation Debug:', {
+    availableTabsCount: availableTabs.length,
+    availableTabs: availableTabs.map(t => ({ title: t.title, to: t.to })),
+    currentRole,
+    isAdmin,
+    isSuperAdmin,
+    location: location.pathname
+  });
+
   if (!user) {
     return null;
   }
@@ -57,7 +66,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
       ['/', '/patients'].includes(tab.to)
     ),
     agents: availableTabs.filter(tab => 
-      ['/agents'].includes(tab.to)
+      ['/agents', '/deployment'].includes(tab.to)
     ),
     management: availableTabs.filter(tab => 
       ['/users', '/facilities', '/modules', '/role-management'].includes(tab.to)

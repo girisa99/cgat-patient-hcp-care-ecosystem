@@ -18,7 +18,11 @@ export const useRoleBasedNavigation = () => {
       isAuthenticated,
       userRolesLength: userRoles.length,
       userRoles,
-      totalNavItems: navItems.length
+      totalNavItems: navItems.length,
+      roleAccess: {
+        deployment: ['superAdmin', 'onboardingTeam'],
+        agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver']
+      }
     });
 
     if (!isAuthenticated) {
@@ -39,7 +43,7 @@ export const useRoleBasedNavigation = () => {
       users: ['superAdmin'], // Remove onboardingTeam - admin only
       patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
       agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      deployment: ['superAdmin'], // Deployment management for superAdmin only
+      deployment: ['superAdmin', 'onboardingTeam'], // Deployment management for superAdmin and onboardingTeam
       facilities: ['superAdmin'], // Remove onboardingTeam - admin only
       onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
       modules: ['superAdmin'], // Remove onboardingTeam - admin only
@@ -91,7 +95,7 @@ export const useRoleBasedNavigation = () => {
       users: ['superAdmin'], // Remove onboardingTeam - admin only
       patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
       agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      deployment: ['superAdmin'], // Deployment management for superAdmin only
+      deployment: ['superAdmin', 'onboardingTeam'], // Deployment management for superAdmin and onboardingTeam
       facilities: ['superAdmin'], // Remove onboardingTeam - admin only
       onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
       modules: ['superAdmin'], // Remove onboardingTeam - admin only
@@ -137,7 +141,7 @@ export const useRoleBasedNavigation = () => {
           users: ['superAdmin'], // Remove onboardingTeam - admin only
           patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
           agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-          deployment: ['superAdmin'], // Deployment management for superAdmin only
+          deployment: ['superAdmin', 'onboardingTeam'], // Deployment management for superAdmin and onboardingTeam
           facilities: ['superAdmin'], // Remove onboardingTeam - admin only
           onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
           modules: ['superAdmin'], // Remove onboardingTeam - admin only
