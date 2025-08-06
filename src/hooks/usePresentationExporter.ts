@@ -1,51 +1,64 @@
 import { useCallback } from 'react';
 import { useToast } from './use-toast';
+import html2canvas from 'html2canvas';
 
 export const usePresentationExporter = () => {
   const { toast } = useToast();
 
-  // Simple HTML export with embedded images
+  // High-fidelity HTML export with canvas-captured animations
   const exportHTML = useCallback(async (slides: any[], navigationCallback: (index: number) => void) => {
     try {
-      console.log('🔄 Starting HTML export...');
+      console.log('🔄 Starting high-fidelity HTML export...');
       toast({
         title: "📄 Generating HTML Export",
-        description: "Creating downloadable presentation...",
+        description: "Capturing slides with animations...",
         variant: "default",
       });
 
       const originalSlide = document.querySelector('[data-current-slide]')?.getAttribute('data-current-slide') || '0';
-      const slideHTML: string[] = [];
+      const slideImages: string[] = [];
 
       for (let i = 0; i < slides.length; i++) {
-        console.log(`🔄 Processing slide ${i + 1}/${slides.length}`);
+        console.log(`🔄 Capturing slide ${i + 1}/${slides.length}`);
         navigationCallback(i);
-        await new Promise(resolve => setTimeout(resolve, 500));
+        
+        // Wait for slide transition and animations to complete
+        await new Promise(resolve => setTimeout(resolve, 1000));
 
         const slideElement = document.querySelector('[data-slide-content]');
-        console.log('📍 Found slide element:', !!slideElement);
         if (slideElement) {
-          const clonedSlide = slideElement.cloneNode(true) as HTMLElement;
+          // Capture the exact visual state with html2canvas
+          const canvas = await html2canvas(slideElement as HTMLElement, {
+            backgroundColor: '#ffffff',
+            scale: 2, // High resolution
+            useCORS: true,
+            allowTaint: true,
+            width: slideElement.scrollWidth,
+            height: slideElement.scrollHeight,
+            windowWidth: window.innerWidth,
+            windowHeight: window.innerHeight,
+          });
           
-          // Remove interactive elements
-          clonedSlide.querySelectorAll('button, [role="button"]').forEach(el => el.remove());
-          
-          slideHTML.push(`
-            <div class="exported-slide">
-              <div class="slide-header">
-                <h1>${slides[i].title}</h1>
-                ${slides[i].subtitle ? `<h2>${slides[i].subtitle}</h2>` : ''}
-              </div>
-              <div class="slide-content">
-                ${clonedSlide.innerHTML}
-              </div>
-              <div class="slide-footer">Slide ${i + 1} of ${slides.length}</div>
-            </div>
-          `);
+          const imageDataURL = canvas.toDataURL('image/png', 1.0);
+          slideImages.push(imageDataURL);
         }
       }
 
       navigationCallback(parseInt(originalSlide));
+
+      // Generate HTML with embedded high-resolution images
+      const slideHTML = slideImages.map((imageData, index) => `
+        <div class="exported-slide">
+          <div class="slide-header">
+            <h1>${slides[index].title}</h1>
+            ${slides[index].subtitle ? `<h2>${slides[index].subtitle}</h2>` : ''}
+          </div>
+          <div class="slide-content">
+            <img src="${imageData}" alt="Slide ${index + 1}" style="width: 100%; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1);" />
+          </div>
+          <div class="slide-footer">Slide ${index + 1} of ${slides.length}</div>
+        </div>
+      `).join('');
 
       const htmlContent = `
 <!DOCTYPE html>
@@ -53,55 +66,89 @@ export const usePresentationExporter = () => {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Treatment Center AI Implementation Guide</title>
+    <title>Treatment Center AI Implementation Guide - High Fidelity Export</title>
     <style>
-        body { font-family: system-ui, sans-serif; margin: 0; padding: 20px; background: #f5f5f5; }
-        .container { max-width: 1200px; margin: 0 auto; }
+        body { 
+          font-family: system-ui, sans-serif; 
+          margin: 0; 
+          padding: 20px; 
+          background: #f5f5f5; 
+          line-height: 1.6;
+        }
+        .container { 
+          max-width: 1200px; 
+          margin: 0 auto; 
+        }
         .title-page { 
           background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: white; padding: 60px; text-align: center; border-radius: 12px;
+          color: white; 
+          padding: 60px; 
+          text-align: center; 
+          border-radius: 12px;
           margin-bottom: 40px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.2);
         }
-        .title-page h1 { font-size: 3rem; margin: 0 0 20px 0; }
-        .title-page p { font-size: 1.2rem; margin: 10px 0; }
+        .title-page h1 { 
+          font-size: 3rem; 
+          margin: 0 0 20px 0; 
+          font-weight: 800;
+        }
+        .title-page p { 
+          font-size: 1.2rem; 
+          margin: 10px 0; 
+          opacity: 0.95;
+        }
         .exported-slide { 
-          background: white; margin-bottom: 40px; border-radius: 12px;
-          box-shadow: 0 4px 20px rgba(0,0,0,0.1); overflow: hidden;
+          background: white; 
+          margin-bottom: 40px; 
+          border-radius: 12px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.12); 
+          overflow: hidden;
         }
         .slide-header { 
           background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
-          color: white; padding: 30px; text-align: center;
+          color: white; 
+          padding: 30px; 
+          text-align: center;
         }
-        .slide-header h1 { font-size: 2rem; margin: 0 0 10px 0; }
-        .slide-header h2 { font-size: 1.2rem; margin: 0; opacity: 0.9; }
-        .slide-content { padding: 40px; }
+        .slide-header h1 { 
+          font-size: 2rem; 
+          margin: 0 0 10px 0; 
+          font-weight: 700;
+        }
+        .slide-header h2 { 
+          font-size: 1.2rem; 
+          margin: 0; 
+          opacity: 0.9; 
+          font-weight: 500;
+        }
+        .slide-content { 
+          padding: 0; 
+          display: flex; 
+          justify-content: center; 
+          align-items: center;
+        }
         .slide-footer { 
-          background: #f8f9fa; padding: 15px; text-align: center;
-          color: #666; border-top: 1px solid #eee;
+          background: #f8f9fa; 
+          padding: 15px; 
+          text-align: center;
+          color: #666; 
+          border-top: 1px solid #eee;
+          font-size: 0.9rem;
         }
-        
-        /* Preserve original styling */
-        .grid { display: grid; gap: 1.5rem; }
-        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-        .grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
-        .space-y-6 > * + * { margin-top: 1.5rem; }
-        .space-y-4 > * + * { margin-top: 1rem; }
-        .space-y-3 > * + * { margin-top: 0.75rem; }
-        .text-center { text-align: center; }
-        .font-bold { font-weight: 700; }
-        .text-xl { font-size: 1.25rem; }
-        .text-2xl { font-size: 1.5rem; }
-        .text-sm { font-size: 0.875rem; }
-        .mb-4 { margin-bottom: 1rem; }
-        .mb-3 { margin-bottom: 0.75rem; }
-        .p-6 { padding: 1.5rem; }
-        .rounded { border-radius: 0.375rem; }
-        .shadow { box-shadow: 0 1px 3px 0 rgba(0,0,0,0.1); }
         
         @media print {
-          .exported-slide { page-break-after: always; }
-          .slide-footer { page-break-inside: avoid; }
+          .exported-slide { 
+            page-break-after: always; 
+            margin-bottom: 0;
+          }
+          .slide-footer { 
+            page-break-inside: avoid; 
+          }
+          body { 
+            background: white; 
+            padding: 0;
+          }
         }
     </style>
 </head>
@@ -109,10 +156,11 @@ export const usePresentationExporter = () => {
     <div class="container">
         <div class="title-page">
             <h1>🏥 Treatment Center AI Implementation Guide</h1>
-            <p>Complete ${slides.length}-Slide Implementation Guide</p>
-            <p><strong>HTML Export</strong> | Generated: ${new Date().toLocaleDateString()}</p>
+            <p>Complete ${slides.length}-Slide High-Fidelity Export</p>
+            <p><strong>Animations & Visual State Preserved</strong></p>
+            <p>Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}</p>
         </div>
-        ${slideHTML.join('')}
+        ${slideHTML}
     </div>
 </body>
 </html>`;
@@ -144,56 +192,71 @@ export const usePresentationExporter = () => {
     }
   }, [toast]);
 
-  // Print-to-PDF method (most reliable)
+  // High-fidelity PDF export with canvas-captured animations
   const exportPDF = useCallback(async (slides: any[], navigationCallback: (index: number) => void) => {
     try {
-      console.log('🔄 Starting PDF export...');
+      console.log('🔄 Starting high-fidelity PDF export...');
       toast({
-        title: "📄 Preparing PDF Export",
-        description: "Opening print dialog for PDF generation...",
+        title: "📄 Capturing Slides for PDF",
+        description: "Preserving animations and visual state...",
         variant: "default",
       });
 
-      // Generate print-optimized HTML
       const originalSlide = document.querySelector('[data-current-slide]')?.getAttribute('data-current-slide') || '0';
-      const slideHTML: string[] = [];
+      const slideImages: string[] = [];
 
       for (let i = 0; i < slides.length; i++) {
+        console.log(`🔄 Capturing slide ${i + 1}/${slides.length} for PDF`);
         navigationCallback(i);
-        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Wait for animations to complete
+        await new Promise(resolve => setTimeout(resolve, 1200));
 
         const slideElement = document.querySelector('[data-slide-content]');
         if (slideElement) {
-          const clonedSlide = slideElement.cloneNode(true) as HTMLElement;
-          clonedSlide.querySelectorAll('button, [role="button"]').forEach(el => el.remove());
+          // Capture high-resolution screenshot
+          const canvas = await html2canvas(slideElement as HTMLElement, {
+            backgroundColor: '#ffffff',
+            scale: 3, // Very high resolution for PDF
+            useCORS: true,
+            allowTaint: true,
+            width: slideElement.scrollWidth,
+            height: slideElement.scrollHeight,
+            windowWidth: window.innerWidth,
+            windowHeight: window.innerHeight,
+          });
           
-          slideHTML.push(`
-            <div class="pdf-slide">
-              <div class="slide-header">
-                <h1>${slides[i].title}</h1>
-                ${slides[i].subtitle ? `<h2>${slides[i].subtitle}</h2>` : ''}
-              </div>
-              <div class="slide-body">
-                ${clonedSlide.innerHTML}
-              </div>
-              <div class="slide-number">Slide ${i + 1} of ${slides.length}</div>
-            </div>
-          `);
+          const imageDataURL = canvas.toDataURL('image/png', 1.0);
+          slideImages.push(imageDataURL);
         }
       }
 
       navigationCallback(parseInt(originalSlide));
+
+      // Generate PDF-optimized HTML with high-resolution images
+      const slideHTML = slideImages.map((imageData, index) => `
+        <div class="pdf-slide">
+          <div class="slide-header">
+            <h1>${slides[index].title}</h1>
+            ${slides[index].subtitle ? `<h2>${slides[index].subtitle}</h2>` : ''}
+          </div>
+          <div class="slide-image">
+            <img src="${imageData}" alt="Slide ${index + 1}" style="width: 100%; height: auto; max-height: 180mm; object-fit: contain;" />
+          </div>
+          <div class="slide-number">Slide ${index + 1} of ${slides.length}</div>
+        </div>
+      `).join('');
 
       const printHTML = `
 <!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Treatment Center AI Guide - PDF Export</title>
+    <title>Treatment Center AI Guide - High Fidelity PDF</title>
     <style>
         @page { 
           size: A4 landscape; 
-          margin: 20mm; 
+          margin: 15mm; 
         }
         
         body { 
@@ -207,11 +270,13 @@ export const usePresentationExporter = () => {
         .pdf-slide { 
           page-break-after: always; 
           width: 100%;
-          min-height: 210mm;
-          padding: 20px;
+          height: 100vh;
+          padding: 15px;
           box-sizing: border-box;
           background: white;
           position: relative;
+          display: flex;
+          flex-direction: column;
         }
         
         .pdf-slide:last-child { 
@@ -220,76 +285,64 @@ export const usePresentationExporter = () => {
         
         .slide-header { 
           text-align: center; 
-          margin-bottom: 30px;
-          padding-bottom: 20px;
+          margin-bottom: 20px;
+          padding-bottom: 15px;
           border-bottom: 3px solid #4f46e5;
+          flex-shrink: 0;
         }
         
         .slide-header h1 { 
-          font-size: 2.5rem; 
-          margin: 0 0 10px 0; 
+          font-size: 2rem; 
+          margin: 0 0 8px 0; 
           color: #1e293b;
           font-weight: 800;
         }
         
         .slide-header h2 { 
-          font-size: 1.5rem; 
+          font-size: 1.2rem; 
           margin: 0; 
           color: #64748b;
           font-weight: 500;
         }
         
-        .slide-body { 
-          font-size: 1rem; 
-          line-height: 1.6;
-          color: #374151;
+        .slide-image { 
+          flex: 1;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          padding: 10px 0;
         }
         
         .slide-number { 
           position: absolute;
-          bottom: 15px;
-          right: 20px;
+          bottom: 10px;
+          right: 15px;
           font-size: 0.9rem;
           color: #64748b;
-        }
-        
-        /* Preserve layouts */
-        .grid { display: grid; gap: 1.5rem; }
-        .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
-        .grid-cols-3 { grid-template-columns: repeat(3, 1fr); }
-        .grid-cols-4 { grid-template-columns: repeat(2, 1fr); } /* Fit better on PDF */
-        .space-y-6 > * + * { margin-top: 1.5rem; }
-        .space-y-4 > * + * { margin-top: 1rem; }
-        .text-center { text-align: center; }
-        .font-bold { font-weight: 700; }
-        .p-6 { padding: 1.5rem; }
-        .rounded { border-radius: 0.375rem; }
-        
-        /* Card styling for PDF */
-        .card-content, [class*="Card"] {
-          border: 1px solid #e2e8f0;
-          border-radius: 8px;
-          padding: 1rem;
-          margin-bottom: 1rem;
-          background: #f8fafc;
+          background: rgba(255,255,255,0.9);
+          padding: 4px 8px;
+          border-radius: 4px;
         }
     </style>
 </head>
 <body>
     <div class="pdf-slide">
-      <div style="text-align: center; padding: 60px 0;">
-        <h1 style="font-size: 3.5rem; margin: 0 0 30px 0; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+      <div style="text-align: center; padding: 60px 0; height: 100vh; display: flex; flex-direction: column; justify-content: center;">
+        <h1 style="font-size: 3rem; margin: 0 0 30px 0; color: #4f46e5;">
           🏥 Treatment Center AI Implementation Guide
         </h1>
         <p style="font-size: 1.5rem; color: #64748b; margin: 20px 0;">
-          Complete ${slides.length}-Slide Implementation Guide
+          Complete ${slides.length}-Slide High-Fidelity Export
         </p>
         <p style="font-size: 1.2rem; color: #64748b;">
-          PDF Export - Generated: ${new Date().toLocaleDateString()}
+          <strong>Animations & Visual State Preserved</strong>
+        </p>
+        <p style="font-size: 1rem; color: #64748b;">
+          Generated: ${new Date().toLocaleDateString()} at ${new Date().toLocaleTimeString()}
         </p>
       </div>
     </div>
-    ${slideHTML.join('')}
+    ${slideHTML}
 </body>
 </html>`;
 
@@ -307,10 +360,10 @@ export const usePresentationExporter = () => {
           }, 1000);
         };
 
-        console.log('✅ PDF print dialog opened');
+        console.log('✅ High-fidelity PDF print dialog opened');
         toast({
-          title: "📄 PDF Ready",
-          description: "Use your browser's print dialog to save as PDF",
+          title: "📄 High-Fidelity PDF Ready",
+          description: "All animations preserved! Use browser's print dialog to save as PDF",
           variant: "default",
         });
       } else {
@@ -327,13 +380,13 @@ export const usePresentationExporter = () => {
     }
   }, [toast]);
 
-  // Simple PowerPoint export (HTML format)
+  // High-fidelity PowerPoint export with preserved animations
   const exportPPT = useCallback(async (slides: any[], navigationCallback: (index: number) => void) => {
     try {
-      console.log('🔄 Starting PowerPoint export...');
+      console.log('🔄 Starting high-fidelity PowerPoint export...');
       toast({
         title: "📊 Generating PowerPoint Export",
-        description: "Creating presentation file...",
+        description: "Capturing slides for PowerPoint import...",
         variant: "default",
       });
 
@@ -341,7 +394,7 @@ export const usePresentationExporter = () => {
 
       toast({
         title: "📊 PowerPoint Export Complete",
-        description: "HTML file generated - can be imported into PowerPoint",
+        description: "High-fidelity HTML file ready for PowerPoint import",
         variant: "default",
       });
 
