@@ -905,21 +905,21 @@ const slides: Slide[] = [
     title: "Step 3: Actions Configuration & System Connectors",
     subtitle: "Auto-Assign Templates & External System Integration",
     content: (
-      <div className="h-full flex flex-col space-y-4 animate-fade-in">
-        <div className="grid grid-cols-2 gap-4 flex-1">
+      <div className="h-full flex flex-col space-y-3 animate-fade-in max-h-full">
+        <div className="grid grid-cols-2 gap-3 flex-1 min-h-0">
           {/* Left Column - AI Templates & Actions */}
-          <Card className="p-4 h-full overflow-hidden">
-            <div className="text-center mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
-                <span className="text-xl">🤖</span>
+          <Card className="p-3 flex flex-col min-h-0">
+            <div className="text-center mb-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span className="text-lg">🤖</span>
               </div>
-              <h3 className="text-lg font-bold text-purple-700 mb-2">AI Template System</h3>
+              <h3 className="text-md font-bold text-purple-700">AI Template System</h3>
             </div>
             
-            <div className="space-y-3 overflow-y-auto flex-1">
-              <div className="p-3 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
-                <h4 className="font-semibold text-purple-700 mb-1 flex items-center gap-2">
-                  <span className="text-sm">⚡</span> Auto-Assign AI Templates
+            <div className="space-y-2 overflow-y-auto flex-1">
+              <div className="p-2 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                <h4 className="font-semibold text-purple-700 mb-1 flex items-center gap-2 text-xs">
+                  <span className="text-xs">⚡</span> Auto-Assign AI Templates
                 </h4>
                 <ul className="text-xs space-y-1 text-gray-700">
                   <li>• Context-aware action suggestions</li>
@@ -929,9 +929,9 @@ const slides: Slide[] = [
                 </ul>
               </div>
               
-              <div className="p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                <h4 className="font-semibold text-blue-700 mb-1 flex items-center gap-2">
-                  <span className="text-sm">🎨</span> Custom Template Creation
+              <div className="p-2 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-700 mb-1 flex items-center gap-2 text-xs">
+                  <span className="text-xs">🎨</span> Custom Template Creation
                 </h4>
                 <ul className="text-xs space-y-1 text-gray-700">
                   <li>• Wizard-guided setup</li>
@@ -941,9 +941,9 @@ const slides: Slide[] = [
                 </ul>
               </div>
               
-              <div className="p-3 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
-                <h4 className="font-semibold text-green-700 mb-1 flex items-center gap-2">
-                  <span className="text-sm">📋</span> Task Assignment Engine
+              <div className="p-2 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-green-700 mb-1 flex items-center gap-2 text-xs">
+                  <span className="text-xs">📋</span> Task Assignment Engine
                 </h4>
                 <ul className="text-xs space-y-1 text-gray-700">
                   <li>• Intelligent connector assignment</li>
@@ -956,18 +956,18 @@ const slides: Slide[] = [
           </Card>
 
           {/* Right Column - AI Models & Implementation */}
-          <Card className="p-4 h-full overflow-hidden">
-            <div className="text-center mb-4">
-              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3 shadow-lg">
-                <span className="text-xl">🧠</span>
+          <Card className="p-3 flex flex-col min-h-0">
+            <div className="text-center mb-3">
+              <div className="w-10 h-10 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span className="text-lg">🧠</span>
               </div>
-              <h3 className="text-lg font-bold text-emerald-700 mb-2">AI Models Implementation</h3>
+              <h3 className="text-md font-bold text-emerald-700">AI Models Implementation</h3>
             </div>
             
-            <div className="space-y-3 overflow-y-auto flex-1">
-              <div className="p-3 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2">
-                  <span className="text-sm">🚀</span> Large Language Models
+            <div className="space-y-2 overflow-y-auto flex-1">
+              <div className="p-2 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2 text-xs">
+                  <span className="text-xs">🚀</span> Large Language Models
                 </h4>
                 <ul className="text-xs space-y-1 text-muted-foreground">
                   <li>• GPT-4 for complex reasoning</li>
@@ -977,9 +977,9 @@ const slides: Slide[] = [
                 </ul>
               </div>
               
-              <div className="p-3 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2">
-                  <span className="text-sm">⚡</span> Small Language Models
+              <div className="p-2 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2 text-xs">
+                  <span className="text-xs">⚡</span> Small Language Models
                 </h4>
                 <ul className="text-xs space-y-1 text-muted-foreground">
                   <li>• Llama 3.1 8B for efficiency</li>
@@ -989,9 +989,9 @@ const slides: Slide[] = [
                 </ul>
               </div>
               
-              <div className="p-3 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2">
-                  <span className="text-sm">👁️</span> Vision & MCP Protocol
+              <div className="p-2 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-1 flex items-center gap-2 text-xs">
+                  <span className="text-xs">👁️</span> Vision & MCP Protocol
                 </h4>
                 <ul className="text-xs space-y-1 text-muted-foreground">
                   <li>• GPT-4V for image analysis</li>
@@ -1005,48 +1005,48 @@ const slides: Slide[] = [
         </div>
 
         {/* Bottom Section - System Connectors & Knowledge Base */}
-        <div className="grid grid-cols-2 gap-4 h-64">
-          <Card className="p-4 h-full overflow-hidden">
-            <h3 className="text-md font-bold mb-3 text-primary flex items-center gap-2">
-              <span className="text-lg">🔌</span> System Connectors
+        <div className="grid grid-cols-2 gap-3 h-48 min-h-0">
+          <Card className="p-3 flex flex-col min-h-0">
+            <h3 className="text-sm font-bold mb-2 text-primary flex items-center gap-2">
+              <span className="text-md">🔌</span> System Connectors
             </h3>
-            <div className="grid grid-cols-2 gap-2 h-48 overflow-y-auto">
-              <div className="p-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+            <div className="grid grid-cols-2 gap-1 overflow-y-auto flex-1">
+              <div className="p-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded border border-blue-200">
                 <div className="font-medium text-blue-800 flex items-center gap-1 text-xs">
                   <Database className="h-3 w-3" />
                   Database
                 </div>
                 <div className="text-xs text-blue-600">Oracle • MySQL • PostgreSQL</div>
               </div>
-              <div className="p-2 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+              <div className="p-2 bg-gradient-to-r from-green-50 to-green-100 rounded border border-green-200">
                 <div className="font-medium text-green-800 flex items-center gap-1 text-xs">
                   <Cloud className="h-3 w-3" />
                   REST API
                 </div>
                 <div className="text-xs text-green-600">HTTP endpoints • Webhooks</div>
               </div>
-              <div className="p-2 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+              <div className="p-2 bg-gradient-to-r from-purple-50 to-purple-100 rounded border border-purple-200">
                 <div className="font-medium text-purple-800 flex items-center gap-1 text-xs">
                   <MessageSquare className="h-3 w-3" />
                   Messaging
                 </div>
                 <div className="text-xs text-purple-600">Kafka • RabbitMQ • SQS</div>
               </div>
-              <div className="p-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+              <div className="p-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded border border-orange-200">
                 <div className="font-medium text-orange-800 flex items-center gap-1 text-xs">
                   <FileText className="h-3 w-3" />
                   File System
                 </div>
                 <div className="text-xs text-orange-600">FTP • SFTP • S3 Storage</div>
               </div>
-              <div className="p-2 bg-gradient-to-r from-red-50 to-red-100 rounded-lg border border-red-200">
+              <div className="p-2 bg-gradient-to-r from-red-50 to-red-100 rounded border border-red-200">
                 <div className="font-medium text-red-800 flex items-center gap-1 text-xs">
                   <Globe className="h-3 w-3" />
                   External Services
                 </div>
                 <div className="text-xs text-red-600">Salesforce • Workday</div>
               </div>
-              <div className="p-2 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200">
+              <div className="p-2 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded border border-indigo-200">
                 <div className="font-medium text-indigo-800 flex items-center gap-1 text-xs">
                   <Zap className="h-3 w-3" />
                   AI Models
@@ -1056,30 +1056,30 @@ const slides: Slide[] = [
             </div>
           </Card>
 
-          <Card className="p-4 h-full overflow-hidden">
-            <h3 className="text-md font-bold mb-3 text-primary flex items-center gap-2">
-              <span className="text-lg">🧠</span> Knowledge Base & Integration
+          <Card className="p-3 flex flex-col min-h-0">
+            <h3 className="text-sm font-bold mb-2 text-primary flex items-center gap-2">
+              <span className="text-md">🧠</span> Knowledge Base & Integration
             </h3>
-            <div className="space-y-2 h-48 overflow-y-auto">
-              <div className="p-2 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200">
+            <div className="space-y-1 overflow-y-auto flex-1">
+              <div className="p-2 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded border border-indigo-200">
                 <div className="font-medium text-indigo-800 flex items-center gap-2 text-xs">
                   <span className="text-xs">📚</span> Supabase Integration
                 </div>
                 <div className="text-xs text-indigo-600">Vector embeddings • Real-time data • Auth</div>
               </div>
-              <div className="p-2 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-lg border border-cyan-200">
+              <div className="p-2 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded border border-cyan-200">
                 <div className="font-medium text-cyan-800 flex items-center gap-2 text-xs">
                   <span className="text-xs">🔍</span> RAG Implementation
                 </div>
                 <div className="text-xs text-cyan-600">Context retrieval • Smart suggestions</div>
               </div>
-              <div className="p-2 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
+              <div className="p-2 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded border border-emerald-200">
                 <div className="font-medium text-emerald-800 flex items-center gap-2 text-xs">
                   <span className="text-xs">⚡</span> Auto-Assignment Features
                 </div>
                 <div className="text-xs text-emerald-600">Smart matching • Performance tracking</div>
               </div>
-              <div className="p-2 bg-gradient-to-r from-violet-50 to-violet-100 rounded-lg border border-violet-200">
+              <div className="p-2 bg-gradient-to-r from-violet-50 to-violet-100 rounded border border-violet-200">
                 <div className="font-medium text-violet-800 flex items-center gap-2 text-xs">
                   <span className="text-xs">🔧</span> Configuration Wizard
                 </div>
@@ -1094,69 +1094,198 @@ const slides: Slide[] = [
   },
   {
     id: 7,
-    title: "Step 4: AI Assignment, Task Execution & Multi-Channel Deployment",
-    subtitle: "Comprehensive AI Model Configuration & Advanced Task Orchestration",
+    title: "Knowledge Base & RAG Implementation",
+    subtitle: "Comprehensive Document Management, Auto-Creation, Upload, Crawl & RAG for Content Approval",
     content: (
-      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
-        <div className="grid grid-cols-2 gap-8">
-          <Card className="p-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl">🤖</span>
+      <div className="h-full overflow-y-auto space-y-4 animate-fade-in">
+        {/* Header */}
+        <div className="text-center mb-4">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium">Complete Knowledge Base & RAG System</span>
+          </div>
+        </div>
+
+        {/* Main Implementation Grid */}
+        <div className="grid grid-cols-2 gap-4">
+          {/* Auto-Creation & Upload */}
+          <Card className="p-4">
+            <div className="text-center mb-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span className="text-lg">📚</span>
               </div>
-              <h3 className="text-xl font-bold text-indigo-700 mb-3">AI Model Assignment</h3>
+              <h3 className="text-md font-bold text-blue-700">Auto-Creation & Upload System</h3>
             </div>
-            <div className="space-y-4">
-              <div className="p-4 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-2">🧠 Small Language Models</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• Llama 3.1 8B Instruct</li>
-                  <li>• Phi-3 Mini for efficiency</li>
-                  <li>• Gemma 2B for quick responses</li>
-                  <li>• Custom fine-tuned models</li>
+            <div className="space-y-2">
+              <div className="p-2 bg-gradient-to-r from-blue-50 to-blue-100 rounded border border-blue-200">
+                <h4 className="font-semibold text-blue-800 mb-1 text-xs flex items-center gap-1">
+                  <span>🤖</span> Auto-Generation (Edge Function)
+                </h4>
+                <ul className="text-xs space-y-1 text-blue-700">
+                  <li>• OpenAI API integration for content generation</li>
+                  <li>• Topic-based knowledge content creation</li>
+                  <li>• Agent type & purpose customization</li>
+                  <li>• Structured markdown output</li>
                 </ul>
               </div>
-              <div className="p-4 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-2">👁️ Vision & Multimodal</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• GPT-4V for image analysis</li>
-                  <li>• CLIP for visual understanding</li>
-                  <li>• OCR integration</li>
-                  <li>• Document processing</li>
+              <div className="p-2 bg-gradient-to-r from-green-50 to-green-100 rounded border border-green-200">
+                <h4 className="font-semibold text-green-800 mb-1 text-xs flex items-center gap-1">
+                  <span>📁</span> File Upload System
+                </h4>
+                <ul className="text-xs space-y-1 text-green-700">
+                  <li>• Drag-and-drop interface (react-dropzone)</li>
+                  <li>• Supabase storage integration</li>
+                  <li>• Multi-format support (PDF, DOC, TXT)</li>
+                  <li>• Real-time processing status</li>
                 </ul>
               </div>
             </div>
           </Card>
-          
-          <Card className="p-6">
-            <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                <span className="text-2xl">⚙️</span>
+
+          {/* Web Crawling & Data Sources */}
+          <Card className="p-4">
+            <div className="text-center mb-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span className="text-lg">🌐</span>
               </div>
-              <h3 className="text-xl font-bold text-emerald-700 mb-3">Task Execution Engine</h3>
+              <h3 className="text-md font-bold text-purple-700">Web Crawling & Data Sources</h3>
             </div>
-            <div className="space-y-4">
-              <div className="p-4 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-2">🔄 Workflow Automation</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• Multi-step processes</li>
-                  <li>• Conditional branching</li>
-                  <li>• Error handling & retry</li>
-                  <li>• Task scheduling</li>
+            <div className="space-y-2">
+              <div className="p-2 bg-gradient-to-r from-purple-50 to-purple-100 rounded border border-purple-200">
+                <h4 className="font-semibold text-purple-800 mb-1 text-xs flex items-center gap-1">
+                  <span>🔥</span> Firecrawl API Integration
+                </h4>
+                <ul className="text-xs space-y-1 text-purple-700">
+                  <li>• Enhanced web scraping with Firecrawl</li>
+                  <li>• Fallback to basic fetch method</li>
+                  <li>• Content filtering (&gt;100 chars)</li>
+                  <li>• Multi-URL batch processing</li>
                 </ul>
               </div>
-              <div className="p-4 bg-card rounded-lg border">
-                <h4 className="font-semibold text-primary mb-2">📊 Performance Monitoring</h4>
-                <ul className="text-sm space-y-1 text-muted-foreground">
-                  <li>• Real-time analytics</li>
-                  <li>• Success rate tracking</li>
-                  <li>• Response time metrics</li>
-                  <li>• Error logging</li>
+              <div className="p-2 bg-gradient-to-r from-orange-50 to-orange-100 rounded border border-orange-200">
+                <h4 className="font-semibold text-orange-800 mb-1 text-xs flex items-center gap-1">
+                  <span>🗃️</span> Knowledge Source Manager
+                </h4>
+                <ul className="text-xs space-y-1 text-orange-700">
+                  <li>• URLs, documents, databases, APIs</li>
+                  <li>• Auto-sync with configurable intervals</li>
+                  <li>• Source validation & status tracking</li>
+                  <li>• Topic-based categorization</li>
                 </ul>
               </div>
             </div>
           </Card>
         </div>
+
+        {/* RAG Implementation & Content Approval */}
+        <div className="grid grid-cols-2 gap-4">
+          <Card className="p-4">
+            <div className="text-center mb-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span className="text-lg">🔍</span>
+              </div>
+              <h3 className="text-md font-bold text-emerald-700">RAG Implementation</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="p-2 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded border border-emerald-200">
+                <h4 className="font-semibold text-emerald-800 mb-1 text-xs flex items-center gap-1">
+                  <span>🧠</span> Vector Database (pgvector)
+                </h4>
+                <ul className="text-xs space-y-1 text-emerald-700">
+                  <li>• Supabase pgvector integration</li>
+                  <li>• Semantic search capabilities</li>
+                  <li>• Document embeddings storage</li>
+                  <li>• Real-time similarity matching</li>
+                </ul>
+              </div>
+              <div className="p-2 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded border border-cyan-200">
+                <h4 className="font-semibold text-cyan-800 mb-1 text-xs flex items-center gap-1">
+                  <span>🎯</span> Context Retrieval
+                </h4>
+                <ul className="text-xs space-y-1 text-cyan-700">
+                  <li>• Smart document chunking</li>
+                  <li>• Relevance scoring algorithm</li>
+                  <li>• Multi-modal search (text + metadata)</li>
+                  <li>• Dynamic context window sizing</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-4">
+            <div className="text-center mb-3">
+              <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-full flex items-center justify-center mx-auto mb-2 shadow-lg">
+                <span className="text-lg">✅</span>
+              </div>
+              <h3 className="text-md font-bold text-indigo-700">Content Approval & Generation</h3>
+            </div>
+            <div className="space-y-2">
+              <div className="p-2 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded border border-indigo-200">
+                <h4 className="font-semibold text-indigo-800 mb-1 text-xs flex items-center gap-1">
+                  <span>🔄</span> Approval Workflow
+                </h4>
+                <ul className="text-xs space-y-1 text-indigo-700">
+                  <li>• Knowledge-based content approval</li>
+                  <li>• AI-powered compliance checking</li>
+                  <li>• Multi-stage review process</li>
+                  <li>• Version control & audit trails</li>
+                </ul>
+              </div>
+              <div className="p-2 bg-gradient-to-r from-pink-50 to-pink-100 rounded border border-pink-200">
+                <h4 className="font-semibold text-pink-800 mb-1 text-xs flex items-center gap-1">
+                  <span>⚡</span> Auto-Generation Features
+                </h4>
+                <ul className="text-xs space-y-1 text-pink-700">
+                  <li>• RAG-enhanced response generation</li>
+                  <li>• Context-aware content suggestions</li>
+                  <li>• Template-based automation</li>
+                  <li>• Real-time knowledge base updates</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Technical Implementation Details */}
+        <Card className="p-4">
+          <h3 className="text-md font-bold text-primary mb-3 flex items-center gap-2">
+            <span>⚙️</span> Technical Implementation Stack
+          </h3>
+          <div className="grid grid-cols-4 gap-3">
+            <div className="p-2 bg-card rounded border text-center">
+              <div className="text-sm font-semibold text-primary mb-1">Storage</div>
+              <div className="text-xs text-muted-foreground">
+                • Supabase Storage<br/>
+                • knowledge_base table<br/>
+                • Vector embeddings
+              </div>
+            </div>
+            <div className="p-2 bg-card rounded border text-center">
+              <div className="text-sm font-semibold text-primary mb-1">Edge Functions</div>
+              <div className="text-xs text-muted-foreground">
+                • generate-knowledge-content<br/>
+                • crawl-relevant-content<br/>
+                • Content processing
+              </div>
+            </div>
+            <div className="p-2 bg-card rounded border text-center">
+              <div className="text-sm font-semibold text-primary mb-1">UI Components</div>
+              <div className="text-xs text-muted-foreground">
+                • EnhancedKnowledgeBase<br/>
+                • KnowledgeSourceManager<br/>
+                • Tabbed interface
+              </div>
+            </div>
+            <div className="p-2 bg-card rounded border text-center">
+              <div className="text-sm font-semibold text-primary mb-1">APIs</div>
+              <div className="text-xs text-muted-foreground">
+                • OpenAI API<br/>
+                • Firecrawl API<br/>
+                • Supabase Real-time
+              </div>
+            </div>
+          </div>
+        </Card>
       </div>
     ),
     animation: 'fade'
