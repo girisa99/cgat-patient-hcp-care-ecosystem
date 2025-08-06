@@ -321,6 +321,13 @@ export type Database = {
             referencedRelation: "action_templates"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_agent_actions_agent"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agent_api_assignments: {
@@ -422,6 +429,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "agent_channel_deployments_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_agent_channel_deployments_agent"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
@@ -573,7 +587,15 @@ export type Database = {
           updated_at?: string
           user_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_agent_conversations_agent"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agent_knowledge_bases: {
         Row: {
@@ -612,6 +634,13 @@ export type Database = {
             referencedRelation: "knowledge_base"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_agent_knowledge_bases_agent"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agent_organization_mapping: {
@@ -645,6 +674,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "agent_organization_mapping_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_agent_organization_mapping_agent"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
@@ -770,7 +806,15 @@ export type Database = {
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fk_agent_sessions_template"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agent_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agent_templates: {
         Row: {
@@ -906,6 +950,13 @@ export type Database = {
             referencedRelation: "test_datasets"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "fk_agent_test_runs_agent"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
         ]
       }
       agent_user_associations: {
@@ -939,6 +990,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "agent_user_associations_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_agent_user_associations_agent"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
@@ -1013,6 +1071,13 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "agents_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agent_templates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fk_agents_template"
             columns: ["template_id"]
             isOneToOne: false
             referencedRelation: "agent_templates"
