@@ -29,13 +29,18 @@ import {
   Settings,
   Activity,
   Users,
-  Zap
+  Zap,
+  Phone
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 
 import { DeploymentChannels, defaultChannels, DeploymentChannel } from './DeploymentChannels';
 import { DraggableAgentCard } from './DraggableAgentCard';
+import { AgentManagementPanel } from './AgentManagementPanel';
+import { ChannelManager } from './ChannelManager';
+import { VoiceAdapterSelector } from './VoiceAdapterSelector';
 import { useAgentSession } from '@/hooks/useAgentSession';
+import { useAgents } from '@/hooks/useAgents';
 import { AgentSession } from '@/types/agent-session';
 
 interface DeploymentAssignment {
@@ -47,6 +52,17 @@ interface DeploymentAssignment {
 
 export const DeploymentManagementInterface: React.FC = () => {
   const { userSessions, isLoading } = useAgentSession();
+  const { agents } = useAgents();
+
+  const refetchAgents = () => {
+    // Mock refetch function
+    console.log('Refetching agents...');
+  };
+
+  const refetchSessions = () => {
+    // Mock refetch function
+    console.log('Refetching sessions...');
+  };
   
   // State management
   const [channels, setChannels] = useState<DeploymentChannel[]>(defaultChannels);
@@ -54,6 +70,8 @@ export const DeploymentManagementInterface: React.FC = () => {
   const [activeId, setActiveId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'deployed' | 'ready' | 'draft'>('all');
+  const [selectedVoiceAdapters, setSelectedVoiceAdapters] = useState<string[]>([]);
+  const [isVoiceConfigOpen, setIsVoiceConfigOpen] = useState(false);
 
   // DnD Kit sensors
   const sensors = useSensors(
@@ -315,12 +333,24 @@ export const deployAgents = async () => {
           </Card>
         </div>
 
-        <Tabs defaultValue="channels" className="space-y-6">
+        <Tabs defaultValue="agents" className="space-y-6">
           <TabsList>
+            <TabsTrigger value="agents">Agent Management</TabsTrigger>
             <TabsTrigger value="channels">Channel Assignment</TabsTrigger>
-            <TabsTrigger value="agents">Agent Library</TabsTrigger>
+            <TabsTrigger value="channel-manager">Channel Manager</TabsTrigger>
+            <TabsTrigger value="voice-config">Voice Configuration</TabsTrigger>
             <TabsTrigger value="deployments">Active Deployments</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="agents" className="space-y-6">
+            <AgentManagementPanel 
+              agents={agents || []}
+              onRefresh={() => {
+                refetchAgents();
+                refetchSessions();
+              }}
+            />
+          </TabsContent>
 
           <TabsContent value="channels" className="space-y-6">
             <DeploymentChannels 
@@ -328,7 +358,7 @@ export const deployAgents = async () => {
               onAddChannel={() => {
                 toast({
                   title: "Add Channel",
-                  description: "Channel creation interface coming soon!"
+                  description: "Use the Channel Manager tab to add new channels"
                 });
               }}
               onConfigureChannel={(channelId) => {
@@ -340,7 +370,32 @@ export const deployAgents = async () => {
             />
           </TabsContent>
 
-          <TabsContent value="agents" className="space-y-6">
+          <TabsContent value="channel-manager" className="space-y-6">
+            <ChannelManager 
+              channels={channels}
+              onChannelsChange={setChannels}
+            />
+          </TabsContent>
+
+          <TabsContent value="voice-config" className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  Voice Channel Configuration
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <VoiceAdapterSelector
+                  channelId="voice-call"
+                  selectedAdapters={selectedVoiceAdapters}
+                  onAdaptersChange={setSelectedVoiceAdapters}
+                />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="agents-library" className="space-y-6">
             {/* Search and Filter */}
             <div className="flex gap-4">
               <div className="relative flex-1">
