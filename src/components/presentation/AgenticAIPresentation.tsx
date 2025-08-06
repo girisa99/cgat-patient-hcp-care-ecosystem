@@ -902,53 +902,160 @@ const slides: Slide[] = [
   },
   {
     id: 6,
-    title: "Step 3: Actions Configuration & System Integration",
-    subtitle: "Connecting to Backend Systems",
+    title: "Step 3: Actions Configuration & AI Templates",
+    subtitle: "Auto-Assign, Custom Templates & Healthcare AI Models",
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">System Integration Setup</h3>
-          <div className="grid grid-cols-2 gap-6">
+        <div className="grid grid-cols-2 gap-6">
+          {/* Left Column - AI Templates & Actions */}
+          <Card className="p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-2xl">🤖</span>
+              </div>
+              <h3 className="text-xl font-bold text-purple-700 mb-3">AI Template System</h3>
+            </div>
+            
             <div className="space-y-4">
-              <h4 className="font-semibold">Core Integrations</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>API endpoint configuration</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Database connections</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Authentication setup</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Webhook configurations</span>
-                </div>
+              <div className="p-4 bg-gradient-to-r from-purple-50 to-indigo-50 rounded-lg border border-purple-200">
+                <h4 className="font-semibold text-purple-700 mb-2 flex items-center gap-2">
+                  <span className="text-lg">⚡</span> Auto-Assign AI Templates
+                </h4>
+                <ul className="text-sm space-y-1 text-gray-700">
+                  <li>• Intelligent action detection</li>
+                  <li>• Context-aware suggestions</li>
+                  <li>• Role-based templates</li>
+                  <li>• Healthcare workflow optimization</li>
+                </ul>
+              </div>
+              
+              <div className="p-4 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                <h4 className="font-semibold text-blue-700 mb-2 flex items-center gap-2">
+                  <span className="text-lg">🎨</span> Custom Templates AI
+                </h4>
+                <ul className="text-sm space-y-1 text-gray-700">
+                  <li>• Dynamic template generation</li>
+                  <li>• Task-specific workflows</li>
+                  <li>• Customizable action chains</li>
+                  <li>• AI-powered optimization</li>
+                </ul>
+              </div>
+              
+              <div className="p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg border border-green-200">
+                <h4 className="font-semibold text-green-700 mb-2 flex items-center gap-2">
+                  <span className="text-lg">📋</span> Task Assignment Engine
+                </h4>
+                <ul className="text-sm space-y-1 text-gray-700">
+                  <li>• Smart task distribution</li>
+                  <li>• Priority-based scheduling</li>
+                  <li>• Real-time monitoring</li>
+                  <li>• Performance analytics</li>
+                </ul>
               </div>
             </div>
+          </Card>
+
+          {/* Right Column - AI Models & Systems */}
+          <Card className="p-6">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-gradient-to-br from-emerald-500 to-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                <span className="text-2xl">🧠</span>
+              </div>
+              <h3 className="text-xl font-bold text-emerald-700 mb-3">AI Models & Integration</h3>
+            </div>
+            
             <div className="space-y-4">
-              <h4 className="font-semibold">Healthcare Systems</h4>
-              <div className="space-y-3">
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">EHR Integration</div>
-                  <div className="text-sm text-muted-foreground">Epic, Cerner, Allscripts</div>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">Billing Systems</div>
-                  <div className="text-sm text-muted-foreground">Revenue cycle management</div>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">Laboratory Systems</div>
-                  <div className="text-sm text-muted-foreground">Lab results automation</div>
-                </div>
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <span className="text-lg">🚀</span> Large Language Models
+                </h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• GPT-4 for complex reasoning</li>
+                  <li>• Claude for healthcare compliance</li>
+                  <li>• Custom medical LLMs</li>
+                  <li>• Multi-model orchestration</li>
+                </ul>
+              </div>
+              
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <span className="text-lg">⚡</span> Small Language Models
+                </h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Llama 3.1 8B for speed</li>
+                  <li>• Phi-3 Mini for efficiency</li>
+                  <li>• Medical domain fine-tuning</li>
+                  <li>• Edge deployment ready</li>
+                </ul>
+              </div>
+              
+              <div className="p-4 bg-card rounded-lg border">
+                <h4 className="font-semibold text-primary mb-2 flex items-center gap-2">
+                  <span className="text-lg">👁️</span> Vision & MCP Protocol
+                </h4>
+                <ul className="text-sm space-y-1 text-muted-foreground">
+                  <li>• Vision models for medical imaging</li>
+                  <li>• MCP for protocol compliance</li>
+                  <li>• Document OCR processing</li>
+                  <li>• Labeling studio integration</li>
+                </ul>
               </div>
             </div>
-          </div>
-        </Card>
+          </Card>
+        </div>
+
+        {/* Bottom Section - Healthcare Systems & Knowledge Base */}
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-bold mb-4 text-primary flex items-center gap-2">
+              <span className="text-xl">🏥</span> Healthcare System Connectors
+            </h3>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="p-3 bg-gradient-to-r from-blue-50 to-blue-100 rounded-lg border border-blue-200">
+                <div className="font-medium text-blue-800">EHR Systems</div>
+                <div className="text-xs text-blue-600">Epic • Cerner • Allscripts</div>
+              </div>
+              <div className="p-3 bg-gradient-to-r from-green-50 to-green-100 rounded-lg border border-green-200">
+                <div className="font-medium text-green-800">FHIR APIs</div>
+                <div className="text-xs text-green-600">HL7 • Real-time data</div>
+              </div>
+              <div className="p-3 bg-gradient-to-r from-purple-50 to-purple-100 rounded-lg border border-purple-200">
+                <div className="font-medium text-purple-800">Lab Systems</div>
+                <div className="text-xs text-purple-600">Results • Automation</div>
+              </div>
+              <div className="p-3 bg-gradient-to-r from-orange-50 to-orange-100 rounded-lg border border-orange-200">
+                <div className="font-medium text-orange-800">Billing APIs</div>
+                <div className="text-xs text-orange-600">Revenue • Claims</div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="text-lg font-bold mb-4 text-primary flex items-center gap-2">
+              <span className="text-xl">🧠</span> Knowledge Base & RAG
+            </h3>
+            <div className="space-y-3">
+              <div className="p-3 bg-gradient-to-r from-indigo-50 to-indigo-100 rounded-lg border border-indigo-200">
+                <div className="font-medium text-indigo-800 flex items-center gap-2">
+                  <span className="text-sm">📚</span> Vector Knowledge Base
+                </div>
+                <div className="text-xs text-indigo-600">Medical embeddings • Semantic search</div>
+              </div>
+              <div className="p-3 bg-gradient-to-r from-cyan-50 to-cyan-100 rounded-lg border border-cyan-200">
+                <div className="font-medium text-cyan-800 flex items-center gap-2">
+                  <span className="text-sm">🔍</span> RAG Implementation
+                </div>
+                <div className="text-xs text-cyan-600">Context retrieval • Real-time augmentation</div>
+              </div>
+              <div className="p-3 bg-gradient-to-r from-emerald-50 to-emerald-100 rounded-lg border border-emerald-200">
+                <div className="font-medium text-emerald-800 flex items-center gap-2">
+                  <span className="text-sm">⚡</span> Smart Suggestions
+                </div>
+                <div className="text-xs text-emerald-600">Auto-assign • Custom actions • Optimization</div>
+              </div>
+            </div>
+          </Card>
+        </div>
       </div>
     ),
     animation: 'zoom'
