@@ -1516,50 +1516,163 @@ const slides: Slide[] = [
   },
   {
     id: 9,
-    title: "MCP Protocol & Small Language Models",
-    subtitle: "Model Context Protocol Integration",
+    title: "AI Models, MCP Protocol & Knowledge Base Implementation",
+    subtitle: "Complete AI Infrastructure with RAG, Model Selection & Context Management",
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">MCP Protocol Architecture</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Protocol Features</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-primary rounded-full"></div>
-                  <span>Context sharing between models</span>
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium">Comprehensive AI Infrastructure Implementation</span>
+          </div>
+        </div>
+
+        {/* MCP Protocol & Model Selection */}
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🔗</span>
+              </div>
+              <h3 className="text-lg font-bold text-blue-700">MCP Protocol Implementation</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-blue-50 rounded-lg border">
+                <h4 className="font-semibold text-blue-800 mb-2">🧠 Context Sharing</h4>
+                <p className="text-sm text-blue-700">Multi-model communication and state management</p>
+              </div>
+              <div className="p-3 bg-indigo-50 rounded-lg border">
+                <h4 className="font-semibold text-indigo-800 mb-2">⚡ Session Management</h4>
+                <p className="text-sm text-indigo-700">Persistent context across agent interactions</p>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-lg border">
+                <h4 className="font-semibold text-purple-800 mb-2">🔄 Model Orchestration</h4>
+                <p className="text-sm text-purple-700">Intelligent routing between AI models</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🎯</span>
+              </div>
+              <h3 className="text-lg font-bold text-green-700">AI Model Assignment Matrix</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-green-50 rounded-lg border">
+                <h4 className="font-semibold text-green-800 mb-2">📝 Text Processing</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Llama 3.1 8B - Complex reasoning</div>
+                  <div>• Phi-3 Mini - Quick responses</div>
+                  <div>• Gemma 2B - Classifications</div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-primary rounded-full"></div>
-                  <span>Efficient model communication</span>
+              </div>
+              <div className="p-3 bg-emerald-50 rounded-lg border">
+                <h4 className="font-semibold text-emerald-800 mb-2">👁️ Vision Tasks</h4>
+                <div className="text-xs space-y-1">
+                  <div>• GPT-4V - Document analysis</div>
+                  <div>• CLIP - Image understanding</div>
+                  <div>• OCR Engine - Text extraction</div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-primary rounded-full"></div>
-                  <span>Session state management</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-primary rounded-full"></div>
-                  <span>Multi-model orchestration</span>
+              </div>
+              <div className="p-3 bg-cyan-50 rounded-lg border">
+                <h4 className="font-semibold text-cyan-800 mb-2">🔬 Specialized Models</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Medical NER - Entity recognition</div>
+                  <div>• Sentiment Analysis - Emotional state</div>
+                  <div>• Classification - Category assignment</div>
                 </div>
               </div>
             </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Small Language Models</h4>
-              <div className="space-y-3">
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">Llama 3.1 8B</div>
-                  <div className="text-sm text-muted-foreground">General purpose reasoning</div>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">Phi-3 Mini</div>
-                  <div className="text-sm text-muted-foreground">Efficient inference</div>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">Gemma 2B</div>
-                  <div className="text-sm text-muted-foreground">Quick responses</div>
+          </Card>
+        </div>
+
+        {/* Knowledge Base & RAG Implementation */}
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">📚</span>
+              </div>
+              <h3 className="text-lg font-bold text-purple-700">RAG Knowledge Base</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-purple-50 rounded-lg border">
+                <h4 className="font-semibold text-purple-800 mb-2">📖 Knowledge Sources</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Medical literature & protocols</div>
+                  <div>• Treatment guidelines</div>
+                  <div>• Internal policies & procedures</div>
                 </div>
               </div>
+              <div className="p-3 bg-violet-50 rounded-lg border">
+                <h4 className="font-semibold text-violet-800 mb-2">🔍 Vector Database</h4>
+                <div className="text-xs space-y-1">
+                  <div>• pgvector semantic search</div>
+                  <div>• Real-time updates</div>
+                  <div>• Multi-language support</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">⚙️</span>
+              </div>
+              <h3 className="text-lg font-bold text-orange-700">Implementation Stack</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-orange-50 rounded-lg border">
+                <h4 className="font-semibold text-orange-800 mb-2">🏗️ Architecture</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Supabase backend integration</div>
+                  <div>• Real-time context sharing</div>
+                  <div>• Edge functions processing</div>
+                </div>
+              </div>
+              <div className="p-3 bg-red-50 rounded-lg border">
+                <h4 className="font-semibold text-red-800 mb-2">🔧 Components</h4>
+                <div className="text-xs space-y-1">
+                  <div>• useHealthcareAI hook</div>
+                  <div>• MCP SDK integration</div>
+                  <div>• Vector embeddings system</div>
+                </div>
+              </div>
+              <div className="p-3 bg-yellow-50 rounded-lg border">
+                <h4 className="font-semibold text-yellow-800 mb-2">📊 Features</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Context-aware retrieval</div>
+                  <div>• Multi-model routing</div>
+                  <div>• Performance monitoring</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Implementation Results */}
+        <Card className="p-6">
+          <h3 className="text-xl font-bold text-primary mb-6">🎯 Implementation Results & Performance</h3>
+          <div className="grid grid-cols-4 gap-6 text-center">
+            <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg border">
+              <div className="text-2xl font-bold text-blue-600 mb-1">96.8%</div>
+              <div className="text-sm text-muted-foreground">AI Model Accuracy</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg border">
+              <div className="text-2xl font-bold text-green-600 mb-1">1.2s</div>
+              <div className="text-sm text-muted-foreground">Response Time</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg border">
+              <div className="text-2xl font-bold text-purple-600 mb-1">85%</div>
+              <div className="text-sm text-muted-foreground">Context Retention</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-lg border">
+              <div className="text-2xl font-bold text-orange-600 mb-1">99.9%</div>
+              <div className="text-sm text-muted-foreground">System Uptime</div>
             </div>
           </div>
         </Card>
@@ -1569,50 +1682,167 @@ const slides: Slide[] = [
   },
   {
     id: 10,
-    title: "Knowledge Base & RAG System",
-    subtitle: "Retrieval Augmented Generation Implementation",
+    title: "Template Configuration & AI Automation Implementation",
+    subtitle: "Complete Template System with Actions, Tasks & Intelligent Deployment",
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">RAG Architecture</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Knowledge Sources</h4>
-              <div className="space-y-3">
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">📚 Medical Literature</div>
-                  <div className="text-sm text-muted-foreground">Evidence-based protocols</div>
+        {/* Header */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium">Advanced Template & Automation Framework</span>
+          </div>
+        </div>
+
+        {/* Template Configuration & AI Automation */}
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">📋</span>
+              </div>
+              <h3 className="text-lg font-bold text-blue-700">Template Library & Configuration</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-blue-50 rounded-lg border">
+                <h4 className="font-semibold text-blue-800 mb-2">🏥 Pre-built Templates</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Intake Assessment workflows</div>
+                  <div>• Treatment Planning automation</div>
+                  <div>• Progress Monitoring systems</div>
                 </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">📋 Treatment Guidelines</div>
-                  <div className="text-sm text-muted-foreground">Best practice recommendations</div>
+              </div>
+              <div className="p-3 bg-indigo-50 rounded-lg border">
+                <h4 className="font-semibold text-indigo-800 mb-2">⚙️ Configuration Options</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Custom fields & forms</div>
+                  <div>• Workflow automation rules</div>
+                  <div>• Integration endpoints</div>
                 </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">🏥 Internal Policies</div>
-                  <div className="text-sm text-muted-foreground">Center-specific procedures</div>
+              </div>
+              <div className="p-3 bg-purple-50 rounded-lg border">
+                <h4 className="font-semibold text-purple-800 mb-2">🔒 Security & Compliance</h4>
+                <div className="text-xs space-y-1">
+                  <div>• HIPAA compliance settings</div>
+                  <div>• Access control configuration</div>
+                  <div>• Audit trail management</div>
                 </div>
               </div>
             </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Vector Database</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Semantic search capabilities</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Real-time updates</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Multi-language support</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Version control</span>
+          </Card>
+
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🤖</span>
+              </div>
+              <h3 className="text-lg font-bold text-green-700">AI-Powered Automation</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-green-50 rounded-lg border">
+                <h4 className="font-semibold text-green-800 mb-2">⚡ Smart Actions</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Auto-routing & case assignment</div>
+                  <div>• Contextual notifications</div>
+                  <div>• AI-assisted form completion</div>
                 </div>
               </div>
+              <div className="p-3 bg-emerald-50 rounded-lg border">
+                <h4 className="font-semibold text-emerald-800 mb-2">📊 Intelligent Tasks</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Appointment optimization</div>
+                  <div>• Automated reporting & insights</div>
+                  <div>• Proactive follow-up outreach</div>
+                </div>
+              </div>
+              <div className="p-3 bg-cyan-50 rounded-lg border">
+                <h4 className="font-semibold text-cyan-800 mb-2">💡 AI Autosuggest</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Evidence-based treatment plans</div>
+                  <div>• Personalized interventions</div>
+                  <div>• Predictive outcome analytics</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Multi-Platform Deployment */}
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🌐</span>
+              </div>
+              <h3 className="text-lg font-bold text-purple-700">Multi-Platform Deployment</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-purple-50 rounded-lg border">
+                <h4 className="font-semibold text-purple-800 mb-2">🖥️ Web Platform</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Rich interactive forms</div>
+                  <div>• Advanced data visualization</div>
+                  <div>• Multi-tab workflows</div>
+                </div>
+              </div>
+              <div className="p-3 bg-violet-50 rounded-lg border">
+                <h4 className="font-semibold text-violet-800 mb-2">📱 Mobile Apps</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Touch-optimized interfaces</div>
+                  <div>• Offline capabilities</div>
+                  <div>• Push notification integration</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <div className="text-center mb-4">
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-orange-600 rounded-full flex items-center justify-center mx-auto mb-3">
+                <span className="text-2xl">🔄</span>
+              </div>
+              <h3 className="text-lg font-bold text-orange-700">Template Synchronization</h3>
+            </div>
+            <div className="space-y-3">
+              <div className="p-3 bg-orange-50 rounded-lg border">
+                <h4 className="font-semibold text-orange-800 mb-2">⚡ Real-time Sync</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Cross-channel synchronization</div>
+                  <div>• Version control & rollback</div>
+                  <div>• A/B testing capabilities</div>
+                </div>
+              </div>
+              <div className="p-3 bg-red-50 rounded-lg border">
+                <h4 className="font-semibold text-red-800 mb-2">📊 Performance Monitoring</h4>
+                <div className="text-xs space-y-1">
+                  <div>• Template usage analytics</div>
+                  <div>• User interaction tracking</div>
+                  <div>• Conversion optimization</div>
+                </div>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Implementation Results */}
+        <Card className="p-6">
+          <h3 className="text-xl font-bold text-primary mb-6">📈 Template & Automation Results</h3>
+          <div className="grid grid-cols-4 gap-6 text-center">
+            <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg border">
+              <div className="text-2xl font-bold text-blue-600 mb-1">90%</div>
+              <div className="text-sm text-muted-foreground">Form Completion Rate</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg border">
+              <div className="text-2xl font-bold text-green-600 mb-1">75%</div>
+              <div className="text-sm text-muted-foreground">Admin Task Reduction</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg border">
+              <div className="text-2xl font-bold text-purple-600 mb-1">15min</div>
+              <div className="text-sm text-muted-foreground">Average Setup Time</div>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-lg border">
+              <div className="text-2xl font-bold text-orange-600 mb-1">85%</div>
+              <div className="text-sm text-muted-foreground">User Satisfaction</div>
             </div>
           </div>
         </Card>
@@ -1622,267 +1852,6 @@ const slides: Slide[] = [
   },
   {
     id: 11,
-    title: "AI Model Selection & Assignment",
-    subtitle: "Choosing the Right Models for Each Task",
-    content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">Model Assignment Matrix</h3>
-          <div className="grid grid-cols-3 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Text Processing</h4>
-              <div className="space-y-2">
-                <div className="p-2 bg-blue-100 rounded text-sm">
-                  <strong>Llama 3.1 8B</strong><br/>
-                  Complex reasoning tasks
-                </div>
-                <div className="p-2 bg-green-100 rounded text-sm">
-                  <strong>Phi-3 Mini</strong><br/>
-                  Quick Q&A responses
-                </div>
-                <div className="p-2 bg-purple-100 rounded text-sm">
-                  <strong>Gemma 2B</strong><br/>
-                  Simple classifications
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Vision Tasks</h4>
-              <div className="space-y-2">
-                <div className="p-2 bg-orange-100 rounded text-sm">
-                  <strong>GPT-4V</strong><br/>
-                  Document analysis
-                </div>
-                <div className="p-2 bg-red-100 rounded text-sm">
-                  <strong>CLIP</strong><br/>
-                  Image understanding
-                </div>
-                <div className="p-2 bg-yellow-100 rounded text-sm">
-                  <strong>OCR Engine</strong><br/>
-                  Text extraction
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Specialized</h4>
-              <div className="space-y-2">
-                <div className="p-2 bg-cyan-100 rounded text-sm">
-                  <strong>Medical NER</strong><br/>
-                  Entity recognition
-                </div>
-                <div className="p-2 bg-pink-100 rounded text-sm">
-                  <strong>Sentiment Analysis</strong><br/>
-                  Emotional state detection
-                </div>
-                <div className="p-2 bg-indigo-100 rounded text-sm">
-                  <strong>Classification</strong><br/>
-                  Category assignment
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    ),
-    animation: 'slide'
-  },
-  {
-    id: 12,
-    title: "Template Configuration Deep Dive",
-    subtitle: "Customizable Templates for Different Use Cases",
-    content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">Template Library</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Pre-built Templates</h4>
-              <div className="space-y-3">
-                <div className="p-4 border rounded-lg">
-                  <h5 className="font-medium">📋 Intake Assessment</h5>
-                  <p className="text-sm text-muted-foreground">Patient onboarding workflow</p>
-                  <div className="mt-2 text-xs">
-                    <Badge variant="secondary">Pre-configured</Badge>
-                  </div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <h5 className="font-medium">🩺 Treatment Planning</h5>
-                  <p className="text-sm text-muted-foreground">Personalized care plan generation</p>
-                  <div className="mt-2 text-xs">
-                    <Badge variant="secondary">Customizable</Badge>
-                  </div>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <h5 className="font-medium">📊 Progress Monitoring</h5>
-                  <p className="text-sm text-muted-foreground">Outcome tracking and reporting</p>
-                  <div className="mt-2 text-xs">
-                    <Badge variant="secondary">Adaptive</Badge>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Configuration Options</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Custom fields and forms</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Workflow automation rules</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Integration endpoints</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Notification preferences</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                  <span>Security and compliance settings</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    ),
-    animation: 'zoom'
-  },
-  {
-    id: 13,
-    title: "Actions, Tasks & AI Autosuggest",
-    subtitle: "Intelligent Automation and Recommendations",
-    content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">AI-Powered Automation</h3>
-          <div className="grid grid-cols-3 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Actions</h4>
-              <div className="space-y-2">
-                <div className="p-3 bg-blue-50 rounded-lg">
-                  <div className="font-medium">🔄 Auto-routing</div>
-                  <div className="text-sm text-muted-foreground">Smart case assignment</div>
-                </div>
-                <div className="p-3 bg-green-50 rounded-lg">
-                  <div className="font-medium">📧 Notifications</div>
-                  <div className="text-sm text-muted-foreground">Contextual alerts</div>
-                </div>
-                <div className="p-3 bg-purple-50 rounded-lg">
-                  <div className="font-medium">📋 Form completion</div>
-                  <div className="text-sm text-muted-foreground">AI-assisted data entry</div>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Tasks</h4>
-              <div className="space-y-2">
-                <div className="p-3 bg-orange-50 rounded-lg">
-                  <div className="font-medium">⏰ Scheduling</div>
-                  <div className="text-sm text-muted-foreground">Appointment optimization</div>
-                </div>
-                <div className="p-3 bg-red-50 rounded-lg">
-                  <div className="font-medium">📊 Reporting</div>
-                  <div className="text-sm text-muted-foreground">Automated insights</div>
-                </div>
-                <div className="p-3 bg-yellow-50 rounded-lg">
-                  <div className="font-medium">🔍 Follow-ups</div>
-                  <div className="text-sm text-muted-foreground">Proactive outreach</div>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">AI Autosuggest</h4>
-              <div className="space-y-2">
-                <div className="p-3 bg-cyan-50 rounded-lg">
-                  <div className="font-medium">💡 Treatment plans</div>
-                  <div className="text-sm text-muted-foreground">Evidence-based recommendations</div>
-                </div>
-                <div className="p-3 bg-pink-50 rounded-lg">
-                  <div className="font-medium">🎯 Interventions</div>
-                  <div className="text-sm text-muted-foreground">Personalized strategies</div>
-                </div>
-                <div className="p-3 bg-indigo-50 rounded-lg">
-                  <div className="font-medium">📈 Outcomes</div>
-                  <div className="text-sm text-muted-foreground">Predictive analytics</div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    ),
-    animation: 'fade'
-  },
-  {
-    id: 14,
-    title: "Template Configuration & Channel Deployment",
-    subtitle: "Multi-Platform Template Management",
-    content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">Deployment Configuration</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Channel-Specific Adaptations</h4>
-              <div className="space-y-3">
-                <div className="p-4 border rounded-lg">
-                  <h5 className="font-medium flex items-center gap-2">
-                    <span className="text-xl">🌐</span>
-                    Web Platform
-                  </h5>
-                  <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                    <li>• Rich interactive forms</li>
-                    <li>• Advanced data visualization</li>
-                    <li>• Multi-tab workflows</li>
-                  </ul>
-                </div>
-                <div className="p-4 border rounded-lg">
-                  <h5 className="font-medium flex items-center gap-2">
-                    <span className="text-xl">📱</span>
-                    Mobile App
-                  </h5>
-                  <ul className="text-sm text-muted-foreground mt-2 space-y-1">
-                    <li>• Touch-optimized interfaces</li>
-                    <li>• Offline capabilities</li>
-                    <li>• Push notification integration</li>
-                  </ul>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Template Synchronization</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Real-time sync across channels</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Version control and rollback</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>A/B testing capabilities</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Performance monitoring</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    ),
-    animation: 'slide'
-  },
-  {
-    id: 15,
     title: "Complete Implementation Results",
     subtitle: "Real-World Performance Metrics and Success Stories",
     content: (
@@ -1954,7 +1923,7 @@ const slides: Slide[] = [
     animation: 'zoom'
   },
   {
-    id: 16,
+    id: 12,
     title: "Advanced AI Models, Vision Systems & Studio Labeling",
     subtitle: "Cutting-Edge AI Capabilities",
     content: (
@@ -2020,7 +1989,7 @@ const slides: Slide[] = [
     animation: 'fade'
   },
   {
-    id: 17,
+    id: 13,
     title: "Real-Time Performance Analytics & Monitoring",
     subtitle: "Comprehensive System Monitoring and Insights",
     content: (
@@ -2088,7 +2057,7 @@ const slides: Slide[] = [
     animation: 'slide'
   },
   {
-    id: 18,
+    id: 14,
     title: "Scalability & Enterprise Integration",
     subtitle: "Enterprise-Grade Architecture and Scaling Solutions",
     content: (
