@@ -17,6 +17,7 @@ import {
   Brain,
   Bot,
   UserCheck,
+  Rocket,
 } from "lucide-react";
 
 export const navItems = [
@@ -39,6 +40,11 @@ export const navItems = [
     title: "Agents",
     url: "/agents",
     icon: Bot,
+  },
+  {
+    title: "Deployment",
+    url: "/deployment",
+    icon: Rocket,
   },
   {
     title: "Facilities",

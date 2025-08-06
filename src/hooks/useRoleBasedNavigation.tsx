@@ -39,6 +39,7 @@ export const useRoleBasedNavigation = () => {
       users: ['superAdmin'], // Remove onboardingTeam - admin only
       patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
       agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+      deployment: ['superAdmin'], // Deployment management for superAdmin only
       facilities: ['superAdmin'], // Remove onboardingTeam - admin only
       onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
       modules: ['superAdmin'], // Remove onboardingTeam - admin only
@@ -90,6 +91,7 @@ export const useRoleBasedNavigation = () => {
       users: ['superAdmin'], // Remove onboardingTeam - admin only
       patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
       agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+      deployment: ['superAdmin'], // Deployment management for superAdmin only
       facilities: ['superAdmin'], // Remove onboardingTeam - admin only
       onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
       modules: ['superAdmin'], // Remove onboardingTeam - admin only
@@ -135,6 +137,7 @@ export const useRoleBasedNavigation = () => {
           users: ['superAdmin'], // Remove onboardingTeam - admin only
           patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
           agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+          deployment: ['superAdmin'], // Deployment management for superAdmin only
           facilities: ['superAdmin'], // Remove onboardingTeam - admin only
           onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
           modules: ['superAdmin'], // Remove onboardingTeam - admin only
