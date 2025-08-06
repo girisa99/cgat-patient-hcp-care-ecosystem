@@ -101,7 +101,7 @@ const Agents = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Generate available tabs based on user roles
+  // Generate available tabs based on user roles - show all tabs for onboarding team
   const availableTabs = [
     { id: 'ecosystem', label: 'Agentic Ecosystem', component: 'AgenticEcosystem' },
     { id: 'deployment', label: 'Deployment Management', component: 'DeploymentManagementInterface' },
@@ -109,7 +109,7 @@ const Agents = () => {
     { id: 'live-transfer', label: 'Live Agent Transfer', component: 'LiveAgentTransfer' },
     { id: 'assignment-matrix', label: 'Channel Assignment', component: 'AgentChannelAssignmentMatrix' },
     { id: 'api', label: 'Agentic API Ecosystem', component: 'AgenticAPIEcosystem' },
-    ...(isOnboardingTeam ? [{ id: 'onboarding', label: 'Onboarding Agents', component: 'OnboardingAgentsView' }] : []),
+    ...(isOnboardingTeam ? [{ id: 'onboarding', label: 'Treatment Centers', component: 'OnboardingAgentsView' }] : []),
     ...(isSuperAdmin ? [{ id: 'settings', label: 'Agent Settings', component: 'AgentSettingsView' }] : []),
   ];
 
@@ -150,7 +150,7 @@ const Agents = () => {
 
           {/* Dynamic Tabs based on role */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6">
+            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8">
               {availableTabs.map((tab) => (
                 <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
                   {tab.id === 'ecosystem' && <Bot className="h-4 w-4" />}
