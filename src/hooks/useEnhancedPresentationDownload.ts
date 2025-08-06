@@ -18,7 +18,29 @@ export const useEnhancedPresentationDownload = () => {
   const { toast } = useToast();
 
   const getSlideContentAsHTML = (slide: Slide, index: number): string => {
-    // Generate rich HTML content based on slide title and index
+    // First try to extract from the actual rendered slide content
+    const slideElement = document.querySelector(`[data-slide-id="${index}"]`);
+    if (slideElement) {
+      const contentElement = slideElement.querySelector('[data-slide-content]');
+      if (contentElement) {
+        // Clone the element to avoid modifying the original
+        const clonedElement = contentElement.cloneNode(true) as HTMLElement;
+        
+        // Remove any interactive elements and clean up for static export
+        clonedElement.querySelectorAll('button, [data-ignore-export]').forEach(el => el.remove());
+        
+        // Ensure animations are disabled for static export
+        clonedElement.querySelectorAll('*').forEach(el => {
+          const element = el as HTMLElement;
+          element.style.animation = 'none';
+          element.style.transition = 'none';
+        });
+        
+        return clonedElement.innerHTML;
+      }
+    }
+    
+    // Fallback to pre-defined content for specific slides
     switch (index) {
       case 0: // Agentic AI & Automation Platform
         return `
@@ -204,7 +226,7 @@ export const useEnhancedPresentationDownload = () => {
   const getEnhancedCSS = (): string => {
     return `
       <style>
-        /* Global Styles */
+        /* Global Styles & Tailwind Class Mappings */
         * { box-sizing: border-box; }
         body { 
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
@@ -214,6 +236,63 @@ export const useEnhancedPresentationDownload = () => {
           margin: 0;
           padding: 0;
         }
+
+        /* Tailwind Grid Classes */
+        .grid { display: grid; }
+        .grid-cols-1 { grid-template-columns: repeat(1, minmax(0, 1fr)); }
+        .grid-cols-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        .grid-cols-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+        .grid-cols-4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        
+        /* Tailwind Gap Classes */
+        .gap-3 { gap: 0.75rem; }
+        .gap-4 { gap: 1rem; }
+        .gap-6 { gap: 1.5rem; }
+        .gap-8 { gap: 2rem; }
+        
+        /* Tailwind Spacing Classes */
+        .space-y-3 > * + * { margin-top: 0.75rem; }
+        .space-y-4 > * + * { margin-top: 1rem; }
+        .space-y-6 > * + * { margin-top: 1.5rem; }
+        .space-y-8 > * + * { margin-top: 2rem; }
+        
+        .p-3 { padding: 0.75rem; }
+        .p-4 { padding: 1rem; }
+        .p-6 { padding: 1.5rem; }
+        .mb-2 { margin-bottom: 0.5rem; }
+        .mb-4 { margin-bottom: 1rem; }
+        .mb-6 { margin-bottom: 1.5rem; }
+        
+        /* Tailwind Color Classes */
+        .bg-accent\/20 { background-color: rgba(240, 240, 240, 0.2); }
+        .bg-primary\/10 { background-color: rgba(99, 102, 241, 0.1); }
+        .text-primary { color: #6366f1; }
+        .text-muted-foreground { color: #64748b; }
+        
+        /* Tailwind Typography */
+        .text-sm { font-size: 0.875rem; line-height: 1.25rem; }
+        .text-xs { font-size: 0.75rem; line-height: 1rem; }
+        .text-xl { font-size: 1.25rem; line-height: 1.75rem; }
+        .text-2xl { font-size: 1.5rem; line-height: 2rem; }
+        .text-3xl { font-size: 1.875rem; line-height: 2.25rem; }
+        .font-semibold { font-weight: 600; }
+        .font-bold { font-weight: 700; }
+        .text-center { text-align: center; }
+        
+        /* Tailwind Flex */
+        .flex { display: flex; }
+        .flex-col { flex-direction: column; }
+        .items-center { align-items: center; }
+        .justify-center { justify-content: center; }
+        
+        /* Tailwind Border Radius */
+        .rounded-lg { border-radius: 0.5rem; }
+        .rounded-full { border-radius: 9999px; }
+        
+        /* Prevent overlapping content */
+        .overflow-y-auto { overflow-y: auto; max-height: 70vh; }
+        .h-full { height: 100%; }
+        .w-full { width: 100%; }
 
         /* Print Styles */
         @media print {

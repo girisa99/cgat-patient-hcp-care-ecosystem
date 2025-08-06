@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation, Database, Cloud, MessageSquare, Globe, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { usePresentationExporter } from '@/hooks/usePresentationExporter';
+import { useEnhancedPresentationDownload } from '@/hooks/useEnhancedPresentationDownload';
 import './PresentationStyles.css';
 
 interface Slide {
@@ -2370,7 +2370,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { exportHTML, exportPDF, exportPPT } = usePresentationExporter();
+  const { downloadEnhancedHTML, downloadEnhancedPDF } = useEnhancedPresentationDownload();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -2407,13 +2407,14 @@ export const AgenticAIPresentation: React.FC = () => {
     try {
       switch (format) {
         case 'html':
-          await exportHTML(slides, goToSlide);
+          downloadEnhancedHTML(slides);
           break;
         case 'pdf':
-          await exportPDF(slides, goToSlide);
+          downloadEnhancedPDF(slides);
           break;
         case 'ppt':
-          await exportPPT(slides, goToSlide);
+          // For PowerPoint, use HTML format as it can be imported
+          downloadEnhancedHTML(slides);
           break;
       }
     } catch (error) {
