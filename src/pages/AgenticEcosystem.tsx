@@ -9,6 +9,7 @@ import { toast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { DraftCleanupDialog } from '@/components/agents/DraftCleanupDialog';
 
 interface Agent {
   id: string;
@@ -190,7 +191,11 @@ const AgenticEcosystem = () => {
   };
 
   return (
-    <div className="space-y-6">
+    <>
+      {/* Draft Cleanup Dialog */}
+      <DraftCleanupDialog />
+      
+      <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold text-foreground">Agentic Ecosystem</h2>
@@ -372,7 +377,8 @@ const AgenticEcosystem = () => {
 
 
       </Tabs>
-    </div>
+      </div>
+    </>
   );
 };
 

@@ -51,7 +51,25 @@ export const useAgentSession = (sessionId?: string) => {
     },
   });
 
-  // Create new session
+  // Check for duplicate agent name
+  const checkDuplicateName = async (name: string, excludeId?: string) => {
+    if (!user?.id) return false;
+    
+    const { data, error } = await supabase.rpc('check_duplicate_agent_name', {
+      p_name: name,
+      p_user_id: user.id,
+      p_exclude_id: excludeId || null
+    });
+    
+    if (error) {
+      console.error('Error checking duplicate name:', error);
+      return false;
+    }
+    
+    return data as boolean;
+  };
+
+  // Create new session with duplicate check
   const createSession = useMutation({
     mutationFn: async (sessionData: Partial<AgentSession>) => {
       console.log('🚀 createSession mutationFn called with:', sessionData);
@@ -62,15 +80,23 @@ export const useAgentSession = (sessionId?: string) => {
         throw new Error('User not authenticated');
       }
 
+      const agentName = sessionData.name || 'Untitled Agent';
+
+      // Check for duplicate name
+      const isDuplicate = await checkDuplicateName(agentName);
+      if (isDuplicate) {
+        throw new Error(`An agent named "${agentName}" already exists. Please choose a different name.`);
+      }
+
       const newSessionData = {
-        name: sessionData.name || 'Untitled Agent',
+        name: agentName,
         description: sessionData.description || null,
         template_id: sessionData.template_id || null, // Convert empty string to null for UUID
         template_type: sessionData.template_type || 'custom',
         current_step: 'basic_info',
         status: 'draft',
         basic_info: sessionData.basic_info || { 
-          name: sessionData.name || 'Untitled Agent', 
+          name: agentName, 
           description: sessionData.description || '' 
         },
         user_id: user.id,
@@ -88,6 +114,9 @@ export const useAgentSession = (sessionId?: string) => {
 
       if (error) {
         console.log('❌ Supabase insert error:', error);
+        if (error.code === '23505') {
+          throw new Error(`An agent named "${agentName}" already exists. Please choose a different name.`);
+        }
         throw new Error(`Failed to create session: ${error.message}`);
       }
 
@@ -111,9 +140,20 @@ export const useAgentSession = (sessionId?: string) => {
     },
   });
 
-  // Update session
+  // Update session with duplicate name check
   const updateSession = useMutation({
     mutationFn: async ({ sessionId, updates }: { sessionId: string; updates: AgentSessionUpdate }) => {
+      // Check for duplicate name if name is being updated
+      if (updates.name || (updates.basic_info as any)?.name) {
+        const newName = updates.name || (updates.basic_info as any)?.name;
+        if (newName && user?.id) {
+          const isDuplicate = await checkDuplicateName(newName, sessionId);
+          if (isDuplicate) {
+            throw new Error(`An agent named "${newName}" already exists. Please choose a different name.`);
+          }
+        }
+      }
+
       const { data, error } = await supabase
         .from('agent_sessions')
         .update(updates)
@@ -122,6 +162,10 @@ export const useAgentSession = (sessionId?: string) => {
         .single();
 
       if (error) {
+        if (error.code === '23505') {
+          const name = updates.name || (updates.basic_info as any)?.name || 'this agent';
+          throw new Error(`An agent named "${name}" already exists. Please choose a different name.`);
+        }
         throw new Error(`Failed to update session: ${error.message}`);
       }
 
@@ -274,5 +318,6 @@ export const useAgentSession = (sessionId?: string) => {
     autoSave,
     deleteSession,
     deployAgent,
+    checkDuplicateName,
   };
 };

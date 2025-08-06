@@ -32,6 +32,22 @@ export const useAgents = () => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
 
+  // Check for duplicate agent name
+  const checkDuplicateName = async (name: string, userId: string, excludeId?: string) => {
+    const { data, error } = await supabase.rpc('check_duplicate_agent_name', {
+      p_name: name,
+      p_user_id: userId,
+      p_exclude_id: excludeId || null
+    });
+    
+    if (error) {
+      console.error('Error checking duplicate name:', error);
+      return false;
+    }
+    
+    return data as boolean;
+  };
+
   // Fetch agents from database
   const { data: agents = [], isLoading, error } = useQuery({
     queryKey: ['agents'],
@@ -70,7 +86,14 @@ export const useAgents = () => {
       topics?: string[];
       organization_id?: string;
       facility_id?: string;
+      created_by: string;
     }) => {
+      // Check for duplicate name
+      const isDuplicate = await checkDuplicateName(agentData.name, agentData.created_by);
+      if (isDuplicate) {
+        throw new Error(`An agent named "${agentData.name}" already exists. Please choose a different name.`);
+      }
+
       const { data, error } = await supabase
         .from('agents')
         .insert({
@@ -82,7 +105,12 @@ export const useAgents = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error(`An agent named "${agentData.name}" already exists. Please choose a different name.`);
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -94,9 +122,17 @@ export const useAgents = () => {
     }
   });
 
-  // Update agent mutation
+  // Update agent mutation with duplicate check
   const updateAgentMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
+      // Check for duplicate name if name is being updated
+      if (updates.name && updates.created_by) {
+        const isDuplicate = await checkDuplicateName(updates.name, updates.created_by, id);
+        if (isDuplicate) {
+          throw new Error(`An agent named "${updates.name}" already exists. Please choose a different name.`);
+        }
+      }
+
       const { data, error } = await supabase
         .from('agents')
         .update({
@@ -107,7 +143,12 @@ export const useAgents = () => {
         .select()
         .single();
       
-      if (error) throw error;
+      if (error) {
+        if (error.code === '23505') {
+          throw new Error(`An agent named "${updates.name}" already exists. Please choose a different name.`);
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {
@@ -191,6 +232,7 @@ export const useAgents = () => {
     deleteAgent: (id: string) => deleteAgentMutation.mutate(id),
     
     // Utilities
+    checkDuplicateName,
     getAgentStats,
     getAgentsByStatus: (status: string) => (agents || []).filter(a => a.status === status),
     getAgentsByType: (type: string) => (agents || []).filter(a => a.agent_type === type),

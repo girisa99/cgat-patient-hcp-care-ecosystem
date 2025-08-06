@@ -6932,12 +6932,20 @@ export type Database = {
         }
         Returns: number
       }
+      check_duplicate_agent_name: {
+        Args: { p_name: string; p_user_id: string; p_exclude_id?: string }
+        Returns: boolean
+      }
       check_user_has_role: {
         Args: {
           check_user_id: string
           role_name: Database["public"]["Enums"]["user_role"]
         }
         Returns: boolean
+      }
+      cleanup_old_draft_agents: {
+        Args: { p_user_id?: string; p_confirm?: boolean }
+        Returns: Json
       }
       continuous_test_generation: {
         Args: Record<PropertyKey, never>
@@ -7012,6 +7020,17 @@ export type Database = {
       get_import_statistics: {
         Args: { p_user_id?: string }
         Returns: Json
+      }
+      get_old_draft_agents: {
+        Args: { p_user_id?: string }
+        Returns: {
+          id: string
+          name: string
+          created_at: string
+          updated_at: string
+          days_old: number
+          table_source: string
+        }[]
       }
       get_user_accessible_facilities: {
         Args: { user_id: string }
