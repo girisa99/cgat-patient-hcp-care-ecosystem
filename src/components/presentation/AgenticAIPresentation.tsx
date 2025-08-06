@@ -443,49 +443,137 @@ const slides: Slide[] = [
   {
     id: 4,
     title: "Step 1: Wizard Setup & Initial Configuration",
-    subtitle: "Getting Started with Agent Creation",
+    subtitle: "Session Management, User Authentication & Multi-Step Setup Process",
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">Initial Configuration Wizard</h3>
-          <div className="grid grid-cols-2 gap-6">
+        {/* Wizard Process Flow */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 bg-primary/10 px-4 py-2 rounded-full">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium">5-Step Wizard Configuration Process</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-5 gap-3 mb-6">
+          {[
+            { step: 1, title: "Session Init", icon: "🔐", desc: "User auth & session creation" },
+            { step: 2, title: "Role Setup", icon: "👤", desc: "User role assignment & permissions" },
+            { step: 3, title: "Agent Config", icon: "🤖", desc: "Basic agent parameters" },
+            { step: 4, title: "Environment", icon: "⚙️", desc: "System environment setup" },
+            { step: 5, title: "Validation", icon: "✅", desc: "Configuration testing" }
+          ].map((item) => (
+            <Card key={item.step} className="p-3 text-center hover:scale-105 transition-all duration-300">
+              <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/80 rounded-full flex items-center justify-center mx-auto mb-2">
+                <span className="text-sm">{item.icon}</span>
+              </div>
+              <div className="text-xs font-bold text-primary mb-1">{item.title}</div>
+              <div className="text-xs text-muted-foreground">{item.desc}</div>
+            </Card>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+              <span>🧙‍♂️</span> Wizard Setup Implementation
+            </h3>
             <div className="space-y-4">
-              <h4 className="font-semibold">Setup Process</h4>
-              <div className="space-y-3">
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Agent name and description setup</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Template selection and customization</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Initial configuration parameters</span>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-3 h-3 bg-green-500 rounded-full"></div>
-                  <span>Environment setup and testing</span>
-                </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Session Management</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• AgentBuilderProvider context for state management</li>
+                  <li>• localStorage persistence for session data</li>
+                  <li>• useAgentSession hook for operations</li>
+                  <li>• Real-time session synchronization</li>
+                </ul>
+              </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Authentication Flow</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• useMasterAuth integration</li>
+                  <li>• Role-based access control (RBAC)</li>
+                  <li>• Multi-tenant user verification</li>
+                  <li>• Security policy enforcement</li>
+                </ul>
+              </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Step Navigation</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• currentStep state management</li>
+                  <li>• Validation at each step</li>
+                  <li>• Back/forward navigation controls</li>
+                  <li>• Progress indicator updates</li>
+                </ul>
               </div>
             </div>
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+              <span>⚙️</span> Configuration Details
+            </h3>
             <div className="space-y-4">
-              <h4 className="font-semibold">Configuration Options</h4>
-              <div className="space-y-3">
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">Security Settings</div>
-                  <div className="text-sm text-muted-foreground">HIPAA compliance configuration</div>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">Integration Points</div>
-                  <div className="text-sm text-muted-foreground">EHR and system connections</div>
-                </div>
-                <div className="p-3 bg-muted rounded-lg">
-                  <div className="font-medium">User Permissions</div>
-                  <div className="text-sm text-muted-foreground">Role-based access control</div>
-                </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Security Settings</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• HIPAA compliance configuration</li>
+                  <li>• Data encryption parameters</li>
+                  <li>• Access control policies</li>
+                  <li>• Audit logging setup</li>
+                </ul>
               </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">System Integration</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• EHR system connections</li>
+                  <li>• Database schema validation</li>
+                  <li>• API endpoint configuration</li>
+                  <li>• Third-party service setup</li>
+                </ul>
+              </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Environment Setup</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• Development/production modes</li>
+                  <li>• Resource allocation settings</li>
+                  <li>• Performance optimization</li>
+                  <li>• Monitoring configuration</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Implementation Components */}
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-primary mb-4">Technical Implementation Components</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg border">
+              <h4 className="font-semibold text-blue-700 mb-2">🔧 Core Hooks</h4>
+              <ul className="text-xs space-y-1">
+                <li>• <code>useAgentBuilder()</code> - Main context hook</li>
+                <li>• <code>useMasterAuth()</code> - Authentication</li>
+                <li>• <code>useAgentSession()</code> - Session operations</li>
+                <li>• <code>useMasterFormStateManager()</code> - Form state</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg border">
+              <h4 className="font-semibold text-green-700 mb-2">🏗️ Provider Components</h4>
+              <ul className="text-xs space-y-1">
+                <li>• <code>AgentBuilderProvider</code> - Context wrapper</li>
+                <li>• State management with <code>useState</code></li>
+                <li>• Effect hooks for persistence</li>
+                <li>• Error boundary integration</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg border">
+              <h4 className="font-semibold text-purple-700 mb-2">💾 State Management</h4>
+              <ul className="text-xs space-y-1">
+                <li>• <code>currentSessionId</code> tracking</li>
+                <li>• <code>currentStep</code> navigation</li>
+                <li>• UI state management</li>
+                <li>• Form validation states</li>
+              </ul>
             </div>
           </div>
         </Card>
@@ -496,52 +584,240 @@ const slides: Slide[] = [
   {
     id: 5,
     title: "Step 2: Canvas Design & Visual Branding",
-    subtitle: "Creating the Visual Interface",
+    subtitle: "Agent Creation, Template System, Use Cases & Complete Branding Implementation",
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
+        {/* Agent Creation Process */}
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 bg-gradient-to-r from-primary/20 to-secondary/20 px-4 py-2 rounded-full">
+            <div className="w-2 h-2 bg-primary rounded-full animate-pulse"></div>
+            <span className="text-sm font-medium">Complete Agent Creation & Branding System</span>
+          </div>
+        </div>
+
+        {/* Agent Creation Methods */}
         <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">Visual Design System</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div>
-              <h4 className="font-semibold mb-3">Canvas Features</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  Drag-and-drop interface
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  Component library
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  Real-time preview
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-                  Responsive design tools
-                </li>
+          <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+            <span>🤖</span> Agent Creation Pathways
+          </h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-gradient-to-br from-blue-500/10 to-blue-500/5 rounded-lg border border-blue-200">
+              <div className="text-center mb-3">
+                <div className="w-12 h-12 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-lg">📋</span>
+                </div>
+                <h4 className="font-bold text-blue-700">Template-Based</h4>
+              </div>
+              <ul className="text-xs space-y-1">
+                <li>• Pre-built healthcare templates</li>
+                <li>• Industry-specific configurations</li>
+                <li>• One-click deployment</li>
+                <li>• Customizable parameters</li>
               </ul>
             </div>
-            <div>
-              <h4 className="font-semibold mb-3">Branding Options</h4>
-              <ul className="space-y-2 text-sm">
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  Custom colors and themes
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  Logo integration
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  Typography selection
-                </li>
-                <li className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-purple-500 rounded-full"></div>
-                  Brand guidelines enforcement
-                </li>
+            <div className="p-4 bg-gradient-to-br from-green-500/10 to-green-500/5 rounded-lg border border-green-200">
+              <div className="text-center mb-3">
+                <div className="w-12 h-12 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-lg">🎨</span>
+                </div>
+                <h4 className="font-bold text-green-700">Custom Creation</h4>
+              </div>
+              <ul className="text-xs space-y-1">
+                <li>• Drag-and-drop canvas interface</li>
+                <li>• Component library access</li>
+                <li>• Real-time visual editing</li>
+                <li>• Advanced customization</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-purple-500/10 to-purple-500/5 rounded-lg border border-purple-200">
+              <div className="text-center mb-3">
+                <div className="w-12 h-12 bg-purple-500 rounded-full flex items-center justify-center mx-auto mb-2">
+                  <span className="text-white text-lg">🚀</span>
+                </div>
+                <h4 className="font-bold text-purple-700">From Scratch</h4>
+              </div>
+              <ul className="text-xs space-y-1">
+                <li>• Blank canvas starting point</li>
+                <li>• Complete creative freedom</li>
+                <li>• Step-by-step guidance</li>
+                <li>• Custom workflow design</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+
+        {/* Template System Implementation */}
+        <div className="grid grid-cols-2 gap-6">
+          <Card className="p-6">
+            <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+              <span>📚</span> Template System Details
+            </h3>
+            <div className="space-y-4">
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Default Templates</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• Patient Intake Assistant</li>
+                  <li>• Treatment Plan Coordinator</li>
+                  <li>• Insurance Verification Agent</li>
+                  <li>• Appointment Scheduler</li>
+                  <li>• Care Manager Assistant</li>
+                </ul>
+              </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Custom Templates</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• Save custom configurations</li>
+                  <li>• Share across team members</li>
+                  <li>• Version control system</li>
+                  <li>• Template marketplace</li>
+                </ul>
+              </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Template Features</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• Pre-configured AI models</li>
+                  <li>• Built-in integrations</li>
+                  <li>• Workflow automation</li>
+                  <li>• Compliance settings</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-6">
+            <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+              <span>🎯</span> Use Cases & Business Units
+            </h3>
+            <div className="space-y-4">
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Healthcare Categories</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• Addiction Treatment Centers</li>
+                  <li>• Mental Health Facilities</li>
+                  <li>• Rehabilitation Centers</li>
+                  <li>• Outpatient Clinics</li>
+                  <li>• Hospital Systems</li>
+                </ul>
+              </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Use Case Implementation</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• <code>UseCaseSelector</code> component</li>
+                  <li>• Dynamic generation based on categories</li>
+                  <li>• Custom use case creation</li>
+                  <li>• Topic-based filtering</li>
+                </ul>
+              </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Business Unit Integration</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• Department-specific agents</li>
+                  <li>• Cross-functional workflows</li>
+                  <li>• Role-based configurations</li>
+                  <li>• Multi-tenant support</li>
+                </ul>
+              </div>
+            </div>
+          </Card>
+        </div>
+
+        {/* Visual Branding System */}
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+            <span>🎨</span> Complete Branding & Design System
+          </h3>
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-4 bg-gradient-to-br from-orange-500/10 to-orange-500/5 rounded-lg border">
+              <h4 className="font-semibold text-orange-700 mb-3">🖼️ Logo Integration</h4>
+              <ul className="text-xs space-y-1">
+                <li>• Upload custom logos (SVG, PNG)</li>
+                <li>• Automatic sizing & positioning</li>
+                <li>• Responsive logo scaling</li>
+                <li>• Brand consistency validation</li>
+                <li>• Logo variation management</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-pink-500/10 to-pink-500/5 rounded-lg border">
+              <h4 className="font-semibold text-pink-700 mb-3">🎨 Color Palette System</h4>
+              <ul className="text-xs space-y-1">
+                <li>• HSL color system implementation</li>
+                <li>• Semantic token architecture</li>
+                <li>• Dark/light mode support</li>
+                <li>• Accessibility compliance (WCAG)</li>
+                <li>• Brand color extraction from logo</li>
+              </ul>
+            </div>
+            <div className="p-4 bg-gradient-to-br from-indigo-500/10 to-indigo-500/5 rounded-lg border">
+              <h4 className="font-semibold text-indigo-700 mb-3">✨ Design System Features</h4>
+              <ul className="text-xs space-y-1">
+                <li>• Tailwind CSS + shadcn/ui</li>
+                <li>• Component variant system</li>
+                <li>• Animation & transition effects</li>
+                <li>• Typography scale & hierarchy</li>
+                <li>• Consistent spacing system</li>
+              </ul>
+            </div>
+          </div>
+        </Card>
+
+        {/* Canvas Implementation Details */}
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-primary mb-4">Canvas Implementation Architecture</h3>
+          <div className="grid grid-cols-4 gap-4">
+            <div className="p-3 bg-card rounded-lg border">
+              <div className="text-center mb-2">
+                <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center mx-auto">
+                  <span className="text-white text-xs">🎨</span>
+                </div>
+              </div>
+              <h5 className="font-semibold text-xs mb-2">Visual Editor</h5>
+              <ul className="text-xs space-y-1 text-muted-foreground">
+                <li>• Drag-and-drop interface</li>
+                <li>• Real-time preview</li>
+                <li>• Component snapping</li>
+                <li>• Undo/redo system</li>
+              </ul>
+            </div>
+            <div className="p-3 bg-card rounded-lg border">
+              <div className="text-center mb-2">
+                <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center mx-auto">
+                  <span className="text-white text-xs">🔧</span>
+                </div>
+              </div>
+              <h5 className="font-semibold text-xs mb-2">Component Library</h5>
+              <ul className="text-xs space-y-1 text-muted-foreground">
+                <li>• Pre-built UI components</li>
+                <li>• Healthcare-specific widgets</li>
+                <li>• Form input collections</li>
+                <li>• Data visualization</li>
+              </ul>
+            </div>
+            <div className="p-3 bg-card rounded-lg border">
+              <div className="text-center mb-2">
+                <div className="w-8 h-8 bg-purple-500 rounded-full flex items-center justify-center mx-auto">
+                  <span className="text-white text-xs">📱</span>
+                </div>
+              </div>
+              <h5 className="font-semibold text-xs mb-2">Responsive Design</h5>
+              <ul className="text-xs space-y-1 text-muted-foreground">
+                <li>• Mobile-first approach</li>
+                <li>• Breakpoint management</li>
+                <li>• Flexible grid system</li>
+                <li>• Touch-friendly interfaces</li>
+              </ul>
+            </div>
+            <div className="p-3 bg-card rounded-lg border">
+              <div className="text-center mb-2">
+                <div className="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center mx-auto">
+                  <span className="text-white text-xs">⚡</span>
+                </div>
+              </div>
+              <h5 className="font-semibold text-xs mb-2">Performance</h5>
+              <ul className="text-xs space-y-1 text-muted-foreground">
+                <li>• Lazy loading components</li>
+                <li>• Optimized rendering</li>
+                <li>• Minimal bundle size</li>
+                <li>• Fast hot reloading</li>
               </ul>
             </div>
           </div>
