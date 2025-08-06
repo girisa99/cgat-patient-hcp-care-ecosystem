@@ -52,7 +52,7 @@ interface DeploymentAssignment {
 
 export const DeploymentManagementInterface: React.FC = () => {
   console.log('🎯 DeploymentManagementInterface rendering...');
-  const { userSessions, isLoading } = useAgentSession();
+  const { userSessions, isLoading, deployAgent } = useAgentSession();
   const { agents } = useAgents();
 
   const refetchAgents = () => {
@@ -83,10 +83,15 @@ export const DeploymentManagementInterface: React.FC = () => {
     })
   );
 
-  // Filter agents for deployment - only show agents ready for deployment
-  const deploymentReadyAgents = (userSessions || []).filter((agent: AgentSession) => {
-    // Only show agents that are ready for deployment and have basic configuration
-    return agent.status === 'ready_to_deploy' || agent.status === 'deployed' && agent.name && agent.description;
+  // Filter agents for deployment - include configured sessions ready for deployment
+  const deploymentReadyAgents = (userSessions || []).filter((session: AgentSession) => {
+    // Show sessions that have completed actions & configuration and are ready for deployment
+    const hasBasicInfo = session.basic_info?.name && session.basic_info?.purpose;
+    const hasActions = session.actions && Object.keys(session.actions).length > 0;
+    const hasConfiguration = session.connectors || session.knowledge || session.rag;
+    
+    return (session.status === 'ready_to_deploy' || session.status === 'deployed') && 
+           hasBasicInfo && (hasActions || hasConfiguration);
   });
 
   // Filter agents based on search and status for deployment view
@@ -416,11 +421,29 @@ export const deployAgents = async () => {
                           description: `Opening configuration for ${agent.name}...`
                         });
                       }}
-                      onToggleStatus={() => {
-                        toast({
-                          title: deployment ? "Pause Agent" : "Deploy Agent",
-                          description: `${deployment ? 'Pausing' : 'Deploying'} ${agent.name} to ${selectedEnvironment.toUpperCase()}...`
-                        });
+                      onToggleStatus={async () => {
+                        if (deployment) {
+                          // Pause deployed agent
+                          toast({
+                            title: "Pause Agent",
+                            description: `Pausing ${agent.name} on ${selectedEnvironment.toUpperCase()}...`
+                          });
+                        } else {
+                          // Deploy agent - convert session to deployed agent
+                          try {
+                            await deployAgent.mutateAsync(agent.id);
+                            toast({
+                              title: "Agent Deployed",
+                              description: `${agent.name} successfully deployed to ${selectedEnvironment.toUpperCase()}!`
+                            });
+                          } catch (error) {
+                            toast({
+                              title: "Deployment Failed",
+                              description: "Failed to deploy agent. Please try again.",
+                              variant: "destructive"
+                            });
+                          }
+                        }
                       }}
                     />
                   );
@@ -453,7 +476,8 @@ export const deployAgents = async () => {
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">
                 <h4 className="font-medium mb-2">Deployment Instructions</h4>
                 <p className="text-sm text-muted-foreground">
-                  • Drag agents to channels in the "Channel Assignment" tab to deploy them<br/>
+                  • Agents shown here have completed Actions & Configuration steps<br/>
+                  • Click "Deploy" on any agent to convert it to a live agent and deploy to channels<br/>
                   • Configure voice settings in the "Voice Configuration" tab<br/>
                   • Monitor active deployments in the "Active Deployments" tab<br/>
                   • Current target environment: <strong>{selectedEnvironment.toUpperCase()}</strong>
