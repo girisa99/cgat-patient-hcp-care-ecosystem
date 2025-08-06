@@ -2,6 +2,8 @@ import React from 'react';
 import { DeploymentManagementInterface } from '@/components/deployment/DeploymentManagementInterface';
 
 const DeploymentManagement: React.FC = () => {
+  console.log('🚀 DeploymentManagement page rendering...');
+  
   return (
     <div className="container mx-auto p-6">
       <DeploymentManagementInterface />

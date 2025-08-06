@@ -51,6 +51,7 @@ interface DeploymentAssignment {
 }
 
 export const DeploymentManagementInterface: React.FC = () => {
+  console.log('🎯 DeploymentManagementInterface rendering...');
   const { userSessions, isLoading } = useAgentSession();
   const { agents } = useAgents();
 
