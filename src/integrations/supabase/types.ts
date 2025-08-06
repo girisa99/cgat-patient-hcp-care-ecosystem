@@ -823,6 +823,91 @@ export type Database = {
         }
         Relationships: []
       }
+      agent_test_runs: {
+        Row: {
+          agent_id: string
+          avg_accuracy: number | null
+          avg_response_time_ms: number | null
+          created_by: string | null
+          end_time: string | null
+          error_logs: Json | null
+          id: string
+          model_config_id: string
+          performance_metrics: Json | null
+          processed_samples: number | null
+          resource_usage: Json | null
+          results: Json | null
+          start_time: string | null
+          status: string | null
+          success_rate: number | null
+          test_dataset_id: string
+          test_name: string
+          total_samples: number | null
+        }
+        Insert: {
+          agent_id: string
+          avg_accuracy?: number | null
+          avg_response_time_ms?: number | null
+          created_by?: string | null
+          end_time?: string | null
+          error_logs?: Json | null
+          id?: string
+          model_config_id: string
+          performance_metrics?: Json | null
+          processed_samples?: number | null
+          resource_usage?: Json | null
+          results?: Json | null
+          start_time?: string | null
+          status?: string | null
+          success_rate?: number | null
+          test_dataset_id: string
+          test_name: string
+          total_samples?: number | null
+        }
+        Update: {
+          agent_id?: string
+          avg_accuracy?: number | null
+          avg_response_time_ms?: number | null
+          created_by?: string | null
+          end_time?: string | null
+          error_logs?: Json | null
+          id?: string
+          model_config_id?: string
+          performance_metrics?: Json | null
+          processed_samples?: number | null
+          resource_usage?: Json | null
+          results?: Json | null
+          start_time?: string | null
+          status?: string | null
+          success_rate?: number | null
+          test_dataset_id?: string
+          test_name?: string
+          total_samples?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_test_runs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_test_runs_model_config_id_fkey"
+            columns: ["model_config_id"]
+            isOneToOne: false
+            referencedRelation: "ai_model_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_test_runs_test_dataset_id_fkey"
+            columns: ["test_dataset_id"]
+            isOneToOne: false
+            referencedRelation: "test_datasets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_user_associations: {
         Row: {
           access_level: string | null
@@ -934,6 +1019,51 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      ai_model_configs: {
+        Row: {
+          configuration: Json | null
+          cost_per_request: number | null
+          created_at: string | null
+          id: string
+          is_active: boolean | null
+          max_concurrent_requests: number | null
+          model_id: string
+          model_type: string
+          name: string
+          performance_tier: string | null
+          provider: string
+          updated_at: string | null
+        }
+        Insert: {
+          configuration?: Json | null
+          cost_per_request?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_concurrent_requests?: number | null
+          model_id: string
+          model_type: string
+          name: string
+          performance_tier?: string | null
+          provider: string
+          updated_at?: string | null
+        }
+        Update: {
+          configuration?: Json | null
+          cost_per_request?: number | null
+          created_at?: string | null
+          id?: string
+          is_active?: boolean | null
+          max_concurrent_requests?: number | null
+          model_id?: string
+          model_type?: string
+          name?: string
+          performance_tier?: string | null
+          provider?: string
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       ai_model_integrations: {
         Row: {
@@ -5984,6 +6114,54 @@ export type Database = {
         }
         Relationships: []
       }
+      test_datasets: {
+        Row: {
+          created_at: string | null
+          created_by: string | null
+          data_format: string
+          dataset_type: string
+          description: string | null
+          id: string
+          is_active: boolean | null
+          labels: Json | null
+          metadata: Json | null
+          name: string
+          sample_count: number | null
+          storage_path: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          created_by?: string | null
+          data_format: string
+          dataset_type: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          labels?: Json | null
+          metadata?: Json | null
+          name: string
+          sample_count?: number | null
+          storage_path?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          created_by?: string | null
+          data_format?: string
+          dataset_type?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          labels?: Json | null
+          metadata?: Json | null
+          name?: string
+          sample_count?: number | null
+          storage_path?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       test_execution_history: {
         Row: {
           environment_info: Json | null
@@ -6033,6 +6211,56 @@ export type Database = {
             columns: ["test_case_id"]
             isOneToOne: false
             referencedRelation: "comprehensive_test_cases"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      test_samples: {
+        Row: {
+          accuracy_score: number | null
+          actual_output: Json | null
+          created_at: string | null
+          error_message: string | null
+          expected_output: Json | null
+          id: string
+          input_data: Json
+          processing_time_ms: number | null
+          sample_index: number
+          status: string | null
+          test_run_id: string
+        }
+        Insert: {
+          accuracy_score?: number | null
+          actual_output?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          expected_output?: Json | null
+          id?: string
+          input_data: Json
+          processing_time_ms?: number | null
+          sample_index: number
+          status?: string | null
+          test_run_id: string
+        }
+        Update: {
+          accuracy_score?: number | null
+          actual_output?: Json | null
+          created_at?: string | null
+          error_message?: string | null
+          expected_output?: Json | null
+          id?: string
+          input_data?: Json
+          processing_time_ms?: number | null
+          sample_index?: number
+          status?: string | null
+          test_run_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "test_samples_test_run_id_fkey"
+            columns: ["test_run_id"]
+            isOneToOne: false
+            referencedRelation: "agent_test_runs"
             referencedColumns: ["id"]
           },
         ]

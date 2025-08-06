@@ -14,6 +14,12 @@ site_url = "http://localhost:5173"
 additional_redirect_urls = ["https://ithspbabhmdntioslfqe.supabase.co"]
 jwt_expiry = 3600
 
+[functions.ai-model-processor]
+verify_jwt = false
+
+[functions.agent-test-runner]
+verify_jwt = true
+
 [functions.comprehensive-therapy-data-generator]
 verify_jwt = false
 
