@@ -686,36 +686,110 @@ const slides: Slide[] = [
 
           <Card className="p-6">
             <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
-              <span>🎯</span> Use Cases & Business Units
+              <span>🎯</span> Implemented Categories & Business Units
             </h3>
             <div className="space-y-4">
               <div className="p-3 bg-accent/20 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2">Healthcare Categories</h4>
+                <h4 className="font-semibold text-sm mb-2">Categories (from CategoryMapping component)</h4>
+                <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                  <div>• Onboarding and Credentaling</div>
+                  <div>• Market access</div>
+                  <div>• Distribution</div>
+                  <div>• Manufacturing</div>
+                  <div>• Claims Management</div>
+                  <div>• Clinical information</div>
+                  <div>• Product Information</div>
+                  <div>• Packaging</div>
+                  <div>• Scheduling</div>
+                  <div>• Buy & Build</div>
+                  <div>• Insurance</div>
+                  <div>• Prior Authorization</div>
+                  <div>• Compliance & Regulatory</div>
+                </div>
+              </div>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Business Units (Dropdown Selection)</h4>
+                <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                  <div>• Commercial</div>
+                  <div>• Research & Development</div>
+                  <div>• Supply Chain</div>
+                  <div>• IT</div>
+                  <div>• Manufacturing</div>
+                  <div>• Compliance</div>
+                  <div>• Finance</div>
+                  <div>• HR</div>
+                </div>
+        </div>
+
+        {/* Dynamic Use Case Generation */}
+        <Card className="p-6">
+          <h3 className="text-lg font-bold text-primary mb-4 flex items-center gap-2">
+            <span>⚡</span> Dynamic Use Case Generation & Dropdown Implementation
+          </h3>
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">UseCaseSelector Implementation</h4>
                 <ul className="text-xs space-y-1 text-muted-foreground">
-                  <li>• Addiction Treatment Centers</li>
-                  <li>• Mental Health Facilities</li>
-                  <li>• Rehabilitation Centers</li>
-                  <li>• Outpatient Clinics</li>
-                  <li>• Hospital Systems</li>
+                  <li>• Automatically generates use cases based on selected categories</li>
+                  <li>• Real-time dropdown with category-based filtering</li>
+                  <li>• Custom use case creation & management system</li>
+                  <li>• Topic-based use case suggestions</li>
+                  <li>• High z-index (z-[100]) dropdown implementation</li>
                 </ul>
               </div>
               <div className="p-3 bg-accent/20 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2">Use Case Implementation</h4>
+                <h4 className="font-semibold text-sm mb-2">Example Generated Use Cases</h4>
                 <ul className="text-xs space-y-1 text-muted-foreground">
-                  <li>• <code>UseCaseSelector</code> component</li>
-                  <li>• Dynamic generation based on categories</li>
-                  <li>• Custom use case creation</li>
-                  <li>• Topic-based filtering</li>
+                  <li>• Provider Onboarding Assistant (from categories)</li>
+                  <li>• Market Access Strategy Assistant (from selection)</li>
+                  <li>• Claims Processing Assistant (dynamic generation)</li>
+                  <li>• Insurance Verification Assistant (topic-based)</li>
+                  <li>• Manufacturing Compliance Agent (category-based)</li>
+                  <li>• + Custom user-defined use cases</li>
+                </ul>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Dropdown Technical Implementation</h4>
+                <ul className="text-xs space-y-1 text-muted-foreground">
+                  <li>• Solid background (bg-background) for proper visibility</li>
+                  <li>• Shadow-lg for depth and layering</li>
+                  <li>• Smooth animations and transitions</li>
+                  <li>• Keyboard navigation support</li>
+                  <li>• Overflow handling with scrollable content</li>
                 </ul>
               </div>
               <div className="p-3 bg-accent/20 rounded-lg">
-                <h4 className="font-semibold text-sm mb-2">Business Unit Integration</h4>
+                <h4 className="font-semibold text-sm mb-2">CategoryMapping Component Features</h4>
                 <ul className="text-xs space-y-1 text-muted-foreground">
-                  <li>• Department-specific agents</li>
-                  <li>• Cross-functional workflows</li>
-                  <li>• Role-based configurations</li>
-                  <li>• Multi-tenant support</li>
+                  <li>• Three-column layout (Categories, Business Units, Topics)</li>
+                  <li>• Real-time selection with visual feedback</li>
+                  <li>• Add/remove custom entries with validation</li>
+                  <li>• Toast notifications for user actions</li>
+                  <li>• Proper z-indexing and dropdown positioning</li>
                 </ul>
+              </div>
+            </div>
+          </div>
+        </Card>
+              <div className="p-3 bg-accent/20 rounded-lg">
+                <h4 className="font-semibold text-sm mb-2">Topics (Implementation)</h4>
+                <div className="grid grid-cols-2 gap-1 text-xs text-muted-foreground">
+                  <div>• Patient onboarding</div>
+                  <div>• Treatment center</div>
+                  <div>• Provider onboarding</div>
+                  <div>• Pharma/Biotech onboarding</div>
+                  <div>• Eligibility Investigation</div>
+                  <div>• Eligibility Verification</div>
+                  <div>• Delivery/Fulfillment</div>
+                  <div>• Label & Adverse Events</div>
+                  <div>• Product details</div>
+                  <div>• Billing & Coding</div>
+                  <div>• Appointments scheduling</div>
+                  <div>• 21 CFR Part 11</div>
+                </div>
               </div>
             </div>
           </Card>
