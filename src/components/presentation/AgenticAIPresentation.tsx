@@ -2480,7 +2480,7 @@ export const AgenticAIPresentation: React.FC = () => {
           
           {/* Slide Content */}
           <div className={cn(
-            "h-full",
+            "h-[420px] overflow-hidden", // Fixed height instead of h-full to prevent overflow
             currentSlideData.animation === 'fade' && "animate-fade-in",
             currentSlideData.animation === 'slide' && "animate-slide-in-right",
             currentSlideData.animation === 'zoom' && "animate-scale-in",
