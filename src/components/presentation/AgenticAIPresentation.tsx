@@ -1852,78 +1852,6 @@ const slides: Slide[] = [
   },
   {
     id: 11,
-    title: "Complete Implementation Results",
-    subtitle: "Real-World Performance Metrics and Success Stories",
-    content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <div className="grid grid-cols-3 gap-6">
-          <Card className="p-6 text-center">
-            <div className="text-4xl font-bold text-green-600 mb-2">95%</div>
-            <div className="text-sm text-muted-foreground">Implementation Success Rate</div>
-          </Card>
-          <Card className="p-6 text-center">
-            <div className="text-4xl font-bold text-blue-600 mb-2">15min</div>
-            <div className="text-sm text-muted-foreground">Average Setup Time</div>
-          </Card>
-          <Card className="p-6 text-center">
-            <div className="text-4xl font-bold text-purple-600 mb-2">400%</div>
-            <div className="text-sm text-muted-foreground">Average ROI</div>
-          </Card>
-        </div>
-        
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">Success Metrics</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Operational Improvements</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Patient wait times</span>
-                  <span className="text-green-600 font-semibold">-60%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Administrative tasks</span>
-                  <span className="text-green-600 font-semibold">-75%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Documentation accuracy</span>
-                  <span className="text-green-600 font-semibold">+85%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Staff satisfaction</span>
-                  <span className="text-green-600 font-semibold">+90%</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Patient Outcomes</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between">
-                  <span>Treatment adherence</span>
-                  <span className="text-blue-600 font-semibold">+70%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Patient satisfaction</span>
-                  <span className="text-blue-600 font-semibold">+80%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Recovery rates</span>
-                  <span className="text-blue-600 font-semibold">+45%</span>
-                </div>
-                <div className="flex justify-between">
-                  <span>Readmission rates</span>
-                  <span className="text-green-600 font-semibold">-55%</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    ),
-    animation: 'zoom'
-  },
-  {
-    id: 12,
     title: "Advanced AI Models, Vision Systems & Studio Labeling",
     subtitle: "Cutting-Edge AI Capabilities",
     content: (
@@ -1989,75 +1917,7 @@ const slides: Slide[] = [
     animation: 'fade'
   },
   {
-    id: 13,
-    title: "Real-Time Performance Analytics & Monitoring",
-    subtitle: "Comprehensive System Monitoring and Insights",
-    content: (
-      <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary">Performance Dashboard</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Real-Time Metrics</h4>
-              <div className="space-y-3">
-                <div className="flex justify-between items-center p-3 bg-green-50 rounded-lg">
-                  <span>System Uptime</span>
-                  <span className="text-green-600 font-bold">99.9%</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-blue-50 rounded-lg">
-                  <span>Response Time</span>
-                  <span className="text-blue-600 font-bold">1.2s</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-purple-50 rounded-lg">
-                  <span>Active Users</span>
-                  <span className="text-purple-600 font-bold">2,847</span>
-                </div>
-                <div className="flex justify-between items-center p-3 bg-orange-50 rounded-lg">
-                  <span>Tasks Processed</span>
-                  <span className="text-orange-600 font-bold">15,693</span>
-                </div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">AI Model Performance</h4>
-              <div className="space-y-3">
-                <div className="p-3 border rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Accuracy Rate</span>
-                    <span className="text-green-600">96.8%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{width: '96.8%'}}></div>
-                  </div>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Processing Speed</span>
-                    <span className="text-blue-600">94.2%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-blue-600 h-2 rounded-full" style={{width: '94.2%'}}></div>
-                  </div>
-                </div>
-                <div className="p-3 border rounded-lg">
-                  <div className="flex justify-between mb-1">
-                    <span className="font-medium">Error Rate</span>
-                    <span className="text-green-600">0.3%</span>
-                  </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
-                    <div className="bg-green-600 h-2 rounded-full" style={{width: '99.7%'}}></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    ),
-    animation: 'slide'
-  },
-  {
-    id: 14,
+    id: 12,
     title: "Scalability & Enterprise Integration",
     subtitle: "Enterprise-Grade Architecture and Scaling Solutions",
     content: (
@@ -2118,7 +1978,7 @@ const slides: Slide[] = [
     animation: 'zoom'
   },
   {
-    id: 19,
+    id: 13,
     title: "ROI & Business Impact Analysis",
     subtitle: "Quantified Business Value and Return on Investment",
     content: (
@@ -2194,7 +2054,7 @@ const slides: Slide[] = [
     animation: 'fade'
   },
   {
-    id: 20,
+    id: 14,
     title: "Implementation Roadmap & Next Steps",
     subtitle: "Strategic Planning for AI Implementation",
     content: (
@@ -2290,75 +2150,6 @@ const slides: Slide[] = [
       </div>
     ),
     animation: 'slide'
-  },
-  {
-    id: 21,
-    title: "Contact & Support Information",
-    subtitle: "Get Started with Your AI Implementation Today",
-    content: (
-      <div className="h-full overflow-y-auto space-y-8 animate-fade-in">
-        <div className="text-center space-y-6">
-          <div className="relative">
-            <div className="w-32 h-32 mx-auto bg-gradient-to-br from-primary via-blue-500 to-purple-600 rounded-full flex items-center justify-center shadow-2xl">
-              <div className="text-5xl">🚀</div>
-            </div>
-          </div>
-          <div className="space-y-4">
-            <h3 className="text-2xl font-bold text-primary">
-              Ready to Transform Your Treatment Center?
-            </h3>
-            <p className="text-lg text-muted-foreground max-w-3xl mx-auto leading-relaxed">
-              Join hundreds of treatment centers already leveraging AI to improve patient outcomes, 
-              reduce costs, and streamline operations.
-            </p>
-          </div>
-        </div>
-        
-        <div className="grid grid-cols-3 gap-6">
-          <Card className="p-6 text-center">
-            <div className="text-3xl mb-4">📞</div>
-            <h4 className="font-bold mb-2">Sales & Demo</h4>
-            <p className="text-sm text-muted-foreground mb-3">Schedule a personalized demo</p>
-            <Button className="w-full">Book Demo</Button>
-          </Card>
-          <Card className="p-6 text-center">
-            <div className="text-3xl mb-4">💬</div>
-            <h4 className="font-bold mb-2">Technical Support</h4>
-            <p className="text-sm text-muted-foreground mb-3">24/7 implementation assistance</p>
-            <Button variant="outline" className="w-full">Contact Support</Button>
-          </Card>
-          <Card className="p-6 text-center">
-            <div className="text-3xl mb-4">📚</div>
-            <h4 className="font-bold mb-2">Documentation</h4>
-            <p className="text-sm text-muted-foreground mb-3">Comprehensive guides and APIs</p>
-            <Button variant="outline" className="w-full">View Docs</Button>
-          </Card>
-        </div>
-        
-        <Card className="p-6">
-          <h3 className="text-xl font-bold mb-4 text-primary text-center">Contact Information</h3>
-          <div className="grid grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <h4 className="font-semibold">Business Development</h4>
-              <div className="space-y-2 text-sm">
-                <div>📧 sales@treatmentcenter-ai.com</div>
-                <div>📞 1-800-AI-TREATMENT</div>
-                <div>🌐 www.treatmentcenter-ai.com</div>
-              </div>
-            </div>
-            <div className="space-y-4">
-              <h4 className="font-semibold">Technical Support</h4>
-              <div className="space-y-2 text-sm">
-                <div>📧 support@treatmentcenter-ai.com</div>
-                <div>📞 1-800-AI-SUPPORT</div>
-                <div>💬 Live chat available 24/7</div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    ),
-    animation: 'zoom'
   }
 ];
 
