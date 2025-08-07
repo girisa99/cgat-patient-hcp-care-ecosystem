@@ -1,6 +1,7 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { CheckCircle, Bot, Workflow, BarChart3, Settings, Palette, Eye, Rocket, Monitor, Zap, Database, Shield, Link } from 'lucide-react';
 
 export interface Slide {
@@ -2038,6 +2039,216 @@ export const presentationSlides: Slide[] = [
                 Typical first-year cost savings for a mid-sized healthcare practice
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: 13,
+    title: "Next Steps & Implementation Timeline",
+    subtitle: "Implementation Roadmap & Next Steps - Strategic Planning for AI Implementation",
+    animation: 'zoom',
+    content: (
+      <div className="space-y-8">
+        {/* Main Header */}
+        <div className="text-center mb-8">
+          <h4 className="text-2xl font-bold text-gray-800 mb-4">Implementation Roadmap & Next Steps</h4>
+          <div className="text-gray-600">Strategic Planning for AI Implementation</div>
+        </div>
+
+        {/* Implementation Timeline */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+          <h5 className="text-lg font-semibold text-purple-800 mb-6 text-center">Implementation Timeline</h5>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-400 rounded-full mx-auto mb-3 flex items-center justify-center animate-pulse">
+                <span className="text-white font-bold">1-2</span>
+              </div>
+              <div className="font-semibold text-blue-800 mb-2">Week 1-2</div>
+              <div className="text-sm text-blue-600">Discovery & Planning</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-400 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <span className="text-white font-bold">3-6</span>
+              </div>
+              <div className="font-semibold text-green-800 mb-2">Week 3-6</div>
+              <div className="text-sm text-green-600">Solution Design</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-400 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <span className="text-white font-bold">7-10</span>
+              </div>
+              <div className="font-semibold text-purple-800 mb-2">Week 7-10</div>
+              <div className="text-sm text-purple-600">Implementation</div>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-orange-400 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <span className="text-white font-bold">11-12</span>
+              </div>
+              <div className="font-semibold text-orange-800 mb-2">Week 11-12</div>
+              <div className="text-sm text-orange-600">Deployment & Launch</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Pre-Implementation Checklist */}
+          <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+            <h5 className="text-lg font-semibold text-green-800 mb-6">Pre-Implementation Checklist</h5>
+            
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div className="text-sm font-medium text-green-800">Stakeholder alignment</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div className="text-sm font-medium text-green-800">Technical requirements review</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div className="text-sm font-medium text-green-800">Security and compliance audit</div>
+              </div>
+              <div className="flex items-center gap-3">
+                <CheckCircle className="w-5 h-5 text-green-600" />
+                <div className="text-sm font-medium text-green-800">Staff readiness assessment</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Success Metrics */}
+          <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+            <h5 className="text-lg font-semibold text-blue-800 mb-6">Success Metrics</h5>
+            
+            <div className="space-y-4">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-blue-700">User adoption rate</div>
+                <div className="font-semibold text-blue-800">Target: 85%</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-blue-700">System uptime</div>
+                <div className="font-semibold text-blue-800">Target: 99.9%</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-blue-700">Time to value</div>
+                <div className="font-semibold text-blue-800">Target: 30 days</div>
+              </div>
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-blue-700">ROI achievement</div>
+                <div className="font-semibold text-blue-800">Target: 18 months</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Detailed Implementation Process */}
+        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <h5 className="text-lg font-semibold text-gray-800 mb-6 text-center">Detailed Implementation Process</h5>
+          
+          <div className="space-y-6">
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">1</div>
+              <div>
+                <h6 className="font-semibold text-gray-800 mb-2">Initial Consultation</h6>
+                <div className="text-sm text-gray-600 mb-1">1-2 weeks: Discovery session to understand your specific healthcare environment, challenges, and objectives. We will identify key stakeholders and establish project parameters.</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">2</div>
+              <div>
+                <h6 className="font-semibold text-gray-800 mb-2">Solution Design</h6>
+                <div className="text-sm text-gray-600 mb-1">2-3 weeks: Detailed planning of implementation approach, integration requirements, and customization needs. We will create a tailored roadmap for your organization.</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">3</div>
+              <div>
+                <h6 className="font-semibold text-gray-800 mb-2">Implementation</h6>
+                <div className="text-sm text-gray-600 mb-1">4-8 weeks: System deployment, integration with existing healthcare systems, and configuration of initial AI agents. Includes comprehensive testing and validation.</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">4</div>
+              <div>
+                <h6 className="font-semibold text-gray-800 mb-2">Training & Adoption</h6>
+                <div className="text-sm text-gray-600 mb-1">2-4 weeks: Staff training, change management support, and initial monitoring. We will work closely with your team to ensure smooth adoption.</div>
+              </div>
+            </div>
+            
+            <div className="flex items-start gap-4">
+              <div className="w-8 h-8 bg-teal-600 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0">5</div>
+              <div>
+                <h6 className="font-semibold text-gray-800 mb-2">Ongoing Support</h6>
+                <div className="text-sm text-gray-600 mb-1">Continuous: Regular check-ins, performance optimization, and expansion to additional use cases. Our team remains engaged to ensure long-term success.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Getting Started */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+          <h5 className="text-lg font-semibold text-purple-800 mb-6 text-center">Getting Started</h5>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card className="p-6 bg-white border-blue-200 hover:shadow-lg transition-shadow">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-blue-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Eye className="w-6 h-6 text-white" />
+                </div>
+                <h6 className="font-semibold text-blue-800 mb-3">Schedule a Demo</h6>
+                <div className="text-sm text-blue-600">
+                  See the platform in action with a personalized demonstration focused on your specific healthcare use cases. Our clinical specialists will walk you through relevant features and capabilities.
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-white border-green-200 hover:shadow-lg transition-shadow">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-green-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Settings className="w-6 h-6 text-white" />
+                </div>
+                <h6 className="font-semibold text-green-800 mb-3">Technical Assessment</h6>
+                <div className="text-sm text-green-600">
+                  Our integration team will conduct a no-obligation assessment of your current systems to identify integration points and potential challenges.
+                </div>
+              </div>
+            </Card>
+            
+            <Card className="p-6 bg-white border-purple-200 hover:shadow-lg transition-shadow">
+              <div className="text-center">
+                <div className="w-12 h-12 bg-purple-600 rounded-full mx-auto mb-4 flex items-center justify-center">
+                  <Rocket className="w-6 h-6 text-white" />
+                </div>
+                <h6 className="font-semibold text-purple-800 mb-3">Pilot Program</h6>
+                <div className="text-sm text-purple-600">
+                  Start with a limited-scope pilot to demonstrate value and build confidence before full-scale implementation. We offer special pricing for pilot programs.
+                </div>
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Call to Action */}
+        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-center text-white">
+          <h5 className="text-xl font-bold mb-4">Ready to Transform Your Healthcare Operations?</h5>
+          <div className="text-blue-100 mb-6">
+            Join leading healthcare organizations already leveraging AI to improve patient outcomes and operational efficiency.
+          </div>
+          <div className="flex flex-col sm:flex-row gap-4 justify-center">
+            <Button className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-6 py-3">
+              Schedule Demo
+            </Button>
+            <Button variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 font-semibold px-6 py-3">
+              Start Pilot Program
+            </Button>
           </div>
         </div>
       </div>
