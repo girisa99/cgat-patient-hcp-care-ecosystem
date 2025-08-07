@@ -19,122 +19,121 @@ export const useComprehensivePresentationCapture = () => {
   const { toast } = useToast();
 
   const captureAllSlides = useCallback(async (slides: Slide[]) => {
+    console.log('🎯 Starting captureAllSlides with', slides.length, 'slides');
     const capturedSlides: string[] = [];
     
+    // First, let's try a much simpler approach - just capture what's currently visible
+    console.log('🔍 Looking for slide elements...');
+    
+    // Check if we can find the presentation container
+    const presentationContainer = document.querySelector('[data-slide-content]');
+    console.log('📍 Presentation container found:', !!presentationContainer);
+    
+    if (!presentationContainer) {
+      console.error('❌ No presentation container found');
+      return slides.map(() => ''); // Return empty array
+    }
+
     // Store the current slide to restore later
     const currentSlideElement = document.querySelector('[data-slide-id]');
     const currentSlideIndex = currentSlideElement ? 
       parseInt(currentSlideElement.getAttribute('data-slide-id') || '0') : 0;
-
-    // Find the presentation container element
-    const presentationContainer = document.querySelector('[data-slide-content]')?.closest('.relative');
-    if (!presentationContainer) {
-      console.error('Could not find presentation container');
-      return slides.map(() => ''); // Return empty strings as fallback
-    }
+    console.log('📌 Current slide index:', currentSlideIndex);
 
     for (let i = 0; i < slides.length; i++) {
       try {
-        console.log(`Capturing slide ${i + 1}/${slides.length}...`);
+        console.log(`\n🎬 Processing slide ${i + 1}/${slides.length}`);
         
-        // Navigate to the slide by clicking the slide indicator
-        const slideIndicators = document.querySelectorAll('[title*="Slide"]');
-        const targetIndicator = slideIndicators[i] as HTMLElement;
+        // Navigate to the slide using button clicks
+        const slideIndicators = document.querySelectorAll('button[title*="Slide"]');
+        console.log('🔘 Found slide indicators:', slideIndicators.length);
         
-        if (targetIndicator) {
-          targetIndicator.click();
+        if (slideIndicators[i]) {
+          console.log(`👆 Clicking slide indicator ${i + 1}`);
+          (slideIndicators[i] as HTMLElement).click();
+          
           // Wait for slide transition
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(resolve => setTimeout(resolve, 1000));
+          
+          // Verify we're on the right slide
+          const currentSlideAfterClick = document.querySelector('[data-slide-id]');
+          const newSlideIndex = currentSlideAfterClick ? 
+            parseInt(currentSlideAfterClick.getAttribute('data-slide-id') || '0') : -1;
+          console.log(`✅ After click, slide index is:`, newSlideIndex);
+        } else {
+          console.warn(`⚠️ No slide indicator found for slide ${i + 1}`);
         }
-        
+
         // Find the current slide content
         const slideContentElement = document.querySelector('[data-slide-content]') as HTMLElement;
         if (!slideContentElement) {
-          console.error(`Could not find slide content for slide ${i + 1}`);
+          console.error(`❌ No slide content element found for slide ${i + 1}`);
           capturedSlides.push('');
           continue;
         }
 
-        // Create a temporary container with the slide content for better capture
-        const tempContainer = document.createElement('div');
-        tempContainer.style.cssText = `
-          position: fixed;
-          top: -9999px;
-          left: -9999px;
-          width: 1200px;
-          height: 800px;
-          background: white;
-          padding: 32px;
-          overflow: visible;
-          z-index: -1;
-        `;
+        console.log(`📏 Slide content dimensions:`, {
+          width: slideContentElement.offsetWidth,
+          height: slideContentElement.offsetHeight,
+          scrollWidth: slideContentElement.scrollWidth,
+          scrollHeight: slideContentElement.scrollHeight
+        });
+
+        // Try to capture the slide content directly (simpler approach)
+        console.log(`📸 Attempting to capture slide ${i + 1}...`);
         
-        // Clone the slide content
-        const slideTitle = slideContentElement.querySelector('h2')?.textContent || slides[i].title;
-        const slideSubtitle = slides[i].subtitle;
-        const slideContent = slideContentElement.querySelector('[class*="h-[calc(100%-120px)]"]');
-        
-        tempContainer.innerHTML = `
-          <div style="text-align: center; margin-bottom: 32px;">
-            <h2 style="font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">
-              ${slideTitle}
-            </h2>
-            ${slideSubtitle ? `<p style="font-size: 16px; color: #64748b;">${slideSubtitle}</p>` : ''}
-          </div>
-          <div style="height: auto; overflow: visible;">
-            ${slideContent ? slideContent.innerHTML : slides[i].content}
-          </div>
-        `;
-        
-        document.body.appendChild(tempContainer);
-        
-        // Wait for fonts and images to load
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        // Capture the temporary container
-        const canvas = await html2canvas(tempContainer, {
+        const canvas = await html2canvas(slideContentElement, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 1.5,
+          scale: 1,
           width: 1200,
           height: 800,
-          logging: false,
+          logging: true, // Enable html2canvas logging
           removeContainer: false,
-          foreignObjectRendering: true,
-          ignoreElements: (element) => {
-            return element.tagName === 'BUTTON' ||
-                   element.getAttribute('role') === 'button' ||
-                   element.classList?.contains('cursor-pointer');
-          }
+          foreignObjectRendering: true
         });
         
-        // Clean up temporary container
-        document.body.removeChild(tempContainer);
+        console.log(`🎨 Canvas created:`, {
+          width: canvas.width,
+          height: canvas.height,
+          hasData: canvas.width > 0 && canvas.height > 0
+        });
         
-        const imageData = canvas.toDataURL('image/png', 0.95);
-        capturedSlides.push(imageData);
-        
-        console.log(`Successfully captured slide ${i + 1}`);
+        if (canvas.width > 0 && canvas.height > 0) {
+          const imageData = canvas.toDataURL('image/png', 0.9);
+          const isValidImage = imageData.length > 1000; // Basic validation
+          console.log(`✅ Image data generated for slide ${i + 1}:`, {
+            length: imageData.length,
+            isValid: isValidImage,
+            preview: imageData.substring(0, 50) + '...'
+          });
+          capturedSlides.push(imageData);
+        } else {
+          console.error(`❌ Invalid canvas for slide ${i + 1}`);
+          capturedSlides.push('');
+        }
         
       } catch (error) {
-        console.error(`Error capturing slide ${i + 1}:`, error);
+        console.error(`💥 Error capturing slide ${i + 1}:`, error);
         capturedSlides.push('');
       }
     }
 
     // Restore original slide
     try {
-      const slideIndicators = document.querySelectorAll('[title*="Slide"]');
-      const originalIndicator = slideIndicators[currentSlideIndex] as HTMLElement;
-      if (originalIndicator) {
-        originalIndicator.click();
+      const slideIndicators = document.querySelectorAll('button[title*="Slide"]');
+      if (slideIndicators[currentSlideIndex]) {
+        console.log(`🔙 Restoring to slide ${currentSlideIndex + 1}`);
+        (slideIndicators[currentSlideIndex] as HTMLElement).click();
       }
     } catch (error) {
-      console.error('Error restoring original slide:', error);
+      console.error('❌ Error restoring original slide:', error);
     }
 
-    console.log(`Captured ${capturedSlides.filter(slide => slide !== '').length}/${slides.length} slides successfully`);
+    const successCount = capturedSlides.filter(slide => slide !== '').length;
+    console.log(`🏁 Capture complete: ${successCount}/${slides.length} slides captured successfully`);
+    
     return capturedSlides;
   }, []);
 
