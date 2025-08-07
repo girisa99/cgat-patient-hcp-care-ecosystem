@@ -24,6 +24,14 @@ export const AgenticAIPresentation: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { downloadHTML, downloadPDF } = useCompleteStaticExport();
 
+  // DEBUG: Log what slides are being used
+  console.log('🔍 AgenticAIPresentation - Slides loaded:', {
+    totalSlides: presentationSlides.length,
+    slideIds: presentationSlides.map(s => s.id),
+    slideTitles: presentationSlides.map(s => s.title),
+    firstSlideContent: presentationSlides[0]?.content ? 'HAS CONTENT' : 'NO CONTENT'
+  });
+
   useEffect(() => {
     let interval: NodeJS.Timeout;
     if (isAutoplay) {
@@ -75,6 +83,15 @@ export const AgenticAIPresentation: React.FC = () => {
   };
 
   const currentSlideData = presentationSlides[currentSlide];
+  
+  // DEBUG: Log current slide data
+  console.log('🎯 Current slide data:', {
+    slideIndex: currentSlide,
+    slideId: currentSlideData?.id,
+    title: currentSlideData?.title,
+    hasContent: currentSlideData?.content ? 'YES' : 'NO',
+    contentType: typeof currentSlideData?.content
+  });
 
   return (
     <div className={cn(

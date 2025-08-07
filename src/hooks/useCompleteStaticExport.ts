@@ -3,8 +3,8 @@
  * Exports all slides with exact visual fidelity including animations, icons, layouts
  */
 
-import { useCallback } from 'react';
-import { useToast } from './use-toast';
+import React, { useCallback } from 'react';
+import { toast } from 'sonner';
 
 interface Slide {
   id: number;
@@ -15,167 +15,279 @@ interface Slide {
 }
 
 export const useCompleteStaticExport = () => {
-  const { toast } = useToast();
+
+  // Enhanced React-to-HTML conversion that preserves rich content
+  const convertReactToHTML = useCallback((reactElement: React.ReactNode): string => {
+    if (!reactElement) return '<p>No content available</p>';
+    
+    try {
+      // Enhanced React-to-HTML conversion with better component and icon handling
+      const extractContent = (element: any): string => {
+        if (!element) return '';
+        
+        // Handle text content
+        if (typeof element === 'string' || typeof element === 'number') {
+          return String(element);
+        }
+        
+        // Handle React elements
+        if (typeof element === 'object' && element.type) {
+          const tagName = typeof element.type === 'string' ? element.type : 'div';
+          const props = element.props || {};
+          
+          // Handle Lucide icons specifically - convert to visual representations
+          if (typeof element.type === 'function') {
+            const displayName = element.type.displayName || element.type.name || '';
+            
+            // Map common icons to their visual representations
+            const iconMap: Record<string, string> = {
+              'Database': '🗄️',
+              'MessageSquare': '💬',
+              'Zap': '⚡',
+              'Cloud': '☁️',
+              'Globe': '🌐',
+              'FileText': '📄',
+              'Users': '👥',
+              'Settings': '⚙️',
+              'ChevronRight': '→',
+              'CheckCircle': '✅',
+              'AlertCircle': '⚠️',
+              'Heart': '❤️',
+              'Star': '⭐',
+              'TrendingUp': '📈',
+              'Shield': '🛡️',
+              'Smartphone': '📱',
+              'Monitor': '🖥️',
+              'Mail': '📧',
+              'Phone': '📞'
+            };
+            
+            const iconSymbol = iconMap[displayName] || '●';
+            const className = props.className || '';
+            
+            return `<span class="icon-symbol ${className}" style="font-size: 1.2em; margin-right: 0.5rem; color: #2563eb;">${iconSymbol}</span>`;
+          }
+          
+          // Extract className and style
+          const className = props.className || '';
+          const style = props.style || {};
+          
+          // Enhanced Tailwind to inline style conversion
+          const convertTailwindToInlineStyles = (className: string) => {
+            const styles: any = {};
+            
+            // Typography
+            if (className.includes('text-center')) styles.textAlign = 'center';
+            if (className.includes('text-left')) styles.textAlign = 'left';
+            if (className.includes('text-right')) styles.textAlign = 'right';
+            if (className.includes('text-primary')) styles.color = '#2563eb';
+            if (className.includes('text-muted-foreground')) styles.color = '#64748b';
+            if (className.includes('text-white')) styles.color = '#ffffff';
+            if (className.includes('font-bold')) styles.fontWeight = 'bold';
+            if (className.includes('font-semibold')) styles.fontWeight = '600';
+            if (className.includes('font-medium')) styles.fontWeight = '500';
+            
+            // Font sizes
+            if (className.includes('text-xs')) styles.fontSize = '0.75rem';
+            if (className.includes('text-sm')) styles.fontSize = '0.875rem';
+            if (className.includes('text-base')) styles.fontSize = '1rem';
+            if (className.includes('text-lg')) styles.fontSize = '1.125rem';
+            if (className.includes('text-xl')) styles.fontSize = '1.25rem';
+            if (className.includes('text-2xl')) styles.fontSize = '1.5rem';
+            if (className.includes('text-3xl')) styles.fontSize = '1.875rem';
+            
+            // Spacing
+            if (className.includes('mb-2')) styles.marginBottom = '0.5rem';
+            if (className.includes('mb-4')) styles.marginBottom = '1rem';
+            if (className.includes('mb-6')) styles.marginBottom = '1.5rem';
+            if (className.includes('mb-8')) styles.marginBottom = '2rem';
+            if (className.includes('mt-2')) styles.marginTop = '0.5rem';
+            if (className.includes('mt-4')) styles.marginTop = '1rem';
+            if (className.includes('p-3')) styles.padding = '0.75rem';
+            if (className.includes('p-4')) styles.padding = '1rem';
+            if (className.includes('p-6')) styles.padding = '1.5rem';
+            if (className.includes('px-4')) { styles.paddingLeft = '1rem'; styles.paddingRight = '1rem'; }
+            if (className.includes('py-2')) { styles.paddingTop = '0.5rem'; styles.paddingBottom = '0.5rem'; }
+            
+            // Layout
+            if (className.includes('flex')) styles.display = 'flex';
+            if (className.includes('grid')) styles.display = 'grid';
+            if (className.includes('items-center')) styles.alignItems = 'center';
+            if (className.includes('justify-center')) styles.justifyContent = 'center';
+            if (className.includes('gap-2')) styles.gap = '0.5rem';
+            if (className.includes('gap-4')) styles.gap = '1rem';
+            if (className.includes('gap-6')) styles.gap = '1.5rem';
+            
+            // Grid
+            if (className.includes('grid-cols-1')) styles.gridTemplateColumns = '1fr';
+            if (className.includes('grid-cols-2')) styles.gridTemplateColumns = 'repeat(2, 1fr)';
+            if (className.includes('grid-cols-3')) styles.gridTemplateColumns = 'repeat(3, 1fr)';
+            if (className.includes('grid-cols-4')) styles.gridTemplateColumns = 'repeat(4, 1fr)';
+            
+            // Background
+            if (className.includes('bg-card')) styles.backgroundColor = '#ffffff';
+            if (className.includes('bg-background')) styles.backgroundColor = '#f8fafc';
+            if (className.includes('bg-primary/20')) styles.backgroundColor = 'rgba(37, 99, 235, 0.2)';
+            if (className.includes('bg-primary')) styles.backgroundColor = '#2563eb';
+            
+            // Border
+            if (className.includes('border')) styles.border = '1px solid #e2e8f0';
+            if (className.includes('rounded-lg')) styles.borderRadius = '0.5rem';
+            if (className.includes('rounded-full')) styles.borderRadius = '50%';
+            if (className.includes('rounded')) styles.borderRadius = '0.25rem';
+            
+            // Dimensions
+            if (className.includes('w-full')) styles.width = '100%';
+            if (className.includes('h-full')) styles.height = '100%';
+            if (className.includes('w-16')) { styles.width = '4rem'; styles.height = '4rem'; }
+            if (className.includes('w-12')) { styles.width = '3rem'; styles.height = '3rem'; }
+            if (className.includes('w-10')) { styles.width = '2.5rem'; styles.height = '2.5rem'; }
+            if (className.includes('w-8')) { styles.width = '2rem'; styles.height = '2rem'; }
+            
+            // Position
+            if (className.includes('mx-auto')) { styles.marginLeft = 'auto'; styles.marginRight = 'auto'; }
+            
+            return styles;
+          };
+          
+          // Merge styles
+          const tailwindStyles = convertTailwindToInlineStyles(className);
+          const mergedStyles = { ...tailwindStyles, ...style };
+          
+          // Convert to CSS string
+          const styleString = Object.entries(mergedStyles)
+            .map(([key, value]) => {
+              const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
+              return `${cssKey}: ${value}`;
+            })
+            .join('; ');
+          
+          // Build attributes
+          const attributes = [];
+          if (className) attributes.push(`class="${className}"`);
+          if (styleString) attributes.push(`style="${styleString}"`);
+          
+          // Handle children
+          const children = props.children;
+          let childrenHTML = '';
+          
+          if (Array.isArray(children)) {
+            childrenHTML = children.map(child => extractContent(child)).join('');
+          } else if (children) {
+            childrenHTML = extractContent(children);
+          }
+          
+          // Self-closing tags
+          if (['img', 'br', 'hr', 'input'].includes(tagName)) {
+            return `<${tagName} ${attributes.join(' ')} />`;
+          }
+          
+          return `<${tagName} ${attributes.join(' ')}>${childrenHTML}</${tagName}>`;
+        }
+        
+        // Handle arrays
+        if (Array.isArray(element)) {
+          return element.map(extractContent).join('');
+        }
+        
+        return '';
+      };
+      
+      const result = extractContent(reactElement);
+      console.log('🔄 Converted React content to HTML:', result.length, 'characters');
+      return result || '<p>Content conversion failed</p>';
+      
+    } catch (error) {
+      console.error('❌ Error converting React to HTML:', error);
+      return `
+        <div style="padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background: #f8fafc;">
+          <h3 style="color: #dc2626; margin-bottom: 12px;">Content Conversion Error</h3>
+          <p style="color: #64748b;">Unable to convert slide content properly.</p>
+        </div>
+      `;
+    }
+  }, []);
 
   const convertAllSlidesToStaticHTML = useCallback((slides: Slide[]): string => {
     console.log(`🔄 Converting ${slides.length} slides to complete static HTML...`);
-
-    // Convert React components to static HTML by extracting structure
-    const convertReactToHTML = (reactContent: React.ReactNode): string => {
-      try {
-        // Convert React elements to HTML strings by extracting their structure
-        const extractContent = (element: any): string => {
-          if (!element) return '';
-          
-          // Handle text content
-          if (typeof element === 'string' || typeof element === 'number') {
-            return String(element);
-          }
-          
-          // Handle React elements
-          if (typeof element === 'object' && element.type) {
-            const tagName = typeof element.type === 'string' ? element.type : 'div';
-            const props = element.props || {};
-            
-            // Extract className and convert to class
-            const className = props.className || '';
-            const style = props.style || {};
-            
-            // Convert inline styles to CSS string
-            const styleString = Object.entries(style)
-              .map(([key, value]) => {
-                const cssKey = key.replace(/([A-Z])/g, '-$1').toLowerCase();
-                return `${cssKey}: ${value}`;
-              })
-              .join('; ');
-            
-            // Build attributes
-            const attributes = [];
-            if (className) attributes.push(`class="${className}"`);
-            if (styleString) attributes.push(`style="${styleString}"`);
-            
-            // Handle children
-            const children = props.children;
-            let childrenHTML = '';
-            
-            if (Array.isArray(children)) {
-              childrenHTML = children.map(child => extractContent(child)).join('');
-            } else if (children) {
-              childrenHTML = extractContent(children);
-            }
-            
-            // Self-closing tags
-            if (['img', 'br', 'hr', 'input'].includes(tagName)) {
-              return `<${tagName} ${attributes.join(' ')} />`;
-            }
-            
-            return `<${tagName} ${attributes.join(' ')}>${childrenHTML}</${tagName}>`;
-          }
-          
-          // Handle arrays
-          if (Array.isArray(element)) {
-            return element.map(extractContent).join('');
-          }
-          
-          return '';
-        };
-        
-        const htmlContent = extractContent(reactContent);
-        
-        return htmlContent || `<div style="padding: 20px; text-align: center; background: #f8fafc; border-radius: 8px;">
-          <h3 style="color: #4f46e5; margin-bottom: 16px;">Slide Content</h3>
-          <p style="color: #64748b; margin-bottom: 16px;">
-            This slide contains rich interactive content with components, layouts, and styling.
-          </p>
-          <div style="background: white; padding: 16px; border-radius: 6px; border: 1px solid #e2e8f0;">
-            <p style="color: #374151; font-size: 14px; margin: 0;">
-              Content includes cards, icons, statistics, process flows, and detailed information
-              about the AI implementation features and capabilities.
-            </p>
-          </div>
-        </div>`;
-        
-      } catch (error) {
-        console.error('Error converting React to HTML:', error);
-        return `<div style="padding: 20px; text-align: center; background: #fee2e2; border-radius: 8px;">
-          <p style="color: #dc2626; font-weight: bold; margin-bottom: 8px;">Content Conversion Error</p>
-          <p style="color: #7f1d1d; font-size: 14px;">
-            Unable to convert slide content. Please check the presentation data.
-          </p>
-        </div>`;
-      }
-    };
 
     // Generate HTML for ALL slides from the actual slide data
     const slideHTML = slides.map((slide, index) => {
       const contentHTML = convertReactToHTML(slide.content);
       
       return `
-        <div class="slide" id="slide-${slide.id}" style="
-          page-break-before: ${index > 0 ? 'always' : 'auto'};
-          min-height: 100vh;
-          padding: 40px;
-          background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
-          border: 1px solid #e2e8f0;
-          margin-bottom: 20px;
-          border-radius: 12px;
-          box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        <div class="slide" data-slide="${index + 1}" style="
+          min-height: 100vh; 
+          padding: 48px; 
+          page-break-after: always;
+          background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+          border-bottom: 3px solid #e2e8f0;
+          position: relative;
         ">
-          <div class="slide-header" style="text-align: center; margin-bottom: 32px; border-bottom: 2px solid #4f46e5; padding-bottom: 16px;">
-            <h1 style="
-              font-size: 28px;
-              font-weight: bold;
-              color: #4f46e5;
-              margin-bottom: 8px;
-              line-height: 1.2;
-            ">${slide.title}</h1>
-            ${slide.subtitle ? `
-              <h2 style="
-                font-size: 18px;
-                color: #64748b;
-                font-weight: normal;
-                margin: 0;
-                line-height: 1.4;
-              ">${slide.subtitle}</h2>
-            ` : ''}
+          <!-- Slide Header -->
+          <div style="text-align: center; margin-bottom: 48px;">
             <div style="
-              background: #4f46e5;
-              color: white;
-              padding: 4px 12px;
-              border-radius: 20px;
-              font-size: 12px;
-              font-weight: bold;
-              display: inline-block;
-              margin-top: 12px;
-            ">Slide ${index + 1} of ${slides.length}</div>
+              display: inline-block; 
+              background: #2563eb; 
+              color: white; 
+              padding: 8px 16px; 
+              border-radius: 20px; 
+              font-size: 14px; 
+              font-weight: 600; 
+              margin-bottom: 24px;
+            ">
+              Slide ${index + 1} of ${slides.length}
+            </div>
+            <h1 style="
+              font-size: 2.5rem; 
+              font-weight: bold; 
+              color: #1e293b; 
+              margin-bottom: 16px; 
+              line-height: 1.2;
+            ">
+              ${slide.title}
+            </h1>
+            ${slide.subtitle ? `
+              <p style="
+                font-size: 1.25rem; 
+                color: #64748b; 
+                max-width: 800px; 
+                margin: 0 auto; 
+                line-height: 1.6;
+              ">
+                ${slide.subtitle}
+              </p>
+            ` : ''}
           </div>
           
-          <div class="slide-content" style="
-            background: white;
-            padding: 32px;
-            border-radius: 8px;
-            box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+          <!-- Slide Content -->
+          <div style="
+            max-width: 1200px; 
+            margin: 0 auto; 
+            background: white; 
+            border-radius: 12px; 
+            padding: 32px; 
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
             min-height: 400px;
-            border: 1px solid #e2e8f0;
           ">
             ${contentHTML}
           </div>
           
-          <div class="slide-footer" style="
-            margin-top: 24px;
-            text-align: center;
-            font-size: 12px;
-            color: #64748b;
-            border-top: 1px solid #e2e8f0;
-            padding-top: 16px;
+          <!-- Slide Footer -->
+          <div style="
+            position: absolute; 
+            bottom: 24px; 
+            right: 48px; 
+            color: #64748b; 
+            font-size: 14px;
           ">
-            <div>Animation: ${slide.animation} | Slide ID: ${slide.id}</div>
-            <div style="margin-top: 4px;">Agentic AI Implementation for Treatment Centers</div>
+            Treatment Center AI Implementation
           </div>
         </div>
       `;
     }).join('\n');
 
+    // Complete HTML document with embedded styles
     const fullHTML = `
 <!DOCTYPE html>
 <html lang="en">
@@ -184,107 +296,68 @@ export const useCompleteStaticExport = () => {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Agentic AI Implementation Presentation - ${slides.length} Slides</title>
     <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            margin: 0;
-            padding: 20px;
-            background: #f8fafc;
             line-height: 1.6;
+            color: #1e293b;
+            background: #f8fafc;
         }
         
         .presentation-container {
-            max-width: 1200px;
-            margin: 0 auto;
+            width: 100%;
+            max-width: none;
         }
         
         .presentation-header {
-            text-align: center;
-            margin-bottom: 40px;
-            padding: 32px;
-            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 50%, #8b5cf6 100%);
+            background: linear-gradient(135deg, #2563eb, #1d4ed8);
             color: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+            padding: 48px;
+            text-align: center;
         }
         
         .presentation-title {
-            font-size: 36px;
+            font-size: 3rem;
             font-weight: bold;
-            margin-bottom: 12px;
-        }
-        
-        .presentation-subtitle {
-            font-size: 18px;
-            opacity: 0.9;
             margin-bottom: 16px;
         }
         
-        .slide-count {
-            background: rgba(255,255,255,0.2);
-            padding: 8px 16px;
-            border-radius: 20px;
-            font-size: 14px;
-            font-weight: bold;
+        .presentation-subtitle {
+            font-size: 1.5rem;
+            opacity: 0.9;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .slide {
+            border-bottom: 3px solid #e2e8f0;
+        }
+        
+        .icon-symbol {
             display: inline-block;
-        }
-        
-        .table-of-contents {
-            background: white;
-            border-radius: 12px;
-            padding: 32px;
-            margin-bottom: 40px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            border: 1px solid #e2e8f0;
-        }
-        
-        .toc-title {
-            font-size: 24px;
-            font-weight: bold;
-            color: #4f46e5;
-            margin-bottom: 24px;
-            text-align: center;
-        }
-        
-        .toc-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 16px;
-        }
-        
-        .toc-item {
-            padding: 16px;
-            background: rgba(79, 70, 229, 0.05);
-            border-radius: 8px;
-            border: 1px solid #e2e8f0;
-        }
-        
-        .toc-number {
-            color: #4f46e5;
-            font-weight: bold;
-            margin-right: 8px;
-        }
-        
-        .toc-title-text {
-            font-weight: bold;
-            color: #1e293b;
-            margin-bottom: 4px;
-        }
-        
-        .toc-subtitle-text {
-            font-size: 14px;
-            color: #64748b;
-            line-height: 1.4;
+            font-size: 1.2em;
+            margin-right: 0.5rem;
+            color: #2563eb;
         }
         
         @media print {
+            .slide {
+                page-break-after: always;
+            }
+            .presentation-container { padding: 10px; }
             body { background: white; }
-            .slide { page-break-inside: avoid; }
+            .presentation-title { font-size: 28px; }
+            .presentation-subtitle { font-size: 18px; }
         }
         
         @media (max-width: 768px) {
-            .presentation-container { padding: 10px; }
-            .slide { padding: 20px; }
-            .presentation-title { font-size: 28px; }
+            .presentation-title { font-size: 2rem; }
+            .slide { padding: 24px; }
         }
     </style>
 </head>
@@ -296,46 +369,35 @@ export const useCompleteStaticExport = () => {
             <div class="slide-count">Complete Presentation - ${slides.length} Slides</div>
         </div>
         
-        <div class="table-of-contents">
+        <!-- Table of Contents -->
+        <div style="padding: 48px; background: white; border-bottom: 3px solid #e2e8f0;">
             <h2 class="toc-title">Table of Contents</h2>
             <div class="toc-list">
                 ${slides.map((slide, index) => `
                     <div class="toc-item">
                         <div class="toc-title-text">
-                            <span class="toc-number">${index + 1}.</span>
-                            ${slide.title}
+                            ${index + 1}. ${slide.title}
                         </div>
-                        ${slide.subtitle ? `
-                            <div class="toc-subtitle-text">${slide.subtitle}</div>
-                        ` : ''}
+                        ${slide.subtitle ? `<div class="toc-subtitle">${slide.subtitle}</div>` : ''}
                     </div>
                 `).join('')}
             </div>
         </div>
         
+        <!-- All Slides -->
         ${slideHTML}
         
+        <!-- Conclusion -->
         <div style="
-            text-align: center;
-            margin-top: 40px;
-            padding: 32px;
-            background: linear-gradient(135deg, #4f46e5 0%, #3b82f6 50%, #8b5cf6 100%);
-            color: white;
-            border-radius: 12px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+          padding: 48px; 
+          text-align: center; 
+          background: linear-gradient(135deg, #1e293b, #334155);
+          color: white;
         ">
             <h2 style="margin-bottom: 16px;">Presentation Complete</h2>
-            <p style="margin-bottom: 12px; opacity: 0.9;">
+            <p style="font-size: 1.125rem; opacity: 0.9;">
                 Thank you for reviewing all ${slides.length} slides of our Agentic AI Implementation presentation.
             </p>
-            <div style="
-                background: rgba(255,255,255,0.2);
-                padding: 8px 16px;
-                border-radius: 20px;
-                font-size: 14px;
-                font-weight: bold;
-                display: inline-block;
-            ">Generated: ${new Date().toLocaleDateString()}</div>
         </div>
     </div>
 </body>
@@ -343,9 +405,9 @@ export const useCompleteStaticExport = () => {
 
     console.log(`✅ Generated complete HTML with ${slides.length} slides, ${fullHTML.length} characters`);
     return fullHTML;
-  }, []);
+  }, [convertReactToHTML]);
 
-  const downloadHTML = useCallback(() => {
+  const downloadHTML = useCallback(async () => {
     try {
       // Import the presentation slides dynamically
       import('@/data/presentation-slides').then(({ presentationSlides }) => {
@@ -360,33 +422,22 @@ export const useCompleteStaticExport = () => {
         const link = document.createElement('a');
         link.href = url;
         link.download = `agentic-ai-presentation-complete-${presentationSlides.length}-slides-${new Date().toISOString().split('T')[0]}.html`;
-        link.style.display = 'none';
-        
         document.body.appendChild(link);
         link.click();
         document.body.removeChild(link);
-        
         URL.revokeObjectURL(url);
         
-        toast({
-          title: "✅ HTML Export Complete",
-          description: `Successfully exported all ${presentationSlides.length} slides as HTML`,
-          variant: "default",
-        });
+        toast.success(`HTML Export Complete! Successfully exported all ${presentationSlides.length} slides as HTML`);
         
         console.log(`✅ HTML export completed: ${presentationSlides.length} slides`);
       });
     } catch (error) {
-      console.error('❌ HTML export failed:', error);
-      toast({
-        title: "❌ Export Failed",
-        description: "Failed to export presentation as HTML",
-        variant: "destructive",
-      });
+      console.error('❌ Error during HTML export:', error);
+      toast.error("Export Failed: Failed to export presentation as HTML");
     }
   }, [convertAllSlidesToStaticHTML, toast]);
 
-  const downloadPDF = useCallback(() => {
+  const downloadPDF = useCallback(async () => {
     try {
       // Import the presentation slides dynamically
       import('@/data/presentation-slides').then(({ presentationSlides }) => {
@@ -396,38 +447,25 @@ export const useCompleteStaticExport = () => {
         
         const htmlContent = convertAllSlidesToStaticHTML(presentationSlides);
         
-        // Create a new window for PDF generation
+        // Create a new window/tab for printing
         const printWindow = window.open('', '_blank');
-        if (!printWindow) {
-          throw new Error('Failed to open print window');
-        }
-        
-        printWindow.document.write(htmlContent);
-        printWindow.document.close();
-        
-        // Wait for content to load, then trigger print
-        printWindow.onload = () => {
+        if (printWindow) {
+          printWindow.document.write(htmlContent);
+          printWindow.document.close();
+          
+          // Wait for content to load, then trigger print dialog
           setTimeout(() => {
-            printWindow.focus();
             printWindow.print();
-            
-            toast({
-              title: "✅ PDF Export Ready",
-              description: `Print dialog opened for all ${presentationSlides.length} slides. Use your browser's print-to-PDF feature.`,
-              variant: "default",
-            });
-            
-            console.log(`✅ PDF export initiated: ${presentationSlides.length} slides`);
           }, 1000);
-        };
+          
+          toast.success(`PDF Export Ready: Print dialog opened for all ${presentationSlides.length} slides. Use your browser's print-to-PDF feature.`);
+          
+          console.log(`✅ PDF export initiated: ${presentationSlides.length} slides`);
+        }
       });
     } catch (error) {
-      console.error('❌ PDF export failed:', error);
-      toast({
-        title: "❌ Export Failed",
-        description: "Failed to export presentation as PDF",
-        variant: "destructive",
-      });
+      console.error('❌ Error during PDF export:', error);
+      toast.error("Export Failed: Failed to export presentation as PDF");
     }
   }, [convertAllSlidesToStaticHTML, toast]);
 
@@ -435,5 +473,6 @@ export const useCompleteStaticExport = () => {
     downloadHTML,
     downloadPDF,
     captureAllSlides: downloadHTML, // Alias for backward compatibility
+    captureCurrentSlide: () => Promise.resolve(''), // Placeholder for compatibility
   };
 };
