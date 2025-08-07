@@ -21,131 +21,102 @@ export const useComprehensivePresentationCapture = () => {
   const captureAllSlides = useCallback(async (slides: Slide[]) => {
     const capturedSlides: string[] = [];
     
-    // Get the current slide to restore later
+    // Store the current slide to restore later
     const currentSlideElement = document.querySelector('[data-slide-id]');
     const currentSlideIndex = currentSlideElement ? 
       parseInt(currentSlideElement.getAttribute('data-slide-id') || '0') : 0;
 
+    // Find the presentation container element
+    const presentationContainer = document.querySelector('[data-slide-content]')?.closest('.relative');
+    if (!presentationContainer) {
+      console.error('Could not find presentation container');
+      return slides.map(() => ''); // Return empty strings as fallback
+    }
+
     for (let i = 0; i < slides.length; i++) {
       try {
-        // Navigate to the slide (simulate clicking slide indicator)
-        const slideIndicator = document.querySelector(`[title="Slide ${i + 1}"]`) as HTMLElement;
-        if (slideIndicator) {
-          slideIndicator.click();
-          
-          // Wait for slide transition to complete
-          await new Promise(resolve => setTimeout(resolve, 500));
-          
-          // Find the slide content element
-          const slideContentElement = document.querySelector('[data-slide-content]') as HTMLElement;
-          if (slideContentElement) {
-            // Store original styles for restoration
-            const originalStyles = {
-              height: slideContentElement.style.height,
-              maxHeight: slideContentElement.style.maxHeight,
-              overflow: slideContentElement.style.overflow,
-              overflowY: slideContentElement.style.overflowY,
-              transform: slideContentElement.style.transform,
-              position: slideContentElement.style.position
-            };
-            
-            // Force content to be fully visible for capture
-            slideContentElement.style.height = 'auto';
-            slideContentElement.style.maxHeight = 'none';
-            slideContentElement.style.overflow = 'visible';
-            slideContentElement.style.overflowY = 'visible';
-            slideContentElement.style.transform = 'none';
-            
-            // Also fix any nested scrollable containers
-            const scrollableElements = slideContentElement.querySelectorAll('[class*="overflow"], [class*="scroll"]');
-            const originalScrollStyles: { element: HTMLElement; styles: Record<string, string> }[] = [];
-            
-            scrollableElements.forEach((el) => {
-              const htmlEl = el as HTMLElement;
-              originalScrollStyles.push({
-                element: htmlEl,
-                styles: {
-                  overflow: htmlEl.style.overflow || '',
-                  overflowY: htmlEl.style.overflowY || '',
-                  maxHeight: htmlEl.style.maxHeight || '',
-                  height: htmlEl.style.height || ''
-                }
-              });
-              
-              htmlEl.style.overflow = 'visible';
-              htmlEl.style.overflowY = 'visible';
-              htmlEl.style.maxHeight = 'none';
-              if (htmlEl.style.height && htmlEl.style.height !== 'auto') {
-                htmlEl.style.height = 'auto';
-              }
-            });
-            
-            // Wait for layout to settle with all changes
-            await new Promise(resolve => setTimeout(resolve, 300));
-            
-            // Get the actual content dimensions after forcing visibility
-            const contentRect = slideContentElement.getBoundingClientRect();
-            const fullWidth = Math.max(
-              slideContentElement.scrollWidth,
-              slideContentElement.offsetWidth,
-              contentRect.width,
-              1200 // Minimum width
-            );
-            const fullHeight = Math.max(
-              slideContentElement.scrollHeight,
-              slideContentElement.offsetHeight,
-              contentRect.height,
-              800 // Minimum height
-            );
-            
-            // Capture the slide with comprehensive settings
-            const canvas = await html2canvas(slideContentElement, {
-              useCORS: true,
-              allowTaint: false,
-              backgroundColor: '#ffffff',
-              scale: 2,
-              width: fullWidth,
-              height: fullHeight,
-              scrollX: 0,
-              scrollY: 0,
-              windowWidth: fullWidth,
-              windowHeight: fullHeight,
-              logging: false,
-              removeContainer: false,
-              foreignObjectRendering: true,
-              ignoreElements: (element) => {
-                // Ignore interactive and overlay elements
-                return element.classList?.contains('cursor-pointer') || 
-                       element.tagName === 'BUTTON' ||
-                       element.getAttribute('role') === 'button' ||
-                       element.classList?.contains('animate-pulse') ||
-                       (element as HTMLElement).style?.pointerEvents === 'none';
-              }
-            });
-            
-            // Restore all original styles
-            Object.entries(originalStyles).forEach(([prop, value]) => {
-              if (value !== undefined && value !== null) {
-                (slideContentElement.style as any)[prop] = value;
-              }
-            });
-            
-            // Restore nested element styles
-            originalScrollStyles.forEach(({ element, styles }) => {
-              Object.entries(styles).forEach(([prop, value]) => {
-                if (value !== undefined && value !== null) {
-                  (element.style as any)[prop] = value;
-                }
-              });
-            });
-            
-            const imageData = canvas.toDataURL('image/png', 1.0);
-            capturedSlides.push(imageData);
-          } else {
-            // Fallback to slide data
-            capturedSlides.push('');
-          }
+        console.log(`Capturing slide ${i + 1}/${slides.length}...`);
+        
+        // Navigate to the slide by clicking the slide indicator
+        const slideIndicators = document.querySelectorAll('[title*="Slide"]');
+        const targetIndicator = slideIndicators[i] as HTMLElement;
+        
+        if (targetIndicator) {
+          targetIndicator.click();
+          // Wait for slide transition
+          await new Promise(resolve => setTimeout(resolve, 800));
         }
+        
+        // Find the current slide content
+        const slideContentElement = document.querySelector('[data-slide-content]') as HTMLElement;
+        if (!slideContentElement) {
+          console.error(`Could not find slide content for slide ${i + 1}`);
+          capturedSlides.push('');
+          continue;
+        }
+
+        // Create a temporary container with the slide content for better capture
+        const tempContainer = document.createElement('div');
+        tempContainer.style.cssText = `
+          position: fixed;
+          top: -9999px;
+          left: -9999px;
+          width: 1200px;
+          height: 800px;
+          background: white;
+          padding: 32px;
+          overflow: visible;
+          z-index: -1;
+        `;
+        
+        // Clone the slide content
+        const slideTitle = slideContentElement.querySelector('h2')?.textContent || slides[i].title;
+        const slideSubtitle = slides[i].subtitle;
+        const slideContent = slideContentElement.querySelector('[class*="h-[calc(100%-120px)]"]');
+        
+        tempContainer.innerHTML = `
+          <div style="text-align: center; margin-bottom: 32px;">
+            <h2 style="font-size: 28px; font-weight: 700; color: #1e293b; margin-bottom: 8px;">
+              ${slideTitle}
+            </h2>
+            ${slideSubtitle ? `<p style="font-size: 16px; color: #64748b;">${slideSubtitle}</p>` : ''}
+          </div>
+          <div style="height: auto; overflow: visible;">
+            ${slideContent ? slideContent.innerHTML : slides[i].content}
+          </div>
+        `;
+        
+        document.body.appendChild(tempContainer);
+        
+        // Wait for fonts and images to load
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        // Capture the temporary container
+        const canvas = await html2canvas(tempContainer, {
+          useCORS: true,
+          allowTaint: false,
+          backgroundColor: '#ffffff',
+          scale: 1.5,
+          width: 1200,
+          height: 800,
+          logging: false,
+          removeContainer: false,
+          foreignObjectRendering: true,
+          ignoreElements: (element) => {
+            return element.tagName === 'BUTTON' ||
+                   element.getAttribute('role') === 'button' ||
+                   element.classList?.contains('cursor-pointer');
+          }
+        });
+        
+        // Clean up temporary container
+        document.body.removeChild(tempContainer);
+        
+        const imageData = canvas.toDataURL('image/png', 0.95);
+        capturedSlides.push(imageData);
+        
+        console.log(`Successfully captured slide ${i + 1}`);
+        
       } catch (error) {
         console.error(`Error capturing slide ${i + 1}:`, error);
         capturedSlides.push('');
@@ -153,11 +124,17 @@ export const useComprehensivePresentationCapture = () => {
     }
 
     // Restore original slide
-    const originalSlideIndicator = document.querySelector(`[title="Slide ${currentSlideIndex + 1}"]`) as HTMLElement;
-    if (originalSlideIndicator) {
-      originalSlideIndicator.click();
+    try {
+      const slideIndicators = document.querySelectorAll('[title*="Slide"]');
+      const originalIndicator = slideIndicators[currentSlideIndex] as HTMLElement;
+      if (originalIndicator) {
+        originalIndicator.click();
+      }
+    } catch (error) {
+      console.error('Error restoring original slide:', error);
     }
 
+    console.log(`Captured ${capturedSlides.filter(slide => slide !== '').length}/${slides.length} slides successfully`);
     return capturedSlides;
   }, []);
 
