@@ -48,8 +48,8 @@ const OnboardingDashboard: React.FC = () => {
     updateApplication
   } = useMasterOnboarding();
 
-  // Security check - only onboardingTeam can access
-  const hasAccess = userRoles.includes('superAdmin') || userRoles.includes('onboardingTeam');
+  // Security check - onboardingTeam, superAdmin, and demoUser can access
+  const hasAccess = userRoles.includes('superAdmin') || userRoles.includes('onboardingTeam') || userRoles.includes('demoUser');
 
   if (!hasAccess) {
     return (
@@ -59,7 +59,7 @@ const OnboardingDashboard: React.FC = () => {
             <AlertCircle className="h-12 w-12 text-destructive mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Access Denied</h2>
             <p className="text-muted-foreground">
-              You need onboardingTeam role to access this page.
+              You need onboardingTeam or demoUser role to access this page.
             </p>
           </div>
         </div>
