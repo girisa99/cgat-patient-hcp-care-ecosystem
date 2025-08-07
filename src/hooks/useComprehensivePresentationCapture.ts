@@ -44,45 +44,20 @@ export const useComprehensivePresentationCapture = () => {
           await new Promise(resolve => setTimeout(resolve, 1500));
         }
 
-        // Try multiple selectors to find the actual content
-        const contentSelectors = [
-          '[data-slide-content]',
-          '.relative.bg-gradient-to-br', // The main slide area
-          '.w-full.h-full.p-8', // The slide container
-          '.presentation-container' // If there's a container
-        ];
-
-        let slideContentElement: HTMLElement | null = null;
+        // Find the slide content element - this is the key selector
+        const slideContentElement = document.querySelector('[data-slide-content]') as HTMLElement;
         
-        for (const selector of contentSelectors) {
-          slideContentElement = document.querySelector(selector) as HTMLElement;
-          if (slideContentElement) {
-            console.log(`✅ Found content using selector: ${selector}`);
-            break;
-          }
-        }
-
         if (!slideContentElement) {
-          console.error(`❌ No content element found for slide ${i + 1}`);
-          // Try to find ANY element that might contain content
-          slideContentElement = document.querySelector('.animate-fade-in') as HTMLElement;
-          if (slideContentElement) {
-            console.log('📍 Using fallback selector: .animate-fade-in');
-          }
-        }
-
-        if (!slideContentElement) {
-          console.error(`❌ Still no content element found for slide ${i + 1}`);
+          console.error(`❌ No [data-slide-content] element found for slide ${i + 1}`);
           capturedSlides.push('');
           continue;
         }
 
-        // Log what we found
-        console.log(`📏 Content element details:`, {
+        console.log(`✅ Found slide content element for slide ${i + 1}`);
+        console.log(`📏 Element details:`, {
           tagName: slideContentElement.tagName,
           className: slideContentElement.className,
-          innerHTML: slideContentElement.innerHTML.substring(0, 200) + '...',
-          children: slideContentElement.children.length,
+          hasChildren: slideContentElement.children.length > 0,
           dimensions: {
             width: slideContentElement.offsetWidth,
             height: slideContentElement.offsetHeight,
@@ -91,56 +66,89 @@ export const useComprehensivePresentationCapture = () => {
           }
         });
 
-        // Force all content to be visible before capture
-        const originalStyles = new Map();
-        const elementsToFix = slideContentElement.querySelectorAll('*');
+        // Store original styles to restore later
+        const originalStyles = new Map<HTMLElement, any>();
         
-        elementsToFix.forEach((el: HTMLElement) => {
-          if (el.style.overflow === 'hidden' || el.style.overflowY === 'hidden' || 
-              el.classList.contains('overflow-hidden') || el.classList.contains('overflow-y-auto')) {
-            originalStyles.set(el, {
-              overflow: el.style.overflow,
-              overflowY: el.style.overflowY,
-              maxHeight: el.style.maxHeight
-            });
-            el.style.overflow = 'visible';
-            el.style.overflowY = 'visible';
-            el.style.maxHeight = 'none';
+        // Fix the main container and all its children
+        const allElements = [slideContentElement, ...Array.from(slideContentElement.querySelectorAll('*'))] as HTMLElement[];
+        
+        allElements.forEach((el) => {
+          // Store original computed styles
+          const computedStyle = window.getComputedStyle(el);
+          originalStyles.set(el, {
+            overflow: el.style.overflow,
+            overflowX: el.style.overflowX,
+            overflowY: el.style.overflowY,
+            maxHeight: el.style.maxHeight,
+            height: el.style.height,
+            visibility: el.style.visibility,
+            display: el.style.display
+          });
+          
+          // Force visibility and remove overflow constraints
+          el.style.setProperty('overflow', 'visible', 'important');
+          el.style.setProperty('overflow-x', 'visible', 'important');
+          el.style.setProperty('overflow-y', 'visible', 'important');
+          el.style.setProperty('max-height', 'none', 'important');
+          el.style.setProperty('visibility', 'visible', 'important');
+          
+          // Ensure elements are displayed
+          if (computedStyle.display === 'none') {
+            el.style.setProperty('display', 'block', 'important');
           }
         });
 
-        // Wait for layout changes
-        await new Promise(resolve => setTimeout(resolve, 500));
+        // Wait for layout to update
+        await new Promise(resolve => setTimeout(resolve, 300));
 
-        console.log(`📸 Attempting to capture slide ${i + 1}...`);
+        console.log(`📸 Capturing slide ${i + 1} with forced visibility...`);
         
         const canvas = await html2canvas(slideContentElement, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 1.5,
-          logging: true,
+          scale: 2, // Higher scale for better quality
+          logging: false, // Reduce noise
           removeContainer: false,
           foreignObjectRendering: true,
-          onclone: (clonedDoc) => {
-            console.log('🔄 Cloning document for capture...');
-            // Ensure all styles are preserved in the clone
-            const clonedElements = clonedDoc.querySelectorAll('*');
-            clonedElements.forEach((el: HTMLElement) => {
-              if (el.style) {
-                el.style.overflow = 'visible';
-                el.style.overflowY = 'visible';
-                el.style.maxHeight = 'none';
-              }
+          ignoreElements: (element) => {
+            // Skip elements that might cause issues
+            return element.classList.contains('animate-pulse') || 
+                   element.classList.contains('animate-spin');
+          },
+          onclone: (clonedDoc, element) => {
+            console.log('🔄 Processing cloned document...');
+            
+            // Apply the same visibility fixes to the cloned document
+            const clonedElements = clonedDoc.querySelectorAll('*') as NodeListOf<HTMLElement>;
+            clonedElements.forEach((clonedEl) => {
+              clonedEl.style.setProperty('overflow', 'visible', 'important');
+              clonedEl.style.setProperty('overflow-x', 'visible', 'important');
+              clonedEl.style.setProperty('overflow-y', 'visible', 'important');
+              clonedEl.style.setProperty('max-height', 'none', 'important');
+              clonedEl.style.setProperty('visibility', 'visible', 'important');
+              clonedEl.style.setProperty('opacity', '1', 'important');
+              
+              // Remove problematic animations
+              clonedEl.style.setProperty('animation', 'none', 'important');
+              clonedEl.style.setProperty('transition', 'none', 'important');
             });
+            
+            // Ensure the root element is also visible
+            if (element) {
+              element.style.setProperty('overflow', 'visible', 'important');
+              element.style.setProperty('background', '#ffffff', 'important');
+            }
           }
         });
         
-        // Restore original styles
+        // Restore all original styles
         originalStyles.forEach((styles, el) => {
           Object.entries(styles).forEach(([prop, value]) => {
-            if (value !== undefined && value !== null) {
-              el.style[prop] = value;
+            if (value !== undefined && value !== null && value !== '') {
+              el.style.setProperty(prop, String(value));
+            } else {
+              el.style.removeProperty(prop);
             }
           });
         });
