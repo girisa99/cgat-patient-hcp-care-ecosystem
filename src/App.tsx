@@ -15,6 +15,7 @@ import { TenantProvider } from '@/contexts/TenantContext';
 // Import pages that exist
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
+import DemoDashboard from '@/pages/DemoDashboard';
 import Users from '@/pages/Users';
 import Patients from '@/pages/Patients';
 import Facilities from '@/pages/Facilities';
@@ -77,15 +78,22 @@ const AppContent = () => {
                 <>
                   {/* Role-based default route */}
                   <Route path="/" element={
-                    userRoles.includes('onboardingTeam') && !userRoles.includes('superAdmin') 
-                      ? <OnboardingDashboard /> 
-                      : <Dashboard />
+                    userRoles.includes('demoUser') 
+                      ? <DemoDashboard />
+                      : userRoles.includes('onboardingTeam') && !userRoles.includes('superAdmin') 
+                        ? <OnboardingDashboard /> 
+                        : <Dashboard />
                   } />
                   
                   {/* SuperAdmin & Admin & Healthcare Staff routes */}
                   <Route path="/dashboard" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'nurse', 'caseManager', 'onboardingTeam']}>
                       <Dashboard />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/demo-dashboard" element={
+                    <ProtectedRoute requiredRoles={['demoUser']}>
+                      <DemoDashboard />
                     </ProtectedRoute>
                   } />
                   <Route path="/index" element={
