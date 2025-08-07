@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation, Database, Cloud, MessageSquare, Globe, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useStaticHTMLExport } from '@/hooks/useStaticHTMLExport';
+import { useCompleteStaticExport } from '@/hooks/useCompleteStaticExport';
 import './PresentationStyles.css';
 
 interface Slide {
@@ -2370,7 +2370,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { downloadHTML, downloadPDF } = useStaticHTMLExport();
+  const { downloadHTML, downloadPDF } = useCompleteStaticExport();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
