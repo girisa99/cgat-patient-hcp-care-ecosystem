@@ -7,6 +7,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Database, MessageSquare, Zap, Cloud, Globe, FileText } from 'lucide-react';
 
 export interface Slide {
   id: number;
@@ -23,8 +24,82 @@ export const presentationSlides: Slide[] = [
     subtitle: "Comprehensive AI automation platform with proven results and real-world implementation",
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
-        <div className="text-center text-muted-foreground">
-          <p>Slide 1 content - Will be rendered by static export</p>
+        {/* Hero Section */}
+        <div className="text-center space-y-4 mb-8">
+          <div className="flex items-center justify-center gap-6 mb-6">
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+              <Database className="w-8 h-8 text-primary" />
+            </div>
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+              <MessageSquare className="w-8 h-8 text-primary" />
+            </div>
+            <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center">
+              <Zap className="w-8 h-8 text-primary" />
+            </div>
+          </div>
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
+            Transform your treatment center operations with comprehensive AI automation. 
+            From patient intake to care coordination, our platform delivers measurable results.
+          </p>
+        </div>
+
+        {/* Key Features Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="p-6 text-center">
+            <CardContent className="space-y-4">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+                <Database className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold">Data Integration</h3>
+              <p className="text-muted-foreground">
+                Seamless integration with existing EHR systems and databases
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="p-6 text-center">
+            <CardContent className="space-y-4">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+                <MessageSquare className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold">AI Conversations</h3>
+              <p className="text-muted-foreground">
+                Natural language processing for patient interactions
+              </p>
+            </CardContent>
+          </Card>
+
+          <Card className="p-6 text-center">
+            <CardContent className="space-y-4">
+              <div className="w-12 h-12 bg-primary/20 rounded-full flex items-center justify-center mx-auto">
+                <Zap className="w-6 h-6 text-primary" />
+              </div>
+              <h3 className="text-xl font-semibold">Automation</h3>
+              <p className="text-muted-foreground">
+                Streamlined workflows and automated processes
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Implementation Stats */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8">
+          <div className="text-center p-4 bg-card rounded-lg">
+            <div className="text-2xl font-bold text-primary">95%</div>
+            <div className="text-sm text-muted-foreground">Efficiency Gain</div>
+          </div>
+          <div className="text-center p-4 bg-card rounded-lg">
+            <div className="text-2xl font-bold text-primary">60%</div>
+            <div className="text-sm text-muted-foreground">Cost Reduction</div>
+          </div>
+          <div className="text-center p-4 bg-card rounded-lg">
+            <div className="text-2xl font-bold text-primary">24/7</div>
+            <div className="text-sm text-muted-foreground">AI Availability</div>
+          </div>
+          <div className="text-center p-4 bg-card rounded-lg">
+            <div className="text-2xl font-bold text-primary">30+</div>
+            <div className="text-sm text-muted-foreground">Integrations</div>
+          </div>
         </div>
       </div>
     ),
@@ -37,7 +112,7 @@ export const presentationSlides: Slide[] = [
     content: (
       <div className="h-full overflow-y-auto space-y-6 animate-fade-in">
         <div className="text-center text-muted-foreground">
-          <p>Slide 2 content - Will be rendered by static export</p>
+          <p>Slide 2 content - Full architecture details</p>
         </div>
       </div>
     ),
