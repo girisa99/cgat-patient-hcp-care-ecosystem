@@ -39,17 +39,49 @@ export const useComprehensivePresentationCapture = () => {
           // Find the slide content element
           const slideContentElement = document.querySelector('[data-slide-content]') as HTMLElement;
           if (slideContentElement) {
-            // Capture the slide as image
+            // Force layout calculation and get full content dimensions
+            slideContentElement.style.overflow = 'visible';
+            const originalHeight = slideContentElement.style.height;
+            slideContentElement.style.height = 'auto';
+            
+            // Wait for layout to settle
+            await new Promise(resolve => setTimeout(resolve, 100));
+            
+            // Get the full scroll dimensions to capture all content
+            const fullWidth = Math.max(
+              slideContentElement.scrollWidth,
+              slideContentElement.offsetWidth,
+              slideContentElement.clientWidth
+            );
+            const fullHeight = Math.max(
+              slideContentElement.scrollHeight,
+              slideContentElement.offsetHeight,
+              slideContentElement.clientHeight
+            );
+            
+            // Capture the slide as image with full dimensions
             const canvas = await html2canvas(slideContentElement, {
               useCORS: true,
               allowTaint: false,
               backgroundColor: '#ffffff',
               scale: 2,
-              width: slideContentElement.offsetWidth,
-              height: slideContentElement.offsetHeight,
+              width: fullWidth,
+              height: fullHeight,
               scrollX: 0,
               scrollY: 0,
+              windowWidth: fullWidth,
+              windowHeight: fullHeight,
+              ignoreElements: (element) => {
+                // Ignore any overlay elements that might interfere
+                return element.classList?.contains('cursor-pointer') || 
+                       element.tagName === 'BUTTON' ||
+                       element.getAttribute('role') === 'button';
+              }
             });
+            
+            // Restore original styles
+            slideContentElement.style.height = originalHeight;
+            slideContentElement.style.overflow = '';
             
             const imageData = canvas.toDataURL('image/png', 1.0);
             capturedSlides.push(imageData);
