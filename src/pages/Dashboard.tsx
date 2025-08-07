@@ -198,46 +198,6 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* AI Presentation Banner for SuperAdmin */}
-        <Card className="bg-gradient-to-r from-purple-500/20 via-pink-500/20 to-red-500/20 border-purple-500/30">
-          <CardHeader>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-4">
-                <div className="w-16 h-16 bg-purple-600 rounded-full flex items-center justify-center">
-                  <Settings className="w-8 h-8 text-white" />
-                </div>
-                <div>
-                  <p className="text-muted-foreground">
-                    Complete system-wide AI implementation and management dashboard
-                  </p>
-                </div>
-              </div>
-              <div className="flex gap-3">
-                <Button 
-                  onClick={() => setShowPresentation(!showPresentation)}
-                  className="flex items-center gap-2 bg-purple-600 hover:bg-purple-700"
-                >
-                  <Presentation className="w-4 h-4" />
-                  {showPresentation ? 'Hide' : 'View'} System Overview
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={downloadPDF}
-                  className="flex items-center gap-2"
-                >
-                  📄 Download PDF
-                </Button>
-                <Button 
-                  variant="outline"
-                  onClick={downloadPPT}
-                  className="flex items-center gap-2"
-                >
-                  📊 Download PPT
-                </Button>
-              </div>
-            </div>
-          </CardHeader>
-        </Card>
 
         {/* Presentation Display */}
         {showPresentation && (
