@@ -207,34 +207,62 @@ export const structuredPresentationData: SlideData[] = [
   },
   {
     id: 6,
-    title: "Step 3: Actions & Connectors Configuration", 
-    subtitle: "External System Integration, Workflow Automation & API Management",
+    title: "Step 3: Actions Configuration & System Connectors",
+    subtitle: "Auto-Assign Templates & External System Integration",
     type: "content",
     content: {
       subSections: [
         {
-          title: "Integration Capabilities",
+          title: "AI Template System",
           items: [
-            "EHR System Integration - Epic, Cerner, AllScripts connectivity",
-            "Payment Processing - Secure payment gateway integration", 
-            "Communication APIs - Twilio, SendGrid, social media platforms",
-            "Document Management - DocuSign, electronic signature workflows"
+            "Auto-Assign AI Templates - Context-aware action suggestions, agent type & purpose analysis, score-based connector matching, real-time task optimization",
+            "Custom Template Creation - Wizard-guided setup, dynamic configuration forms, multi-step validation, reusable action chains",
+            "Task Assignment Engine - Intelligent connector assignment, type-based matching algorithm, category alignment scoring, performance monitoring"
           ]
         },
         {
-          title: "Workflow Automation", 
+          title: "AI Models Implementation",
           items: [
-            "Automated patient intake and verification",
-            "Insurance verification and pre-authorization",
-            "Appointment scheduling and reminder systems",
-            "Treatment plan coordination and updates"
+            "Large Language Models - GPT-4 for complex reasoning, Claude for healthcare compliance, multi-modal orchestration, context-aware routing",
+            "Small Language Models - Llama 3.1 8B for efficiency, Phi-3 Mini for quick responses, Gemma 2B for lightweight tasks, edge deployment ready",
+            "Vision & MCP Protocol - GPT-4V for image analysis, MCP SDK integration, OCR document processing, labeling studio workflows"
+          ]
+        },
+        {
+          title: "System Connectors",
+          items: [
+            "Database - Oracle, MySQL, PostgreSQL integration",
+            "Messaging - Kafka, RabbitMQ, SQS support",
+            "REST API - HTTP endpoints, webhook integration",
+            "File System - FTP, SFTP, S3 storage connectivity"
+          ]
+        },
+        {
+          title: "Knowledge Base & Integration",
+          items: [
+            "Supabase Integration - Vector embeddings, real-time data, Auth",
+            "RAG Implementation - Context retrieval, smart suggestions",
+            "Document Auto-Creation - Automated clinical documentation, consent forms, patient education materials",
+            "Secure Upload System - HIPAA-compliant document upload with automatic OCR, metadata extraction, and classification",
+            "Web Crawling - Intelligent crawling of authorized websites to gather relevant information for knowledge bases"
+          ]
+        },
+        {
+          title: "Retrieval-Augmented Generation (RAG)",
+          items: [
+            "Vector database integration for semantic search across documents",
+            "Automatic chunking and embedding of medical content",
+            "Citation tracking to maintain source transparency",
+            "Content approval workflows with clinical review options",
+            "Version control for all knowledge base materials",
+            "Comprehensive audit trails and access controls for healthcare compliance"
           ]
         }
       ]
     },
     design: {
       backgroundColor: "#f8fafc",
-      primaryColor: "#2563eb", 
+      primaryColor: "#2563eb",
       layout: "two-column"
     }
   },
