@@ -886,6 +886,584 @@ export const presentationSlides: Slide[] = [
         </div>
       </div>
     )
+  },
+  {
+    id: 8,
+    title: "Complete Template System",
+    subtitle: "Comprehensive template system with intelligent deployment, validation, and workflow automation",
+    animation: 'fade',
+    content: (
+      <div className="space-y-8">
+        {/* Main Stats */}
+        <div className="grid grid-cols-4 gap-6 mb-8">
+          <div className="text-center">
+            <div className="text-3xl font-bold text-green-600 mb-2">100%</div>
+            <div className="text-sm text-green-700">Automated Workflow</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-blue-600 mb-2">95%</div>
+            <div className="text-sm text-blue-700">Deployment Success Rate</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-purple-600 mb-2">5min</div>
+            <div className="text-sm text-purple-700">Average Deployment Time</div>
+          </div>
+          <div className="text-center">
+            <div className="text-3xl font-bold text-orange-600 mb-2">8+</div>
+            <div className="text-sm text-orange-700">Supported Channels</div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Template Components */}
+          <div className="space-y-6">
+            <h4 className="text-xl font-semibold text-gray-800">Template Components</h4>
+            <div className="text-sm text-gray-600 mb-4">Our comprehensive template system includes:</div>
+            
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded border border-blue-200">
+                <CheckCircle className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-blue-800">Pre-built healthcare-specific agent templates</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded border border-blue-200">
+                <CheckCircle className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-blue-800">Customizable conversation flows</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded border border-blue-200">
+                <CheckCircle className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-blue-800">Clinical decision trees with medical validation</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded border border-blue-200">
+                <CheckCircle className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-blue-800">Integration points for EHR and other systems</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-blue-50 rounded border border-blue-200">
+                <CheckCircle className="w-4 h-4 text-blue-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-blue-800">Compliance-checked response patterns</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded border text-sm text-gray-600">
+              Templates are maintained by clinical experts and updated regularly to reflect best practices and current medical guidelines. Each template undergoes rigorous validation before being made available.
+            </div>
+          </div>
+
+          {/* Actions & Tasks */}
+          <div className="space-y-6">
+            <h4 className="text-xl font-semibold text-gray-800">Actions & Tasks</h4>
+            <div className="text-sm text-gray-600 mb-4">Templates include configurable actions that agents can perform:</div>
+            
+            <div className="space-y-3">
+              <div className="flex items-start gap-3 p-3 bg-green-50 rounded border border-green-200">
+                <CheckCircle className="w-4 h-4 text-green-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-green-800">Schedule appointments in integrated systems</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-green-50 rounded border border-green-200">
+                <CheckCircle className="w-4 h-4 text-green-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-green-800">Retrieve patient information from EHR</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-green-50 rounded border border-green-200">
+                <CheckCircle className="w-4 h-4 text-green-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-green-800">Process insurance eligibility checks</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-green-50 rounded border border-green-200">
+                <CheckCircle className="w-4 h-4 text-green-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-green-800">Generate and send documentation</div>
+                </div>
+              </div>
+              <div className="flex items-start gap-3 p-3 bg-green-50 rounded border border-green-200">
+                <CheckCircle className="w-4 h-4 text-green-600 mt-1 flex-shrink-0" />
+                <div className="text-sm">
+                  <div className="font-medium text-green-800">Escalate to human providers when needed</div>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-gray-50 p-4 rounded border text-sm text-gray-600">
+              Each action includes appropriate security checks, validation logic, and error handling to ensure reliable operation in healthcare environments.
+            </div>
+          </div>
+        </div>
+
+        {/* Intelligent Deployment */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+          <h4 className="text-xl font-semibold text-purple-800 mb-6">Intelligent Deployment</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-4 rounded border border-purple-200">
+              <h5 className="font-semibold text-purple-700 mb-3">Template Selection</h5>
+              <div className="text-sm text-purple-600">
+                AI-assisted recommendation of appropriate templates based on the specific healthcare use case and organizational requirements.
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded border border-purple-200">
+              <h5 className="font-semibold text-purple-700 mb-3">Validation</h5>
+              <div className="text-sm text-purple-600">
+                Automated testing against common scenarios and edge cases to ensure the template performs as expected in clinical settings.
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded border border-purple-200">
+              <h5 className="font-semibold text-purple-700 mb-3">Customization</h5>
+              <div className="text-sm text-purple-600">
+                Guided customization process with healthcare-specific parameters and compliance checks built into the workflow.
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 bg-white p-4 rounded border border-purple-200">
+            <h5 className="font-semibold text-purple-700 mb-3">Deployment</h5>
+            <div className="text-sm text-purple-600">
+              One-click deployment across selected channels with automatic configuration of necessary integrations and security settings.
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: 9,
+    title: "Advanced AI Models & Multi-Modal Capabilities",
+    subtitle: "Complete AI Infrastructure with RAG, Model Selection & Context Management",
+    animation: 'slide',
+    content: (
+      <div className="space-y-8">
+        {/* Main Header */}
+        <div className="text-center mb-8">
+          <h4 className="text-2xl font-bold text-gray-800 mb-4">AI Models, MCP Protocol & Knowledge Base Implementation</h4>
+          <div className="text-gray-600">Complete AI Infrastructure with RAG, Model Selection & Context Management</div>
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-blue-100 rounded-full border border-blue-200">
+            <Database className="w-4 h-4 text-blue-600" />
+            <span className="text-sm font-medium text-blue-800">Comprehensive AI Infrastructure Implementation</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* MCP Protocol Implementation */}
+          <div className="space-y-6">
+            <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
+                  <Link className="w-4 h-4 text-white" />
+                </div>
+                <h5 className="text-lg font-semibold text-blue-800">MCP Protocol Implementation</h5>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-pink-500 rounded-full"></div>
+                    <div className="font-medium text-blue-800">Context Sharing</div>
+                  </div>
+                  <div className="text-sm text-blue-600">Multi-modal communication and state management</div>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                    <div className="font-medium text-blue-800">Session Management</div>
+                  </div>
+                  <div className="text-sm text-blue-600">Persistent context across agent interactions</div>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-blue-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <div className="font-medium text-blue-800">Model Orchestration</div>
+                  </div>
+                  <div className="text-sm text-blue-600">Intelligent routing between AI models</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* AI Model Assignment Matrix */}
+          <div className="space-y-6">
+            <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center">
+                  <Bot className="w-4 h-4 text-white" />
+                </div>
+                <h5 className="text-lg font-semibold text-green-800">AI Model Assignment Matrix</h5>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+                    <div className="font-medium text-green-800">Text Processing</div>
+                  </div>
+                  <ul className="text-xs text-green-600 space-y-1">
+                    <li>• Llama 3.1 8B - Complex reasoning</li>
+                    <li>• Phi-3 Mini - Quick responses</li>
+                    <li>• Gemma 2B - Classifications</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className="font-medium text-green-800">Vision Tasks</div>
+                  </div>
+                  <ul className="text-xs text-green-600 space-y-1">
+                    <li>• GPT-4V - Document analysis</li>
+                    <li>• CLIP - Image understanding</li>
+                    <li>• OCR Engine - Text extraction</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-green-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <div className="font-medium text-green-800">Specialized Models</div>
+                  </div>
+                  <ul className="text-xs text-green-600 space-y-1">
+                    <li>• Medical NER - Entity recognition</li>
+                    <li>• Sentiment Analysis - Emotional state</li>
+                    <li>• Classification - Category assignment</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom Section */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* RAG Knowledge Base */}
+          <div className="space-y-6">
+            <div className="bg-purple-50 rounded-lg p-6 border border-purple-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-purple-600 rounded-full flex items-center justify-center">
+                  <Database className="w-4 h-4 text-white" />
+                </div>
+                <h5 className="text-lg font-semibold text-purple-800">RAG Knowledge Base</h5>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <h6 className="font-semibold text-purple-700 mb-2">Knowledge Sources</h6>
+                  <ul className="text-sm text-purple-600 space-y-1">
+                    <li>• Medical literature & protocols</li>
+                    <li>• Treatment guidelines</li>
+                    <li>• Institutional procedures</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h6 className="font-semibold text-purple-700 mb-2">Vector Database</h6>
+                  <ul className="text-sm text-purple-600 space-y-1">
+                    <li>• Embedding semantic search</li>
+                    <li>• Real-time updates</li>
+                    <li>• Context relevance scoring</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Implementation Stack */}
+          <div className="space-y-6">
+            <div className="bg-orange-50 rounded-lg p-6 border border-orange-200">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-8 h-8 bg-orange-600 rounded-full flex items-center justify-center">
+                  <Settings className="w-4 h-4 text-white" />
+                </div>
+                <h5 className="text-lg font-semibold text-orange-800">Implementation Stack</h5>
+              </div>
+              
+              <div className="space-y-3">
+                <div>
+                  <h6 className="font-semibold text-orange-700 mb-2">Architecture</h6>
+                  <ul className="text-sm text-orange-600 space-y-1">
+                    <li>• Supabase backend integration</li>
+                    <li>• Real-time context sharing</li>
+                    <li>• Multi-tenant support</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h6 className="font-semibold text-orange-700 mb-2">Components</h6>
+                  <ul className="text-sm text-orange-600 space-y-1">
+                    <li>• useHealthcareAI hook</li>
+                    <li>• MCP SDK integration</li>
+                    <li>• Model selection system</li>
+                  </ul>
+                </div>
+                
+                <div>
+                  <h6 className="font-semibold text-orange-700 mb-2">Features</h6>
+                  <ul className="text-sm text-orange-600 space-y-1">
+                    <li>• Context-aware retrieval</li>
+                    <li>• Multi-modal routing</li>
+                    <li>• Performance monitoring</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Performance Results */}
+        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <h5 className="text-lg font-semibold text-gray-800 mb-4 text-center">Implementation Results & Performance</h5>
+          
+          <div className="grid grid-cols-4 gap-6">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600 mb-1">96.8%</div>
+              <div className="text-sm text-blue-700">AI Model Accuracy</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600 mb-1">1.2s</div>
+              <div className="text-sm text-green-700">Response Time</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600 mb-1">85%</div>
+              <div className="text-sm text-purple-700">Context Retention</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600 mb-1">99.9%</div>
+              <div className="text-sm text-orange-700">System Uptime</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  },
+  {
+    id: 10,
+    title: "AI Model Infrastructure & Multi-Modal Processing",
+    subtitle: "Large Language Models, Vision Processing, Voice & Audio capabilities with comprehensive implementation",
+    animation: 'zoom',
+    content: (
+      <div className="space-y-8">
+        {/* Large Language Models */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div className="space-y-6">
+            <h4 className="text-xl font-semibold text-gray-800">Large Language Models</h4>
+            
+            <div className="space-y-4">
+              <div className="bg-blue-50 rounded-lg p-4 border border-blue-200">
+                <h5 className="font-semibold text-blue-800 mb-3">OpenAI Models</h5>
+                <ul className="text-sm text-blue-600 space-y-1">
+                  <li>• GPT-4 Turbo: Complex reasoning and analysis</li>
+                  <li>• GPT-4V: Vision language understanding</li>
+                  <li>• GPT-4 Realtime: Live voice conversations</li>
+                  <li>• Whisper: Speech-to-text transcription</li>
+                </ul>
+              </div>
+              
+              <div className="bg-purple-50 rounded-lg p-4 border border-purple-200">
+                <h5 className="font-semibold text-purple-800 mb-3">Anthropic Models</h5>
+                <ul className="text-sm text-purple-600 space-y-1">
+                  <li>• Claude 4 Opus: Most capable model</li>
+                  <li>• Claude 4 Sonnet: High performance & efficiency</li>
+                  <li>• Claude 3.5 Haiku: Fastest responses</li>
+                  <li>• 200K context window support</li>
+                </ul>
+              </div>
+              
+              <div className="bg-green-50 rounded-lg p-4 border border-green-200">
+                <h5 className="font-semibold text-green-800 mb-3">Hugging Face Models</h5>
+                <ul className="text-sm text-green-600 space-y-1">
+                  <li>• FLUX 1-schnell: Fast image generation</li>
+                  <li>• Llama 3.1 8B: Local text processing</li>
+                  <li>• DistilBERT: Text classification</li>
+                  <li>• Custom fine-tuned models</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+
+          {/* Vision & Image Processing */}
+          <div className="space-y-6">
+            <h4 className="text-xl font-semibold text-gray-800">Vision & Image Processing</h4>
+            
+            <div className="space-y-4">
+              <div className="bg-teal-50 rounded-lg p-4 border border-teal-200">
+                <h5 className="font-semibold text-teal-800 mb-3">Vision Language Models</h5>
+                <ul className="text-sm text-teal-600 space-y-1">
+                  <li>• GPT-4V: Document analysis & OCR</li>
+                  <li>• CLIP: Visual understanding</li>
+                  <li>• PaLI: Document processing</li>
+                  <li>• Custom OCR pipelines</li>
+                </ul>
+              </div>
+              
+              <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+                <h5 className="font-semibold text-indigo-800 mb-3">Image Generation</h5>
+                <ul className="text-sm text-indigo-600 space-y-1">
+                  <li>• FLUX 1-dev: High-quality images</li>
+                  <li>• FLUX 1-schnell: Fast generation</li>
+                  <li>• Image editing & merging</li>
+                  <li>• 1920x1920 max resolution</li>
+                </ul>
+              </div>
+              
+              <div className="bg-pink-50 rounded-lg p-4 border border-pink-200">
+                <h5 className="font-semibold text-pink-800 mb-3">Medical Imaging</h5>
+                <ul className="text-sm text-pink-600 space-y-1">
+                  <li>• X-ray & MRI analysis</li>
+                  <li>• DICOM format support</li>
+                  <li>• AI-powered diagnostics</li>
+                  <li>• Healthcare compliance</li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Voice & Audio Processing */}
+        <div className="bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg p-6 border border-blue-200">
+          <h4 className="text-xl font-semibold text-purple-800 mb-6 text-center">Voice & Audio Processing</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            {/* ElevenLabs Voice */}
+            <div className="bg-white rounded-lg p-4 border border-blue-200">
+              <h5 className="font-semibold text-blue-800 mb-3">ElevenLabs Voice</h5>
+              <ul className="text-sm text-blue-600 space-y-2">
+                <li>• 30+ High-quality voices (Aria, Roger, Sarah)</li>
+                <li>• Multilingual v2: 29 languages</li>
+                <li>• Turbo v2.5: Low latency, 32 languages</li>
+                <li>• Voice cloning & customization</li>
+              </ul>
+            </div>
+            
+            {/* Live Voice Agents */}
+            <div className="bg-white rounded-lg p-4 border border-green-200">
+              <h5 className="font-semibold text-green-800 mb-3">Live Voice Agents</h5>
+              <ul className="text-sm text-green-600 space-y-2">
+                <li>• OpenAI Realtime API integration</li>
+                <li>• WebSocket-based voice conversations</li>
+                <li>• Function calling support</li>
+                <li>• Voice Activity Detection (VAD)</li>
+              </ul>
+            </div>
+            
+            {/* Speech-to-Text */}
+            <div className="bg-white rounded-lg p-4 border border-purple-200">
+              <h5 className="font-semibold text-purple-800 mb-3">Speech-to-Text</h5>
+              <ul className="text-sm text-purple-600 space-y-2">
+                <li>• OpenAI Whisper integration</li>
+                <li>• Real-time transcription</li>
+                <li>• Multi-language support</li>
+                <li>• Optimized buffer handling</li>
+              </ul>
+            </div>
+            
+            {/* AI Model Processing */}
+            <div className="bg-white rounded-lg p-4 border border-orange-200">
+              <h5 className="font-semibold text-orange-800 mb-3">AI Model Processing</h5>
+              <ul className="text-sm text-orange-600 space-y-2">
+                <li>• Unified AI Gateway with multi-provider routing</li>
+                <li>• Automatic failover & load balancing</li>
+                <li>• Rate limiting & cost optimization</li>
+                <li>• Request/response caching</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+
+        {/* Implementation Architecture */}
+        <div className="bg-gray-50 rounded-lg p-6 border border-gray-200">
+          <h4 className="text-xl font-semibold text-gray-800 mb-6 text-center">Implementation Architecture</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-blue-600 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <Database className="w-8 h-8 text-white" />
+              </div>
+              <h5 className="font-semibold text-blue-800 mb-2">Model Management</h5>
+              <div className="text-sm text-blue-600">
+                Dynamic model selection based on task complexity, response time requirements, and cost optimization
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-green-600 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <Zap className="w-8 h-8 text-white" />
+              </div>
+              <h5 className="font-semibold text-green-800 mb-2">Real-time Processing</h5>
+              <div className="text-sm text-green-600">
+                Sub-second response times with intelligent caching and optimized model routing for healthcare workflows
+              </div>
+            </div>
+            
+            <div className="text-center">
+              <div className="w-16 h-16 bg-purple-600 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <Shield className="w-8 h-8 text-white" />
+              </div>
+              <h5 className="font-semibold text-purple-800 mb-2">Healthcare Compliance</h5>
+              <div className="text-sm text-purple-600">
+                HIPAA-compliant processing with encrypted data handling and audit trails for all AI interactions
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Technical Implementation */}
+        <div className="bg-gradient-to-r from-gray-100 to-gray-50 rounded-lg p-6 border border-gray-300">
+          <h4 className="text-xl font-semibold text-gray-800 mb-4 text-center">Technical Implementation Components</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Badge className="mb-2 bg-blue-100 text-blue-800">React Hooks</Badge>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• useConversation</li>
+                <li>• useVoiceProcessing</li>
+                <li>• useImageGeneration</li>
+                <li>• useModelSelection</li>
+              </ul>
+            </div>
+            <div>
+              <Badge className="mb-2 bg-green-100 text-green-800">Services</Badge>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• AI Gateway Service</li>
+                <li>• Voice Processing API</li>
+                <li>• Image Analysis Service</li>
+                <li>• Model Router</li>
+              </ul>
+            </div>
+            <div>
+              <Badge className="mb-2 bg-purple-100 text-purple-800">Integrations</Badge>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• @11labs/react</li>
+                <li>• OpenAI SDK</li>
+                <li>• Anthropic SDK</li>
+                <li>• Hugging Face API</li>
+              </ul>
+            </div>
+            <div>
+              <Badge className="mb-2 bg-orange-100 text-orange-800">Infrastructure</Badge>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• Supabase Edge Functions</li>
+                <li>• Real-time WebSockets</li>
+                <li>• Vector Database</li>
+                <li>• CDN Integration</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 ];
 
