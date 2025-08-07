@@ -59,14 +59,14 @@ export const AgenticAIPresentation: React.FC = () => {
     try {
       switch (format) {
         case 'html':
-          await downloadHTML(presentationSlides);
+          await downloadHTML();
           break;
         case 'pdf':
-          await downloadPDF(presentationSlides);
+          await downloadPDF();
           break;
         case 'ppt':
           // For PowerPoint, use HTML format with all slides captured
-          await downloadHTML(presentationSlides);
+          await downloadHTML();
           break;
       }
     } catch (error) {
