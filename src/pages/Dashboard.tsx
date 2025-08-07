@@ -29,15 +29,6 @@ export const Dashboard: React.FC = () => {
   const [showPresentation, setShowPresentation] = React.useState(false);
   const { isDemoMode } = useQuickDemo();
   
-  // If in demo mode, show AI learning dashboard
-  if (isDemoMode) {
-    return (
-      <AppLayout>
-        <AiLearningDashboard />
-      </AppLayout>
-    );
-  }
-  
   // Download functions
   const downloadPDF = () => {
     const presentationContent = `AGENTIC AI & AUTOMATION IMPLEMENTATION - Complete Healthcare Onboarding Platform
@@ -210,6 +201,10 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
 
   return (
     <AppLayout>
+      {/* If in demo mode, show AI learning dashboard */}
+      {isDemoMode ? (
+        <AiLearningDashboard />
+      ) : (
       <div className="space-y-6">
         {/* Demo Mode Banner */}
         <DemoModeBanner />
@@ -461,6 +456,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
           </Card>
         )}
       </div>
+      )}
     </AppLayout>
   );
 };
