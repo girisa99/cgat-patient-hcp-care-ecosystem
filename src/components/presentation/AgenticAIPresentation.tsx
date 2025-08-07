@@ -4,8 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation, Database, Cloud, MessageSquare, Globe, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useEnhancedPresentationDownload } from '@/hooks/useEnhancedPresentationDownload';
-import { useAdvancedPresentationCapture } from '@/hooks/useAdvancedPresentationCapture';
+import { useComprehensivePresentationCapture } from '@/hooks/useComprehensivePresentationCapture';
 import './PresentationStyles.css';
 
 interface Slide {
@@ -2371,8 +2370,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { downloadEnhancedHTML, downloadEnhancedPDF } = useEnhancedPresentationDownload();
-  const { downloadAdvancedHTML, downloadAdvancedPDF } = useAdvancedPresentationCapture();
+  const { downloadHTML, downloadPDF } = useComprehensivePresentationCapture();
 
   useEffect(() => {
     let interval: NodeJS.Timeout;
@@ -2409,14 +2407,14 @@ export const AgenticAIPresentation: React.FC = () => {
     try {
       switch (format) {
         case 'html':
-          await downloadAdvancedHTML(slides);
+          await downloadHTML(slides);
           break;
         case 'pdf':
-          await downloadAdvancedPDF(slides);
+          await downloadPDF(slides);
           break;
         case 'ppt':
-          // For PowerPoint, use advanced HTML format with comprehensive content
-          await downloadAdvancedHTML(slides);
+          // For PowerPoint, use HTML format with all slides captured
+          await downloadHTML(slides);
           break;
       }
     } catch (error) {
@@ -2478,7 +2476,7 @@ export const AgenticAIPresentation: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => handleExport('html')}
-              title="Export as HTML"
+              title="Export all slides as HTML with visual content"
             >
               <FileText className="w-4 h-4" />
             </Button>
@@ -2486,7 +2484,7 @@ export const AgenticAIPresentation: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => handleExport('pdf')}
-              title="Export as PDF"
+              title="Export all slides as PDF with visual content"
             >
               <Download className="w-4 h-4" />
             </Button>
@@ -2494,7 +2492,7 @@ export const AgenticAIPresentation: React.FC = () => {
               variant="outline"
               size="sm"
               onClick={() => handleExport('ppt')}
-              title="Export as PowerPoint"
+              title="Export all slides as comprehensive HTML (PowerPoint alternative)"
             >
               <Presentation className="w-4 h-4" />
             </Button>
