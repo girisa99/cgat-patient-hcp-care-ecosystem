@@ -39,6 +39,11 @@ export const useMasterRoleManagement = () => {
   // Role-based access
   const hasRole = (role: string) => userRoles.includes(role);
   const isAdmin = hasRole('superAdmin') || hasRole('onboardingTeam');
+  const isDemoUser = hasRole('demoUser');
+  
+  // Get demo-specific modules for demo users
+  const demoModules = modules.filter(m => m.name.startsWith('demo_'));
+  const hasDemoAccess = isDemoUser && demoModules.length > 0;
 
   return {
     // Data - now includes all required fields
@@ -57,7 +62,10 @@ export const useMasterRoleManagement = () => {
     // Access control
     hasRole,
     isAdmin,
+    isDemoUser,
     userRoles,
+    hasDemoAccess,
+    demoModules,
     
     // Meta
     meta: {
