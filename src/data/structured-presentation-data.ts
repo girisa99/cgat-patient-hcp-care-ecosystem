@@ -164,10 +164,30 @@ export const structuredPresentationData: SlideData[] = [
   {
     id: 5,
     title: "Step 2: Canvas Design & Visual Branding",
-    subtitle: "Agent Creation, Template System, Use Cases & Complete Branding Implementation",
+    subtitle: "Complete Branding System, Canvas Architecture & Agent Creation Platform",
     type: "content", 
     content: {
       subSections: [
+        {
+          title: "Complete Branding & Design System",
+          items: [
+            "Logo for all colors - Comprehensive brand identity package",
+            "Branding style guide - Complete visual identity standards",
+            "Digital assets created - Professional marketing materials",
+            "Brand positioning - Strategic market positioning framework",
+            "Branding strategy - Long-term brand development roadmap",
+            "Colors & fonts - Consistent typography and color palette"
+          ]
+        },
+        {
+          title: "Canvas Implementation Architecture",
+          items: [
+            "Data Layer - Secure data management and storage foundation",
+            "Command Layer - Intelligent command processing and routing",
+            "Rendering Engine - Real-time visual rendering and display",
+            "Experience Layer - User interface and interaction management"
+          ]
+        },
         {
           title: "Visual Design Features",
           items: [
@@ -175,15 +195,6 @@ export const structuredPresentationData: SlideData[] = [
             "Professional templates for healthcare industry",
             "Complete branding customization and logo integration",
             "Real-time preview with responsive design testing"
-          ]
-        },
-        {
-          title: "Template System",
-          items: [
-            "Industry-specific agent templates",
-            "Healthcare compliance built-in",
-            "Customizable conversation flows",
-            "Multi-language support and localization"
           ]
         }
       ]
