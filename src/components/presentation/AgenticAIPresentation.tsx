@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation, Database, Cloud, MessageSquare, Globe, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useScreenCaptureExport } from '@/hooks/useScreenCaptureExport';
+import { useTextBasedExport } from '@/hooks/useTextBasedExport';
 import { presentationSlides } from '@/data/presentation-slides';
 import './PresentationStyles.css';
 
@@ -22,7 +23,8 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { generatePowerPoint, generatePDF } = useScreenCaptureExport();
+  const { generatePowerPoint: generateImagePPT, generatePDF: generateImagePDF } = useScreenCaptureExport();
+  const { generateTextPowerPoint, generateTextPDF } = useTextBasedExport();
 
   // DEBUG: Log what slides are being used
   console.log('🔍 AgenticAIPresentation - Slides loaded:', {
@@ -63,17 +65,20 @@ export const AgenticAIPresentation: React.FC = () => {
     setIsFullscreen(!isFullscreen);
   };
 
-  const handleExport = async (format: 'html' | 'pdf' | 'ppt') => {
+  const handleExport = async (format: 'text-pdf' | 'text-ppt' | 'image-pdf' | 'image-ppt') => {
     try {
       switch (format) {
-        case 'html':
-          await generatePDF(); // Use PDF instead of HTML for better formatting
+        case 'text-pdf':
+          await generateTextPDF();
           break;
-        case 'pdf':
-          await generatePDF();
+        case 'text-ppt':
+          await generateTextPowerPoint();
           break;
-        case 'ppt':
-          await generatePowerPoint();
+        case 'image-pdf':
+          await generateImagePDF();
+          break;
+        case 'image-ppt':
+          await generateImagePPT();
           break;
       }
     } catch (error) {
@@ -143,26 +148,29 @@ export const AgenticAIPresentation: React.FC = () => {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExport('pdf')}
-              title="Generate professional PDF using DocuSign integration"
+              onClick={() => handleExport('text-pdf')}
+              title="Generate PDF with actual text content (recommended)"
             >
               <FileText className="w-4 h-4" />
+              <span className="ml-1 text-xs">TEXT</span>
             </Button>
             <Button
               variant="outline"
               size="sm"
-              onClick={() => handleExport('pdf')}
-              title="Generate high-quality PDF with professional formatting"
-            >
-              <Download className="w-4 h-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport('ppt')}
-              title="Generate native PowerPoint presentation (PPTX)"
+              onClick={() => handleExport('text-ppt')}
+              title="Generate PowerPoint with actual text content (recommended)"
             >
               <Presentation className="w-4 h-4" />
+              <span className="ml-1 text-xs">TEXT</span>
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => handleExport('image-pdf')}
+              title="Generate PDF with slide images (visual fidelity)"
+            >
+              <Download className="w-4 h-4" />
+              <span className="ml-1 text-xs">IMG</span>
             </Button>
           </div>
         </div>

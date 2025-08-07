@@ -17,7 +17,7 @@ export const useScreenCaptureExport = () => {
     return new Promise(resolve => setTimeout(resolve, ms));
   };
 
-  // Capture current slide as high-quality image
+  // Capture current slide as high-quality image with proper content handling
   const captureCurrentSlide = useCallback(async (): Promise<string> => {
     try {
       console.log('📸 Capturing current slide...');
@@ -31,20 +31,71 @@ export const useScreenCaptureExport = () => {
       // Wait for animations and content to settle
       await waitForContent(1500);
 
+      // Get the actual content height (including scrollable content)
+      const contentElement = slideElement.querySelector('.h-\\[calc\\(100\\%-120px\\)\\]') as HTMLElement;
+      let actualHeight = slideElement.offsetHeight;
+      
+      if (contentElement) {
+        // Calculate the full content height including scrolled content
+        const contentScrollHeight = contentElement.scrollHeight;
+        const headerHeight = 120; // Approximate header height
+        actualHeight = Math.max(actualHeight, contentScrollHeight + headerHeight + 100);
+      }
+
+      console.log(`📏 Capturing dimensions: ${slideElement.offsetWidth}x${actualHeight} (original: ${slideElement.offsetHeight})`);
+
+      // Temporarily expand element to capture all content
+      const originalOverflow = slideElement.style.overflow;
+      const originalHeight = slideElement.style.height;
+      const contentOriginalOverflow = contentElement?.style.overflow || '';
+      const contentOriginalHeight = contentElement?.style.height || '';
+      
+      slideElement.style.overflow = 'visible';
+      slideElement.style.height = `${actualHeight}px`;
+      if (contentElement) {
+        contentElement.style.overflow = 'visible';
+        contentElement.style.height = 'auto';
+      }
+
+      // Wait for layout to stabilize
+      await waitForContent(500);
+
       // Capture with high quality settings
       const canvas = await html2canvas(slideElement, {
-        scale: 3, // High resolution
+        scale: 2, // Good quality without being too large
         useCORS: true,
         allowTaint: true,
         backgroundColor: '#f8fafc',
         width: slideElement.offsetWidth,
-        height: slideElement.offsetHeight,
+        height: actualHeight,
         scrollX: 0,
         scrollY: 0,
         windowWidth: window.innerWidth,
-        windowHeight: window.innerHeight
+        windowHeight: window.innerHeight,
+        onclone: (clonedDoc) => {
+          // Ensure cloned content is fully visible
+          const clonedSlide = clonedDoc.querySelector('[data-slide-content]') as HTMLElement;
+          if (clonedSlide) {
+            clonedSlide.style.overflow = 'visible';
+            clonedSlide.style.height = `${actualHeight}px`;
+            const clonedContent = clonedSlide.querySelector('.h-\\[calc\\(100\\%-120px\\)\\]') as HTMLElement;
+            if (clonedContent) {
+              clonedContent.style.overflow = 'visible';
+              clonedContent.style.height = 'auto';
+            }
+          }
+        }
       });
 
+      // Restore original styles
+      slideElement.style.overflow = originalOverflow;
+      slideElement.style.height = originalHeight;
+      if (contentElement) {
+        contentElement.style.overflow = contentOriginalOverflow;
+        contentElement.style.height = contentOriginalHeight;
+      }
+
+      console.log(`✅ Slide captured: ${canvas.width}x${canvas.height}`);
       return canvas.toDataURL('image/png', 1.0);
     } catch (error) {
       console.error('❌ Failed to capture slide:', error);
