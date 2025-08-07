@@ -18,29 +18,146 @@ export const useEnhancedPresentationDownload = () => {
   const { toast } = useToast();
 
   const getSlideContentAsHTML = (slide: Slide, index: number): string => {
-    // First try to extract from the actual rendered slide content
+    // First, try to extract from the actual rendered slide content
     const slideElement = document.querySelector(`[data-slide-id="${index}"]`);
     if (slideElement) {
       const contentElement = slideElement.querySelector('[data-slide-content]');
       if (contentElement) {
-        // Clone the element to avoid modifying the original
-        const clonedElement = contentElement.cloneNode(true) as HTMLElement;
-        
-        // Remove any interactive elements and clean up for static export
-        clonedElement.querySelectorAll('button, [data-ignore-export]').forEach(el => el.remove());
-        
-        // Ensure animations are disabled for static export
-        clonedElement.querySelectorAll('*').forEach(el => {
-          const element = el as HTMLElement;
-          element.style.animation = 'none';
-          element.style.transition = 'none';
-        });
-        
-        return clonedElement.innerHTML;
+        return captureSlideContent(contentElement, index);
       }
     }
+
+    // If no slide element found, try to find the current slide container
+    const currentSlideContainer = document.querySelector('.slide-container');
+    if (currentSlideContainer && index === getCurrentSlideIndex()) {
+      const slideContent = currentSlideContainer.querySelector('.slide-content');
+      if (slideContent) {
+        return captureSlideContent(slideContent, index);
+      }
+    }
+
+    // Enhanced fallback content generation based on slide structure
+    return generateEnhancedSlideContent(slide, index);
+  };
+
+  const getCurrentSlideIndex = (): number => {
+    // Try to get current slide index from various sources
+    const slideIndicator = document.querySelector('[data-current-slide]');
+    if (slideIndicator) {
+      return parseInt(slideIndicator.getAttribute('data-current-slide') || '0');
+    }
+    return 0;
+  };
+
+  const captureSlideContent = (contentElement: Element, index: number): string => {
+    // Clone the element to avoid modifying the original
+    const clonedElement = contentElement.cloneNode(true) as HTMLElement;
     
-    // Fallback to pre-defined content for specific slides
+    // Convert Tailwind classes to CSS for better export compatibility
+    const tailwindToCSS = new Map([
+      // Grid and layout
+      ['grid', 'display: grid;'],
+      ['grid-cols-1', 'grid-template-columns: repeat(1, minmax(0, 1fr));'],
+      ['grid-cols-2', 'grid-template-columns: repeat(2, minmax(0, 1fr));'],
+      ['grid-cols-3', 'grid-template-columns: repeat(3, minmax(0, 1fr));'],
+      ['grid-cols-4', 'grid-template-columns: repeat(4, minmax(0, 1fr));'],
+      ['gap-3', 'gap: 0.75rem;'],
+      ['gap-4', 'gap: 1rem;'],
+      ['gap-6', 'gap: 1.5rem;'],
+      ['gap-8', 'gap: 2rem;'],
+      
+      // Flexbox
+      ['flex', 'display: flex;'],
+      ['flex-col', 'flex-direction: column;'],
+      ['items-center', 'align-items: center;'],
+      ['justify-center', 'justify-content: center;'],
+      ['items-start', 'align-items: flex-start;'],
+      
+      // Spacing
+      ['space-y-1 > * + *', 'margin-top: 0.25rem;'],
+      ['space-y-2 > * + *', 'margin-top: 0.5rem;'],
+      ['space-y-3 > * + *', 'margin-top: 0.75rem;'],
+      ['space-y-4 > * + *', 'margin-top: 1rem;'],
+      ['space-y-6 > * + *', 'margin-top: 1.5rem;'],
+      ['p-3', 'padding: 0.75rem;'],
+      ['p-4', 'padding: 1rem;'],
+      ['p-6', 'padding: 1.5rem;'],
+      ['mb-2', 'margin-bottom: 0.5rem;'],
+      ['mb-4', 'margin-bottom: 1rem;'],
+      ['mb-6', 'margin-bottom: 1.5rem;'],
+      ['mt-4', 'margin-top: 1rem;'],
+      
+      // Text styling
+      ['text-sm', 'font-size: 0.875rem; line-height: 1.25rem;'],
+      ['text-xs', 'font-size: 0.75rem; line-height: 1rem;'],
+      ['text-xl', 'font-size: 1.25rem; line-height: 1.75rem;'],
+      ['text-2xl', 'font-size: 1.5rem; line-height: 2rem;'],
+      ['text-3xl', 'font-size: 1.875rem; line-height: 2.25rem;'],
+      ['font-semibold', 'font-weight: 600;'],
+      ['font-bold', 'font-weight: 700;'],
+      ['text-center', 'text-align: center;'],
+      
+      // Colors and backgrounds
+      ['text-primary', 'color: #4f46e5;'],
+      ['text-muted-foreground', 'color: #64748b;'],
+      ['bg-accent\\/20', 'background-color: rgba(240, 240, 240, 0.2);'],
+      ['bg-primary\\/10', 'background-color: rgba(79, 70, 229, 0.1);'],
+      ['bg-green-500', 'background-color: #22c55e;'],
+      ['text-white', 'color: #ffffff;'],
+      
+      // Border radius
+      ['rounded-lg', 'border-radius: 0.5rem;'],
+      ['rounded-full', 'border-radius: 9999px;'],
+      
+      // Sizing
+      ['w-6', 'width: 1.5rem;'],
+      ['h-6', 'height: 1.5rem;'],
+      ['w-20', 'width: 5rem;'],
+      ['h-20', 'height: 5rem;'],
+      ['mx-auto', 'margin-left: auto; margin-right: auto;'],
+    ]);
+
+    // Apply enhanced styling conversion
+    clonedElement.querySelectorAll('*').forEach(el => {
+      const element = el as HTMLElement;
+      
+      // Remove interactive elements
+      if (element.tagName === 'BUTTON' || element.hasAttribute('data-ignore-export')) {
+        element.remove();
+        return;
+      }
+      
+      // Convert classes to inline styles
+      const classList = Array.from(element.classList);
+      let inlineStyles = element.style.cssText;
+      
+      classList.forEach(className => {
+        if (tailwindToCSS.has(className)) {
+          inlineStyles += ' ' + tailwindToCSS.get(className);
+        }
+      });
+      
+      // Apply the styles
+      element.style.cssText = inlineStyles;
+      
+      // Disable animations for static export
+      element.style.animation = 'none !important';
+      element.style.transition = 'none !important';
+      
+      // Ensure proper display for common elements
+      if (element.classList.contains('grid')) {
+        element.style.display = 'grid';
+      }
+      if (element.classList.contains('flex')) {
+        element.style.display = 'flex';
+      }
+    });
+
+    return clonedElement.innerHTML;
+  };
+
+  const generateEnhancedSlideContent = (slide: Slide, index: number): string => {
+    // This is the fallback content generation method
     switch (index) {
       case 0: // Agentic AI & Automation Platform
         return `
