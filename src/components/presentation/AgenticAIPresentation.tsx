@@ -4,7 +4,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation, Database, Cloud, MessageSquare, Globe, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useDirectPresentationExport } from '@/hooks/useDirectPresentationExport';
+import { useProfessionalPresentationExport } from '@/hooks/useProfessionalPresentationExport';
 import { presentationSlides } from '@/data/presentation-slides';
 import './PresentationStyles.css';
 
@@ -22,7 +22,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { generatePowerPoint, generatePDF, generateDocuSignPDF } = useDirectPresentationExport();
+  const { generatePowerPoint, generatePDF } = useProfessionalPresentationExport();
 
   // DEBUG: Log what slides are being used
   console.log('🔍 AgenticAIPresentation - Slides loaded:', {
@@ -70,7 +70,7 @@ export const AgenticAIPresentation: React.FC = () => {
           await generatePDF(); // Use PDF instead of HTML for better formatting
           break;
         case 'pdf':
-          await generateDocuSignPDF(); // Try DocuSign first, fallback to standard
+          await generatePDF();
           break;
         case 'ppt':
           await generatePowerPoint();
