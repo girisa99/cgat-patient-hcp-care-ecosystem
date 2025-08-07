@@ -6924,7 +6924,7 @@ export type Database = {
       }
       auto_sync_demo_user_access: {
         Args: Record<PropertyKey, never>
-        Returns: undefined
+        Returns: Json
       }
       calculate_financial_risk_score: {
         Args: {
