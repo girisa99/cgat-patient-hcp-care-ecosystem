@@ -254,6 +254,13 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               System-wide healthcare management and AI platform oversight
             </p>
           </div>
+          <div className="flex gap-2">
+            <Link to="/presentation">
+              <Button variant="outline" size="sm">
+                🎯 Test Presentation Export
+              </Button>
+            </Link>
+          </div>
         </div>
 
         {/* AI Presentation Section */}

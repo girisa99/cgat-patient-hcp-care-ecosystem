@@ -33,6 +33,7 @@ import Stability from '@/pages/Stability';
 import Governance from '@/pages/Governance';
 import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
+import { PresentationPage } from '@/pages/PresentationPage';
 
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
@@ -213,6 +214,11 @@ const AppContent = () => {
                   <Route path="/research" element={
                     <ProtectedRoute requiredRoles={['superAdmin']}>
                       <PackageResearch />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/presentation" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam']}>
+                      <PresentationPage />
                     </ProtectedRoute>
                   } />
                 </>
