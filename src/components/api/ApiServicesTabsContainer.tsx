@@ -135,12 +135,15 @@ const ApiServicesTabsContainer: React.FC<ApiServicesTabsContainerProps> = ({
         </div>
       )}
 
-      {currentRole === 'superAdmin' && (
+      {(currentRole === 'superAdmin' || currentRole === 'demoUser') && (
         <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-          <h3 className="font-semibold text-purple-900 mb-2">🔧 SuperAdmin API Management</h3>
+          <h3 className="font-semibold text-purple-900 mb-2">
+            {currentRole === 'demoUser' ? '🎯 Demo API Management' : '🔧 SuperAdmin API Management'}
+          </h3>
           <p className="text-purple-700 text-sm">
             <strong>Consolidated Structure:</strong> Reduced from 5+ tabs to 4 focused areas. 
             Eliminated redundant Business/Technical API categories. API Keys moved to Developer Hub.
+            {currentRole === 'demoUser' && ' Demo mode provides full API access for testing and evaluation.'}
           </p>
         </div>
       )}

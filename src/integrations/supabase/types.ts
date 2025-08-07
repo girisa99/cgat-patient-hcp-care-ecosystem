@@ -7099,6 +7099,10 @@ export type Database = {
         Args: { check_user_id?: string }
         Returns: boolean
       }
+      is_demo_user_or_admin: {
+        Args: { check_user_id?: string }
+        Returns: boolean
+      }
       log_credit_application_audit: {
         Args: {
           p_credit_application_id: string
