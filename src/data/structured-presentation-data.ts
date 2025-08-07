@@ -268,47 +268,54 @@ export const structuredPresentationData: SlideData[] = [
   },
   {
     id: 7,
-    title: "Complete Implementation with Advanced Features",
-    subtitle: "Knowledge Base & RAG Implementation, Enterprise Management & Automation",
+    title: "AI Infrastructure with RAG & Model Selection",
+    subtitle: "Multi-Channel Deployment, Retrieval-Augmented Generation & Dynamic Model Selection",
     type: "content",
     content: {
       subSections: [
         {
-          title: "Knowledge Base & RAG Implementation",
+          title: "Multi-Channel Deployment System",
           items: [
-            "Auto-Creation & Upload - OpenAI API integration for intelligent content generation, Supabase storage with drag & drop functionality",
-            "Web Crawling & Data - Firecrawl API for multi-URL scraping with intelligent parsing, Source Manager for auto-sync and content validation",
-            "RAG Implementation - Vector Database (Pinecone) for semantic search and context retrieval, Context Retrieval with smart chunking and relevance scoring",
-            "Content Approval - Approval Workflow with multi-stage validation and review process, Auto-Generation for context-aware content creation"
+            "Advanced Management Features - Duplicate Prevention, Draft Cleanup, Status Sync across all deployment channels",
+            "Unified Agent Workflow - Create Tab, Test Tab, Deploy Tab for streamlined agent development lifecycle",
+            "Advanced Drag & Drop System - DroppableAgentCard, DroppableChannel for intuitive interface management",
+            "Health Monitoring & Analytics - Health Checks, Performance Tracking, Alert System for proactive maintenance"
           ]
         },
         {
-          title: "Enterprise-Grade Management",
+          title: "Retrieval-Augmented Generation (RAG)",
           items: [
-            "Role-based access control with granular permissions - Comprehensive user management with department-level access controls",
-            "Detailed audit logging for compliance requirements - Complete activity tracking with exportable compliance reports",
-            "Performance dashboards with actionable insights - Real-time analytics with customizable KPI monitoring",
-            "Cost management and usage optimization tools - Intelligent resource allocation with automated cost controls",
-            "Scheduled reporting with customizable metrics - Automated report generation with stakeholder distribution"
+            "Vector database with semantic search capabilities - Advanced indexing for healthcare-specific terminology",
+            "Automatic chunking and embedding of medical content - Intelligent segmentation preserving clinical context",
+            "Citation tracking and source verification - Maintain transparency and clinical accuracy in AI responses",
+            "Relevance scoring and content ranking - Ensure most pertinent information surfaces first"
           ]
         },
         {
-          title: "Automation Features",
+          title: "Dynamic Model Selection",
           items: [
-            "Scheduled maintenance and optimization routines - Automated system health checks with performance tuning",
-            "Automatic failover and load balancing - High availability architecture with seamless traffic distribution",
-            "Intelligent scaling based on usage patterns - Dynamic resource allocation with predictive scaling algorithms",
-            "Proactive alert system for potential issues - Advanced monitoring with intelligent anomaly detection",
-            "Self-healing capabilities for common problems - Automated issue resolution with minimal human intervention"
+            "Task complexity and requirements analysis - Intelligent routing to most appropriate AI model",
+            "Performance optimization needs assessment - Real-time performance monitoring and adjustment",
+            "Cost management parameters - Optimize resource allocation while maintaining quality",
+            "Compliance and security considerations - Ensure all model selections meet healthcare regulations"
           ]
         },
         {
-          title: "Technical Implementation Stack",
+          title: "Voice Provider Integration & Management",
           items: [
-            "Storage - Supabase Database, Vector Storage, File Management for comprehensive data handling",
-            "Functions - Content Generation, Web Crawling, Processing Pipeline for intelligent automation",
-            "Components - Enhanced KB Manager, Upload Interface, Search Engine for seamless user experience",
-            "APIs - OpenAI Integration, Firecrawl Service, Vector Search for powerful AI capabilities"
+            "Twilio Integration - Voice call handling, phone number management, call routing",
+            "OpenAI Realtime - Real-time voice processing, natural conversation flow",
+            "Custom Providers - Flexible integration with additional voice service providers",
+            "Voice Configuration - Regional accents, multilingual support, voice cloning capabilities"
+          ]
+        },
+        {
+          title: "Database Architecture & Automation",
+          items: [
+            "Core Tables - Comprehensive data structure for agents, deployments, and configurations",
+            "RLS Policies - Row-level security ensuring data isolation and compliance",
+            "Automation Triggers - Real-time data synchronization and automated workflows",
+            "Real-time Features - Live updates, instant synchronization across all system components"
           ]
         }
       ]
