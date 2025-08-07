@@ -2,11 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download, FileText, Presentation, Database, Cloud, MessageSquare, Globe, Zap } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Sparkles, Zap, TrendingUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { useScreenCaptureExport } from '@/hooks/useScreenCaptureExport';
-import { useTextBasedExport } from '@/hooks/useTextBasedExport';
-import { useCleanTextExport } from '@/hooks/useCleanTextExport';
 import { presentationSlides } from '@/data/presentation-slides';
 import './PresentationStyles.css';
 
@@ -18,15 +15,10 @@ interface Slide {
   animation: 'fade' | 'slide' | 'zoom' | 'flip';
 }
 
-// Use imported slides from data file
-
 export const AgenticAIPresentation: React.FC = () => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const { generatePowerPoint: generateImagePPT, generatePDF: generateImagePDF } = useScreenCaptureExport();
-  const { generateTextPowerPoint, generateTextPDF } = useTextBasedExport();
-  const { generateCleanPowerPoint, generateCleanPDF } = useCleanTextExport();
 
   // DEBUG: Log what slides are being used
   console.log('🔍 AgenticAIPresentation - Slides loaded:', {
@@ -67,33 +59,6 @@ export const AgenticAIPresentation: React.FC = () => {
     setIsFullscreen(!isFullscreen);
   };
 
-  const handleExport = async (format: 'clean-pdf' | 'clean-ppt' | 'text-pdf' | 'text-ppt' | 'image-pdf' | 'image-ppt') => {
-    try {
-      switch (format) {
-        case 'clean-pdf':
-          await generateCleanPDF();
-          break;
-        case 'clean-ppt':
-          await generateCleanPowerPoint();
-          break;
-        case 'text-pdf':
-          await generateTextPDF();
-          break;
-        case 'text-ppt':
-          await generateTextPowerPoint();
-          break;
-        case 'image-pdf':
-          await generateImagePDF();
-          break;
-        case 'image-ppt':
-          await generateImagePPT();
-          break;
-      }
-    } catch (error) {
-      console.error(`Error exporting ${format}:`, error);
-    }
-  };
-
   const currentSlideData = presentationSlides[currentSlide];
   
   // DEBUG: Log current slide data
@@ -107,26 +72,38 @@ export const AgenticAIPresentation: React.FC = () => {
 
   return (
     <div className={cn(
-      "relative bg-background",
-      isFullscreen ? "fixed inset-0 z-50" : "w-full max-w-6xl mx-auto"
+      "relative bg-gradient-to-br from-background via-background to-muted/30",
+      isFullscreen ? "fixed inset-0 z-50" : "w-full max-w-7xl mx-auto rounded-xl shadow-2xl border"
     )}>
-      {/* Header Controls */}
-      <div className="flex justify-between items-center p-4 border-b bg-card/50 backdrop-blur-sm">
-        <div className="flex items-center gap-4">
-          <h1 className="text-xl font-bold text-primary">
-            Treatment Center AI Implementation
-          </h1>
-          <Badge variant="secondary">
+      {/* Enhanced Header Controls */}
+      <div className="flex justify-between items-center p-6 border-b bg-gradient-to-r from-primary/5 via-primary/10 to-primary/5 backdrop-blur-sm">
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-primary to-primary/70 rounded-lg flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-primary-foreground" />
+            </div>
+            <div>
+              <h1 className="text-xl font-bold bg-gradient-to-r from-primary to-primary/70 bg-clip-text text-transparent">
+                Treatment Center AI Implementation
+              </h1>
+              <p className="text-sm text-muted-foreground">Interactive Presentation</p>
+            </div>
+          </div>
+          <Badge variant="secondary" className="bg-primary/10 text-primary border-primary/20">
+            <TrendingUp className="w-3 h-3 mr-1" />
             {currentSlide + 1} of {presentationSlides.length}
           </Badge>
         </div>
         
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
-            variant="outline"
+            variant={isAutoplay ? "default" : "outline"}
             size="sm"
             onClick={() => setIsAutoplay(!isAutoplay)}
-            className="flex items-center gap-2"
+            className={cn(
+              "flex items-center gap-2 transition-all",
+              isAutoplay && "bg-primary text-primary-foreground shadow-lg"
+            )}
           >
             {isAutoplay ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
             {isAutoplay ? 'Pause' : 'Play'}
@@ -136,7 +113,7 @@ export const AgenticAIPresentation: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={resetPresentation}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 hover:bg-muted/50"
           >
             <RotateCcw className="w-4 h-4" />
             Reset
@@ -146,72 +123,60 @@ export const AgenticAIPresentation: React.FC = () => {
             variant="outline"
             size="sm"
             onClick={toggleFullscreen}
-            className="flex items-center gap-2"
+            className="flex items-center gap-2 hover:bg-muted/50"
           >
             <Maximize2 className="w-4 h-4" />
             {isFullscreen ? 'Exit' : 'Fullscreen'}
           </Button>
           
-          <div className="flex items-center gap-1 ml-2">
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => handleExport('clean-pdf')}
-              title="Generate professional PDF with clean text content (RECOMMENDED)"
-              className="bg-primary text-primary-foreground"
-            >
-              <FileText className="w-4 h-4" />
-              <span className="ml-1 text-xs font-semibold">PDF</span>
-            </Button>
-            <Button
-              variant="default"
-              size="sm"
-              onClick={() => handleExport('clean-ppt')}
-              title="Generate professional PowerPoint with clean text content (RECOMMENDED)"
-              className="bg-primary text-primary-foreground"
-            >
-              <Presentation className="w-4 h-4" />
-              <span className="ml-1 text-xs font-semibold">PPT</span>
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => handleExport('image-pdf')}
-              title="Generate PDF with slide images (visual fidelity)"
-            >
-              <Download className="w-4 h-4" />
-              <span className="ml-1 text-xs">IMG</span>
-            </Button>
+          <div className="flex items-center gap-2 ml-4">
+            <Zap className="w-4 h-4 text-primary animate-pulse" />
+            <span className="text-sm font-medium text-primary">Live Interactive Mode</span>
           </div>
         </div>
       </div>
 
-      {/* Main Slide Area */}
+      {/* Enhanced Main Slide Area */}
       <div className={cn(
-        "relative bg-gradient-to-br from-background via-muted/20 to-background",
-        isFullscreen ? "h-[calc(100vh-120px)]" : "h-[600px]"
+        "relative overflow-hidden",
+        "bg-gradient-to-br from-background via-muted/10 to-background",
+        "border-x border-border/50",
+        isFullscreen ? "h-[calc(100vh-160px)]" : "h-[700px]"
       )}>
+        {/* Animated Background Elements */}
+        <div className="absolute inset-0 overflow-hidden pointer-events-none">
+          <div className="absolute top-10 left-10 w-32 h-32 bg-primary/5 rounded-full animate-pulse"></div>
+          <div className="absolute top-1/2 right-20 w-24 h-24 bg-primary/10 rounded-full animate-bounce"></div>
+          <div className="absolute bottom-20 left-1/3 w-40 h-40 bg-gradient-to-br from-primary/5 to-transparent rounded-full animate-pulse"></div>
+        </div>
+        
         <div 
-          className="w-full h-full p-8"
+          className="relative w-full h-full p-8 z-10"
           data-slide-content
           data-slide-id={currentSlide}
           key={currentSlide}
         >
-          {/* Slide Header */}
-          <div className="text-center mb-8 animate-fade-in">
-            <h2 className="text-3xl font-bold text-primary mb-2">
+          {/* Enhanced Slide Header */}
+          <div className="text-center mb-10 animate-fade-in">
+            <div className="inline-flex items-center gap-3 mb-4 px-4 py-2 bg-primary/10 rounded-full border border-primary/20">
+              <Sparkles className="w-5 h-5 text-primary animate-pulse" />
+              <span className="text-sm font-medium text-primary">Interactive Presentation</span>
+            </div>
+            <h2 className="text-4xl font-bold bg-gradient-to-r from-primary via-primary/80 to-primary bg-clip-text text-transparent mb-3 leading-tight">
               {currentSlideData.title}
             </h2>
             {currentSlideData.subtitle && (
-              <p className="text-lg text-muted-foreground">
+              <p className="text-lg text-muted-foreground max-w-4xl mx-auto leading-relaxed">
                 {currentSlideData.subtitle}
               </p>
             )}
           </div>
           
-          {/* Slide Content */}
+          {/* Enhanced Slide Content */}
           <div className={cn(
-            "h-[calc(100%-120px)] overflow-y-auto", // Calculate available space minus header
+            "h-[calc(100%-160px)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent",
+            "bg-gradient-to-b from-transparent via-background/50 to-transparent",
+            "rounded-xl p-6",
             currentSlideData.animation === 'fade' && "animate-fade-in",
             currentSlideData.animation === 'slide' && "animate-slide-in-right",
             currentSlideData.animation === 'zoom' && "animate-scale-in",
@@ -222,31 +187,34 @@ export const AgenticAIPresentation: React.FC = () => {
         </div>
       </div>
 
-      {/* Navigation Controls */}
-      <div className="flex justify-between items-center p-4 border-t bg-card/50 backdrop-blur-sm">
+      {/* Enhanced Navigation Controls */}
+      <div className="flex justify-between items-center p-6 border-t bg-gradient-to-r from-muted/20 via-background to-muted/20 backdrop-blur-sm">
         <Button
           variant="outline"
           onClick={prevSlide}
           disabled={currentSlide === 0}
-          className="flex items-center gap-2"
+          className={cn(
+            "flex items-center gap-2 transition-all",
+            currentSlide === 0 ? "opacity-50" : "hover:bg-primary/10 hover:border-primary/30"
+          )}
         >
           <ChevronLeft className="w-4 h-4" />
           Previous
         </Button>
         
-        {/* Slide Indicators */}
-        <div className="flex gap-2 overflow-x-auto max-w-md">
+        {/* Enhanced Slide Indicators */}
+        <div className="flex gap-3 overflow-x-auto max-w-md px-4 py-2 bg-muted/30 rounded-full">
           {presentationSlides.map((_, index) => (
             <button
               key={index}
               onClick={() => goToSlide(index)}
               className={cn(
-                "w-3 h-3 rounded-full transition-all duration-200 flex-shrink-0",
+                "w-4 h-4 rounded-full transition-all duration-300 flex-shrink-0 border-2",
                 index === currentSlide
-                  ? "bg-primary scale-125"
-                  : "bg-muted-foreground/30 hover:bg-muted-foreground/50"
+                  ? "bg-primary border-primary shadow-lg shadow-primary/50 scale-125"
+                  : "bg-muted border-muted-foreground/30 hover:bg-muted-foreground/50 hover:border-primary/50 hover:scale-110"
               )}
-              title={`Slide ${index + 1}`}
+              title={`Slide ${index + 1}: ${presentationSlides[index]?.title || 'Slide'}`}
             />
           ))}
         </div>
@@ -255,7 +223,10 @@ export const AgenticAIPresentation: React.FC = () => {
           variant="outline"
           onClick={nextSlide}
           disabled={currentSlide === presentationSlides.length - 1}
-          className="flex items-center gap-2"
+          className={cn(
+            "flex items-center gap-2 transition-all",
+            currentSlide === presentationSlides.length - 1 ? "opacity-50" : "hover:bg-primary/10 hover:border-primary/30"
+          )}
         >
           Next
           <ChevronRight className="w-4 h-4" />
