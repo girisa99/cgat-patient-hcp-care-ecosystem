@@ -889,6 +889,251 @@ export const presentationSlides: Slide[] = [
     )
   },
   {
+    id: 6,
+    title: "Step 3: Actions Configuration & System Connectors",
+    subtitle: "Comprehensive tabs management with actions, templates, system connectors, knowledge base, RAG, and API integrations",
+    animation: 'slide',
+    content: (
+      <div className="space-y-8">
+        {/* Main Header */}
+        <div className="text-center mb-8">
+          <h4 className="text-2xl font-bold text-gray-800 mb-4">Actions Configuration & System Connectors</h4>
+          <div className="text-gray-600">Complete management system for actions, templates, connectors, and AI integrations</div>
+          <div className="mt-4 inline-flex items-center gap-2 px-4 py-2 bg-purple-100 rounded-full border border-purple-200">
+            <Settings className="w-4 h-4 text-purple-600" />
+            <span className="text-sm font-medium text-purple-800">Step 3: Configuration Management</span>
+          </div>
+        </div>
+
+        {/* Tabs Overview */}
+        <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-lg p-6 border border-purple-200">
+          <h4 className="text-xl font-semibold text-purple-800 mb-6 text-center">🛠️ Configuration Tabs & Management System</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+            <Card className="text-center p-4 bg-blue-100 border-blue-300 hover:scale-105 transition-transform">
+              <div className="w-12 h-12 bg-blue-600 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <Zap className="w-6 h-6 text-white" />
+              </div>
+              <div className="font-semibold text-blue-800">Actions Tab</div>
+              <div className="text-xs text-blue-600 mt-2">
+                • Action templates<br/>
+                • Task management<br/>
+                • Workflow automation<br/>
+                • AI suggestions
+              </div>
+            </Card>
+
+            <Card className="text-center p-4 bg-green-100 border-green-300 hover:scale-105 transition-transform">
+              <div className="w-12 h-12 bg-green-600 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <Link className="w-6 h-6 text-white" />
+              </div>
+              <div className="font-semibold text-green-800">Connectors Tab</div>
+              <div className="text-xs text-green-600 mt-2">
+                • System integrations<br/>
+                • API connections<br/>
+                • Data sources<br/>
+                • External services
+              </div>
+            </Card>
+
+            <Card className="text-center p-4 bg-purple-100 border-purple-300 hover:scale-105 transition-transform">
+              <div className="w-12 h-12 bg-purple-600 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <Database className="w-6 h-6 text-white" />
+              </div>
+              <div className="font-semibold text-purple-800">Knowledge Tab</div>
+              <div className="text-xs text-purple-600 mt-2">
+                • Knowledge base<br/>
+                • RAG implementation<br/>
+                • Document processing<br/>
+                • Context management
+              </div>
+            </Card>
+
+            <Card className="text-center p-4 bg-orange-100 border-orange-300 hover:scale-105 transition-transform">
+              <div className="w-12 h-12 bg-orange-600 rounded-full mx-auto mb-3 flex items-center justify-center">
+                <BarChart3 className="w-6 h-6 text-white" />
+              </div>
+              <div className="font-semibold text-orange-800">Assignments Tab</div>
+              <div className="text-xs text-orange-600 mt-2">
+                • Task assignments<br/>
+                • Resource allocation<br/>
+                • Performance tracking<br/>
+                • Analytics overview
+              </div>
+            </Card>
+          </div>
+        </div>
+
+        {/* Detailed Features */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* Actions & Templates */}
+          <div className="space-y-6">
+            <div className="bg-blue-50 rounded-lg p-6 border border-blue-200">
+              <div className="flex items-center gap-3 mb-4">
+                <Zap className="w-6 h-6 text-blue-600" />
+                <h5 className="text-lg font-semibold text-blue-800">Actions & Templates System</h5>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded border border-blue-200">
+                  <div className="font-medium text-blue-800 mb-2">Action Templates</div>
+                  <ul className="text-sm text-blue-600 space-y-1">
+                    <li>• Pre-built healthcare action templates</li>
+                    <li>• Custom action creation with drag-and-drop</li>
+                    <li>• Template versioning and management</li>
+                    <li>• Real-time validation and testing</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-blue-200">
+                  <div className="font-medium text-blue-800 mb-2">AI Auto-Generation</div>
+                  <ul className="text-sm text-blue-600 space-y-1">
+                    <li>• Intelligent action suggestions based on context</li>
+                    <li>• AI-powered template optimization</li>
+                    <li>• Automated workflow generation</li>
+                    <li>• Smart task prioritization</li>
+                  </ul>
+                </div>
+
+                <div className="bg-white p-4 rounded border border-blue-200">
+                  <div className="font-medium text-blue-800 mb-2">Task Management</div>
+                  <ul className="text-sm text-blue-600 space-y-1">
+                    <li>• Dynamic task creation and assignment</li>
+                    <li>• Progress tracking and monitoring</li>
+                    <li>• Automated escalation procedures</li>
+                    <li>• Performance analytics and reporting</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* System Connectors & APIs */}
+          <div className="space-y-6">
+            <div className="bg-green-50 rounded-lg p-6 border border-green-200">
+              <div className="flex items-center gap-3 mb-4">
+                <Link className="w-6 h-6 text-green-600" />
+                <h5 className="text-lg font-semibold text-green-800">System Connectors & API Integration</h5>
+              </div>
+              
+              <div className="space-y-4">
+                <div className="bg-white p-4 rounded border border-green-200">
+                  <div className="font-medium text-green-800 mb-2">Internal APIs</div>
+                  <ul className="text-sm text-green-600 space-y-1">
+                    <li>• Healthcare database connections</li>
+                    <li>• Patient record system integration</li>
+                    <li>• Appointment scheduling APIs</li>
+                    <li>• Internal workflow automation</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-green-200">
+                  <div className="font-medium text-green-800 mb-2">External APIs</div>
+                  <ul className="text-sm text-green-600 space-y-1">
+                    <li>• Insurance verification services</li>
+                    <li>• Third-party healthcare providers</li>
+                    <li>• Payment processing integration</li>
+                    <li>• Regulatory compliance systems</li>
+                  </ul>
+                </div>
+
+                <div className="bg-white p-4 rounded border border-green-200">
+                  <div className="font-medium text-green-800 mb-2">Enhanced Connector System</div>
+                  <ul className="text-sm text-green-600 space-y-1">
+                    <li>• Real-time data synchronization</li>
+                    <li>• Secure authentication protocols</li>
+                    <li>• Error handling and retry mechanisms</li>
+                    <li>• Performance monitoring and optimization</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Knowledge Base & RAG */}
+        <div className="bg-gradient-to-r from-purple-50 to-pink-50 rounded-lg p-6 border border-purple-200">
+          <h4 className="text-xl font-semibold text-purple-800 mb-6">🧠 Knowledge Base & RAG Implementation</h4>
+          
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="bg-white p-4 rounded border border-purple-200">
+              <h5 className="font-semibold text-purple-700 mb-3">Knowledge Base Management</h5>
+              <div className="text-sm text-purple-600 space-y-2">
+                <div>• Document ingestion and processing</div>
+                <div>• Medical knowledge repositories</div>
+                <div>• Treatment protocol databases</div>
+                <div>• Real-time content updates</div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded border border-purple-200">
+              <h5 className="font-semibold text-purple-700 mb-3">RAG (Retrieval-Augmented Generation)</h5>
+              <div className="text-sm text-purple-600 space-y-2">
+                <div>• Intelligent document retrieval</div>
+                <div>• Context-aware answer generation</div>
+                <div>• Multi-source information synthesis</div>
+                <div>• Accuracy validation and fact-checking</div>
+              </div>
+            </div>
+            
+            <div className="bg-white p-4 rounded border border-purple-200">
+              <h5 className="font-semibold text-purple-700 mb-3">Context Management</h5>
+              <div className="text-sm text-purple-600 space-y-2">
+                <div>• Session-based context retention</div>
+                <div>• Cross-conversation memory</div>
+                <div>• Personalized knowledge adaptation</div>
+                <div>• Dynamic context prioritization</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Implementation Features */}
+        <div className="bg-gray-50 rounded-lg p-6">
+          <h5 className="text-lg font-semibold text-gray-800 mb-4">🔧 Implementation Features from Existing Components</h5>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div>
+              <Badge className="mb-2 bg-blue-100 text-blue-800">ActionsTab Component</Badge>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• AgentActionsManager</li>
+                <li>• Action template selection</li>
+                <li>• Workflow configuration</li>
+                <li>• Real-time preview</li>
+              </ul>
+            </div>
+            <div>
+              <Badge className="mb-2 bg-green-100 text-green-800">Enhanced Connectors</Badge>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• EnhancedConnectorSystem</li>
+                <li>• API assignment manager</li>
+                <li>• Connection monitoring</li>
+                <li>• Error handling</li>
+              </ul>
+            </div>
+            <div>
+              <Badge className="mb-2 bg-purple-100 text-purple-800">Knowledge Management</Badge>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• KnowledgeBaseManager</li>
+                <li>• Document processing</li>
+                <li>• RAG integration</li>
+                <li>• Context optimization</li>
+              </ul>
+            </div>
+            <div>
+              <Badge className="mb-2 bg-orange-100 text-orange-800">Assignment System</Badge>
+              <ul className="text-sm text-gray-600 space-y-1">
+                <li>• AgentAssignmentOverview</li>
+                <li>• Resource allocation</li>
+                <li>• Performance tracking</li>
+                <li>• Analytics dashboard</li>
+              </ul>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  },
+  {
     id: 8,
     title: "Complete Template System",
     subtitle: "Comprehensive template system with intelligent deployment, validation, and workflow automation",
