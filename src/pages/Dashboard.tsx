@@ -207,7 +207,6 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                   <Settings className="w-8 h-8 text-white" />
                 </div>
                 <div>
-                  <CardTitle className="text-2xl text-purple-700">SuperAdmin AI Platform Overview</CardTitle>
                   <p className="text-muted-foreground">
                     Complete system-wide AI implementation and management dashboard
                   </p>
@@ -278,7 +277,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               <div className="flex items-center space-x-2">
                 <Presentation className="h-8 w-8 text-primary" />
                 <div>
-                  <p className="text-2xl font-bold text-primary">9</p>
+                  <p className="text-2xl font-bold text-primary">13</p>
                   <p className="text-xs text-muted-foreground">AI Slides</p>
                 </div>
               </div>
