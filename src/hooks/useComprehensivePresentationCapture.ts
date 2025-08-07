@@ -140,16 +140,21 @@ export const useComprehensivePresentationCapture = () => {
 
   const downloadHTML = useCallback(async (slides: Slide[]) => {
     try {
+      console.log('Starting HTML export for', slides.length, 'slides');
+      
       toast({
         title: "🔄 Capturing All Slides",
-        description: "Please wait while we capture all 13 slides...",
+        description: "Please wait while we capture all slides...",
         variant: "default",
       });
 
       const capturedImages = await captureAllSlides(slides);
+      console.log('Captured images:', capturedImages.length, 'successful captures:', capturedImages.filter(img => img !== '').length);
 
+      // Ensure we have some content even if capture fails
       const slidesHTML = slides.map((slide, index) => {
         const imageData = capturedImages[index];
+        console.log(`Slide ${index + 1}: ${imageData ? 'captured' : 'using fallback'}`);
         
         return `
           <div class="slide" data-slide="${index + 1}">
@@ -164,8 +169,11 @@ export const useComprehensivePresentationCapture = () => {
                    <img src="${imageData}" alt="Slide ${index + 1}: ${slide.title}" style="width: 100%; height: auto; border-radius: 12px; box-shadow: 0 4px 20px rgba(0,0,0,0.1);" />
                  </div>` : 
                 `<div class="slide-placeholder">
-                   <p>Content for slide ${index + 1}: ${slide.title}</p>
+                   <h3>Slide ${index + 1}: ${slide.title}</h3>
                    ${slide.subtitle ? `<p class="subtitle">${slide.subtitle}</p>` : ''}
+                   <p style="margin-top: 20px; color: #64748b;">
+                     Visual content could not be captured. This slide contains interactive elements and comprehensive content.
+                   </p>
                  </div>`
               }
             </div>
@@ -261,6 +269,12 @@ export const useComprehensivePresentationCapture = () => {
                 text-align: center;
               }
               
+              .slide-placeholder h3 {
+                color: #1e293b;
+                margin-bottom: 16px;
+                font-size: 24px;
+              }
+              
               @media print {
                 body { background: white !important; }
                 .slide { box-shadow: none !important; margin: 0 !important; }
@@ -279,40 +293,42 @@ export const useComprehensivePresentationCapture = () => {
                 <h1 style="font-size: 42px; margin: 0 0 16px 0;">🤖 Agentic AI Implementation</h1>
                 <p style="font-size: 18px; margin: 0; opacity: 0.9;">Complete Healthcare Automation Platform</p>
                 <p style="font-size: 14px; margin: 16px 0 0 0; opacity: 0.8;">
-                  ${slides.length} slides captured • Generated ${new Date().toLocaleDateString()} • Complete visual export
+                  ${slides.length} slides • Generated ${new Date().toLocaleDateString()} • Complete presentation export
                 </p>
               </div>
               ${slidesHTML}
               <div class="presentation-footer" style="background: #f8fafc; padding: 40px; text-align: center; border-top: 2px solid #e2e8f0;">
                 <h3 style="color: #1e293b; margin: 0 0 16px 0;">📋 Export Complete</h3>
-                <p style="color: #64748b; margin: 0;">All ${slides.length} slides have been captured with complete visual content and styling.</p>
+                <p style="color: #64748b; margin: 0;">All ${slides.length} slides have been exported with ${capturedImages.filter(img => img !== '').length} visual captures.</p>
               </div>
             </div>
           </body>
         </html>
       `;
 
+      console.log('Creating download blob...');
       const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `agentic-ai-complete-presentation-${slides.length}-slides-${new Date().toISOString().split('T')[0]}.html`;
+      a.download = `agentic-ai-presentation-${slides.length}-slides-${new Date().toISOString().split('T')[0]}.html`;
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
       URL.revokeObjectURL(url);
 
+      console.log('Download triggered successfully');
       toast({
-        title: "✅ Complete Export Success",
-        description: `All ${slides.length} slides exported with visual content preserved`,
+        title: "✅ Export Complete",
+        description: `Downloaded ${slides.length} slides with ${capturedImages.filter(img => img !== '').length} visual captures`,
         variant: "default",
       });
 
     } catch (error) {
-      console.error('Error in comprehensive export:', error);
+      console.error('Error in HTML export:', error);
       toast({
         title: "❌ Export Failed",
-        description: "Failed to export complete presentation",
+        description: `Error: ${error.message}`,
         variant: "destructive",
       });
     }
