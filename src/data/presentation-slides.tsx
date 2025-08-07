@@ -2813,21 +2813,6 @@ export const presentationSlides: Slide[] = [
           </div>
         </div>
 
-        {/* Call to Action */}
-        <div className="bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg p-8 text-center text-white">
-          <h5 className="text-xl font-bold mb-4">Ready to Transform Your Healthcare Operations?</h5>
-          <div className="text-blue-100 mb-6">
-            Join leading healthcare organizations already leveraging AI to improve patient outcomes and operational efficiency.
-          </div>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Button className="bg-white text-blue-600 hover:bg-blue-50 font-semibold px-6 py-3">
-              Schedule Demo
-            </Button>
-            <Button variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600 font-semibold px-6 py-3">
-              Start Pilot Program
-            </Button>
-          </div>
-        </div>
       </div>
     )
   }
