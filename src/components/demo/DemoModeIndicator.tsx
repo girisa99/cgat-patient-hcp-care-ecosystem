@@ -8,11 +8,6 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { 
-  Popover, 
-  PopoverContent, 
-  PopoverTrigger 
-} from '@/components/ui/popover';
-import { 
   Play, 
   RefreshCw, 
   Info, 
@@ -104,25 +99,20 @@ export const DemoModeIndicator: React.FC<DemoModeIndicatorProps> = ({
   }
 
   return (
-    <Popover>
-      <PopoverTrigger asChild>
-        <Button
-          variant="outline"
-          size="sm"
-          className={cn(
-            "border-orange-300 bg-orange-100 hover:bg-orange-200 text-orange-800",
-            "flex items-center gap-2 text-xs font-medium",
-            className
-          )}
-        >
-          <Play className="w-3 h-3 fill-orange-600" />
-          🎭 DEMO MODE
-          <Info className="w-3 h-3" />
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80" align="end">
-        <DemoControls />
-      </PopoverContent>
-    </Popover>
+    <div className="relative">
+      <Button
+        variant="outline"
+        size="sm"
+        className={cn(
+          "border-orange-300 bg-orange-100 hover:bg-orange-200 text-orange-800",
+          "flex items-center gap-2 text-xs font-medium",
+          className
+        )}
+      >
+        <Play className="w-3 h-3 fill-orange-600" />
+        🎭 DEMO MODE
+        <Info className="w-3 h-3" />
+      </Button>
+    </div>
   );
 };

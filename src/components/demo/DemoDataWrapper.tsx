@@ -5,7 +5,6 @@
 
 import React, { ReactNode } from 'react';
 import { useDemoMode } from '@/hooks/useDemoMode';
-import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info } from 'lucide-react';
 
@@ -38,9 +37,9 @@ export const DemoDataWrapper: React.FC<DemoDataWrapperProps> = ({
   if (isLoadingMockData) {
     return fallbackComponent || (
       <div className="space-y-3">
-        <Skeleton className="h-8 w-full" />
-        <Skeleton className="h-6 w-3/4" />
-        <Skeleton className="h-6 w-1/2" />
+        <div className="animate-pulse h-8 w-full bg-gray-200 rounded" />
+        <div className="animate-pulse h-6 w-3/4 bg-gray-200 rounded" />
+        <div className="animate-pulse h-6 w-1/2 bg-gray-200 rounded" />
       </div>
     );
   }
