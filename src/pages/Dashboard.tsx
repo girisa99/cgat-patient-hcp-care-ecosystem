@@ -3,9 +3,6 @@ import { Link } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
-import { AiLearningDashboard } from '@/components/demo/AiLearningDashboard';
-import { DemoModeBanner } from '@/components/demo/DemoModeBanner';
-import { useQuickDemo } from '@/hooks/useQuickDemo';
 import { 
   Activity, 
   Users,
@@ -27,7 +24,6 @@ import { toast } from '@/hooks/use-toast';
 
 export const Dashboard: React.FC = () => {
   const [showPresentation, setShowPresentation] = React.useState(false);
-  const { isDemoMode } = useQuickDemo();
   
   // Download functions
   const downloadPDF = () => {
@@ -201,13 +197,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
 
   return (
     <AppLayout>
-      {/* If in demo mode, show AI learning dashboard */}
-      {isDemoMode ? (
-        <AiLearningDashboard />
-      ) : (
       <div className="space-y-6">
-        {/* Demo Mode Banner */}
-        <DemoModeBanner />
 
         {/* Presentation Display */}
         {showPresentation && (
@@ -456,7 +446,6 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
           </Card>
         )}
       </div>
-      )}
     </AppLayout>
   );
 };
