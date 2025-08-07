@@ -94,42 +94,42 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/users" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser']}>
                       <Users />
                     </ProtectedRoute>
                   } />
                   <Route path="/patients" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'nurse', 'caseManager']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'nurse', 'caseManager', 'demoUser']}>
                       <Patients />
                     </ProtectedRoute>
                   } />
                   
                   {/* OnboardingTeam accessible routes */}
                   <Route path="/agents" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
                       <Agents />
                     </ProtectedRoute>
                   } />
                   <Route path="/testing" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
                       <Testing />
                     </ProtectedRoute>
                   } />
                   <Route path="/data-import" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
                       <DataImport />
                     </ProtectedRoute>
                   } />
                   
                   <Route path="/facilities" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser']}>
                       <Facilities />
                     </ProtectedRoute>
                   } />
                   
                   {/* Onboarding route - accessible to onboardingTeam and superAdmin */}
                   <Route path="/onboarding" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
                       <OnboardingDashboard />
                     </ProtectedRoute>
                   } />
@@ -146,12 +146,12 @@ const AppContent = () => {
                   
                   {/* Technical/Admin routes - SuperAdmin only */}
                   <Route path="/modules" element={
-                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'demoUser']}>
                       <Modules />
                     </ProtectedRoute>
                   } />
                   <Route path="/api-services" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
                       <ApiServices />
                     </ProtectedRoute>
                   } />
@@ -173,22 +173,22 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/reports" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser']}>
                       <Reports />
                     </ProtectedRoute>
                   } />
                   <Route path="/framework" element={
-                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'demoUser']}>
                       <FrameworkDashboard />
                     </ProtectedRoute>
                   } />
                   <Route path="/role-management" element={
-                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'demoUser']}>
                       <RoleManagement />
                     </ProtectedRoute>
                   } />
                   <Route path="/stability" element={
-                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'demoUser']}>
                       <Stability />
                     </ProtectedRoute>
                   } />
@@ -200,12 +200,12 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/governance" element={
-                    <ProtectedRoute requiredRoles={['superAdmin']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'demoUser']}>
                       <Governance />
                     </ProtectedRoute>
                   } />
                   <Route path="/healthcare-ai" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading healthcare AI..." />}>
                         {React.createElement(React.lazy(() => import('@/components/healthcare/HealthcareAIDashboard').then(m => ({ default: m.default }))))}
                       </Suspense>
@@ -219,6 +219,11 @@ const AppContent = () => {
                   <Route path="/presentation" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam']}>
                       <PresentationPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/treatment-centers" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'demoUser']}>
+                      <OnboardingDashboard />
                     </ProtectedRoute>
                   } />
                 </>
