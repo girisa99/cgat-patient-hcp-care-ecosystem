@@ -22,18 +22,6 @@ export const useComprehensivePresentationCapture = () => {
     console.log('🎯 Starting captureAllSlides with', slides.length, 'slides');
     const capturedSlides: string[] = [];
     
-    // First, let's try a much simpler approach - just capture what's currently visible
-    console.log('🔍 Looking for slide elements...');
-    
-    // Check if we can find the presentation container
-    const presentationContainer = document.querySelector('[data-slide-content]');
-    console.log('📍 Presentation container found:', !!presentationContainer);
-    
-    if (!presentationContainer) {
-      console.error('❌ No presentation container found');
-      return slides.map(() => ''); // Return empty array
-    }
-
     // Store the current slide to restore later
     const currentSlideElement = document.querySelector('[data-slide-id]');
     const currentSlideIndex = currentSlideElement ? 
@@ -52,46 +40,109 @@ export const useComprehensivePresentationCapture = () => {
           console.log(`👆 Clicking slide indicator ${i + 1}`);
           (slideIndicators[i] as HTMLElement).click();
           
-          // Wait for slide transition
-          await new Promise(resolve => setTimeout(resolve, 1000));
-          
-          // Verify we're on the right slide
-          const currentSlideAfterClick = document.querySelector('[data-slide-id]');
-          const newSlideIndex = currentSlideAfterClick ? 
-            parseInt(currentSlideAfterClick.getAttribute('data-slide-id') || '0') : -1;
-          console.log(`✅ After click, slide index is:`, newSlideIndex);
-        } else {
-          console.warn(`⚠️ No slide indicator found for slide ${i + 1}`);
+          // Wait longer for slide transition and content loading
+          await new Promise(resolve => setTimeout(resolve, 1500));
         }
 
-        // Find the current slide content
-        const slideContentElement = document.querySelector('[data-slide-content]') as HTMLElement;
+        // Try multiple selectors to find the actual content
+        const contentSelectors = [
+          '[data-slide-content]',
+          '.relative.bg-gradient-to-br', // The main slide area
+          '.w-full.h-full.p-8', // The slide container
+          '.presentation-container' // If there's a container
+        ];
+
+        let slideContentElement: HTMLElement | null = null;
+        
+        for (const selector of contentSelectors) {
+          slideContentElement = document.querySelector(selector) as HTMLElement;
+          if (slideContentElement) {
+            console.log(`✅ Found content using selector: ${selector}`);
+            break;
+          }
+        }
+
         if (!slideContentElement) {
-          console.error(`❌ No slide content element found for slide ${i + 1}`);
+          console.error(`❌ No content element found for slide ${i + 1}`);
+          // Try to find ANY element that might contain content
+          slideContentElement = document.querySelector('.animate-fade-in') as HTMLElement;
+          if (slideContentElement) {
+            console.log('📍 Using fallback selector: .animate-fade-in');
+          }
+        }
+
+        if (!slideContentElement) {
+          console.error(`❌ Still no content element found for slide ${i + 1}`);
           capturedSlides.push('');
           continue;
         }
 
-        console.log(`📏 Slide content dimensions:`, {
-          width: slideContentElement.offsetWidth,
-          height: slideContentElement.offsetHeight,
-          scrollWidth: slideContentElement.scrollWidth,
-          scrollHeight: slideContentElement.scrollHeight
+        // Log what we found
+        console.log(`📏 Content element details:`, {
+          tagName: slideContentElement.tagName,
+          className: slideContentElement.className,
+          innerHTML: slideContentElement.innerHTML.substring(0, 200) + '...',
+          children: slideContentElement.children.length,
+          dimensions: {
+            width: slideContentElement.offsetWidth,
+            height: slideContentElement.offsetHeight,
+            scrollWidth: slideContentElement.scrollWidth,
+            scrollHeight: slideContentElement.scrollHeight
+          }
         });
 
-        // Try to capture the slide content directly (simpler approach)
+        // Force all content to be visible before capture
+        const originalStyles = new Map();
+        const elementsToFix = slideContentElement.querySelectorAll('*');
+        
+        elementsToFix.forEach((el: HTMLElement) => {
+          if (el.style.overflow === 'hidden' || el.style.overflowY === 'hidden' || 
+              el.classList.contains('overflow-hidden') || el.classList.contains('overflow-y-auto')) {
+            originalStyles.set(el, {
+              overflow: el.style.overflow,
+              overflowY: el.style.overflowY,
+              maxHeight: el.style.maxHeight
+            });
+            el.style.overflow = 'visible';
+            el.style.overflowY = 'visible';
+            el.style.maxHeight = 'none';
+          }
+        });
+
+        // Wait for layout changes
+        await new Promise(resolve => setTimeout(resolve, 500));
+
         console.log(`📸 Attempting to capture slide ${i + 1}...`);
         
         const canvas = await html2canvas(slideContentElement, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
-          scale: 1,
-          width: 1200,
-          height: 800,
-          logging: true, // Enable html2canvas logging
+          scale: 1.5,
+          logging: true,
           removeContainer: false,
-          foreignObjectRendering: true
+          foreignObjectRendering: true,
+          onclone: (clonedDoc) => {
+            console.log('🔄 Cloning document for capture...');
+            // Ensure all styles are preserved in the clone
+            const clonedElements = clonedDoc.querySelectorAll('*');
+            clonedElements.forEach((el: HTMLElement) => {
+              if (el.style) {
+                el.style.overflow = 'visible';
+                el.style.overflowY = 'visible';
+                el.style.maxHeight = 'none';
+              }
+            });
+          }
+        });
+        
+        // Restore original styles
+        originalStyles.forEach((styles, el) => {
+          Object.entries(styles).forEach(([prop, value]) => {
+            if (value !== undefined && value !== null) {
+              el.style[prop] = value;
+            }
+          });
         });
         
         console.log(`🎨 Canvas created:`, {
@@ -102,11 +153,10 @@ export const useComprehensivePresentationCapture = () => {
         
         if (canvas.width > 0 && canvas.height > 0) {
           const imageData = canvas.toDataURL('image/png', 0.9);
-          const isValidImage = imageData.length > 1000; // Basic validation
+          const isValidImage = imageData.length > 1000;
           console.log(`✅ Image data generated for slide ${i + 1}:`, {
             length: imageData.length,
-            isValid: isValidImage,
-            preview: imageData.substring(0, 50) + '...'
+            isValid: isValidImage
           });
           capturedSlides.push(imageData);
         } else {
