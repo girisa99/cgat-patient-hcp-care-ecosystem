@@ -2,6 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { useAgentSession } from './useAgentSession';
 import { AgentSession, AgentSessionUpdate } from '@/types/agent-session';
 import { useToast } from './use-toast';
+import { sessionSaveManager } from '@/utils/sessionSaveManager';
 
 interface UseAgentAutoSaveProps {
   data: Partial<AgentSession>;
@@ -23,51 +24,51 @@ export const useAgentAutoSave = ({
   const savingRef = useRef<boolean>(false); // Prevent concurrent saves
 
   const saveProgress = useCallback(async () => {
-    if (!enabled || savingRef.current) return;
+    if (!enabled || !sessionId) return;
 
     const currentDataString = JSON.stringify({ data, currentStep });
     
     // Don't save if nothing has changed
     if (currentDataString === lastSavedRef.current) return;
 
-    // Prevent concurrent saves
-    savingRef.current = true;
-
+    // Use global session save manager to prevent concurrent saves
     try {
-      console.log('🔄 Auto-saving agent session data:', { sessionId, currentStep, dataKeys: Object.keys(data) });
-      
-      const saveData: AgentSessionUpdate = {
-        ...data,
-        current_step: currentStep
-      };
+      const result = await sessionSaveManager.saveSession(sessionId, async () => {
+        console.log('🔄 Auto-saving agent session data:', { sessionId, currentStep, dataKeys: Object.keys(data) });
+        
+        const saveData: AgentSessionUpdate = {
+          ...data,
+          current_step: currentStep
+        };
 
-      if (sessionId) {
-        await autoSave.mutateAsync({ sessionId, updates: saveData });
-      } else if (data.name) {
-        // Create new session if none exists
-        const newSession = await createSession.mutateAsync(data);
-        console.log('✅ New session created:', newSession?.id);
-        return newSession;
-      }
+        if (sessionId) {
+          return await autoSave.mutateAsync({ sessionId, updates: saveData });
+        } else if (data.name) {
+          // Create new session if none exists
+          const newSession = await createSession.mutateAsync(data);
+          console.log('✅ New session created:', newSession?.id);
+          return newSession;
+        }
+      });
 
       lastSavedRef.current = currentDataString;
       console.log('✅ Auto-save completed successfully');
+      return result;
     } catch (error) {
       console.error('❌ Auto-save failed:', error);
       
       // Only show toast for non-constraint violation errors to avoid spam
       const errorMessage = error?.message || '';
-      if (!errorMessage.includes('duplicate key value violates unique constraint')) {
+      if (!errorMessage.includes('duplicate key value violates unique constraint') && 
+          !errorMessage.includes('already being saved')) {
         toast({
           title: "Auto-save Failed",
           description: "Your progress couldn't be saved automatically. Please save manually.",
           variant: "destructive",
         });
       } else {
-        console.log('🔄 Skipping duplicate constraint error - likely concurrent save attempt');
+        console.log('🔄 Skipping auto-save error toast - likely concurrent save or constraint violation');
       }
-    } finally {
-      savingRef.current = false;
     }
   }, [data, currentStep, sessionId, enabled, autoSave, createSession, toast]);
 
@@ -104,7 +105,7 @@ export const useAgentAutoSave = ({
 
   return {
     manualSave,
-    isSaving: createSession.isPending || updateSession.isPending || autoSave.isPending,
+    isSaving: createSession.isPending || updateSession.isPending || autoSave.isPending || (sessionId ? sessionSaveManager.isSessionBeingSaved(sessionId) : false),
     saveProgress
   };
 };
