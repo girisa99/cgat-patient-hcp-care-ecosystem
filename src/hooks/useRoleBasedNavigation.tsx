@@ -37,28 +37,29 @@ export const useRoleBasedNavigation = () => {
       return navItems;
     }
 
-    // Define role-based access - restricted for onboardingTeam to customer onboarding only
+    // Define role-based access - includes demoUser for comprehensive demonstration
     const roleAccess = {
-      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      users: ['superAdmin'], // Remove onboardingTeam - admin only
-      patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
-      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+      users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
+      patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
       // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
-      facilities: ['superAdmin'], // Remove onboardingTeam - admin only
-      onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
-      modules: ['superAdmin'], // Remove onboardingTeam - admin only
-      'api-services': ['superAdmin', 'onboardingTeam'], // Keep for onboarding workflow
+      facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
+      onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
+      modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
+      'api-services': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for API services demo
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
-      reports: ['superAdmin', 'caseManager'],
-      testing: ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
-      'role-management': ['superAdmin'],
-      'data-import': ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
-      'governance': ['superAdmin'],
-      'active-verification': ['superAdmin'],
-      'framework': ['superAdmin'],
-      'stability': ['superAdmin'],
-      'healthcare-ai': ['superAdmin', 'onboardingTeam'], // Keep for AI-assisted onboarding
+      reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
+      testing: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for testing suite demo
+      'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
+      'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
+      'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
+      'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
+      'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
+      'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
+      'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
+      'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
     };
 
     const filteredItems = navItems.filter(item => {
@@ -91,26 +92,27 @@ export const useRoleBasedNavigation = () => {
     
     const cleanPath = path.replace('/', '') || 'dashboard';
     const roleAccess = {
-      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-      users: ['superAdmin'], // Remove onboardingTeam - admin only
-      patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
-      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+      users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
+      patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
       // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
-      facilities: ['superAdmin'], // Remove onboardingTeam - admin only
-      onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
-      modules: ['superAdmin'], // Remove onboardingTeam - admin only
-      'api-services': ['superAdmin', 'onboardingTeam'], // Keep for onboarding workflow
+      facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
+      onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
+      modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
+      'api-services': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for API services demo
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
-      reports: ['superAdmin', 'caseManager'],
-      testing: ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
-      'role-management': ['superAdmin'],
-      'data-import': ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
-      'active-verification': ['superAdmin'],
-      'governance': ['superAdmin'],
-      'framework': ['superAdmin'],
-      'stability': ['superAdmin'],
-      'healthcare-ai': ['superAdmin', 'onboardingTeam'], // Keep for AI-assisted onboarding
+      reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
+      testing: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for testing suite demo
+      'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
+      'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
+      'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
+      'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
+      'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
+      'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
+      'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
+      'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
@@ -137,26 +139,27 @@ export const useRoleBasedNavigation = () => {
       acc[role] = navItems.filter(item => {
         const path = item.url.replace('/', '') || 'dashboard';
         const roleAccess = {
-          dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
-          users: ['superAdmin'], // Remove onboardingTeam - admin only
-          patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver'], // Remove onboardingTeam - not needed for customer onboarding
-          agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver'],
+          dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+          users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
+          patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+          agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
           // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
-          facilities: ['superAdmin'], // Remove onboardingTeam - admin only
-          onboarding: ['superAdmin', 'onboardingTeam'], // Keep for onboarding team
-          modules: ['superAdmin'], // Remove onboardingTeam - admin only
-          'api-services': ['superAdmin', 'onboardingTeam'], // Keep for onboarding workflow
+          facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
+          onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
+          modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
+          'api-services': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for API services demo
           ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
           security: ['superAdmin'],
-          reports: ['superAdmin', 'caseManager'],
-          testing: ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
-          'role-management': ['superAdmin'],
-          'data-import': ['superAdmin', 'onboardingTeam'], // Add back for onboarding team
-          'active-verification': ['superAdmin'],
-          'governance': ['superAdmin'],
-          'framework': ['superAdmin'],
-          'stability': ['superAdmin'],
-          'healthcare-ai': ['superAdmin', 'onboardingTeam'], // Keep for AI-assisted onboarding
+          reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
+          testing: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for testing suite demo
+          'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
+          'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
+          'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
+          'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
+          'framework': ['superAdmin', 'demoUser'], // Add demoUser for framework demo
+          'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
+          'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
+          'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
         };
         
         const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];

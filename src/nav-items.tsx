@@ -115,4 +115,9 @@ export const navItems = [
     url: "/healthcare-ai",
     icon: Brain,
   },
+  {
+    title: "Treatment Centers",
+    url: "/treatment-centers",
+    icon: Building2,
+  },
 ];
