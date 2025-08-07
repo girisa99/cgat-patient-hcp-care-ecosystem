@@ -350,6 +350,8 @@ export const useCompleteStaticExport = () => {
       // Import the presentation slides dynamically
       import('@/data/presentation-slides').then(({ presentationSlides }) => {
         console.log(`📄 Starting HTML export for ${presentationSlides.length} slides...`);
+        console.log('📋 Slide IDs:', presentationSlides.map(slide => slide.id));
+        console.log('📋 Slide titles:', presentationSlides.map(slide => slide.title));
         
         const htmlContent = convertAllSlidesToStaticHTML(presentationSlides);
         const blob = new Blob([htmlContent], { type: 'text/html' });
@@ -389,6 +391,8 @@ export const useCompleteStaticExport = () => {
       // Import the presentation slides dynamically
       import('@/data/presentation-slides').then(({ presentationSlides }) => {
         console.log(`📄 Starting PDF export for ${presentationSlides.length} slides...`);
+        console.log('📋 Slide IDs:', presentationSlides.map(slide => slide.id));
+        console.log('📋 Slide titles:', presentationSlides.map(slide => slide.title));
         
         const htmlContent = convertAllSlidesToStaticHTML(presentationSlides);
         

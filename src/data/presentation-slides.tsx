@@ -1705,7 +1705,7 @@ export const presentationSlides: Slide[] = [
     animation: 'zoom'
   },
   {
-    id: 14,
+    id: 13,
     title: "Implementation Roadmap & Next Steps",
     subtitle: "Strategic Planning for AI Implementation",
     content: (
