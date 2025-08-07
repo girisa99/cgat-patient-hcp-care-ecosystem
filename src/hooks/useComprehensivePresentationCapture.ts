@@ -39,27 +39,66 @@ export const useComprehensivePresentationCapture = () => {
           // Find the slide content element
           const slideContentElement = document.querySelector('[data-slide-content]') as HTMLElement;
           if (slideContentElement) {
-            // Force layout calculation and get full content dimensions
-            slideContentElement.style.overflow = 'visible';
-            const originalHeight = slideContentElement.style.height;
+            // Store original styles for restoration
+            const originalStyles = {
+              height: slideContentElement.style.height,
+              maxHeight: slideContentElement.style.maxHeight,
+              overflow: slideContentElement.style.overflow,
+              overflowY: slideContentElement.style.overflowY,
+              transform: slideContentElement.style.transform,
+              position: slideContentElement.style.position
+            };
+            
+            // Force content to be fully visible for capture
             slideContentElement.style.height = 'auto';
+            slideContentElement.style.maxHeight = 'none';
+            slideContentElement.style.overflow = 'visible';
+            slideContentElement.style.overflowY = 'visible';
+            slideContentElement.style.transform = 'none';
             
-            // Wait for layout to settle
-            await new Promise(resolve => setTimeout(resolve, 100));
+            // Also fix any nested scrollable containers
+            const scrollableElements = slideContentElement.querySelectorAll('[class*="overflow"], [class*="scroll"]');
+            const originalScrollStyles: { element: HTMLElement; styles: Record<string, string> }[] = [];
             
-            // Get the full scroll dimensions to capture all content
+            scrollableElements.forEach((el) => {
+              const htmlEl = el as HTMLElement;
+              originalScrollStyles.push({
+                element: htmlEl,
+                styles: {
+                  overflow: htmlEl.style.overflow || '',
+                  overflowY: htmlEl.style.overflowY || '',
+                  maxHeight: htmlEl.style.maxHeight || '',
+                  height: htmlEl.style.height || ''
+                }
+              });
+              
+              htmlEl.style.overflow = 'visible';
+              htmlEl.style.overflowY = 'visible';
+              htmlEl.style.maxHeight = 'none';
+              if (htmlEl.style.height && htmlEl.style.height !== 'auto') {
+                htmlEl.style.height = 'auto';
+              }
+            });
+            
+            // Wait for layout to settle with all changes
+            await new Promise(resolve => setTimeout(resolve, 300));
+            
+            // Get the actual content dimensions after forcing visibility
+            const contentRect = slideContentElement.getBoundingClientRect();
             const fullWidth = Math.max(
               slideContentElement.scrollWidth,
               slideContentElement.offsetWidth,
-              slideContentElement.clientWidth
+              contentRect.width,
+              1200 // Minimum width
             );
             const fullHeight = Math.max(
               slideContentElement.scrollHeight,
               slideContentElement.offsetHeight,
-              slideContentElement.clientHeight
+              contentRect.height,
+              800 // Minimum height
             );
             
-            // Capture the slide as image with full dimensions
+            // Capture the slide with comprehensive settings
             const canvas = await html2canvas(slideContentElement, {
               useCORS: true,
               allowTaint: false,
@@ -71,17 +110,34 @@ export const useComprehensivePresentationCapture = () => {
               scrollY: 0,
               windowWidth: fullWidth,
               windowHeight: fullHeight,
+              logging: false,
+              removeContainer: false,
+              foreignObjectRendering: true,
               ignoreElements: (element) => {
-                // Ignore any overlay elements that might interfere
+                // Ignore interactive and overlay elements
                 return element.classList?.contains('cursor-pointer') || 
                        element.tagName === 'BUTTON' ||
-                       element.getAttribute('role') === 'button';
+                       element.getAttribute('role') === 'button' ||
+                       element.classList?.contains('animate-pulse') ||
+                       (element as HTMLElement).style?.pointerEvents === 'none';
               }
             });
             
-            // Restore original styles
-            slideContentElement.style.height = originalHeight;
-            slideContentElement.style.overflow = '';
+            // Restore all original styles
+            Object.entries(originalStyles).forEach(([prop, value]) => {
+              if (value !== undefined && value !== null) {
+                (slideContentElement.style as any)[prop] = value;
+              }
+            });
+            
+            // Restore nested element styles
+            originalScrollStyles.forEach(({ element, styles }) => {
+              Object.entries(styles).forEach(([prop, value]) => {
+                if (value !== undefined && value !== null) {
+                  (element.style as any)[prop] = value;
+                }
+              });
+            });
             
             const imageData = canvas.toDataURL('image/png', 1.0);
             capturedSlides.push(imageData);
