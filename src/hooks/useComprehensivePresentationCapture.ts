@@ -54,10 +54,17 @@ export const useComprehensivePresentationCapture = () => {
         }
 
         console.log(`✅ Found slide content element for slide ${i + 1}`);
+        
+        // Check if content is actually there
+        const contentDiv = slideContentElement.querySelector('div[class*="overflow-y-auto"]');
+        const actualContent = contentDiv || slideContentElement;
+        
         console.log(`📏 Element details:`, {
           tagName: slideContentElement.tagName,
           className: slideContentElement.className,
           hasChildren: slideContentElement.children.length > 0,
+          contentExists: !!actualContent,
+          actualContentChildren: actualContent.children.length,
           dimensions: {
             width: slideContentElement.offsetWidth,
             height: slideContentElement.offsetHeight,
@@ -69,8 +76,10 @@ export const useComprehensivePresentationCapture = () => {
         // Store original styles to restore later
         const originalStyles = new Map<HTMLElement, any>();
         
-        // Fix the main container and all its children
-        const allElements = [slideContentElement, ...Array.from(slideContentElement.querySelectorAll('*'))] as HTMLElement[];
+        // Fix the main container and all its children - Focus on the actual content container
+        const contentContainer = slideContentElement.querySelector('div[class*="overflow-y-auto"]') as HTMLElement;
+        const targetElement = contentContainer || slideContentElement;
+        const allElements = [slideContentElement, targetElement, ...Array.from(slideContentElement.querySelectorAll('*'))] as HTMLElement[];
         
         allElements.forEach((el) => {
           // Store original computed styles
@@ -103,7 +112,17 @@ export const useComprehensivePresentationCapture = () => {
 
         console.log(`📸 Capturing slide ${i + 1} with forced visibility...`);
         
-        const canvas = await html2canvas(slideContentElement, {
+        // Use the content container if it exists, otherwise use the main element
+        const captureTarget = contentContainer && contentContainer.children.length > 0 ? contentContainer : slideContentElement;
+        console.log(`🎯 Capturing target:`, {
+          element: captureTarget.tagName,
+          classes: captureTarget.className,
+          children: captureTarget.children.length,
+          scrollHeight: captureTarget.scrollHeight,
+          offsetHeight: captureTarget.offsetHeight
+        });
+        
+        const canvas = await html2canvas(captureTarget, {
           useCORS: true,
           allowTaint: false,
           backgroundColor: '#ffffff',
