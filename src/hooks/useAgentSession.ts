@@ -196,6 +196,22 @@ export const useAgentSession = (sessionId?: string) => {
         .single();
 
       if (error) {
+        // If it's a primary key constraint violation, it's likely a race condition
+        if (error.code === '23505' && error.message.includes('agent_sessions_pkey')) {
+          console.log('🔄 Ignoring primary key constraint violation (race condition)');
+          // Return the existing data by fetching it
+          const { data: existingData, error: fetchError } = await supabase
+            .from('agent_sessions')
+            .select()
+            .eq('id', sessionId)
+            .single();
+          
+          if (fetchError) {
+            throw new Error(`Failed to auto-save session: ${error.message}`);
+          }
+          return existingData as AgentSession;
+        }
+        
         throw new Error(`Failed to auto-save session: ${error.message}`);
       }
 

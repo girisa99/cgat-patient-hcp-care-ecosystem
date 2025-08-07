@@ -20,14 +20,18 @@ export const useAgentAutoSave = ({
   const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
+  const savingRef = useRef<boolean>(false); // Prevent concurrent saves
 
   const saveProgress = useCallback(async () => {
-    if (!enabled) return;
+    if (!enabled || savingRef.current) return;
 
     const currentDataString = JSON.stringify({ data, currentStep });
     
     // Don't save if nothing has changed
     if (currentDataString === lastSavedRef.current) return;
+
+    // Prevent concurrent saves
+    savingRef.current = true;
 
     try {
       console.log('🔄 Auto-saving agent session data:', { sessionId, currentStep, dataKeys: Object.keys(data) });
@@ -50,11 +54,20 @@ export const useAgentAutoSave = ({
       console.log('✅ Auto-save completed successfully');
     } catch (error) {
       console.error('❌ Auto-save failed:', error);
-      toast({
-        title: "Auto-save Failed",
-        description: "Your progress couldn't be saved automatically. Please save manually.",
-        variant: "destructive",
-      });
+      
+      // Only show toast for non-constraint violation errors to avoid spam
+      const errorMessage = error?.message || '';
+      if (!errorMessage.includes('duplicate key value violates unique constraint')) {
+        toast({
+          title: "Auto-save Failed",
+          description: "Your progress couldn't be saved automatically. Please save manually.",
+          variant: "destructive",
+        });
+      } else {
+        console.log('🔄 Skipping duplicate constraint error - likely concurrent save attempt');
+      }
+    } finally {
+      savingRef.current = false;
     }
   }, [data, currentStep, sessionId, enabled, autoSave, createSession, toast]);
 
