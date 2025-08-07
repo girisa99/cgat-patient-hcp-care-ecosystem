@@ -6922,6 +6922,10 @@ export type Database = {
         Args: { p_user_id: string; p_role_name: string }
         Returns: undefined
       }
+      auto_sync_demo_user_access: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       calculate_financial_risk_score: {
         Args: {
           p_annual_revenue_range: string
