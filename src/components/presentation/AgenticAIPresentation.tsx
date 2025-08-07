@@ -15,7 +15,11 @@ interface Slide {
   animation: 'fade' | 'slide' | 'zoom' | 'flip';
 }
 
-export const AgenticAIPresentation: React.FC = () => {
+interface AgenticAIPresentationProps {
+  onExit?: () => void;
+}
+
+export const AgenticAIPresentation: React.FC<AgenticAIPresentationProps> = ({ onExit }) => {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [isAutoplay, setIsAutoplay] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
@@ -128,6 +132,17 @@ export const AgenticAIPresentation: React.FC = () => {
             <Maximize2 className="w-4 h-4" />
             {isFullscreen ? 'Exit' : 'Fullscreen'}
           </Button>
+          
+          {onExit && (
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={onExit}
+              className="flex items-center gap-2 bg-red-600 hover:bg-red-700 text-white"
+            >
+              ✕ Exit
+            </Button>
+          )}
           
           <div className="flex items-center gap-2 ml-4">
             <Zap className="w-4 h-4 text-primary animate-pulse" />

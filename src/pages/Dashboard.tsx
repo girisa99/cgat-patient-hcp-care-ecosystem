@@ -202,7 +202,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
         {/* Presentation Display */}
         {showPresentation && (
           <div className="mb-8">
-            <AgenticAIPresentation />
+            <AgenticAIPresentation onExit={() => setShowPresentation(false)} />
           </div>
         )}
 
@@ -213,21 +213,8 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               System-wide healthcare management and AI platform oversight
             </p>
           </div>
-          <div className="flex gap-2">
-            <Link to="/presentation">
-              <Button variant="outline" size="sm">
-                🎯 Test Presentation Export
-              </Button>
-            </Link>
-          </div>
         </div>
 
-        {/* AI Presentation Section */}
-        {showPresentation && (
-          <div className="mb-8">
-            <AgenticAIPresentation />
-          </div>
-        )}
         
         {/* Quick Stats with Real Data */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
