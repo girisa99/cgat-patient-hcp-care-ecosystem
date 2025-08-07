@@ -6,6 +6,7 @@ import { ChevronLeft, ChevronRight, Play, Pause, RotateCcw, Maximize2, Download,
 import { cn } from '@/lib/utils';
 import { useScreenCaptureExport } from '@/hooks/useScreenCaptureExport';
 import { useTextBasedExport } from '@/hooks/useTextBasedExport';
+import { useCleanTextExport } from '@/hooks/useCleanTextExport';
 import { presentationSlides } from '@/data/presentation-slides';
 import './PresentationStyles.css';
 
@@ -25,6 +26,7 @@ export const AgenticAIPresentation: React.FC = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const { generatePowerPoint: generateImagePPT, generatePDF: generateImagePDF } = useScreenCaptureExport();
   const { generateTextPowerPoint, generateTextPDF } = useTextBasedExport();
+  const { generateCleanPowerPoint, generateCleanPDF } = useCleanTextExport();
 
   // DEBUG: Log what slides are being used
   console.log('🔍 AgenticAIPresentation - Slides loaded:', {
@@ -65,9 +67,15 @@ export const AgenticAIPresentation: React.FC = () => {
     setIsFullscreen(!isFullscreen);
   };
 
-  const handleExport = async (format: 'text-pdf' | 'text-ppt' | 'image-pdf' | 'image-ppt') => {
+  const handleExport = async (format: 'clean-pdf' | 'clean-ppt' | 'text-pdf' | 'text-ppt' | 'image-pdf' | 'image-ppt') => {
     try {
       switch (format) {
+        case 'clean-pdf':
+          await generateCleanPDF();
+          break;
+        case 'clean-ppt':
+          await generateCleanPowerPoint();
+          break;
         case 'text-pdf':
           await generateTextPDF();
           break;
@@ -146,22 +154,24 @@ export const AgenticAIPresentation: React.FC = () => {
           
           <div className="flex items-center gap-1 ml-2">
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
-              onClick={() => handleExport('text-pdf')}
-              title="Generate PDF with actual text content (recommended)"
+              onClick={() => handleExport('clean-pdf')}
+              title="Generate professional PDF with clean text content (RECOMMENDED)"
+              className="bg-primary text-primary-foreground"
             >
               <FileText className="w-4 h-4" />
-              <span className="ml-1 text-xs">TEXT</span>
+              <span className="ml-1 text-xs font-semibold">PDF</span>
             </Button>
             <Button
-              variant="outline"
+              variant="default"
               size="sm"
-              onClick={() => handleExport('text-ppt')}
-              title="Generate PowerPoint with actual text content (recommended)"
+              onClick={() => handleExport('clean-ppt')}
+              title="Generate professional PowerPoint with clean text content (RECOMMENDED)"
+              className="bg-primary text-primary-foreground"
             >
               <Presentation className="w-4 h-4" />
-              <span className="ml-1 text-xs">TEXT</span>
+              <span className="ml-1 text-xs font-semibold">PPT</span>
             </Button>
             <Button
               variant="outline"
