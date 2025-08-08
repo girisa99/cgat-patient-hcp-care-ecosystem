@@ -16,10 +16,23 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
+// Import the new management components
+import { TreatmentCenterDetailsDialog } from '@/components/treatment-centers/TreatmentCenterDetailsDialog';
+import { TreatmentCenterAnalytics } from '@/components/treatment-centers/TreatmentCenterAnalytics';
+import { TreatmentCenterSettings } from '@/components/treatment-centers/TreatmentCenterSettings';
+import { TreatmentCenterStaff } from '@/components/treatment-centers/TreatmentCenterStaff';
+
 const TreatmentCentersView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCenter, setSelectedCenter] = useState<any>(null);
   const [showAgentAssignment, setShowAgentAssignment] = useState(false);
+  
+  // Dialog states for different management functions
+  const [showDetailsDialog, setShowDetailsDialog] = useState(false);
+  const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [showStaffDialog, setShowStaffDialog] = useState(false);
+  
   const { toast } = useToast();
 
   const { facilities, isLoading, facilityStats } = useMasterFacilities();
@@ -83,17 +96,36 @@ const TreatmentCentersView = () => {
     return agent?.name || 'Unknown Agent';
   };
 
-  const handleManageCenter = (centerId: string) => {
+  const handleManageCenter = (centerId: string, action: 'details' | 'analytics' | 'settings' | 'staff') => {
     const center = facilities.find(f => f.id === centerId);
     if (center) {
       setSelectedCenter(center);
-      // Here you would typically open a management dialog
-      // For now, we'll show a more detailed toast
-      toast({
-        title: "Treatment Center Management",
-        description: `Managing ${center.name} - View analytics, update settings, manage staff assignments, and configure services.`,
-      });
+      
+      switch (action) {
+        case 'details':
+          setShowDetailsDialog(true);
+          break;
+        case 'analytics':
+          setShowAnalyticsDialog(true);
+          break;
+        case 'settings':
+          setShowSettingsDialog(true);
+          break;
+        case 'staff':
+          setShowStaffDialog(true);
+          break;
+      }
     }
+  };
+
+  const handleSaveSettings = async (updatedCenter: any) => {
+    // Here you would typically make an API call to update the center
+    console.log('Saving center settings:', updatedCenter);
+    // For now, we'll just show a success message
+    toast({
+      title: "Settings Saved",
+      description: `Settings for ${updatedCenter.name} have been saved successfully.`,
+    });
   };
 
   if (isLoading) {
@@ -339,32 +371,17 @@ const TreatmentCentersView = () => {
                         <ChevronDown className="h-3 w-3 ml-1" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem onClick={() => handleManageCenter(center.id)}>
+                    <DropdownMenuContent align="end" className="bg-background border shadow-lg">
+                      <DropdownMenuItem onClick={() => handleManageCenter(center.id, 'details')}>
                         View Details
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        toast({
-                          title: "Analytics",
-                          description: `Opening analytics dashboard for ${center.name}`,
-                        });
-                      }}>
+                      <DropdownMenuItem onClick={() => handleManageCenter(center.id, 'analytics')}>
                         View Analytics
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        toast({
-                          title: "Configuration",
-                          description: `Opening configuration panel for ${center.name}`,
-                        });
-                      }}>
+                      <DropdownMenuItem onClick={() => handleManageCenter(center.id, 'settings')}>
                         Configure Settings
                       </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => {
-                        toast({
-                          title: "Staff Management", 
-                          description: `Opening staff management for ${center.name}`,
-                        });
-                      }}>
+                      <DropdownMenuItem onClick={() => handleManageCenter(center.id, 'staff')}>
                         Manage Staff
                       </DropdownMenuItem>
                     </DropdownMenuContent>
@@ -462,8 +479,36 @@ const TreatmentCentersView = () => {
             </CardContent>
           </Card>
         </div>
-      )}
-    </div>
+        )}
+
+        {/* Management Dialog Components */}
+        <TreatmentCenterDetailsDialog
+          center={selectedCenter}
+          isOpen={showDetailsDialog}
+          onClose={() => setShowDetailsDialog(false)}
+          assignedAgents={selectedCenter ? getAssignedAgents(selectedCenter.id) : []}
+          getAgentName={getAgentName}
+        />
+
+        <TreatmentCenterAnalytics
+          center={selectedCenter}
+          isOpen={showAnalyticsDialog}
+          onClose={() => setShowAnalyticsDialog(false)}
+        />
+
+        <TreatmentCenterSettings
+          center={selectedCenter}
+          isOpen={showSettingsDialog}
+          onClose={() => setShowSettingsDialog(false)}
+          onSave={handleSaveSettings}
+        />
+
+        <TreatmentCenterStaff
+          center={selectedCenter}
+          isOpen={showStaffDialog}
+          onClose={() => setShowStaffDialog(false)}
+        />
+      </div>
   );
 };
 
