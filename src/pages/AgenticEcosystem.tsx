@@ -270,31 +270,31 @@ const AgenticEcosystem = () => {
         // Persist tab state to localStorage
         localStorage.setItem('agenticEcosystem_activeTab', value);
       }} className="w-full">
-        <TabsList className="child-tabs grid grid-cols-4 h-auto p-1 bg-muted/50 rounded-lg">
+        <TabsList className="child-tabs grid grid-cols-4 h-auto p-1 bg-muted/30 rounded-lg border">
           <TabsTrigger 
             value="overview" 
-            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto text-foreground hover:text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors"
           >
             <Settings className="h-5 w-5" />
             <span className="text-sm font-medium">Overview</span>
           </TabsTrigger>
           <TabsTrigger 
             value="basic_info" 
-            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto text-foreground hover:text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors"
           >
             <Bot className="h-5 w-5" />
             <span className="text-sm font-medium text-center">Agent Creation</span>
           </TabsTrigger>
           <TabsTrigger 
             value="canvas" 
-            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto text-foreground hover:text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors"
           >
             <Brain className="h-5 w-5" />
             <span className="text-sm font-medium">Canvas</span>
           </TabsTrigger>
           <TabsTrigger 
             value="actions" 
-            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto text-foreground hover:text-primary data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm transition-colors"
           >
             <Settings className="h-5 w-5" />
             <span className="text-sm font-medium text-center">Actions & Configuration</span>
