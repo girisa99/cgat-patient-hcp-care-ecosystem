@@ -100,6 +100,11 @@ const EnhancedDeploymentReadyView = () => {
               <Activity className="h-4 w-4" />
               Channel & Voice Setup
             </div>
+            <ArrowRight className="h-4 w-4 text-gray-400" />
+            <div className="flex items-center gap-2 px-3 py-1 bg-red-100 rounded-full">
+              <CheckCircle className="h-4 w-4" />
+              Active Deployment
+            </div>
           </div>
         </CardContent>
       </Card>
