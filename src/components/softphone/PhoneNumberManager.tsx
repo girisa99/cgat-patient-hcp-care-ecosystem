@@ -22,11 +22,16 @@ import {
 interface PhoneNumber {
   id: string;
   phone_number: string;
-  assigned_to_type: 'agent' | 'brand';
-  assigned_to_id: string;
-  provider_id: string;
+  assigned_to_agent_id: string | null;
+  assigned_to_brand: string | null;
+  provider_type: string;
   is_active: boolean;
   created_at: string;
+  
+  // Helper properties for UI compatibility
+  assigned_to_type?: 'agent' | 'brand';
+  assigned_to_id?: string;
+  provider_id?: string;
 }
 
 export const PhoneNumberManager = () => {
@@ -35,7 +40,7 @@ export const PhoneNumberManager = () => {
     phone_number: '',
     assigned_to_type: 'agent' as 'agent' | 'brand',
     assigned_to_id: '',
-    provider_id: ''
+    provider_type: ''
   });
 
   const { showSuccess, showError } = useMasterToast();
@@ -51,7 +56,12 @@ export const PhoneNumberManager = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as PhoneNumber[];
+      return data.map((item): PhoneNumber => ({
+        ...item,
+        assigned_to_type: item.assigned_to_agent_id ? 'agent' : 'brand',
+        assigned_to_id: item.assigned_to_agent_id || item.assigned_to_brand || '',
+        provider_id: item.provider_type
+      }));
     }
   });
 
@@ -61,7 +71,10 @@ export const PhoneNumberManager = () => {
       const { data, error } = await supabase
         .from('phone_numbers')
         .insert([{
-          ...numberData,
+          phone_number: numberData.phone_number,
+          assigned_to_agent_id: numberData.assigned_to_type === 'agent' ? numberData.assigned_to_id : null,
+          assigned_to_brand: numberData.assigned_to_type === 'brand' ? numberData.assigned_to_id : null,
+          provider_type: numberData.provider_type,
           is_active: true
         }])
         .select()
@@ -77,7 +90,7 @@ export const PhoneNumberManager = () => {
         phone_number: '',
         assigned_to_type: 'agent',
         assigned_to_id: '',
-        provider_id: ''
+        provider_type: ''
       });
       showSuccess('Phone number added successfully');
     },
@@ -108,7 +121,7 @@ export const PhoneNumberManager = () => {
   });
 
   const handleAddNumber = () => {
-    if (newNumber.phone_number && newNumber.assigned_to_id) {
+    if (newNumber.phone_number && newNumber.assigned_to_id && newNumber.provider_type) {
       addPhoneNumber.mutate(newNumber);
     }
   };
@@ -230,9 +243,9 @@ export const PhoneNumberManager = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Provider ID</label>
                 <Input
-                  placeholder="Voice Provider ID"
-                  value={newNumber.provider_id}
-                  onChange={(e) => setNewNumber(prev => ({ ...prev, provider_id: e.target.value }))}
+                  placeholder="Voice Provider Type"
+                  value={newNumber.provider_type}
+                  onChange={(e) => setNewNumber(prev => ({ ...prev, provider_type: e.target.value }))}
                 />
               </div>
             </div>
@@ -285,7 +298,7 @@ export const PhoneNumberManager = () => {
                         <Building2 className="h-4 w-4 text-orange-600" />
                       )}
                       <span className="text-sm text-muted-foreground capitalize">
-                        {number.assigned_to_type}: {number.assigned_to_id}
+                        {number.assigned_to_type}: {number.assigned_to_id || 'Unassigned'}
                       </span>
                     </div>
 

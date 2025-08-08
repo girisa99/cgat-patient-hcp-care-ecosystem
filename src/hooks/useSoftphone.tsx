@@ -8,22 +8,42 @@ export type CallStatus = 'idle' | 'dialing' | 'ringing' | 'connected' | 'ended' 
 
 interface CallSession {
   id: string;
-  phone_number: string;
-  status: CallStatus;
-  direction: 'inbound' | 'outbound';
-  duration?: number;
-  provider_id?: string;
+  caller_number: string;
+  callee_number: string;
+  call_status: string;
+  call_direction: 'inbound' | 'outbound';
+  call_duration?: number;
+  voice_provider_id?: string;
   agent_id?: string;
   metadata?: any;
+  created_at: string;
+  session_id?: string;
+  end_time?: string;
+  
+  // Helper properties for compatibility
+  phone_number?: string;
+  status?: CallStatus;
+  direction?: 'inbound' | 'outbound';
+  duration?: number;
+  provider_id?: string;
+  
+  // Index signature for DataTable compatibility
+  [key: string]: any;
 }
 
 interface PhoneNumber {
   id: string;
   phone_number: string;
-  assigned_to_type: 'agent' | 'brand';
-  assigned_to_id: string;
-  provider_id: string;
+  assigned_to_agent_id: string | null;
+  assigned_to_brand: string | null;
+  provider_type: string;
   is_active: boolean;
+  created_at: string;
+  
+  // Helper properties for compatibility
+  assigned_to_type?: 'agent' | 'brand';
+  assigned_to_id?: string;
+  provider_id?: string;
 }
 
 export const useSoftphone = () => {
@@ -50,7 +70,12 @@ export const useSoftphone = () => {
         .eq('is_active', true);
       
       if (error) throw error;
-      return data as PhoneNumber[];
+      return data.map((item): PhoneNumber => ({
+        ...item,
+        assigned_to_type: item.assigned_to_agent_id ? 'agent' : 'brand',
+        assigned_to_id: item.assigned_to_agent_id || item.assigned_to_brand || '',
+        provider_id: item.provider_type
+      }));
     }
   });
 
@@ -65,7 +90,16 @@ export const useSoftphone = () => {
         .limit(50);
       
       if (error) throw error;
-      return data as CallSession[];
+      return data.map((item): CallSession => ({
+        ...item,
+        call_direction: item.call_direction as 'inbound' | 'outbound',
+        phone_number: item.callee_number || item.caller_number,
+        status: (item.call_status as CallStatus) || 'idle',
+        direction: item.call_direction as 'inbound' | 'outbound',
+        duration: (item as any).call_duration || 0,
+        provider_id: item.voice_provider_id,
+        session_id: item.session_id || item.id
+      }));
     }
   });
 
@@ -96,11 +130,13 @@ export const useSoftphone = () => {
       const { data: session, error } = await supabase
         .from('call_sessions')
         .insert({
-          phone_number: phoneNumber,
-          direction: 'outbound',
-          status: 'dialing',
-          provider_id: providerId,
+          callee_number: phoneNumber,
+          caller_number: 'softphone',
+          call_direction: 'outbound',
+          call_status: 'dialing',
+          voice_provider_id: providerId,
           agent_id: agentId,
+          session_id: `session_${Date.now()}`,
           metadata: {
             initiated_at: new Date().toISOString(),
             channel: 'softphone'
@@ -113,28 +149,52 @@ export const useSoftphone = () => {
 
       // Initialize voice provider if specified
       if (providerId) {
-        const adapter = voiceProviderManager.getAdapter(providerId);
-        if (adapter) {
-          const callSession = await adapter.makeCall(phoneNumber, { agentId });
-          
-          // Update session with provider details
-          await supabase
-            .from('call_sessions')
-            .update({
-              metadata: {
-                ...session.metadata,
-                provider_session_id: callSession.sessionId,
-                provider_metadata: callSession.metadata
-              }
-            })
-            .eq('id', session.id);
+        try {
+          const adapter = voiceProviderManager.getAdapter(providerId);
+          if (adapter && typeof adapter.makeCall === 'function') {
+            const providerCallSession = await adapter.makeCall(phoneNumber, { agentId });
+            
+            // Update session with provider details if available
+            if (providerCallSession && typeof providerCallSession === 'object') {
+              await supabase
+                .from('call_sessions')
+                .update({
+                  metadata: {
+                    ...(typeof session.metadata === 'object' && session.metadata !== null ? session.metadata : {}),
+                    provider_session_id: (providerCallSession as any).sessionId || session.id,
+                    provider_metadata: (providerCallSession as any).metadata || {}
+                  }
+                })
+                .eq('id', session.id);
+            }
+          }
+        } catch (providerError) {
+          console.warn('Voice provider initialization failed:', providerError);
+          // Continue without provider - this is non-blocking
         }
       }
 
       return session;
     },
     onSuccess: (session) => {
-      setCurrentCall(session);
+      const callSession: CallSession = {
+        id: session.id,
+        caller_number: session.caller_number,
+        callee_number: session.callee_number,
+        call_status: session.call_status,
+        call_direction: 'outbound' as 'inbound' | 'outbound',
+        voice_provider_id: session.voice_provider_id,
+        agent_id: session.agent_id,
+        metadata: session.metadata,
+        created_at: session.created_at,
+        session_id: session.session_id,
+        phone_number: session.callee_number,
+        status: 'dialing' as CallStatus,
+        direction: 'outbound' as 'inbound' | 'outbound',
+        duration: 0,
+        provider_id: session.voice_provider_id
+      };
+      setCurrentCall(callSession);
       setCallStatus('dialing');
       setIsCallActive(true);
       
@@ -148,7 +208,7 @@ export const useSoftphone = () => {
       }, 1000);
 
       queryClient.invalidateQueries({ queryKey: ['call-sessions'] });
-      showSuccess(`Calling ${session.phone_number}...`);
+      showSuccess(`Calling ${session.callee_number}...`);
     },
     onError: (error) => {
       console.error('Error making call:', error);
@@ -170,9 +230,9 @@ export const useSoftphone = () => {
       const { error } = await supabase
         .from('call_sessions')
         .update({
-          status: 'ended',
-          duration: callDuration,
-          ended_at: new Date().toISOString(),
+          call_status: 'ended',
+          call_duration: callDuration,
+          end_time: new Date().toISOString(),
           metadata: {
             ...currentCall.metadata,
             ended_by: 'user',
@@ -184,8 +244,9 @@ export const useSoftphone = () => {
       if (error) throw error;
 
       // End call with provider if applicable
-      if (currentCall.provider_id) {
-        const adapter = voiceProviderManager.getAdapter(currentCall.provider_id);
+      if (currentCall.provider_id || currentCall.voice_provider_id) {
+        const providerId = currentCall.provider_id || currentCall.voice_provider_id;
+        const adapter = voiceProviderManager.getAdapter(providerId);
         if (adapter && currentCall.metadata?.provider_session_id) {
           await adapter.endCall(currentCall.metadata.provider_session_id);
         }
@@ -216,11 +277,12 @@ export const useSoftphone = () => {
   // Transfer call
   const transferCall = useMutation({
     mutationFn: async ({ destination }: { destination: string }) => {
-      if (!currentCall || !currentCall.provider_id) {
+      const providerId = currentCall?.provider_id || currentCall?.voice_provider_id;
+      if (!currentCall || !providerId) {
         throw new Error('No active call or provider to transfer');
       }
 
-      const adapter = voiceProviderManager.getAdapter(currentCall.provider_id);
+      const adapter = voiceProviderManager.getAdapter(providerId);
       if (!adapter || !currentCall.metadata?.provider_session_id) {
         throw new Error('Provider adapter not available');
       }

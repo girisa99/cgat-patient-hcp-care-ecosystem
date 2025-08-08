@@ -38,7 +38,8 @@ export const CallManagement = () => {
   };
 
   const filteredSessions = callSessions.filter(session => {
-    const matchesSearch = session.phone_number.toLowerCase().includes(searchTerm.toLowerCase());
+    const phoneNumber = session.phone_number || session.callee_number || session.caller_number;
+    const matchesSearch = phoneNumber.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || session.status === statusFilter;
     const matchesDirection = directionFilter === 'all' || session.direction === directionFilter;
     return matchesSearch && matchesStatus && matchesDirection;
@@ -46,6 +47,8 @@ export const CallManagement = () => {
 
   const callColumns = [
     {
+      key: 'direction',
+      label: 'Type',
       accessorKey: 'direction',
       header: 'Type',
       cell: ({ row }: any) => (
@@ -60,34 +63,42 @@ export const CallManagement = () => {
       ),
     },
     {
+      key: 'phone_number',
+      label: 'Phone Number',
       accessorKey: 'phone_number',
       header: 'Phone Number',
       cell: ({ row }: any) => (
         <div className="font-mono text-sm">
-          {row.original.phone_number}
+          {row.original.phone_number || row.original.callee_number}
         </div>
       ),
     },
     {
+      key: 'status',
+      label: 'Status',
       accessorKey: 'status',
       header: 'Status',
       cell: ({ row }: any) => (
-        <Badge className={getStatusColor(row.original.status)} variant="secondary">
-          {row.original.status}
+        <Badge className={getStatusColor(row.original.status || row.original.call_status)} variant="secondary">
+          {row.original.status || row.original.call_status}
         </Badge>
       ),
     },
     {
+      key: 'duration',
+      label: 'Duration',
       accessorKey: 'duration',
       header: 'Duration',
       cell: ({ row }: any) => (
         <div className="flex items-center gap-2">
           <Clock className="h-4 w-4 text-muted-foreground" />
-          <span>{row.original.duration ? formatDuration(row.original.duration) : 'N/A'}</span>
+          <span>{(row.original.duration || row.original.call_duration) ? formatDuration(row.original.duration || row.original.call_duration) : 'N/A'}</span>
         </div>
       ),
     },
     {
+      key: 'created_at',
+      label: 'Date/Time',
       accessorKey: 'created_at',
       header: 'Date/Time',
       cell: ({ row }: any) => (
@@ -100,6 +111,8 @@ export const CallManagement = () => {
       ),
     },
     {
+      key: 'actions',
+      label: 'Actions',
       id: 'actions',
       header: 'Actions',
       cell: ({ row }: any) => (
@@ -129,7 +142,7 @@ export const CallManagement = () => {
     const csvContent = "data:text/csv;charset=utf-8," +
       "Direction,Phone Number,Status,Duration,Date/Time\n" +
       filteredSessions.map(session => 
-        `${session.direction},${session.phone_number},${session.status},${session.duration || 0},${session.created_at}`
+        `${session.direction || session.call_direction},${session.phone_number || session.callee_number},${session.status || session.call_status},${session.duration || session.call_duration || 0},${session.created_at}`
       ).join("\n");
     
     const encodedUri = encodeURI(csvContent);

@@ -10,8 +10,8 @@ import {
   Headphones,
   Activity
 } from 'lucide-react';
-import SoftphoneInterface from '@/components/softphone/SoftphoneInterface';
-import PhoneNumberManager from '@/components/softphone/PhoneNumberManager';
+import { SoftphoneInterface } from '@/components/softphone/SoftphoneInterface';
+import { PhoneNumberManager } from '@/components/softphone/PhoneNumberManager';
 
 const SoftphonePage: React.FC = () => {
   return (

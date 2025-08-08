@@ -68,6 +68,8 @@ export const VoiceProviderManager = () => {
 
   const providerColumns = [
     {
+      key: 'name',
+      label: 'Provider',
       accessorKey: 'name',
       header: 'Provider',
       cell: ({ row }: any) => (
@@ -83,6 +85,8 @@ export const VoiceProviderManager = () => {
       ),
     },
     {
+      key: 'capabilities',
+      label: 'Capabilities',
       accessorKey: 'capabilities',
       header: 'Capabilities',
       cell: ({ row }: any) => {
@@ -106,6 +110,8 @@ export const VoiceProviderManager = () => {
       },
     },
     {
+      key: 'is_active',
+      label: 'Status',
       accessorKey: 'is_active',
       header: 'Status',
       cell: ({ row }: any) => (
@@ -122,6 +128,8 @@ export const VoiceProviderManager = () => {
       ),
     },
     {
+      key: 'rate_limits',
+      label: 'Rate Limits',
       accessorKey: 'rate_limits',
       header: 'Rate Limits',
       cell: ({ row }: any) => {
@@ -134,6 +142,8 @@ export const VoiceProviderManager = () => {
       },
     },
     {
+      key: 'actions',
+      label: 'Actions',
       id: 'actions',
       header: 'Actions',
       cell: ({ row }: any) => (
@@ -237,7 +247,10 @@ export const VoiceProviderManager = () => {
         <CardContent>
           <DataTable
             columns={providerColumns}
-            data={voiceProviders}
+            data={voiceProviders.map(provider => ({
+              ...provider,
+              [provider.id]: provider.id // Add string index signature
+            }))}
             loading={isLoading}
             searchPlaceholder="Search providers..."
           />

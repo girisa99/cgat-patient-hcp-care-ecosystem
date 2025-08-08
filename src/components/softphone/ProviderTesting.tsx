@@ -27,12 +27,21 @@ import { format } from 'date-fns';
 
 interface ProviderTestConfig {
   id: string;
+  agent_id: string;
+  config_name: string;
+  created_by: string;
+  expected_outcomes: any;
+  phone_number_id: string;
   provider_type: string;
-  test_scenarios: any;
   test_data: any;
-  expected_results: any;
+  test_scenario: string;
+  updated_at: string;
   is_active: boolean;
   created_at: string;
+  
+  // Helper properties for UI compatibility
+  test_scenarios?: any;
+  expected_results?: any;
 }
 
 export const ProviderTesting = () => {
@@ -58,7 +67,11 @@ export const ProviderTesting = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as ProviderTestConfig[];
+      return data.map((item): ProviderTestConfig => ({
+        ...item,
+        test_scenarios: item.test_data,
+        expected_results: item.expected_outcomes
+      }));
     }
   });
 
