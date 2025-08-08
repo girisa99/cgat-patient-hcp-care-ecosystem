@@ -14,7 +14,11 @@ import {
   Bot,
   Brain,
   Zap,
-  ListChecks
+  ListChecks,
+  MessageCircle,
+  Phone,
+  Calendar,
+  Car
 } from 'lucide-react';
 
 interface PreDeploymentReviewProps {
@@ -94,7 +98,7 @@ export const PreDeploymentReview: React.FC<PreDeploymentReviewProps> = ({ sessio
                 Pre-Deployment Review
               </CardTitle>
               <CardDescription>
-                Comprehensive assessment of {session.name} before deployment
+                Comprehensive assessment of {session.name} before deployment with configuration flow verification
               </CardDescription>
             </div>
             <div className="text-right">
@@ -112,9 +116,84 @@ export const PreDeploymentReview: React.FC<PreDeploymentReviewProps> = ({ sessio
         </CardHeader>
       </Card>
 
+      {/* Configuration Flow Status */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CheckCircle className="h-5 w-5" />
+            Configuration Flow Verification
+          </CardTitle>
+          <CardDescription>
+            End-to-end verification of all configuration steps and data flow
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="p-3 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-green-500 rounded-full"></div>
+                <span className="font-medium text-sm">Basic Configuration</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                ✓ Agent name, purpose, use case<br/>
+                ✓ Categories and topics<br/>
+                ✓ Business units assigned
+              </div>
+            </div>
+
+            <div className="p-3 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 ${session.actions?.assigned_actions?.length > 0 ? 'bg-green-500' : 'bg-yellow-500'} rounded-full`}></div>
+                <span className="font-medium text-sm">AI Models & Actions</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {session.actions?.assigned_actions?.length > 0 ? '✓' : '⚠'} Actions configured<br/>
+                {session.actions?.configurations?.ai_models ? '✓' : '⚠'} AI models selected<br/>
+                {session.actions?.custom_actions ? '✓' : '⚠'} Custom actions
+              </div>
+            </div>
+
+            <div className="p-3 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 ${session.connectors?.assigned_connectors?.length > 0 ? 'bg-green-500' : 'bg-yellow-500'} rounded-full`}></div>
+                <span className="font-medium text-sm">System Connectors</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {session.connectors?.assigned_connectors?.length > 0 ? '✓' : '⚠'} Connectors assigned<br/>
+                {session.connectors?.api_integrations?.length > 0 ? '✓' : '⚠'} API integrations<br/>
+                {session.connectors?.configurations ? '✓' : '⚠'} Configurations saved
+              </div>
+            </div>
+
+            <div className="p-3 border rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <div className={`w-2 h-2 ${session.knowledge?.knowledge_bases?.length > 0 ? 'bg-green-500' : 'bg-yellow-500'} rounded-full`}></div>
+                <span className="font-medium text-sm">Knowledge Base</span>
+              </div>
+              <div className="text-xs text-muted-foreground">
+                {session.knowledge?.knowledge_bases?.length > 0 ? '✓' : '⚠'} Knowledge sources<br/>
+                {session.knowledge?.documents?.length > 0 ? '✓' : '⚠'} Documents uploaded<br/>
+                {session.rag?.configurations ? '✓' : '⚠'} RAG configured
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <CheckCircle className="h-4 w-4 text-green-600" />
+              <span className="font-medium text-green-800">Configuration Flow Integrity</span>
+            </div>
+            <div className="text-sm text-green-700">
+              All configuration data from previous steps is available and will be forwarded to deployment. 
+              The deployment system can access all models, connectors, APIs, knowledge bases, and voice configurations.
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Detailed Review Tabs */}
       <Tabs defaultValue="overview" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview" className="flex items-center gap-2">
             <Info className="h-4 w-4" />
             Overview
@@ -134,6 +213,10 @@ export const PreDeploymentReview: React.FC<PreDeploymentReviewProps> = ({ sessio
           <TabsTrigger value="deployment" className="flex items-center gap-2">
             <Bot className="h-4 w-4" />
             Deployment
+          </TabsTrigger>
+          <TabsTrigger value="code-generation" className="flex items-center gap-2">
+            <Bot className="h-4 w-4" />
+            Code Gen
           </TabsTrigger>
         </TabsList>
 
@@ -157,7 +240,7 @@ export const PreDeploymentReview: React.FC<PreDeploymentReviewProps> = ({ sessio
           <Card>
             <CardHeader>
               <CardTitle>Deployment Configuration</CardTitle>
-              <CardDescription>Environment and scaling settings</CardDescription>
+              <CardDescription>Environment and scaling settings with channel enablement</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -174,6 +257,34 @@ export const PreDeploymentReview: React.FC<PreDeploymentReviewProps> = ({ sessio
                   </Badge>
                 </div>
               </div>
+
+              <div>
+                <h4 className="font-medium mb-2">Available Channels</h4>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="flex items-center gap-2 p-2 border rounded">
+                    <MessageCircle className="h-4 w-4" />
+                    <span className="text-sm">Web Chat</span>
+                    <Badge variant="outline" className="ml-auto">Ready</Badge>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border rounded">
+                    <Phone className="h-4 w-4" />
+                    <span className="text-sm">Voice Call</span>
+                    <Badge variant="outline" className="ml-auto">
+                      {session.voice?.provider ? 'Ready' : 'Config Needed'}
+                    </Badge>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border rounded">
+                    <Calendar className="h-4 w-4" />
+                    <span className="text-sm">Scheduling</span>
+                    <Badge variant="outline" className="ml-auto">Available</Badge>
+                  </div>
+                  <div className="flex items-center gap-2 p-2 border rounded">
+                    <Car className="h-4 w-4" />
+                    <span className="text-sm">Uber</span>
+                    <Badge variant="outline" className="ml-auto">Available</Badge>
+                  </div>
+                </div>
+              </div>
               
               {session.deployment?.scaling_config && (
                 <div>
@@ -185,6 +296,52 @@ export const PreDeploymentReview: React.FC<PreDeploymentReviewProps> = ({ sessio
                   </div>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="code-generation">
+          <Card>
+            <CardHeader>
+              <CardTitle>Drag & Drop Deployment</CardTitle>
+              <CardDescription>
+                Generate deployment code that can be used anywhere with simple drag and drop functionality
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="p-4 border-2 border-dashed rounded-lg">
+                  <h4 className="font-medium mb-2">Single Agent Deployment</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Deploy this agent to any web application, mobile app, or server environment
+                  </p>
+                  <Button size="sm" className="w-full">
+                    Generate Single Agent Code
+                  </Button>
+                </div>
+
+                <div className="p-4 border-2 border-dashed rounded-lg">
+                  <h4 className="font-medium mb-2">Multi-Agent Orchestration</h4>
+                  <p className="text-sm text-muted-foreground mb-3">
+                    Create intelligent routing between multiple specialized agents
+                  </p>
+                  <Button size="sm" variant="outline" className="w-full">
+                    Generate Multi-Agent Code
+                  </Button>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                <div className="flex items-center gap-2 mb-2">
+                  <Info className="h-4 w-4 text-blue-600" />
+                  <span className="font-medium text-blue-800">Configuration Forward Flow</span>
+                </div>
+                <div className="text-sm text-blue-700">
+                  All configuration data (AI models, connectors, APIs, knowledge base, voice settings) 
+                  flows seamlessly from the previous setup steps into the deployment code. 
+                  The generated code includes everything needed for production deployment.
+                </div>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

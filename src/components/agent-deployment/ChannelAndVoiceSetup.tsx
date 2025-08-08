@@ -1,26 +1,33 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
+import { EnhancedChannelMatrix } from './EnhancedChannelMatrix';
 import VoiceConfigurationView from '@/components/deployment/VoiceConfigurationView';
 import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer';
 import SharedVoiceConnectors from '@/components/voice/SharedVoiceConnectors';
+import { DeploymentFlowManager } from './DeploymentFlowManager';
 import { 
   Grid, 
   Phone, 
   Users, 
-  Network 
+  Network,
+  Rocket
 } from 'lucide-react';
 
-const ChannelAndVoiceSetup = () => {
+interface ChannelAndVoiceSetupProps {
+  agentSession?: any;
+}
+
+const ChannelAndVoiceSetup: React.FC<ChannelAndVoiceSetupProps> = ({ agentSession }) => {
   const [activeSubTab, setActiveSubTab] = useState('channel-matrix');
 
   const subTabs = [
     { 
       id: 'channel-matrix', 
-      label: 'Agent Channel Assignment Matrix', 
+      label: 'Enhanced Channel Assignment Matrix', 
       icon: Grid,
-      component: AgentChannelAssignmentMatrix,
-      description: 'Assign agents to communication channels and manage deployment status.'
+      component: () => <EnhancedChannelMatrix />,
+      description: 'Configure channels including scheduling, Uber, voice, and webchat with Gen AI capabilities.'
     },
     { 
       id: 'voice-config', 
@@ -42,6 +49,13 @@ const ChannelAndVoiceSetup = () => {
       icon: Network,
       component: SharedVoiceConnectors,
       description: 'Manage voice system connectors, API integrations, and external service connections.'
+    },
+    {
+      id: 'deployment-flow',
+      label: 'Deployment Flow Verification',
+      icon: Rocket,
+      component: () => <DeploymentFlowManager agentSession={agentSession} />,
+      description: 'Verify complete configuration flow and generate deployment code snippets.'
     }
   ];
 
@@ -50,22 +64,30 @@ const ChannelAndVoiceSetup = () => {
       <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6 shadow-sm">
         <h3 className="font-bold text-green-900 mb-3 text-lg">Channel & Voice Configuration</h3>
         <p className="text-green-700">
-          Configure channel assignments, voice adapters, and communication settings through sequential setup tabs.
+          Configure channel assignments, voice adapters, communication settings, and verify the complete deployment flow from configuration to code generation.
         </p>
       </div>
 
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="child-tabs">
+        <TabsList className="child-tabs grid grid-cols-5">
           {subTabs.map((tab) => {
             const IconComponent = tab.icon;
             return (
               <TabsTrigger 
                 key={tab.id} 
                 value={tab.id} 
-                className="child-tab-trigger"
+                className="child-tab-trigger flex flex-col items-center gap-1 p-3"
               >
                 <IconComponent className="h-4 w-4" />
-                <span className="font-medium">{tab.label}</span>
+                <span className="font-medium text-xs text-center leading-tight">
+                  {tab.label.split(' ').slice(0, 2).join(' ')}
+                  {tab.label.split(' ').length > 2 && (
+                    <>
+                      <br />
+                      {tab.label.split(' ').slice(2).join(' ')}
+                    </>
+                  )}
+                </span>
               </TabsTrigger>
             );
           })}
@@ -81,7 +103,7 @@ const ChannelAndVoiceSetup = () => {
                     {tab.description}
                   </p>
                 </div>
-                <ComponentToRender />
+                <ComponentToRender agentSession={agentSession} />
               </div>
             </TabsContent>
           );
