@@ -12,22 +12,24 @@ import {
 import { useMasterFacilities } from '@/hooks/useMasterFacilities';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const TreatmentCentersView = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCenter, setSelectedCenter] = useState<any>(null);
   const [showAgentAssignment, setShowAgentAssignment] = useState(false);
+  const { toast } = useToast();
 
   const { facilities, isLoading, facilityStats } = useMasterFacilities();
   
-  // Get agents for assignment
+  // Get agents for assignment - show all agents, not just active ones
   const { data: agents = [] } = useQuery({
     queryKey: ['agents-for-assignment'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('agents')
         .select('*')
-        .eq('status', 'active');
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data || [];
@@ -88,6 +90,19 @@ const TreatmentCentersView = () => {
   const getAgentName = (agentId: string) => {
     const agent = agents.find(a => a.id === agentId);
     return agent?.name || 'Unknown Agent';
+  };
+
+  const handleManageCenter = (centerId: string) => {
+    const center = facilities.find(f => f.id === centerId);
+    if (center) {
+      setSelectedCenter(center);
+      // Here you would typically open a management dialog
+      // For now, we'll show a more detailed toast
+      toast({
+        title: "Treatment Center Management",
+        description: `Managing ${center.name} - View analytics, update settings, manage staff assignments, and configure services.`,
+      });
+    }
   };
 
   if (isLoading) {
@@ -285,7 +300,11 @@ const TreatmentCentersView = () => {
                     <Plus className="h-3 w-3 mr-1" />
                     Assign Agent
                   </Button>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleManageCenter(center.id)}
+                  >
                     <Settings className="h-3 w-3 mr-1" />
                     Manage
                   </Button>

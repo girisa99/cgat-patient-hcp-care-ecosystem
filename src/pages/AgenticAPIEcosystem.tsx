@@ -21,10 +21,14 @@ import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import ApiIntegrationCreator from '@/components/api/ApiIntegrationCreator';
+import DatabaseConnectorManager from '@/components/integration/DatabaseConnectorManager';
+import SecurityGatewayManager from '@/components/integration/SecurityGatewayManager';
 
 const AgenticAPIEcosystem = () => {
   const [activeTab, setActiveTab] = useState('overview');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
+  const [showDatabaseConnectorManager, setShowDatabaseConnectorManager] = useState(false);
+  const [showSecurityGatewayManager, setShowSecurityGatewayManager] = useState(false);
 
   // Fetch real API services data
   const { data: apiServices = [], isLoading: apisLoading } = useQuery({
@@ -415,9 +419,9 @@ const AgenticAPIEcosystem = () => {
                         <span className="text-green-600 font-medium">Available</span>
                       </div>
                     </div>
-                    <Button size="sm" className="mt-3 w-full" onClick={() => toast({ title: "Database Connectors", description: "Opening database connection manager..." })}>
-                      Configure
-                    </Button>
+                    <Button size="sm" className="mt-3 w-full" onClick={() => setShowDatabaseConnectorManager(true)}>
+                       Configure
+                     </Button>
                   </CardContent>
                 </Card>
                 
@@ -440,9 +444,9 @@ const AgenticAPIEcosystem = () => {
                         <span className="text-blue-600 font-medium">Enabled</span>
                       </div>
                     </div>
-                    <Button size="sm" className="mt-3 w-full" onClick={() => toast({ title: "Security Gateway", description: "Opening security configuration panel..." })}>
-                      Manage Security
-                    </Button>
+                    <Button size="sm" className="mt-3 w-full" onClick={() => setShowSecurityGatewayManager(true)}>
+                       Manage Security
+                     </Button>
                   </CardContent>
                 </Card>
                 
@@ -481,6 +485,20 @@ const AgenticAPIEcosystem = () => {
         isOpen={showCreateDialog}
         onClose={() => setShowCreateDialog(false)}
       />
+
+      {/* Database Connector Manager */}
+      {showDatabaseConnectorManager && (
+        <DatabaseConnectorManager
+          onClose={() => setShowDatabaseConnectorManager(false)}
+        />
+      )}
+
+      {/* Security Gateway Manager */}
+      {showSecurityGatewayManager && (
+        <SecurityGatewayManager
+          onClose={() => setShowSecurityGatewayManager(false)}
+        />
+      )}
     </div>
   );
 };
