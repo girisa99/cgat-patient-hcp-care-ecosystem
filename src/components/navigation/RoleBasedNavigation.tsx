@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User, FileBarChart, Bot } from 'lucide-react';
+import { ArrowLeft, Home, ChevronDown, Users, Building2, Settings, Activity, MoreHorizontal, LogOut, User, FileBarChart, Bot, Brain, Network } from 'lucide-react';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import {
   DropdownMenu,
@@ -60,22 +60,35 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     return 'User';
   };
 
-  // Group navigation items by category
+  // CONSOLIDATED navigation groups - eliminates redundancy
   const navigationGroups = {
+    // Core business functions
     core: availableTabs.filter(tab => 
       ['/', '/patients'].includes(tab.to)
     ),
+    // Main agent ecosystem (consolidated)
     agents: availableTabs.filter(tab => 
       ['/agents'].includes(tab.to)
     ),
+    // Business domain - separate from agent tech
+    treatmentCenters: availableTabs.filter(tab => 
+      ['/treatment-centers'].includes(tab.to)
+    ),
+    // Administrative functions
     management: availableTabs.filter(tab => 
-      ['/users', '/facilities', '/modules', '/role-management'].includes(tab.to)
+      ['/users', '/facilities', '/onboarding', '/modules', '/role-management'].includes(tab.to)
     ),
-    technical: availableTabs.filter(tab => 
-      ['/api-services', '/ngrok', '/security', '/testing', '/data-import', '/healthcare-ai'].includes(tab.to)
+    // Technical integration (consolidated from scattered tools)
+    systemIntegration: availableTabs.filter(tab => 
+      ['/api-services', '/system-integration', '/data-import', '/security', '/testing'].includes(tab.to)
     ),
+    // Compliance & reporting
     reportsCompliance: availableTabs.filter(tab => 
-      ['/reports', '/governance', '/framework', '/stability'].includes(tab.to)
+      ['/reports', '/governance', '/framework', '/stability', '/active-verification'].includes(tab.to)
+    ),
+    // Specialized tools
+    specialized: availableTabs.filter(tab => 
+      ['/healthcare-ai', '/ngrok'].includes(tab.to)
     )
   };
 
@@ -175,9 +188,14 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
           {/* Core Features */}
           {navigationGroups.core.filter(tab => tab.to !== '/').map(tab => renderNavButton(tab))}
 
-          {/* Agents Tab */}
+          {/* Agents Ecosystem */}
           {navigationGroups.agents.length > 0 && (
             navigationGroups.agents.map(tab => renderNavButton(tab))
+          )}
+
+          {/* Treatment Centers - Business Domain */}
+          {navigationGroups.treatmentCenters.length > 0 && (
+            navigationGroups.treatmentCenters.map(tab => renderNavButton(tab))
           )}
 
           {/* Management Dropdown */}
@@ -200,8 +218,8 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
             </DropdownMenu>
           )}
 
-          {/* Technical Dropdown */}
-          {navigationGroups.technical.length > 0 && (
+          {/* System Integration - Consolidated Technical Tools */}
+          {navigationGroups.systemIntegration.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
@@ -210,17 +228,17 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                   className="flex items-center gap-2 hover:bg-accent hover:scale-105"
                 >
                   <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">Technical</span>
+                  <span className="hidden sm:inline">System Integration</span>
                   <ChevronDown className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48">
-                {navigationGroups.technical.map(tab => renderNavButton(tab, true))}
+              <DropdownMenuContent align="center" className="w-56">
+                {navigationGroups.systemIntegration.map(tab => renderNavButton(tab, true))}
               </DropdownMenuContent>
             </DropdownMenu>
           )}
 
-          {/* Reports & Compliance Dropdown */}
+          {/* Reports & Compliance */}
           {navigationGroups.reportsCompliance.length > 0 && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
@@ -236,6 +254,26 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
               </DropdownMenuTrigger>
               <DropdownMenuContent align="center" className="w-56">
                 {navigationGroups.reportsCompliance.map(tab => renderNavButton(tab, true))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          )}
+
+          {/* Specialized Tools */}
+          {navigationGroups.specialized.length > 0 && (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="flex items-center gap-2 hover:bg-accent hover:scale-105"
+                >
+                  <Brain className="h-4 w-4" />
+                  <span className="hidden sm:inline">Specialized</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="center" className="w-48">
+                {navigationGroups.specialized.map(tab => renderNavButton(tab, true))}
               </DropdownMenuContent>
             </DropdownMenu>
           )}

@@ -101,6 +101,7 @@ export const useRoleBasedNavigation = () => {
       onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
       'api-services': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for API services demo
+      'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
       reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo

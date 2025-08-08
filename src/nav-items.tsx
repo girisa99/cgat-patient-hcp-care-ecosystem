@@ -17,6 +17,9 @@ import {
   Brain,
   Bot,
   UserCheck,
+  Zap,
+  Network,
+  Workflow
 } from "lucide-react";
 
 export const navItems = [
@@ -26,13 +29,8 @@ export const navItems = [
     icon: HomeIcon,
   },
   {
-    title: "Users",
-    url: "/users",
-    icon: Users,
-  },
-  {
     title: "Patients",
-    url: "/patients",
+    url: "/patients", 
     icon: Stethoscope,
   },
   {
@@ -41,13 +39,24 @@ export const navItems = [
     icon: Bot,
   },
   {
-    title: "Facilities",
+    title: "Treatment Centers",
+    url: "/treatment-centers",
+    icon: Building2,
+  },
+  // MANAGEMENT SECTION
+  {
+    title: "Users",
+    url: "/users",
+    icon: Users,
+  },
+  {
+    title: "Facilities", 
     url: "/facilities",
     icon: Building2,
   },
   {
     title: "Onboarding",
-    url: "/onboarding",
+    url: "/onboarding", 
     icon: UserCheck,
   },
   {
@@ -56,44 +65,41 @@ export const navItems = [
     icon: Settings,
   },
   {
+    title: "Role Management",
+    url: "/role-management",
+    icon: BarChart3,
+  },
+  // SYSTEM INTEGRATION SECTION
+  {
     title: "API Services",
     url: "/api-services",
     icon: Activity,
   },
   {
-    title: "Ngrok Integration",
-    url: "/ngrok",
-    icon: Globe,
-  },
-  {
-    title: "Security",
-    url: "/security",
-    icon: Shield,
-  },
-  {
-    title: "Reports",
-    url: "/reports",
-    icon: FileText,
-  },
-  {
-    title: "Testing",
-    url: "/testing",
-    icon: TestTube,
-  },
-  {
-    title: "Role Management",
-    url: "/role-management",
-    icon: BarChart3,
+    title: "System Integration",
+    url: "/system-integration",
+    icon: Network,
   },
   {
     title: "Data Import",
     url: "/data-import",
-    icon: Globe,
+    icon: Upload,
   },
   {
-    title: "Verification",
-    url: "/active-verification",
-    icon: BarChart3,
+    title: "Security",
+    url: "/security", 
+    icon: Shield,
+  },
+  {
+    title: "Testing & Validation",
+    url: "/testing",
+    icon: TestTube,
+  },
+  // REPORTS & COMPLIANCE SECTION  
+  {
+    title: "Reports",
+    url: "/reports",
+    icon: FileText,
   },
   {
     title: "Governance",
@@ -107,17 +113,23 @@ export const navItems = [
   },
   {
     title: "Stability",
-    url: "/stability",
+    url: "/stability", 
     icon: Activity,
   },
+  {
+    title: "Verification",
+    url: "/active-verification",
+    icon: BarChart3,
+  },
+  // SPECIALIZED TOOLS
   {
     title: "Healthcare AI",
     url: "/healthcare-ai",
     icon: Brain,
   },
   {
-    title: "Treatment Centers",
-    url: "/treatment-centers",
-    icon: Building2,
+    title: "Ngrok Integration",
+    url: "/ngrok",
+    icon: Globe,
   },
 ];
