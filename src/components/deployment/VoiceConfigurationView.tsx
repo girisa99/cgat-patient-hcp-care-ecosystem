@@ -140,18 +140,22 @@ const VoiceConfigurationView = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {voiceProviders.filter(p => 
-              (p.capabilities && p.capabilities.includes('STT')) || 
-              p.provider_type === 'stt' || 
-              p.name.toLowerCase().includes('stt')
-            ).map((provider) => (
+            {voiceProviders.filter(p => {
+              // Check if this provider supports STT functionality
+              const capabilities = Array.isArray(p.capabilities) ? p.capabilities : [];
+              return capabilities.some(cap => 
+                cap.toLowerCase().includes('voice') || 
+                cap.toLowerCase().includes('stt') || 
+                ['twilio', 'five9', 'genesys'].includes(p.provider_type)
+              );
+            }).map((provider) => (
               <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
                   <div>
                     <p className="font-medium">{provider.name}</p>
                     <div className="flex gap-1 mt-1">
-                      {provider.capabilities?.map((capability, idx) => (
+                      {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
                         <Badge key={idx} variant="secondary" className="text-xs">
                           {capability}
                         </Badge>
@@ -181,18 +185,22 @@ const VoiceConfigurationView = () => {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {voiceProviders.filter(p => 
-              (p.capabilities && p.capabilities.includes('TTS')) || 
-              p.provider_type === 'tts' || 
-              p.name.toLowerCase().includes('tts')
-            ).map((provider) => (
+            {voiceProviders.filter(p => {
+              // Check if this provider supports TTS functionality  
+              const capabilities = Array.isArray(p.capabilities) ? p.capabilities : [];
+              return capabilities.some(cap => 
+                cap.toLowerCase().includes('voice') || 
+                cap.toLowerCase().includes('tts') || 
+                ['twilio', 'five9', 'genesys', 'vonage', 'voxiplant'].includes(p.provider_type)
+              );
+            }).map((provider) => (
               <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
                   <div>
                     <p className="font-medium">{provider.name}</p>
                     <div className="flex gap-1 mt-1">
-                      {provider.capabilities?.map((capability, idx) => (
+                      {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
                         <Badge key={idx} variant="secondary" className="text-xs">
                           {capability}
                         </Badge>

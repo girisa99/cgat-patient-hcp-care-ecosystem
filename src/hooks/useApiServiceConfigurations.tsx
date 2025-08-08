@@ -36,7 +36,7 @@ export const useApiServiceConfigurations = () => {
 
   // Create API service configuration
   const createApiServiceConfiguration = useMutation({
-    mutationFn: async (config: Partial<ApiServiceConfiguration>) => {
+    mutationFn: async (config: Pick<ApiServiceConfiguration, 'service_name' | 'service_type'> & Partial<Omit<ApiServiceConfiguration, 'id' | 'created_at' | 'updated_at' | 'service_name' | 'service_type'>>) => {
       const { data, error } = await supabase
         .from('api_service_configurations')
         .insert([config])

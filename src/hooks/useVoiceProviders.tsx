@@ -8,10 +8,12 @@ interface VoiceProvider {
   name: string;
   provider_type: string;
   configuration: any;
-  capabilities: string[];
+  capabilities: any; // This is stored as JSON in the database
   is_active: boolean;
-  health_status?: string;
   api_credentials?: any;
+  rate_limits?: any;
+  webhook_config?: any;
+  health_check_config?: any;
   created_at: string;
   updated_at: string;
 }

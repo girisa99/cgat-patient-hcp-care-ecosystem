@@ -1623,6 +1623,48 @@ export type Database = {
           },
         ]
       }
+      api_service_configurations: {
+        Row: {
+          agent_id: string | null
+          configuration: Json
+          created_at: string
+          credentials: Json | null
+          health_status: string | null
+          id: string
+          is_active: boolean
+          last_health_check: string | null
+          service_name: string
+          service_type: string
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          configuration?: Json
+          created_at?: string
+          credentials?: Json | null
+          health_status?: string | null
+          id?: string
+          is_active?: boolean
+          last_health_check?: string | null
+          service_name: string
+          service_type: string
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          configuration?: Json
+          created_at?: string
+          credentials?: Json | null
+          health_status?: string | null
+          id?: string
+          is_active?: boolean
+          last_health_check?: string | null
+          service_name?: string
+          service_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       api_testing_configs: {
         Row: {
           api_integration_id: string | null
@@ -6861,6 +6903,44 @@ export type Database = {
             columns: ["related_functionality_id"]
             isOneToOne: false
             referencedRelation: "system_functionality_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_configurations: {
+        Row: {
+          agent_id: string | null
+          configuration: Json
+          created_at: string
+          id: string
+          is_active: boolean
+          updated_at: string
+          voice_provider_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          configuration?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          voice_provider_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          configuration?: Json
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          updated_at?: string
+          voice_provider_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_configurations_voice_provider_id_fkey"
+            columns: ["voice_provider_id"]
+            isOneToOne: false
+            referencedRelation: "voice_providers"
             referencedColumns: ["id"]
           },
         ]
