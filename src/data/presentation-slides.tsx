@@ -1420,6 +1420,113 @@ export const presentationSlides: Slide[] = [
           </div>
         </div>
 
+        {/* Technical Architecture & Data Integration */}
+        <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-lg p-6 border border-indigo-200">
+          <div className="flex items-center gap-3 mb-6 justify-center">
+            <Database className="w-6 h-6 text-indigo-600" />
+            <h5 className="text-lg font-semibold text-indigo-800">🔧 Technical Architecture & Data Integration</h5>
+          </div>
+          
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Database-First Architecture */}
+            <div className="space-y-4">
+              <h6 className="font-semibold text-indigo-700">Database-First Architecture</h6>
+              <div className="space-y-3">
+                <div className="bg-white p-4 rounded border border-indigo-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Database className="w-4 h-4 text-indigo-600" />
+                    <div className="font-medium text-indigo-800">Real Database Integration</div>
+                  </div>
+                  <div className="text-sm text-indigo-600">Complete elimination of mock data with real Supabase tables</div>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-indigo-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Shield className="w-4 h-4 text-green-600" />
+                    <div className="font-medium text-indigo-800">Type-Safe Implementation</div>
+                  </div>
+                  <div className="text-sm text-indigo-600">TypeScript hooks with database-driven type safety</div>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-indigo-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Zap className="w-4 h-4 text-purple-600" />
+                    <div className="font-medium text-indigo-800">Real-time Subscriptions</div>
+                  </div>
+                  <div className="text-sm text-indigo-600">Live data sync with Supabase real-time capabilities</div>
+                </div>
+              </div>
+            </div>
+
+            {/* Voice System Implementation */}
+            <div className="space-y-4">
+              <h6 className="font-semibold text-indigo-700">Voice System Implementation</h6>
+              <div className="space-y-3">
+                <div className="bg-white p-4 rounded border border-indigo-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <div className="font-medium text-indigo-800">Voice Database Tables</div>
+                  </div>
+                  <ul className="text-sm text-indigo-600 space-y-1">
+                    <li>• voice_live_agents</li>
+                    <li>• voice_connectors</li>
+                    <li>• voice_transfer_queue</li>
+                    <li>• voice_analytics_events</li>
+                  </ul>
+                </div>
+                
+                <div className="bg-white p-4 rounded border border-indigo-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+                    <div className="font-medium text-indigo-800">Data Hooks & Validation</div>
+                  </div>
+                  <ul className="text-sm text-indigo-600 space-y-1">
+                    <li>• useVoiceLiveAgents</li>
+                    <li>• useVoiceConnectors</li>
+                    <li>• useTransferQueue</li>
+                    <li>• useVoiceAnalytics</li>
+                  </ul>
+                </div>
+
+                <div className="bg-white p-4 rounded border border-indigo-200">
+                  <div className="flex items-center gap-2 mb-2">
+                    <div className="w-3 h-3 bg-orange-500 rounded-full"></div>
+                    <div className="font-medium text-indigo-800">RLS & Security</div>
+                  </div>
+                  <div className="text-sm text-indigo-600">Row-level security policies with user-based access control</div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Technical Stack Summary */}
+          <div className="mt-8 bg-white rounded-lg p-4 border border-indigo-200">
+            <h6 className="font-semibold text-indigo-700 mb-4 text-center">Complete Technical Stack</h6>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-6 text-center">
+              <div>
+                <div className="text-2xl font-bold text-indigo-600 mb-1">100%</div>
+                <div className="text-sm text-indigo-700">Real Data</div>
+                <div className="text-xs text-gray-500">No mock implementations</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-green-600 mb-1">25+</div>
+                <div className="text-sm text-green-700">Database Tables</div>
+                <div className="text-xs text-gray-500">Full schema integration</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-purple-600 mb-1">TypeScript</div>
+                <div className="text-sm text-purple-700">Type Safety</div>
+                <div className="text-xs text-gray-500">Database-driven types</div>
+              </div>
+              <div>
+                <div className="text-2xl font-bold text-orange-600 mb-1">Real-time</div>
+                <div className="text-sm text-orange-700">Data Sync</div>
+                <div className="text-xs text-gray-500">Live updates</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
         {/* Implementation Components */}
         <div className="bg-gray-50 rounded-lg p-6">
           <h5 className="text-lg font-semibold text-gray-800 mb-4">🛠️ Implemented Deployment Components & Features</h5>
