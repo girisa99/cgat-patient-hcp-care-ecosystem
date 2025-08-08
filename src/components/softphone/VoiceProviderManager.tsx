@@ -147,28 +147,33 @@ export const VoiceProviderManager = () => {
       id: 'actions',
       header: 'Actions',
       cell: ({ row }: any) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-4">
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="default"
             onClick={() => handleTestProvider(row.original.id)}
             disabled={isTesting}
+            className="px-4 py-2"
           >
-            <TestTube className="h-4 w-4" />
+            <TestTube className="h-5 w-5 mr-2" />
+            Test
           </Button>
           <Button
-            variant="ghost"
-            size="sm"
+            variant="outline"
+            size="default"
             onClick={() => setSelectedProvider(row.original)}
+            className="px-4 py-2"
           >
-            <Edit className="h-4 w-4" />
+            <Edit className="h-5 w-5 mr-2" />
+            Edit
           </Button>
           <Button
-            variant="ghost"
-            size="sm"
-            className="text-destructive hover:text-destructive"
+            variant="outline"
+            size="default"
+            className="text-destructive hover:text-destructive border-destructive/20 hover:border-destructive px-4 py-2"
           >
-            <Trash2 className="h-4 w-4" />
+            <Trash2 className="h-5 w-5 mr-2" />
+            Delete
           </Button>
         </div>
       ),
