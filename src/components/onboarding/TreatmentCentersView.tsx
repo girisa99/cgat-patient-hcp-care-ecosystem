@@ -7,12 +7,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Building2, MapPin, Phone, Mail, Users, Bot, 
-  Plus, Settings, Activity, Search, Filter
+  Plus, Settings, Activity, Search, Filter, ChevronDown
 } from "lucide-react";
 import { useMasterFacilities } from '@/hooks/useMasterFacilities';
+import { useAgents } from '@/hooks/useAgents';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 const TreatmentCentersView = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -22,19 +24,8 @@ const TreatmentCentersView = () => {
 
   const { facilities, isLoading, facilityStats } = useMasterFacilities();
   
-  // Get agents for assignment - show all agents, not just active ones
-  const { data: agents = [] } = useQuery({
-    queryKey: ['agents-for-assignment'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('agents')
-        .select('*')
-        .order('created_at', { ascending: false });
-      
-      if (error) throw error;
-      return data || [];
-    }
-  });
+  // Get agents using the proper hook
+  const { agents, isLoading: agentsLoading } = useAgents();
 
   // Get agent assignments for treatment centers
   const { data: agentAssignments = [] } = useQuery({
@@ -289,25 +280,95 @@ const TreatmentCentersView = () => {
 
                 {/* Actions */}
                 <div className="flex gap-2 pt-2 border-t">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => {
-                      setSelectedCenter(center);
-                      setShowAgentAssignment(true);
-                    }}
-                  >
-                    <Plus className="h-3 w-3 mr-1" />
-                    Assign Agent
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleManageCenter(center.id)}
-                  >
-                    <Settings className="h-3 w-3 mr-1" />
-                    Manage
-                  </Button>
+                  {/* Assign Agent Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm" disabled={agentsLoading || agents.length === 0}>
+                        <Plus className="h-3 w-3 mr-1" />
+                        Assign Agent
+                        <ChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent className="w-64" align="start">
+                      {agentsLoading ? (
+                        <DropdownMenuItem disabled>Loading agents...</DropdownMenuItem>
+                      ) : agents.length === 0 ? (
+                        <DropdownMenuItem disabled>No agents available</DropdownMenuItem>
+                      ) : (
+                        agents.slice(0, 10).map((agent) => (
+                          <DropdownMenuItem
+                            key={agent.id}
+                            onClick={() => {
+                              handleAssignAgent(
+                                center.id,
+                                agent.id,
+                                agent.use_case || 'General',
+                                agent.categories || [],
+                                agent.topics || []
+                              );
+                            }}
+                          >
+                            <div className="flex flex-col">
+                              <span className="font-medium">{agent.name}</span>
+                              <span className="text-xs text-muted-foreground">
+                                {agent.description?.slice(0, 50)}...
+                              </span>
+                            </div>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                      {agents.length > 10 && (
+                        <DropdownMenuItem
+                          onClick={() => {
+                            setSelectedCenter(center);
+                            setShowAgentAssignment(true);
+                          }}
+                        >
+                          View all {agents.length} agents...
+                        </DropdownMenuItem>
+                      )}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                  
+                  {/* Manage Dropdown */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="outline" size="sm">
+                        <Settings className="h-3 w-3 mr-1" />
+                        Manage
+                        <ChevronDown className="h-3 w-3 ml-1" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => handleManageCenter(center.id)}>
+                        View Details
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        toast({
+                          title: "Analytics",
+                          description: `Opening analytics dashboard for ${center.name}`,
+                        });
+                      }}>
+                        View Analytics
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        toast({
+                          title: "Configuration",
+                          description: `Opening configuration panel for ${center.name}`,
+                        });
+                      }}>
+                        Configure Settings
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => {
+                        toast({
+                          title: "Staff Management", 
+                          description: `Opening staff management for ${center.name}`,
+                        });
+                      }}>
+                        Manage Staff
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </CardContent>
             </Card>

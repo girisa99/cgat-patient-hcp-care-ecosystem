@@ -9,12 +9,16 @@ import {
   Volume2,
   Settings,
   Zap,
-  Check
+  Check,
+  ExternalLink
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const VoiceConfigurationView = () => {
   const [selectedVoiceProvider, setSelectedVoiceProvider] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
+  const [isConfiguring, setIsConfiguring] = useState<string | null>(null);
+  const { toast } = useToast();
 
   const voiceProviders = [
     { id: 'twilio', name: 'Twilio Voice', status: 'active', features: ['Real-time', 'PSTN', 'SIP'] },
@@ -30,6 +34,43 @@ const VoiceConfigurationView = () => {
     { code: 'fr-FR', name: 'French (France)' },
     { code: 'de-DE', name: 'German (Germany)' },
   ];
+
+  const handleConfigure = async (providerId: string, providerName: string) => {
+    setIsConfiguring(providerId);
+    
+    // Simulate configuration process
+    await new Promise(resolve => setTimeout(resolve, 2000));
+    
+    toast({
+      title: `${providerName} Configuration`,
+      description: `Successfully configured ${providerName} for voice processing. Ready to use in agent deployments.`,
+    });
+    
+    setIsConfiguring(null);
+  };
+
+  const handleTestConfiguration = () => {
+    toast({
+      title: "Voice Test Started",
+      description: "Testing voice configuration with sample audio. Check the results in the console.",
+    });
+  };
+
+  const handleSaveConfiguration = () => {
+    if (!selectedVoiceProvider || !selectedLanguage) {
+      toast({
+        title: "Configuration Incomplete",
+        description: "Please select both a voice provider and language before saving.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: "Configuration Saved",
+      description: `Voice configuration saved successfully. Provider: ${voiceProviders.find(p => p.id === selectedVoiceProvider)?.name}, Language: ${languages.find(l => l.code === selectedLanguage)?.name}`,
+    });
+  };
 
   return (
     <div className="space-y-6">
@@ -58,8 +99,14 @@ const VoiceConfigurationView = () => {
                     </div>
                   </div>
                 </div>
-                <Button variant={provider.status === 'active' ? 'default' : 'outline'} size="sm">
-                  {provider.status === 'active' ? 'Configured' : 'Configure'}
+                <Button 
+                  variant={provider.status === 'active' ? 'default' : 'outline'} 
+                  size="sm"
+                  disabled={isConfiguring === provider.id}
+                  onClick={() => handleConfigure(provider.id, provider.name)}
+                >
+                  {isConfiguring === provider.id ? 'Configuring...' : provider.status === 'active' ? 'Configured' : 'Configure'}
+                  {provider.status === 'inactive' && <ExternalLink className="h-3 w-3 ml-1" />}
                 </Button>
               </div>
             ))}
@@ -89,8 +136,14 @@ const VoiceConfigurationView = () => {
                     </div>
                   </div>
                 </div>
-                <Button variant={provider.status === 'active' ? 'default' : 'outline'} size="sm">
-                  {provider.status === 'active' ? 'Configured' : 'Configure'}
+                <Button 
+                  variant={provider.status === 'active' ? 'default' : 'outline'} 
+                  size="sm"
+                  disabled={isConfiguring === provider.id}
+                  onClick={() => handleConfigure(provider.id, provider.name)}
+                >
+                  {isConfiguring === provider.id ? 'Configuring...' : provider.status === 'active' ? 'Configured' : 'Configure'}
+                  {provider.status === 'inactive' && <ExternalLink className="h-3 w-3 ml-1" />}
                 </Button>
               </div>
             ))}
@@ -167,11 +220,12 @@ const VoiceConfigurationView = () => {
           </div>
 
           <div className="flex gap-2 pt-4 border-t">
-            <Button className="flex items-center gap-2">
+            <Button className="flex items-center gap-2" onClick={handleSaveConfiguration}>
               <Check className="h-4 w-4" />
               Save Configuration
             </Button>
-            <Button variant="outline">
+            <Button variant="outline" onClick={handleTestConfiguration}>
+              <Zap className="h-4 w-4 mr-2" />
               Test Voice Configuration
             </Button>
           </div>

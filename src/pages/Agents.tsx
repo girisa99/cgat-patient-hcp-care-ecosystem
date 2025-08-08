@@ -9,6 +9,7 @@ import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/Agen
 import AgenticAPIEcosystem from '@/pages/AgenticAPIEcosystem';
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
 import DeploymentReadyView from '@/components/deployment/DeploymentReadyView';
+import EnhancedDeploymentReadyView from '@/components/deployment/EnhancedDeploymentReadyView';
 import VoiceConfigurationView from '@/components/deployment/VoiceConfigurationView';
 import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
@@ -148,10 +149,10 @@ const Agents = () => {
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 mb-2">Ready for Deployment</h3>
                   <p className="text-blue-700 text-sm">
-                    Agents that are configured and ready to be deployed to live channels.
+                    View agents from the ecosystem and sessions from treatment centers that are ready to be deployed to live channels. This shows the complete data flow from creation to deployment.
                   </p>
                 </div>
-                <DeploymentReadyView />
+                <EnhancedDeploymentReadyView />
               </div>
             </TabsContent>
 
