@@ -270,22 +270,34 @@ const AgenticEcosystem = () => {
         // Persist tab state to localStorage
         localStorage.setItem('agenticEcosystem_activeTab', value);
       }} className="w-full">
-        <TabsList className="child-tabs">
-          <TabsTrigger value="overview" className="child-tab-trigger">
-            <Settings className="h-4 w-4" />
-            <span>Overview</span>
+        <TabsList className="child-tabs grid grid-cols-4 h-auto p-1 bg-muted/50 rounded-lg">
+          <TabsTrigger 
+            value="overview" 
+            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Settings className="h-5 w-5" />
+            <span className="text-sm font-medium">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="basic_info" className="child-tab-trigger">
-            <Bot className="h-4 w-4" />
-            <span>Agent Creation</span>
+          <TabsTrigger 
+            value="basic_info" 
+            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Bot className="h-5 w-5" />
+            <span className="text-sm font-medium text-center">Agent Creation</span>
           </TabsTrigger>
-          <TabsTrigger value="canvas" className="child-tab-trigger">
-            <Settings className="h-4 w-4" />
-            <span>Canvas</span>
+          <TabsTrigger 
+            value="canvas" 
+            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Brain className="h-5 w-5" />
+            <span className="text-sm font-medium">Canvas</span>
           </TabsTrigger>
-          <TabsTrigger value="actions" className="child-tab-trigger">
-            <Plus className="h-4 w-4" />
-            <span>Actions & Configuration</span>
+          <TabsTrigger 
+            value="actions" 
+            className="child-tab-trigger flex flex-col items-center gap-2 p-4 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+          >
+            <Settings className="h-5 w-5" />
+            <span className="text-sm font-medium text-center">Actions & Configuration</span>
           </TabsTrigger>
         </TabsList>
 
