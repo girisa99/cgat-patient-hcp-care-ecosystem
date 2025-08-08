@@ -1,18 +1,9 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useMemo } from 'react';
 
-interface AnalyticsEvent {
-  id: string;
-  event_type: 'call_started' | 'call_ended' | 'transfer' | 'queue_join' | 'queue_leave' | 'agent_login' | 'agent_logout';
-  agent_id: string | null;
-  live_agent_id: string | null;
-  connector_id: string | null;
-  call_duration: number | null;
-  queue_wait_time: number | null;
-  metadata: any;
-  created_at: string;
-}
+type AnalyticsEvent = Database['public']['Tables']['voice_analytics_events']['Row'];
 
 interface AnalyticsMetrics {
   totalCalls: number;

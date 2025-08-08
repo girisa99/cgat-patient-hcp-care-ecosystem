@@ -23,10 +23,10 @@ import { useVoiceConnectors } from '@/hooks/useVoiceConnectors';
 import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { SoftphoneInterface } from '@/components/softphone/SoftphoneInterface';
 import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer';
-import VoiceConnectors from '@/components/voice/VoiceConnectors';
 import ElevenLabsIntegration from '@/components/voice/ElevenLabsIntegration';
 import OpenAIRealtimeChat from '@/components/voice/OpenAIRealtimeChat';
 import VoiceAnalytics from '@/components/voice/VoiceAnalytics';
+import SharedVoiceConnectors from '@/components/voice/SharedVoiceConnectors';
 
 // Form schemas
 const liveAgentSchema = z.object({
@@ -334,147 +334,7 @@ const VoiceConfigurationView = () => {
         </TabsContent>
 
         <TabsContent value="connectors" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Voice System Connectors</h3>
-              <p className="text-sm text-muted-foreground">Manage external voice integrations</p>
-            </div>
-            <div className="flex gap-2">
-              <Dialog>
-                <DialogTrigger asChild>
-                  <Button className="gap-2" size="sm">
-                    <Plus className="h-4 w-4" />
-                    Add Connector
-                  </Button>
-                </DialogTrigger>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>Add Voice Connector</DialogTitle>
-                  </DialogHeader>
-                  <Form {...connectorForm}>
-                    <form onSubmit={connectorForm.handleSubmit(handleCreateConnector)} className="space-y-4">
-                      <FormField
-                        control={connectorForm.control}
-                        name="name"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Name</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="Connector Name" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={connectorForm.control}
-                        name="type"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Type</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select type" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                <SelectItem value="SIP">SIP</SelectItem>
-                                <SelectItem value="API">API</SelectItem>
-                                <SelectItem value="Webhook">Webhook</SelectItem>
-                                <SelectItem value="Database">Database</SelectItem>
-                                <SelectItem value="CRM">CRM</SelectItem>
-                                <SelectItem value="Cloud">Cloud</SelectItem>
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={connectorForm.control}
-                        name="endpoints"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Endpoints (comma-separated)</FormLabel>
-                            <FormControl>
-                              <Input {...field} placeholder="https://api.example.com" />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <div className="flex justify-end gap-2">
-                        <Button type="submit" disabled={isCreatingConnector}>
-                          {isCreatingConnector ? "Creating..." : "Create Connector"}
-                        </Button>
-                      </div>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-                  <Button 
-                    variant="outline" 
-                    onClick={() => testAllConnectors()}
-                    disabled={isTestingConnector}
-                    size="sm"
-                  >
-                    <TestTube className="h-4 w-4 mr-2" />
-                    {isTestingConnector ? "Testing..." : "Test All"}
-                  </Button>
-            </div>
-          </div>
-
-          <div className="grid gap-4">
-            {connectors?.length > 0 ? (
-              connectors.map((connector) => (
-                <Card key={connector.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{connector.name}</h4>
-                        <Badge variant="outline">{connector.connector_type}</Badge>
-                        <Badge variant={connector.is_active ? 'default' : 'secondary'}>
-                          {connector.is_active ? 'active' : 'inactive'}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          onClick={() => testConnector(connector.id)}
-                          disabled={isTestingConnector}
-                          size="sm"
-                          variant="ghost"
-                        >
-                          <TestTube className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          onClick={() => updateConnector({ id: connector.id, updates: { is_active: !connector.is_active } })}
-                          disabled={isUpdatingConnector}
-                          size="sm"
-                          variant="ghost"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          onClick={() => deleteConnector(connector.id)}
-                          disabled={isDeletingConnector}
-                          size="sm"
-                          variant="ghost"
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <Link className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No connectors configured</p>
-              </div>
-            )}
-          </div>
+          <SharedVoiceConnectors variant="full" showOverview={true} showSecurity={false} showActions={true} />
         </TabsContent>
 
         <TabsContent value="analytics">

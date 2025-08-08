@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
 import VoiceConfigurationView from '@/components/deployment/VoiceConfigurationView';
 import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer';
-import VoiceConnectors from '@/components/voice/VoiceConnectors';
+import SharedVoiceConnectors from '@/components/voice/SharedVoiceConnectors';
 import { 
   Grid, 
   Phone, 
@@ -40,7 +40,7 @@ const ChannelAndVoiceSetup = () => {
       id: 'system-connectors', 
       label: 'System Connectors & API Ecosystem', 
       icon: Network,
-      component: VoiceConnectors,
+      component: SharedVoiceConnectors,
       description: 'Manage voice system connectors, API integrations, and external service connections.'
     }
   ];

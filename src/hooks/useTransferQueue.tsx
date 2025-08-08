@@ -1,24 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useMasterToast } from './useMasterToast';
 
-interface TransferRequest {
-  id: string;
-  agent_id: string;
-  live_agent_id: string | null;
-  customer_info: any;
-  priority: number;
-  status: 'waiting' | 'assigned' | 'completed' | 'cancelled';
-  created_at: string;
-  assigned_at: string | null;
-  completed_at: string | null;
-}
-
-interface CreateTransferData {
-  agent_id: string;
-  customer_info: any;
-  priority?: number;
-}
+type TransferRequest = Database['public']['Tables']['voice_transfer_queue']['Row'];
+type CreateTransferData = Pick<Database['public']['Tables']['voice_transfer_queue']['Insert'], 'agent_id' | 'customer_info' | 'priority'>;
 
 export const useTransferQueue = () => {
   const { showSuccess, showError } = useMasterToast();
@@ -41,12 +27,14 @@ export const useTransferQueue = () => {
   // Create transfer request
   const createTransfer = useMutation({
     mutationFn: async (transferData: CreateTransferData) => {
+      const { data: user } = await supabase.auth.getUser();
       const { data, error } = await supabase
         .from('voice_transfer_queue')
         .insert([{
           ...transferData,
           priority: transferData.priority || 1,
-          status: 'waiting'
+          status: 'waiting',
+          requested_by: user.user?.id || ''
         }])
         .select()
         .single();
