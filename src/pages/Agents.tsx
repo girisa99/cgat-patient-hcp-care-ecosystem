@@ -11,7 +11,6 @@ import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresen
 import DeploymentReadyView from '@/components/deployment/DeploymentReadyView';
 import VoiceConfigurationView from '@/components/deployment/VoiceConfigurationView';
 import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
-import { AgentTabsVerification } from '@/components/testing/AgentTabsVerification';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { 
   Bot, 
@@ -120,9 +119,6 @@ const Agents = () => {
               <AgenticAIPresentation />
             </div>
           )}
-
-          {/* Verification Status - Show for debugging */}
-          <AgentTabsVerification />
 
           {/* Dynamic Tabs based on role */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
