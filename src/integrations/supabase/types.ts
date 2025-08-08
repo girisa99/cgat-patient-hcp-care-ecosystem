@@ -7263,6 +7263,64 @@ export type Database = {
           },
         ]
       }
+      voice_analytics_events: {
+        Row: {
+          agent_id: string | null
+          call_duration: number | null
+          connector_id: string | null
+          created_at: string
+          event_type: Database["public"]["Enums"]["voice_event_type"]
+          id: string
+          live_agent_id: string | null
+          metadata: Json
+          queue_wait_time: number | null
+        }
+        Insert: {
+          agent_id?: string | null
+          call_duration?: number | null
+          connector_id?: string | null
+          created_at?: string
+          event_type: Database["public"]["Enums"]["voice_event_type"]
+          id?: string
+          live_agent_id?: string | null
+          metadata?: Json
+          queue_wait_time?: number | null
+        }
+        Update: {
+          agent_id?: string | null
+          call_duration?: number | null
+          connector_id?: string | null
+          created_at?: string
+          event_type?: Database["public"]["Enums"]["voice_event_type"]
+          id?: string
+          live_agent_id?: string | null
+          metadata?: Json
+          queue_wait_time?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_analytics_events_agent_fk"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_analytics_events_connector_fk"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "voice_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_analytics_events_live_agent_fk"
+            columns: ["live_agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       voice_configurations: {
         Row: {
           agent_id: string | null
@@ -7297,6 +7355,59 @@ export type Database = {
             columns: ["voice_provider_id"]
             isOneToOne: false
             referencedRelation: "voice_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voice_connectors: {
+        Row: {
+          configuration: Json
+          connector_type: Database["public"]["Enums"]["voice_connector_type"]
+          created_at: string
+          created_by: string
+          endpoints: string[]
+          features: string[]
+          health_status: Database["public"]["Enums"]["voice_health_status"]
+          id: string
+          is_active: boolean
+          last_tested_at: string | null
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          configuration?: Json
+          connector_type: Database["public"]["Enums"]["voice_connector_type"]
+          created_at?: string
+          created_by: string
+          endpoints?: string[]
+          features?: string[]
+          health_status?: Database["public"]["Enums"]["voice_health_status"]
+          id?: string
+          is_active?: boolean
+          last_tested_at?: string | null
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          configuration?: Json
+          connector_type?: Database["public"]["Enums"]["voice_connector_type"]
+          created_at?: string
+          created_by?: string
+          endpoints?: string[]
+          features?: string[]
+          health_status?: Database["public"]["Enums"]["voice_health_status"]
+          id?: string
+          is_active?: boolean
+          last_tested_at?: string | null
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_connectors_created_by_fk"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -7348,6 +7459,70 @@ export type Database = {
           webhook_config?: Json | null
         }
         Relationships: []
+      }
+      voice_transfer_queue: {
+        Row: {
+          agent_id: string | null
+          assigned_at: string | null
+          completed_at: string | null
+          created_at: string
+          customer_info: Json
+          id: string
+          live_agent_id: string | null
+          priority: number
+          requested_by: string
+          status: Database["public"]["Enums"]["voice_transfer_status"]
+          updated_at: string
+        }
+        Insert: {
+          agent_id?: string | null
+          assigned_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_info?: Json
+          id?: string
+          live_agent_id?: string | null
+          priority?: number
+          requested_by: string
+          status?: Database["public"]["Enums"]["voice_transfer_status"]
+          updated_at?: string
+        }
+        Update: {
+          agent_id?: string | null
+          assigned_at?: string | null
+          completed_at?: string | null
+          created_at?: string
+          customer_info?: Json
+          id?: string
+          live_agent_id?: string | null
+          priority?: number
+          requested_by?: string
+          status?: Database["public"]["Enums"]["voice_transfer_status"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voice_transfer_queue_agent_fk"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_transfer_queue_live_agent_fk"
+            columns: ["live_agent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "voice_transfer_queue_requested_by_fk"
+            columns: ["requested_by"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -7790,6 +7965,23 @@ export type Database = {
         | "contractTeam"
         | "workflowManager"
         | "demoUser"
+      voice_connector_type:
+        | "SIP"
+        | "API"
+        | "Webhook"
+        | "Database"
+        | "CRM"
+        | "Cloud"
+      voice_event_type:
+        | "call_started"
+        | "call_ended"
+        | "transfer"
+        | "queue_join"
+        | "queue_leave"
+        | "agent_login"
+        | "agent_logout"
+      voice_health_status: "healthy" | "warning" | "error" | "unknown"
+      voice_transfer_status: "waiting" | "assigned" | "completed" | "cancelled"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -8058,6 +8250,25 @@ export const Constants = {
         "workflowManager",
         "demoUser",
       ],
+      voice_connector_type: [
+        "SIP",
+        "API",
+        "Webhook",
+        "Database",
+        "CRM",
+        "Cloud",
+      ],
+      voice_event_type: [
+        "call_started",
+        "call_ended",
+        "transfer",
+        "queue_join",
+        "queue_leave",
+        "agent_login",
+        "agent_logout",
+      ],
+      voice_health_status: ["healthy", "warning", "error", "unknown"],
+      voice_transfer_status: ["waiting", "assigned", "completed", "cancelled"],
     },
   },
 } as const
