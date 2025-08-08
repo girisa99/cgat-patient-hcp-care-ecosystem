@@ -11,7 +11,7 @@ import {
   AlertCircle,
   Settings,
   ExternalLink,
-  User
+  PowerOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
@@ -224,11 +224,15 @@ const VoiceConnectors = () => {
                   onClick={() => handleTestConnector(connector.id, connector.name)}
                 >
                   <Zap className="h-4 w-4 mr-2" />
-                  {testingConnector === connector.id ? 'Testing...' : 'Test Connection'}
+                  {testingConnector === connector.id ? 'Testing...' : 'Test'}
                 </Button>
                 <Button size="sm" variant="ghost">
-                  <User className="h-4 w-4 mr-2" />
-                  Configure
+                  <Settings className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+                <Button size="sm" variant="ghost">
+                  <PowerOff className="h-4 w-4 mr-2" />
+                  Disable
                 </Button>
               </div>
             </CardContent>

@@ -229,11 +229,11 @@ const VoiceConfigurationView = () => {
       </div>
 
       {/* Comprehensive Voice System Tabs */}
-      <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 text-xs bg-card shadow-lg border">
-          <TabsTrigger value="overview" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <BarChart3 className="h-3 w-3" />
-            <span className="hidden sm:inline">Overview</span>
+      <Tabs defaultValue="providers" className="w-full">
+        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 text-xs bg-card shadow-lg border">
+          <TabsTrigger value="providers" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Settings className="h-3 w-3" />
+            <span className="hidden sm:inline">Providers</span>
           </TabsTrigger>
           <TabsTrigger value="softphone" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Phone className="h-3 w-3" />
@@ -251,126 +251,11 @@ const VoiceConfigurationView = () => {
             <Zap className="h-3 w-3" />
             <span className="hidden sm:inline">Connectors</span>
           </TabsTrigger>
-          <TabsTrigger value="testing" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <TestTube className="h-3 w-3" />
-            <span className="hidden sm:inline">Testing</span>
-          </TabsTrigger>
-          <TabsTrigger value="deployments" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Activity className="h-3 w-3" />
-            <span className="hidden sm:inline">Deployments</span>
-          </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <BarChart3 className="h-3 w-3" />
             <span className="hidden sm:inline">Analytics</span>
           </TabsTrigger>
         </TabsList>
-
-        <TabsContent value="overview" className="space-y-6">
-          {/* System Overview */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Voice System Status
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Active Providers</span>
-                    <Badge variant="secondary">4/7</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">System Health</span>
-                    <Badge className="bg-green-100 text-green-800">Excellent</Badge>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Uptime</span>
-                    <span className="text-sm font-medium">99.8%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
-                  Call Statistics
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Total Calls Today</span>
-                    <span className="text-sm font-medium">347</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Success Rate</span>
-                    <span className="text-sm font-medium text-green-600">94.2%</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Avg Duration</span>
-                    <span className="text-sm font-medium">2:34</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Users className="h-5 w-5" />
-                  Agent Activity
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Online Agents</span>
-                    <span className="text-sm font-medium">12/15</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">In Conversation</span>
-                    <span className="text-sm font-medium">8</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm">Available</span>
-                    <span className="text-sm font-medium text-green-600">4</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Quick Actions */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <Button variant="outline" className="h-20 flex flex-col gap-2">
-                  <Phone className="h-6 w-6" />
-                  <span className="text-sm">Test Call</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex flex-col gap-2">
-                  <Settings className="h-6 w-6" />
-                  <span className="text-sm">Configure</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex flex-col gap-2">
-                  <BarChart3 className="h-6 w-6" />
-                  <span className="text-sm">View Reports</span>
-                </Button>
-                <Button variant="outline" className="h-20 flex flex-col gap-2">
-                  <Zap className="h-6 w-6" />
-                  <span className="text-sm">Run Tests</span>
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
 
         <TabsContent value="providers" className="space-y-6">
           {/* Voice Provider Selection */}
@@ -613,85 +498,86 @@ const VoiceConfigurationView = () => {
         </TabsContent>
 
         <TabsContent value="live-agents" className="space-y-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold">Live Agent Management</h3>
+              <p className="text-sm text-muted-foreground">Manage live agents and transfer queues</p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Agent
+              </Button>
+              <Button size="sm" variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Configure Queue
+              </Button>
+            </div>
+          </div>
           <LiveAgentTransfer />
         </TabsContent>
 
         <TabsContent value="ai-voice" className="space-y-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold">AI Voice Services</h3>
+              <p className="text-sm text-muted-foreground">Manage AI voice synthesis and processing</p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Integration
+              </Button>
+              <Button size="sm" variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Configure
+              </Button>
+            </div>
+          </div>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle>ElevenLabs TTS Integration</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <ElevenLabsIntegration />
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardHeader>
-                <CardTitle>OpenAI Realtime Voice</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <OpenAIRealtimeChat />
-              </CardContent>
-            </Card>
+            <ElevenLabsIntegration />
+            <OpenAIRealtimeChat />
           </div>
         </TabsContent>
 
         <TabsContent value="connectors" className="space-y-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold">Voice System Connectors</h3>
+              <p className="text-sm text-muted-foreground">Manage external voice integrations</p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Add Connector
+              </Button>
+              <Button size="sm" variant="outline">
+                <TestTube className="h-4 w-4 mr-2" />
+                Test All
+              </Button>
+            </div>
+          </div>
           <VoiceConnectors />
         </TabsContent>
 
-        <TabsContent value="testing" className="space-y-6">
-          <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg p-6">
-            <h3 className="font-bold text-yellow-900 mb-2">Voice Provider Testing</h3>
-            <p className="text-yellow-700">Test voice provider connectivity and performance across all configured providers.</p>
-          </div>
-          
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TestTube className="h-5 w-5" />
-                Provider Test Suite
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {voiceProviders.map((provider) => (
-                  <div key={provider.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-medium">{provider.name}</h4>
-                      <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                    </div>
-                    <div className="flex gap-1 flex-wrap">
-                      {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {capability}
-                        </Badge>
-                      ))}
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      variant="outline" 
-                      size="sm"
-                      disabled={isTesting}
-                      onClick={() => testVoiceProvider(provider.id)}
-                    >
-                      <Zap className="h-4 w-4 mr-2" />
-                      {isTesting ? 'Testing...' : 'Test Connection'}
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="deployments" className="space-y-6">
-          <ActiveDeploymentsView />
-        </TabsContent>
 
         <TabsContent value="analytics" className="space-y-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h3 className="text-lg font-semibold">Voice Analytics & Insights</h3>
+              <p className="text-sm text-muted-foreground">Performance metrics and usage analytics</p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline">
+                <BarChart3 className="h-4 w-4 mr-2" />
+                Export Report
+              </Button>
+              <Button size="sm" variant="outline">
+                <Settings className="h-4 w-4 mr-2" />
+                Configure Alerts
+              </Button>
+            </div>
+          </div>
           <VoiceAnalytics />
         </TabsContent>
       </Tabs>

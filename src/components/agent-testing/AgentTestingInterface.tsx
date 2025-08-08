@@ -27,7 +27,9 @@ import {
   ArrowRight,
   Users,
   Headphones,
-  TestTube
+  TestTube,
+  Mic,
+  Volume2
 } from 'lucide-react';
 import { useAgentDeployments } from '@/hooks/useAgentDeployments';
 import { useAgentConversations } from '@/hooks/useAgentConversations';
@@ -336,6 +338,10 @@ export const AgentTestingInterface: React.FC = () => {
             <TestTube className="h-4 w-4" />
             <span>Agent Testing</span>
           </TabsTrigger>
+          <TabsTrigger value="voice-testing" className="child-tab-trigger">
+            <Phone className="h-4 w-4" />
+            <span>Voice Testing</span>
+          </TabsTrigger>
           <TabsTrigger value="sessions" className="child-tab-trigger">
             <Clock className="h-4 w-4" />
             <span>Test Sessions</span>
@@ -520,6 +526,116 @@ export const AgentTestingInterface: React.FC = () => {
                     <p className="text-muted-foreground">Select a deployment and start a test session</p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="voice-testing" className="child-tab-content space-y-6">
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
+            <h3 className="font-bold text-blue-900 mb-2">Voice Agent Testing</h3>
+            <p className="text-blue-700 mb-4">
+              Test voice providers, TTS/STT services, and voice conversation flows.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Voice Provider Testing */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TestTube className="h-5 w-5" />
+                  Provider Tests
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-3 border rounded">
+                    <span className="text-sm font-medium">Twilio Voice</span>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">Online</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded">
+                    <span className="text-sm font-medium">ElevenLabs TTS</span>
+                    <Badge variant="secondary" className="bg-green-100 text-green-800">Online</Badge>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded">
+                    <span className="text-sm font-medium">OpenAI Whisper</span>
+                    <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">Warning</Badge>
+                  </div>
+                </div>
+                <Button className="w-full" variant="outline">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Test All Providers
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Voice Call Testing */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  Voice Calls
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <Button className="w-full justify-start" variant="outline">
+                    <Phone className="h-4 w-4 mr-2" />
+                    Test Inbound Call
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <Phone className="h-4 w-4 mr-2" />
+                    Test Outbound Call
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <Headphones className="h-4 w-4 mr-2" />
+                    Test Voice Quality
+                  </Button>
+                </div>
+                <div className="p-3 bg-muted rounded text-sm">
+                  <p className="font-medium mb-1">Last Test:</p>
+                  <p className="text-muted-foreground">Inbound call - Success (2.3s latency)</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Speech Processing */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mic className="h-5 w-5" />
+                  Speech Processing
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-3">
+                  <Button className="w-full justify-start" variant="outline">
+                    <Mic className="h-4 w-4 mr-2" />
+                    Test Speech-to-Text
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <Volume2 className="h-4 w-4 mr-2" />
+                    Test Text-to-Speech
+                  </Button>
+                  <Button className="w-full justify-start" variant="outline">
+                    <Bot className="h-4 w-4 mr-2" />
+                    Test Conversation Flow
+                  </Button>
+                </div>
+                <div className="p-3 bg-muted rounded text-sm">
+                  <p className="font-medium mb-1">Performance:</p>
+                  <div className="space-y-1">
+                    <div className="flex justify-between">
+                      <span>STT Accuracy:</span>
+                      <span>96.2%</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>TTS Quality:</span>
+                      <span>Excellent</span>
+                    </div>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           </div>

@@ -105,6 +105,19 @@ const ActiveDeploymentsView = () => {
 
   return (
     <div className="space-y-6">
+      {/* Filter Tabs */}
+      <div className="flex gap-2 border-b">
+        <Button variant="ghost" className="border-b-2 border-primary">
+          All Deployments
+        </Button>
+        <Button variant="ghost">
+          Voice Deployments
+        </Button>
+        <Button variant="ghost">
+          Chat Deployments
+        </Button>
+      </div>
+
       {/* Search and Overview Stats */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="relative flex-1">
@@ -122,6 +135,9 @@ const ActiveDeploymentsView = () => {
           </Badge>
           <Badge variant="secondary" className="bg-yellow-100 text-yellow-800">
             {activeDeployments.filter(d => d.status === 'paused').length} Paused
+          </Badge>
+          <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+            {activeDeployments.filter(d => d.channel === 'Phone').length} Voice
           </Badge>
         </div>
       </div>
