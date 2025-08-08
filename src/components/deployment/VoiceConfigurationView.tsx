@@ -12,7 +12,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { 
   Phone, Mic, Volume2, Settings, Zap, Check, ExternalLink, Plus, Edit, Trash2, 
   Power, PowerOff, BarChart3, TestTube, Headphones, Users, Activity, UserPlus, Link,
-  Brain, Sparkles, Radio, Cloud, Database, Webhook
+  Brain, Sparkles, Radio, Cloud, Database, Webhook, UserCheck, UserX
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -29,7 +29,9 @@ import OpenAIRealtimeChat from '@/components/voice/OpenAIRealtimeChat';
 import VoiceAnalytics from '@/components/voice/VoiceAnalytics';
 import SharedVoiceConnectors from '@/components/voice/SharedVoiceConnectors';
 import { CreateProviderDialog } from '@/components/softphone/CreateProviderDialog';
+import { EditProviderDialog } from '@/components/softphone/EditProviderDialog';
 import { ApiIntegrationsDialog } from '@/components/voice/ApiIntegrationsDialog';
+import { LiveAgentDialog } from '@/components/voice/LiveAgentDialog';
 
 // Form schemas
 const liveAgentSchema = z.object({
@@ -55,6 +57,11 @@ const VoiceConfigurationView = () => {
   const [selectedAIVoiceType, setSelectedAIVoiceType] = useState('elevenlabs');
   const [showApiIntegrations, setShowApiIntegrations] = useState(false);
   const [apiIntegrationType, setApiIntegrationType] = useState<'internal' | 'external' | 'webhooks'>('internal');
+  const [showEditProvider, setShowEditProvider] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [showLiveAgentDialog, setShowLiveAgentDialog] = useState(false);
+  const [selectedLiveAgent, setSelectedLiveAgent] = useState<any>(null);
+  const [liveAgentMode, setLiveAgentMode] = useState<'create' | 'edit'>('create');
   const { toast } = useToast();
   
   const {
@@ -120,7 +127,32 @@ const VoiceConfigurationView = () => {
       skills: values.skills ? values.skills.split(',').map(s => s.trim()) : [],
       max_concurrent_calls: values.max_concurrent_calls,
     });
-    liveAgentForm.reset();
+    setShowLiveAgentDialog(false);
+  };
+
+  const handleEditLiveAgent = ({ id, updates }: { id: string; updates: any }) => {
+    updateAgent({ id, updates });
+    setShowLiveAgentDialog(false);
+    setSelectedLiveAgent(null);
+  };
+
+  const handleDeleteLiveAgent = (id: string) => {
+    deleteAgent(id);
+    setShowLiveAgentDialog(false);
+    setSelectedLiveAgent(null);
+  };
+
+  const handleProviderEdit = (provider: any) => {
+    setSelectedProvider(provider);
+    setShowEditProvider(true);
+  };
+
+  const handleProviderConfig = (provider: any) => {
+    // Navigate to provider configuration
+    toast({
+      title: "Provider Configuration",
+      description: `Opening configuration for ${provider.name}`,
+    });
   };
 
   const handleCreateConnector = (values: z.infer<typeof connectorSchema>) => {
@@ -266,11 +298,21 @@ const VoiceConfigurationView = () => {
                       </div>
                       
                       <div className="flex gap-2">
-                        <Button size="sm" variant="ghost" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="flex-1"
+                          onClick={() => handleProviderEdit(provider)}
+                        >
                           <Edit className="h-3 w-3 mr-2" />
                           Edit
                         </Button>
-                        <Button size="sm" variant="ghost" className="flex-1">
+                        <Button 
+                          size="sm" 
+                          variant="ghost" 
+                          className="flex-1"
+                          onClick={() => handleProviderConfig(provider)}
+                        >
                           <Settings className="h-3 w-3 mr-2" />
                           Config
                         </Button>
@@ -300,129 +342,106 @@ const VoiceConfigurationView = () => {
         </TabsContent>
 
         <TabsContent value="live-agents" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold">Live Agent Management</h3>
-              <p className="text-sm text-muted-foreground">Manage live agents and transfer queues</p>
-            </div>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button className="gap-2" size="sm">
-                  <Plus className="h-4 w-4" />
-                  Add Agent
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Add Live Agent</DialogTitle>
-                </DialogHeader>
-                <Form {...liveAgentForm}>
-                  <form onSubmit={liveAgentForm.handleSubmit(handleCreateLiveAgent)} className="space-y-4">
-                    <FormField
-                      control={liveAgentForm.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Agent Name" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={liveAgentForm.control}
-                      name="email"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Email</FormLabel>
-                          <FormControl>
-                            <Input {...field} type="email" placeholder="agent@company.com" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={liveAgentForm.control}
-                      name="department"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Department</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="Customer Support" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={liveAgentForm.control}
-                      name="skills"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Skills (comma-separated)</FormLabel>
-                          <FormControl>
-                            <Input {...field} placeholder="General Support, Technical Issues" />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <div className="flex justify-end gap-2">
-                      <Button type="submit" disabled={isCreatingAgent}>
-                        {isCreatingAgent ? "Creating..." : "Create Agent"}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-
-          <div className="grid gap-4">
-            {liveAgents?.length > 0 ? (
-              liveAgents.map((agent) => (
-                <Card key={agent.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h4 className="font-medium">{agent.name}</h4>
-                        <p className="text-sm text-muted-foreground">{agent.email}</p>
-                        <Badge variant={agent.status === 'online' ? 'default' : 'secondary'}>
-                          {agent.status}
-                        </Badge>
-                      </div>
-                      <div className="flex gap-2">
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => updateAgent({ id: agent.id, updates: { status: agent.status === 'online' ? 'offline' : 'online' } })}
-                          disabled={isUpdatingAgent}
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button 
-                          variant="ghost" 
-                          size="sm"
-                          onClick={() => deleteAgent(agent.id)}
-                          disabled={isDeletingAgent}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            ) : (
-              <div className="text-center py-8">
-                <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-muted-foreground">No live agents configured</p>
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Live Agent Management</h3>
+                <p className="text-sm text-muted-foreground">Manage live agents and transfer queues</p>
               </div>
-            )}
-          </div>
+              <Button 
+                className="gap-2" 
+                size="sm"
+                onClick={() => {
+                  setLiveAgentMode('create');
+                  setSelectedLiveAgent(null);
+                  setShowLiveAgentDialog(true);
+                }}
+              >
+                <Plus className="h-4 w-4" />
+                Add Agent
+              </Button>
+            </div>
+
+            <div className="grid gap-4">
+              {liveAgents?.length > 0 ? (
+                liveAgents.map((agent) => (
+                  <Card key={agent.id} className="hover:shadow-md transition-shadow">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-medium">{agent.name}</h4>
+                            <Badge variant={
+                              agent.status === 'online' ? 'default' : 
+                              agent.status === 'busy' ? 'destructive' :
+                              agent.status === 'away' ? 'secondary' : 'outline'
+                            }>
+                              {agent.status || 'offline'}
+                            </Badge>
+                            {agent.status === 'offline' && (
+                              <Badge variant="outline" className="text-red-600">
+                                Disabled
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-sm text-muted-foreground">{agent.email}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {agent.department} • Max calls: {agent.max_concurrent_calls || 3}
+                          </p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => {
+                              setLiveAgentMode('edit');
+                              setSelectedLiveAgent(agent);
+                              setShowLiveAgentDialog(true);
+                            }}
+                            disabled={isUpdatingAgent}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => updateAgent({ 
+                              id: agent.id, 
+                              updates: { status: agent.status === 'offline' ? 'online' : 'offline' } 
+                            })}
+                            disabled={isUpdatingAgent}
+                          >
+                            {agent.status !== 'offline' ? (
+                              <UserX className="h-4 w-4 text-red-600" />
+                            ) : (
+                              <UserCheck className="h-4 w-4 text-green-600" />
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <div className="p-6 rounded-lg bg-muted/30 border-2 border-dashed border-muted-foreground/25">
+                    <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="font-semibold mb-2">No Live Agents</h3>
+                    <p className="text-muted-foreground text-sm mb-4">Add your first live agent for call transfers</p>
+                    <Button 
+                      onClick={() => {
+                        setLiveAgentMode('create');
+                        setSelectedLiveAgent(null);
+                        setShowLiveAgentDialog(true);
+                      }} 
+                      className="gap-2"
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Live Agent
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </div>
         </TabsContent>
 
         <TabsContent value="ai-voice" className="space-y-6">
@@ -580,10 +599,26 @@ const VoiceConfigurationView = () => {
         onOpenChange={setShowAddProvider}
       />
       
+      <EditProviderDialog
+        open={showEditProvider}
+        onOpenChange={setShowEditProvider}
+        provider={selectedProvider}
+      />
+      
       <ApiIntegrationsDialog
         open={showApiIntegrations}
         onOpenChange={setShowApiIntegrations}
         initialTab={apiIntegrationType}
+      />
+
+      <LiveAgentDialog
+        open={showLiveAgentDialog}
+        onOpenChange={setShowLiveAgentDialog}
+        agent={selectedLiveAgent}
+        mode={liveAgentMode}
+        onSave={liveAgentMode === 'create' ? handleCreateLiveAgent : handleEditLiveAgent}
+        onDelete={handleDeleteLiveAgent}
+        isLoading={isCreatingAgent || isUpdatingAgent || isDeletingAgent}
       />
     </div>
   );
