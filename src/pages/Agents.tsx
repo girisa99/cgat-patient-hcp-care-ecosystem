@@ -101,14 +101,13 @@ const Agents = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Generate available tabs based on user roles - show all tabs for onboarding team
+  // Generate available tabs based on user roles - reorganized structure
   const availableTabs = [
-    { id: 'ecosystem', label: 'Agentic Ecosystem', component: 'AgenticEcosystem' },
-    { id: 'deployment', label: 'Deployment Management', component: 'DeploymentManagementInterface' },
+    { id: 'ecosystem', label: 'Agent Ecosystem', component: 'AgenticEcosystem' },
+    { id: 'deployment', label: 'Agent Deployment', component: 'DeploymentManagementInterface' },
     { id: 'testing', label: 'Agent Testing', component: 'AgentTestingInterface' },
-    { id: 'live-transfer', label: 'Live Agent Transfer', component: 'LiveAgentTransfer' },
-    { id: 'assignment-matrix', label: 'Channel Assignment', component: 'AgentChannelAssignmentMatrix' },
-    { id: 'api', label: 'Agentic API Ecosystem', component: 'AgenticAPIEcosystem' },
+    { id: 'channels', label: 'Channel Management', component: 'AgentChannelAssignmentMatrix' },
+    { id: 'connectors', label: 'System Connectors', component: 'AgenticAPIEcosystem' },
     ...(isOnboardingTeam ? [{ id: 'onboarding', label: 'Treatment Centers', component: 'OnboardingAgentsView' }] : []),
     ...(isSuperAdmin ? [{ id: 'settings', label: 'Agent Settings', component: 'AgentSettingsView' }] : []),
   ];
@@ -150,19 +149,21 @@ const Agents = () => {
 
           {/* Dynamic Tabs based on role */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="grid w-full grid-cols-2 lg:grid-cols-8">
+            <TabsList className="flex w-full gap-2 h-auto p-2 justify-start overflow-x-auto">
               {availableTabs.map((tab) => (
-                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+                <TabsTrigger 
+                  key={tab.id} 
+                  value={tab.id} 
+                  className="flex items-center gap-2 whitespace-nowrap px-4 py-2 min-w-fit"
+                >
                   {tab.id === 'ecosystem' && <Bot className="h-4 w-4" />}
                   {tab.id === 'deployment' && <Rocket className="h-4 w-4" />}
                   {tab.id === 'testing' && <TestTube className="h-4 w-4" />}
-                  {tab.id === 'live-transfer' && <UserCog className="h-4 w-4" />}
-                  {tab.id === 'assignment-matrix' && <Grid className="h-4 w-4" />}
-                  {tab.id === 'api' && <Network className="h-4 w-4" />}
+                  {tab.id === 'channels' && <Grid className="h-4 w-4" />}
+                  {tab.id === 'connectors' && <Network className="h-4 w-4" />}
                   {tab.id === 'onboarding' && <Users className="h-4 w-4" />}
                   {tab.id === 'settings' && <Settings className="h-4 w-4" />}
-                  <span className="hidden lg:inline">{tab.label}</span>
-                  <span className="lg:hidden">{tab.label.split(' ')[0]}</span>
+                  <span>{tab.label}</span>
                 </TabsTrigger>
               ))}
             </TabsList>
@@ -179,16 +180,29 @@ const Agents = () => {
               <AgentTestingInterface />
             </TabsContent>
 
-            <TabsContent value="live-transfer">
-              <LiveAgentTransfer />
-            </TabsContent>
-
-            <TabsContent value="assignment-matrix">
-              <AgentChannelAssignmentMatrix />
+            <TabsContent value="channels">
+              <div className="space-y-6">
+                <AgentChannelAssignmentMatrix />
+                <div className="border-t pt-6">
+                  <h2 className="text-xl font-semibold mb-4">Live Agent Transfer</h2>
+                  <p className="text-muted-foreground mb-4">
+                    Configure live handoff when users request to speak with a human agent during conversations.
+                  </p>
+                  <LiveAgentTransfer />
+                </div>
+              </div>
             </TabsContent>
             
-            <TabsContent value="api">
-              <AgenticAPIEcosystem />
+            <TabsContent value="connectors">
+              <div className="space-y-4">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-blue-900 mb-2">System Connectors & API Ecosystem</h3>
+                  <p className="text-blue-700 text-sm">
+                    Manage API integrations, system connectors, and external service connections for your agents.
+                  </p>
+                </div>
+                <AgenticAPIEcosystem />
+              </div>
             </TabsContent>
             
             {isOnboardingTeam && (
