@@ -72,16 +72,14 @@ const Agents = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Generate available tabs based on user roles - flattened structure to avoid nested tabs
+  // Generate available tabs based on user roles - reorganized for better UX flow
   const availableTabs = [
     { id: 'ecosystem', label: 'Agent Ecosystem', component: 'AgenticEcosystem' },
-    { id: 'deployment-ready', label: 'Deployment Ready', component: 'DeploymentReady' },
-    { id: 'channel-assignment', label: 'Channel Assignment', component: 'ChannelAssignment' },
-    { id: 'voice-config', label: 'Voice Configuration', component: 'VoiceConfiguration' },
-    { id: 'active-deployments', label: 'Active Deployments', component: 'ActiveDeployments' },
-    { id: 'testing', label: 'Agent Testing', component: 'AgentTestingInterface' },
-    { id: 'connectors', label: 'System Connectors', component: 'AgenticAPIEcosystem' },
     ...(isOnboardingTeam ? [{ id: 'onboarding', label: 'Treatment Centers', component: 'OnboardingAgentsView' }] : []),
+    { id: 'deployment-ready', label: 'Deployment Ready', component: 'DeploymentReady' },
+    { id: 'channel-assignment', label: 'Channel & Voice Setup', component: 'ChannelAssignment' },
+    { id: 'testing', label: 'Agent Testing', component: 'AgentTestingInterface' },
+    { id: 'active-deployments', label: 'Active Deployments', component: 'ActiveDeployments' },
     ...(isSuperAdmin ? [{ id: 'settings', label: 'Agent Settings', component: 'AgentSettingsView' }] : []),
   ];
 
@@ -130,13 +128,11 @@ const Agents = () => {
                   className="flex items-center gap-2 whitespace-nowrap px-4 py-3 min-w-fit rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
                   {tab.id === 'ecosystem' && <Bot className="h-4 w-4" />}
+                  {tab.id === 'onboarding' && <Users className="h-4 w-4" />}
                   {tab.id === 'deployment-ready' && <Rocket className="h-4 w-4" />}
                   {tab.id === 'channel-assignment' && <Grid className="h-4 w-4" />}
-                  {tab.id === 'voice-config' && <Phone className="h-4 w-4" />}
-                  {tab.id === 'active-deployments' && <Activity className="h-4 w-4" />}
                   {tab.id === 'testing' && <TestTube className="h-4 w-4" />}
-                  {tab.id === 'connectors' && <Network className="h-4 w-4" />}
-                  {tab.id === 'onboarding' && <Users className="h-4 w-4" />}
+                  {tab.id === 'active-deployments' && <Activity className="h-4 w-4" />}
                   {tab.id === 'settings' && <Settings className="h-4 w-4" />}
                   <span>{tab.label}</span>
                 </TabsTrigger>
@@ -162,12 +158,25 @@ const Agents = () => {
             <TabsContent value="channel-assignment" className="mt-6">
               <div className="space-y-6">
                 <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-green-900 mb-2">Channel Assignment</h3>
+                  <h3 className="font-semibold text-green-900 mb-2">Channel & Voice Configuration</h3>
                   <p className="text-green-700 text-sm">
-                    Drag and drop agents to assign them to communication channels.
+                    Configure channel assignments, voice adapters, and communication settings all in one place.
                   </p>
                 </div>
+                
+                {/* Channel Assignment Matrix */}
                 <AgentChannelAssignmentMatrix />
+                
+                {/* Voice Configuration */}
+                <div className="border-t pt-6">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Phone className="h-5 w-5" />
+                    Voice Configuration
+                  </h2>
+                  <VoiceConfigurationView />
+                </div>
+                
+                {/* Live Agent Transfer */}
                 <div className="border-t pt-6">
                   <h2 className="text-xl font-semibold mb-4">Live Agent Transfer</h2>
                   <p className="text-muted-foreground mb-4">
@@ -175,19 +184,23 @@ const Agents = () => {
                   </p>
                   <LiveAgentTransfer />
                 </div>
+
+                {/* System Connectors - Merged from separate tab */}
+                <div className="border-t pt-6">
+                  <h2 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                    <Network className="h-5 w-5" />
+                    System Connectors & API Ecosystem
+                  </h2>
+                  <p className="text-muted-foreground mb-4">
+                    Manage API integrations, system connectors, and external service connections for your agents.
+                  </p>
+                  <AgenticAPIEcosystem />
+                </div>
               </div>
             </TabsContent>
 
-            <TabsContent value="voice-config" className="mt-6">
-              <div className="space-y-6">
-                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-purple-900 mb-2">Voice Configuration</h3>
-                  <p className="text-purple-700 text-sm">
-                    Configure voice adapters and speech recognition settings for voice-enabled channels.
-                  </p>
-                </div>
-                <VoiceConfigurationView />
-              </div>
+            <TabsContent value="testing" className="mt-6">
+              <AgentTestingInterface />
             </TabsContent>
 
             <TabsContent value="active-deployments" className="mt-6">
@@ -201,23 +214,6 @@ const Agents = () => {
                 <ActiveDeploymentsView />
               </div>
             </TabsContent>
-
-            <TabsContent value="testing" className="mt-6">
-              <AgentTestingInterface />
-            </TabsContent>
-            
-            <TabsContent value="connectors" className="mt-6">
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <h3 className="font-semibold text-blue-900 mb-2">System Connectors & API Ecosystem</h3>
-                  <p className="text-blue-700 text-sm">
-                    Manage API integrations, system connectors, and external service connections for your agents.
-                  </p>
-                </div>
-                <AgenticAPIEcosystem />
-              </div>
-            </TabsContent>
-            
             {isOnboardingTeam && (
               <TabsContent value="onboarding" className="mt-6">
                 <OnboardingAgentsView />
