@@ -8,6 +8,10 @@ import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer'
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
 import AgenticAPIEcosystem from '@/pages/AgenticAPIEcosystem';
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
+import DeploymentReadyView from '@/components/deployment/DeploymentReadyView';
+import VoiceConfigurationView from '@/components/deployment/VoiceConfigurationView';
+import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
+import { AgentTabsVerification } from '@/components/testing/AgentTabsVerification';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { 
   Bot, 
@@ -117,6 +121,9 @@ const Agents = () => {
             </div>
           )}
 
+          {/* Verification Status - Show for debugging */}
+          <AgentTabsVerification />
+
           {/* Dynamic Tabs based on role */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="flex w-full gap-2 h-auto p-3 justify-start overflow-x-auto bg-muted/20">
@@ -152,7 +159,7 @@ const Agents = () => {
                     Agents that are configured and ready to be deployed to live channels.
                   </p>
                 </div>
-                {React.createElement(React.lazy(() => import('@/components/deployment/DeploymentReadyView')))}
+                <DeploymentReadyView />
               </div>
             </TabsContent>
 
@@ -183,7 +190,7 @@ const Agents = () => {
                     Configure voice adapters and speech recognition settings for voice-enabled channels.
                   </p>
                 </div>
-                {React.createElement(React.lazy(() => import('@/components/deployment/VoiceConfigurationView')))}
+                <VoiceConfigurationView />
               </div>
             </TabsContent>
 
@@ -195,7 +202,7 @@ const Agents = () => {
                     Monitor and manage currently deployed agents across all channels.
                   </p>
                 </div>
-                {React.createElement(React.lazy(() => import('@/components/deployment/ActiveDeploymentsView')))}
+                <ActiveDeploymentsView />
               </div>
             </TabsContent>
 
