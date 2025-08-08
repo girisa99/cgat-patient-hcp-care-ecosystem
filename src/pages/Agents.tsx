@@ -4,13 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AgenticEcosystem from '@/pages/AgenticEcosystem';
 import { DeploymentManagementInterface } from '@/components/deployment/DeploymentManagementInterface';
 import { AgentTestingInterface } from '@/components/agent-testing/AgentTestingInterface';
-import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer';
-import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
 import AgenticAPIEcosystem from '@/pages/AgenticAPIEcosystem';
+import ChannelAndVoiceSetup from '@/components/agent-deployment/ChannelAndVoiceSetup';
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
 import DeploymentReadyView from '@/components/deployment/DeploymentReadyView';
 import EnhancedDeploymentReadyView from '@/components/deployment/EnhancedDeploymentReadyView';
-import VoiceConfigurationView from '@/components/deployment/VoiceConfigurationView';
+
 import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { 
@@ -23,8 +22,6 @@ import {
   UserCog,
   Grid,
   Rocket,
-  Network,
-  Phone,
   Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -157,57 +154,7 @@ const Agents = () => {
             </TabsContent>
 
             <TabsContent value="channel-assignment" className="parent-tab-content">
-              <div className="space-y-8">
-                <div className="bg-gradient-to-r from-green-50 to-green-100 border border-green-200 rounded-lg p-6 shadow-sm">
-                  <h3 className="font-bold text-green-900 mb-3 text-lg">Channel & Voice Configuration</h3>
-                  <p className="text-green-700">
-                    Configure channel assignments, voice adapters, and communication settings all in one place.
-                  </p>
-                </div>
-                
-                {/* Channel Assignment Matrix */}
-                <AgentChannelAssignmentMatrix />
-                
-                {/* Voice Configuration */}
-                <div className="border-t border-border/30 pt-8">
-                  <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6 mb-6 shadow-sm">
-                    <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                      <Phone className="h-6 w-6 text-purple-600" />
-                      Voice Configuration
-                    </h2>
-                    <p className="text-purple-700">Configure voice adapters and settings for audio interactions.</p>
-                  </div>
-                  <VoiceConfigurationView />
-                </div>
-                
-                {/* Live Agent Transfer */}
-                <div className="border-t border-border/30 pt-8">
-                  <div className="bg-gradient-to-r from-orange-50 to-orange-100 border border-orange-200 rounded-lg p-6 mb-6 shadow-sm">
-                    <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                      <Users className="h-6 w-6 text-orange-600" />
-                      Live Agent Transfer
-                    </h2>
-                    <p className="text-orange-700">
-                      Configure live handoff when users request to speak with a human agent during conversations.
-                    </p>
-                  </div>
-                  <LiveAgentTransfer />
-                </div>
-
-                {/* System Connectors - Merged from separate tab */}
-                <div className="border-t border-border/30 pt-8">
-                  <div className="bg-gradient-to-r from-indigo-50 to-indigo-100 border border-indigo-200 rounded-lg p-6 mb-6 shadow-sm">
-                    <h2 className="text-xl font-bold mb-2 flex items-center gap-2">
-                      <Network className="h-6 w-6 text-indigo-600" />
-                      System Connectors & API Ecosystem
-                    </h2>
-                    <p className="text-indigo-700">
-                      Manage API integrations, system connectors, and external service connections for your agents.
-                    </p>
-                  </div>
-                  <AgenticAPIEcosystem />
-                </div>
-              </div>
+              <ChannelAndVoiceSetup />
             </TabsContent>
 
             <TabsContent value="testing" className="parent-tab-content">
