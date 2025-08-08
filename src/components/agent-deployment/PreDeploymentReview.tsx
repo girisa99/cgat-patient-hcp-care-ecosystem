@@ -1,6 +1,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentSession } from '@/types/agent-session';
 import { AgentConfigurationSummary } from './AgentConfigurationSummary';
@@ -270,7 +271,7 @@ export const PreDeploymentReview: React.FC<PreDeploymentReviewProps> = ({ sessio
                     <Phone className="h-4 w-4" />
                     <span className="text-sm">Voice Call</span>
                     <Badge variant="outline" className="ml-auto">
-                      {session.voice?.provider ? 'Ready' : 'Config Needed'}
+                      {session.deployment?.config?.voice?.provider ? 'Ready' : 'Config Needed'}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-2 p-2 border rounded">

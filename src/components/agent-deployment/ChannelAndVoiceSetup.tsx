@@ -94,7 +94,6 @@ const ChannelAndVoiceSetup: React.FC<ChannelAndVoiceSetupProps> = ({ agentSessio
         </TabsList>
 
         {subTabs.map((tab) => {
-          const ComponentToRender = tab.component;
           return (
             <TabsContent key={tab.id} value={tab.id} className="child-tab-content">
               <div className="space-y-4">
@@ -103,7 +102,11 @@ const ChannelAndVoiceSetup: React.FC<ChannelAndVoiceSetupProps> = ({ agentSessio
                     {tab.description}
                   </p>
                 </div>
-                <ComponentToRender agentSession={agentSession} />
+                {tab.id === 'channel-matrix' && <EnhancedChannelMatrix />}
+                {tab.id === 'voice-config' && <VoiceConfigurationView />}
+                {tab.id === 'live-transfer' && <LiveAgentTransfer />}
+                {tab.id === 'system-connectors' && <SharedVoiceConnectors />}
+                {tab.id === 'deployment-flow' && <DeploymentFlowManager agentSession={agentSession} />}
               </div>
             </TabsContent>
           );
