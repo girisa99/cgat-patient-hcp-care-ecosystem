@@ -3,7 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
 import VoiceConfigurationView from '@/components/deployment/VoiceConfigurationView';
 import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer';
-import AgenticAPIEcosystem from '@/pages/AgenticAPIEcosystem';
+import VoiceConnectors from '@/components/voice/VoiceConnectors';
 import { 
   Grid, 
   Phone, 
@@ -40,8 +40,8 @@ const ChannelAndVoiceSetup = () => {
       id: 'system-connectors', 
       label: 'System Connectors & API Ecosystem', 
       icon: Network,
-      component: AgenticAPIEcosystem,
-      description: 'Manage API integrations, system connectors, and external service connections.'
+      component: VoiceConnectors,
+      description: 'Manage voice system connectors, API integrations, and external service connections.'
     }
   ];
 

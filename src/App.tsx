@@ -36,7 +36,7 @@ import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
 import { PresentationPage } from '@/pages/PresentationPage';
 import SystemIntegration from '@/pages/SystemIntegration';
-import SoftphonePage from '@/pages/SoftphonePage';
+
 
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
@@ -118,11 +118,6 @@ const AppContent = () => {
                   <Route path="/agents" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
                       <Agents />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/softphone" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
-                      <SoftphonePage />
                     </ProtectedRoute>
                   } />
                   <Route path="/testing" element={

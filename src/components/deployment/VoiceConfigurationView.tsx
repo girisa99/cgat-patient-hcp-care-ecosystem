@@ -6,6 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Dialog,
   DialogContent,
@@ -26,10 +27,14 @@ import {
   Edit,
   Trash2,
   Power,
-  PowerOff
+  PowerOff,
+  BarChart3,
+  TestTube,
+  Headphones
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useVoiceProviders } from '@/hooks/useVoiceProviders';
+import { SoftphoneInterface } from '@/components/softphone/SoftphoneInterface';
 
 const VoiceConfigurationView = () => {
   const [selectedVoiceProvider, setSelectedVoiceProvider] = useState('');
@@ -206,8 +211,8 @@ const VoiceConfigurationView = () => {
       {/* Header with Add Provider Button */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Voice Configuration</h2>
-          <p className="text-muted-foreground">Manage voice providers and configuration settings</p>
+          <h2 className="text-2xl font-bold">Voice Configuration & Management</h2>
+          <p className="text-muted-foreground">Complete voice system management including softphone, providers, and analytics</p>
         </div>
         <Button onClick={() => setShowAddProvider(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -215,223 +220,357 @@ const VoiceConfigurationView = () => {
         </Button>
       </div>
 
-      {/* Voice Provider Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mic className="h-5 w-5" />
-              Speech-to-Text Providers
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {voiceProviders.filter(p => {
-              // Check if this provider supports STT functionality
-              const capabilities = Array.isArray(p.capabilities) ? p.capabilities : [];
-              return capabilities.some(cap => 
-                cap.toLowerCase().includes('voice') || 
-                cap.toLowerCase().includes('stt') || 
-                ['twilio', 'five9', 'genesys'].includes(p.provider_type)
-              );
-            }).map((provider) => (
-              <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <div>
-                    <p className="font-medium">{provider.name}</p>
-                    <div className="flex gap-1 mt-1">
-                      {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {capability}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant={provider.is_active ? 'default' : 'outline'} 
-                    size="sm"
-                    disabled={isConfiguring === provider.id || isUpdating}
-                    onClick={() => handleConfigure(provider.id, provider.name)}
-                  >
-                    {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
-                    {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleEditProvider(provider)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  {provider.is_active && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleDeactivateProvider(provider.id, provider.name)}
-                    >
-                      <PowerOff className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
+      {/* Voice System Tabs */}
+      <Tabs defaultValue="providers" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="providers" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Providers
+          </TabsTrigger>
+          <TabsTrigger value="softphone" className="flex items-center gap-2">
+            <Phone className="h-4 w-4" />
+            Softphone
+          </TabsTrigger>
+          <TabsTrigger value="testing" className="flex items-center gap-2">
+            <TestTube className="h-4 w-4" />
+            Testing
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" />
+            Analytics
+          </TabsTrigger>
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Volume2 className="h-5 w-5" />
-              Text-to-Speech Providers
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {voiceProviders.filter(p => {
-              // Check if this provider supports TTS functionality  
-              const capabilities = Array.isArray(p.capabilities) ? p.capabilities : [];
-              return capabilities.some(cap => 
-                cap.toLowerCase().includes('voice') || 
-                cap.toLowerCase().includes('tts') || 
-                ['twilio', 'five9', 'genesys', 'vonage', 'voxiplant'].includes(p.provider_type)
-              );
-            }).map((provider) => (
-              <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                  <div>
-                    <p className="font-medium">{provider.name}</p>
-                    <div className="flex gap-1 mt-1">
-                      {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">
-                          {capability}
-                        </Badge>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex gap-2">
-                  <Button 
-                    variant={provider.is_active ? 'default' : 'outline'} 
-                    size="sm"
-                    disabled={isConfiguring === provider.id || isUpdating}
-                    onClick={() => handleConfigure(provider.id, provider.name)}
-                  >
-                    {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
-                    {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => handleEditProvider(provider)}
-                  >
-                    <Edit className="h-4 w-4" />
-                  </Button>
-                  {provider.is_active && (
-                    <Button 
-                      variant="ghost" 
-                      size="sm"
-                      onClick={() => handleDeactivateProvider(provider.id, provider.name)}
-                    >
-                      <PowerOff className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Configuration Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
-            Voice Configuration Settings
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-6">
+        <TabsContent value="providers" className="space-y-6">
+          {/* Voice Provider Selection */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-4">
-              <div>
-                <label className="text-sm font-medium mb-2 block">Primary Language</label>
-                <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select language" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {languages.map((lang) => (
-                      <SelectItem key={lang.code} value={lang.code}>
-                        {lang.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div>
-                <label className="text-sm font-medium mb-2 block">Voice Provider</label>
-                <Select value={selectedVoiceProvider} onValueChange={setSelectedVoiceProvider}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select provider" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {voiceProviders.map((provider) => (
-                      <SelectItem key={provider.id} value={provider.id}>
-                        {provider.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-
-            <div className="space-y-4">
-              <div className="p-4 bg-muted/20 rounded-lg">
-                <h4 className="font-medium mb-2 flex items-center gap-2">
-                  <Phone className="h-4 w-4" />
-                  Voice Channel Settings
-                </h4>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span>Sample Rate:</span>
-                    <span className="text-muted-foreground">16kHz</span>
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Mic className="h-5 w-5" />
+                  Speech-to-Text Providers
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {voiceProviders.filter(p => {
+                  // Check if this provider supports STT functionality
+                  const capabilities = Array.isArray(p.capabilities) ? p.capabilities : [];
+                  return capabilities.some(cap => 
+                    cap.toLowerCase().includes('voice') || 
+                    cap.toLowerCase().includes('stt') || 
+                    ['twilio', 'five9', 'genesys'].includes(p.provider_type)
+                  );
+                }).map((provider) => (
+                  <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <div>
+                        <p className="font-medium">{provider.name}</p>
+                        <div className="flex gap-1 mt-1">
+                          {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              {capability}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant={provider.is_active ? 'default' : 'outline'} 
+                        size="sm"
+                        disabled={isConfiguring === provider.id || isUpdating}
+                        onClick={() => handleConfigure(provider.id, provider.name)}
+                      >
+                        {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
+                        {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditProvider(provider)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      {provider.is_active && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeactivateProvider(provider.id, provider.name)}
+                        >
+                          <PowerOff className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Audio Format:</span>
-                    <span className="text-muted-foreground">PCM</span>
+                ))}
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Volume2 className="h-5 w-5" />
+                  Text-to-Speech Providers
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {voiceProviders.filter(p => {
+                  // Check if this provider supports TTS functionality  
+                  const capabilities = Array.isArray(p.capabilities) ? p.capabilities : [];
+                  return capabilities.some(cap => 
+                    cap.toLowerCase().includes('voice') || 
+                    cap.toLowerCase().includes('tts') || 
+                    ['twilio', 'five9', 'genesys', 'vonage', 'voxiplant'].includes(p.provider_type)
+                  );
+                }).map((provider) => (
+                  <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <div>
+                        <p className="font-medium">{provider.name}</p>
+                        <div className="flex gap-1 mt-1">
+                          {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
+                            <Badge key={idx} variant="secondary" className="text-xs">
+                              {capability}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant={provider.is_active ? 'default' : 'outline'} 
+                        size="sm"
+                        disabled={isConfiguring === provider.id || isUpdating}
+                        onClick={() => handleConfigure(provider.id, provider.name)}
+                      >
+                        {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
+                        {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
+                      </Button>
+                      <Button 
+                        variant="ghost" 
+                        size="sm"
+                        onClick={() => handleEditProvider(provider)}
+                      >
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      {provider.is_active && (
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => handleDeactivateProvider(provider.id, provider.name)}
+                        >
+                          <PowerOff className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex justify-between">
-                    <span>Latency:</span>
-                    <span className="text-muted-foreground">Low</span>
+                ))}
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Configuration Settings */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Voice Configuration Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Primary Language</label>
+                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select language" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {languages.map((lang) => (
+                          <SelectItem key={lang.code} value={lang.code}>
+                            {lang.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium mb-2 block">Voice Provider</label>
+                    <Select value={selectedVoiceProvider} onValueChange={setSelectedVoiceProvider}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {voiceProviders.map((provider) => (
+                          <SelectItem key={provider.id} value={provider.id}>
+                            {provider.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="p-4 bg-muted/20 rounded-lg">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Phone className="h-4 w-4" />
+                      Voice Channel Settings
+                    </h4>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Sample Rate:</span>
+                        <span className="text-muted-foreground">16kHz</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Audio Format:</span>
+                        <span className="text-muted-foreground">PCM</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Latency:</span>
+                        <span className="text-muted-foreground">Low</span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
 
-          <div className="flex gap-2 pt-4 border-t">
-            <Button 
-              className="flex items-center gap-2" 
-              onClick={handleSaveConfiguration}
-              disabled={isCreating}
-            >
-              <Check className="h-4 w-4" />
-              {isCreating ? 'Saving...' : 'Save Configuration'}
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={handleTestConfiguration}
-              disabled={isTesting}
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              {isTesting ? 'Testing...' : 'Test Voice Configuration'}
-            </Button>
+              <div className="flex gap-2 pt-4 border-t">
+                <Button 
+                  className="flex items-center gap-2" 
+                  onClick={handleSaveConfiguration}
+                  disabled={isCreating}
+                >
+                  <Check className="h-4 w-4" />
+                  {isCreating ? 'Saving...' : 'Save Configuration'}
+                </Button>
+                <Button 
+                  variant="outline" 
+                  onClick={handleTestConfiguration}
+                  disabled={isTesting}
+                >
+                  <Zap className="h-4 w-4 mr-2" />
+                  {isTesting ? 'Testing...' : 'Test Voice Configuration'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="softphone" className="space-y-6">
+          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
+            <h3 className="font-bold text-blue-900 mb-2">Softphone Interface</h3>
+            <p className="text-blue-700">Make and manage voice calls with real-time transcription and multi-provider support.</p>
           </div>
-        </CardContent>
-      </Card>
+          <SoftphoneInterface />
+        </TabsContent>
+
+        <TabsContent value="testing" className="space-y-6">
+          <div className="bg-gradient-to-r from-yellow-50 to-yellow-100 border border-yellow-200 rounded-lg p-6">
+            <h3 className="font-bold text-yellow-900 mb-2">Voice Provider Testing</h3>
+            <p className="text-yellow-700">Test voice provider connectivity and performance across all configured providers.</p>
+          </div>
+          
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <TestTube className="h-5 w-5" />
+                Provider Test Suite
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {voiceProviders.map((provider) => (
+                  <div key={provider.id} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <h4 className="font-medium">{provider.name}</h4>
+                      <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                    </div>
+                    <div className="flex gap-1 flex-wrap">
+                      {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
+                        <Badge key={idx} variant="secondary" className="text-xs">
+                          {capability}
+                        </Badge>
+                      ))}
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      variant="outline" 
+                      size="sm"
+                      disabled={isTesting}
+                      onClick={() => testVoiceProvider(provider.id)}
+                    >
+                      <Zap className="h-4 w-4 mr-2" />
+                      {isTesting ? 'Testing...' : 'Test Connection'}
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
+            <h3 className="font-bold text-purple-900 mb-2">Voice System Analytics</h3>
+            <p className="text-purple-700">Monitor voice system performance, call quality, and usage metrics.</p>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Active Providers</p>
+                    <p className="text-2xl font-bold">{voiceProviders.filter(p => p.is_active).length}</p>
+                  </div>
+                  <Headphones className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Total Providers</p>
+                    <p className="text-2xl font-bold">{voiceProviders.length}</p>
+                  </div>
+                  <Settings className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Configurations</p>
+                    <p className="text-2xl font-bold">{voiceConfigurations.length}</p>
+                  </div>
+                  <Volume2 className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">System Status</p>
+                    <p className="text-2xl font-bold text-green-600">Online</p>
+                  </div>
+                  <Check className="h-8 w-8 text-green-600" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Add Provider Dialog */}
       <Dialog open={showAddProvider} onOpenChange={setShowAddProvider}>
