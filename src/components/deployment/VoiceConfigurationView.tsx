@@ -29,6 +29,7 @@ import OpenAIRealtimeChat from '@/components/voice/OpenAIRealtimeChat';
 import VoiceAnalytics from '@/components/voice/VoiceAnalytics';
 import SharedVoiceConnectors from '@/components/voice/SharedVoiceConnectors';
 import { CreateProviderDialog } from '@/components/softphone/CreateProviderDialog';
+import { ApiIntegrationsDialog } from '@/components/voice/ApiIntegrationsDialog';
 
 // Form schemas
 const liveAgentSchema = z.object({
@@ -52,6 +53,8 @@ const VoiceConfigurationView = () => {
   const [isConfiguring, setIsConfiguring] = useState<string | null>(null);
   const [showAddProvider, setShowAddProvider] = useState(false);
   const [selectedAIVoiceType, setSelectedAIVoiceType] = useState('elevenlabs');
+  const [showApiIntegrations, setShowApiIntegrations] = useState(false);
+  const [apiIntegrationType, setApiIntegrationType] = useState<'internal' | 'external' | 'webhooks'>('internal');
   const { toast } = useToast();
   
   const {
@@ -527,15 +530,36 @@ const VoiceConfigurationView = () => {
               <p className="text-sm text-muted-foreground">Manage voice system connectors, API integrations, and external services</p>
             </div>
             <div className="flex gap-2">
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  setApiIntegrationType('internal');
+                  setShowApiIntegrations(true);
+                }}
+              >
                 <Database className="h-4 w-4 mr-2" />
                 Internal APIs
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  setApiIntegrationType('external');
+                  setShowApiIntegrations(true);
+                }}
+              >
                 <Cloud className="h-4 w-4 mr-2" />
                 External APIs
               </Button>
-              <Button size="sm" variant="outline">
+              <Button 
+                size="sm" 
+                variant="outline"
+                onClick={() => {
+                  setApiIntegrationType('webhooks');
+                  setShowApiIntegrations(true);
+                }}
+              >
                 <Webhook className="h-4 w-4 mr-2" />
                 Webhooks
               </Button>
@@ -550,10 +574,16 @@ const VoiceConfigurationView = () => {
         </TabsContent>
       </Tabs>
 
-      {/* Add Provider Dialog */}
+      {/* Dialogs */}
       <CreateProviderDialog
         open={showAddProvider}
         onOpenChange={setShowAddProvider}
+      />
+      
+      <ApiIntegrationsDialog
+        open={showApiIntegrations}
+        onOpenChange={setShowApiIntegrations}
+        initialTab={apiIntegrationType}
       />
     </div>
   );
