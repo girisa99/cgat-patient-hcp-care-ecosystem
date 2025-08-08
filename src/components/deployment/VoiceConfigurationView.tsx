@@ -11,7 +11,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { 
   Phone, Mic, Volume2, Settings, Zap, Check, ExternalLink, Plus, Edit, Trash2, 
-  Power, PowerOff, BarChart3, TestTube, Headphones, Users, Activity, UserPlus, Link
+  Power, PowerOff, BarChart3, TestTube, Headphones, Users, Activity, UserPlus, Link,
+  Brain, Sparkles, Radio, Cloud, Database, Webhook
 } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,6 +28,7 @@ import ElevenLabsIntegration from '@/components/voice/ElevenLabsIntegration';
 import OpenAIRealtimeChat from '@/components/voice/OpenAIRealtimeChat';
 import VoiceAnalytics from '@/components/voice/VoiceAnalytics';
 import SharedVoiceConnectors from '@/components/voice/SharedVoiceConnectors';
+import { CreateProviderDialog } from '@/components/softphone/CreateProviderDialog';
 
 // Form schemas
 const liveAgentSchema = z.object({
@@ -49,6 +51,7 @@ const VoiceConfigurationView = () => {
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [isConfiguring, setIsConfiguring] = useState<string | null>(null);
   const [showAddProvider, setShowAddProvider] = useState(false);
+  const [selectedAIVoiceType, setSelectedAIVoiceType] = useState('elevenlabs');
   const { toast } = useToast();
   
   const {
@@ -139,49 +142,134 @@ const VoiceConfigurationView = () => {
           <h2 className="text-2xl font-bold">Voice Configuration & Management</h2>
           <p className="text-muted-foreground">Complete voice system management including softphone, providers, and analytics</p>
         </div>
-        <Button onClick={() => setShowAddProvider(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Voice Provider
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={() => setShowAddProvider(true)} className="gap-2">
+            <Plus className="h-4 w-4" />
+            Add Voice Provider
+          </Button>
+        </div>
       </div>
 
       <Tabs defaultValue="providers" className="w-full">
-        <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 text-xs bg-card shadow-lg border">
-          <TabsTrigger value="providers">Providers</TabsTrigger>
-          <TabsTrigger value="softphone">Softphone</TabsTrigger>
-          <TabsTrigger value="live-agents">Live Agents</TabsTrigger>
-          <TabsTrigger value="ai-voice">AI Voice</TabsTrigger>
-          <TabsTrigger value="connectors">Connectors</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-1 h-auto p-1 bg-muted/30 border">
+          <TabsTrigger value="providers" className="flex items-center gap-2 h-10 text-xs">
+            <Phone className="h-4 w-4" />
+            <span className="hidden sm:inline">Providers</span>
+          </TabsTrigger>
+          <TabsTrigger value="softphone" className="flex items-center gap-2 h-10 text-xs">
+            <Headphones className="h-4 w-4" />
+            <span className="hidden sm:inline">Softphone</span>
+          </TabsTrigger>
+          <TabsTrigger value="live-agents" className="flex items-center gap-2 h-10 text-xs">
+            <Users className="h-4 w-4" />
+            <span className="hidden sm:inline">Live Agents</span>
+          </TabsTrigger>
+          <TabsTrigger value="ai-voice" className="flex items-center gap-2 h-10 text-xs">
+            <Brain className="h-4 w-4" />
+            <span className="hidden sm:inline">AI Voice</span>
+          </TabsTrigger>
+          <TabsTrigger value="connectors" className="flex items-center gap-2 h-10 text-xs">
+            <Link className="h-4 w-4" />
+            <span className="hidden sm:inline">Connectors</span>
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-2 h-10 text-xs">
+            <BarChart3 className="h-4 w-4" />
+            <span className="hidden sm:inline">Analytics</span>
+          </TabsTrigger>
         </TabsList>
 
         <TabsContent value="providers" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Phone className="h-5 w-5" />
+                Voice Providers
+              </h3>
+              <p className="text-sm text-muted-foreground">Manage your voice service providers and configurations</p>
+            </div>
+            <Badge variant="outline" className="text-xs">
+              {voiceProviders?.length || 0} Providers
+            </Badge>
+          </div>
+
           {voiceProviders && voiceProviders.length > 0 ? (
-            <div className="grid gap-4">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
               {voiceProviders.map(provider => (
-                <Card key={provider.id}>
-                  <CardContent className="p-4">
+                <Card key={provider.id} className="hover:shadow-md transition-shadow">
+                  <CardHeader className="pb-3">
                     <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-medium">{provider.name}</h3>
-                        <p className="text-sm text-muted-foreground">{provider.provider_type}</p>
+                      <div className="flex items-center gap-2">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          {provider.provider_type === 'twilio' && <Phone className="h-4 w-4 text-primary" />}
+                          {provider.provider_type === 'elevenlabs' && <Mic className="h-4 w-4 text-primary" />}
+                          {provider.provider_type === 'openai' && <Brain className="h-4 w-4 text-primary" />}
+                          {!['twilio', 'elevenlabs', 'openai'].includes(provider.provider_type) && <Phone className="h-4 w-4 text-primary" />}
+                        </div>
+                        <div>
+                          <h3 className="font-medium text-sm">{provider.name}</h3>
+                          <p className="text-xs text-muted-foreground capitalize">{provider.provider_type}</p>
+                        </div>
                       </div>
+                      <Badge 
+                        variant={provider.is_active ? "default" : "secondary"}
+                        className="text-xs"
+                      >
+                        {provider.is_active ? "Active" : "Inactive"}
+                      </Badge>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="pt-0">
+                    <div className="flex flex-col gap-3">
+                      <div className="flex flex-wrap gap-1">
+                        {provider.capabilities && Object.entries(provider.capabilities).map(([key, value]) => 
+                          value && (
+                            <Badge key={key} variant="outline" className="text-xs">
+                              {key.toUpperCase()}
+                            </Badge>
+                          )
+                        )}
+                      </div>
+                      
                       <div className="flex gap-2">
                         <Button 
                           onClick={() => testVoiceProvider(provider.id)}
                           disabled={isTesting}
                           size="sm"
+                          variant="outline"
+                          className="flex-1"
                         >
-                          <TestTube className="h-4 w-4 mr-2" />
+                          <TestTube className="h-3 w-3 mr-2" />
                           {isTesting ? "Testing..." : "Test"}
                         </Button>
                         <Button
                           onClick={() => updateProviderStatus({ id: provider.id, isActive: !provider.is_active })}
                           disabled={isUpdating}
-                          variant={provider.is_active ? "default" : "outline"}
                           size="sm"
+                          variant={provider.is_active ? "destructive" : "default"}
+                          className="flex-1"
                         >
-                          {provider.is_active ? "Active" : "Inactive"}
+                          {provider.is_active ? (
+                            <>
+                              <PowerOff className="h-3 w-3 mr-2" />
+                              Disable
+                            </>
+                          ) : (
+                            <>
+                              <Power className="h-3 w-3 mr-2" />
+                              Enable
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                      
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" className="flex-1">
+                          <Edit className="h-3 w-3 mr-2" />
+                          Edit
+                        </Button>
+                        <Button size="sm" variant="ghost" className="flex-1">
+                          <Settings className="h-3 w-3 mr-2" />
+                          Config
                         </Button>
                       </div>
                     </div>
@@ -190,8 +278,16 @@ const VoiceConfigurationView = () => {
               ))}
             </div>
           ) : (
-            <div className="text-center py-8">
-              <p className="text-muted-foreground">No voice providers configured</p>
+            <div className="text-center py-12">
+              <div className="p-6 rounded-lg bg-muted/30 border-2 border-dashed border-muted-foreground/25">
+                <Phone className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold mb-2">No Voice Providers</h3>
+                <p className="text-muted-foreground text-sm mb-4">Get started by adding your first voice provider</p>
+                <Button onClick={() => setShowAddProvider(true)} className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  Add Voice Provider
+                </Button>
+              </div>
             </div>
           )}
         </TabsContent>
@@ -326,14 +422,126 @@ const VoiceConfigurationView = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="ai-voice">
+        <TabsContent value="ai-voice" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                AI Voice Configuration
+              </h3>
+              <p className="text-sm text-muted-foreground">Configure AI-powered voice interactions and models</p>
+            </div>
+            <Select value={selectedAIVoiceType} onValueChange={setSelectedAIVoiceType}>
+              <SelectTrigger className="w-48">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="elevenlabs">
+                  <div className="flex items-center gap-2">
+                    <Mic className="h-4 w-4" />
+                    ElevenLabs TTS
+                  </div>
+                </SelectItem>
+                <SelectItem value="openai">
+                  <div className="flex items-center gap-2">
+                    <Brain className="h-4 w-4" />
+                    OpenAI Realtime
+                  </div>
+                </SelectItem>
+                <SelectItem value="combined">
+                  <div className="flex items-center gap-2">
+                    <Sparkles className="h-4 w-4" />
+                    Combined Setup
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="space-y-6">
-            <ElevenLabsIntegration />
-            <OpenAIRealtimeChat />
+            {selectedAIVoiceType === 'elevenlabs' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Mic className="h-5 w-5" />
+                    ElevenLabs Text-to-Speech
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ElevenLabsIntegration />
+                </CardContent>
+              </Card>
+            )}
+
+            {selectedAIVoiceType === 'openai' && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Brain className="h-5 w-5" />
+                    OpenAI Realtime Voice
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <OpenAIRealtimeChat />
+                </CardContent>
+              </Card>
+            )}
+
+            {selectedAIVoiceType === 'combined' && (
+              <div className="space-y-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Mic className="h-5 w-5" />
+                      ElevenLabs Text-to-Speech
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ElevenLabsIntegration />
+                  </CardContent>
+                </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Brain className="h-5 w-5" />
+                      OpenAI Realtime Voice
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <OpenAIRealtimeChat />
+                  </CardContent>
+                </Card>
+              </div>
+            )}
           </div>
         </TabsContent>
 
         <TabsContent value="connectors" className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <Link className="h-5 w-5" />
+                System Connectors & API Ecosystem
+              </h3>
+              <p className="text-sm text-muted-foreground">Manage voice system connectors, API integrations, and external services</p>
+            </div>
+            <div className="flex gap-2">
+              <Button size="sm" variant="outline">
+                <Database className="h-4 w-4 mr-2" />
+                Internal APIs
+              </Button>
+              <Button size="sm" variant="outline">
+                <Cloud className="h-4 w-4 mr-2" />
+                External APIs
+              </Button>
+              <Button size="sm" variant="outline">
+                <Webhook className="h-4 w-4 mr-2" />
+                Webhooks
+              </Button>
+            </div>
+          </div>
+          
           <SharedVoiceConnectors variant="full" showOverview={true} showSecurity={false} showActions={true} />
         </TabsContent>
 
@@ -341,6 +549,12 @@ const VoiceConfigurationView = () => {
           <VoiceAnalytics />
         </TabsContent>
       </Tabs>
+
+      {/* Add Provider Dialog */}
+      <CreateProviderDialog
+        open={showAddProvider}
+        onOpenChange={setShowAddProvider}
+      />
     </div>
   );
 };
