@@ -540,48 +540,56 @@ const VoiceConfigurationView = () => {
         </TabsContent>
 
         <TabsContent value="connectors" className="space-y-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h3 className="text-lg font-semibold flex items-center gap-2">
-                <Link className="h-5 w-5" />
-                System Connectors & API Ecosystem
-              </h3>
-              <p className="text-sm text-muted-foreground">Manage voice system connectors, API integrations, and external services</p>
-            </div>
-            <div className="flex gap-2">
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  setApiIntegrationType('internal');
-                  setShowApiIntegrations(true);
-                }}
-              >
-                <Database className="h-4 w-4 mr-2" />
-                Internal APIs
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  setApiIntegrationType('external');
-                  setShowApiIntegrations(true);
-                }}
-              >
-                <Cloud className="h-4 w-4 mr-2" />
-                External APIs
-              </Button>
-              <Button 
-                size="sm" 
-                variant="outline"
-                onClick={() => {
-                  setApiIntegrationType('webhooks');
-                  setShowApiIntegrations(true);
-                }}
-              >
-                <Webhook className="h-4 w-4 mr-2" />
-                Webhooks
-              </Button>
+          <div className="space-y-4">
+            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+              <div>
+                <h3 className="text-lg font-semibold flex items-center gap-2">
+                  <Link className="h-5 w-5" />
+                  System Connectors & API Ecosystem
+                </h3>
+                <p className="text-sm text-muted-foreground">Manage voice system connectors, API integrations, and external services</p>
+              </div>
+              <div className="flex flex-wrap gap-2 lg:gap-3">
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="flex items-center gap-2 min-w-fit"
+                  onClick={() => {
+                    setApiIntegrationType('internal');
+                    setShowApiIntegrations(true);
+                  }}
+                >
+                  <Database className="h-4 w-4" />
+                  <span className="hidden sm:inline">Internal APIs</span>
+                  <span className="sm:hidden">Internal</span>
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="flex items-center gap-2 min-w-fit"
+                  onClick={() => {
+                    setApiIntegrationType('external');
+                    setShowApiIntegrations(true);
+                  }}
+                >
+                  <Cloud className="h-4 w-4" />
+                  <span className="hidden sm:inline">External APIs</span>
+                  <span className="sm:hidden">External</span>
+                </Button>
+                <Button 
+                  size="sm" 
+                  variant="outline"
+                  className="flex items-center gap-2 min-w-fit"
+                  onClick={() => {
+                    setApiIntegrationType('webhooks');
+                    setShowApiIntegrations(true);
+                  }}
+                >
+                  <Webhook className="h-4 w-4" />
+                  <span className="hidden sm:inline">Webhooks</span>
+                  <span className="sm:hidden">Hooks</span>
+                </Button>
+              </div>
             </div>
           </div>
           
