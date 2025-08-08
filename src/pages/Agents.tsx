@@ -19,7 +19,9 @@ import {
   UserCog,
   Grid,
   Rocket,
-  Network
+  Network,
+  Phone,
+  Activity
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 
@@ -67,12 +69,14 @@ const Agents = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Generate available tabs based on user roles - reorganized structure
+  // Generate available tabs based on user roles - flattened structure to avoid nested tabs
   const availableTabs = [
     { id: 'ecosystem', label: 'Agent Ecosystem', component: 'AgenticEcosystem' },
-    { id: 'deployment', label: 'Agent Deployment', component: 'DeploymentManagementInterface' },
+    { id: 'deployment-ready', label: 'Deployment Ready', component: 'DeploymentReady' },
+    { id: 'channel-assignment', label: 'Channel Assignment', component: 'ChannelAssignment' },
+    { id: 'voice-config', label: 'Voice Configuration', component: 'VoiceConfiguration' },
+    { id: 'active-deployments', label: 'Active Deployments', component: 'ActiveDeployments' },
     { id: 'testing', label: 'Agent Testing', component: 'AgentTestingInterface' },
-    { id: 'channels', label: 'Channel Management', component: 'AgentChannelAssignmentMatrix' },
     { id: 'connectors', label: 'System Connectors', component: 'AgenticAPIEcosystem' },
     ...(isOnboardingTeam ? [{ id: 'onboarding', label: 'Treatment Centers', component: 'OnboardingAgentsView' }] : []),
     ...(isSuperAdmin ? [{ id: 'settings', label: 'Agent Settings', component: 'AgentSettingsView' }] : []),
@@ -115,17 +119,19 @@ const Agents = () => {
 
           {/* Dynamic Tabs based on role */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-            <TabsList className="flex w-full gap-2 h-auto p-2 justify-start overflow-x-auto">
+            <TabsList className="flex w-full gap-2 h-auto p-3 justify-start overflow-x-auto bg-muted/20">
               {availableTabs.map((tab) => (
                 <TabsTrigger 
                   key={tab.id} 
                   value={tab.id} 
-                  className="flex items-center gap-2 whitespace-nowrap px-4 py-2 min-w-fit"
+                  className="flex items-center gap-2 whitespace-nowrap px-4 py-3 min-w-fit rounded-lg data-[state=active]:bg-background data-[state=active]:shadow-sm"
                 >
                   {tab.id === 'ecosystem' && <Bot className="h-4 w-4" />}
-                  {tab.id === 'deployment' && <Rocket className="h-4 w-4" />}
+                  {tab.id === 'deployment-ready' && <Rocket className="h-4 w-4" />}
+                  {tab.id === 'channel-assignment' && <Grid className="h-4 w-4" />}
+                  {tab.id === 'voice-config' && <Phone className="h-4 w-4" />}
+                  {tab.id === 'active-deployments' && <Activity className="h-4 w-4" />}
                   {tab.id === 'testing' && <TestTube className="h-4 w-4" />}
-                  {tab.id === 'channels' && <Grid className="h-4 w-4" />}
                   {tab.id === 'connectors' && <Network className="h-4 w-4" />}
                   {tab.id === 'onboarding' && <Users className="h-4 w-4" />}
                   {tab.id === 'settings' && <Settings className="h-4 w-4" />}
@@ -134,20 +140,30 @@ const Agents = () => {
               ))}
             </TabsList>
 
-            <TabsContent value="ecosystem">
+            <TabsContent value="ecosystem" className="mt-6">
               <AgenticEcosystem />
             </TabsContent>
             
-            <TabsContent value="deployment">
-              <DeploymentManagementInterface />
-            </TabsContent>
-
-            <TabsContent value="testing">
-              <AgentTestingInterface />
-            </TabsContent>
-
-            <TabsContent value="channels">
+            <TabsContent value="deployment-ready" className="mt-6">
               <div className="space-y-6">
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-blue-900 mb-2">Ready for Deployment</h3>
+                  <p className="text-blue-700 text-sm">
+                    Agents that are configured and ready to be deployed to live channels.
+                  </p>
+                </div>
+                {React.createElement(React.lazy(() => import('@/components/deployment/DeploymentReadyView')))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="channel-assignment" className="mt-6">
+              <div className="space-y-6">
+                <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-green-900 mb-2">Channel Assignment</h3>
+                  <p className="text-green-700 text-sm">
+                    Drag and drop agents to assign them to communication channels.
+                  </p>
+                </div>
                 <AgentChannelAssignmentMatrix />
                 <div className="border-t pt-6">
                   <h2 className="text-xl font-semibold mb-4">Live Agent Transfer</h2>
@@ -158,8 +174,36 @@ const Agents = () => {
                 </div>
               </div>
             </TabsContent>
+
+            <TabsContent value="voice-config" className="mt-6">
+              <div className="space-y-6">
+                <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-purple-900 mb-2">Voice Configuration</h3>
+                  <p className="text-purple-700 text-sm">
+                    Configure voice adapters and speech recognition settings for voice-enabled channels.
+                  </p>
+                </div>
+                {React.createElement(React.lazy(() => import('@/components/deployment/VoiceConfigurationView')))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="active-deployments" className="mt-6">
+              <div className="space-y-6">
+                <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
+                  <h3 className="font-semibold text-orange-900 mb-2">Active Deployments</h3>
+                  <p className="text-orange-700 text-sm">
+                    Monitor and manage currently deployed agents across all channels.
+                  </p>
+                </div>
+                {React.createElement(React.lazy(() => import('@/components/deployment/ActiveDeploymentsView')))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="testing" className="mt-6">
+              <AgentTestingInterface />
+            </TabsContent>
             
-            <TabsContent value="connectors">
+            <TabsContent value="connectors" className="mt-6">
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
                   <h3 className="font-semibold text-blue-900 mb-2">System Connectors & API Ecosystem</h3>
@@ -172,13 +216,13 @@ const Agents = () => {
             </TabsContent>
             
             {isOnboardingTeam && (
-              <TabsContent value="onboarding">
+              <TabsContent value="onboarding" className="mt-6">
                 <OnboardingAgentsView />
               </TabsContent>
             )}
             
             {isSuperAdmin && (
-              <TabsContent value="settings">
+              <TabsContent value="settings" className="mt-6">
                 <AgentSettingsView />
               </TabsContent>
             )}
