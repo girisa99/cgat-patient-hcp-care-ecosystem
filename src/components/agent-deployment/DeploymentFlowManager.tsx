@@ -56,63 +56,151 @@ export const DeploymentFlowManager: React.FC<{
   const [generatedCode, setGeneratedCode] = useState('');
 
   useEffect(() => {
-    if (agentSession) {
-      analyzeDeploymentReadiness(agentSession);
-    }
+    // Always analyze, even with null/undefined session
+    analyzeDeploymentReadiness(agentSession);
   }, [agentSession]);
 
   const analyzeDeploymentReadiness = (session: any) => {
-    const config: DeploymentConfiguration = {
-      agentId: session.id,
-      agentName: session.name,
-      steps: {
+    // Handle missing session with meaningful default configuration
+    if (!session) {
+      const emptySteps = {
         basicInfo: {
           id: 'basicInfo',
           name: 'Basic Information',
-          status: session.basic_info?.name ? 'completed' : 'missing',
-          data: session.basic_info,
+          status: 'missing' as const,
+          data: {},
           dependencies: []
         },
         canvas: {
           id: 'canvas',
           name: 'Canvas & Branding',
-          status: session.canvas?.name ? 'completed' : 'partial',
-          data: session.canvas,
+          status: 'missing' as const,
+          data: {},
           dependencies: ['basicInfo']
         },
         actions: {
           id: 'actions',
           name: 'Actions & AI Models',
-          status: session.actions?.assigned_actions?.length > 0 ? 'completed' : 'missing',
-          data: session.actions,
+          status: 'missing' as const,
+          data: { assigned_actions: [], ai_models: [], configurations: {}, custom_actions: [] },
           dependencies: ['basicInfo']
         },
         connectors: {
           id: 'connectors',
           name: 'System Connectors',
-          status: session.connectors?.assigned_connectors?.length > 0 ? 'completed' : 'partial',
-          data: session.connectors,
+          status: 'missing' as const,
+          data: { assigned_connectors: [], api_integrations: [], configurations: {} },
           dependencies: ['actions']
         },
         knowledgeBase: {
           id: 'knowledgeBase',
           name: 'Knowledge Base',
-          status: session.knowledge?.knowledge_bases?.length > 0 ? 'completed' : 'partial',
-          data: session.knowledge,
+          status: 'missing' as const,
+          data: { knowledge_bases: [], documents: [], urls: [], rag_config: {} },
           dependencies: ['basicInfo']
         },
         voiceConfig: {
           id: 'voiceConfig',
           name: 'Voice Configuration',
-          status: session.voice?.provider ? 'completed' : 'missing',
-          data: session.voice,
+          status: 'missing' as const,
+          data: {},
           dependencies: ['actions']
         },
         channelAssignment: {
           id: 'channelAssignment',
           name: 'Channel Assignment',
-          status: session.deployment?.channels?.length > 0 ? 'completed' : 'missing',
-          data: session.deployment?.channels || [],
+          status: 'missing' as const,
+          data: { channels: [], environment: 'production', scaling_config: {} },
+          dependencies: ['actions', 'connectors']
+        }
+      };
+
+      setDeploymentConfig({
+        agentId: 'no-session',
+        agentName: 'No Agent Session Loaded',
+        steps: emptySteps,
+        deploymentReadiness: 0,
+        gaps: ['Agent session not loaded or selected'],
+        recommendations: ['Please select an agent session from a previous configuration step']
+      });
+      return;
+    }
+
+    const config: DeploymentConfiguration = {
+      agentId: session.id || 'unknown',
+      agentName: session.name || 'Unnamed Agent',
+      steps: {
+        basicInfo: {
+          id: 'basicInfo',
+          name: 'Basic Information',
+          status: (session.basic_info?.name && session.basic_info?.purpose) ? 'completed' : 
+                  session.basic_info?.name ? 'partial' : 'missing',
+          data: session.basic_info || {},
+          dependencies: []
+        },
+        canvas: {
+          id: 'canvas',
+          name: 'Canvas & Branding',
+          status: (session.canvas?.name && session.canvas?.primaryColor) ? 'completed' : 
+                  session.canvas?.name ? 'partial' : 'missing',
+          data: session.canvas || {},
+          dependencies: ['basicInfo']
+        },
+        actions: {
+          id: 'actions',
+          name: 'Actions & AI Models',
+          status: (session.actions?.assigned_actions?.length > 0 || session.deployment?.ai_models?.length > 0) ? 'completed' : 
+                  (session.actions?.configurations || session.actions?.custom_actions?.length > 0) ? 'partial' : 'missing',
+          data: {
+            assigned_actions: session.actions?.assigned_actions || [],
+            ai_models: session.deployment?.ai_models || [],
+            configurations: session.actions?.configurations || {},
+            custom_actions: session.actions?.custom_actions || []
+          },
+          dependencies: ['basicInfo']
+        },
+        connectors: {
+          id: 'connectors',
+          name: 'System Connectors',
+          status: (session.connectors?.assigned_connectors?.length > 0 || session.connectors?.api_integrations?.length > 0) ? 'completed' : 
+                  session.connectors?.configurations ? 'partial' : 'missing',
+          data: {
+            assigned_connectors: session.connectors?.assigned_connectors || [],
+            api_integrations: session.connectors?.api_integrations || [],
+            configurations: session.connectors?.configurations || {}
+          },
+          dependencies: ['actions']
+        },
+        knowledgeBase: {
+          id: 'knowledgeBase',
+          name: 'Knowledge Base',
+          status: (session.knowledge?.knowledge_bases?.length > 0 || session.knowledge?.documents?.length > 0) ? 'completed' : 
+                  (session.knowledge?.urls?.length > 0 || session.rag?.configurations) ? 'partial' : 'missing',
+          data: {
+            knowledge_bases: session.knowledge?.knowledge_bases || [],
+            documents: session.knowledge?.documents || [],
+            urls: session.knowledge?.urls || [],
+            rag_config: session.rag?.configurations || {}
+          },
+          dependencies: ['basicInfo']
+        },
+        voiceConfig: {
+          id: 'voiceConfig',
+          name: 'Voice Configuration',
+          status: session.deployment?.config?.voice?.provider ? 'completed' : 'missing',
+          data: session.deployment?.config?.voice || {},
+          dependencies: ['actions']
+        },
+        channelAssignment: {
+          id: 'channelAssignment',
+          name: 'Channel Assignment',
+          status: session.deployment?.config?.channels ? 'completed' : 
+                  session.deployment?.environment ? 'partial' : 'missing',
+          data: {
+            channels: session.deployment?.config?.channels || [],
+            environment: session.deployment?.environment || 'production',
+            scaling_config: session.deployment?.scaling_config || {}
+          },
           dependencies: ['actions', 'connectors']
         }
       },
