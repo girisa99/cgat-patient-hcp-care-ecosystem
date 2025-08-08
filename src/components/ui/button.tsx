@@ -11,18 +11,18 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', size = 'default', asChild = false, loading = false, icon: Icon, iconPosition = 'left', children, disabled, ...props }, ref) => {
-    const variantClasses = {
-      default: "bg-primary text-primary-foreground hover:bg-primary/90",
-      destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-      outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-      secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-      ghost: "hover:bg-accent hover:text-accent-foreground",
-      link: "text-primary underline-offset-4 hover:underline",
-      // Enhanced variants for better consolidation
-      success: "bg-green-600 text-white hover:bg-green-700 focus:ring-green-500",
-      warning: "bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-yellow-500",
-      info: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-blue-500"
-    };
+  const variantClasses = {
+    default: "bg-primary text-primary-foreground hover:bg-primary/90 hover:shadow-md transition-all duration-200",
+    destructive: "bg-destructive text-destructive-foreground hover:bg-destructive/90 hover:shadow-md transition-all duration-200",
+    outline: "border border-input bg-background hover:bg-accent hover:text-accent-foreground hover:shadow-sm transition-all duration-200",
+    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80 hover:shadow-sm transition-all duration-200",
+    ghost: "hover:bg-accent hover:text-accent-foreground transition-all duration-200",
+    link: "text-primary underline-offset-4 hover:underline transition-all duration-200",
+    // Enhanced variants using design system tokens
+    success: "bg-green-600 text-white hover:bg-green-700 focus:ring-2 focus:ring-green-500/20 hover:shadow-md transition-all duration-200",
+    warning: "bg-yellow-600 text-white hover:bg-yellow-700 focus:ring-2 focus:ring-yellow-500/20 hover:shadow-md transition-all duration-200", 
+    info: "bg-blue-600 text-white hover:bg-blue-700 focus:ring-2 focus:ring-blue-500/20 hover:shadow-md transition-all duration-200"
+  };
 
     const sizeClasses = {
       default: "h-10 px-4 py-2",
