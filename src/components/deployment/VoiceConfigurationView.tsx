@@ -7,207 +7,121 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { 
-  Phone, 
-  Mic, 
-  Volume2,
-  Settings,
-  Zap,
-  Check,
-  ExternalLink,
-  Plus,
-  Edit,
-  Trash2,
-  Power,
-  PowerOff,
-  BarChart3,
-  TestTube,
-  Headphones,
-  Users,
-  Activity
+  Phone, Mic, Volume2, Settings, Zap, Check, ExternalLink, Plus, Edit, Trash2, 
+  Power, PowerOff, BarChart3, TestTube, Headphones, Users, Activity, UserPlus, Link
 } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { useToast } from '@/hooks/use-toast';
 import { useVoiceProviders } from '@/hooks/useVoiceProviders';
+import { useVoiceLiveAgents } from '@/hooks/useVoiceLiveAgents';
+import { useVoiceConnectors } from '@/hooks/useVoiceConnectors';
+import { useTransferQueue } from '@/hooks/useTransferQueue';
 import { SoftphoneInterface } from '@/components/softphone/SoftphoneInterface';
 import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer';
 import VoiceConnectors from '@/components/voice/VoiceConnectors';
-import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
 import ElevenLabsIntegration from '@/components/voice/ElevenLabsIntegration';
 import OpenAIRealtimeChat from '@/components/voice/OpenAIRealtimeChat';
 import VoiceAnalytics from '@/components/voice/VoiceAnalytics';
+
+// Form schemas
+const liveAgentSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  email: z.string().email("Valid email is required"),
+  department: z.string().optional(),
+  skills: z.string().optional(),
+  max_concurrent_calls: z.number().min(1).max(10).default(3),
+});
+
+const connectorSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  type: z.enum(['SIP', 'API', 'Webhook', 'Database', 'CRM', 'Cloud']),
+  endpoints: z.string().optional(),
+  features: z.string().optional(),
+});
 
 const VoiceConfigurationView = () => {
   const [selectedVoiceProvider, setSelectedVoiceProvider] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [isConfiguring, setIsConfiguring] = useState<string | null>(null);
   const [showAddProvider, setShowAddProvider] = useState(false);
-  const [showEditProvider, setShowEditProvider] = useState(false);
-  const [editingProvider, setEditingProvider] = useState<any>(null);
-  const [newProvider, setNewProvider] = useState({
-    name: '',
-    provider_type: '',
-    capabilities: [''],
-    configuration: {},
-    description: ''
-  });
   const { toast } = useToast();
   
   const {
     voiceProviders,
     voiceConfigurations,
     isLoading,
-    createVoiceConfiguration,
     updateProviderStatus,
     testVoiceProvider,
-    isCreating,
     isUpdating,
     isTesting
   } = useVoiceProviders();
 
-  const languages = [
-    { code: 'en-US', name: 'English (US)' },
-    { code: 'en-GB', name: 'English (UK)' },
-    { code: 'es-ES', name: 'Spanish (Spain)' },
-    { code: 'fr-FR', name: 'French (France)' },
-    { code: 'de-DE', name: 'German (Germany)' },
-  ];
+  const {
+    liveAgents,
+    createAgent,
+    updateAgent,
+    deleteAgent,
+    isCreating: isCreatingAgent,
+    isUpdating: isUpdatingAgent,
+    isDeleting: isDeletingAgent
+  } = useVoiceLiveAgents();
 
-  // Load existing configuration
-  useEffect(() => {
-    const activeConfig = voiceConfigurations.find(config => config.is_active);
-    if (activeConfig) {
-      setSelectedVoiceProvider(activeConfig.voice_provider_id);
-      const langConfig = activeConfig.configuration?.language;
-      if (langConfig) {
-        setSelectedLanguage(langConfig);
-      }
-    }
-  }, [voiceConfigurations]);
+  const {
+    connectors,
+    createConnector,
+    updateConnector,
+    testConnector,
+    testAllConnectors,
+    deleteConnector,
+    isCreating: isCreatingConnector,
+    isUpdating: isUpdatingConnector,
+    isTesting: isTestingConnector,
+    isDeleting: isDeletingConnector
+  } = useVoiceConnectors();
 
-  const handleConfigure = async (providerId: string, providerName: string) => {
-    setIsConfiguring(providerId);
-    
-    try {
-      // Toggle provider status
-      const provider = voiceProviders.find(p => p.id === providerId);
-      const newStatus = !provider?.is_active;
-      
-      await updateProviderStatus({ id: providerId, isActive: newStatus });
-      
-      toast({
-        title: `${providerName} Configuration`,
-        description: `Successfully ${newStatus ? 'activated' : 'deactivated'} ${providerName} for voice processing.`,
-      });
-    } catch (error) {
-      console.error('Configuration error:', error);
-      toast({
-        title: 'Configuration Error',
-        description: 'Failed to update voice provider configuration.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsConfiguring(null);
-    }
-  };
+  // Form handlers
+  const liveAgentForm = useForm<z.infer<typeof liveAgentSchema>>({
+    resolver: zodResolver(liveAgentSchema),
+    defaultValues: {
+      name: "",
+      email: "",
+      department: "",
+      skills: "",
+      max_concurrent_calls: 3,
+    },
+  });
 
-  const handleTestConfiguration = async () => {
-    if (!selectedVoiceProvider) {
-      toast({
-        title: "No Provider Selected",
-        description: "Please select a voice provider to test.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const connectorForm = useForm<z.infer<typeof connectorSchema>>({
+    resolver: zodResolver(connectorSchema),
+    defaultValues: {
+      name: "",
+      type: "API",
+      endpoints: "",
+      features: "",
+    },
+  });
 
-    try {
-      await testVoiceProvider(selectedVoiceProvider);
-    } catch (error) {
-      console.error('Test error:', error);
-    }
-  };
-
-  const handleSaveConfiguration = async () => {
-    if (!selectedVoiceProvider || !selectedLanguage) {
-      toast({
-        title: "Configuration Incomplete",
-        description: "Please select both a voice provider and language before saving.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    try {
-      const config = {
-        voice_provider_id: selectedVoiceProvider,
-        configuration: {
-          language: selectedLanguage,
-          sample_rate: 16000,
-          audio_format: 'PCM',
-          latency: 'low'
-        },
-        is_active: true
-      };
-
-      await createVoiceConfiguration(config);
-    } catch (error) {
-      console.error('Save error:', error);
-    }
-  };
-
-  const handleAddProvider = async () => {
-    // This would typically call an API to create a new provider
-    toast({
-      title: "Add Provider",
-      description: "Voice provider added successfully (demo functionality)",
+  const handleCreateLiveAgent = (values: z.infer<typeof liveAgentSchema>) => {
+    createAgent({
+      ...values,
+      skills: values.skills ? values.skills.split(',').map(s => s.trim()) : [],
     });
-    setShowAddProvider(false);
-    setNewProvider({
-      name: '',
-      provider_type: '',
-      capabilities: [''],
+    liveAgentForm.reset();
+  };
+
+  const handleCreateConnector = (values: z.infer<typeof connectorSchema>) => {
+    createConnector({
+      ...values,
       configuration: {},
-      description: ''
+      endpoints: values.endpoints ? values.endpoints.split(',').map(s => s.trim()) : [],
+      features: values.features ? values.features.split(',').map(s => s.trim()) : [],
     });
-  };
-
-  const handleEditProvider = (provider: any) => {
-    setEditingProvider(provider);
-    setShowEditProvider(true);
-  };
-
-  const handleUpdateProvider = async () => {
-    toast({
-      title: "Update Provider",
-      description: "Voice provider updated successfully (demo functionality)",
-    });
-    setShowEditProvider(false);
-    setEditingProvider(null);
-  };
-
-  const handleDeactivateProvider = async (providerId: string, providerName: string) => {
-    try {
-      await updateProviderStatus({ id: providerId, isActive: false });
-      toast({
-        title: "Provider Deactivated",
-        description: `${providerName} has been deactivated successfully.`,
-      });
-    } catch (error) {
-      console.error('Deactivation error:', error);
-      toast({
-        title: 'Deactivation Error',
-        description: 'Failed to deactivate voice provider.',
-        variant: 'destructive',
-      });
-    }
+    connectorForm.reset();
   };
 
   if (isLoading) {
@@ -216,7 +130,6 @@ const VoiceConfigurationView = () => {
 
   return (
     <div className="space-y-6">
-      {/* Header with Add Provider Button */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Voice Configuration & Management</h2>
@@ -228,471 +141,342 @@ const VoiceConfigurationView = () => {
         </Button>
       </div>
 
-      {/* Comprehensive Voice System Tabs */}
       <Tabs defaultValue="providers" className="w-full">
         <TabsList className="grid w-full grid-cols-3 lg:grid-cols-6 text-xs bg-card shadow-lg border">
-          <TabsTrigger value="providers" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Settings className="h-3 w-3" />
-            <span className="hidden sm:inline">Providers</span>
-          </TabsTrigger>
-          <TabsTrigger value="softphone" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Phone className="h-3 w-3" />
-            <span className="hidden sm:inline">Softphone</span>
-          </TabsTrigger>
-          <TabsTrigger value="live-agents" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Users className="h-3 w-3" />
-            <span className="hidden sm:inline">Live Agents</span>
-          </TabsTrigger>
-          <TabsTrigger value="ai-voice" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Mic className="h-3 w-3" />
-            <span className="hidden sm:inline">AI Voice</span>
-          </TabsTrigger>
-          <TabsTrigger value="connectors" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <Zap className="h-3 w-3" />
-            <span className="hidden sm:inline">Connectors</span>
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
-            <BarChart3 className="h-3 w-3" />
-            <span className="hidden sm:inline">Analytics</span>
-          </TabsTrigger>
+          <TabsTrigger value="providers">Providers</TabsTrigger>
+          <TabsTrigger value="softphone">Softphone</TabsTrigger>
+          <TabsTrigger value="live-agents">Live Agents</TabsTrigger>
+          <TabsTrigger value="ai-voice">AI Voice</TabsTrigger>
+          <TabsTrigger value="connectors">Connectors</TabsTrigger>
+          <TabsTrigger value="analytics">Analytics</TabsTrigger>
         </TabsList>
 
         <TabsContent value="providers" className="space-y-6">
-          {/* Voice Provider Selection */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Mic className="h-5 w-5" />
-                  Speech-to-Text Providers
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {voiceProviders.filter(p => {
-                  // Check if this provider supports STT functionality
-                  const capabilities = Array.isArray(p.capabilities) ? p.capabilities : [];
-                  return capabilities.some(cap => 
-                    cap.toLowerCase().includes('voice') || 
-                    cap.toLowerCase().includes('stt') || 
-                    ['twilio', 'five9', 'genesys'].includes(p.provider_type)
-                  );
-                }).map((provider) => (
-                  <div key={provider.id} className="flex items-start justify-between p-4 border rounded-lg space-y-2">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{provider.name}</p>
-                        <div className="flex gap-1 mt-2 flex-wrap">
-                          {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs px-1.5 py-0.5 h-auto">
-                              {capability}
-                            </Badge>
-                          ))}
-                        </div>
+          {voiceProviders && voiceProviders.length > 0 ? (
+            <div className="grid gap-4">
+              {voiceProviders.map(provider => (
+                <Card key={provider.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h3 className="font-medium">{provider.name}</h3>
+                        <p className="text-sm text-muted-foreground">{provider.provider_type}</p>
                       </div>
-                    </div>
-                    <div className="flex gap-1 ml-2 flex-shrink-0">
-                      <Button 
-                        variant={provider.is_active ? 'default' : 'outline'} 
-                        size="sm"
-                        className="text-xs px-2 h-7"
-                        disabled={isConfiguring === provider.id || isUpdating}
-                        onClick={() => handleConfigure(provider.id, provider.name)}
-                      >
-                        {isConfiguring === provider.id ? 'Config...' : provider.is_active ? 'Active' : 'Activate'}
-                        {!provider.is_active && <ExternalLink className="h-2.5 w-2.5 ml-1" />}
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => handleEditProvider(provider)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      {provider.is_active && (
+                      <div className="flex gap-2">
                         <Button 
-                          variant="ghost" 
+                          onClick={() => testVoiceProvider(provider.id)}
+                          disabled={isTesting}
                           size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handleDeactivateProvider(provider.id, provider.name)}
                         >
-                          <PowerOff className="h-3 w-3" />
+                          <TestTube className="h-4 w-4 mr-2" />
+                          {isTesting ? "Testing..." : "Test"}
                         </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Volume2 className="h-5 w-5" />
-                  Text-to-Speech Providers
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {voiceProviders.filter(p => {
-                  // Check if this provider supports TTS functionality  
-                  const capabilities = Array.isArray(p.capabilities) ? p.capabilities : [];
-                  return capabilities.some(cap => 
-                    cap.toLowerCase().includes('voice') || 
-                    cap.toLowerCase().includes('tts') || 
-                    ['twilio', 'five9', 'genesys', 'vonage', 'voxiplant'].includes(p.provider_type)
-                  );
-                }).map((provider) => (
-                  <div key={provider.id} className="flex items-start justify-between p-4 border rounded-lg space-y-2">
-                    <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <div className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <div className="flex-1 min-w-0">
-                        <p className="font-medium text-sm truncate">{provider.name}</p>
-                        <div className="flex gap-1 mt-2 flex-wrap">
-                          {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs px-1.5 py-0.5 h-auto">
-                              {capability}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex gap-1 ml-2 flex-shrink-0">
-                      <Button 
-                        variant={provider.is_active ? 'default' : 'outline'} 
-                        size="sm"
-                        className="text-xs px-2 h-7"
-                        disabled={isConfiguring === provider.id || isUpdating}
-                        onClick={() => handleConfigure(provider.id, provider.name)}
-                      >
-                        {isConfiguring === provider.id ? 'Config...' : provider.is_active ? 'Active' : 'Activate'}
-                        {!provider.is_active && <ExternalLink className="h-2.5 w-2.5 ml-1" />}
-                      </Button>
-                      <Button 
-                        variant="ghost" 
-                        size="sm"
-                        className="h-7 w-7 p-0"
-                        onClick={() => handleEditProvider(provider)}
-                      >
-                        <Edit className="h-3 w-3" />
-                      </Button>
-                      {provider.is_active && (
-                        <Button 
-                          variant="ghost" 
+                        <Button
+                          onClick={() => updateProviderStatus({ id: provider.id, isActive: !provider.is_active })}
+                          disabled={isUpdating}
+                          variant={provider.is_active ? "default" : "outline"}
                           size="sm"
-                          className="h-7 w-7 p-0"
-                          onClick={() => handleDeactivateProvider(provider.id, provider.name)}
                         >
-                          <PowerOff className="h-3 w-3" />
+                          {provider.is_active ? "Active" : "Inactive"}
                         </Button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Configuration Settings */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Voice Configuration Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Primary Language</label>
-                    <Select value={selectedLanguage} onValueChange={setSelectedLanguage}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select language" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {languages.map((lang) => (
-                          <SelectItem key={lang.code} value={lang.code}>
-                            {lang.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-
-                  <div>
-                    <label className="text-sm font-medium mb-2 block">Voice Provider</label>
-                    <Select value={selectedVoiceProvider} onValueChange={setSelectedVoiceProvider}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select provider" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {voiceProviders.map((provider) => (
-                          <SelectItem key={provider.id} value={provider.id}>
-                            {provider.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="p-4 bg-muted/20 rounded-lg">
-                    <h4 className="font-medium mb-2 flex items-center gap-2">
-                      <Phone className="h-4 w-4" />
-                      Voice Channel Settings
-                    </h4>
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span>Sample Rate:</span>
-                        <span className="text-muted-foreground">16kHz</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Audio Format:</span>
-                        <span className="text-muted-foreground">PCM</span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span>Latency:</span>
-                        <span className="text-muted-foreground">Low</span>
                       </div>
                     </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex gap-2 pt-4 border-t">
-                <Button 
-                  className="flex items-center gap-2" 
-                  onClick={handleSaveConfiguration}
-                  disabled={isCreating}
-                >
-                  <Check className="h-4 w-4" />
-                  {isCreating ? 'Saving...' : 'Save Configuration'}
-                </Button>
-                <Button 
-                  variant="outline" 
-                  onClick={handleTestConfiguration}
-                  disabled={isTesting}
-                >
-                  <Zap className="h-4 w-4 mr-2" />
-                  {isTesting ? 'Testing...' : 'Test Voice Configuration'}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No voice providers configured</p>
+            </div>
+          )}
         </TabsContent>
 
-        <TabsContent value="softphone" className="space-y-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Phone className="h-5 w-5" />
-                Complete Softphone Interface
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SoftphoneInterface />
-            </CardContent>
-          </Card>
+        <TabsContent value="softphone">
+          <SoftphoneInterface />
         </TabsContent>
 
         <TabsContent value="live-agents" className="space-y-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold">Live Agent Management</h3>
               <p className="text-sm text-muted-foreground">Manage live agents and transfer queues</p>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Agent
-              </Button>
-              <Button size="sm" variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Configure Queue
-              </Button>
-            </div>
+            <Dialog>
+              <DialogTrigger asChild>
+                <Button className="gap-2" size="sm">
+                  <Plus className="h-4 w-4" />
+                  Add Agent
+                </Button>
+              </DialogTrigger>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Add Live Agent</DialogTitle>
+                </DialogHeader>
+                <Form {...liveAgentForm}>
+                  <form onSubmit={liveAgentForm.handleSubmit(handleCreateLiveAgent)} className="space-y-4">
+                    <FormField
+                      control={liveAgentForm.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Name</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Agent Name" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={liveAgentForm.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Email</FormLabel>
+                          <FormControl>
+                            <Input {...field} type="email" placeholder="agent@company.com" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={liveAgentForm.control}
+                      name="department"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Department</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="Customer Support" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={liveAgentForm.control}
+                      name="skills"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Skills (comma-separated)</FormLabel>
+                          <FormControl>
+                            <Input {...field} placeholder="General Support, Technical Issues" />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <div className="flex justify-end gap-2">
+                      <Button type="submit" disabled={isCreatingAgent}>
+                        {isCreatingAgent ? "Creating..." : "Create Agent"}
+                      </Button>
+                    </div>
+                  </form>
+                </Form>
+              </DialogContent>
+            </Dialog>
           </div>
-          <LiveAgentTransfer />
+
+          <div className="grid gap-4">
+            {liveAgents?.length > 0 ? (
+              liveAgents.map((agent) => (
+                <Card key={agent.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{agent.name}</h4>
+                        <p className="text-sm text-muted-foreground">{agent.email}</p>
+                        <Badge variant={agent.status === 'online' ? 'default' : 'secondary'}>
+                          {agent.status}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => updateAgent(agent.id, { status: agent.status === 'online' ? 'offline' : 'online' })}
+                          disabled={isUpdatingAgent}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="sm"
+                          onClick={() => deleteAgent(agent.id)}
+                          disabled={isDeletingAgent}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <UserPlus className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No live agents configured</p>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
-        <TabsContent value="ai-voice" className="space-y-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold">AI Voice Services</h3>
-              <p className="text-sm text-muted-foreground">Manage AI voice synthesis and processing</p>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Integration
-              </Button>
-              <Button size="sm" variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <TabsContent value="ai-voice">
+          <div className="space-y-6">
             <ElevenLabsIntegration />
             <OpenAIRealtimeChat />
           </div>
         </TabsContent>
 
         <TabsContent value="connectors" className="space-y-6">
-          <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center justify-between">
             <div>
               <h3 className="text-lg font-semibold">Voice System Connectors</h3>
               <p className="text-sm text-muted-foreground">Manage external voice integrations</p>
             </div>
             <div className="flex gap-2">
-              <Button size="sm">
-                <Plus className="h-4 w-4 mr-2" />
-                Add Connector
-              </Button>
-              <Button size="sm" variant="outline">
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button className="gap-2" size="sm">
+                    <Plus className="h-4 w-4" />
+                    Add Connector
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Add Voice Connector</DialogTitle>
+                  </DialogHeader>
+                  <Form {...connectorForm}>
+                    <form onSubmit={connectorForm.handleSubmit(handleCreateConnector)} className="space-y-4">
+                      <FormField
+                        control={connectorForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Name</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="Connector Name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={connectorForm.control}
+                        name="type"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select type" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                <SelectItem value="SIP">SIP</SelectItem>
+                                <SelectItem value="API">API</SelectItem>
+                                <SelectItem value="Webhook">Webhook</SelectItem>
+                                <SelectItem value="Database">Database</SelectItem>
+                                <SelectItem value="CRM">CRM</SelectItem>
+                                <SelectItem value="Cloud">Cloud</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={connectorForm.control}
+                        name="endpoints"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Endpoints (comma-separated)</FormLabel>
+                            <FormControl>
+                              <Input {...field} placeholder="https://api.example.com" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex justify-end gap-2">
+                        <Button type="submit" disabled={isCreatingConnector}>
+                          {isCreatingConnector ? "Creating..." : "Create Connector"}
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+              <Button 
+                variant="outline" 
+                onClick={testAllConnectors}
+                disabled={isTestingConnector}
+                size="sm"
+              >
                 <TestTube className="h-4 w-4 mr-2" />
-                Test All
+                {isTestingConnector ? "Testing..." : "Test All"}
               </Button>
             </div>
           </div>
-          <VoiceConnectors />
+
+          <div className="grid gap-4">
+            {connectors?.length > 0 ? (
+              connectors.map((connector) => (
+                <Card key={connector.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h4 className="font-medium">{connector.name}</h4>
+                        <Badge variant="outline">{connector.type}</Badge>
+                        <Badge variant={connector.status === 'active' ? 'default' : 'secondary'}>
+                          {connector.status}
+                        </Badge>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button 
+                          onClick={() => testConnector(connector.id)}
+                          disabled={isTestingConnector}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <TestTube className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          onClick={() => updateConnector(connector.id, { status: connector.status === 'active' ? 'inactive' : 'active' })}
+                          disabled={isUpdatingConnector}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          onClick={() => deleteConnector(connector.id)}
+                          disabled={isDeletingConnector}
+                          size="sm"
+                          variant="ghost"
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Link className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                <p className="text-muted-foreground">No connectors configured</p>
+              </div>
+            )}
+          </div>
         </TabsContent>
 
-
-        <TabsContent value="analytics" className="space-y-6">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-semibold">Voice Analytics & Insights</h3>
-              <p className="text-sm text-muted-foreground">Performance metrics and usage analytics</p>
-            </div>
-            <div className="flex gap-2">
-              <Button size="sm" variant="outline">
-                <BarChart3 className="h-4 w-4 mr-2" />
-                Export Report
-              </Button>
-              <Button size="sm" variant="outline">
-                <Settings className="h-4 w-4 mr-2" />
-                Configure Alerts
-              </Button>
-            </div>
-          </div>
+        <TabsContent value="analytics">
           <VoiceAnalytics />
         </TabsContent>
       </Tabs>
-
-      {/* Add Provider Dialog */}
-      <Dialog open={showAddProvider} onOpenChange={setShowAddProvider}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Voice Provider</DialogTitle>
-            <DialogDescription>
-              Configure a new voice provider for speech processing.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="provider-name">Provider Name</Label>
-              <Input
-                id="provider-name"
-                value={newProvider.name}
-                onChange={(e) => setNewProvider(prev => ({ ...prev, name: e.target.value }))}
-                placeholder="Enter provider name"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="provider-type">Provider Type</Label>
-              <Select 
-                value={newProvider.provider_type} 
-                onValueChange={(value) => setNewProvider(prev => ({ ...prev, provider_type: value }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select provider type" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="twilio">Twilio</SelectItem>
-                  <SelectItem value="five9">Five9</SelectItem>
-                  <SelectItem value="genesys">Genesys</SelectItem>
-                  <SelectItem value="vonage">Vonage</SelectItem>
-                  <SelectItem value="aws">AWS Connect</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor="provider-description">Description</Label>
-              <Textarea
-                id="provider-description"
-                value={newProvider.description}
-                onChange={(e) => setNewProvider(prev => ({ ...prev, description: e.target.value }))}
-                placeholder="Enter provider description"
-              />
-            </div>
-          </div>
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowAddProvider(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleAddProvider}>
-              Add Provider
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Provider Dialog */}
-      <Dialog open={showEditProvider} onOpenChange={setShowEditProvider}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Edit Voice Provider</DialogTitle>
-            <DialogDescription>
-              Update voice provider configuration.
-            </DialogDescription>
-          </DialogHeader>
-          
-          {editingProvider && (
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="edit-provider-name">Provider Name</Label>
-                <Input
-                  id="edit-provider-name"
-                  defaultValue={editingProvider.name}
-                  placeholder="Enter provider name"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="edit-provider-type">Provider Type</Label>
-                <Select defaultValue={editingProvider.provider_type}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select provider type" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="twilio">Twilio</SelectItem>
-                    <SelectItem value="five9">Five9</SelectItem>
-                    <SelectItem value="genesys">Genesys</SelectItem>
-                    <SelectItem value="vonage">Vonage</SelectItem>
-                    <SelectItem value="aws">AWS Connect</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          )}
-          
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowEditProvider(false)}>
-              Cancel
-            </Button>
-            <Button onClick={handleUpdateProvider}>
-              Update Provider
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };
