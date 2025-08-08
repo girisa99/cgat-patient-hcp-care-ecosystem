@@ -9,6 +9,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useVoiceProviders } from '@/hooks/useVoiceProviders';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { SoftphoneInterface } from './SoftphoneInterface';
 import { 
   TestTube, 
   Play, 
@@ -19,7 +20,8 @@ import {
   Database,
   Settings,
   Zap,
-  RefreshCw
+  RefreshCw,
+  Phone
 } from 'lucide-react';
 import { format } from 'date-fns';
 
@@ -39,6 +41,7 @@ export const ProviderTesting = () => {
   const [testInput, setTestInput] = useState('');
   const [testResults, setTestResults] = useState<any>(null);
   const [isRunningTest, setIsRunningTest] = useState(false);
+  const [showSoftphone, setShowSoftphone] = useState(false);
 
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
@@ -155,6 +158,37 @@ export const ProviderTesting = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex items-center justify-between mb-6">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">Provider Testing</h2>
+          <p className="text-muted-foreground">
+            Test voice provider connections and configurations
+          </p>
+        </div>
+        <Button 
+          onClick={() => setShowSoftphone(!showSoftphone)}
+          className="gap-2"
+          variant={showSoftphone ? "default" : "outline"}
+        >
+          <Phone className="h-4 w-4" />
+          {showSoftphone ? 'Hide' : 'Show'} Voice Testing
+        </Button>
+      </div>
+
+      {showSoftphone && (
+        <Card className="border-primary/20">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Phone className="h-5 w-5 text-primary" />
+              Voice Testing Interface
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <SoftphoneInterface />
+          </CardContent>
+        </Card>
+      )}
+      
       {/* Test Statistics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>

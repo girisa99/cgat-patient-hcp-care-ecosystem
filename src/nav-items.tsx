@@ -128,11 +128,6 @@ export const navItems = [
     icon: Brain,
   },
   {
-    title: "Softphone System",
-    url: "/softphone",
-    icon: Phone,
-  },
-  {
     title: "Ngrok Integration",
     url: "/ngrok",
     icon: Globe,
