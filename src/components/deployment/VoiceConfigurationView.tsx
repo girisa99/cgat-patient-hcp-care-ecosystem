@@ -230,38 +230,38 @@ const VoiceConfigurationView = () => {
 
       {/* Comprehensive Voice System Tabs */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-8 text-xs">
-          <TabsTrigger value="overview" className="flex items-center gap-1">
+        <TabsList className="grid w-full grid-cols-4 lg:grid-cols-8 text-xs bg-card shadow-lg border">
+          <TabsTrigger value="overview" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <BarChart3 className="h-3 w-3" />
-            Overview
+            <span className="hidden sm:inline">Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="softphone" className="flex items-center gap-1">
+          <TabsTrigger value="softphone" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Phone className="h-3 w-3" />
-            Softphone
+            <span className="hidden sm:inline">Softphone</span>
           </TabsTrigger>
-          <TabsTrigger value="live-agents" className="flex items-center gap-1">
+          <TabsTrigger value="live-agents" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Users className="h-3 w-3" />
-            Live Agents
+            <span className="hidden sm:inline">Live Agents</span>
           </TabsTrigger>
-          <TabsTrigger value="ai-voice" className="flex items-center gap-1">
+          <TabsTrigger value="ai-voice" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Mic className="h-3 w-3" />
-            AI Voice
+            <span className="hidden sm:inline">AI Voice</span>
           </TabsTrigger>
-          <TabsTrigger value="connectors" className="flex items-center gap-1">
+          <TabsTrigger value="connectors" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Zap className="h-3 w-3" />
-            Connectors
+            <span className="hidden sm:inline">Connectors</span>
           </TabsTrigger>
-          <TabsTrigger value="testing" className="flex items-center gap-1">
+          <TabsTrigger value="testing" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <TestTube className="h-3 w-3" />
-            Testing
+            <span className="hidden sm:inline">Testing</span>
           </TabsTrigger>
-          <TabsTrigger value="deployments" className="flex items-center gap-1">
+          <TabsTrigger value="deployments" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Activity className="h-3 w-3" />
-            Deployments
+            <span className="hidden sm:inline">Deployments</span>
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-1">
+          <TabsTrigger value="analytics" className="flex items-center gap-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <BarChart3 className="h-3 w-3" />
-            Analytics
+            <span className="hidden sm:inline">Analytics</span>
           </TabsTrigger>
         </TabsList>
 
@@ -392,44 +392,47 @@ const VoiceConfigurationView = () => {
                     ['twilio', 'five9', 'genesys'].includes(p.provider_type)
                   );
                 }).map((provider) => (
-                  <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <div>
-                        <p className="font-medium">{provider.name}</p>
-                        <div className="flex gap-1 mt-1">
+                  <div key={provider.id} className="flex items-start justify-between p-4 border rounded-lg space-y-2">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{provider.name}</p>
+                        <div className="flex gap-1 mt-2 flex-wrap">
                           {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">
+                            <Badge key={idx} variant="secondary" className="text-xs px-1.5 py-0.5 h-auto">
                               {capability}
                             </Badge>
                           ))}
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 ml-2 flex-shrink-0">
                       <Button 
                         variant={provider.is_active ? 'default' : 'outline'} 
                         size="sm"
+                        className="text-xs px-2 h-7"
                         disabled={isConfiguring === provider.id || isUpdating}
                         onClick={() => handleConfigure(provider.id, provider.name)}
                       >
-                        {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
-                        {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
+                        {isConfiguring === provider.id ? 'Config...' : provider.is_active ? 'Active' : 'Activate'}
+                        {!provider.is_active && <ExternalLink className="h-2.5 w-2.5 ml-1" />}
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        className="h-7 w-7 p-0"
                         onClick={() => handleEditProvider(provider)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3 w-3" />
                       </Button>
                       {provider.is_active && (
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          className="h-7 w-7 p-0"
                           onClick={() => handleDeactivateProvider(provider.id, provider.name)}
                         >
-                          <PowerOff className="h-4 w-4" />
+                          <PowerOff className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
@@ -455,44 +458,47 @@ const VoiceConfigurationView = () => {
                     ['twilio', 'five9', 'genesys', 'vonage', 'voxiplant'].includes(p.provider_type)
                   );
                 }).map((provider) => (
-                  <div key={provider.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <div className={`w-3 h-3 rounded-full ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
-                      <div>
-                        <p className="font-medium">{provider.name}</p>
-                        <div className="flex gap-1 mt-1">
+                  <div key={provider.id} className="flex items-start justify-between p-4 border rounded-lg space-y-2">
+                    <div className="flex items-start gap-3 flex-1 min-w-0">
+                      <div className={`w-3 h-3 rounded-full mt-1 flex-shrink-0 ${provider.is_active ? 'bg-green-500' : 'bg-gray-300'}`} />
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm truncate">{provider.name}</p>
+                        <div className="flex gap-1 mt-2 flex-wrap">
                           {(Array.isArray(provider.capabilities) ? provider.capabilities : []).map((capability, idx) => (
-                            <Badge key={idx} variant="secondary" className="text-xs">
+                            <Badge key={idx} variant="secondary" className="text-xs px-1.5 py-0.5 h-auto">
                               {capability}
                             </Badge>
                           ))}
                         </div>
                       </div>
                     </div>
-                    <div className="flex gap-2">
+                    <div className="flex gap-1 ml-2 flex-shrink-0">
                       <Button 
                         variant={provider.is_active ? 'default' : 'outline'} 
                         size="sm"
+                        className="text-xs px-2 h-7"
                         disabled={isConfiguring === provider.id || isUpdating}
                         onClick={() => handleConfigure(provider.id, provider.name)}
                       >
-                        {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
-                        {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
+                        {isConfiguring === provider.id ? 'Config...' : provider.is_active ? 'Active' : 'Activate'}
+                        {!provider.is_active && <ExternalLink className="h-2.5 w-2.5 ml-1" />}
                       </Button>
                       <Button 
                         variant="ghost" 
                         size="sm"
+                        className="h-7 w-7 p-0"
                         onClick={() => handleEditProvider(provider)}
                       >
-                        <Edit className="h-4 w-4" />
+                        <Edit className="h-3 w-3" />
                       </Button>
                       {provider.is_active && (
                         <Button 
                           variant="ghost" 
                           size="sm"
+                          className="h-7 w-7 p-0"
                           onClick={() => handleDeactivateProvider(provider.id, provider.name)}
                         >
-                          <PowerOff className="h-4 w-4" />
+                          <PowerOff className="h-3 w-3" />
                         </Button>
                       )}
                     </div>
