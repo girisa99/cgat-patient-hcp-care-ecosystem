@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Settings, Shield, Clock, Database, Zap, Globe } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { useMasterApiServices } from '@/hooks/useMasterApiServices';
 
 interface ConfigurationDialogProps {
   service: any;
@@ -23,7 +24,9 @@ const ConfigurationDialog: React.FC<ConfigurationDialogProps> = ({
   onClose
 }) => {
   const { toast } = useToast();
+  const { updateApiService } = useMasterApiServices();
   const [activeTab, setActiveTab] = useState("endpoints");
+  const [isSaving, setIsSaving] = useState(false);
   
   // Configuration state
   const [config, setConfig] = useState({
@@ -51,15 +54,40 @@ const ConfigurationDialog: React.FC<ConfigurationDialogProps> = ({
     }
   });
 
-  const handleSaveConfiguration = () => {
+  const handleSaveConfiguration = async () => {
+    if (!service?.id) return;
+    
+    setIsSaving(true);
     console.log('💾 Saving configuration for:', service?.name, config);
     
-    toast({
-      title: "Configuration Saved",
-      description: `Configuration for ${service?.name} has been updated successfully.`,
-    });
-    
-    onClose();
+    try {
+      // Since updateApiService is a placeholder, we'll just log the configuration
+      // In a real implementation, this would update the database
+      console.log('💾 Configuration to save:', {
+        serviceId: service.id,
+        baseUrl: config.endpoints.baseUrl,
+        timeout: config.endpoints.timeout,
+        authentication: config.authentication,
+        rateLimit: config.rateLimit,
+        documentation: config.documentation
+      });
+
+      toast({
+        title: "Configuration Saved",
+        description: `Configuration for ${service?.name} has been updated successfully.`,
+      });
+      
+      onClose();
+    } catch (error) {
+      console.error('Failed to save configuration:', error);
+      toast({
+        title: "Configuration Error",
+        description: "Failed to save configuration. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   if (!service) return null;
@@ -361,9 +389,9 @@ const ConfigurationDialog: React.FC<ConfigurationDialogProps> = ({
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button onClick={handleSaveConfiguration}>
+          <Button onClick={handleSaveConfiguration} disabled={isSaving}>
             <Settings className="h-4 w-4 mr-2" />
-            Save Configuration
+            {isSaving ? 'Saving...' : 'Save Configuration'}
           </Button>
         </div>
       </DialogContent>

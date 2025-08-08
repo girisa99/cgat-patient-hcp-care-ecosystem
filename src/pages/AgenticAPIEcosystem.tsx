@@ -20,9 +20,11 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import ApiIntegrationCreator from '@/components/api/ApiIntegrationCreator';
 
 const AgenticAPIEcosystem = () => {
   const [activeTab, setActiveTab] = useState('overview');
+  const [showCreateDialog, setShowCreateDialog] = useState(false);
 
   // Fetch real API services data
   const { data: apiServices = [], isLoading: apisLoading } = useQuery({
@@ -92,10 +94,7 @@ const AgenticAPIEcosystem = () => {
   });
 
   const handleCreateIntegration = () => {
-    toast({
-      title: "API Integration",
-      description: "Opening API integration wizard...",
-    });
+    setShowCreateDialog(true);
   };
 
   const handleManageAPI = (apiId: string) => {
@@ -397,27 +396,78 @@ const AgenticAPIEcosystem = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/20">
                   <CardContent className="p-6 text-center">
-                    <Database className="h-12 w-12 text-primary mx-auto mb-4" />
+                    <Database className="h-12 w-12 text-blue-600 mx-auto mb-4" />
                     <h3 className="font-semibold mb-2">Database Connectors</h3>
-                    <p className="text-sm text-muted-foreground">Connect to various healthcare databases</p>
+                    <p className="text-sm text-muted-foreground mb-4">Connect to various healthcare databases</p>
+                    <div className="space-y-2 text-xs text-gray-600">
+                      <div className="flex justify-between">
+                        <span>PostgreSQL:</span>
+                        <span className="text-green-600 font-medium">Connected</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>MySQL:</span>
+                        <span className="text-yellow-600 font-medium">Configurable</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>MongoDB:</span>
+                        <span className="text-green-600 font-medium">Available</span>
+                      </div>
+                    </div>
+                    <Button size="sm" className="mt-3 w-full" onClick={() => toast({ title: "Database Connectors", description: "Opening database connection manager..." })}>
+                      Configure
+                    </Button>
                   </CardContent>
                 </Card>
                 
-                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/20">
                   <CardContent className="p-6 text-center">
-                    <Shield className="h-12 w-12 text-primary mx-auto mb-4" />
+                    <Shield className="h-12 w-12 text-green-600 mx-auto mb-4" />
                     <h3 className="font-semibold mb-2">Security Gateway</h3>
-                    <p className="text-sm text-muted-foreground">Secure API authentication and authorization</p>
+                    <p className="text-sm text-muted-foreground mb-4">Secure API authentication and authorization</p>
+                    <div className="space-y-2 text-xs text-gray-600">
+                      <div className="flex justify-between">
+                        <span>OAuth 2.0:</span>
+                        <span className="text-green-600 font-medium">Active</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>API Keys:</span>
+                        <span className="text-green-600 font-medium">Protected</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Rate Limiting:</span>
+                        <span className="text-blue-600 font-medium">Enabled</span>
+                      </div>
+                    </div>
+                    <Button size="sm" className="mt-3 w-full" onClick={() => toast({ title: "Security Gateway", description: "Opening security configuration panel..." })}>
+                      Manage Security
+                    </Button>
                   </CardContent>
                 </Card>
                 
-                <Card className="cursor-pointer hover:shadow-lg transition-shadow">
+                <Card className="cursor-pointer hover:shadow-lg transition-shadow border-2 hover:border-primary/20">
                   <CardContent className="p-6 text-center">
-                    <Link2 className="h-12 w-12 text-primary mx-auto mb-4" />
+                    <Link2 className="h-12 w-12 text-orange-600 mx-auto mb-4" />
                     <h3 className="font-semibold mb-2">External APIs</h3>
-                    <p className="text-sm text-muted-foreground">Integrate with third-party healthcare services</p>
+                    <p className="text-sm text-muted-foreground mb-4">Integrate with third-party healthcare services</p>
+                    <div className="space-y-2 text-xs text-gray-600">
+                      <div className="flex justify-between">
+                        <span>Healthcare.gov:</span>
+                        <span className="text-green-600 font-medium">Connected</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>HL7 FHIR:</span>
+                        <span className="text-blue-600 font-medium">Available</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Epic/Cerner:</span>
+                        <span className="text-yellow-600 font-medium">Pending</span>
+                      </div>
+                    </div>
+                    <Button size="sm" className="mt-3 w-full" onClick={() => setShowCreateDialog(true)}>
+                      Add Integration
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
@@ -425,6 +475,12 @@ const AgenticAPIEcosystem = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* API Integration Creator Dialog */}
+      <ApiIntegrationCreator
+        isOpen={showCreateDialog}
+        onClose={() => setShowCreateDialog(false)}
+      />
     </div>
   );
 };

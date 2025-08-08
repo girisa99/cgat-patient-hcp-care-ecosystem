@@ -24,44 +24,10 @@ import {
 import { Button } from '@/components/ui/button';
 
 // Role-specific components - defined before use to avoid React error #185
+import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
+
 const OnboardingAgentsView = () => {
-  return (
-    <div className="space-y-6">
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-blue-900 mb-2">
-          Onboarding Team Agent Dashboard
-        </h3>
-        <p className="text-blue-700">
-          This functionality is exclusively for onboarding team workflows and 
-          is not visible to other roles.
-        </p>
-      </div>
-      
-      {/* Onboarding-specific agent functionality goes here */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-card rounded-lg border p-4">
-          <h4 className="font-medium mb-2">Treatment Center Verification Agent</h4>
-          <p className="text-sm text-muted-foreground">
-            Automates verification of treatment center credentials and documentation.
-          </p>
-        </div>
-        
-        <div className="bg-card rounded-lg border p-4">
-          <h4 className="font-medium mb-2">Compliance Assessment Agent</h4>
-          <p className="text-sm text-muted-foreground">
-            Validates compliance requirements during onboarding process.
-          </p>
-        </div>
-        
-        <div className="bg-card rounded-lg border p-4">
-          <h4 className="font-medium mb-2">Documentation Processing Agent</h4>
-          <p className="text-sm text-muted-foreground">
-            Processes and validates submitted onboarding documents.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
+  return <TreatmentCentersView />;
 };
 
 const AgentSettingsView = () => {
