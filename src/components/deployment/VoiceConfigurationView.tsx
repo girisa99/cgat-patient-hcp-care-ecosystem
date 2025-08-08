@@ -541,53 +541,53 @@ const VoiceConfigurationView = () => {
 
         <TabsContent value="connectors" className="space-y-6">
           <div className="space-y-4">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div>
-                <h3 className="text-lg font-semibold flex items-center gap-2">
-                  <Link className="h-5 w-5" />
-                  System Connectors & API Ecosystem
+            <div className="flex flex-col gap-4">
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold flex items-center gap-2 flex-wrap">
+                  <Link className="h-5 w-5 flex-shrink-0" />
+                  <span className="break-words">System Connectors & API Ecosystem</span>
                 </h3>
-                <p className="text-sm text-muted-foreground">Manage voice system connectors, API integrations, and external services</p>
+                <p className="text-sm text-muted-foreground break-words">
+                  Manage voice system connectors, API integrations, and external services
+                </p>
               </div>
-              <div className="flex flex-wrap gap-2 lg:gap-3">
+              
+              <div className="flex flex-wrap gap-2 justify-start">
                 <Button 
                   size="sm" 
                   variant="outline"
-                  className="flex items-center gap-2 min-w-fit"
+                  className="flex items-center gap-2 flex-shrink-0"
                   onClick={() => {
                     setApiIntegrationType('internal');
                     setShowApiIntegrations(true);
                   }}
                 >
-                  <Database className="h-4 w-4" />
-                  <span className="hidden sm:inline">Internal APIs</span>
-                  <span className="sm:hidden">Internal</span>
+                  <Database className="h-4 w-4 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Internal APIs</span>
                 </Button>
                 <Button 
                   size="sm" 
                   variant="outline"
-                  className="flex items-center gap-2 min-w-fit"
+                  className="flex items-center gap-2 flex-shrink-0"
                   onClick={() => {
                     setApiIntegrationType('external');
                     setShowApiIntegrations(true);
                   }}
                 >
-                  <Cloud className="h-4 w-4" />
-                  <span className="hidden sm:inline">External APIs</span>
-                  <span className="sm:hidden">External</span>
+                  <Cloud className="h-4 w-4 flex-shrink-0" />
+                  <span className="whitespace-nowrap">External APIs</span>
                 </Button>
                 <Button 
                   size="sm" 
                   variant="outline"
-                  className="flex items-center gap-2 min-w-fit"
+                  className="flex items-center gap-2 flex-shrink-0"
                   onClick={() => {
                     setApiIntegrationType('webhooks');
                     setShowApiIntegrations(true);
                   }}
                 >
-                  <Webhook className="h-4 w-4" />
-                  <span className="hidden sm:inline">Webhooks</span>
-                  <span className="sm:hidden">Hooks</span>
+                  <Webhook className="h-4 w-4 flex-shrink-0" />
+                  <span className="whitespace-nowrap">Webhooks</span>
                 </Button>
               </div>
             </div>
