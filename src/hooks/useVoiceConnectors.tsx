@@ -1,45 +1,21 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import type { Database } from '@/integrations/supabase/types';
 import { useMasterToast } from './useMasterToast';
 
-interface VoiceConnector {
-  id: string;
-  name: string;
-  connector_type: 'SIP' | 'API' | 'Webhook' | 'Database' | 'CRM' | 'Cloud';
-  configuration: any;
-  endpoints: string[];
-  features: string[];
-  is_active: boolean;
-  health_status: 'healthy' | 'warning' | 'error' | 'unknown';
-  last_tested_at: string | null;
-  created_by: string;
-  created_at: string;
-  updated_at: string;
-}
-
-interface CreateConnectorData {
-  name: string;
-  connector_type: 'SIP' | 'API' | 'Webhook' | 'Database' | 'CRM' | 'Cloud';
-  configuration: any;
-  endpoints?: string[];
-  features?: string[];
-}
-
-interface UpdateConnectorData extends Partial<CreateConnectorData> {
-  is_active?: boolean;
-  health_status?: 'healthy' | 'warning' | 'error' | 'unknown';
-}
+type VoiceConnector = Database['public']['Tables']['voice_connectors']['Row'];
+type CreateConnectorData = Pick<Database['public']['Tables']['voice_connectors']['Insert'], 'name' | 'connector_type' | 'configuration' | 'endpoints' | 'features'>;
+type UpdateConnectorData = Database['public']['Tables']['voice_connectors']['Update'];
 
 export const useVoiceConnectors = () => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
-  const sb = supabase as any;
 
   // Fetch voice connectors
   const { data: connectors = [], isLoading, error } = useQuery({
     queryKey: ['voice-connectors'],
     queryFn: async () => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_connectors')
         .select('*')
         .order('name');
@@ -52,7 +28,7 @@ export const useVoiceConnectors = () => {
   // Create voice connector
   const createConnector = useMutation({
     mutationFn: async (connectorData: CreateConnectorData) => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_connectors')
         .insert([{
           ...connectorData,
@@ -81,7 +57,7 @@ export const useVoiceConnectors = () => {
   // Update voice connector
   const updateConnector = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: UpdateConnectorData }) => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_connectors')
         .update(updates)
         .eq('id', id)
@@ -104,7 +80,7 @@ export const useVoiceConnectors = () => {
   // Test voice connector
   const testConnector = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_connectors')
         .update({ 
           last_tested_at: new Date().toISOString(),
@@ -130,7 +106,7 @@ export const useVoiceConnectors = () => {
   // Test all connectors
   const testAllConnectors = useMutation({
     mutationFn: async () => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_connectors')
         .update({ 
           last_tested_at: new Date().toISOString(),
@@ -154,7 +130,7 @@ export const useVoiceConnectors = () => {
   // Delete voice connector
   const deleteConnector = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await sb
+      const { error } = await supabase
         .from('voice_connectors')
         .delete()
         .eq('id', id);

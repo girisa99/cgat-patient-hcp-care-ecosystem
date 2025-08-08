@@ -26,12 +26,11 @@ interface AnalyticsMetrics {
 }
 
 export const useVoiceAnalytics = () => {
-  const sb = supabase as any;
   // Fetch voice analytics events
   const { data: events = [], isLoading, error } = useQuery({
     queryKey: ['voice-analytics-events'],
     queryFn: async () => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_analytics_events')
         .select('*')
         .order('created_at', { ascending: false });

@@ -23,13 +23,11 @@ interface CreateTransferData {
 export const useTransferQueue = () => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
-
-  const sb = supabase as any;
   // Fetch transfer queue
   const { data: transferQueue = [], isLoading, error } = useQuery({
     queryKey: ['voice-transfer-queue'],
     queryFn: async () => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_transfer_queue')
         .select('*')
         .order('priority', { ascending: false })
@@ -43,7 +41,7 @@ export const useTransferQueue = () => {
   // Create transfer request
   const createTransfer = useMutation({
     mutationFn: async (transferData: CreateTransferData) => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_transfer_queue')
         .insert([{
           ...transferData,
@@ -69,7 +67,7 @@ export const useTransferQueue = () => {
   // Assign transfer to agent
   const assignTransfer = useMutation({
     mutationFn: async ({ id, agentId }: { id: string; agentId: string }) => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_transfer_queue')
         .update({ 
           live_agent_id: agentId,
@@ -96,7 +94,7 @@ export const useTransferQueue = () => {
   // Complete transfer
   const completeTransfer = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await sb
+      const { data, error } = await supabase
         .from('voice_transfer_queue')
         .update({ 
           status: 'completed',
