@@ -35,7 +35,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { errorManager } from '@/utils/error/ErrorManager';
-import { useAgentAutoSave } from '@/hooks/useAgentAutoSave';
+// Removed useAgentAutoSave import as it doesn't exist
 
 // Step configuration with progress tracking
 interface BuilderStep {
@@ -279,13 +279,8 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     };
   }, [currentSessionId, currentStep]);
 
-  // Use agent auto-save hook for robust persistence
-  const { manualSave, isSaving } = useAgentAutoSave({
-    data: currentSession || {},
-    currentStep,
-    sessionId: currentSessionId || undefined,
-    enabled: !!currentSession && !!currentSessionId
-  });
+  // Auto-save is handled through the updateSession mutation
+  // Manual save is triggered through the SessionControls component
 
   // Persist session and step state on navigation
   useEffect(() => {
@@ -1202,10 +1197,46 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
       <SessionControls
         session={currentSession}
         onSave={() => {
-          if (currentSessionId) {
+          if (currentSessionId && currentSession) {
+            // Prepare comprehensive update data
+            const updates: any = { 
+              current_step: currentStep,
+              updated_at: new Date().toISOString()
+            };
+            
+            // Save current form data based on the current step
+            if (currentStep === 'basic_info' && currentSession.basic_info) {
+              updates.basic_info = currentSession.basic_info;
+            } else if (currentStep === 'canvas' && currentSession.canvas) {
+              updates.canvas = currentSession.canvas;
+            } else if (currentStep === 'actions' && currentSession.actions) {
+              updates.actions = currentSession.actions;
+            } else if (currentStep === 'connectors' && currentSession.connectors) {
+              updates.connectors = currentSession.connectors;
+            } else if (currentStep === 'knowledge' && currentSession.knowledge) {
+              updates.knowledge = currentSession.knowledge;
+            } else if (currentStep === 'rag' && currentSession.rag) {
+              updates.rag = currentSession.rag;
+            } else if (currentStep === 'deploy' && currentSession.deployment) {
+              updates.deployment = currentSession.deployment;
+            }
+            
             updateSession.mutate({
               sessionId: currentSessionId,
-              updates: { current_step: currentStep }
+              updates
+            }, {
+              onSuccess: () => {
+                toast({
+                  title: "Progress Saved",
+                  description: "Your agent configuration has been saved successfully.",
+                });
+              }
+            });
+          } else {
+            toast({
+              title: "Save Failed",
+              description: "No active session to save. Please create a new agent first.",
+              variant: "destructive",
             });
           }
         }}
@@ -1215,10 +1246,30 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
               onSuccess: () => {
                 setCurrentSessionId(null);
                 setCurrentStep('basic_info');
+                // Clear localStorage
+                localStorage.removeItem('unifiedBuilder_currentSessionId');
+                localStorage.removeItem('unifiedBuilder_currentStep');
                 // Go back to overview after deleting
-                setCurrentStep('basic_info');
                 window.localStorage.setItem('agenticEcosystem_activeTab', 'overview');
+                
+                toast({
+                  title: "Session Deleted",
+                  description: "Agent session has been permanently deleted.",
+                });
+              },
+              onError: (error) => {
+                toast({
+                  title: "Delete Failed", 
+                  description: error.message,
+                  variant: "destructive",
+                });
               }
+            });
+          } else {
+            toast({
+              title: "Delete Failed",
+              description: "No active session to delete.",
+              variant: "destructive",
             });
           }
         }}
