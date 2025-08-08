@@ -4,6 +4,7 @@
  */
 import React from 'react';
 import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
+import '@/styles/navigation.css';
 
 interface AppLayoutProps {
   title?: string;
@@ -18,17 +19,19 @@ const AppLayout: React.FC<AppLayoutProps> = ({
 }) => {
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* DEBUG: Navigation should render here */}
+      {/* Navigation */}
       {showNavigation && <RoleBasedNavigation />}
       
       {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
+      <div className="container mx-auto px-4 py-8 max-w-7xl">
         {title && (
           <div className="mb-8">
-            <h1 className="text-3xl font-bold text-gray-900">{title}</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-900 truncate">{title}</h1>
           </div>
         )}
-        {children}
+        <div className="min-w-0">
+          {children}
+        </div>
       </div>
     </div>
   );

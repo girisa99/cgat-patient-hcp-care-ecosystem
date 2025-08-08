@@ -98,8 +98,8 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     
     const buttonContent = (
       <>
-        <Icon className="h-4 w-4" />
-        <span className={isDropdown ? "" : "hidden sm:inline"}>{tab.title}</span>
+        <Icon className="h-4 w-4 flex-shrink-0" />
+        <span className={isDropdown ? "" : "hidden lg:inline truncate"}>{tab.title}</span>
       </>
     );
 
@@ -118,7 +118,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
         <Button
           variant={isActive ? 'default' : 'ghost'}
           size="sm"
-          className={`flex items-center gap-2 whitespace-nowrap transition-all duration-200 ${
+          className={`flex items-center gap-2 whitespace-nowrap transition-all duration-200 min-w-0 ${
             isActive 
               ? 'bg-primary text-primary-foreground shadow-sm' 
               : 'hover:bg-accent hover:scale-105'
@@ -132,193 +132,225 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
   return (
     <header className={`sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 ${className}`}>
-      <div className="container flex h-16 items-center justify-between px-4">
-        
-        {/* Left side: Logo and Back button */}
-        <div className="flex items-center gap-4">
-          {/* Company Logo */}
-          <Link to="/" className="flex items-center gap-3">
-            <img 
-              src="/lovable-uploads/c721185e-a640-4364-a7d1-ccae9b2d6123.png" 
-              alt="GENIE - Cell and Gene Technology Navigator" 
-              className="w-10 h-10 object-contain"
-            />
-            <div className="hidden md:block">
-              <div className="font-bold text-xl text-primary">GENIE</div>
-              <div className="text-xs text-muted-foreground -mt-1">Cell & Gene Technology Navigator</div>
-            </div>
-          </Link>
+      <div className="w-full px-4 lg:px-6">
+        <div className="flex h-16 items-center justify-between gap-4 min-w-0">
           
-          {canGoBack && (
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                // For credit application, go back to onboarding instead of generic back
-                if (location.pathname === '/credit-application') {
-                  navigate('/onboarding');
-                } else {
-                  navigate(-1);
-                }
-              }}
-              className="flex items-center gap-2 hover:bg-accent"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              <span className="hidden sm:inline">Back</span>
-            </Button>
-          )}
-        </div>
-
-        {/* Center: Main Navigation */}
-        <nav className="flex items-center gap-1">
-          {/* Dashboard */}
-          <Link to="/">
-            <Button
-              variant={isDashboard ? 'default' : 'ghost'}
-              size="sm"
-              className={`flex items-center gap-2 ${
-                isDashboard ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent hover:scale-105'
-              }`}
-            >
-              <Home className="h-4 w-4" />
-              <span className="hidden sm:inline">Dashboard</span>
-            </Button>
-          </Link>
-
-          {/* Core Features */}
-          {navigationGroups.core.filter(tab => tab.to !== '/').map(tab => renderNavButton(tab))}
-
-          {/* Agents Ecosystem */}
-          {navigationGroups.agents.length > 0 && (
-            navigationGroups.agents.map(tab => renderNavButton(tab))
-          )}
-
-          {/* Treatment Centers - Business Domain */}
-          {navigationGroups.treatmentCenters.length > 0 && (
-            navigationGroups.treatmentCenters.map(tab => renderNavButton(tab))
-          )}
-
-          {/* Management Dropdown */}
-          {navigationGroups.management.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-accent hover:scale-105"
-                >
-                  <Users className="h-4 w-4" />
-                  <span className="hidden sm:inline">Management</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48">
-                {navigationGroups.management.map(tab => renderNavButton(tab, true))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          {/* System Integration - Consolidated Technical Tools */}
-          {navigationGroups.systemIntegration.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-accent hover:scale-105"
-                >
-                  <Settings className="h-4 w-4" />
-                  <span className="hidden sm:inline">System Integration</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56">
-                {navigationGroups.systemIntegration.map(tab => renderNavButton(tab, true))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          {/* Reports & Compliance */}
-          {navigationGroups.reportsCompliance.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-accent hover:scale-105"
-                >
-                  <FileBarChart className="h-4 w-4" />
-                  <span className="hidden sm:inline">Reports & Compliance</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-56">
-                {navigationGroups.reportsCompliance.map(tab => renderNavButton(tab, true))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-
-          {/* Specialized Tools */}
-          {navigationGroups.specialized.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="flex items-center gap-2 hover:bg-accent hover:scale-105"
-                >
-                  <Brain className="h-4 w-4" />
-                  <span className="hidden sm:inline">Specialized</span>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="center" className="w-48">
-                {navigationGroups.specialized.map(tab => renderNavButton(tab, true))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
-        </nav>
-
-        {/* Right side: User dropdown and actions */}
-        <div className="flex items-center gap-3">
-          {/* User Dropdown */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="flex items-center gap-2 hover:bg-accent">
-                <User className="h-4 w-4" />
-                <span className="hidden md:inline">{getUserDisplayName()}</span>
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <div className="px-2 py-1.5">
-                <p className="text-sm font-medium">{getUserDisplayName()}</p>
-                <p className="text-xs text-muted-foreground">{user?.email}</p>
+          {/* Left side: Logo and Back button */}
+          <div className="flex items-center gap-3 flex-shrink-0 min-w-0">
+            {/* Company Logo */}
+            <Link to="/" className="flex items-center gap-3 flex-shrink-0">
+              <img 
+                src="/lovable-uploads/c721185e-a640-4364-a7d1-ccae9b2d6123.png" 
+                alt="GENIE - Cell and Gene Technology Navigator" 
+                className="w-8 h-8 md:w-10 md:h-10 object-contain flex-shrink-0"
+              />
+              <div className="hidden sm:block min-w-0">
+                <div className="font-bold text-lg md:text-xl text-primary truncate">GENIE</div>
+                <div className="text-xs text-muted-foreground -mt-1 truncate">Cell & Gene Navigator</div>
               </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem>
-                <User className="h-4 w-4 mr-2" />
-                Profile Settings
-              </DropdownMenuItem>
-              <DropdownMenuItem>
-                <Settings className="h-4 w-4 mr-2" />
-                Preferences
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-          
-          {/* Role Badge */}
-          <Badge 
-            variant={isSuperAdmin ? 'destructive' : isAdmin ? 'secondary' : 'outline'}
-            className="whitespace-nowrap hidden sm:flex"
-          >
-            {currentRole ? currentRole.replace(/([A-Z])/g, ' $1').trim() : 'No Role'}
-          </Badge>
+            </Link>
+            
+            {canGoBack && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  // For credit application, go back to onboarding instead of generic back
+                  if (location.pathname === '/credit-application') {
+                    navigate('/onboarding');
+                  } else {
+                    navigate(-1);
+                  }
+                }}
+                className="flex items-center gap-2 hover:bg-accent flex-shrink-0"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                <span className="hidden md:inline">Back</span>
+              </Button>
+            )}
+          </div>
+
+          {/* Center: Main Navigation - Responsive with overflow handling */}
+          <nav className="flex items-center gap-1 flex-1 justify-center min-w-0 overflow-x-auto scrollbar-hide">
+            <div className="flex items-center gap-1 mx-auto">
+              {/* Dashboard */}
+              <Link to="/" className="flex-shrink-0">
+                <Button
+                  variant={isDashboard ? 'default' : 'ghost'}
+                  size="sm"
+                  className={`flex items-center gap-2 whitespace-nowrap ${
+                    isDashboard ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent hover:scale-105'
+                  }`}
+                >
+                  <Home className="h-4 w-4" />
+                  <span className="hidden lg:inline">Dashboard</span>
+                </Button>
+              </Link>
+
+              {/* Core Features */}
+              {navigationGroups.core.filter(tab => tab.to !== '/').map(tab => (
+                <div key={tab.to} className="flex-shrink-0">
+                  {renderNavButton(tab)}
+                </div>
+              ))}
+
+              {/* Agents Ecosystem */}
+              {navigationGroups.agents.length > 0 && (
+                <div className="flex-shrink-0">
+                  {navigationGroups.agents.map(tab => (
+                    <div key={tab.to} className="flex-shrink-0">
+                      {renderNavButton(tab)}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Treatment Centers - Business Domain */}
+              {navigationGroups.treatmentCenters.length > 0 && (
+                <div className="flex-shrink-0">
+                  {navigationGroups.treatmentCenters.map(tab => (
+                    <div key={tab.to} className="flex-shrink-0">
+                      {renderNavButton(tab)}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Management Dropdown */}
+              {navigationGroups.management.length > 0 && (
+                <div className="flex-shrink-0">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap"
+                      >
+                        <Users className="h-4 w-4" />
+                        <span className="hidden xl:inline">Management</span>
+                        <span className="hidden lg:inline xl:hidden">Mgmt</span>
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-48">
+                      {navigationGroups.management.map(tab => renderNavButton(tab, true))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+
+              {/* System Integration - Consolidated Technical Tools */}
+              {navigationGroups.systemIntegration.length > 0 && (
+                <div className="flex-shrink-0">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap"
+                      >
+                        <Settings className="h-4 w-4" />
+                        <span className="hidden xl:inline">System Integration</span>
+                        <span className="hidden lg:inline xl:hidden">System</span>
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-56">
+                      {navigationGroups.systemIntegration.map(tab => renderNavButton(tab, true))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+
+              {/* Reports & Compliance */}
+              {navigationGroups.reportsCompliance.length > 0 && (
+                <div className="flex-shrink-0">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap"
+                      >
+                        <FileBarChart className="h-4 w-4" />
+                        <span className="hidden xl:inline">Reports & Compliance</span>
+                        <span className="hidden lg:inline xl:hidden">Reports</span>
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-56">
+                      {navigationGroups.reportsCompliance.map(tab => renderNavButton(tab, true))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+
+              {/* Specialized Tools */}
+              {navigationGroups.specialized.length > 0 && (
+                <div className="flex-shrink-0">
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap"
+                      >
+                        <Brain className="h-4 w-4" />
+                        <span className="hidden xl:inline">Specialized</span>
+                        <span className="hidden lg:inline xl:hidden">Special</span>
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="center" className="w-48">
+                      {navigationGroups.specialized.map(tab => renderNavButton(tab, true))}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+              )}
+            </div>
+          </nav>
+
+          {/* Right side: User dropdown and actions */}
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {/* User Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" size="sm" className="flex items-center gap-2 hover:bg-accent">
+                  <User className="h-4 w-4" />
+                  <span className="hidden lg:inline max-w-32 truncate">{getUserDisplayName()}</span>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="px-2 py-1.5">
+                  <p className="text-sm font-medium truncate">{getUserDisplayName()}</p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </div>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>
+                  <User className="h-4 w-4 mr-2" />
+                  Profile Settings
+                </DropdownMenuItem>
+                <DropdownMenuItem>
+                  <Settings className="h-4 w-4 mr-2" />
+                  Preferences
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut} className="text-red-600 focus:text-red-600">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+            
+            {/* Role Badge */}
+            <Badge 
+              variant={isSuperAdmin ? 'destructive' : isAdmin ? 'secondary' : 'outline'}
+              className="whitespace-nowrap hidden md:flex text-xs px-2 py-1"
+            >
+              {currentRole ? currentRole.replace(/([A-Z])/g, ' $1').trim() : 'No Role'}
+            </Badge>
+          </div>
         </div>
       </div>
     </header>
