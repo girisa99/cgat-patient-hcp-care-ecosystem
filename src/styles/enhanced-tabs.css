@@ -38,33 +38,9 @@
   disabled:pointer-events-none disabled:opacity-50 min-w-fit;
 }
 
-/* Override active state for better contrast */
+/* Override active state for better contrast - now handled in tabs.tsx */
 .child-tab-trigger[data-state="active"] {
   @apply bg-primary text-primary-foreground border-primary/20 shadow-md scale-105;
-}
-
-/* Ensure inactive tabs are readable */
-.child-tab-trigger[data-state="inactive"] {
-  @apply text-foreground bg-transparent;
-  color: hsl(var(--foreground)) !important;
-}
-
-/* Additional specificity for readability */
-.child-tabs .child-tab-trigger {
-  color: hsl(var(--foreground));
-}
-
-.child-tabs .child-tab-trigger[data-state="active"] {
-  background-color: hsl(var(--primary)) !important;
-  color: hsl(var(--primary-foreground)) !important;
-}
-
-.child-tabs .child-tab-trigger span {
-  color: inherit;
-}
-
-.child-tabs .child-tab-trigger svg {
-  color: inherit;
 }
 
 .child-tab-content {
