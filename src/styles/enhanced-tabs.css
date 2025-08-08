@@ -1,0 +1,111 @@
+/* Enhanced Tab Styles for Better Structure and Spacing */
+
+/* Parent Level Tabs */
+.parent-tabs {
+  @apply flex items-center justify-start gap-4 p-6 bg-gradient-to-r from-background via-muted/20 to-background border-b-2 border-primary/10 overflow-x-auto scrollbar-hide min-h-[80px];
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+}
+
+.parent-tab-trigger {
+  @apply flex items-center gap-3 px-8 py-4 text-base font-semibold rounded-xl 
+  transition-all duration-300 ease-in-out hover:bg-muted/60 hover:scale-105
+  border-2 border-transparent ring-offset-background 
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+  disabled:pointer-events-none disabled:opacity-50 
+  data-[state=active]:bg-primary data-[state=active]:text-primary-foreground 
+  data-[state=active]:border-primary/30 data-[state=active]:shadow-lg 
+  data-[state=active]:scale-110 min-w-fit backdrop-blur-sm;
+}
+
+.parent-tab-content {
+  @apply mt-8 p-8 bg-gradient-to-br from-background to-muted/5 
+  rounded-2xl border border-border/40 shadow-lg ring-offset-background 
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+}
+
+/* Child Level Tabs */
+.child-tabs {
+  @apply flex items-center justify-start gap-2 p-4 bg-gradient-to-r from-muted/30 to-muted/10 
+  border border-border/30 rounded-lg overflow-x-auto scrollbar-hide;
+  backdrop-filter: blur(8px);
+}
+
+.child-tab-trigger {
+  @apply flex items-center gap-2 px-5 py-2.5 text-sm font-medium rounded-lg 
+  transition-all duration-200 hover:bg-background/60 
+  border border-transparent ring-offset-background 
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 
+  disabled:pointer-events-none disabled:opacity-50 
+  data-[state=active]:bg-background data-[state=active]:text-primary 
+  data-[state=active]:border-primary/20 data-[state=active]:shadow-md 
+  data-[state=active]:scale-105 min-w-fit;
+}
+
+.child-tab-content {
+  @apply mt-6 p-6 bg-gradient-to-br from-background to-muted/5 
+  rounded-lg border border-border/30 shadow-sm ring-offset-background 
+  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .parent-tabs {
+    @apply p-4 gap-2;
+  }
+  
+  .parent-tab-trigger {
+    @apply px-4 py-3 text-sm gap-2;
+  }
+  
+  .parent-tab-content {
+    @apply mt-4 p-4;
+  }
+  
+  .child-tabs {
+    @apply p-3 gap-1;
+  }
+  
+  .child-tab-trigger {
+    @apply px-3 py-2 text-xs;
+  }
+  
+  .child-tab-content {
+    @apply mt-4 p-4;
+  }
+}
+
+/* Scrollbar Hide for Horizontal Scroll */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* Smooth Animations */
+@keyframes tab-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.parent-tab-content,
+.child-tab-content {
+  animation: tab-fade-in 0.3s ease-out;
+}
+
+/* Enhanced Hover Effects */
+.parent-tab-trigger:hover {
+  transform: translateY(-2px);
+}
+
+.child-tab-trigger:hover {
+  transform: translateY(-1px);
+}

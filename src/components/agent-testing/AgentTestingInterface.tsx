@@ -26,7 +26,8 @@ import {
   RefreshCw,
   ArrowRight,
   Users,
-  Headphones
+  Headphones,
+  TestTube
 } from 'lucide-react';
 import { useAgentDeployments } from '@/hooks/useAgentDeployments';
 import { useAgentConversations } from '@/hooks/useAgentConversations';
@@ -330,13 +331,22 @@ export const AgentTestingInterface: React.FC = () => {
       </div>
 
       <Tabs defaultValue="testing" className="space-y-6">
-        <TabsList>
-          <TabsTrigger value="testing">Agent Testing</TabsTrigger>
-          <TabsTrigger value="sessions">Test Sessions</TabsTrigger>
-          <TabsTrigger value="live-queue">Live Agent Queue</TabsTrigger>
+        <TabsList className="child-tabs">
+          <TabsTrigger value="testing" className="child-tab-trigger">
+            <TestTube className="h-4 w-4" />
+            <span>Agent Testing</span>
+          </TabsTrigger>
+          <TabsTrigger value="sessions" className="child-tab-trigger">
+            <Clock className="h-4 w-4" />
+            <span>Test Sessions</span>
+          </TabsTrigger>
+          <TabsTrigger value="live-queue" className="child-tab-trigger">
+            <Users className="h-4 w-4" />
+            <span>Live Agent Queue</span>
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="testing" className="space-y-6">
+        <TabsContent value="testing" className="child-tab-content space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             {/* Available Deployments */}
             <Card>
@@ -515,7 +525,7 @@ export const AgentTestingInterface: React.FC = () => {
           </div>
         </TabsContent>
 
-        <TabsContent value="sessions" className="space-y-6">
+        <TabsContent value="sessions" className="child-tab-content space-y-6">
           <Card>
             <CardHeader>
               <CardTitle>Test Session History</CardTitle>
@@ -569,7 +579,7 @@ export const AgentTestingInterface: React.FC = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="live-queue" className="space-y-6">
+        <TabsContent value="live-queue" className="child-tab-content space-y-6">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">

@@ -270,26 +270,26 @@ const AgenticEcosystem = () => {
         // Persist tab state to localStorage
         localStorage.setItem('agenticEcosystem_activeTab', value);
       }} className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview">
-            <Settings className="h-4 w-4 mr-2" />
-            Overview
+        <TabsList className="child-tabs">
+          <TabsTrigger value="overview" className="child-tab-trigger">
+            <Settings className="h-4 w-4" />
+            <span>Overview</span>
           </TabsTrigger>
-          <TabsTrigger value="basic_info">
-            <Bot className="h-4 w-4 mr-2" />
-            Agent Creation
+          <TabsTrigger value="basic_info" className="child-tab-trigger">
+            <Bot className="h-4 w-4" />
+            <span>Agent Creation</span>
           </TabsTrigger>
-          <TabsTrigger value="canvas">
-            <Settings className="h-4 w-4 mr-2" />
-            Canvas
+          <TabsTrigger value="canvas" className="child-tab-trigger">
+            <Settings className="h-4 w-4" />
+            <span>Canvas</span>
           </TabsTrigger>
-          <TabsTrigger value="actions">
-            <Plus className="h-4 w-4 mr-2" />
-            Actions & Configuration
+          <TabsTrigger value="actions" className="child-tab-trigger">
+            <Plus className="h-4 w-4" />
+            <span>Actions & Configuration</span>
           </TabsTrigger>
         </TabsList>
 
-           <TabsContent value="overview" className="space-y-6">
+           <TabsContent value="overview" className="child-tab-content space-y-6">
             {/* My Agents - Real Data */}
             <Card>
               <CardHeader>
@@ -363,15 +363,15 @@ const AgenticEcosystem = () => {
             </Card>
           </TabsContent>
 
-          <TabsContent value="basic_info" className="mt-6">
+          <TabsContent value="basic_info" className="child-tab-content">
             <EnhancedAgentBuilder step="basic_info" />
           </TabsContent>
 
-          <TabsContent value="canvas" className="mt-6">
+          <TabsContent value="canvas" className="child-tab-content">
             <EnhancedAgentBuilder step="canvas" />
           </TabsContent>
 
-          <TabsContent value="actions" className="mt-6">
+          <TabsContent value="actions" className="child-tab-content">
             <EnhancedAgentBuilder step="actions" />
           </TabsContent>
 
