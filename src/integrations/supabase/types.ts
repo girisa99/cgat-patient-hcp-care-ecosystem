@@ -1971,6 +1971,141 @@ export type Database = {
         }
         Relationships: []
       }
+      call_sessions: {
+        Row: {
+          agent_id: string | null
+          call_direction: string
+          call_recording_url: string | null
+          call_status: string | null
+          callee_number: string | null
+          caller_number: string | null
+          conversation_engine_id: string | null
+          created_at: string | null
+          duration_seconds: number | null
+          end_time: string | null
+          id: string
+          metadata: Json | null
+          phone_number_id: string | null
+          provider_call_sid: string | null
+          session_id: string
+          start_time: string | null
+          updated_at: string | null
+          voice_provider_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          call_direction: string
+          call_recording_url?: string | null
+          call_status?: string | null
+          callee_number?: string | null
+          caller_number?: string | null
+          conversation_engine_id?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          end_time?: string | null
+          id?: string
+          metadata?: Json | null
+          phone_number_id?: string | null
+          provider_call_sid?: string | null
+          session_id: string
+          start_time?: string | null
+          updated_at?: string | null
+          voice_provider_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          call_direction?: string
+          call_recording_url?: string | null
+          call_status?: string | null
+          callee_number?: string | null
+          caller_number?: string | null
+          conversation_engine_id?: string | null
+          created_at?: string | null
+          duration_seconds?: number | null
+          end_time?: string | null
+          id?: string
+          metadata?: Json | null
+          phone_number_id?: string | null
+          provider_call_sid?: string | null
+          session_id?: string
+          start_time?: string | null
+          updated_at?: string | null
+          voice_provider_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_sessions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_sessions_phone_number_id_fkey"
+            columns: ["phone_number_id"]
+            isOneToOne: false
+            referencedRelation: "phone_numbers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_sessions_voice_provider_id_fkey"
+            columns: ["voice_provider_id"]
+            isOneToOne: false
+            referencedRelation: "voice_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      call_transcriptions: {
+        Row: {
+          call_session_id: string
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          keywords: Json | null
+          language_code: string | null
+          provider_used: string | null
+          sentiment_analysis: Json | null
+          speaker_type: string
+          timestamp_offset: number | null
+          transcript_text: string
+        }
+        Insert: {
+          call_session_id: string
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          keywords?: Json | null
+          language_code?: string | null
+          provider_used?: string | null
+          sentiment_analysis?: Json | null
+          speaker_type: string
+          timestamp_offset?: number | null
+          transcript_text: string
+        }
+        Update: {
+          call_session_id?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          keywords?: Json | null
+          language_code?: string | null
+          provider_used?: string | null
+          sentiment_analysis?: Json | null
+          speaker_type?: string
+          timestamp_offset?: number | null
+          transcript_text?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_transcriptions_call_session_id_fkey"
+            columns: ["call_session_id"]
+            isOneToOne: false
+            referencedRelation: "call_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clinical_trials: {
         Row: {
           actual_completion_date: string | null
@@ -2438,6 +2573,47 @@ export type Database = {
             columns: ["connector_id"]
             isOneToOne: false
             referencedRelation: "system_connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      conversation_analysis: {
+        Row: {
+          analysis_result: Json
+          analysis_type: string
+          call_session_id: string
+          confidence_score: number | null
+          created_at: string | null
+          id: string
+          processing_time_ms: number | null
+          provider_used: string | null
+        }
+        Insert: {
+          analysis_result: Json
+          analysis_type: string
+          call_session_id: string
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          provider_used?: string | null
+        }
+        Update: {
+          analysis_result?: Json
+          analysis_type?: string
+          call_session_id?: string
+          confidence_score?: number | null
+          created_at?: string | null
+          id?: string
+          processing_time_ms?: number | null
+          provider_used?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "conversation_analysis_call_session_id_fkey"
+            columns: ["call_session_id"]
+            isOneToOne: false
+            referencedRelation: "call_sessions"
             referencedColumns: ["id"]
           },
         ]
@@ -5422,6 +5598,59 @@ export type Database = {
         }
         Relationships: []
       }
+      phone_numbers: {
+        Row: {
+          assigned_to_agent_id: string | null
+          assigned_to_brand: string | null
+          capabilities: Json | null
+          configuration: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          phone_number: string
+          provider_phone_sid: string | null
+          provider_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          assigned_to_agent_id?: string | null
+          assigned_to_brand?: string | null
+          capabilities?: Json | null
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone_number: string
+          provider_phone_sid?: string | null
+          provider_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          assigned_to_agent_id?: string | null
+          assigned_to_brand?: string | null
+          capabilities?: Json | null
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          phone_number?: string
+          provider_phone_sid?: string | null
+          provider_type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "phone_numbers_assigned_to_agent_id_fkey"
+            columns: ["assigned_to_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       products: {
         Row: {
           approval_date: string | null
@@ -5610,6 +5839,66 @@ export type Database = {
           was_blocked?: boolean | null
         }
         Relationships: []
+      }
+      provider_test_configs: {
+        Row: {
+          agent_id: string | null
+          config_name: string
+          created_at: string | null
+          created_by: string | null
+          expected_outcomes: Json | null
+          id: string
+          is_active: boolean | null
+          phone_number_id: string | null
+          provider_type: string
+          test_data: Json
+          test_scenario: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          config_name: string
+          created_at?: string | null
+          created_by?: string | null
+          expected_outcomes?: Json | null
+          id?: string
+          is_active?: boolean | null
+          phone_number_id?: string | null
+          provider_type: string
+          test_data: Json
+          test_scenario: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          config_name?: string
+          created_at?: string | null
+          created_by?: string | null
+          expected_outcomes?: Json | null
+          id?: string
+          is_active?: boolean | null
+          phone_number_id?: string | null
+          provider_type?: string
+          test_data?: Json
+          test_scenario?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_test_configs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_test_configs_phone_number_id_fkey"
+            columns: ["phone_number_id"]
+            isOneToOne: false
+            referencedRelation: "phone_numbers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       rag_recommendations: {
         Row: {
@@ -6070,6 +6359,73 @@ export type Database = {
             columns: ["service_provider_id"]
             isOneToOne: false
             referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      softphone_sessions: {
+        Row: {
+          agent_id: string | null
+          created_at: string | null
+          current_call_session_id: string | null
+          id: string
+          last_activity: string | null
+          phone_number_id: string | null
+          status: string | null
+          ui_preferences: Json | null
+          updated_at: string | null
+          user_id: string
+          voice_settings: Json | null
+          websocket_connection_id: string | null
+        }
+        Insert: {
+          agent_id?: string | null
+          created_at?: string | null
+          current_call_session_id?: string | null
+          id?: string
+          last_activity?: string | null
+          phone_number_id?: string | null
+          status?: string | null
+          ui_preferences?: Json | null
+          updated_at?: string | null
+          user_id: string
+          voice_settings?: Json | null
+          websocket_connection_id?: string | null
+        }
+        Update: {
+          agent_id?: string | null
+          created_at?: string | null
+          current_call_session_id?: string | null
+          id?: string
+          last_activity?: string | null
+          phone_number_id?: string | null
+          status?: string | null
+          ui_preferences?: Json | null
+          updated_at?: string | null
+          user_id?: string
+          voice_settings?: Json | null
+          websocket_connection_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "softphone_sessions_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "softphone_sessions_current_call_session_id_fkey"
+            columns: ["current_call_session_id"]
+            isOneToOne: false
+            referencedRelation: "call_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "softphone_sessions_phone_number_id_fkey"
+            columns: ["phone_number_id"]
+            isOneToOne: false
+            referencedRelation: "phone_numbers"
             referencedColumns: ["id"]
           },
         ]
