@@ -33,12 +33,13 @@ interface UpdateConnectorData extends Partial<CreateConnectorData> {
 export const useVoiceConnectors = () => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
+  const sb = supabase as any;
 
   // Fetch voice connectors
   const { data: connectors = [], isLoading, error } = useQuery({
     queryKey: ['voice-connectors'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('voice_connectors')
         .select('*')
         .order('name');
@@ -51,7 +52,7 @@ export const useVoiceConnectors = () => {
   // Create voice connector
   const createConnector = useMutation({
     mutationFn: async (connectorData: CreateConnectorData) => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('voice_connectors')
         .insert([{
           ...connectorData,
@@ -80,7 +81,7 @@ export const useVoiceConnectors = () => {
   // Update voice connector
   const updateConnector = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: UpdateConnectorData }) => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('voice_connectors')
         .update(updates)
         .eq('id', id)
@@ -103,7 +104,7 @@ export const useVoiceConnectors = () => {
   // Test voice connector
   const testConnector = useMutation({
     mutationFn: async (id: string) => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('voice_connectors')
         .update({ 
           last_tested_at: new Date().toISOString(),
@@ -129,7 +130,7 @@ export const useVoiceConnectors = () => {
   // Test all connectors
   const testAllConnectors = useMutation({
     mutationFn: async () => {
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('voice_connectors')
         .update({ 
           last_tested_at: new Date().toISOString(),
@@ -153,7 +154,7 @@ export const useVoiceConnectors = () => {
   // Delete voice connector
   const deleteConnector = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await sb
         .from('voice_connectors')
         .delete()
         .eq('id', id);

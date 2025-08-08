@@ -120,7 +120,7 @@ const VoiceConfigurationView = () => {
   const handleCreateConnector = (values: z.infer<typeof connectorSchema>) => {
     createConnector({
       name: values.name,
-      type: values.type,
+      connector_type: values.type,
       configuration: {},
       endpoints: values.endpoints ? values.endpoints.split(',').map(s => s.trim()) : [],
       features: values.features ? values.features.split(',').map(s => s.trim()) : [],
@@ -433,9 +433,9 @@ const VoiceConfigurationView = () => {
                     <div className="flex items-center justify-between">
                       <div>
                         <h4 className="font-medium">{connector.name}</h4>
-                        <Badge variant="outline">{connector.type}</Badge>
-                        <Badge variant={connector.status === 'active' ? 'default' : 'secondary'}>
-                          {connector.status}
+                        <Badge variant="outline">{connector.connector_type}</Badge>
+                        <Badge variant={connector.is_active ? 'default' : 'secondary'}>
+                          {connector.is_active ? 'active' : 'inactive'}
                         </Badge>
                       </div>
                       <div className="flex gap-2">
@@ -448,7 +448,7 @@ const VoiceConfigurationView = () => {
                           <TestTube className="h-4 w-4" />
                         </Button>
                         <Button 
-                          onClick={() => updateConnector({ id: connector.id, updates: { status: connector.status === 'active' ? 'inactive' : 'active' } })}
+                          onClick={() => updateConnector({ id: connector.id, updates: { is_active: !connector.is_active } })}
                           disabled={isUpdatingConnector}
                           size="sm"
                           variant="ghost"
