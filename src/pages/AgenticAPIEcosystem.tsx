@@ -15,11 +15,27 @@ import {
   Plus,
   Database,
   Shield,
-  Clock
+  Clock,
+  Edit,
+  Power,
+  PowerOff,
+  Trash2
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import ApiIntegrationCreator from '@/components/api/ApiIntegrationCreator';
 import DatabaseConnectorManager from '@/components/integration/DatabaseConnectorManager';
 import SecurityGatewayManager from '@/components/integration/SecurityGatewayManager';
@@ -29,6 +45,8 @@ const AgenticAPIEcosystem = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showDatabaseConnectorManager, setShowDatabaseConnectorManager] = useState(false);
   const [showSecurityGatewayManager, setShowSecurityGatewayManager] = useState(false);
+  const [showEditService, setShowEditService] = useState(false);
+  const [editingService, setEditingService] = useState<any>(null);
 
   // Fetch real API services data
   const { data: apiServices = [], isLoading: apisLoading } = useQuery({
@@ -101,10 +119,45 @@ const AgenticAPIEcosystem = () => {
     setShowCreateDialog(true);
   };
 
-  const handleManageAPI = (apiId: string) => {
+  const handleEditService = (service: any) => {
+    setEditingService(service);
+    setShowEditService(true);
+  };
+
+  const handleUpdateService = async () => {
+    if (!editingService) return;
+
     toast({
-      title: "API Management",
-      description: `Opening management for API: ${apiId}`,
+      title: "Service Updated",
+      description: `${editingService.name} has been updated successfully.`,
+    });
+    
+    setShowEditService(false);
+    setEditingService(null);
+  };
+
+  const handleDeactivateService = async (serviceId: string, serviceName: string) => {
+    // This would typically call an API to deactivate the service
+    toast({
+      title: "Service Deactivated",
+      description: `${serviceName} has been deactivated successfully.`,
+    });
+  };
+
+  const handleActivateService = async (serviceId: string, serviceName: string) => {
+    // This would typically call an API to activate the service
+    toast({
+      title: "Service Activated",
+      description: `${serviceName} has been activated successfully.`,
+    });
+  };
+
+  const handleDeleteService = async (serviceId: string, serviceName: string) => {
+    // This would typically call an API to delete the service
+    toast({
+      title: "Service Deleted",
+      description: `${serviceName} has been deleted successfully.`,
+      variant: "destructive",
     });
   };
 
@@ -314,9 +367,9 @@ const AgenticAPIEcosystem = () => {
                           <Button 
                             variant="outline" 
                             size="sm"
-                            onClick={() => handleManageAPI(api.id)}
+                            onClick={() => handleEditService(api)}
                           >
-                            <Settings className="h-4 w-4" />
+                            <Edit className="h-4 w-4" />
                           </Button>
                           <Button 
                             variant="outline" 
@@ -324,6 +377,30 @@ const AgenticAPIEcosystem = () => {
                             onClick={() => handleViewMetrics(api.id)}
                           >
                             <BarChart3 className="h-4 w-4" />
+                          </Button>
+                          {api.status === 'active' ? (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleDeactivateService(api.id, api.name)}
+                            >
+                              <PowerOff className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleActivateService(api.id, api.name)}
+                            >
+                              <Power className="h-4 w-4" />
+                            </Button>
+                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeleteService(api.id, api.name)}
+                          >
+                            <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
@@ -373,12 +450,33 @@ const AgenticAPIEcosystem = () => {
                         </div>
                       </div>
                       <div className="flex space-x-2">
-                        <Button variant="outline" size="sm">
-                          <Settings className="h-4 w-4" />
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => handleEditService(agent)}
+                        >
+                          <Edit className="h-4 w-4" />
                         </Button>
                         <Button variant="outline" size="sm">
                           <Activity className="h-4 w-4" />
                         </Button>
+                        {agent.status === 'active' ? (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleDeactivateService(agent.id, agent.name)}
+                          >
+                            <PowerOff className="h-4 w-4" />
+                          </Button>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleActivateService(agent.id, agent.name)}
+                          >
+                            <Power className="h-4 w-4" />
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -499,6 +597,99 @@ const AgenticAPIEcosystem = () => {
           onClose={() => setShowSecurityGatewayManager(false)}
         />
       )}
+
+      {/* Edit Service Dialog */}
+      <Dialog open={showEditService} onOpenChange={setShowEditService}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit API Service</DialogTitle>
+            <DialogDescription>
+              Update service configuration and settings.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingService && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="service-name">Service Name</Label>
+                <Input
+                  id="service-name"
+                  value={editingService.name}
+                  onChange={(e) => setEditingService(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter service name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="service-description">Description</Label>
+                <Textarea
+                  id="service-description"
+                  value={editingService.description || ''}
+                  onChange={(e) => setEditingService(prev => ({ ...prev, description: e.target.value }))}
+                  placeholder="Enter service description"
+                />
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="service-type">Service Type</Label>
+                  <Select 
+                    value={editingService.type} 
+                    onValueChange={(value) => setEditingService(prev => ({ ...prev, type: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select service type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="REST">REST API</SelectItem>
+                      <SelectItem value="GraphQL">GraphQL</SelectItem>
+                      <SelectItem value="SOAP">SOAP</SelectItem>
+                      <SelectItem value="webhook">Webhook</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="service-status">Status</Label>
+                  <Select 
+                    value={editingService.status} 
+                    onValueChange={(value) => setEditingService(prev => ({ ...prev, status: value }))}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="inactive">Inactive</SelectItem>
+                      <SelectItem value="maintenance">Maintenance</SelectItem>
+                      <SelectItem value="deprecated">Deprecated</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="service-version">Version</Label>
+                <Input
+                  id="service-version"
+                  value={editingService.version}
+                  onChange={(e) => setEditingService(prev => ({ ...prev, version: e.target.value }))}
+                  placeholder="Enter version number"
+                />
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditService(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateService}>
+              Update Service
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

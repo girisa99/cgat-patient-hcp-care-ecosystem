@@ -29,7 +29,12 @@ import {
   MessageSquare,
   User,
   Zap,
-  Filter
+  Filter,
+  Plus,
+  Edit,
+  Power,
+  PowerOff,
+  Trash2
 } from 'lucide-react';
 import { useAgentConversations } from '@/hooks/useAgentConversations';
 import { toast } from '@/hooks/use-toast';
@@ -70,6 +75,16 @@ export const LiveAgentTransfer: React.FC = () => {
   const [transferReason, setTransferReason] = useState('');
   const [selectedPriority, setSelectedPriority] = useState<'low' | 'normal' | 'high'>('normal');
   const [filterStatus, setFilterStatus] = useState<'all' | 'pending' | 'assigned'>('all');
+  const [showAddAgent, setShowAddAgent] = useState(false);
+  const [showEditAgent, setShowEditAgent] = useState(false);
+  const [editingAgent, setEditingAgent] = useState<LiveAgent | null>(null);
+  const [newAgent, setNewAgent] = useState({
+    name: '',
+    email: '',
+    department: '',
+    skills: [] as string[],
+    maxCapacity: 5
+  });
 
   // Mock live agents data
   useEffect(() => {
@@ -250,6 +265,87 @@ export const LiveAgentTransfer: React.FC = () => {
     }
   };
 
+  // Add new agent
+  const handleAddAgent = async () => {
+    const newLiveAgent: LiveAgent = {
+      id: `agent_${Date.now()}`,
+      name: newAgent.name,
+      email: newAgent.email,
+      department: newAgent.department,
+      skills: newAgent.skills,
+      status: 'available',
+      currentLoad: 0,
+      maxCapacity: newAgent.maxCapacity,
+      avgResponseTime: 45
+    };
+
+    setLiveAgents(prev => [...prev, newLiveAgent]);
+    setShowAddAgent(false);
+    setNewAgent({
+      name: '',
+      email: '',
+      department: '',
+      skills: [],
+      maxCapacity: 5
+    });
+
+    toast({
+      title: "Agent Added",
+      description: `${newAgent.name} has been added successfully.`,
+    });
+  };
+
+  // Edit agent
+  const handleEditAgent = (agent: LiveAgent) => {
+    setEditingAgent(agent);
+    setShowEditAgent(true);
+  };
+
+  // Update agent
+  const handleUpdateAgent = async () => {
+    if (!editingAgent) return;
+
+    setLiveAgents(prev => prev.map(agent => 
+      agent.id === editingAgent.id ? editingAgent : agent
+    ));
+
+    setShowEditAgent(false);
+    setEditingAgent(null);
+
+    toast({
+      title: "Agent Updated",
+      description: "Agent information has been updated successfully.",
+    });
+  };
+
+  // Deactivate agent
+  const handleDeactivateAgent = async (agentId: string) => {
+    setLiveAgents(prev => prev.map(agent => 
+      agent.id === agentId 
+        ? { ...agent, status: 'offline' as const }
+        : agent
+    ));
+
+    toast({
+      title: "Agent Deactivated",
+      description: "Agent has been marked as offline.",
+    });
+  };
+
+  // Activate agent
+  const handleActivateAgent = async (agentId: string) => {
+    setLiveAgents(prev => prev.map(agent => 
+      agent.id === agentId 
+        ? { ...agent, status: 'available' as const }
+        : agent
+    ));
+
+    toast({
+      title: "Agent Activated",
+      description: "Agent has been marked as available.",
+    });
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -261,6 +357,10 @@ export const LiveAgentTransfer: React.FC = () => {
           </p>
         </div>
         <div className="flex gap-2">
+          <Button onClick={() => setShowAddAgent(true)}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Live Agent
+          </Button>
           <Select value={filterStatus} onValueChange={(value: any) => setFilterStatus(value)}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="Filter status" />
@@ -434,6 +534,33 @@ export const LiveAgentTransfer: React.FC = () => {
                         </Badge>
                       )}
                     </div>
+
+                    <div className="flex gap-1 mt-2">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleEditAgent(agent)}
+                      >
+                        <Edit className="h-3 w-3" />
+                      </Button>
+                      {agent.status === 'offline' ? (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleActivateAgent(agent.id)}
+                        >
+                          <Power className="h-3 w-3" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeactivateAgent(agent.id)}
+                        >
+                          <PowerOff className="h-3 w-3" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -523,6 +650,168 @@ export const LiveAgentTransfer: React.FC = () => {
           <DialogFooter>
             <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
               Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Agent Dialog */}
+      <Dialog open={showAddAgent} onOpenChange={setShowAddAgent}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Live Agent</DialogTitle>
+            <DialogDescription>
+              Add a new live agent to handle customer conversations.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Name</label>
+                <Input
+                  value={newAgent.name}
+                  onChange={(e) => setNewAgent(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter agent name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Email</label>
+                <Input
+                  value={newAgent.email}
+                  onChange={(e) => setNewAgent(prev => ({ ...prev, email: e.target.value }))}
+                  placeholder="Enter agent email"
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Department</label>
+              <Select 
+                value={newAgent.department} 
+                onValueChange={(value) => setNewAgent(prev => ({ ...prev, department: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select department" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Customer Support">Customer Support</SelectItem>
+                  <SelectItem value="Technical Support">Technical Support</SelectItem>
+                  <SelectItem value="Sales">Sales</SelectItem>
+                  <SelectItem value="Escalations">Escalations</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Max Capacity</label>
+              <Input
+                type="number"
+                value={newAgent.maxCapacity}
+                onChange={(e) => setNewAgent(prev => ({ ...prev, maxCapacity: parseInt(e.target.value) }))}
+                placeholder="Maximum concurrent conversations"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddAgent(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddAgent}>
+              Add Agent
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Agent Dialog */}
+      <Dialog open={showEditAgent} onOpenChange={setShowEditAgent}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Live Agent</DialogTitle>
+            <DialogDescription>
+              Update agent information and settings.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingAgent && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Name</label>
+                  <Input
+                    value={editingAgent.name}
+                    onChange={(e) => setEditingAgent(prev => prev ? ({ ...prev, name: e.target.value }) : null)}
+                    placeholder="Enter agent name"
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Email</label>
+                  <Input
+                    value={editingAgent.email}
+                    onChange={(e) => setEditingAgent(prev => prev ? ({ ...prev, email: e.target.value }) : null)}
+                    placeholder="Enter agent email"
+                  />
+                </div>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Department</label>
+                <Select 
+                  value={editingAgent.department} 
+                  onValueChange={(value) => setEditingAgent(prev => prev ? ({ ...prev, department: value }) : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select department" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="Customer Support">Customer Support</SelectItem>
+                    <SelectItem value="Technical Support">Technical Support</SelectItem>
+                    <SelectItem value="Sales">Sales</SelectItem>
+                    <SelectItem value="Escalations">Escalations</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Max Capacity</label>
+                <Input
+                  type="number"
+                  value={editingAgent.maxCapacity}
+                  onChange={(e) => setEditingAgent(prev => prev ? ({ ...prev, maxCapacity: parseInt(e.target.value) }) : null)}
+                  placeholder="Maximum concurrent conversations"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Status</label>
+                <Select 
+                  value={editingAgent.status} 
+                  onValueChange={(value: any) => setEditingAgent(prev => prev ? ({ ...prev, status: value }) : null)}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="available">Available</SelectItem>
+                    <SelectItem value="busy">Busy</SelectItem>
+                    <SelectItem value="away">Away</SelectItem>
+                    <SelectItem value="offline">Offline</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditAgent(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateAgent}>
+              Update Agent
             </Button>
           </DialogFooter>
         </DialogContent>

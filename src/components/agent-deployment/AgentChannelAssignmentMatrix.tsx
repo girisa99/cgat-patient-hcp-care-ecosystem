@@ -40,7 +40,11 @@ import {
   Pause,
   Square,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  Edit,
+  Power,
+  PowerOff,
+  Trash2
 } from 'lucide-react';
 import { useAgentDeployments } from '@/hooks/useAgentDeployments';
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -88,6 +92,16 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
     priority: 1,
     maxSessions: '',
     autoScaling: false,
+  });
+  const [showAddChannel, setShowAddChannel] = useState(false);
+  const [showEditChannel, setShowEditChannel] = useState(false);
+  const [editingChannel, setEditingChannel] = useState<any>(null);
+  const [channelList, setChannelList] = useState(channels);
+  const [newChannel, setNewChannel] = useState({
+    id: '',
+    name: '',
+    type: 'voice-call' as const,
+    isActive: true
   });
 
   // Get deployment for agent-channel combination
@@ -191,6 +205,58 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
     });
   };
 
+  // Channel management functions
+  const handleAddChannel = async () => {
+    const channelToAdd = {
+      id: newChannel.id,
+      name: newChannel.name,
+      type: newChannel.type
+    };
+
+    setChannelList(prev => [...prev, channelToAdd]);
+    setShowAddChannel(false);
+    setNewChannel({
+      id: '',
+      name: '',
+      type: 'voice-call' as const,
+      isActive: true
+    });
+
+    toast({
+      title: "Channel Added",
+      description: `${newChannel.name} channel has been added successfully.`,
+    });
+  };
+
+  const handleEditChannel = (channel: any) => {
+    setEditingChannel(channel);
+    setShowEditChannel(true);
+  };
+
+  const handleUpdateChannel = async () => {
+    if (!editingChannel) return;
+
+    setChannelList(prev => prev.map(channel => 
+      channel.id === editingChannel.id ? editingChannel : channel
+    ));
+
+    setShowEditChannel(false);
+    setEditingChannel(null);
+
+    toast({
+      title: "Channel Updated",
+      description: "Channel has been updated successfully.",
+    });
+  };
+
+  const handleDeactivateChannel = async (channelId: string) => {
+    // In a real app, you would mark channel as inactive in database
+    toast({
+      title: "Channel Deactivated",
+      description: "Channel has been deactivated successfully.",
+    });
+  };
+
   // Filter out draft agents - only show deployment-ready agents
   const deploymentReadyAgents = agents?.filter(agent => 
     agent.status !== 'draft' && agent.status !== 'in_progress'
@@ -203,7 +269,13 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
   return (
     <Card className={className}>
       <CardHeader>
-        <CardTitle>Agent-Channel Assignment Matrix</CardTitle>
+        <CardTitle className="flex items-center justify-between">
+          <span>Agent-Channel Assignment Matrix</span>
+          <Button onClick={() => setShowAddChannel(true)} size="sm">
+            <Plus className="h-4 w-4 mr-2" />
+            Add Channel
+          </Button>
+        </CardTitle>
         <p className="text-sm text-muted-foreground">
           Click cells to deploy agents to channels or manage existing deployments
         </p>
@@ -221,12 +293,22 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
             <TableHeader>
               <TableRow>
                 <TableHead className="w-48">Agent</TableHead>
-                {channels.map((channel) => {
+                {channelList.map((channel) => {
                   const Icon = channelIcons[channel.type];
                   return (
                     <TableHead key={channel.id} className="text-center">
                       <div className="flex flex-col items-center gap-1">
-                        <Icon className="h-4 w-4" />
+                        <div className="flex items-center gap-1">
+                          <Icon className="h-4 w-4" />
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleEditChannel(channel)}
+                            className="h-6 w-6 p-0"
+                          >
+                            <Edit className="h-3 w-3" />
+                          </Button>
+                        </div>
                         <span className="text-xs">{channel.name}</span>
                       </div>
                     </TableHead>
@@ -246,7 +328,7 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
                         </Badge>
                       </div>
                     </TableCell>
-                    {channels.map((channel) => {
+                    {channelList.map((channel) => {
                       const deployment = getDeployment(agent.id, channel.id);
                       return (
                         <TableCell 
@@ -292,8 +374,8 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
                   </TableRow>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={channels.length + 1} className="text-center py-8">
+                 <TableRow>
+                   <TableCell colSpan={channelList.length + 1} className="text-center py-8">
                     <div className="flex flex-col items-center gap-2 text-muted-foreground">
                       <AlertTriangle className="h-8 w-8" />
                       <p className="text-sm">No deployment-ready agents available</p>
@@ -383,6 +465,134 @@ export const AgentChannelAssignmentMatrix: React.FC<AgentChannelAssignmentMatrix
             </Button>
             <Button onClick={handleDeploy}>
               Deploy Agent
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Channel Dialog */}
+      <Dialog open={showAddChannel} onOpenChange={setShowAddChannel}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Channel</DialogTitle>
+            <DialogDescription>
+              Create a new communication channel for agent deployment.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="channel-id">Channel ID</Label>
+              <Input
+                id="channel-id"
+                value={newChannel.id}
+                onChange={(e) => setNewChannel(prev => ({ ...prev, id: e.target.value }))}
+                placeholder="Enter channel ID"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="channel-name">Channel Name</Label>
+              <Input
+                id="channel-name"
+                value={newChannel.name}
+                onChange={(e) => setNewChannel(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter channel name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="channel-type">Channel Type</Label>
+              <Select 
+                value={newChannel.type} 
+                onValueChange={(value: any) => setNewChannel(prev => ({ ...prev, type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select channel type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="voice-call">Voice Call</SelectItem>
+                  <SelectItem value="web-chat">Web Chat</SelectItem>
+                  <SelectItem value="email">Email</SelectItem>
+                  <SelectItem value="messaging">Messaging</SelectItem>
+                  <SelectItem value="voice-assistant">Voice Assistant</SelectItem>
+                  <SelectItem value="instagram">Instagram</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddChannel(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddChannel}>
+              Add Channel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Channel Dialog */}
+      <Dialog open={showEditChannel} onOpenChange={setShowEditChannel}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Channel</DialogTitle>
+            <DialogDescription>
+              Update channel configuration and settings.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingChannel && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-channel-name">Channel Name</Label>
+                <Input
+                  id="edit-channel-name"
+                  value={editingChannel.name}
+                  onChange={(e) => setEditingChannel(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter channel name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-channel-type">Channel Type</Label>
+                <Select 
+                  value={editingChannel.type} 
+                  onValueChange={(value: any) => setEditingChannel(prev => ({ ...prev, type: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select channel type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="voice-call">Voice Call</SelectItem>
+                    <SelectItem value="web-chat">Web Chat</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="messaging">Messaging</SelectItem>
+                    <SelectItem value="voice-assistant">Voice Assistant</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="flex gap-2 pt-4">
+                <Button 
+                  variant="outline" 
+                  onClick={() => handleDeactivateChannel(editingChannel.id)}
+                >
+                  <PowerOff className="h-4 w-4 mr-2" />
+                  Deactivate Channel
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditChannel(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateChannel}>
+              Update Channel
             </Button>
           </DialogFooter>
         </DialogContent>

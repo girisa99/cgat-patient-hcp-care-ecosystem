@@ -3,6 +3,17 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 import { 
   Phone, 
   Mic, 
@@ -10,7 +21,12 @@ import {
   Settings,
   Zap,
   Check,
-  ExternalLink
+  ExternalLink,
+  Plus,
+  Edit,
+  Trash2,
+  Power,
+  PowerOff
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useVoiceProviders } from '@/hooks/useVoiceProviders';
@@ -19,6 +35,16 @@ const VoiceConfigurationView = () => {
   const [selectedVoiceProvider, setSelectedVoiceProvider] = useState('');
   const [selectedLanguage, setSelectedLanguage] = useState('');
   const [isConfiguring, setIsConfiguring] = useState<string | null>(null);
+  const [showAddProvider, setShowAddProvider] = useState(false);
+  const [showEditProvider, setShowEditProvider] = useState(false);
+  const [editingProvider, setEditingProvider] = useState<any>(null);
+  const [newProvider, setNewProvider] = useState({
+    name: '',
+    provider_type: '',
+    capabilities: [''],
+    configuration: {},
+    description: ''
+  });
   const { toast } = useToast();
   
   const {
@@ -124,12 +150,71 @@ const VoiceConfigurationView = () => {
     }
   };
 
+  const handleAddProvider = async () => {
+    // This would typically call an API to create a new provider
+    toast({
+      title: "Add Provider",
+      description: "Voice provider added successfully (demo functionality)",
+    });
+    setShowAddProvider(false);
+    setNewProvider({
+      name: '',
+      provider_type: '',
+      capabilities: [''],
+      configuration: {},
+      description: ''
+    });
+  };
+
+  const handleEditProvider = (provider: any) => {
+    setEditingProvider(provider);
+    setShowEditProvider(true);
+  };
+
+  const handleUpdateProvider = async () => {
+    toast({
+      title: "Update Provider",
+      description: "Voice provider updated successfully (demo functionality)",
+    });
+    setShowEditProvider(false);
+    setEditingProvider(null);
+  };
+
+  const handleDeactivateProvider = async (providerId: string, providerName: string) => {
+    try {
+      await updateProviderStatus({ id: providerId, isActive: false });
+      toast({
+        title: "Provider Deactivated",
+        description: `${providerName} has been deactivated successfully.`,
+      });
+    } catch (error) {
+      console.error('Deactivation error:', error);
+      toast({
+        title: 'Deactivation Error',
+        description: 'Failed to deactivate voice provider.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   if (isLoading) {
     return <div className="flex justify-center p-8">Loading voice configuration...</div>;
   }
 
   return (
     <div className="space-y-6">
+      {/* Header with Add Provider Button */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold">Voice Configuration</h2>
+          <p className="text-muted-foreground">Manage voice providers and configuration settings</p>
+        </div>
+        <Button onClick={() => setShowAddProvider(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Add Voice Provider
+        </Button>
+      </div>
+
       {/* Voice Provider Selection */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <Card>
@@ -163,15 +248,33 @@ const VoiceConfigurationView = () => {
                     </div>
                   </div>
                 </div>
-                <Button 
-                  variant={provider.is_active ? 'default' : 'outline'} 
-                  size="sm"
-                  disabled={isConfiguring === provider.id || isUpdating}
-                  onClick={() => handleConfigure(provider.id, provider.name)}
-                >
-                  {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
-                  {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={provider.is_active ? 'default' : 'outline'} 
+                    size="sm"
+                    disabled={isConfiguring === provider.id || isUpdating}
+                    onClick={() => handleConfigure(provider.id, provider.name)}
+                  >
+                    {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
+                    {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleEditProvider(provider)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  {provider.is_active && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeactivateProvider(provider.id, provider.name)}
+                    >
+                      <PowerOff className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </CardContent>
@@ -208,15 +311,33 @@ const VoiceConfigurationView = () => {
                     </div>
                   </div>
                 </div>
-                <Button 
-                  variant={provider.is_active ? 'default' : 'outline'} 
-                  size="sm"
-                  disabled={isConfiguring === provider.id || isUpdating}
-                  onClick={() => handleConfigure(provider.id, provider.name)}
-                >
-                  {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
-                  {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
-                </Button>
+                <div className="flex gap-2">
+                  <Button 
+                    variant={provider.is_active ? 'default' : 'outline'} 
+                    size="sm"
+                    disabled={isConfiguring === provider.id || isUpdating}
+                    onClick={() => handleConfigure(provider.id, provider.name)}
+                  >
+                    {isConfiguring === provider.id ? 'Configuring...' : provider.is_active ? 'Active' : 'Activate'}
+                    {!provider.is_active && <ExternalLink className="h-3 w-3 ml-1" />}
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="sm"
+                    onClick={() => handleEditProvider(provider)}
+                  >
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                  {provider.is_active && (
+                    <Button 
+                      variant="ghost" 
+                      size="sm"
+                      onClick={() => handleDeactivateProvider(provider.id, provider.name)}
+                    >
+                      <PowerOff className="h-4 w-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </CardContent>
@@ -311,6 +432,118 @@ const VoiceConfigurationView = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Add Provider Dialog */}
+      <Dialog open={showAddProvider} onOpenChange={setShowAddProvider}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Voice Provider</DialogTitle>
+            <DialogDescription>
+              Configure a new voice provider for speech processing.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="provider-name">Provider Name</Label>
+              <Input
+                id="provider-name"
+                value={newProvider.name}
+                onChange={(e) => setNewProvider(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Enter provider name"
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="provider-type">Provider Type</Label>
+              <Select 
+                value={newProvider.provider_type} 
+                onValueChange={(value) => setNewProvider(prev => ({ ...prev, provider_type: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select provider type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="twilio">Twilio</SelectItem>
+                  <SelectItem value="five9">Five9</SelectItem>
+                  <SelectItem value="genesys">Genesys</SelectItem>
+                  <SelectItem value="vonage">Vonage</SelectItem>
+                  <SelectItem value="aws">AWS Connect</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label htmlFor="provider-description">Description</Label>
+              <Textarea
+                id="provider-description"
+                value={newProvider.description}
+                onChange={(e) => setNewProvider(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Enter provider description"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowAddProvider(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleAddProvider}>
+              Add Provider
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Provider Dialog */}
+      <Dialog open={showEditProvider} onOpenChange={setShowEditProvider}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Edit Voice Provider</DialogTitle>
+            <DialogDescription>
+              Update voice provider configuration.
+            </DialogDescription>
+          </DialogHeader>
+          
+          {editingProvider && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-provider-name">Provider Name</Label>
+                <Input
+                  id="edit-provider-name"
+                  defaultValue={editingProvider.name}
+                  placeholder="Enter provider name"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="edit-provider-type">Provider Type</Label>
+                <Select defaultValue={editingProvider.provider_type}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select provider type" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="twilio">Twilio</SelectItem>
+                    <SelectItem value="five9">Five9</SelectItem>
+                    <SelectItem value="genesys">Genesys</SelectItem>
+                    <SelectItem value="vonage">Vonage</SelectItem>
+                    <SelectItem value="aws">AWS Connect</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          )}
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowEditProvider(false)}>
+              Cancel
+            </Button>
+            <Button onClick={handleUpdateProvider}>
+              Update Provider
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
