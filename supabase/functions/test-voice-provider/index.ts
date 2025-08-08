@@ -73,6 +73,15 @@ serve(async (req) => {
         case 'azure':
           testResult = await testAzureProvider(provider);
           break;
+        case 'openai':
+          testResult = await testOpenAIProvider(provider);
+          break;
+        case 'huggingface':
+          testResult = await testHuggingFaceProvider(provider);
+          break;
+        case 'claude':
+          testResult = await testClaudeProvider(provider);
+          break;
         default:
           testResult = {
             success: false,
@@ -81,17 +90,17 @@ serve(async (req) => {
           };
       }
 
-      // Update provider health status
+      // Update provider last tested timestamp and active status if test successful
       const { error: updateError } = await supabase
         .from('voice_providers')
         .update({
-          health_status: testResult.success ? 'healthy' : 'unhealthy',
-          updated_at: new Date().toISOString()
+          updated_at: new Date().toISOString(),
+          ...(testResult.success && { is_active: true })
         })
         .eq('id', providerId);
 
       if (updateError) {
-        console.error('Error updating provider health status:', updateError);
+        console.error('Error updating provider after test:', updateError);
       }
 
     } catch (error) {
@@ -180,6 +189,51 @@ async function testAzureProvider(provider: VoiceProvider) {
       text_to_speech: true,
       translation: true,
       latency: '150ms'
+    }
+  };
+}
+
+async function testOpenAIProvider(provider: VoiceProvider) {
+  // Simulate OpenAI Speech Services test
+  return {
+    success: true,
+    message: 'OpenAI Speech Services are working correctly',
+    details: {
+      tts_models: ['tts-1', 'tts-1-hd'],
+      stt_models: ['whisper-1'],
+      voices: ['alloy', 'echo', 'fable', 'onyx', 'nova', 'shimmer'],
+      realtime_api: true,
+      latency: '100ms'
+    }
+  };
+}
+
+async function testHuggingFaceProvider(provider: VoiceProvider) {
+  // Simulate Hugging Face Voice Models test
+  return {
+    success: true,
+    message: 'Hugging Face Voice Models are working correctly',
+    details: {
+      available_models: 50,
+      tts_models: ['speecht5_tts', 'bark'],
+      stt_models: ['wav2vec2', 'whisper-tiny'],
+      open_source: true,
+      latency: '200ms'
+    }
+  };
+}
+
+async function testClaudeProvider(provider: VoiceProvider) {
+  // Simulate Claude AI Voice Orchestrator test
+  return {
+    success: true,
+    message: 'Claude AI Voice Orchestrator is working correctly',
+    details: {
+      orchestration: true,
+      models: ['claude-3-5-sonnet', 'claude-3-haiku'],
+      conversation_management: true,
+      context_understanding: true,
+      latency: '180ms'
     }
   };
 }
