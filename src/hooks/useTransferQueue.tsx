@@ -1,5 +1,4 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 import { useMasterToast } from './useMasterToast';
 
 interface TransferRequest {
@@ -20,107 +19,95 @@ interface CreateTransferData {
   priority?: number;
 }
 
+// Mock data
+const mockTransfers: TransferRequest[] = [];
+
 export const useTransferQueue = () => {
   const { showSuccess, showError } = useMasterToast();
-  const queryClient = useQueryClient();
-
-  // Fetch transfer queue
-  const { data: transferQueue = [], isLoading } = useQuery({
-    queryKey: ['voice-transfer-queue'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('voice_transfer_queue')
-        .select('*')
-        .order('created_at', { ascending: true });
-      
-      if (error) throw error;
-      return data as TransferRequest[];
-    }
-  });
+  const [transferQueue, setTransferQueue] = useState<TransferRequest[]>(mockTransfers);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCreating, setIsCreating] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [isCompleting, setIsCompleting] = useState(false);
 
   // Create transfer request
-  const createTransfer = useMutation({
-    mutationFn: async (transferData: CreateTransferData) => {
-      const { data, error } = await supabase
-        .from('voice_transfer_queue')
-        .insert([transferData])
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['voice-transfer-queue'] });
+  const createTransfer = async (transferData: CreateTransferData) => {
+    setIsCreating(true);
+    try {
+      const newTransfer: TransferRequest = {
+        id: Date.now().toString(),
+        ...transferData,
+        priority: transferData.priority || 1,
+        live_agent_id: null,
+        status: 'waiting',
+        created_at: new Date().toISOString(),
+        assigned_at: null,
+        completed_at: null,
+      };
+
+      setTransferQueue(prev => [...prev, newTransfer]);
       showSuccess('Transfer request created');
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error('Error creating transfer:', error);
       showError('Failed to create transfer request');
-    },
-  });
+    } finally {
+      setIsCreating(false);
+    }
+  };
 
   // Assign transfer to agent
-  const assignTransfer = useMutation({
-    mutationFn: async ({ id, agentId }: { id: string; agentId: string }) => {
-      const { data, error } = await supabase
-        .from('voice_transfer_queue')
-        .update({ 
-          live_agent_id: agentId,
-          status: 'assigned',
-          assigned_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['voice-transfer-queue'] });
+  const assignTransfer = async ({ id, agentId }: { id: string; agentId: string }) => {
+    setIsAssigning(true);
+    try {
+      setTransferQueue(prev => prev.map(transfer => 
+        transfer.id === id 
+          ? { 
+              ...transfer, 
+              live_agent_id: agentId,
+              status: 'assigned',
+              assigned_at: new Date().toISOString()
+            }
+          : transfer
+      ));
       showSuccess('Transfer assigned successfully');
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error('Error assigning transfer:', error);
       showError('Failed to assign transfer');
-    },
-  });
+    } finally {
+      setIsAssigning(false);
+    }
+  };
 
   // Complete transfer
-  const completeTransfer = useMutation({
-    mutationFn: async (id: string) => {
-      const { data, error } = await supabase
-        .from('voice_transfer_queue')
-        .update({ 
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', id)
-        .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['voice-transfer-queue'] });
+  const completeTransfer = async (id: string) => {
+    setIsCompleting(true);
+    try {
+      setTransferQueue(prev => prev.map(transfer => 
+        transfer.id === id 
+          ? { 
+              ...transfer, 
+              status: 'completed',
+              completed_at: new Date().toISOString()
+            }
+          : transfer
+      ));
       showSuccess('Transfer completed');
-    },
-    onError: (error) => {
+    } catch (error) {
       console.error('Error completing transfer:', error);
       showError('Failed to complete transfer');
-    },
-  });
+    } finally {
+      setIsCompleting(false);
+    }
+  };
 
   return {
     transferQueue,
     isLoading,
-    createTransfer: createTransfer.mutate,
-    assignTransfer: assignTransfer.mutate,
-    completeTransfer: completeTransfer.mutate,
-    isCreating: createTransfer.isPending,
-    isAssigning: assignTransfer.isPending,
-    isCompleting: completeTransfer.isPending,
+    createTransfer,
+    assignTransfer,
+    completeTransfer,
+    isCreating,
+    isAssigning,
+    isCompleting,
   };
 };

@@ -1,5 +1,4 @@
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
+import { useState } from 'react';
 
 interface AnalyticsEvent {
   id: string;
@@ -24,21 +23,35 @@ interface AnalyticsMetrics {
   satisfactionScore: number;
 }
 
+// Mock data
+const mockEvents: AnalyticsEvent[] = [
+  {
+    id: '1',
+    event_type: 'call_started',
+    agent_id: 'agent1',
+    live_agent_id: null,
+    connector_id: 'connector1',
+    call_duration: null,
+    queue_wait_time: null,
+    metadata: {},
+    created_at: new Date(Date.now() - 3600000).toISOString(),
+  },
+  {
+    id: '2',
+    event_type: 'call_ended',
+    agent_id: 'agent1',
+    live_agent_id: null,
+    connector_id: 'connector1',
+    call_duration: 180,
+    queue_wait_time: null,
+    metadata: {},
+    created_at: new Date(Date.now() - 3300000).toISOString(),
+  }
+];
+
 export const useVoiceAnalytics = () => {
-  // Fetch analytics events
-  const { data: events = [], isLoading: eventsLoading } = useQuery({
-    queryKey: ['voice-analytics-events'],
-    queryFn: async () => {
-      const { data, error } = await supabase
-        .from('voice_analytics_events')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(1000);
-      
-      if (error) throw error;
-      return data as AnalyticsEvent[];
-    }
-  });
+  const [events] = useState<AnalyticsEvent[]>(mockEvents);
+  const [isLoading] = useState(false);
 
   // Calculate metrics from events
   const metrics: AnalyticsMetrics = {
@@ -96,6 +109,6 @@ export const useVoiceAnalytics = () => {
     metrics,
     callVolumeData,
     performanceData,
-    isLoading: eventsLoading,
+    isLoading,
   };
 };

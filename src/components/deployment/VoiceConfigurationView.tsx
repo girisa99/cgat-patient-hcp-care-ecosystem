@@ -108,15 +108,19 @@ const VoiceConfigurationView = () => {
 
   const handleCreateLiveAgent = (values: z.infer<typeof liveAgentSchema>) => {
     createAgent({
-      ...values,
+      name: values.name,
+      email: values.email,
+      department: values.department,
       skills: values.skills ? values.skills.split(',').map(s => s.trim()) : [],
+      max_concurrent_calls: values.max_concurrent_calls,
     });
     liveAgentForm.reset();
   };
 
   const handleCreateConnector = (values: z.infer<typeof connectorSchema>) => {
     createConnector({
-      ...values,
+      name: values.name,
+      type: values.type,
       configuration: {},
       endpoints: values.endpoints ? values.endpoints.split(',').map(s => s.trim()) : [],
       features: values.features ? values.features.split(',').map(s => s.trim()) : [],
@@ -295,7 +299,7 @@ const VoiceConfigurationView = () => {
                         <Button 
                           variant="ghost" 
                           size="sm"
-                          onClick={() => updateAgent(agent.id, { status: agent.status === 'online' ? 'offline' : 'online' })}
+                          onClick={() => updateAgent({ id: agent.id, updates: { status: agent.status === 'online' ? 'offline' : 'online' } })}
                           disabled={isUpdatingAgent}
                         >
                           <Edit className="h-4 w-4" />
@@ -409,15 +413,15 @@ const VoiceConfigurationView = () => {
                   </Form>
                 </DialogContent>
               </Dialog>
-              <Button 
-                variant="outline" 
-                onClick={testAllConnectors}
-                disabled={isTestingConnector}
-                size="sm"
-              >
-                <TestTube className="h-4 w-4 mr-2" />
-                {isTestingConnector ? "Testing..." : "Test All"}
-              </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={() => testAllConnectors()}
+                    disabled={isTestingConnector}
+                    size="sm"
+                  >
+                    <TestTube className="h-4 w-4 mr-2" />
+                    {isTestingConnector ? "Testing..." : "Test All"}
+                  </Button>
             </div>
           </div>
 
@@ -444,7 +448,7 @@ const VoiceConfigurationView = () => {
                           <TestTube className="h-4 w-4" />
                         </Button>
                         <Button 
-                          onClick={() => updateConnector(connector.id, { status: connector.status === 'active' ? 'inactive' : 'active' })}
+                          onClick={() => updateConnector({ id: connector.id, updates: { status: connector.status === 'active' ? 'inactive' : 'active' } })}
                           disabled={isUpdatingConnector}
                           size="sm"
                           variant="ghost"

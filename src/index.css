@@ -1,9 +1,9 @@
+/* Import Enhanced Tab Styles */
+@import './styles/enhanced-tabs.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-/* Import Enhanced Tab Styles */
-@import './styles/enhanced-tabs.css';
 
 /* Presentation Animations */
 @keyframes fade-in {
