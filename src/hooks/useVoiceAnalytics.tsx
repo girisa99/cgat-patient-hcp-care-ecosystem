@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
+import { useMemo } from 'react';
 
 interface AnalyticsEvent {
   id: string;
@@ -23,38 +25,23 @@ interface AnalyticsMetrics {
   satisfactionScore: number;
 }
 
-// Mock data
-const mockEvents: AnalyticsEvent[] = [
-  {
-    id: '1',
-    event_type: 'call_started',
-    agent_id: 'agent1',
-    live_agent_id: null,
-    connector_id: 'connector1',
-    call_duration: null,
-    queue_wait_time: null,
-    metadata: {},
-    created_at: new Date(Date.now() - 3600000).toISOString(),
-  },
-  {
-    id: '2',
-    event_type: 'call_ended',
-    agent_id: 'agent1',
-    live_agent_id: null,
-    connector_id: 'connector1',
-    call_duration: 180,
-    queue_wait_time: null,
-    metadata: {},
-    created_at: new Date(Date.now() - 3300000).toISOString(),
-  }
-];
-
 export const useVoiceAnalytics = () => {
-  const [events] = useState<AnalyticsEvent[]>(mockEvents);
-  const [isLoading] = useState(false);
+  // Fetch voice analytics events
+  const { data: events = [], isLoading, error } = useQuery({
+    queryKey: ['voice-analytics-events'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('voice_analytics_events')
+        .select('*')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data as AnalyticsEvent[];
+    }
+  });
 
   // Calculate metrics from events
-  const metrics: AnalyticsMetrics = {
+  const metrics: AnalyticsMetrics = useMemo(() => ({
     totalCalls: events.filter(e => e.event_type === 'call_ended').length,
     averageCallDuration: events
       .filter(e => e.event_type === 'call_ended' && e.call_duration)
@@ -75,18 +62,18 @@ export const useVoiceAnalytics = () => {
     ).length,
     peakHour: '2:00 PM', // Calculated from hourly distribution
     satisfactionScore: 4.2 // Mock data - would come from surveys
-  };
+  }), [events]);
 
   // Generate chart data
-  const callVolumeData = Array.from({ length: 24 }, (_, hour) => ({
+  const callVolumeData = useMemo(() => Array.from({ length: 24 }, (_, hour) => ({
     hour: `${hour}:00`,
     calls: events.filter(e => 
       e.event_type === 'call_ended' && 
       new Date(e.created_at).getHours() === hour
     ).length
-  }));
+  })), [events]);
 
-  const performanceData = Array.from({ length: 7 }, (_, day) => {
+  const performanceData = useMemo(() => Array.from({ length: 7 }, (_, day) => {
     const date = new Date();
     date.setDate(date.getDate() - day);
     const dayEvents = events.filter(e => 
@@ -102,7 +89,7 @@ export const useVoiceAnalytics = () => {
         .reduce((acc, e) => acc + (e.call_duration || 0), 0) / 
         (dayEvents.filter(e => e.event_type === 'call_ended' && e.call_duration).length || 1)
     };
-  }).reverse();
+  }).reverse(), [events]);
 
   return {
     events,
@@ -110,5 +97,6 @@ export const useVoiceAnalytics = () => {
     callVolumeData,
     performanceData,
     isLoading,
+    error,
   };
 };
