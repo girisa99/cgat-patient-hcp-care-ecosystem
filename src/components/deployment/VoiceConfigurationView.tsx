@@ -30,11 +30,19 @@ import {
   PowerOff,
   BarChart3,
   TestTube,
-  Headphones
+  Headphones,
+  Users,
+  Activity
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useVoiceProviders } from '@/hooks/useVoiceProviders';
 import { SoftphoneInterface } from '@/components/softphone/SoftphoneInterface';
+import { LiveAgentTransfer } from '@/components/agent-testing/LiveAgentTransfer';
+import VoiceConnectors from '@/components/voice/VoiceConnectors';
+import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
+import ElevenLabsIntegration from '@/components/voice/ElevenLabsIntegration';
+import OpenAIRealtimeChat from '@/components/voice/OpenAIRealtimeChat';
+import VoiceAnalytics from '@/components/voice/VoiceAnalytics';
 
 const VoiceConfigurationView = () => {
   const [selectedVoiceProvider, setSelectedVoiceProvider] = useState('');
@@ -220,26 +228,149 @@ const VoiceConfigurationView = () => {
         </Button>
       </div>
 
-      {/* Voice System Tabs */}
-      <Tabs defaultValue="providers" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="providers" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Providers
+      {/* Comprehensive Voice System Tabs */}
+      <Tabs defaultValue="overview" className="w-full">
+        <TabsList className="grid w-full grid-cols-8 text-xs">
+          <TabsTrigger value="overview" className="flex items-center gap-1">
+            <BarChart3 className="h-3 w-3" />
+            Overview
           </TabsTrigger>
-          <TabsTrigger value="softphone" className="flex items-center gap-2">
-            <Phone className="h-4 w-4" />
+          <TabsTrigger value="softphone" className="flex items-center gap-1">
+            <Phone className="h-3 w-3" />
             Softphone
           </TabsTrigger>
-          <TabsTrigger value="testing" className="flex items-center gap-2">
-            <TestTube className="h-4 w-4" />
+          <TabsTrigger value="live-agents" className="flex items-center gap-1">
+            <Users className="h-3 w-3" />
+            Live Agents
+          </TabsTrigger>
+          <TabsTrigger value="ai-voice" className="flex items-center gap-1">
+            <Mic className="h-3 w-3" />
+            AI Voice
+          </TabsTrigger>
+          <TabsTrigger value="connectors" className="flex items-center gap-1">
+            <Zap className="h-3 w-3" />
+            Connectors
+          </TabsTrigger>
+          <TabsTrigger value="testing" className="flex items-center gap-1">
+            <TestTube className="h-3 w-3" />
             Testing
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <BarChart3 className="h-4 w-4" />
+          <TabsTrigger value="deployments" className="flex items-center gap-1">
+            <Activity className="h-3 w-3" />
+            Deployments
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="flex items-center gap-1">
+            <BarChart3 className="h-3 w-3" />
             Analytics
           </TabsTrigger>
         </TabsList>
+
+        <TabsContent value="overview" className="space-y-6">
+          {/* System Overview */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Activity className="h-5 w-5" />
+                  Voice System Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Active Providers</span>
+                    <Badge variant="secondary">4/7</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">System Health</span>
+                    <Badge className="bg-green-100 text-green-800">Excellent</Badge>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Uptime</span>
+                    <span className="text-sm font-medium">99.8%</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Phone className="h-5 w-5" />
+                  Call Statistics
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Total Calls Today</span>
+                    <span className="text-sm font-medium">347</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Success Rate</span>
+                    <span className="text-sm font-medium text-green-600">94.2%</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Avg Duration</span>
+                    <span className="text-sm font-medium">2:34</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="h-5 w-5" />
+                  Agent Activity
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Online Agents</span>
+                    <span className="text-sm font-medium">12/15</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">In Conversation</span>
+                    <span className="text-sm font-medium">8</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm">Available</span>
+                    <span className="text-sm font-medium text-green-600">4</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Quick Actions */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Quick Actions</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                  <Phone className="h-6 w-6" />
+                  <span className="text-sm">Test Call</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                  <Settings className="h-6 w-6" />
+                  <span className="text-sm">Configure</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                  <BarChart3 className="h-6 w-6" />
+                  <span className="text-sm">View Reports</span>
+                </Button>
+                <Button variant="outline" className="h-20 flex flex-col gap-2">
+                  <Zap className="h-6 w-6" />
+                  <span className="text-sm">Run Tests</span>
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
 
         <TabsContent value="providers" className="space-y-6">
           {/* Voice Provider Selection */}
@@ -462,11 +593,47 @@ const VoiceConfigurationView = () => {
         </TabsContent>
 
         <TabsContent value="softphone" className="space-y-6">
-          <div className="bg-gradient-to-r from-blue-50 to-blue-100 border border-blue-200 rounded-lg p-6">
-            <h3 className="font-bold text-blue-900 mb-2">Softphone Interface</h3>
-            <p className="text-blue-700">Make and manage voice calls with real-time transcription and multi-provider support.</p>
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Phone className="h-5 w-5" />
+                Complete Softphone Interface
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <SoftphoneInterface />
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="live-agents" className="space-y-6">
+          <LiveAgentTransfer />
+        </TabsContent>
+
+        <TabsContent value="ai-voice" className="space-y-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>ElevenLabs TTS Integration</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ElevenLabsIntegration />
+              </CardContent>
+            </Card>
+            
+            <Card>
+              <CardHeader>
+                <CardTitle>OpenAI Realtime Voice</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <OpenAIRealtimeChat />
+              </CardContent>
+            </Card>
           </div>
-          <SoftphoneInterface />
+        </TabsContent>
+
+        <TabsContent value="connectors" className="space-y-6">
+          <VoiceConnectors />
         </TabsContent>
 
         <TabsContent value="testing" className="space-y-6">
@@ -514,61 +681,12 @@ const VoiceConfigurationView = () => {
           </Card>
         </TabsContent>
 
+        <TabsContent value="deployments" className="space-y-6">
+          <ActiveDeploymentsView />
+        </TabsContent>
+
         <TabsContent value="analytics" className="space-y-6">
-          <div className="bg-gradient-to-r from-purple-50 to-purple-100 border border-purple-200 rounded-lg p-6">
-            <h3 className="font-bold text-purple-900 mb-2">Voice System Analytics</h3>
-            <p className="text-purple-700">Monitor voice system performance, call quality, and usage metrics.</p>
-          </div>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Active Providers</p>
-                    <p className="text-2xl font-bold">{voiceProviders.filter(p => p.is_active).length}</p>
-                  </div>
-                  <Headphones className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Total Providers</p>
-                    <p className="text-2xl font-bold">{voiceProviders.length}</p>
-                  </div>
-                  <Settings className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">Configurations</p>
-                    <p className="text-2xl font-bold">{voiceConfigurations.length}</p>
-                  </div>
-                  <Volume2 className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-            
-            <Card>
-              <CardContent className="p-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">System Status</p>
-                    <p className="text-2xl font-bold text-green-600">Online</p>
-                  </div>
-                  <Check className="h-8 w-8 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+          <VoiceAnalytics />
         </TabsContent>
       </Tabs>
 
