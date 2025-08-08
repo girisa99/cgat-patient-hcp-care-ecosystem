@@ -19,7 +19,8 @@ import {
   UserCheck,
   Zap,
   Network,
-  Workflow
+  Workflow,
+  Phone
 } from "lucide-react";
 
 export const navItems = [
@@ -37,6 +38,11 @@ export const navItems = [
     title: "Agents",
     url: "/agents",
     icon: Bot,
+  },
+  {
+    title: "Softphone",
+    url: "/softphone",
+    icon: Phone,
   },
   {
     title: "Treatment Centers",
