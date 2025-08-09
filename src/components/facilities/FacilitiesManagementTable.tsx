@@ -38,15 +38,6 @@ export const FacilitiesManagementTable: React.FC = () => {
     };
   }>({ open: false });
 
-  if (!isAdmin) {
-    return (
-      <Card>
-        <CardContent className="p-8 text-center">
-          <p>You don't have permission to manage facilities.</p>
-        </CardContent>
-      </Card>
-    );
-  }
 
   const handleOpenCreateModal = () => {
     setFacilityModal({ open: true, facility: undefined });
@@ -111,10 +102,12 @@ export const FacilitiesManagementTable: React.FC = () => {
         <CardTitle className="flex items-center gap-2">
           Facilities <Badge variant="outline">{facilities.length}</Badge>
         </CardTitle>
-        <Button size="sm" onClick={handleOpenCreateModal}>
-          <Plus className="h-4 w-4 mr-2" />
-          Add Facility
-        </Button>
+        {isAdmin && (
+          <Button size="sm" onClick={handleOpenCreateModal}>
+            <Plus className="h-4 w-4 mr-2" />
+            Add Facility
+          </Button>
+        )}
       </CardHeader>
       <CardContent>
         {error ? (
@@ -123,7 +116,7 @@ export const FacilitiesManagementTable: React.FC = () => {
           <DataTable
             data={facilities}
             columns={columns}
-            actions={renderActions}
+            actions={isAdmin ? renderActions : undefined}
             loading={isLoading}
             emptyMessage="No facilities found"
             onRefresh={refetch}
