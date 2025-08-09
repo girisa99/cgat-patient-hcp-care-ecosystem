@@ -7529,6 +7529,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      _table_exists: {
+        Args: { p_table: string }
+        Returns: boolean
+      }
       assign_user_role: {
         Args: { p_user_id: string; p_role_name: string }
         Returns: undefined
