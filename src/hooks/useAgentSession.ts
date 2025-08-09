@@ -21,14 +21,14 @@ export const useAgentSession = (sessionId?: string) => {
         .from('agent_sessions')
         .select('*')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error fetching session:', error);
         return null;
       }
 
-      return data as AgentSession;
+      return (data ?? null) as AgentSession | null;
     },
     enabled: !!sessionId,
   });
@@ -204,9 +204,9 @@ export const useAgentSession = (sessionId?: string) => {
             .from('agent_sessions')
             .select()
             .eq('id', sessionId)
-            .single();
+            .maybeSingle();
           
-          if (fetchError) {
+          if (fetchError || !existingData) {
             throw new Error(`Failed to auto-save session: ${error.message}`);
           }
           return existingData as AgentSession;

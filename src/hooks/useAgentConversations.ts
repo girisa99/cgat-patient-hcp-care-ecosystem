@@ -109,9 +109,9 @@ export const useAgentConversations = () => {
         .from('agent_conversations')
         .select('conversation_data')
         .eq('id', conversationId)
-        .single();
+        .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (fetchError || !conversation) throw (fetchError || new Error('Conversation not found'));
 
       // Add new message to conversation data
       const existingData = Array.isArray(conversation.conversation_data) ? conversation.conversation_data : [];
