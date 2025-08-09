@@ -554,12 +554,12 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         {/* Tab List */}
-        <TabsList className="flex w-full items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide p-2">
+        <TabsList level="parent" className="flex-nowrap whitespace-nowrap scrollbar-hide">
           {tabClusters.map((tab) => (
             <TabsTrigger
               key={tab.id}
               value={tab.id}
-              className="min-w-max flex flex-col items-center gap-1 p-2 h-auto text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="min-w-max h-auto flex-col whitespace-nowrap"
             >
               <div className={`${tab.color} p-1.5 rounded text-white`}>
                 {tab.icon}
@@ -585,13 +585,13 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
                 if (idx >= 0) setActiveSubStep((prev) => ({ ...prev, [tab.id]: idx }));
               }}
             >
-              <TabsList level="child" className="w-full overflow-x-auto whitespace-nowrap scrollbar-hide gap-2">
+              <TabsList level="child" className="w-full overflow-x-auto flex-nowrap whitespace-nowrap scrollbar-hide">
                 {tab.subSteps.map((subStep) => (
                   <TabsTrigger
                     key={subStep.id}
                     value={subStep.id}
                     level="child"
-                    className="min-w-max flex items-center gap-2"
+                    className="min-w-max"
                   >
                     <span className="text-muted-foreground">{subStep.icon}</span>
                     <span className="text-sm">{subStep.title}</span>
