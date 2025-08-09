@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModelConfig, UserModelPreferences, ModelCapability, ALL_MODELS } from '@/types/ModelTypes';
 import { useToast } from '@/hooks/use-toast';
-import { Cpu, Zap, DollarSign, Shield, Cloud, HardDrive } from 'lucide-react';
+import { Cpu, Zap, DollarSign, Shield, Cloud, HardDrive, Wand2 } from 'lucide-react';
 
 interface ModelSelectorProps {
   onPreferencesChange: (preferences: UserModelPreferences) => void;
@@ -67,6 +67,30 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     };
     setPreferences(updated);
     onPreferencesChange(updated);
+  };
+
+  const applyAutosuggest = () => {
+    // Default: Auto (Claude/OpenAI) for conversational tasks; real model IDs for others
+    const suggestions = {
+      chat: 'auto-hybrid',
+      medical: 'auto-hybrid',
+      code: 'gpt-4o-mini',
+      embeddings: 'distilbert-base',
+      classification: 'distilbert-base'
+    } as UserModelPreferences['preferredModels'];
+
+    const updated = {
+      ...preferences,
+      preferredModels: {
+        ...preferences.preferredModels,
+        ...suggestions,
+      },
+      updatedAt: new Date().toISOString(),
+    };
+
+    setPreferences(updated);
+    onPreferencesChange(updated);
+    toast({ title: 'Autosuggest applied', description: 'Model choices updated. You can override any selection.' });
   };
 
   const getModelIcon = (model: ModelConfig) => {
@@ -200,6 +224,14 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
               <Label htmlFor="auto-download" className="text-sm">Auto Download Models</Label>
             </div>
           </div>
+
+          {/* Autosuggest - apply on click */}
+          <div className="flex justify-end">
+            <Button variant="secondary" size="sm" onClick={applyAutosuggest} className="flex items-center gap-2">
+              <Wand2 className="h-4 w-4" />
+              Apply Autosuggest
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -224,6 +256,37 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                   Select your preferred model for {capability} tasks
                 </div>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* Auto (Claude/OpenAI) hybrid option */}
+                  {(capability === 'chat' || capability === 'medical') && (
+                    <Card 
+                      className={`cursor-pointer transition-all hover:shadow-md ${
+                        preferences.preferredModels[capability] === 'auto-hybrid' ? 'ring-2 ring-primary' : ''
+                      }`}
+                      onClick={() => updatePreferredModel(capability, 'auto-hybrid')}
+                    >
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center justify-between">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            {getPerformanceIcon(preferences.performancePreference)}
+                            Auto (Claude/OpenAI)
+                          </CardTitle>
+                          <div className="flex gap-1">
+                            <Badge variant="secondary" className="text-xs">Hybrid</Badge>
+                            <Badge variant="outline" className="text-xs">Smart</Badge>
+                          </div>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="pt-0">
+                        <p className="text-xs text-muted-foreground mb-2">Let the system pick the best of Claude/OpenAI per turn based on speed, accuracy, and cost.</p>
+                        <div className="flex flex-wrap gap-1 mb-2">
+                          <Badge variant="outline" className="text-xs">{capability}</Badge>
+                          <Badge variant="outline" className="text-xs">routing</Badge>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  {/* Explicit models */}
                   {ALL_MODELS
                     .filter(m => m.capabilities.includes(capability))
                     .map(model => (
