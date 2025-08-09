@@ -206,7 +206,7 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
         .select()
         .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create API service'));
       return data;
     },
     onSuccess: () => {

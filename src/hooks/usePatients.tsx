@@ -118,9 +118,9 @@ export const usePatients = () => {
           .from('roles')
           .select('id')
           .eq('name', 'patientCaregiver')
-          .single();
+          .maybeSingle();
           
-        if (roleQueryError) throw roleQueryError;
+        if (roleQueryError || !roleData?.id) throw (roleQueryError || new Error('Role patientCaregiver not found'));
         
         const { error: roleError } = await supabase
           .from('user_roles')
