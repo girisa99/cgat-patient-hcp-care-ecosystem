@@ -21,6 +21,7 @@ import { AgentActionsManager, type AgentAction } from './AgentActionsManager';
 import ModePicker from '@/components/agent-builder/ModePicker';
 import LSBindingPanel, { type LSBinding } from '@/components/label-studio/LSBindingPanel';
 import { useLabelStudio } from '@/hooks/useLabelStudio';
+import { Switch } from '@/components/ui/switch';
 
 interface Template {
   id: string;
@@ -60,6 +61,8 @@ interface WizardState {
   agentActions: AgentAction[];
   // Label Studio binding
   labelStudio?: LSBinding;
+  // Whether to use Label Studio in this build
+  useLabelStudio: boolean;
   deploymentConfig: {
     parallel: boolean;
     compliance: boolean;
@@ -98,6 +101,7 @@ export const AgentCreationWizard = () => {
     labelStudio: {
       appliesTo: { prompts: true, visual: false, templates: false }
     },
+    useLabelStudio: false,
     deploymentConfig: {
       parallel: false,
       compliance: true,
@@ -139,6 +143,30 @@ export const AgentCreationWizard = () => {
     };
 
     fetchTemplates();
+  }, []);
+
+  // Pre-bind Label Studio from last agent if present
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const userId = auth.user?.id;
+        if (!userId) return;
+        if (state.labelStudio?.projectId) return; // already set by user
+        const { data, error } = await supabase
+          .from('agents')
+          .select('configuration, created_at, created_by')
+          .eq('created_by', userId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (!error && data && data.length) {
+          const lastBinding = (data[0] as any)?.configuration?.labelStudioBinding;
+          if (lastBinding?.projectId) {
+            setState(prev => ({ ...prev, labelStudio: lastBinding, useLabelStudio: true }));
+          }
+        }
+      } catch {}
+    })();
   }, []);
 
   // Step change handler
@@ -591,7 +619,7 @@ export const AgentCreationWizard = () => {
                 onBusinessUnitsChange={(units) => updateField('selectedBusinessUnits', units)}
                 onTopicsChange={(topics) => updateField('selectedTopics', topics)}
               />
-              {hasLS && state.labelStudio?.appliesTo?.templates && (
+              {state.useLabelStudio && hasLS && state.labelStudio?.appliesTo?.templates && (
                 <div className="flex justify-end">
                   <Button size="sm" variant="outline" onClick={applyLSForTemplates} disabled={lsLoading}>
                     {lsLoading ? 'Applying…' : 'Apply from Label Studio'}
@@ -619,7 +647,7 @@ export const AgentCreationWizard = () => {
             </div>
           )}
         </div>
-        {hasLS && state.labelStudio?.appliesTo?.visual && (
+        {state.useLabelStudio && hasLS && state.labelStudio?.appliesTo?.visual && (
           <Button size="sm" variant="outline" onClick={applyLSForVisual} disabled={lsLoading}>
             {lsLoading ? 'Applying…' : 'Apply from Label Studio'}
           </Button>
@@ -648,7 +676,7 @@ export const AgentCreationWizard = () => {
     <div className="space-y-6" key="step-4">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Agent Actions & Tasks</h3>
-        {hasLS && state.labelStudio?.appliesTo?.prompts && (
+        {state.useLabelStudio && hasLS && state.labelStudio?.appliesTo?.prompts && (
           <Button size="sm" variant="outline" onClick={applyLSForPrompts} disabled={lsLoading}>
             {lsLoading ? 'Applying…' : 'Import from Label Studio'}
           </Button>
@@ -759,25 +787,38 @@ export const AgentCreationWizard = () => {
               </div>
             </div>
             
-            {/* Label Studio Binding */}
-            <LSBindingPanel
-              value={state.labelStudio}
-              onBind={(binding) => {
-                updateField('labelStudio', binding);
-                toast({
-                  title: binding.projectId ? 'Label Studio Linked' : 'Label Studio Detached',
-                  description: binding.projectId
-                    ? `Project ${binding.projectTitle || binding.projectId} attached to ${[
-                        binding.appliesTo.prompts ? 'prompts' : null,
-                        binding.appliesTo.visual ? 'visual' : null,
-                        binding.appliesTo.templates ? 'templates' : null,
-                      ]
-                        .filter(Boolean)
-                        .join(', ')}`
-                    : 'Dataset disconnected from this agent.',
-                });
-              }}
-            />
+            {/* Label Studio */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h5 className="text-sm font-medium">Label Studio</h5>
+                <p className="text-xs text-muted-foreground">Optional dataset binding; manual apply only.</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Switch checked={state.useLabelStudio} onCheckedChange={(v) => updateField('useLabelStudio', v)} />
+                <span className="text-sm">{state.useLabelStudio ? 'Enabled' : 'Disabled'}</span>
+              </div>
+            </div>
+            {state.useLabelStudio && (
+              <LSBindingPanel
+                value={state.labelStudio}
+                onBind={(binding) => {
+                  updateField('labelStudio', binding);
+                  toast({
+                    title: binding.projectId ? 'Label Studio Linked' : 'Label Studio Detached',
+                    description: binding.projectId
+                      ? `Project ${binding.projectTitle || binding.projectId} attached to ${[
+                          binding.appliesTo.prompts ? 'prompts' : null,
+                          binding.appliesTo.visual ? 'visual' : null,
+                          binding.appliesTo.templates ? 'templates' : null,
+                        ]
+                          .filter(Boolean)
+                          .join(', ')}`
+                      : 'Dataset disconnected from this agent.',
+                  });
+                }}
+              />
+            )}
+
             
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-200">
