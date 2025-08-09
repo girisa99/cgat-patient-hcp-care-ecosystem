@@ -67,9 +67,10 @@ export const useVoiceProviders = () => {
         .from('voice_configurations')
         .insert([config])
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create voice configuration'));
+
       return data;
     },
     onSuccess: () => {
@@ -90,9 +91,10 @@ export const useVoiceProviders = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to update voice configuration'));
+
       return data;
     },
     onSuccess: () => {
@@ -113,9 +115,10 @@ export const useVoiceProviders = () => {
         .update({ is_active: isActive })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to update provider status'));
+
       return data;
     },
     onSuccess: () => {

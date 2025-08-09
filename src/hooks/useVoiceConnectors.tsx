@@ -39,9 +39,10 @@ export const useVoiceConnectors = () => {
           created_by: (await supabase.auth.getUser()).data.user?.id
         }])
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create connector'));
+
       return data;
     },
     onSuccess: () => {
@@ -62,9 +63,10 @@ export const useVoiceConnectors = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to update connector'));
+
       return data;
     },
     onSuccess: () => {
@@ -88,9 +90,10 @@ export const useVoiceConnectors = () => {
         })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to test connector'));
+
       return data;
     },
     onSuccess: () => {

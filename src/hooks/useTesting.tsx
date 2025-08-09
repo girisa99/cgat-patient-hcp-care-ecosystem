@@ -97,9 +97,10 @@ export const useTesting = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to update test case'));
+
       return data;
     },
     onSuccess: () => {

@@ -159,13 +159,13 @@ const validatePatientAccess = async (userId: string, patientId: string): Promise
     .from('profiles')
     .select('facility_id')
     .eq('id', userId)
-    .single();
+    .maybeSingle();
     
   const { data: patient } = await supabase
     .from('profiles')
     .select('facility_id')
     .eq('id', patientId)
-    .single();
+    .maybeSingle();
     
   // Users can access patients in their facility
   return userProfile?.facility_id === patient?.facility_id;

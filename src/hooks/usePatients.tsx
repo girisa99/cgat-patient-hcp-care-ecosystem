@@ -153,9 +153,10 @@ export const usePatients = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to update patient'));
+
       return data;
     },
     onSuccess: () => {
@@ -175,9 +176,10 @@ export const usePatients = () => {
         .update({ updated_at: new Date().toISOString() })
         .eq('id', patientId)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to deactivate patient'));
+
       return data;
     },
     onSuccess: () => {

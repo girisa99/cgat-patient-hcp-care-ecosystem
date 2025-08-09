@@ -74,9 +74,10 @@ export const useAgentConversations = () => {
           healthcare_context: {},
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (createError) throw createError;
+      if (createError || !data) throw (createError || new Error('Conversation not created'));
+
 
       await fetchConversations();
       

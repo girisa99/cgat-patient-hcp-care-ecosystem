@@ -563,9 +563,10 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
           is_active: true
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error ?? new Error('No template duplicated'));
+
 
       // Duplicate tasks
       if (template.tasks && template.tasks.length > 0) {

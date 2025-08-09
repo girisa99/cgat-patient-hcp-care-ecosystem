@@ -213,7 +213,7 @@ class ExternalApiSyncManagerClass {
         .from('external_api_registry')
         .select('*')
         .eq('id', externalApiId)
-        .single();
+        .maybeSingle();
 
       if (apiError) throw apiError;
 
@@ -291,7 +291,7 @@ class ExternalApiSyncManagerClass {
       .from('external_api_registry')
       .select('*')
       .eq('id', externalApiId)
-      .single();
+      .maybeSingle();
 
     if (apiError) throw apiError;
 
@@ -337,7 +337,7 @@ class ExternalApiSyncManagerClass {
       })
       .eq('id', externalApiId)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
 

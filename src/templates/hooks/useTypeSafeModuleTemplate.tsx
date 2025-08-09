@@ -92,7 +92,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
       .from(config.tableName)
       .insert(itemData)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;
@@ -110,7 +110,7 @@ export const useTypeSafeModuleTemplate = (config: ModuleConfig) => {
       .update(updates)
       .eq('id', id)
       .select()
-      .single();
+      .maybeSingle();
 
     if (error) throw error;
     return data;

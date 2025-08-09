@@ -87,9 +87,10 @@ export const useMasterApiServices = () => {
           status: 'active'
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create API service'));
+
       return data;
     },
     onSuccess: () => {

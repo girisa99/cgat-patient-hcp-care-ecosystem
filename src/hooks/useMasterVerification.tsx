@@ -170,9 +170,10 @@ export const useMasterVerification = () => {
         .update({ status: 'resolved' })
         .eq('id', issueId)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to resolve issue'));
+
       return data;
     },
     onSuccess: () => {

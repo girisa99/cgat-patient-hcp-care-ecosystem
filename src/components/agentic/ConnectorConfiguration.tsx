@@ -73,7 +73,7 @@ export const ConnectorConfiguration: React.FC<ConnectorConfigurationProps> = ({
         .from('agent_sessions')
         .select('connectors')
         .eq('id', sessionId)
-        .single();
+        .maybeSingle();
 
       if (data?.connectors && typeof data.connectors === 'object' && data.connectors !== null && 'configuration' in data.connectors) {
         const connectorConfig = data.connectors as Record<string, unknown>;

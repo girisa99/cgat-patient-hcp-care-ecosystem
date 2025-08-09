@@ -52,9 +52,10 @@ export const useGPOMemberships = (onboardingId?: string) => {
         .from('onboarding_gpo_memberships')
         .insert(membershipData)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create GPO membership'));
+
       return data;
     },
     onSuccess: () => {
@@ -81,9 +82,10 @@ export const useGPOMemberships = (onboardingId?: string) => {
         .update(membershipData)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to update GPO membership'));
+
       return data;
     },
     onSuccess: () => {

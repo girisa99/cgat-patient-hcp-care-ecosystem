@@ -85,7 +85,7 @@ export const useMasterOnboarding = () => {
         .from('treatment_center_onboarding')
         .insert(cleanData)
         .select()
-        .single();
+        .maybeSingle();
       
       if (onboardingError) throw onboardingError;
 
@@ -155,9 +155,10 @@ export const useMasterOnboarding = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to update application'));
+
 
       // Handle therapy selections updates if provided
       if (updates.therapy_selections !== undefined) {
@@ -246,9 +247,10 @@ export const useMasterOnboarding = () => {
         })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to submit application'));
+
       return data;
     },
     onSuccess: () => {

@@ -62,18 +62,20 @@ export const useOnboardingPurchasing = () => {
           .update(dbPreferences)
           .eq('id', preferences.id)
           .select()
-          .single();
+          .maybeSingle();
 
-        if (error) throw error;
+        if (error || !data) throw (error || new Error('Failed to update preferences'));
+
         return data;
       } else {
         const { data, error } = await supabase
           .from('onboarding_purchasing_preferences')
           .insert(dbPreferences)
           .select()
-          .single();
+          .maybeSingle();
 
-        if (error) throw error;
+        if (error || !data) throw (error || new Error('Failed to create preferences'));
+
         return data;
       }
     },

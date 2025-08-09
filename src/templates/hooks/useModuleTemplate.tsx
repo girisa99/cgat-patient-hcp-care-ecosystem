@@ -53,11 +53,15 @@ export const useModuleTemplate = (tableName: string) => {
         .from(tableName)
         .insert(newItem)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error(`❌ Error creating ${tableName}:`, error);
         throw error;
+      }
+
+      if (!data) {
+        throw new Error(`Failed to create ${tableName} item`);
       }
 
       return data;
@@ -88,11 +92,15 @@ export const useModuleTemplate = (tableName: string) => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error(`❌ Error updating ${tableName}:`, error);
         throw error;
+      }
+
+      if (!data) {
+        throw new Error(`Failed to update ${tableName} item`);
       }
 
       return data;

@@ -63,9 +63,10 @@ export const useMasterModules = () => {
         .from('modules')
         .insert(moduleData)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create module'));
+
       return data;
     },
     onSuccess: (newModule) => {
@@ -87,9 +88,10 @@ export const useMasterModules = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to update module'));
+
       return data;
     },
     onSuccess: (updatedModule) => {

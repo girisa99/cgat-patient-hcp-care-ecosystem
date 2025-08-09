@@ -143,9 +143,10 @@ export const useSoftphone = () => {
           }
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+       if (error || !session) throw (error || new Error('Failed to create call session'));
+
 
       // Initialize voice provider if specified
       if (providerId) {

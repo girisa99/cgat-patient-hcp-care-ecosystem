@@ -37,9 +37,10 @@ export const useTransferQueue = () => {
           requested_by: user.user?.id || ''
         }])
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to create transfer'));
+
       return data;
     },
     onSuccess: () => {
@@ -64,9 +65,10 @@ export const useTransferQueue = () => {
         })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to assign transfer'));
+
       return data;
     },
     onSuccess: () => {
@@ -90,9 +92,10 @@ export const useTransferQueue = () => {
         })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
-      if (error) throw error;
+      if (error || !data) throw (error || new Error('Failed to complete transfer'));
+
       return data;
     },
     onSuccess: () => {
