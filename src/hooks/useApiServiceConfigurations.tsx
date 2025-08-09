@@ -41,9 +41,10 @@ export const useApiServiceConfigurations = () => {
         .from('api_service_configurations')
         .insert([config])
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create API service configuration: no data returned'); }
       return data;
     },
     onSuccess: () => {
@@ -64,9 +65,10 @@ export const useApiServiceConfigurations = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to update API service configuration: no data returned'); }
       return data;
     },
     onSuccess: () => {

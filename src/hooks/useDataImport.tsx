@@ -64,9 +64,10 @@ export const useDataImport = () => {
           user_id: (await supabase.auth.getUser()).data.user?.id || ''
         })
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create import session: no data returned'); }
       return data;
     },
     onSuccess: () => {
@@ -89,9 +90,10 @@ export const useDataImport = () => {
         })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to update import session: no data returned'); }
       return data;
     },
     onSuccess: () => {

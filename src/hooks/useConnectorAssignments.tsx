@@ -132,12 +132,13 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
           *,
           connector:system_connectors(name, type, status)
         `)
-        .single();
+         .maybeSingle();
 
       if (error) {
         console.error('Error assigning connector:', error);
         throw error;
       }
+      if (!data) { throw new Error('Failed to assign connector: no data returned'); }
       return data;
     },
     onSuccess: (data) => {
@@ -168,9 +169,10 @@ export const useConnectorAssignments = (agentSessionId?: string) => {
           *,
           connector:system_connectors(name, type, status)
         `)
-        .single();
+         .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to update assignment: no data returned'); }
       return data;
     },
     onSuccess: (data) => {

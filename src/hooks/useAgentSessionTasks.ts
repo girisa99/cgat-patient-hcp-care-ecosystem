@@ -51,9 +51,10 @@ export const useAgentSessionTasks = (sessionId?: string) => {
         .from('agent_session_tasks')
         .insert([taskData])
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create task: no data returned'); }
       return data;
     },
     onSuccess: () => {
@@ -81,9 +82,10 @@ export const useAgentSessionTasks = (sessionId?: string) => {
         .update(updates)
         .eq('id', taskId)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to update task: no data returned'); }
       return data;
     },
     onSuccess: () => {

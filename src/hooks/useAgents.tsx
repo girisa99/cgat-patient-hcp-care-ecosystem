@@ -102,8 +102,8 @@ export const useAgents = () => {
           configuration: agentData.configuration || {},
           deployment_config: {}
         })
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
       
       if (error) {
         if (error.code === '23505') {
@@ -111,6 +111,7 @@ export const useAgents = () => {
         }
         throw error;
       }
+      if (!data) { throw new Error('Failed to create agent: no data returned'); }
       return data;
     },
     onSuccess: () => {
@@ -140,8 +141,8 @@ export const useAgents = () => {
           updated_at: new Date().toISOString()
         })
         .eq('id', id)
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
       
       if (error) {
         if (error.code === '23505') {
@@ -149,6 +150,7 @@ export const useAgents = () => {
         }
         throw error;
       }
+      if (!data) { throw new Error('Failed to update agent: no data returned'); }
       return data;
     },
     onSuccess: () => {

@@ -99,18 +99,20 @@ export const useFinancialAssessment = () => {
           .update(dbAssessment)
           .eq('id', assessment.id)
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
+        if (!data) { throw new Error('Failed to update financial assessment: no data returned'); }
         return data;
       } else {
         const { data, error } = await supabase
           .from('onboarding_financial_assessment')
           .insert(dbAssessment)
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
+        if (!data) { throw new Error('Failed to create financial assessment: no data returned'); }
         return data;
       }
     },

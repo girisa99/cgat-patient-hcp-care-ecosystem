@@ -108,7 +108,7 @@ export const useAgentSession = (sessionId?: string) => {
         .from('agent_sessions')
         .insert([newSessionData])
         .select()
-        .single();
+        .maybeSingle();
 
       console.log('🚀 Supabase insert result:', { data, error });
 
@@ -119,6 +119,7 @@ export const useAgentSession = (sessionId?: string) => {
         }
         throw new Error(`Failed to create session: ${error.message}`);
       }
+      if (!data) { throw new Error('Failed to create session: no data returned'); }
 
       console.log('✅ Session created successfully:', data);
       return data as AgentSession;
@@ -159,7 +160,7 @@ export const useAgentSession = (sessionId?: string) => {
         .update(updates)
         .eq('id', sessionId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         if (error.code === '23505') {
@@ -168,6 +169,7 @@ export const useAgentSession = (sessionId?: string) => {
         }
         throw new Error(`Failed to update session: ${error.message}`);
       }
+      if (!data) { throw new Error('Failed to update session: no data returned'); }
 
       return data as AgentSession;
     },
@@ -192,8 +194,8 @@ export const useAgentSession = (sessionId?: string) => {
         .from('agent_sessions')
         .update(updates)
         .eq('id', sessionId)
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
 
       if (error) {
         // If it's a primary key constraint violation, it's likely a race condition
@@ -214,6 +216,8 @@ export const useAgentSession = (sessionId?: string) => {
         
         throw new Error(`Failed to auto-save session: ${error.message}`);
       }
+
+      if (!data) { throw new Error('Failed to auto-save session: no data returned'); }
 
       return data as AgentSession;
     },
@@ -296,10 +300,11 @@ export const useAgentSession = (sessionId?: string) => {
       const { data, error } = await supabase
         .from('agents')
         .insert([agentData])
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
         
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create agent: no data returned'); }
 
       // Update session status
       await updateSession.mutateAsync({

@@ -99,9 +99,10 @@ export const useApiIntegrations = () => {
         .from('api_integration_registry')
         .insert(integrationData)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create API integration: no data returned'); }
       return data;
     },
     onSuccess: () => {
@@ -129,9 +130,10 @@ export const useApiIntegrations = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to update API integration: no data returned'); }
       return data;
     },
     onSuccess: () => {
@@ -185,9 +187,10 @@ export const useApiIntegrations = () => {
         .from('api_endpoints')
         .insert(endpointData)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create API endpoint: no data returned'); }
       return data;
     },
     onSuccess: () => {

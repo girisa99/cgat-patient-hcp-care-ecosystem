@@ -195,9 +195,10 @@ export const useConnectorMetrics = () => {
           created_by: (await supabase.auth.getUser()).data.user?.id
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create connector: no data returned'); }
       return data;
     },
     onSuccess: (data) => {
@@ -219,9 +220,10 @@ export const useConnectorMetrics = () => {
         .update(updates)
         .eq('id', connectorId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to update connector: no data returned'); }
       return data;
     },
     onSuccess: (data) => {
@@ -280,10 +282,11 @@ export const useConnectorMetrics = () => {
           success_rate: success ? 95 : 50 // Mock success rate
         })
         .eq('id', connectorId)
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to update connector after test: no data returned'); }
 
       // Log activity
       await supabase

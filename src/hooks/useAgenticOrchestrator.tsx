@@ -182,9 +182,10 @@ export const useAgenticOrchestrator = () => {
           }
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create external API: no data returned'); }
 
       // Create API endpoints
       for (const endpoint of configuration.endpoints) {

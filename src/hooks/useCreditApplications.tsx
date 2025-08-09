@@ -75,10 +75,11 @@ export const useCreditApplications = () => {
           business_type: applicationData.business_type || 'other',
           primary_contact_name: applicationData.primary_contact_name || 'Unknown'
         })
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to create credit application: no data returned'); }
       return data;
     },
     onSuccess: () => {
@@ -104,10 +105,11 @@ export const useCreditApplications = () => {
         .from('credit_applications')
         .update(applicationData)
         .eq('id', id)
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to update credit application: no data returned'); }
       return data;
     },
     onSuccess: () => {
@@ -136,10 +138,11 @@ export const useCreditApplications = () => {
           submitted_at: new Date().toISOString()
         })
         .eq('id', id)
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Failed to submit credit application: no data returned'); }
       return data;
     },
     onSuccess: () => {
