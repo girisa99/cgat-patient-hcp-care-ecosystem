@@ -261,7 +261,7 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
             is_active: true
           })
           .select()
-          .single();
+          .maybeSingle();
 
         if (saveError) {
           console.error('Error saving template:', saveError);
@@ -401,9 +401,9 @@ export const ActionTemplateManager: React.FC<ActionTemplateManagerProps> = ({
           is_active: true
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw (error ?? new Error('No template returned'));
 
       // Save tasks if any
       if (tasks.length > 0) {

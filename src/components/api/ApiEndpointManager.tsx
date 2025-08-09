@@ -115,9 +115,9 @@ const ApiEndpointManager: React.FC = () => {
           testing_status: 'pending'
         }])
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Insert returned no data');
       return data;
     },
     onSuccess: () => {

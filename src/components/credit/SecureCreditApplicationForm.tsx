@@ -148,7 +148,7 @@ export const SecureCreditApplicationForm: React.FC = () => {
         .eq('application_status', 'draft')
         .order('created_at', { ascending: false })
         .limit(1)
-        .single();
+         .maybeSingle();
 
       if (data && !error) {
         // Convert JSONB fields to arrays for compatibility and cast types properly
@@ -269,9 +269,9 @@ export const SecureCreditApplicationForm: React.FC = () => {
           .update(applicationData)
           .eq('id', application.id)
           .select()
-          .single();
-        
-        if (error) throw error;
+          .maybeSingle();
+          
+        if (error || !data) throw error ?? new Error('Update returned no data');
         result = data;
       } else {
         // Create new application
@@ -282,8 +282,8 @@ export const SecureCreditApplicationForm: React.FC = () => {
             applicant_user_id: user.id
           }])
           .select()
-          .single();
-        
+          .maybeSingle();
+          
         if (error) throw error;
         result = data;
         setApplication(result);
@@ -357,10 +357,10 @@ export const SecureCreditApplicationForm: React.FC = () => {
           storage_path: uploadData.path,
           uploaded_by: user.id
         }])
-        .select()
-        .single();
+         .select()
+         .maybeSingle();
 
-      if (docError) throw docError;
+       if (docError) throw docError;
 
       setDocuments(prev => [...prev, docData]);
 

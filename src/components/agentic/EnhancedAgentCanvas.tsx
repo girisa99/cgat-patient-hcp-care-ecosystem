@@ -334,9 +334,9 @@ export const EnhancedAgentCanvas: React.FC<EnhancedAgentCanvasProps> = ({
           created_by: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
-        .single();
+        .maybeSingle();
         
-      if (error) throw error;
+      if (error || !newTemplate) throw (error ?? new Error('Template not created'));
       
       // Add the new template to the templates list
       if (newTemplate) {

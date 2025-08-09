@@ -266,9 +266,9 @@ export const ConnectorCreationWizard: React.FC<ConnectorCreationWizardProps> = (
           created_by: (await supabase.auth.getUser()).data.user?.id
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !newConnector) throw error ?? new Error('Insert returned no data');
       
       // Trigger refresh of available connectors
       window.dispatchEvent(new CustomEvent('connectorCreated', { detail: newConnector }));

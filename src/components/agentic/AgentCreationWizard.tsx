@@ -268,9 +268,9 @@ export const AgentCreationWizard = () => {
           created_by: (await supabase.auth.getUser()).data.user?.id
         })
         .select('id')
-        .single();
+        .maybeSingle();
       
-      if (agentError) throw agentError;
+      if (agentError || !agent) throw (agentError ?? new Error('Agent not created'));
       
       // 3. Link knowledge bases if any
       if (state.knowledgeBaseIds.length > 0) {

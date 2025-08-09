@@ -100,9 +100,9 @@ const PublishingPipelineManager: React.FC = () => {
           lifecycle_stage: 'production'
         }])
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Insert returned no data');
       return data;
     },
     onSuccess: (result) => {
@@ -135,9 +135,9 @@ const PublishingPipelineManager: React.FC = () => {
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', apiId)
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Update returned no data');
       return data;
     },
     onSuccess: () => {

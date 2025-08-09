@@ -127,7 +127,7 @@ export const ManualConnectorDialog: React.FC<ManualConnectorDialogProps> = ({
         .from('api_integration_registry')
         .insert(finalData)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         throw new Error(error.message);

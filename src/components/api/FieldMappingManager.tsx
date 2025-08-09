@@ -169,9 +169,9 @@ const FieldMappingManager: React.FC = () => {
           mapping_direction: 'bidirectional'
         }])
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Insert returned no data');
       return data;
     },
     onSuccess: () => {

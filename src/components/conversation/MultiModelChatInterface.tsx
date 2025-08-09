@@ -84,9 +84,9 @@ export const MultiModelChatInterface: React.FC<MultiModelChatInterfaceProps> = (
           status: 'active',
         })
         .select()
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error || !data) throw error ?? new Error('Failed to initialize');
       setConversation(data as MultiModelConversation);
 
       // Load available engines for agent
