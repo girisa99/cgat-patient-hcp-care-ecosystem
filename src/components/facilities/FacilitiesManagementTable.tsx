@@ -103,7 +103,7 @@ export const FacilitiesManagementTable: React.FC = () => {
           Facilities <Badge variant="outline">{facilities.length}</Badge>
         </CardTitle>
         {isAdmin && (
-          <Button size="sm" onClick={handleOpenCreateModal}>
+          <Button size="sm" onClick={handleOpenCreateModal} disabled={userRoles.includes('demoUser')}>
             <Plus className="h-4 w-4 mr-2" />
             Add Facility
           </Button>
@@ -116,7 +116,7 @@ export const FacilitiesManagementTable: React.FC = () => {
           <DataTable
             data={facilities}
             columns={columns}
-            actions={isAdmin ? renderActions : undefined}
+            actions={isAdmin && !userRoles.includes('demoUser') ? renderActions : undefined}
             loading={isLoading}
             emptyMessage="No facilities found"
             onRefresh={refetch}

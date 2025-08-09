@@ -33,6 +33,7 @@ import { TreatmentCenterOnboarding, OnboardingStep } from '@/types/onboarding';
 import { useAutoSave } from '@/hooks/useAutoSave';
 import { useMasterOnboarding } from '@/hooks/useMasterOnboarding';
 import { toast } from '@/hooks/use-toast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 // Import existing step components
 import { 
@@ -135,12 +136,15 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
   
   const [completedSteps, setCompletedSteps] = useState<Set<string>>(new Set());
 
+  const { userRoles } = useMasterAuth();
+  const isDemo = userRoles.includes('demoUser');
+
   // Initialize auto-save functionality
   const { manualSave, isSaving } = useAutoSave({
     data: formData,
     currentStep: activeSubStep[activeTab],
     applicationId: applicationId || undefined,
-    enabled: true
+    enabled: !isDemo
   });
 
   const updateFormData = (section: string, data: any) => {
@@ -564,9 +568,14 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
               <div className={`${tab.color} p-1.5 rounded text-white`}>
                 {tab.icon}
               </div>
-              <div className="text-center">
-                <div className="text-xs font-medium leading-tight">{tab.title}</div>
-                <div className="text-[10px] opacity-75 mt-0.5">
+                <div className="text-center">
+                  <div className="text-xs font-medium leading-tight flex items-center justify-center gap-2">
+                    {tab.title}
+                    {isDemo && (
+                      <Badge variant="outline" className="text-[10px]">Read-only</Badge>
+                    )}
+                  </div>
+                  <div className="text-[10px] opacity-75 mt-0.5">
                   {tab.subSteps.filter(step => completedSteps.has(step.id)).length}/{tab.subSteps.length}
                 </div>
               </div>
@@ -637,13 +646,13 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
                     </Button>
 
                     <div className="flex gap-2">
-                      <Button variant="outline" onClick={handleSaveAndExit} disabled={isSaving}>
+                      <Button variant="outline" onClick={handleSaveAndExit} disabled={isSaving || isDemo}>
                         <Save className="h-4 w-4 mr-2" />
                         {isSaving ? 'Saving...' : 'Save & Exit'}
                       </Button>
 
                       {isLastStep() ? (
-                        <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+                        <Button onClick={handleSubmit} disabled={isDemo} className="bg-green-600 hover:bg-green-700">
                           <Check className="h-4 w-4 mr-2" />
                           Submit Application
                         </Button>
