@@ -39,7 +39,7 @@ export const useMasterFacilities = () => {
         .from('facilities')
         .insert(facilityData)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -60,7 +60,7 @@ export const useMasterFacilities = () => {
         .update(updates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;
@@ -75,13 +75,13 @@ export const useMasterFacilities = () => {
   });
 
   const deactivateFacilityMutation = useMutation({
-    mutationFn: async (facilityId: string) => {
+  mutationFn: async (facilityId: string) => {
       const { data, error } = await supabase
         .from('facilities')
         .update({ is_active: false })
         .eq('id', facilityId)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;

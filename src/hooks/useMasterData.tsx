@@ -204,7 +204,7 @@ export const useMasterData = (isAuthenticated: boolean = false) => {
         .from('api_integration_registry')
         .insert(serviceData)
         .select()
-        .single();
+        .maybeSingle();
       
       if (error) throw error;
       return data;

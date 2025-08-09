@@ -1,64 +1,24 @@
-
 /**
  * MASTER USER MANAGEMENT TYPES - SINGLE SOURCE OF TRUTH
- * Unified user interface definitions for master consolidation compliance
- * Version: user-management-types-v8.0.0 - Complete interface alignment with required properties
+ * Consolidated re-exports from masterTypes to prevent drift
+ * Version: user-management-types-v8.0.0
  */
+import type { MasterUser as BaseMasterUser } from '@/types/masterTypes';
 
-export interface UserWithRoles {
-  id: string;
-  email: string;
-  first_name: string;
-  last_name: string;
-  phone?: string | null;
-  created_at: string; // REQUIRED
-  updated_at?: string;
-  facility_id?: string | null;
+// Backward-compatible export that preserves all existing consumer expectations
+export type MasterUser = Omit<BaseMasterUser, 'is_email_verified' | 'user_roles'> & {
+  // Relax strict fields used across the app to avoid breakage
+  is_email_verified?: boolean;
   email_confirmed_at?: string | null;
   last_sign_in_at?: string | null;
   email_confirmed?: boolean;
-  is_active?: boolean;
   user_roles: {
     role: {
       name: string;
       description?: string | null;
     };
   }[];
-  facilities?: {
-    id: string;
-    name: string;
-    facility_type: string;
-  } | null;
-}
+};
 
-// Master User interface - now fully compatible with UserWithRoles with required user_roles
-export interface MasterUser {
-  id: string;
-  firstName: string;
-  lastName: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-  role?: string;
-  phone?: string;
-  isActive: boolean;
-  is_active?: boolean;
-  is_email_verified?: boolean; // Added missing property
-  created_at: string; // REQUIRED - made non-optional to match UserWithRoles
-  updated_at?: string;
-  facility_id?: string;
-  email_confirmed_at?: string;
-  last_sign_in_at?: string;
-  email_confirmed?: boolean;
-  facilities?: {
-    id: string;
-    name: string;
-    facility_type: string;
-  } | null;
-  user_roles: {
-    role: {
-      name: string;
-      description?: string;
-    };
-  }[]; // REQUIRED - made non-optional to match UserWithRoles
-}
+export type UserWithRoles = MasterUser;
+

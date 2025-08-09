@@ -137,7 +137,7 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
         .from('profiles')
         .select('*')
         .eq('id', userId)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('❌ Profile fetch error:', error);
