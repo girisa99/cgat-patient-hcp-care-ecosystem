@@ -19,6 +19,7 @@ import { CircleCheckBig, AlertTriangle, Bot, Settings, Users, CheckCircle } from
 import { CategoryMapping } from './CategoryMapping';
 import { AgentActionsManager, type AgentAction } from './AgentActionsManager';
 import ModePicker from '@/components/agent-builder/ModePicker';
+import LSBindingPanel, { type LSBinding } from '@/components/label-studio/LSBindingPanel';
 
 interface Template {
   id: string;
@@ -56,6 +57,8 @@ interface WizardState {
   selectedTopics: string[];
   // Agent actions
   agentActions: AgentAction[];
+  // Label Studio binding
+  labelStudio?: LSBinding;
   deploymentConfig: {
     parallel: boolean;
     compliance: boolean;
@@ -90,6 +93,10 @@ export const AgentCreationWizard = () => {
     selectedTopics: [],
     // Agent actions
     agentActions: [],
+    // Label Studio default binding
+    labelStudio: {
+      appliesTo: { prompts: true, visual: false, templates: false }
+    },
     deploymentConfig: {
       parallel: false,
       compliance: true,
@@ -264,6 +271,7 @@ export const AgentCreationWizard = () => {
             secondaryColor: state.secondaryColor,
             accentColor: state.accentColor,
             aiModels: selectedAIModels,
+            labelStudioBinding: state.labelStudio ? ({ ...state.labelStudio } as any) : undefined,
           },
           deployment_config: state.deploymentConfig,
           created_by: (await supabase.auth.getUser()).data.user?.id
@@ -648,6 +656,26 @@ export const AgentCreationWizard = () => {
                 </div>
               </div>
             </div>
+            
+            {/* Label Studio Binding */}
+            <LSBindingPanel
+              value={state.labelStudio}
+              onBind={(binding) => {
+                updateField('labelStudio', binding);
+                toast({
+                  title: binding.projectId ? 'Label Studio Linked' : 'Label Studio Detached',
+                  description: binding.projectId
+                    ? `Project ${binding.projectTitle || binding.projectId} attached to ${[
+                        binding.appliesTo.prompts ? 'prompts' : null,
+                        binding.appliesTo.visual ? 'visual' : null,
+                        binding.appliesTo.templates ? 'templates' : null,
+                      ]
+                        .filter(Boolean)
+                        .join(', ')}`
+                    : 'Dataset disconnected from this agent.',
+                });
+              }}
+            />
             
             <div className="mt-4 p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
               <p className="text-sm text-blue-800 dark:text-blue-200">
