@@ -15,8 +15,8 @@ interface Agent {
   purpose?: string;
   use_case?: string;
   brand?: string;
-  configuration: any;
-  deployment_config?: any;
+  configuration: unknown;
+  deployment_config?: unknown;
   template_id?: string;
   categories?: string[];
   business_units?: string[];

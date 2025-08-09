@@ -8,6 +8,7 @@ import { useRealFacilities } from './useRealFacilities';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
+import type { Database } from '@/integrations/supabase/types';
 
 export interface Facility {
   id: string;

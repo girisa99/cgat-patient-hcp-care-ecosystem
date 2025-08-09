@@ -102,7 +102,7 @@ const ApiEndpointManager: React.FC = () => {
 
   // Create endpoint mutation
   const createEndpointMutation = useMutation({
-    mutationFn: async (endpointData: any) => {
+    mutationFn: async (endpointData: { endpoint_path: string; method: string; description?: string; category: string; is_public: boolean; requires_authentication: boolean; sandbox_available: boolean; }) => {
       const { data, error } = await supabase
         .from('api_endpoints')
         .insert([{
