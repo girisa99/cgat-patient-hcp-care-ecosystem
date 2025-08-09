@@ -27,8 +27,11 @@ jobs:
       - name: Lint code
         run: npm run lint
 
-      - name: Type-check
-        run: npx tsc --noEmit
+      - name: Type-check (strict)
+        run: |
+          npx tsc -p tsconfig.strict-check.json --noEmit
+          npx tsc -p tsconfig.strict-check.app.json --noEmit
+          npx tsc -p tsconfig.strict-check.node.json --noEmit
 
       - name: Build project
         run: npm run build
