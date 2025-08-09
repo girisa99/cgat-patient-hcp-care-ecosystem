@@ -9,7 +9,7 @@ import ChannelAndVoiceSetup from '@/components/agent-deployment/ChannelAndVoiceS
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
 import DeploymentReadyView from '@/components/deployment/DeploymentReadyView';
 import EnhancedDeploymentReadyView from '@/components/deployment/EnhancedDeploymentReadyView';
-
+import { Link } from 'react-router-dom';
 import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { 
@@ -99,14 +99,22 @@ const Agents = () => {
                 }
               </p>
             </div>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowPresentation(!showPresentation)}
-              className="flex items-center gap-2"
-            >
-              <Presentation className="w-4 h-4" />
-              {showPresentation ? 'Hide' : 'Show'} AI Presentation
-            </Button>
+            <div className="flex items-center gap-2">
+              <Link to="/agents/new">
+                <Button className="flex items-center gap-2">
+                  <Bot className="w-4 h-4" />
+                  New Agent
+                </Button>
+              </Link>
+              <Button 
+                variant="outline" 
+                onClick={() => setShowPresentation(!showPresentation)}
+                className="flex items-center gap-2"
+              >
+                <Presentation className="w-4 h-4" />
+                {showPresentation ? 'Hide' : 'Show'} AI Presentation
+              </Button>
+            </div>
           </div>
 
           {/* AI Presentation Display */}

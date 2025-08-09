@@ -41,7 +41,7 @@ import SystemIntegration from '@/pages/SystemIntegration';
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
 import CreditApplication from '@/pages/CreditApplication';
-
+import AgentCreationWizard from '@/components/agentic/AgentCreationWizard';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -118,6 +118,11 @@ const AppContent = () => {
                   <Route path="/agents" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
                       <Agents />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/agents/new" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
+                      <AgentCreationWizard />
                     </ProtectedRoute>
                   } />
                   <Route path="/testing" element={
