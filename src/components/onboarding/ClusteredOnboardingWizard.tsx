@@ -554,14 +554,14 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
       {/* Main Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
         {/* Tab List */}
-        <TabsList className="grid w-full grid-cols-2 lg:grid-cols-6 gap-1 h-auto p-1">
+        <TabsList className="flex w-full items-center gap-2 overflow-x-auto whitespace-nowrap scrollbar-hide p-2">
           {tabClusters.map((tab) => (
             <TabsTrigger
               key={tab.id}
               value={tab.id}
-              className="flex flex-col items-center gap-1 p-2 h-auto text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              className="min-w-max flex flex-col items-center gap-1 p-2 h-auto text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
             >
-              <div className={`p-1.5 rounded ${tab.color} text-white`}>
+              <div className={`${tab.color} p-1.5 rounded text-white`}>
                 {tab.icon}
               </div>
               <div className="text-center">
@@ -577,125 +577,87 @@ export const ClusteredOnboardingWizard: React.FC<ClusteredOnboardingWizardProps>
         {/* Tab Content */}
         {tabClusters.map((tab) => (
           <TabsContent key={tab.id} value={tab.id} className="space-y-6">
-            <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Subtep Navigation Sidebar */}
-              <div className="lg:col-span-1">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <div className={`p-1 rounded ${tab.color} text-white`}>
-                        {tab.icon}
-                      </div>
-                      {tab.title}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-3 space-y-2">
-                    {tab.subSteps.map((subStep, index) => (
-                      <div
-                        key={subStep.id}
-                        className={`p-3 rounded-lg border cursor-pointer transition-all ${
-                          index === activeSubStep[activeTab]
-                            ? 'border-primary bg-primary/5'
-                            : completedSteps.has(subStep.id)
-                            ? 'border-green-200 bg-green-50'
-                            : 'border-gray-200 hover:border-gray-300'
-                        }`}
-                        onClick={() => setActiveSubStep(prev => ({ ...prev, [activeTab]: index }))}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="text-muted-foreground">
-                            {subStep.icon}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2">
-                              <p className="text-sm font-medium truncate">{subStep.title}</p>
-                              {completedSteps.has(subStep.id) && (
-                                <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                              )}
-                              {subStep.required && !completedSteps.has(subStep.id) && (
-                                <AlertCircle className="h-4 w-4 text-orange-500 flex-shrink-0" />
-                              )}
-                            </div>
-                            <p className="text-xs text-muted-foreground truncate">
-                              {subStep.description}
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* Main Content */}
-              <div className="lg:col-span-3">
-                {(() => {
-                  const currentSubStep = getCurrentSubStep();
-                  if (!currentSubStep) return null;
-
-                  return (
-                    <Card>
-                      <CardHeader>
-                        <div className="flex items-center gap-3">
-                          <div className="text-muted-foreground">
-                            {currentSubStep.icon}
-                          </div>
-                          <div>
-                            <CardTitle className="flex items-center gap-2">
-                              {currentSubStep.title}
-                              {currentSubStep.required && (
-                                <Badge variant="destructive" className="text-xs">Required</Badge>
-                              )}
-                            </CardTitle>
-                            <p className="text-muted-foreground text-sm">
-                              {currentSubStep.description}
-                            </p>
-                          </div>
-                        </div>
-                      </CardHeader>
-                      <CardContent>
-                        {currentSubStep.component}
-                      </CardContent>
-                    </Card>
-                  );
-                })()}
-
-                {/* Navigation */}
-                <div className="flex justify-between mt-6">
-                  <Button
-                    variant="outline"
-                    onClick={handlePreviousSubStep}
-                    disabled={isFirstStep()}
+            {/* Subtabs - single row, horizontally scrollable */}
+            <Tabs
+              value={tab.subSteps[activeSubStep[tab.id]]?.id}
+              onValueChange={(val) => {
+                const idx = tab.subSteps.findIndex((s) => s.id === (val as any));
+                if (idx >= 0) setActiveSubStep((prev) => ({ ...prev, [tab.id]: idx }));
+              }}
+            >
+              <TabsList level="child" className="w-full overflow-x-auto whitespace-nowrap scrollbar-hide gap-2">
+                {tab.subSteps.map((subStep) => (
+                  <TabsTrigger
+                    key={subStep.id}
+                    value={subStep.id}
+                    level="child"
+                    className="min-w-max flex items-center gap-2"
                   >
-                    <ArrowLeft className="h-4 w-4 mr-2" />
-                    Previous
-                  </Button>
+                    <span className="text-muted-foreground">{subStep.icon}</span>
+                    <span className="text-sm">{subStep.title}</span>
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+            </Tabs>
 
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={handleSaveAndExit}
-                      disabled={isSaving}
+            {/* Main Content */}
+            {(() => {
+              const currentIndex = activeSubStep[tab.id];
+              const currentSubStep = tab.subSteps[currentIndex];
+              if (!currentSubStep) return null;
+              return (
+                <>
+                  <Card>
+                    <CardHeader>
+                      <div className="flex items-center gap-3">
+                        <div className="text-muted-foreground">{currentSubStep.icon}</div>
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            {currentSubStep.title}
+                            {currentSubStep.required && (
+                              <Badge variant="destructive" className="text-xs">Required</Badge>
+                            )}
+                          </CardTitle>
+                          <p className="text-muted-foreground text-sm">{currentSubStep.description}</p>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    <CardContent>{currentSubStep.component}</CardContent>
+                  </Card>
+
+                  {/* Navigation */}
+                  <div className="flex justify-between mt-6">
+                    <Button
+                      variant="outline"
+                      onClick={handlePreviousSubStep}
+                      disabled={isFirstStep()}
                     >
-                      <Save className="h-4 w-4 mr-2" />
-                      {isSaving ? 'Saving...' : 'Save & Exit'}
+                      <ArrowLeft className="h-4 w-4 mr-2" />
+                      Previous
                     </Button>
-                    
-                    {isLastStep() ? (
-                      <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
-                        <Check className="h-4 w-4 mr-2" />
-                        Submit Application
+
+                    <div className="flex gap-2">
+                      <Button variant="outline" onClick={handleSaveAndExit} disabled={isSaving}>
+                        <Save className="h-4 w-4 mr-2" />
+                        {isSaving ? 'Saving...' : 'Save & Exit'}
                       </Button>
-                    ) : (
-                      <Button onClick={handleNextSubStep}>
-                        Continue
-                        <ArrowRight className="h-4 w-4 ml-2" />
-                      </Button>
-                    )}
+
+                      {isLastStep() ? (
+                        <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
+                          <Check className="h-4 w-4 mr-2" />
+                          Submit Application
+                        </Button>
+                      ) : (
+                        <Button onClick={handleNextSubStep}>
+                          Continue
+                          <ArrowRight className="h-4 w-4 ml-2" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              </div>
-            </div>
+                </>
+              );
+            })()}
           </TabsContent>
         ))}
       </Tabs>
