@@ -59,10 +59,11 @@ export const EditProviderDialog = ({ open, onOpenChange, provider }: EditProvide
         .update(updates)
         .eq('id', provider.id)
         .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+        .maybeSingle();
+        
+        if (error) throw error;
+        if (!data) { throw new Error('Update failed: no data returned'); }
+        return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voice-providers'] });

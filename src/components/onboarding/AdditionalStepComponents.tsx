@@ -535,9 +535,10 @@ export const DetailedServiceSelectionStep = ({ formData, updateFormData }: any) 
           sla_requirements: {}
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Insert failed: no data returned'); }
 
       // Add to local services state
       setServices(prev => [...prev, data]);

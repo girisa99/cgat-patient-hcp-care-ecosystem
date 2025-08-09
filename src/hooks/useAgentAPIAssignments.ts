@@ -78,11 +78,14 @@ export const useAgentAPIAssignments = (sessionId?: string) => {
           api_configuration: assignment.api_configuration || {}
         }])
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error assigning API:', error);
         throw new Error(`Failed to assign API: ${error.message}`);
+      }
+      if (!data) {
+        throw new Error('Failed to assign API: no data returned');
       }
 
       return data as APIAssignment;
@@ -114,10 +117,13 @@ export const useAgentAPIAssignments = (sessionId?: string) => {
         .update(updates)
         .eq('id', assignmentId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         throw new Error(`Failed to update assignment: ${error.message}`);
+      }
+      if (!data) {
+        throw new Error('Failed to update assignment: no data returned');
       }
 
       return data as APIAssignment;

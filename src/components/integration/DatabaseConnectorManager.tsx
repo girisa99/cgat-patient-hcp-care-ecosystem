@@ -114,9 +114,10 @@ const DatabaseConnectorManager: React.FC<DatabaseConnectorManagerProps> = ({ onC
           }
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!result) { throw new Error('Insert failed: no data returned'); }
       return result;
     },
     onSuccess: () => {

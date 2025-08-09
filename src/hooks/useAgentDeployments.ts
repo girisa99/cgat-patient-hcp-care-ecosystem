@@ -69,9 +69,10 @@ export const useAgentDeployments = () => {
           assigned_at: new Date().toISOString(),
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (deployError) throw deployError;
+      if (!data) { throw new Error('Deployment failed: no data returned'); }
 
       await fetchDeployments();
       

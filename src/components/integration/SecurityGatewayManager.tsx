@@ -95,9 +95,10 @@ const SecurityGatewayManager: React.FC<SecurityGatewayManagerProps> = ({ onClose
           security_requirements: data.config
         })
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!result) { throw new Error('Insert failed: no data returned'); }
       return result;
     },
     onSuccess: () => {

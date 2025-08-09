@@ -78,10 +78,11 @@ export const PhoneNumberManager = () => {
           is_active: true
         }])
         .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+        .maybeSingle();
+        
+        if (error) throw error;
+        if (!data) { throw new Error('Insert failed: no data returned'); }
+        return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['phone-numbers'] });

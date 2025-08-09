@@ -48,9 +48,10 @@ export const useAgentPersistence = (sessionId?: string) => {
           .update(updateData)
           .eq('id', sessionId)
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
+        if (!updatedData) { throw new Error('Update failed: no data returned'); }
         result = updatedData;
       } else {
         // Create new session - ensure user is authenticated and required fields are provided
@@ -69,9 +70,10 @@ export const useAgentPersistence = (sessionId?: string) => {
           .from('agent_sessions')
           .insert(insertData)
           .select()
-          .single();
+          .maybeSingle();
 
         if (error) throw error;
+        if (!newData) { throw new Error('Insert failed: no data returned'); }
         result = newData;
       }
 
@@ -115,9 +117,10 @@ export const useAgentPersistence = (sessionId?: string) => {
         .from('agent_sessions')
         .select('*')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Agent session not found'); }
       return data;
 
     } catch (error) {
@@ -182,9 +185,10 @@ export const useAgentPersistence = (sessionId?: string) => {
         .from('agent_sessions')
         .select('status, current_step, updated_at')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
       if (error) throw error;
+      if (!data) { throw new Error('Session not found'); }
       return data;
 
     } catch (error) {
@@ -206,17 +210,18 @@ export const useAgentPersistence = (sessionId?: string) => {
           updated_at: new Date().toISOString()
         })
         .eq('id', sessionId)
-        .select()
-        .single();
+          .select()
+          .maybeSingle();
 
-      if (error) throw error;
+        if (error) throw error;
+        if (!data) { throw new Error('Deployment update failed: no data returned'); }
 
-      toast({
-        title: "Agent Deployed",
-        description: "Your agent has been successfully deployed and is now active."
-      });
+        toast({
+          title: "Agent Deployed",
+          description: "Your agent has been successfully deployed and is now active."
+        });
 
-      return data;
+        return data;
 
     } catch (error) {
       console.error('Error deploying agent:', error);

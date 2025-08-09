@@ -45,10 +45,11 @@ export const CreateProviderDialog = ({ open, onOpenChange }: CreateProviderDialo
           health_check_config: JSON.parse(providerData.health_check_config)
         }])
         .select()
-        .single();
-      
-      if (error) throw error;
-      return data;
+        .maybeSingle();
+        
+        if (error) throw error;
+        if (!data) { throw new Error('Insert failed: no data returned'); }
+        return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['voice-providers'] });
