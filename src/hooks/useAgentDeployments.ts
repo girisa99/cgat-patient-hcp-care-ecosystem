@@ -173,9 +173,9 @@ export const useAgentDeployments = () => {
         .from('agent_channel_deployments')
         .select('*')
         .eq('id', deploymentId)
-        .single();
+        .maybeSingle();
 
-      if (fetchError) throw fetchError;
+      if (fetchError || !data) return null;
 
       // Simulate health check - in real implementation, this would call actual health endpoints
       const health: DeploymentHealth = {
