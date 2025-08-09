@@ -20,6 +20,7 @@ import { CategoryMapping } from './CategoryMapping';
 import { AgentActionsManager, type AgentAction } from './AgentActionsManager';
 import ModePicker from '@/components/agent-builder/ModePicker';
 import LSBindingPanel, { type LSBinding } from '@/components/label-studio/LSBindingPanel';
+import { useLabelStudio } from '@/hooks/useLabelStudio';
 
 interface Template {
   id: string;
@@ -111,6 +112,7 @@ export const AgentCreationWizard = () => {
   const [isComplete, setIsComplete] = useState(false);
   const [showAIModelSelector, setShowAIModelSelector] = useState(false);
   const [selectedAIModels, setSelectedAIModels] = useState<string[]>([]);
+  const { listProjectTasks, listTaskAnnotations, loading: lsLoading } = useLabelStudio();
   
   // Fetch templates on component mount
   useEffect(() => {
@@ -234,6 +236,84 @@ export const AgentCreationWizard = () => {
     });
   };
 
+  // Label Studio seeding helpers
+  const hasLS = !!state.labelStudio?.projectId;
+  const lsProjectId = state.labelStudio?.projectId as number | undefined;
+
+  const applyLSForPrompts = async () => {
+    if (!hasLS || !lsProjectId || !state.labelStudio?.appliesTo?.prompts) return;
+    try {
+      const tasks: any[] = await listProjectTasks(lsProjectId, 1, 10);
+      const newActions: AgentAction[] = (tasks || []).map((t) => {
+        const data = t?.data || {};
+        const baseName: string = (data.title || data.name || data.text || `Task ${t.id}`).toString();
+        const trimmed = baseName.length > 40 ? baseName.slice(0, 40) + '…' : baseName;
+        return {
+          id: `ls-${t.id}`,
+          name: trimmed,
+          description: 'Imported from Label Studio task',
+          category: 'analysis',
+          type: 'on_demand',
+          parameters: { lsTaskId: t.id, lsProjectId },
+          isEnabled: true,
+          priority: 'medium',
+          tasks: []
+        } as AgentAction;
+      });
+      // Avoid duplicates by id
+      const existingIds = new Set((state.agentActions || []).map(a => a.id));
+      const merged = [...state.agentActions, ...newActions.filter(a => !existingIds.has(a.id))];
+      updateField('agentActions', merged);
+      toast({ title: 'Prompts seeded', description: `Added ${merged.length - state.agentActions.length} actions from Label Studio` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Seeding failed', description: 'Could not import tasks from Label Studio', variant: 'destructive' });
+    }
+  };
+
+  const applyLSForTemplates = async () => {
+    if (!hasLS || !lsProjectId || !state.labelStudio?.appliesTo?.templates) return;
+    try {
+      const tasks: any[] = await listProjectTasks(lsProjectId, 1, 5);
+      const labels = new Set<string>();
+      for (const t of tasks || []) {
+        try {
+          const ann = await listTaskAnnotations(t.id);
+          (ann || []).forEach((a: any) => {
+            (a.result || []).forEach((r: any) => {
+              const lbls: string[] = r?.value?.labels || [];
+              lbls.forEach((l) => labels.add(l));
+            });
+          });
+        } catch {}
+      }
+      const categories = Array.from(labels).slice(0, 10);
+      if (categories.length) {
+        const mergedCategories = Array.from(new Set([...(state.selectedCategories || []), ...categories]));
+        updateField('selectedCategories', mergedCategories);
+        toast({ title: 'Templates seeded', description: `Mapped ${categories.length} labels to categories` });
+      } else {
+        toast({ title: 'No labels found', description: 'No annotation labels detected to map to templates' });
+      }
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Seeding failed', description: 'Could not import annotations from Label Studio', variant: 'destructive' });
+    }
+  };
+
+  const applyLSForVisual = async () => {
+    if (!hasLS || !lsProjectId || !state.labelStudio?.appliesTo?.visual) return;
+    try {
+      const projectTitle = state.labelStudio?.projectTitle || `Project ${lsProjectId}`;
+      // Seed name/tagline if empty
+      const newName = state.name || projectTitle;
+      const newTag = state.tagline || `Trained on ${projectTitle}`;
+      setState((prev) => ({ ...prev, name: newName, tagline: newTag }));
+      toast({ title: 'Visual seeded', description: 'Canvas branding updated from Label Studio' });
+    } catch (e) {
+      console.error(e);
+    }
+  };
   // Create agent handler
   const handleCreateAgent = async () => {
     setIsSaving(true);
@@ -502,7 +582,7 @@ export const AgentCreationWizard = () => {
             </div>
 
             {/* Category Mapping Section */}
-            <div className="mt-8">
+            <div className="mt-8 space-y-3">
               <CategoryMapping
                 selectedCategories={state.selectedCategories}
                 selectedBusinessUnits={state.selectedBusinessUnits}
@@ -511,6 +591,13 @@ export const AgentCreationWizard = () => {
                 onBusinessUnitsChange={(units) => updateField('selectedBusinessUnits', units)}
                 onTopicsChange={(topics) => updateField('selectedTopics', topics)}
               />
+              {hasLS && state.labelStudio?.appliesTo?.templates && (
+                <div className="flex justify-end">
+                  <Button size="sm" variant="outline" onClick={applyLSForTemplates} disabled={lsLoading}>
+                    {lsLoading ? 'Applying…' : 'Apply from Label Studio'}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -519,16 +606,23 @@ export const AgentCreationWizard = () => {
     
     // Step 3: Canvas Customization  
     <div className="space-y-6" key="step-3">
-      <div>
-        <h3 className="text-lg font-medium">Customize Your Agent</h3>
-        <p className="text-muted-foreground">Brand and customize your agent appearance</p>
-        {state.isFirstTime && (
-          <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg mt-2">
-            <p className="text-sm text-amber-800 dark:text-amber-200">
-              💡 <strong>Tip:</strong> Your agent's branding will be used across all interactions. 
-              Choose colors and messaging that align with your organization's brand.
-            </p>
-          </div>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Customize Your Agent</h3>
+          <p className="text-muted-foreground">Brand and customize your agent appearance</p>
+          {state.isFirstTime && (
+            <div className="bg-amber-50 dark:bg-amber-900/20 p-3 rounded-lg mt-2">
+              <p className="text-sm text-amber-800 dark:text-amber-200">
+                💡 <strong>Tip:</strong> Your agent's branding will be used across all interactions. 
+                Choose colors and messaging that align with your organization's brand.
+              </p>
+            </div>
+          )}
+        </div>
+        {hasLS && state.labelStudio?.appliesTo?.visual && (
+          <Button size="sm" variant="outline" onClick={applyLSForVisual} disabled={lsLoading}>
+            {lsLoading ? 'Applying…' : 'Apply from Label Studio'}
+          </Button>
         )}
       </div>
       <EnhancedAgentCanvas 
@@ -552,6 +646,14 @@ export const AgentCreationWizard = () => {
 
     // Step 4: Agent Actions & Tasks
     <div className="space-y-6" key="step-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Agent Actions & Tasks</h3>
+        {hasLS && state.labelStudio?.appliesTo?.prompts && (
+          <Button size="sm" variant="outline" onClick={applyLSForPrompts} disabled={lsLoading}>
+            {lsLoading ? 'Applying…' : 'Import from Label Studio'}
+          </Button>
+        )}
+      </div>
       <AgentActionsManager
         onActionsChange={(actions) => updateField('agentActions', actions)}
         initialActions={state.agentActions || []}
