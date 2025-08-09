@@ -7588,6 +7588,10 @@ export type Database = {
         Args: { p_risk_score: number }
         Returns: Database["public"]["Enums"]["risk_level"]
       }
+      ensure_demo_block_triggers: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       execute_comprehensive_test_suite: {
         Args: { suite_type?: string; batch_size?: number }
         Returns: Json
