@@ -18,6 +18,7 @@ import { useNavigate } from 'react-router-dom';
 import { CircleCheckBig, AlertTriangle, Bot, Settings, Users, CheckCircle } from 'lucide-react';
 import { CategoryMapping } from './CategoryMapping';
 import { AgentActionsManager, type AgentAction } from './AgentActionsManager';
+import ModePicker from '@/components/agent-builder/ModePicker';
 
 interface Template {
   id: string;
@@ -825,6 +826,11 @@ export const AgentCreationWizard = () => {
 
   return (
     <div className="space-y-8">
+      <Card>
+        <CardContent className="pt-4">
+          <ModePicker />
+        </CardContent>
+      </Card>
       <Card>
         <CardContent className="pt-6">
           <Steps 

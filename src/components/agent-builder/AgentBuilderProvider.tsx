@@ -40,6 +40,10 @@ interface AgentBuilderContextType {
   // User Context
   user: any;
   userRoles: string[];
+  
+  // Build Mode
+  mode: 'prompt' | 'visual' | 'manual';
+  setMode: (mode: 'prompt' | 'visual' | 'manual') => void;
 }
 
 const AgentBuilderContext = createContext<AgentBuilderContextType | undefined>(undefined);
@@ -64,6 +68,13 @@ export const AgentBuilderProvider: React.FC<AgentBuilderProviderProps> = ({
   const [showNewSessionDialog, setShowNewSessionDialog] = useState(false);
   const [showSessionList, setShowSessionList] = useState(false);
   const [actions, setActions] = useState<AgentAction[]>([]);
+  const [mode, setMode] = useState<'prompt' | 'visual' | 'manual'>(() => {
+    try {
+      return (localStorage.getItem('agentBuilder_mode') as any) || 'prompt';
+    } catch {
+      return 'prompt';
+    }
+  });
   
   // STABLE sessionId for hook consistency
   const stableSessionId = currentSessionId || '';
@@ -115,6 +126,13 @@ export const AgentBuilderProvider: React.FC<AgentBuilderProviderProps> = ({
     }
   }, [currentStep]);
 
+  // Persist build mode to localStorage
+  useEffect(() => {
+    if (mode) {
+      localStorage.setItem('agentBuilder_mode', mode);
+    }
+  }, [mode]);
+
   const contextValue: AgentBuilderContextType = {
     // Session Management
     currentSessionId,
@@ -143,6 +161,10 @@ export const AgentBuilderProvider: React.FC<AgentBuilderProviderProps> = ({
     deleteSession,
     deployAgent,
     isLoading,
+    
+    // Build Mode
+    mode,
+    setMode,
     
     // User Context
     user,
