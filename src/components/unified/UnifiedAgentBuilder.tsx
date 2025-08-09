@@ -20,6 +20,9 @@ import { PreDeploymentReview } from '@/components/agent-deployment/PreDeployment
 import { CategoryMapping } from '@/components/agentic/CategoryMapping';
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { ConsolidatedActionsTab } from '@/components/agentic/tabs/ConsolidatedActionsTab';
+import LSBindingPanel, { type LSBinding } from '@/components/label-studio/LSBindingPanel';
+import { useLabelStudio } from '@/hooks/useLabelStudio';
+import { Switch } from '@/components/ui/switch';
 
 // Import existing hooks to preserve functionality
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -123,6 +126,10 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
   const [showSessionList, setShowSessionList] = useState(false);
   const [actions, setActions] = useState<AgentAction[]>([]);
   const [isClient, setIsClient] = useState(false);
+  // Label Studio integration state (scoped to Unified Builder)
+  const [useLabelStudioEnabled, setUseLabelStudioEnabled] = useState(false);
+  const [lsBinding, setLsBinding] = useState<LSBinding | undefined>({ appliesTo: { prompts: true, visual: false, templates: false } });
+  const { listProjectTasks, loading: lsLoading } = useLabelStudio();
   
   // STABLE sessionId for hook consistency
   const stableSessionId = currentSessionId || '';
@@ -910,6 +917,50 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
     </Card>
   );
 
+  // Apply Label Studio tasks as actions in the current session
+  const applyLSForPrompts = async () => {
+    if (!useLabelStudioEnabled || !lsBinding?.projectId || !lsBinding?.appliesTo?.prompts) return;
+    try {
+      const lsProjectId = lsBinding.projectId as number;
+      const tasks: any[] = await listProjectTasks(lsProjectId, 1, 10);
+      const newActions: AgentAction[] = (tasks || []).map((t) => {
+        const data = t?.data || {};
+        const baseName: string = (data.title || data.name || data.text || `Task ${t.id}`).toString();
+        const trimmed = baseName.length > 40 ? baseName.slice(0, 40) + '…' : baseName;
+        return {
+          id: `ls-${t.id}`,
+          name: trimmed,
+          description: 'Imported from Label Studio task',
+          category: 'analysis',
+          type: 'on_demand',
+          parameters: { lsTaskId: t.id, lsProjectId },
+          isEnabled: true,
+          priority: 'medium',
+          tasks: []
+        } as AgentAction;
+      });
+      const existingIds = new Set((actions || []).map(a => a.id));
+      const merged = [...actions, ...newActions.filter(a => !existingIds.has(a.id))];
+      setActions(merged);
+      if (currentSessionId) {
+        updateSession.mutate({
+          sessionId: currentSessionId,
+          updates: {
+            actions: {
+              assigned_actions: merged,
+              custom_actions: [],
+              configurations: {}
+            }
+          }
+        });
+      }
+      toast({ title: 'Prompts seeded', description: `Added ${merged.length - actions.length} actions from Label Studio` });
+    } catch (e) {
+      console.error(e);
+      toast({ title: 'Seeding failed', description: 'Could not import tasks from Label Studio', variant: 'destructive' });
+    }
+  };
+
   const renderActionsStep = () => (
     <Card>
       <CardHeader>
@@ -922,6 +973,29 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {/* Label Studio seeding (optional) */}
+        <div className="mb-6 space-y-4 border rounded-lg p-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Label Studio Dataset</p>
+              <p className="text-xs text-muted-foreground">Optionally seed agent actions from a Label Studio project</p>
+            </div>
+            <div className="flex items-center gap-2">
+              <Switch checked={useLabelStudioEnabled} onCheckedChange={setUseLabelStudioEnabled} />
+              <span className="text-sm">{useLabelStudioEnabled ? 'Enabled' : 'Disabled'}</span>
+            </div>
+          </div>
+          {useLabelStudioEnabled && (
+            <>
+              <LSBindingPanel value={lsBinding} onBind={setLsBinding} />
+              <div className="flex justify-end">
+                <Button variant="outline" onClick={applyLSForPrompts} disabled={!lsBinding?.projectId || lsLoading}>
+                  {lsLoading ? 'Loading…' : 'Apply from Label Studio'}
+                </Button>
+              </div>
+            </>
+          )}
+        </div>
         <AgentActionsManager
           agentId={currentSessionId || ''}
           onActionsChange={(newActions) => {
