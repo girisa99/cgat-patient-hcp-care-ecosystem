@@ -99,14 +99,14 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     const buttonContent = (
       <>
         <Icon className="h-4 w-4 flex-shrink-0" />
-        <span className={isDropdown ? "" : "hidden lg:inline truncate"}>{tab.title}</span>
+        <span className={isDropdown ? "text-stable" : "hidden lg:inline text-stable truncate"}>{tab.title}</span>
       </>
     );
 
     if (isDropdown) {
       return (
         <DropdownMenuItem key={tab.to} asChild>
-          <Link to={tab.to} className="flex items-center gap-2 w-full">
+          <Link to={tab.to} className="flex items-center gap-2 w-full hover:bg-accent">
             {buttonContent}
           </Link>
         </DropdownMenuItem>
@@ -118,7 +118,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
         <Button
           variant={isActive ? 'default' : 'ghost'}
           size="sm"
-          className={`flex items-center gap-2 whitespace-nowrap transition-all duration-200 min-w-0 ${
+          className={`flex items-center gap-2 whitespace-nowrap transition-all duration-200 min-w-fit px-3 ${
             isActive 
               ? 'bg-primary text-primary-foreground shadow-sm' 
               : 'hover:bg-accent hover:scale-105'
@@ -170,69 +170,63 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
             )}
           </div>
 
-          {/* Center: Main Navigation - Responsive with overflow handling */}
-          <nav className="flex items-center gap-1 flex-1 justify-center min-w-0 overflow-x-auto scrollbar-hide">
-            <div className="flex items-center gap-1 mx-auto">
+          {/* Center: Main Navigation - Fixed overflow and text stability */}
+          <nav className="flex items-center flex-1 justify-center min-w-0 px-2">
+            <div className="flex items-center gap-1 max-w-full overflow-x-auto scrollbar-hide nav-item">
               {/* Dashboard */}
-              <Link to="/" className="flex-shrink-0">
-                <Button
-                  variant={isDashboard ? 'default' : 'ghost'}
-                  size="sm"
-                  className={`flex items-center gap-2 whitespace-nowrap ${
-                    isDashboard ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent hover:scale-105'
-                  }`}
-                >
-                  <Home className="h-4 w-4" />
-                  <span className="hidden lg:inline">Dashboard</span>
-                </Button>
-              </Link>
+              <div className="nav-item">
+                <Link to="/">
+                  <Button
+                    variant={isDashboard ? 'default' : 'ghost'}
+                    size="sm"
+                    className={`flex items-center gap-2 whitespace-nowrap min-w-fit px-3 ${
+                      isDashboard ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent hover:scale-105'
+                    }`}
+                  >
+                    <Home className="h-4 w-4 flex-shrink-0" />
+                    <span className="hidden lg:inline text-stable">Dashboard</span>
+                  </Button>
+                </Link>
+              </div>
 
               {/* Core Features */}
               {navigationGroups.core.filter(tab => tab.to !== '/').map(tab => (
-                <div key={tab.to} className="flex-shrink-0">
+                <div key={tab.to} className="nav-item">
                   {renderNavButton(tab)}
                 </div>
               ))}
 
               {/* Agents Ecosystem */}
-              {navigationGroups.agents.length > 0 && (
-                <div className="flex-shrink-0">
-                  {navigationGroups.agents.map(tab => (
-                    <div key={tab.to} className="flex-shrink-0">
-                      {renderNavButton(tab)}
-                    </div>
-                  ))}
+              {navigationGroups.agents.length > 0 && navigationGroups.agents.map(tab => (
+                <div key={tab.to} className="nav-item">
+                  {renderNavButton(tab)}
                 </div>
-              )}
+              ))}
 
               {/* Treatment Centers - Business Domain */}
-              {navigationGroups.treatmentCenters.length > 0 && (
-                <div className="flex-shrink-0">
-                  {navigationGroups.treatmentCenters.map(tab => (
-                    <div key={tab.to} className="flex-shrink-0">
-                      {renderNavButton(tab)}
-                    </div>
-                  ))}
+              {navigationGroups.treatmentCenters.length > 0 && navigationGroups.treatmentCenters.map(tab => (
+                <div key={tab.to} className="nav-item">
+                  {renderNavButton(tab)}
                 </div>
-              )}
+              ))}
 
               {/* Management Dropdown */}
               {navigationGroups.management.length > 0 && (
-                <div className="flex-shrink-0">
+                <div className="nav-item">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap"
+                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap min-w-fit px-3"
                       >
-                        <Users className="h-4 w-4" />
-                        <span className="hidden xl:inline">Management</span>
-                        <span className="hidden lg:inline xl:hidden">Mgmt</span>
-                        <ChevronDown className="h-3 w-3" />
+                        <Users className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden xl:inline text-stable">Management</span>
+                        <span className="hidden lg:inline xl:hidden text-stable">Mgmt</span>
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-48">
+                    <DropdownMenuContent align="center" className="w-48 bg-background border border-border shadow-md z-[9999]">
                       {navigationGroups.management.map(tab => renderNavButton(tab, true))}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -241,21 +235,21 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
               {/* System Integration - Consolidated Technical Tools */}
               {navigationGroups.systemIntegration.length > 0 && (
-                <div className="flex-shrink-0">
+                <div className="nav-item">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap"
+                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap min-w-fit px-3"
                       >
-                        <Settings className="h-4 w-4" />
-                        <span className="hidden xl:inline">System Integration</span>
-                        <span className="hidden lg:inline xl:hidden">System</span>
-                        <ChevronDown className="h-3 w-3" />
+                        <Settings className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden xl:inline text-stable">System Integration</span>
+                        <span className="hidden lg:inline xl:hidden text-stable">System</span>
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-56">
+                    <DropdownMenuContent align="center" className="w-56 bg-background border border-border shadow-md z-[9999]">
                       {navigationGroups.systemIntegration.map(tab => renderNavButton(tab, true))}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -264,21 +258,21 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
               {/* Reports & Compliance */}
               {navigationGroups.reportsCompliance.length > 0 && (
-                <div className="flex-shrink-0">
+                <div className="nav-item">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap"
+                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap min-w-fit px-3"
                       >
-                        <FileBarChart className="h-4 w-4" />
-                        <span className="hidden xl:inline">Reports & Compliance</span>
-                        <span className="hidden lg:inline xl:hidden">Reports</span>
-                        <ChevronDown className="h-3 w-3" />
+                        <FileBarChart className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden xl:inline text-stable">Reports & Compliance</span>
+                        <span className="hidden lg:inline xl:hidden text-stable">Reports</span>
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-56">
+                    <DropdownMenuContent align="center" className="w-56 bg-background border border-border shadow-md z-[9999]">
                       {navigationGroups.reportsCompliance.map(tab => renderNavButton(tab, true))}
                     </DropdownMenuContent>
                   </DropdownMenu>
@@ -287,21 +281,21 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
 
               {/* Specialized Tools */}
               {navigationGroups.specialized.length > 0 && (
-                <div className="flex-shrink-0">
+                <div className="nav-item">
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap"
+                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap min-w-fit px-3"
                       >
-                        <Brain className="h-4 w-4" />
-                        <span className="hidden xl:inline">Specialized</span>
-                        <span className="hidden lg:inline xl:hidden">Special</span>
-                        <ChevronDown className="h-3 w-3" />
+                        <Brain className="h-4 w-4 flex-shrink-0" />
+                        <span className="hidden xl:inline text-stable">Specialized</span>
+                        <span className="hidden lg:inline xl:hidden text-stable">Special</span>
+                        <ChevronDown className="h-3 w-3 flex-shrink-0" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="center" className="w-48">
+                    <DropdownMenuContent align="center" className="w-48 bg-background border border-border shadow-md z-[9999]">
                       {navigationGroups.specialized.map(tab => renderNavButton(tab, true))}
                     </DropdownMenuContent>
                   </DropdownMenu>
