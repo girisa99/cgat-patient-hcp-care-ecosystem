@@ -71,6 +71,30 @@ export function useLabelStudio() {
     return invoke("exportProject", { projectId });
   }, [invoke]);
 
+  const createAnnotation = useCallback(async (taskId: number | string, annotation: any): Promise<any> => {
+    return invoke("createAnnotation", { taskId, annotation });
+  }, [invoke]);
+
+  const updateTask = useCallback(async (taskId: number | string, taskData: any): Promise<any> => {
+    return invoke("updateTask", { taskId, taskData });
+  }, [invoke]);
+
+  const bulkImportTasks = useCallback(async (projectId: number | string, bulkTasks: any[]): Promise<any> => {
+    return invoke("bulkImportTasks", { projectId, bulkTasks });
+  }, [invoke]);
+
+  const getProjectStats = useCallback(async (projectId: number | string): Promise<any> => {
+    return invoke("getProjectStats", { projectId });
+  }, [invoke]);
+
+  const searchTasks = useCallback(async (projectId: number | string, searchQuery: string, page = 1, pageSize = 25): Promise<LSTask[]> => {
+    return invoke("searchTasks", { projectId, searchQuery, page, pageSize });
+  }, [invoke]);
+
+  const listProjectTasksWithFilters = useCallback(async (projectId: number | string, filters: Record<string, any> = {}, page = 1, pageSize = 25): Promise<LSTask[]> => {
+    return invoke("listProjectTasks", { projectId, filters, page, pageSize });
+  }, [invoke]);
+
   return {
     loading,
     listProjects,
@@ -78,5 +102,11 @@ export function useLabelStudio() {
     listProjectTasks,
     listTaskAnnotations,
     exportProject,
+    createAnnotation,
+    updateTask,
+    bulkImportTasks,
+    getProjectStats,
+    searchTasks,
+    listProjectTasksWithFilters,
   };
 }

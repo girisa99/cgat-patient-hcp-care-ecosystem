@@ -973,25 +973,41 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
         </CardDescription>
       </CardHeader>
       <CardContent>
-        {/* Label Studio seeding (optional) */}
-        <div className="mb-6 space-y-4 border rounded-lg p-4">
+        {/* Enhanced Label Studio Integration */}
+        <div className="mb-6 space-y-4 border rounded-lg p-4 bg-muted/30 border-l-4 border-l-blue-500">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium">Label Studio Dataset</p>
-              <p className="text-xs text-muted-foreground">Optionally seed agent actions from a Label Studio project</p>
+              <p className="text-sm font-medium">Enhanced Label Studio Integration</p>
+              <p className="text-xs text-muted-foreground">Advanced Label Studio features with real-time sync and annotation workflows</p>
             </div>
             <div className="flex items-center gap-2">
               <Switch checked={useLabelStudioEnabled} onCheckedChange={setUseLabelStudioEnabled} />
-              <span className="text-sm">{useLabelStudioEnabled ? 'Enabled' : 'Disabled'}</span>
+              <span className="text-sm">{useLabelStudioEnabled ? 'Enhanced Mode' : 'Basic Mode'}</span>
             </div>
           </div>
           {useLabelStudioEnabled && (
             <>
               <LSBindingPanel value={lsBinding} onBind={setLsBinding} />
-              <div className="flex justify-end">
-                <Button variant="outline" onClick={applyLSForPrompts} disabled={!lsBinding?.projectId || lsLoading}>
-                  {lsLoading ? 'Loading…' : 'Apply from Label Studio'}
-                </Button>
+              <div className="flex justify-between items-center">
+                <div className="text-xs text-muted-foreground">
+                  {lsBinding?.projectId ? `Connected to Project ${lsBinding.projectId}` : 'No project selected'}
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={applyLSForPrompts} disabled={!lsBinding?.projectId || lsLoading}>
+                    {lsLoading ? 'Applying…' : 'Quick Seed'}
+                  </Button>
+                  <Button 
+                    variant="secondary" 
+                    size="sm"
+                    onClick={() => {
+                      // Could open enhanced panel or redirect to advanced features
+                      window.open(`#/agents/label-studio/${lsBinding?.projectId}`, '_blank');
+                    }}
+                    disabled={!lsBinding?.projectId}
+                  >
+                    Advanced Panel
+                  </Button>
+                </div>
               </div>
             </>
           )}

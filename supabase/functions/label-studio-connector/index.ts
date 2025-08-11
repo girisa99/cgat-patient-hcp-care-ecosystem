@@ -13,11 +13,22 @@ interface InvokeBody {
     | "getProject"
     | "listProjectTasks"
     | "listTaskAnnotations"
-    | "exportProject";
+    | "exportProject"
+    | "createAnnotation"
+    | "updateTask"
+    | "bulkImportTasks"
+    | "getProjectStats"
+    | "searchTasks";
   projectId?: number | string;
   taskId?: number | string;
   page?: number;
   pageSize?: number;
+  // Enhanced functionality params
+  annotation?: any;
+  taskData?: any;
+  bulkTasks?: any[];
+  searchQuery?: string;
+  filters?: Record<string, any>;
 }
 
 serve(async (req) => {
@@ -80,6 +91,8 @@ serve(async (req) => {
 
     let data: unknown;
 
+    const { annotation, taskData, bulkTasks, searchQuery, filters } = body;
+
     switch (action) {
       case "listProjects": {
         data = await lsFetch(`/api/projects?page=${page}&page_size=${pageSize}`);
@@ -92,7 +105,14 @@ serve(async (req) => {
       }
       case "listProjectTasks": {
         if (!projectId) throw new Error("projectId is required");
-        data = await lsFetch(`/api/projects/${projectId}/tasks?page=${page}&page_size=${pageSize}`);
+        let url = `/api/projects/${projectId}/tasks?page=${page}&page_size=${pageSize}`;
+        if (searchQuery) url += `&search=${encodeURIComponent(searchQuery)}`;
+        if (filters) {
+          Object.entries(filters).forEach(([key, value]) => {
+            url += `&${key}=${encodeURIComponent(String(value))}`;
+          });
+        }
+        data = await lsFetch(url);
         break;
       }
       case "listTaskAnnotations": {
@@ -102,8 +122,50 @@ serve(async (req) => {
       }
       case "exportProject": {
         if (!projectId) throw new Error("projectId is required");
-        // Export as JSON
         data = await lsFetch(`/api/projects/${projectId}/export?format=JSON`);
+        break;
+      }
+      case "createAnnotation": {
+        if (!taskId || !annotation) throw new Error("taskId and annotation are required");
+        data = await lsFetch(`/api/tasks/${taskId}/annotations`, {
+          method: 'POST',
+          body: JSON.stringify(annotation)
+        });
+        break;
+      }
+      case "updateTask": {
+        if (!taskId || !taskData) throw new Error("taskId and taskData are required");
+        data = await lsFetch(`/api/tasks/${taskId}`, {
+          method: 'PATCH',
+          body: JSON.stringify(taskData)
+        });
+        break;
+      }
+      case "bulkImportTasks": {
+        if (!projectId || !bulkTasks) throw new Error("projectId and bulkTasks are required");
+        data = await lsFetch(`/api/projects/${projectId}/import`, {
+          method: 'POST',
+          body: JSON.stringify(bulkTasks)
+        });
+        break;
+      }
+      case "getProjectStats": {
+        if (!projectId) throw new Error("projectId is required");
+        const [project, tasks] = await Promise.all([
+          lsFetch(`/api/projects/${projectId}`),
+          lsFetch(`/api/projects/${projectId}/tasks?page=1&page_size=1`)
+        ]);
+        data = {
+          project_info: project,
+          total_tasks: tasks.count || 0,
+          completed_tasks: project.num_tasks_with_annotations || 0,
+          completion_rate: project.num_tasks_with_annotations / (tasks.count || 1) * 100
+        };
+        break;
+      }
+      case "searchTasks": {
+        if (!projectId || !searchQuery) throw new Error("projectId and searchQuery are required");
+        data = await lsFetch(`/api/projects/${projectId}/tasks?search=${encodeURIComponent(searchQuery)}&page=${page}&page_size=${pageSize}`);
         break;
       }
       default:
