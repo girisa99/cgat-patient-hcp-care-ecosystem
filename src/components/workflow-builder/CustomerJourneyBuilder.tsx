@@ -420,7 +420,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
           >
             <Controls />
             <MiniMap />
-            <Background variant="dots" gap={20} size={1} />
+            <Background gap={20} size={1} />
           </ReactFlow>
 
           {/* Node Properties Panel */}
@@ -441,19 +441,19 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
               <CardContent className="space-y-3">
                 <div>
                   <label className="text-xs font-medium">Type</label>
-                  <p className="text-sm capitalize">{selectedNode.type}</p>
+                  <p className="text-sm capitalize">{String(selectedNode.type || 'unknown')}</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium">Label</label>
-                  <p className="text-sm">{selectedNode.data?.label}</p>
+                  <p className="text-sm">{String(selectedNode.data?.label || 'No label')}</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium">Description</label>
                   <p className="text-sm text-muted-foreground">
-                    {selectedNode.data?.description}
+                    {String(selectedNode.data?.description || 'No description available')}
                   </p>
                 </div>
-                {selectedNode.type === 'agent' && selectedNode.data?.capabilities && (
+                {selectedNode.type === 'agent' && selectedNode.data?.capabilities && Array.isArray(selectedNode.data.capabilities) && (
                   <div>
                     <label className="text-xs font-medium">Capabilities</label>
                     <div className="flex flex-wrap gap-1 mt-1">

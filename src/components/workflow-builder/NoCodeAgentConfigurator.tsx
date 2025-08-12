@@ -126,29 +126,31 @@ export const NoCodeAgentConfigurator: React.FC<NoCodeAgentConfiguratorProps> = (
   // Update configuration from workflow data
   useEffect(() => {
     if (workflow) {
-      setConfiguration(prev => ({
-        ...prev,
-        basic: {
-          ...prev.basic,
-          name: workflow.name || prev.basic.name,
-          description: workflow.description || prev.basic.description
-        }
-      }));
-
       // Extract channel preferences from workflow nodes
       const touchpoints = workflow.nodes?.filter((node: any) => node.type === 'touchpoint') || [];
-      const channels = { ...prev.channels };
       
-      touchpoints.forEach((touchpoint: any) => {
-        if (touchpoint.data?.channel) {
-          const channelKey = touchpoint.data.channel === 'chat' ? 'webChat' : touchpoint.data.channel;
-          if (channels[channelKey as keyof typeof channels]) {
-            channels[channelKey as keyof typeof channels].enabled = true;
+      setConfiguration(prev => {
+        const channels = { ...prev.channels };
+        
+        touchpoints.forEach((touchpoint: any) => {
+          if (touchpoint.data?.channel) {
+            const channelKey = touchpoint.data.channel === 'chat' ? 'webChat' : touchpoint.data.channel;
+            if (channels[channelKey as keyof typeof channels]) {
+              channels[channelKey as keyof typeof channels].enabled = true;
+            }
           }
-        }
-      });
+        });
 
-      setConfiguration(prevConfig => ({ ...prevConfig, channels }));
+        return {
+          ...prev,
+          basic: {
+            ...prev.basic,
+            name: workflow.name || prev.basic.name,
+            description: workflow.description || prev.basic.description
+          },
+          channels
+        };
+      });
     }
   }, [workflow]);
 

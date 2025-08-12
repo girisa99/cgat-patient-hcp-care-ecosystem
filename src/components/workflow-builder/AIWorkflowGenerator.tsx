@@ -271,12 +271,12 @@ export const AIWorkflowGenerator: React.FC<AIWorkflowGeneratorProps> = ({
                             </div>
                             <div className="flex flex-wrap gap-1">
                               {template.components.slice(0, 3).map((comp, idx) => (
-                                <Badge key={idx} variant="ghost" className="text-xs">
+                                <Badge key={idx} variant="secondary" className="text-xs">
                                   {comp}
                                 </Badge>
                               ))}
                               {template.components.length > 3 && (
-                                <Badge variant="ghost" className="text-xs">
+                                <Badge variant="secondary" className="text-xs">
                                   +{template.components.length - 3} more
                                 </Badge>
                               )}
