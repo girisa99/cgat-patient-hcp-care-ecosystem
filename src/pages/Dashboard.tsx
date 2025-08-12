@@ -17,6 +17,7 @@ import {
   Presentation
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
+import { useMasterData } from '@/hooks/useMasterData';
 import { LSDashboardWidget } from '@/components/label-studio';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -102,7 +103,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
     });
   };
 
-  const { data: userStats, isLoading: userStatsLoading } = useRealTimeUserStats();
+  const { stats } = useMasterData();
   
   // Fetch real activity data from audit logs
   const { data: recentActivity, isLoading: activityLoading } = useQuery({
@@ -239,7 +240,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 <Users className="h-8 w-8 text-primary" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {userStatsLoading ? '...' : userStats?.totalUsers || 0}
+                    {stats?.totalUsers || 0}
                   </p>
                   <p className="text-xs text-muted-foreground">Total Users</p>
                 </div>
@@ -252,7 +253,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 <Stethoscope className="h-8 w-8 text-green-600" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {userStatsLoading ? '...' : userStats?.verifiedUsers || 0}
+                    {stats?.patientCount || 0}
                   </p>
                   <p className="text-xs text-muted-foreground">Verified Users</p>
                 </div>
@@ -265,7 +266,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 <Building2 className="h-8 w-8 text-blue-600" />
                 <div>
                   <p className="text-2xl font-bold">
-                    {userStatsLoading ? '...' : userStats?.activeFacilities || 0}
+                    {stats?.totalFacilities || 0}
                   </p>
                   <p className="text-xs text-muted-foreground">Active Facilities</p>
                 </div>
@@ -423,28 +424,37 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
         </Card>
 
         {/* Role Distribution Chart */}
-        {userStats?.usersByRole && Object.keys(userStats.usersByRole).length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                User Role Distribution
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {Object.entries(userStats.usersByRole).map(([role, count]) => (
-                  <div key={role} className="text-center p-4 bg-accent rounded-lg">
-                    <p className="text-2xl font-bold">{count}</p>
-                    <p className="text-sm text-muted-foreground capitalize">
-                      {role.replace(/([A-Z])/g, ' $1').trim()}
-                    </p>
-                  </div>
-                ))}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              User Distribution
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center p-4 bg-accent rounded-lg">
+                <p className="text-2xl font-bold">{stats?.totalUsers || 0}</p>
+                <p className="text-sm text-muted-foreground">Total Users</p>
               </div>
-            </CardContent>
-          </Card>
-        )}
+              <div className="text-center p-4 bg-accent rounded-lg">
+                <p className="text-2xl font-bold">{stats?.activeUsers || 0}</p>
+                <p className="text-sm text-muted-foreground">Active Users</p>
+              </div>
+              <div className="text-center p-4 bg-accent rounded-lg">
+                <p className="text-2xl font-bold">{stats?.patientCount || 0}</p>
+                <p className="text-sm text-muted-foreground">Patients</p>
+              </div>
+              <div className="text-center p-4 bg-accent rounded-lg">
+                <p className="text-2xl font-bold">{stats?.totalModules || 0}</p>
+                <p className="text-sm text-muted-foreground">Modules</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Label Studio Integration */}
+        <LSDashboardWidget compact={true} showActions={true} />
       </div>
     </AppLayout>
   );
