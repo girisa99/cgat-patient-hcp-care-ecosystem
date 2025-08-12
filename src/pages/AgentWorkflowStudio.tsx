@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Workflow, Sparkles, Bot, Play, CheckCircle, Settings, 
   Users, MessageCircle, Monitor, ArrowRight, Download,
-  Save, Eye, Rocket, TestTube, RotateCcw
+  Save, Eye, Rocket, TestTube, RotateCcw, X
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -46,6 +46,7 @@ const AgentWorkflowStudio: React.FC = () => {
   const [isDeploying, setIsDeploying] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
   const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
+  const [showGuidedStart, setShowGuidedStart] = useState(true);
 
   // Workflow generation complete
   const handleWorkflowGenerated = (workflow: any) => {
@@ -171,6 +172,34 @@ const AgentWorkflowStudio: React.FC = () => {
             </Button>
           </div>
         </div>
+
+        {/* Guided Start Banner */}
+        {showGuidedStart && (
+          <Card className="border-dashed">
+            <CardContent className="p-4 md:p-6">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h3 className="font-semibold text-foreground">Start your build</h3>
+                  <p className="text-sm text-muted-foreground">Choose a path: use AI prompts, build a manual journey, or start from a template. You can switch anytime.</p>
+                </div>
+                <Button variant="ghost" size="sm" aria-label="Dismiss guide" onClick={() => setShowGuidedStart(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
+                <Button variant="outline" onClick={() => setActiveTab('generator')} className="justify-start">
+                  <Sparkles className="h-4 w-4 mr-2" /> Prompt-based (AI)
+                </Button>
+                <Button variant="outline" onClick={() => setActiveTab('manual')} className="justify-start">
+                  <Users className="h-4 w-4 mr-2" /> Manual Journey
+                </Button>
+                <Button variant="outline" onClick={() => setActiveTab('templates')} className="justify-start">
+                  <Bot className="h-4 w-4 mr-2" /> Templates
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Progress Steps */}
         <Card>
