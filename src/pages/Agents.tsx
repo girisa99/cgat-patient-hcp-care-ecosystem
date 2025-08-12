@@ -4,7 +4,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AgenticEcosystem from '@/pages/AgenticEcosystem';
 import { DeploymentManagementInterface } from '@/components/deployment/DeploymentManagementInterface';
 import { AgentTestingInterface } from '@/components/agent-testing/AgentTestingInterface';
-import AgenticAPIEcosystem from '@/pages/AgenticAPIEcosystem';
 import ChannelAndVoiceSetup from '@/components/agent-deployment/ChannelAndVoiceSetup';
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
 import DeploymentReadyView from '@/components/deployment/DeploymentReadyView';
@@ -27,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-
+import { Helmet } from 'react-helmet-async';
 // Role-specific components - defined before use to avoid React error #185
 import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
 
@@ -88,6 +87,11 @@ const Agents = () => {
   try {
     return (
       <AppLayout>
+        <Helmet>
+          <title>Agents – Visual Workflow, Templates, Prompts</title>
+          <meta name="description" content="Build and deploy healthcare AI agents with visual workflows, templates, and prompt-based generation." />
+          <link rel="canonical" href="/agents" />
+        </Helmet>
         <div className="space-y-6">
           {/* Role-specific header */}
           <div className="flex items-center justify-between">
@@ -103,12 +107,10 @@ const Agents = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
-              <Link to="/agents/workflow-studio">
-                <Button variant="outline" className="flex items-center gap-2">
-                  <Workflow className="w-4 h-4" />
-                  Visual Workflow Builder
-                </Button>
-              </Link>
+              <Button variant="outline" className="flex items-center gap-2" onClick={() => setActiveTab('workflow-studio')} aria-label="Open Visual Workflow Builder tab">
+                <Workflow className="w-4 h-4" />
+                Visual Workflow Builder
+              </Button>
               <Link to="/agents/new">
                 <Button className="flex items-center gap-2">
                   <Bot className="w-4 h-4" />

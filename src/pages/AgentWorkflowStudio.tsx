@@ -18,6 +18,7 @@ import {
   NoCodeAgentConfigurator,
   IntegratedWorkflowBuilder 
 } from '@/components/workflow-builder';
+import { AgentTemplates } from '@/components/agentic/AgentTemplates';
 import { useAgentPersistence } from '@/hooks/useAgentPersistence';
 
 interface WorkflowStudioState {
@@ -44,12 +45,13 @@ const AgentWorkflowStudio: React.FC = () => {
   const [activeTab, setActiveTab] = useState('generator');
   const [isDeploying, setIsDeploying] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
   // Workflow generation complete
   const handleWorkflowGenerated = (workflow: any) => {
     setStudioState(prev => ({ ...prev, workflow, currentStep: 1 }));
-    setActiveTab('configurator');
-    showSuccess('Workflow generated! Now configure your agent.');
+    setActiveTab('builder');
+    showSuccess('Workflow generated! You can now refine it visually or proceed to configuration.');
   };
 
   // Agent configuration complete
@@ -267,7 +269,7 @@ const AgentWorkflowStudio: React.FC = () => {
               </CardHeader>
               <CardContent className="p-0">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-4 m-4 mb-0">
+                  <TabsList className="grid w-full grid-cols-6 m-4 mb-0">
                     <TabsTrigger 
                       value="generator" 
                       className="flex items-center gap-2"
@@ -276,13 +278,27 @@ const AgentWorkflowStudio: React.FC = () => {
                       <Sparkles className="h-4 w-4" />
                       AI Generator
                     </TabsTrigger>
-              <TabsTrigger 
-                value="builder" 
-                className="flex items-center gap-2"
-              >
-                <Workflow className="h-4 w-4" />
-                Integrated Builder
-              </TabsTrigger>
+                    <TabsTrigger 
+                      value="manual" 
+                      className="flex items-center gap-2"
+                    >
+                      <Users className="h-4 w-4" />
+                      Manual Journey
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="templates" 
+                      className="flex items-center gap-2"
+                    >
+                      <Bot className="h-4 w-4" />
+                      Templates
+                    </TabsTrigger>
+                    <TabsTrigger 
+                      value="builder" 
+                      className="flex items-center gap-2"
+                    >
+                      <Workflow className="h-4 w-4" />
+                      Integrated Builder
+                    </TabsTrigger>
                     <TabsTrigger 
                       value="configurator" 
                       className="flex items-center gap-2"
@@ -304,6 +320,35 @@ const AgentWorkflowStudio: React.FC = () => {
                   <TabsContent value="generator" className="p-6 min-h-[600px]">
                     <AIWorkflowGenerator 
                       onWorkflowGenerated={handleWorkflowGenerated}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="manual" className="p-0 min-h-[600px]">
+                    <CustomerJourneyBuilder 
+                      initialWorkflow={studioState.workflow}
+                      onSave={(workflow) => {
+                        setStudioState(prev => ({ ...prev, workflow }));
+                        showSuccess('Journey saved. You can refine it visually or configure the agent.');
+                      }}
+                      onGenerateAgent={(workflow) => {
+                        setStudioState(prev => ({ ...prev, workflow }));
+                        setActiveTab('builder');
+                      }}
+                    />
+                  </TabsContent>
+
+                  <TabsContent value="templates" className="p-6 min-h-[600px]">
+                    <AgentTemplates 
+                      onSelectTemplate={(id) => {
+                        setSelectedTemplateId(id);
+                        setStudioState(prev => ({ 
+                          ...prev, 
+                          workflow: prev.workflow ?? { name: `Template: ${id}`, nodes: [], edges: [], templateId: id }
+                        }));
+                        showSuccess('Template selected! Continue in the Integrated Builder or generate prompts.');
+                        setActiveTab('builder');
+                      }}
+                      selectedTemplateId={selectedTemplateId || undefined}
                     />
                   </TabsContent>
 
