@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useEffect } from 'react';
+import React, { useCallback, useState, useEffect } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -346,7 +346,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
   const [checkpoints, setCheckpoints] = useState<Array<{ id: string; name: string; timestamp: string; nodes: Node[]; edges: Edge[] }>>([]);
 
   // Hook to get React Flow viewport
-  const { setViewport, getViewport } = useReactFlow();
+  const { getViewport } = useReactFlow();
   
   
   // Session management - using consistent sessionId for hooks
@@ -356,9 +356,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
     userSessions,
     createSession,
     updateSession,
-    deleteSession,
     deployAgent,
-    isLoading,
   } = useAgentSession(stableSessionId || undefined);
 
 // Flow state - using proper data structure
@@ -1065,7 +1063,52 @@ setAgentConfig({
                 </div>
               )}
 
-            </TabsContent>
+              {/* Checkpoints */}
+              <div className="pt-4 border-t">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium text-sm">Checkpoints</h4>
+                  <Badge variant="outline" className="text-xs">{checkpoints.length}</Badge>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" className="w-full" onClick={() => {
+                    const id = `${Date.now()}`;
+                    setCheckpoints((cp) => [
+                      ...cp,
+                      { id, name: `Checkpoint ${new Date().toLocaleTimeString()}`, timestamp: new Date().toISOString(), nodes, edges },
+                    ]);
+                    showSuccess('Checkpoint saved');
+                  }}>
+                    Save Checkpoint
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full" disabled={!checkpoints.length} onClick={() => {
+                    const last = checkpoints[checkpoints.length - 1];
+                    if (!last) return;
+                    setNodes(last.nodes);
+                    setEdges(last.edges);
+                    setSelectedNode(null);
+                    showSuccess(`Restored ${last.name}`);
+                  }}>
+                    Restore Last
+                  </Button>
+                </div>
+                {checkpoints.length > 0 && (
+                  <div className="mt-2 space-y-1 max-h-36 overflow-auto">
+                    {checkpoints.slice(-5).reverse().map((cp) => (
+                      <div key={cp.id} className="flex items-center justify-between text-xs p-2 bg-muted rounded">
+                        <div className="truncate mr-2">
+                          <div className="font-medium">{cp.name}</div>
+                          <div className="text-muted-foreground">{new Date(cp.timestamp).toLocaleString()}</div>
+                        </div>
+                          <div className="flex gap-2">
+                            <Button size="sm" variant="outline" onClick={() => { setNodes(cp.nodes); setEdges(cp.edges); setSelectedNode(null); showSuccess(`Restored ${cp.name}`); }}>Restore</Button>
+                          </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              </TabsContent>
             
             <TabsContent value="canvas" className="space-y-4">
               <h3 className="font-medium mb-3">Add Components</h3>
@@ -1234,6 +1277,20 @@ setAgentConfig({
                     setContextMenu({ visible: false, x: 0, y: 0, node: null });
                   }}
                 >Toggle Active</button>
+                <button
+                  className="block w-full text-left px-2 py-1 hover:bg-muted rounded"
+                  onClick={() => {
+                    const n = contextMenu.node!;
+                    const clone: Node = {
+                      ...n,
+                      id: `${Date.now()}`,
+                      position: { x: (n.position?.x || 0) + 30, y: (n.position?.y || 0) + 30 },
+                      selected: false,
+                    } as Node;
+                    setNodes((nds) => [...nds, clone]);
+                    setContextMenu({ visible: false, x: 0, y: 0, node: null });
+                  }}
+                >Duplicate</button>
                 <button
                   className="block w-full text-left px-2 py-1 hover:bg-destructive/10 rounded"
                   onClick={() => {
