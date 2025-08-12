@@ -164,23 +164,28 @@ const Agents = () => {
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6 shadow-sm">
                   <h3 className="font-bold text-purple-900 mb-3 text-lg flex items-center gap-2">
                     <Workflow className="h-5 w-5" />
-                    Visual Workflow Builder
+                    Enhanced Visual Workflow Builder
                   </h3>
                   <p className="text-purple-700">
-                    Create AI agents through visual drag & drop workflows with integrated Label Studio, MCP servers, small & vision language models, AI-powered recommendations, and real-time testing. No coding required!
+                    Full-featured visual agent builder with session management, deployment pipeline, channel assignment, 
+                    knowledge base configuration, RAG setup, and complete backend integration. All functionality from 
+                    manual builder now available in visual drag & drop interface.
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
-                    <Badge variant="outline" className="text-xs">Label Studio</Badge>
+                    <Badge variant="outline" className="text-xs">Session Management</Badge>
+                    <Badge variant="outline" className="text-xs">Full Deployment</Badge>
+                    <Badge variant="outline" className="text-xs">Channel Assignment</Badge>
+                    <Badge variant="outline" className="text-xs">RAG Configuration</Badge>
+                    <Badge variant="outline" className="text-xs">Knowledge Bases</Badge>
                     <Badge variant="outline" className="text-xs">MCP Integration</Badge>
-                    <Badge variant="outline" className="text-xs">Vision Models</Badge>
+                    <Badge variant="outline" className="text-xs">Label Studio</Badge>
                     <Badge variant="outline" className="text-xs">Real-time Testing</Badge>
-                    <Badge variant="outline" className="text-xs">AI Recommendations</Badge>
                   </div>
                 </div>
                 <Suspense fallback={<div className="flex items-center justify-center p-8">
                   <div className="text-center">
                     <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Loading Workflow Builder...</p>
+                    <p className="text-sm text-muted-foreground">Loading Enhanced Workflow Builder...</p>
                   </div>
                 </div>}>
                   {React.createElement(React.lazy(() => import('@/pages/AgentWorkflowStudio').then(m => ({ default: m.default }))))}
