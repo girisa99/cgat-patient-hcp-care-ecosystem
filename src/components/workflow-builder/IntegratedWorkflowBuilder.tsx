@@ -26,26 +26,17 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Progress } from '@/components/ui/progress';
 import { 
-  Bot, MessageCircle, Phone, Mail, Calendar, CheckCircle, 
-  AlertTriangle, Clock, Users, Workflow, Sparkles, Settings,
-  Play, Pause, RotateCcw, Save, Download, Upload, Eye,
-  Database, Brain, Zap, Tag, TestTube, Monitor, Rocket,
-  BookOpen, Plug, Plus, X, Edit
+  Bot, MessageCircle, Phone, Mail, Calendar,
+  AlertTriangle, Users, Workflow, Sparkles, Settings,
+  Save, Eye, Database, Brain, Tag, TestTube, Rocket,
+  BookOpen, Plug, Plus, X
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { z } from 'zod';
-import { useAgentDeployments } from '@/hooks/useAgentDeployments';
-
-// Import integrated backend systems
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { LSBindingPanel } from '@/components/label-studio';
-import { useLabelStudio } from '@/hooks/useLabelStudio';
 import { AgentSession } from '@/types/agent-session';
-import { SystemConnectors } from '@/components/agentic/SystemConnectors';
-import { KnowledgeBaseManager } from '@/components/agentic/KnowledgeBaseManager';
-import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
-import { PreDeploymentReview } from '@/components/agent-deployment/PreDeploymentReview';
 import { useConnectorAssignments } from '@/hooks/useConnectorAssignments';
 import { CHANNELS } from '@/config/orchestration';
 import { supabase } from '@/integrations/supabase/client';
@@ -328,7 +319,6 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
   const [configStep, setConfigStep] = useState<'basic' | 'connectors' | 'knowledge' | 'rag' | 'channels' | 'deploy'>('basic');
   
   // Deploy resources
-  const { voiceProviders } = useAgentDeployments();
   
   // Form state for configuration
   const [agentConfig, setAgentConfig] = useState({
