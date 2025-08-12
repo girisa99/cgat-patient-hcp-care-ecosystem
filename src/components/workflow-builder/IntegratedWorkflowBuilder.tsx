@@ -343,6 +343,7 @@ const [agentConfig, setAgentConfig] = useState({
   const [selectedConnectorId, setSelectedConnectorId] = useState<string>('');
   const [promptText, setPromptText] = useState<string>('');
   const [isPrompting, setIsPrompting] = useState(false);
+  const [knowledgeUrl, setKnowledgeUrl] = useState<string>('');
 
   // Hook to get React Flow viewport
   const { setViewport, getViewport } = useReactFlow();
@@ -714,27 +715,37 @@ setAgentConfig({
 
   const generateAgentFromWorkflow = () => {
     const agentNodes = nodes.filter(n => n.type === 'agent');
-    const mcpNodes = nodes.filter(n => n.type === 'mcp');
     const labelStudioNodes = nodes.filter(n => n.type === 'labelstudio');
-    
+
+    const assignedFromSessions = (assignments || []).map((a: any) => ({
+      id: a.connector_id,
+      name: a.connector?.name || a.connector_id,
+      task_id: a.task_id,
+      task_type: a.task_type,
+      type: a.connector?.type || 'connector'
+    }));
+
+    const connectorConfig = assignedFromSessions.reduce((acc: Record<string, any>, a: any) => {
+      acc[a.id] = { enabled: true };
+      return acc;
+    }, {} as Record<string, any>);
+
     return {
       basic_info: {
         name: agentConfig.name || `Visual Agent ${Date.now()}`,
         description: agentConfig.description || 'Agent created from visual workflow',
-        purpose: agentConfig.purpose || 'AI Assistant with visual workflow capabilities'
+        purpose: agentConfig.purpose || 'AI Assistant with visual workflow capabilities',
+        categories: agentConfig.categories,
+        topics: agentConfig.topics,
+        business_units: agentConfig.businessUnits,
       },
       actions: {
         assigned_actions: agentNodes.flatMap(n => n.data?.capabilities || []),
         custom_actions: nodes.filter(n => n.data?.realTimeTesting).map(n => ({ name: n.data?.label, enabled: true }))
       },
       connectors: {
-        assigned_connectors: mcpNodes.map(n => ({
-          id: n.id,
-          name: n.data?.label,
-          type: n.data?.serverType,
-          tools: n.data?.tools || []
-        })),
-        configurations: agentConfig.connectors.reduce((acc, connector) => ({ ...acc, [connector]: { enabled: true } }), {})
+        assigned_connectors: assignedFromSessions,
+        configurations: connectorConfig,
       },
       knowledge: {
         label_studio: labelStudioNodes.map(n => ({
@@ -1360,11 +1371,41 @@ setAgentConfig({
                       <div className="flex gap-2">
                         <Input
                           placeholder="https://docs.example.com/guide"
-                          value={''}
-                          onChange={() => {}}
+                          value={knowledgeUrl}
+                          onChange={(e) => setKnowledgeUrl(e.target.value)}
                         />
+                        <Button
+                          disabled={!knowledgeUrl.trim()}
+                          onClick={() => {
+                            const url = knowledgeUrl.trim();
+                            if (!url) return;
+                            const next = Array.from(new Set([...(agentConfig.knowledgeBases || []), url]));
+                            setAgentConfig(prev => ({ ...prev, knowledgeBases: next }));
+                            handleConfigUpdate('knowledge', { knowledge_bases: next });
+                            setKnowledgeUrl('');
+                          }}
+                        >Add</Button>
                       </div>
                       <div className="text-xs text-muted-foreground mt-1">Tip: paste URLs to include in this session's knowledge set.</div>
+                    </div>
+
+                    <div className="space-y-2">
+                      {agentConfig.knowledgeBases.length ? agentConfig.knowledgeBases.map((kb, idx) => (
+                        <div key={`${kb}-${idx}`} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <div className="truncate text-sm" title={kb}>{kb}</div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const next = agentConfig.knowledgeBases.filter((k) => k !== kb);
+                              setAgentConfig(prev => ({ ...prev, knowledgeBases: next }));
+                              handleConfigUpdate('knowledge', { knowledge_bases: next });
+                            }}
+                          >Remove</Button>
+                        </div>
+                      )) : (
+                        <div className="text-xs text-muted-foreground">No knowledge sources added yet</div>
+                      )}
                     </div>
                   </div>
                 )}
