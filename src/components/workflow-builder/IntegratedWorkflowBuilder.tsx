@@ -353,6 +353,7 @@ const [agentConfig, setAgentConfig] = useState({
   // Hook to get React Flow viewport
   const { setViewport, getViewport } = useReactFlow();
   
+  
   // Session management - using consistent sessionId for hooks
   const stableSessionId = currentSessionId || '';
   const {
@@ -369,6 +370,29 @@ const [agentConfig, setAgentConfig] = useState({
   const { assignments, availableConnectors, assignConnector, removeAssignment, isLoading: isLoadingAssignments, isLoadingConnectors } = useConnectorAssignments(currentSessionId || undefined);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
+  
+  // Keyboard shortcuts for soft delete and save checkpoint
+  useEffect(() => {
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Delete' && selectedNode) {
+        e.preventDefault();
+        setDeletedNodes((prev) => [...prev, selectedNode]);
+        setNodes((nds) => nds.filter((n) => n.id !== selectedNode.id));
+        setSelectedNode(null);
+      }
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        const id = `${Date.now()}`;
+        setCheckpoints((cp) => [
+          ...cp,
+          { id, name: `Checkpoint ${new Date().toLocaleTimeString()}`, timestamp: new Date().toISOString(), nodes, edges },
+        ]);
+        showSuccess('Checkpoint saved');
+      }
+    };
+    window.addEventListener('keydown', onKeyDown as any);
+    return () => window.removeEventListener('keydown', onKeyDown as any);
+  }, [selectedNode, nodes, edges, showSuccess, setNodes]);
   
   // Language model options
   const [languageModels] = useState([
@@ -1142,7 +1166,16 @@ setAgentConfig({
               onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               nodeTypes={nodeTypes}
-              onNodeClick={(event, node) => setSelectedNode(node)}
+              onNodeClick={(event, node) => {
+                setSelectedNode(node);
+                setContextMenu({ visible: false, x: 0, y: 0, node: null });
+              }}
+              onNodeContextMenu={(event, node) => {
+                event.preventDefault();
+                setSelectedNode(node);
+                setContextMenu({ visible: true, x: event.clientX, y: event.clientY, node });
+              }}
+              onPaneClick={() => setContextMenu({ visible: false, x: 0, y: 0, node: null })}
               fitView
               attributionPosition="bottom-right"
             >
