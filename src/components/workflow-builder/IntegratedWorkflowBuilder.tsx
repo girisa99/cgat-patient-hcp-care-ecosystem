@@ -33,6 +33,8 @@ import {
   BookOpen, Plug, Plus, X, Edit
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { z } from 'zod';
+import { useAgentDeployments } from '@/hooks/useAgentDeployments';
 
 // Import integrated backend systems
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -325,8 +327,11 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [configStep, setConfigStep] = useState<'basic' | 'connectors' | 'knowledge' | 'rag' | 'channels' | 'deploy'>('basic');
   
+  // Deploy resources
+  const { voiceProviders } = useAgentDeployments();
+  
   // Form state for configuration
-const [agentConfig, setAgentConfig] = useState({
+  const [agentConfig, setAgentConfig] = useState({
     name: '',
     description: '',
     purpose: '',
@@ -392,9 +397,6 @@ const [agentConfig, setAgentConfig] = useState({
     };
     window.addEventListener('keydown', onKeyDown as any);
     return () => window.removeEventListener('keydown', onKeyDown as any);
-  }, [selectedNode, nodes, edges, showSuccess, setNodes]);
-  
-  // Language model options
   const [languageModels] = useState([
     { id: 'gpt-4o-mini', name: 'GPT-4o Mini', type: 'fast', vision: true },
     { id: 'gpt-4o', name: 'GPT-4o', type: 'advanced', vision: true },
@@ -737,10 +739,35 @@ setAgentConfig({
     });
   };
 
+  // Pre-deploy validation
+  const runPreDeployChecks = () => {
+    const errors: string[] = [];
+    const warnings: string[] = [];
+
+    const agentNodes = nodes.filter(n => n.type === 'agent');
+    if (!agentConfig.name?.trim()) errors.push('Agent name is required.');
+    if (!agentConfig.description?.trim()) warnings.push('Agent description is recommended.');
+    if (agentNodes.length === 0) errors.push('At least one Agent node is required.');
+    if (edges.length < 1) warnings.push('Add edges to define flow between nodes.');
+    if (agentConfig.channels.length === 0) warnings.push('No deployment channels selected.');
+
+    if ((assignments?.length || 0) === 0) warnings.push('No connectors assigned.');
+
+    return { errors, warnings };
+  };
+
   // Deployment Functions
   const handleDeploy = async () => {
     if (!currentSessionId || !currentSession) {
       showError('No workflow session to deploy');
+      return;
+    }
+
+    const checks = runPreDeployChecks();
+    if (checks.errors.length) {
+      setShowConfigPanel(true);
+      setConfigStep('deploy');
+      showError(`Fix issues before deploy: ${checks.errors.join(' | ')}`);
       return;
     }
 
@@ -1036,6 +1063,24 @@ setAgentConfig({
                   </Button>
                 </div>
               </div>
+              {/* Trash / Restore */
+              {deletedNodes.length > 0 && (
+                <div className="pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium text-sm">Recently Deleted</h4>
+                    <Badge variant="outline" className="text-xs">{deletedNodes.length}</Badge>
+                  </div>
+                  <Button size="sm" variant="outline" className="mt-2 w-full" onClick={() => {
+                    const last = deletedNodes[deletedNodes.length - 1];
+                    if (!last) return;
+                    setDeletedNodes((prev) => prev.slice(0, -1));
+                    setNodes((nds) => [...nds, { ...last, id: `${Date.now()}` }]);
+                  }}>
+                    Restore Last
+                  </Button>
+                </div>
+              )}
+
             </TabsContent>
             
             <TabsContent value="canvas" className="space-y-4">
@@ -1183,6 +1228,39 @@ setAgentConfig({
               <MiniMap />
               <Background gap={20} size={1} />
             </ReactFlow>
+            {/* Context Menu */}
+            {contextMenu.visible && contextMenu.node && (
+              <div
+                className="z-20 bg-popover border rounded shadow-md p-2 text-sm fixed"
+                style={{ top: contextMenu.y, left: contextMenu.x }}
+                onMouseLeave={() => setContextMenu({ visible: false, x: 0, y: 0, node: null })}
+              >
+                <button
+                  className="block w-full text-left px-2 py-1 hover:bg-muted rounded"
+                  onClick={() => {
+                    setSelectedNode(contextMenu.node);
+                    setContextMenu({ visible: false, x: 0, y: 0, node: null });
+                  }}
+                >Edit Properties</button>
+                <button
+                  className="block w-full text-left px-2 py-1 hover:bg-muted rounded"
+                  onClick={() => {
+                    const n = contextMenu.node!;
+                    setNodes((nds) => nds.map(node => node.id === n.id ? { ...node, data: { ...node.data, deactivated: !node.data?.deactivated } } : node));
+                    setContextMenu({ visible: false, x: 0, y: 0, node: null });
+                  }}
+                >Toggle Active</button>
+                <button
+                  className="block w-full text-left px-2 py-1 hover:bg-destructive/10 rounded"
+                  onClick={() => {
+                    const n = contextMenu.node!;
+                    setDeletedNodes((prev) => [...prev, n]);
+                    setNodes((nds) => nds.filter(node => node.id !== n.id));
+                    setContextMenu({ visible: false, x: 0, y: 0, node: null });
+                  }}
+                >Soft Delete</button>
+              </div>
+            )}
           ) : (
             <div className="flex items-center justify-center h-full bg-muted/20">
               <div className="text-center p-8">
@@ -1216,14 +1294,41 @@ setAgentConfig({
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium">Label</label>
-                  <p className="text-sm">{String(selectedNode.data?.label || 'No label')}</p>
+                  <Label className="text-xs font-medium">Label</Label>
+                  <Input
+                    value={String(selectedNode.data?.label || '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      // Validate
+                      if (!z.string().min(1).safeParse(val).success) return;
+                      setNodes((nds) => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, label: val } } : n));
+                      setSelectedNode((sn) => sn && sn.id === selectedNode.id ? { ...sn, data: { ...sn.data, label: val } } as any : sn);
+                    }}
+                    placeholder="Enter label"
+                  />
                 </div>
                 <div>
-                  <label className="text-xs font-medium">Description</label>
-                  <p className="text-sm text-muted-foreground">
-                    {String(selectedNode.data?.description || 'No description')}
-                  </p>
+                  <Label className="text-xs font-medium">Description</Label>
+                  <Textarea
+                    rows={3}
+                    value={String(selectedNode.data?.description || '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setNodes((nds) => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, description: val } } : n));
+                      setSelectedNode((sn) => sn && sn.id === selectedNode.id ? { ...sn, data: { ...sn.data, description: val } } as any : sn);
+                    }}
+                    placeholder="Describe this node"
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs font-medium">Active</Label>
+                  <Switch
+                    checked={!selectedNode.data?.deactivated}
+                    onCheckedChange={(on) => {
+                      setNodes((nds) => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, deactivated: !on } } : n));
+                      setSelectedNode((sn) => sn && sn.id === selectedNode.id ? { ...sn, data: { ...sn.data, deactivated: !on } } as any : sn);
+                    }}
+                  />
                 </div>
                 
                 {/* Agent-specific properties */}
