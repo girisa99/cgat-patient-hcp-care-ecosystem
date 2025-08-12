@@ -121,7 +121,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
           className={`flex items-center gap-2 whitespace-nowrap transition-all duration-200 min-w-fit px-3 ${
             isActive 
               ? 'bg-primary text-primary-foreground shadow-sm' 
-              : 'hover:bg-accent hover:scale-105'
+              : 'hover:bg-accent'
           }`}
         >
           {buttonContent}
@@ -180,7 +180,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                     variant={isDashboard ? 'default' : 'ghost'}
                     size="sm"
                     className={`flex items-center gap-2 whitespace-nowrap min-w-fit px-3 ${
-                      isDashboard ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent hover:scale-105'
+                      isDashboard ? 'bg-primary text-primary-foreground shadow-sm' : 'hover:bg-accent'
                     }`}
                   >
                     <Home className="h-4 w-4 flex-shrink-0" />
@@ -218,7 +218,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap min-w-fit px-3"
+                        className="flex items-center gap-2 hover:bg-accent whitespace-nowrap min-w-fit px-3"
                       >
                         <Users className="h-4 w-4 flex-shrink-0" />
                         <span className="hidden xl:inline text-stable">Management</span>
@@ -241,7 +241,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap min-w-fit px-3"
+                        className="flex items-center gap-2 hover:bg-accent whitespace-nowrap min-w-fit px-3"
                       >
                         <Settings className="h-4 w-4 flex-shrink-0" />
                         <span className="hidden xl:inline text-stable">System Integration</span>
@@ -264,7 +264,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                       <Button
                         variant="ghost"
                         size="sm"
-                        className="flex items-center gap-2 hover:bg-accent hover:scale-105 whitespace-nowrap min-w-fit px-3"
+                        className="flex items-center gap-2 hover:bg-accent whitespace-nowrap min-w-fit px-3"
                       >
                         <FileBarChart className="h-4 w-4 flex-shrink-0" />
                         <span className="hidden xl:inline text-stable">Reports & Compliance</span>
