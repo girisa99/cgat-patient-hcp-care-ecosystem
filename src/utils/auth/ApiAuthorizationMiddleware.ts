@@ -5,7 +5,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 type UserRole = Database['public']['Enums']['user_role'];
 

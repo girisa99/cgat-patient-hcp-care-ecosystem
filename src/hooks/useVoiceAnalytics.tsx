@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 import { useMemo } from 'react';
 
 type AnalyticsEvent = Database['public']['Tables']['voice_analytics_events']['Row'];

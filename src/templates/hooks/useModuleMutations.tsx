@@ -2,9 +2,9 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
-type DatabaseTables = keyof Database['public']['Tables'];
+type DatabaseTables = string;
 
 /**
  * Generic Module Mutations Hook
@@ -18,7 +18,7 @@ export const useModuleMutations = (config?: { tableName: DatabaseTables }) => {
   // Generic create mutation
   const createMutation = useMutation({
     mutationFn: async (data: any) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from(tableName)
         .insert(data);
 
@@ -43,7 +43,7 @@ export const useModuleMutations = (config?: { tableName: DatabaseTables }) => {
   // Generic update mutation
   const updateMutation = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: any }) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from(tableName)
         .update(updates)
         .eq('id', id);
@@ -69,7 +69,7 @@ export const useModuleMutations = (config?: { tableName: DatabaseTables }) => {
   // Generic delete mutation
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await (supabase as any)
         .from(tableName)
         .delete()
         .eq('id', id);

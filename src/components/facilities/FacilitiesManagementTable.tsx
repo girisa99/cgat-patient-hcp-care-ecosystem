@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Shield, UserPlus, Settings, Plus, Edit } from 'lucide-react';
 import { FacilityManagementModal } from '@/components/modals/FacilityManagementModal';
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 type FacilityType = Database["public"]["Enums"]["facility_type"];
 

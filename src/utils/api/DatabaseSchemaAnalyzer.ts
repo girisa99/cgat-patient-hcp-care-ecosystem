@@ -5,10 +5,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { moduleRegistry } from '../moduleRegistry';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 // Align with framework TypeScript types
-type DatabaseTables = keyof Database['public']['Tables'];
+type DatabaseTables = string;
 type TableRow<T extends DatabaseTables> = Database['public']['Tables'][T]['Row'];
 
 export interface DatabaseTableAnalysis {

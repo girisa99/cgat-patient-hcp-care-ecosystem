@@ -21,7 +21,7 @@ import {
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useRealUsers } from '@/hooks/api/useRealUsers';
 import { supabase } from '@/integrations/supabase/client';
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 type FacilityType = Database["public"]["Enums"]["facility_type"];
 

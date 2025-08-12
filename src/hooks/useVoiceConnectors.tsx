@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 import { useMasterToast } from './useMasterToast';
 
 type VoiceConnector = Database['public']['Tables']['voice_connectors']['Row'];

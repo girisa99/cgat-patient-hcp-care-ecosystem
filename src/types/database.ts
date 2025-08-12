@@ -1,5 +1,5 @@
 
-import { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 
 // Extract proper types from the database schema
 export type Facility = Database['public']['Tables']['facilities']['Row'];

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import type { Database } from '@/integrations/supabase/types';
+import type { Database } from '@/types/database.generated';
 import { useMasterToast } from './useMasterToast';
 
 type TransferRequest = Database['public']['Tables']['voice_transfer_queue']['Row'];
