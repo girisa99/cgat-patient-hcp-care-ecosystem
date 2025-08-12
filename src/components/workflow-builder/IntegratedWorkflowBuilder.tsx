@@ -50,7 +50,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 // Enhanced Node Components with integrated features
 const CustomerNode = ({ data }: { data: any }) => (
-  <div className="px-4 py-3 shadow-md rounded-md bg-background border-2 border-primary min-w-[200px]">
+  <div className={`px-4 py-3 shadow-md rounded-md bg-background border-2 border-primary min-w-[200px] ${data.deactivated ? 'opacity-50 grayscale' : ''}`}>
     <div className="flex items-center gap-2 mb-2">
       <Users className="h-4 w-4 text-primary" />
       <div className="font-bold text-sm">{data.label}</div>
@@ -70,7 +70,7 @@ const CustomerNode = ({ data }: { data: any }) => (
 );
 
 const TouchpointNode = ({ data }: { data: any }) => (
-  <div className="px-4 py-3 shadow-md rounded-md bg-accent border-2 border-accent-foreground min-w-[180px]">
+  <div className={`px-4 py-3 shadow-md rounded-md bg-accent border-2 border-accent-foreground min-w-[180px] ${data.deactivated ? 'opacity-50 grayscale' : ''}`}>
     <div className="flex items-center gap-2 mb-2">
       {data.channel === 'chat' && <MessageCircle className="h-4 w-4" />}
       {data.channel === 'phone' && <Phone className="h-4 w-4" />}
@@ -345,6 +345,10 @@ const [agentConfig, setAgentConfig] = useState({
   const [isPrompting, setIsPrompting] = useState(false);
   const [knowledgeUrl, setKnowledgeUrl] = useState<string>('');
   const [lsBinding, setLsBinding] = useState<any | undefined>(undefined);
+  // CRUD, context menu, and versioning
+  const [deletedNodes, setDeletedNodes] = useState<Node[]>([]);
+  const [contextMenu, setContextMenu] = useState<{ visible: boolean; x: number; y: number; node: Node | null }>({ visible: false, x: 0, y: 0, node: null });
+  const [checkpoints, setCheckpoints] = useState<Array<{ id: string; name: string; timestamp: string; nodes: Node[]; edges: Edge[] }>>([]);
 
   // Hook to get React Flow viewport
   const { setViewport, getViewport } = useReactFlow();
