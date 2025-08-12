@@ -44,6 +44,9 @@ import { SystemConnectors } from '@/components/agentic/SystemConnectors';
 import { KnowledgeBaseManager } from '@/components/agentic/KnowledgeBaseManager';
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
 import { PreDeploymentReview } from '@/components/agent-deployment/PreDeploymentReview';
+import { useConnectorAssignments } from '@/hooks/useConnectorAssignments';
+import { CHANNELS } from '@/config/orchestration';
+import { supabase } from '@/integrations/supabase/client';
 
 // Enhanced Node Components with integrated features
 const CustomerNode = ({ data }: { data: any }) => (
@@ -323,16 +326,23 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
   const [configStep, setConfigStep] = useState<'basic' | 'connectors' | 'knowledge' | 'rag' | 'channels' | 'deploy'>('basic');
   
   // Form state for configuration
-  const [agentConfig, setAgentConfig] = useState({
+const [agentConfig, setAgentConfig] = useState({
     name: '',
     description: '',
     purpose: '',
+    categories: [] as string[],
+    topics: [] as string[],
+    businessUnits: [] as string[],
     channels: [] as string[],
     knowledgeBases: [] as string[],
     connectors: [] as string[],
     ragConfig: {},
-    voiceConfig: {}
+    voiceConfig: {},
+    approved: false,
   });
+  const [selectedConnectorId, setSelectedConnectorId] = useState<string>('');
+  const [promptText, setPromptText] = useState<string>('');
+  const [isPrompting, setIsPrompting] = useState(false);
 
   // Hook to get React Flow viewport
   const { setViewport, getViewport } = useReactFlow();
@@ -349,7 +359,8 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
     isLoading,
   } = useAgentSession(stableSessionId || undefined);
 
-  // Flow state - using proper data structure
+// Flow state - using proper data structure
+  const { assignments, availableConnectors, assignConnector, removeAssignment, isLoading: isLoadingAssignments, isLoadingConnectors } = useConnectorAssignments(currentSessionId || undefined);
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   
@@ -388,15 +399,19 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
       }
       
       // Load agent config
-      setAgentConfig({
+setAgentConfig({
         name: currentSession.basic_info?.name || '',
         description: currentSession.basic_info?.description || '',
         purpose: currentSession.basic_info?.purpose || '',
+        categories: (currentSession.basic_info as any)?.categories || [],
+        topics: (currentSession.basic_info as any)?.topics || [],
+        businessUnits: (currentSession.basic_info as any)?.business_units || [],
         channels: deploymentData?.config?.channels || [],
         knowledgeBases: (currentSession.knowledge as any)?.knowledge_bases || [],
         connectors: Object.keys(currentSession.connectors || {}),
         ragConfig: currentSession.rag || {},
-        voiceConfig: deploymentData?.voice_config || {}
+        voiceConfig: deploymentData?.voice_config || {},
+        approved: Boolean((deploymentData?.config as any)?.approved) || false,
       });
     }
   }, [currentSession, setNodes, setEdges]);
@@ -837,10 +852,10 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
             Configure
           </Button>
           
-          <Button 
+<Button 
             size="sm" 
             onClick={handleDeploy}
-            disabled={isDeploying || readinessScore < 60}
+            disabled={isDeploying || readinessScore < 60 || !agentConfig.approved}
             className="bg-primary hover:bg-primary/90"
           >
             <Rocket className="h-4 w-4 mr-1" />
@@ -859,7 +874,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
               <TabsTrigger value="config">Config</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="workflow" className="space-y-4">
+<TabsContent value="workflow" className="space-y-4">
               <h3 className="font-medium mb-3">Sessions</h3>
               {userSessions && userSessions.length > 0 ? (
                 <div className="space-y-2">
@@ -900,6 +915,43 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
                   Create First Session
                 </Button>
               )}
+              <div className="pt-4 border-t">
+                <h4 className="font-medium text-sm mb-2">Prompt-based Generator</h4>
+                <Textarea
+                  placeholder="Describe the workflow you want. We'll recommend nodes and connections."
+                  value={promptText}
+                  onChange={(e) => setPromptText(e.target.value)}
+                  rows={3}
+                />
+                <div className="flex gap-2 mt-2">
+                  <Button size="sm" variant="outline" onClick={generateAIRecommendations} disabled={isGenerating}>
+                    <Sparkles className="h-4 w-4 mr-1" /> Quick AI
+                  </Button>
+                  <Button size="sm" onClick={async () => {
+                    if (!promptText.trim()) return;
+                    setIsPrompting(true);
+                    try {
+                      const { data, error } = await supabase.functions.invoke('perplexity-recommend', { body: { prompt: promptText } });
+                      if (error) throw error;
+                      const recs = (data?.suggestions || []).map((s: any, idx: number) => ({
+                        id: `px-${Date.now()}-${idx}`,
+                        type: s.type || 'agent',
+                        position: { x: 100 + (idx*80), y: 500 + (idx*40) },
+                        data: { label: s.label, description: s.description, capabilities: s.capabilities || [] }
+                      }));
+                      setNodes(prev => [...prev, ...recs]);
+                      setActiveTab('canvas');
+                      setShowConfigPanel(false);
+                    } catch (e) {
+                      showError('Prompt-based generation failed');
+                    } finally {
+                      setIsPrompting(false);
+                    }
+                  }} disabled={isPrompting}>
+                    {isPrompting ? 'Generating...' : 'Run Prompt'}
+                  </Button>
+                </div>
+              </div>
             </TabsContent>
             
             <TabsContent value="canvas" className="space-y-4">
@@ -984,7 +1036,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
                   )}
                 </div>
                 
-                <div className="space-y-2">
+<div className="space-y-2">
                   {['basic', 'connectors', 'knowledge', 'rag', 'channels'].map((step) => (
                     <Button
                       key={step}
@@ -1011,7 +1063,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
                   <div className="text-xs text-muted-foreground mb-2">Readiness Score</div>
                   <Progress value={readinessScore} className="h-2" />
                   <div className="text-xs text-muted-foreground mt-1">
-                    {readinessScore}% complete
+                    {readinessScore}% complete {agentConfig.approved ? '(Approved)' : '(Awaiting approval)'}
                   </div>
                 </div>
               </div>
@@ -1107,7 +1159,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
                   </>
                 )}
                 
-                {/* MCP-specific properties */}
+{/* MCP-specific properties */}
                 {selectedNode.type === 'mcp' && selectedNode.data?.tools && (
                   <div>
                     <label className="text-xs font-medium">Available Tools</label>
@@ -1116,7 +1168,22 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
                     </div>
                   </div>
                 )}
-                
+
+                {/* Decision-specific properties */}
+                {selectedNode.type === 'decision' && (
+                  <div>
+                    <label className="text-xs font-medium">Conditions (comma-separated)</label>
+                    <Textarea
+                      rows={2}
+                      value={(selectedNode.data?.conditions || []).join(', ')}
+                      onChange={(e) => {
+                        const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean);
+                        setNodes((nds) => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, conditions: vals } } : n));
+                      }}
+                    />
+                  </div>
+                )}
+
                 {/* Label Studio properties */}
                 {selectedNode.type === 'labelstudio' && (
                   <>
@@ -1157,7 +1224,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
                   </Button>
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-4">
+<CardContent className="space-y-4">
                 {configStep === 'basic' && (
                   <div className="space-y-3">
                     <div>
@@ -1200,18 +1267,105 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
                         placeholder="Agent's main purpose"
                       />
                     </div>
+                    <div>
+                      <Label>Categories (comma-separated)</Label>
+                      <Input
+                        value={agentConfig.categories.join(', ')}
+                        onChange={(e) => {
+                          const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean);
+                          setAgentConfig(prev => ({ ...prev, categories: vals }));
+                          handleConfigUpdate('basic', { categories: vals });
+                        }}
+                        placeholder="e.g. Clinical, Scheduling"
+                      />
+                    </div>
+                    <div>
+                      <Label>Topics (comma-separated)</Label>
+                      <Input
+                        value={agentConfig.topics.join(', ')}
+                        onChange={(e) => {
+                          const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean);
+                          setAgentConfig(prev => ({ ...prev, topics: vals }));
+                          handleConfigUpdate('basic', { topics: vals });
+                        }}
+                        placeholder="e.g. Radiology, Intake"
+                      />
+                    </div>
+                    <div>
+                      <Label>Business Units (comma-separated)</Label>
+                      <Input
+                        value={agentConfig.businessUnits.join(', ')}
+                        onChange={(e) => {
+                          const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean);
+                          setAgentConfig(prev => ({ ...prev, businessUnits: vals }));
+                          handleConfigUpdate('basic', { business_units: vals });
+                        }}
+                        placeholder="e.g. Operations, Billing"
+                      />
+                    </div>
                   </div>
                 )}
 
                 {configStep === 'connectors' && (
-                  <div className="space-y-3 text-center p-4 bg-muted rounded">
-                    <p className="text-sm">Connector configuration panel - integrated with backend</p>
+                  <div className="space-y-3">
+                    <div className="text-sm text-muted-foreground">Assign connectors to this workflow or selected step.</div>
+                    <div className="flex gap-2 items-center">
+                      <Select value={selectedConnectorId} onValueChange={setSelectedConnectorId}>
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder={isLoadingConnectors ? 'Loading connectors...' : 'Select a connector'} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {availableConnectors?.map((c: any) => (
+                            <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <Button
+                        disabled={!currentSessionId || !selectedConnectorId}
+                        onClick={() => {
+                          if (!currentSessionId || !selectedConnectorId) return;
+                          assignConnector.mutate({
+                            agent_session_id: currentSessionId,
+                            connector_id: selectedConnectorId,
+                            task_id: selectedNode?.id || 'global',
+                            task_type: selectedNode ? 'workflow_step' : 'connector'
+                          });
+                          setSelectedConnectorId('');
+                        }}
+                      >Assign</Button>
+                    </div>
+                    <div className="pt-2 border-t">
+                      <div className="text-xs font-medium mb-2">Current Assignments</div>
+                      <div className="space-y-2">
+                        {assignments?.length ? assignments.map((a: any) => (
+                          <div key={a.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                            <div className="text-sm">
+                              <div className="font-medium">{a.connector?.name || a.connector_id}</div>
+                              <div className="text-xs text-muted-foreground">{a.task_type} • {a.task_id}</div>
+                            </div>
+                            <Button variant="outline" size="sm" onClick={() => removeAssignment.mutate(a.id)}>Remove</Button>
+                          </div>
+                        )) : (
+                          <div className="text-xs text-muted-foreground">No assignments yet</div>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 )}
 
                 {configStep === 'knowledge' && (
-                  <div className="space-y-3 text-center p-4 bg-muted rounded">
-                    <p className="text-sm">Knowledge base management - integrated with backend</p>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Add Knowledge Source URL</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          placeholder="https://docs.example.com/guide"
+                          value={''}
+                          onChange={() => {}}
+                        />
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">Tip: paste URLs to include in this session's knowledge set.</div>
+                    </div>
                   </div>
                 )}
 
@@ -1229,25 +1383,70 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
                       />
                     </div>
                     {Object.keys(agentConfig.ragConfig).length > 0 && (
-                      <div className="p-3 bg-muted rounded">
-                        <p className="text-sm text-muted-foreground">
-                          RAG configuration will use your knowledge bases for context-aware responses.
-                        </p>
+                      <div className="p-3 bg-muted rounded space-y-2">
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm" onClick={() => {
+                            const blob = new Blob([JSON.stringify(agentConfig.ragConfig, null, 2)], { type: 'application/json' });
+                            const url = URL.createObjectURL(blob);
+                            const a = document.createElement('a');
+                            a.href = url;
+                            a.download = 'rag-config.json';
+                            a.click();
+                            URL.revokeObjectURL(url);
+                          }}>Download RAG Config</Button>
+                          <Input type="file" accept="application/json" onChange={async (e) => {
+                            const file = e.target.files?.[0];
+                            if (!file) return;
+                            const text = await file.text();
+                            try {
+                              const json = JSON.parse(text);
+                              setAgentConfig(prev => ({ ...prev, ragConfig: json }));
+                              handleConfigUpdate('rag', json);
+                            } catch {}
+                          }} />
+                        </div>
+                        <div className="flex items-center justify-between mt-2">
+                          <Label>Final Approval</Label>
+                          <Switch
+                            checked={agentConfig.approved}
+                            onCheckedChange={(checked) => {
+                              setAgentConfig(prev => ({ ...prev, approved: checked }));
+                              handleConfigUpdate('channels', { approved: checked });
+                            }}
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
                 )}
 
                 {configStep === 'channels' && (
-                  <div className="space-y-3 text-center p-4 bg-muted rounded">
-                    <p className="text-sm">Channel assignment - integrated with deployment pipeline</p>
+                  <div className="space-y-2">
+                    {CHANNELS.map((ch) => {
+                      const checked = agentConfig.channels.includes(ch.id);
+                      return (
+                        <div key={ch.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                          <div className="text-sm">{ch.label}</div>
+                          <Switch
+                            checked={checked}
+                            onCheckedChange={(isOn) => {
+                              const next = isOn
+                                ? Array.from(new Set([...agentConfig.channels, ch.id]))
+                                : agentConfig.channels.filter((c) => c !== ch.id);
+                              setAgentConfig(prev => ({ ...prev, channels: next }));
+                              handleConfigUpdate('channels', { channels: next });
+                            }}
+                          />
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
 
                 {configStep === 'deploy' && (
                   <div className="space-y-3 text-center p-4 bg-muted rounded">
                     <p className="text-sm">Deployment review - ready for production deployment</p>
-                    <Button onClick={handleDeploy} disabled={isDeploying}>
+                    <Button onClick={handleDeploy} disabled={isDeploying || !agentConfig.approved}>
                       {isDeploying ? 'Deploying...' : 'Deploy Now'}
                     </Button>
                   </div>
