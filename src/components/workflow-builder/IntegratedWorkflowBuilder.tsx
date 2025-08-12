@@ -344,6 +344,7 @@ const [agentConfig, setAgentConfig] = useState({
   const [promptText, setPromptText] = useState<string>('');
   const [isPrompting, setIsPrompting] = useState(false);
   const [knowledgeUrl, setKnowledgeUrl] = useState<string>('');
+  const [lsBinding, setLsBinding] = useState<any | undefined>(undefined);
 
   // Hook to get React Flow viewport
   const { setViewport, getViewport } = useReactFlow();
@@ -414,8 +415,52 @@ setAgentConfig({
         voiceConfig: deploymentData?.voice_config || {},
         approved: Boolean((deploymentData?.config as any)?.approved) || false,
       });
+      setLsBinding(((currentSession.knowledge as any)?.label_studio as any)?.binding);
     }
   }, [currentSession, setNodes, setEdges]);
+
+  useEffect(() => {
+    if (!lsBinding) return;
+    setNodes((nds) => {
+      let found = false;
+      const updated = nds.map((n) => {
+        if (n.type === 'labelstudio') {
+          found = true;
+          return {
+            ...n,
+            data: {
+              ...n.data,
+              label: (lsBinding as any).projectTitle || 'Label Studio',
+              description: 'Connected labeling project',
+              projectId: (lsBinding as any).projectId,
+            },
+          };
+        }
+        return n;
+      });
+      if (!found) {
+        const newNode = {
+          id: `ls-${Date.now()}`,
+          type: 'labelstudio' as any,
+          position: { x: 200, y: 240 },
+          data: {
+            label: (lsBinding as any).projectTitle || 'Label Studio',
+            description: 'Connected labeling project',
+            projectId: (lsBinding as any).projectId,
+            annotationTypes: [],
+          },
+        };
+        return [...updated, newNode];
+      }
+      return updated;
+    });
+    handleConfigUpdate('knowledge', {
+      label_studio: {
+        ...(((currentSession as any)?.knowledge as any)?.label_studio || {}),
+        binding: lsBinding,
+      },
+    });
+  }, [lsBinding]);
 
   // Auto-save workflow changes
   useEffect(() => {
@@ -1406,6 +1451,11 @@ setAgentConfig({
                       )) : (
                         <div className="text-xs text-muted-foreground">No knowledge sources added yet</div>
                       )}
+                    </div>
+
+                    <div className="pt-3 border-t">
+                      <div className="text-sm font-medium mb-2">Label Studio Integration</div>
+                      <LSBindingPanel value={lsBinding} onBind={setLsBinding} />
                     </div>
                   </div>
                 )}
