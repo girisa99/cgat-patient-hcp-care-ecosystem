@@ -10,10 +10,19 @@
   display: none;  /* Chrome, Safari and Opera */
 }
 
-/* Ensure navigation items don't shrink below readable size */
+/* Ensure navigation items don't shrink below readable size and prevent text overlap */
 .nav-item {
   min-width: fit-content;
   flex-shrink: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+/* Prevent text wrapping and ensure stable layout */
+.text-stable {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Responsive navigation adjustments */

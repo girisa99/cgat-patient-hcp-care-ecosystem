@@ -15,7 +15,8 @@ import { useNavigate } from 'react-router-dom';
 import { 
   CustomerJourneyBuilder, 
   AIWorkflowGenerator, 
-  NoCodeAgentConfigurator 
+  NoCodeAgentConfigurator,
+  IntegratedWorkflowBuilder 
 } from '@/components/workflow-builder';
 import { useAgentPersistence } from '@/hooks/useAgentPersistence';
 
@@ -275,14 +276,13 @@ const AgentWorkflowStudio: React.FC = () => {
                       <Sparkles className="h-4 w-4" />
                       AI Generator
                     </TabsTrigger>
-                    <TabsTrigger 
-                      value="builder" 
-                      className="flex items-center gap-2"
-                      disabled={!studioState.workflow}
-                    >
-                      <Workflow className="h-4 w-4" />
-                      Visual Builder
-                    </TabsTrigger>
+              <TabsTrigger 
+                value="builder" 
+                className="flex items-center gap-2"
+              >
+                <Workflow className="h-4 w-4" />
+                Integrated Builder
+              </TabsTrigger>
                     <TabsTrigger 
                       value="configurator" 
                       className="flex items-center gap-2"
@@ -308,15 +308,19 @@ const AgentWorkflowStudio: React.FC = () => {
                   </TabsContent>
 
                   <TabsContent value="builder" className="p-0 min-h-[600px]">
-                    <CustomerJourneyBuilder 
+                    <IntegratedWorkflowBuilder 
                       initialWorkflow={studioState.workflow}
                       onSave={(workflow) => {
                         setStudioState(prev => ({ ...prev, workflow }));
-                        showSuccess('Workflow saved successfully!');
+                        showSuccess('Integrated workflow saved successfully!');
                       }}
                       onGenerateAgent={(workflow) => {
                         setStudioState(prev => ({ ...prev, workflow }));
                         setActiveTab('configurator');
+                      }}
+                      onTest={(testData) => {
+                        showSuccess('Real-time testing completed!');
+                        setPreviewMode(true);
                       }}
                     />
                   </TabsContent>

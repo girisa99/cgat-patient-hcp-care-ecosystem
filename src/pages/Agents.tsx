@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AgenticEcosystem from '@/pages/AgenticEcosystem';
@@ -22,9 +22,11 @@ import {
   UserCog,
   Grid,
   Rocket,
-  Activity
+  Activity,
+  Workflow
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 
 // Role-specific components - defined before use to avoid React error #185
 import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
@@ -73,6 +75,7 @@ const Agents = () => {
   // Generate available tabs based on user roles - reorganized for better UX flow
   const availableTabs = [
     { id: 'ecosystem', label: 'Agent Ecosystem', component: 'AgenticEcosystem' },
+    { id: 'workflow-studio', label: 'Visual Workflow Builder', component: 'WorkflowStudio' },
     ...(isOnboardingTeam ? [{ id: 'onboarding', label: 'Treatment Centers', component: 'OnboardingAgentsView' }] : []),
     { id: 'deployment-ready', label: 'Deployment Ready', component: 'DeploymentReady' },
     { id: 'channel-assignment', label: 'Channel & Voice Setup', component: 'ChannelAssignment' },
@@ -100,6 +103,12 @@ const Agents = () => {
               </p>
             </div>
             <div className="flex items-center gap-2">
+              <Link to="/agents/workflow-studio">
+                <Button variant="outline" className="flex items-center gap-2">
+                  <Workflow className="w-4 h-4" />
+                  Visual Workflow Builder
+                </Button>
+              </Link>
               <Link to="/agents/new">
                 <Button className="flex items-center gap-2">
                   <Bot className="w-4 h-4" />
@@ -127,26 +136,56 @@ const Agents = () => {
           {/* Dynamic Tabs based on role */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
             <TabsList className="parent-tabs">
-              {availableTabs.map((tab) => (
-                <TabsTrigger 
-                  key={tab.id} 
-                  value={tab.id} 
-                  className="parent-tab-trigger"
-                >
-                  {tab.id === 'ecosystem' && <Bot className="h-5 w-5" />}
-                  {tab.id === 'onboarding' && <Users className="h-5 w-5" />}
-                  {tab.id === 'deployment-ready' && <Rocket className="h-5 w-5" />}
-                  {tab.id === 'channel-assignment' && <Grid className="h-5 w-5" />}
-                  {tab.id === 'testing' && <TestTube className="h-5 w-5" />}
-                  {tab.id === 'active-deployments' && <Activity className="h-5 w-5" />}
-                  {tab.id === 'settings' && <Settings className="h-5 w-5" />}
-                  <span className="font-semibold">{tab.label}</span>
-                </TabsTrigger>
-              ))}
+               {availableTabs.map((tab) => (
+                 <TabsTrigger 
+                   key={tab.id} 
+                   value={tab.id} 
+                   className="parent-tab-trigger flex items-center gap-2"
+                 >
+                   {tab.id === 'ecosystem' && <Bot className="h-4 w-4" />}
+                   {tab.id === 'workflow-studio' && <Grid className="h-4 w-4" />}
+                   {tab.id === 'onboarding' && <Users className="h-4 w-4" />}
+                   {tab.id === 'deployment-ready' && <Rocket className="h-4 w-4" />}
+                   {tab.id === 'channel-assignment' && <Settings className="h-4 w-4" />}
+                   {tab.id === 'testing' && <TestTube className="h-4 w-4" />}
+                   {tab.id === 'active-deployments' && <Activity className="h-4 w-4" />}
+                   {tab.id === 'settings' && <UserCog className="h-4 w-4" />}
+                   <span className="font-medium text-sm">{tab.label}</span>
+                 </TabsTrigger>
+               ))}
             </TabsList>
 
             <TabsContent value="ecosystem" className="parent-tab-content">
               <AgenticEcosystem />
+            </TabsContent>
+            
+            <TabsContent value="workflow-studio" className="parent-tab-content">
+              <div className="space-y-6">
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 border border-purple-200 rounded-lg p-6 shadow-sm">
+                  <h3 className="font-bold text-purple-900 mb-3 text-lg flex items-center gap-2">
+                    <Workflow className="h-5 w-5" />
+                    Visual Workflow Builder
+                  </h3>
+                  <p className="text-purple-700">
+                    Create AI agents through visual drag & drop workflows with integrated Label Studio, MCP servers, small & vision language models, AI-powered recommendations, and real-time testing. No coding required!
+                  </p>
+                  <div className="mt-3 flex flex-wrap gap-2">
+                    <Badge variant="outline" className="text-xs">Label Studio</Badge>
+                    <Badge variant="outline" className="text-xs">MCP Integration</Badge>
+                    <Badge variant="outline" className="text-xs">Vision Models</Badge>
+                    <Badge variant="outline" className="text-xs">Real-time Testing</Badge>
+                    <Badge variant="outline" className="text-xs">AI Recommendations</Badge>
+                  </div>
+                </div>
+                <Suspense fallback={<div className="flex items-center justify-center p-8">
+                  <div className="text-center">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
+                    <p className="text-sm text-muted-foreground">Loading Workflow Builder...</p>
+                  </div>
+                </div>}>
+                  {React.createElement(React.lazy(() => import('@/pages/AgentWorkflowStudio').then(m => ({ default: m.default }))))}
+                </Suspense>
+              </div>
             </TabsContent>
             
             <TabsContent value="deployment-ready" className="parent-tab-content">
