@@ -17,7 +17,7 @@ import {
   Presentation
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
-import { useRealTimeUserStats } from '@/hooks/useRealTimeUserStats';
+import { LSDashboardWidget } from '@/components/label-studio';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
