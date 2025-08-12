@@ -378,7 +378,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
             <h3 className="font-medium mb-3">Quick Templates</h3>
             <div className="space-y-2">
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
                 className="w-full justify-start text-xs"
                 onClick={() => generateAIWorkflow('Patient Onboarding')}
@@ -386,7 +386,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
                 Patient Onboarding
               </Button>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
                 className="w-full justify-start text-xs"
                 onClick={() => generateAIWorkflow('Appointment Scheduling')}
@@ -394,7 +394,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
                 Appointment Scheduling
               </Button>
               <Button 
-                variant="ghost" 
+                variant="outline" 
                 size="sm" 
                 className="w-full justify-start text-xs"
                 onClick={() => generateAIWorkflow('Insurance Verification')}
@@ -441,7 +441,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
               <CardContent className="space-y-3">
                 <div>
                   <label className="text-xs font-medium">Type</label>
-                  <p className="text-sm capitalize">{String(selectedNode.type || 'unknown')}</p>
+                  <p className="text-sm capitalize">{selectedNode.type || 'unknown'}</p>
                 </div>
                 <div>
                   <label className="text-xs font-medium">Label</label>
