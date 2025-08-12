@@ -44,5 +44,9 @@ jobs:
           npx vite preview --port 5173 &
           npx wait-on http://localhost:5173
 
-      - name: Run Playwright E2E tests
+      - name: Run Playwright smoke test (auth only)
+        run: npx playwright test -g "01 Authentication"
+
+      - name: Run full Playwright E2E (requires secrets)
+        if: ${{ secrets.SUPABASE_URL != '' && secrets.SUPABASE_SERVICE_ROLE != '' && secrets.E2E_ADMIN_EMAIL != '' && secrets.E2E_ADMIN_PASSWORD != '' }}
         run: npx playwright test
