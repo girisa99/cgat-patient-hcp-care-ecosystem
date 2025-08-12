@@ -1175,7 +1175,7 @@ setAgentConfig({
                     <label className="text-xs font-medium">Conditions (comma-separated)</label>
                     <Textarea
                       rows={2}
-                      value={(selectedNode.data?.conditions || []).join(', ')}
+                      value={Array.isArray(selectedNode.data?.conditions) ? (selectedNode.data?.conditions as string[]).join(', ') : ''}
                       onChange={(e) => {
                         const vals = e.target.value.split(',').map(v => v.trim()).filter(Boolean);
                         setNodes((nds) => nds.map(n => n.id === selectedNode.id ? { ...n, data: { ...n.data, conditions: vals } } : n));
