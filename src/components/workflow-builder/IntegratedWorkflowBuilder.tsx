@@ -397,13 +397,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
     };
     window.addEventListener('keydown', onKeyDown as any);
     return () => window.removeEventListener('keydown', onKeyDown as any);
-  const [languageModels] = useState([
-    { id: 'gpt-4o-mini', name: 'GPT-4o Mini', type: 'fast', vision: true },
-    { id: 'gpt-4o', name: 'GPT-4o', type: 'advanced', vision: true },
-    { id: 'claude-3', name: 'Claude 3', type: 'reasoning', vision: false },
-    { id: 'gemini-pro', name: 'Gemini Pro', type: 'multimodal', vision: true }
-  ]);
-
+  }, [selectedNode, nodes, edges, showSuccess]);
   // Initialize session if needed
   useEffect(() => {
     if (!currentSessionId && user && activeTab !== 'workflow') {
@@ -1063,7 +1057,7 @@ setAgentConfig({
                   </Button>
                 </div>
               </div>
-              {/* Trash / Restore */
+              {/* Trash / Restore */}
               {deletedNodes.length > 0 && (
                 <div className="pt-4 border-t">
                   <div className="flex items-center justify-between">
@@ -1203,7 +1197,7 @@ setAgentConfig({
 
         {/* Flow Canvas */}
         <div className="flex-1 relative">
-          {currentSessionId ? (
+          {currentSessionId ? (<>
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -1261,7 +1255,7 @@ setAgentConfig({
                 >Soft Delete</button>
               </div>
             )}
-          ) : (
+           </>) : (
             <div className="flex items-center justify-center h-full bg-muted/20">
               <div className="text-center p-8">
                 <Workflow className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
