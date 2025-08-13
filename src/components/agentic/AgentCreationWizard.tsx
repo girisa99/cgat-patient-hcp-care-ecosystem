@@ -538,6 +538,7 @@ export const AgentCreationWizard = () => {
           <AgentTemplates 
             onSelectTemplate={handleSelectTemplate}
             selectedTemplateId={state.templateId}
+            onCustomizeFurther={() => setState(prev => ({ ...prev, startOption: 'template', step: 3 }))}
           />
         </div>
       ) : (

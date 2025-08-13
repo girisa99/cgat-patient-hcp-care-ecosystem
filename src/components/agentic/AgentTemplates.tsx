@@ -172,11 +172,13 @@ const agentTemplates: AgentTemplate[] = [
 interface AgentTemplatesProps {
   onSelectTemplate?: (templateId: string) => void;
   selectedTemplateId?: string | null;
+  onCustomizeFurther?: () => void;
 }
 
 export const AgentTemplates: React.FC<AgentTemplatesProps> = ({ 
   onSelectTemplate, 
-  selectedTemplateId 
+  selectedTemplateId,
+  onCustomizeFurther,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
@@ -341,7 +343,7 @@ export const AgentTemplates: React.FC<AgentTemplatesProps> = ({
               </Button>
               <Button 
                 variant="outline" 
-                onClick={() => setSelectedTemplate(null)}
+                onClick={() => { setSelectedTemplate(null); onCustomizeFurther?.(); }}
                 className="flex-1"
               >
                 Customize Further
