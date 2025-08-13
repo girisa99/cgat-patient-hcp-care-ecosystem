@@ -11,6 +11,7 @@ import { initializeStabilityFramework } from '@/utils/framework/init';
 import { StabilityProvider } from '@/components/stability/StabilityProvider';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { TenantProvider } from '@/contexts/TenantContext';
+import { HelmetProvider } from 'react-helmet-async';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -279,8 +280,10 @@ const App = () => {
         <TenantProvider>
           <StabilityProvider>
             <TooltipProvider>
-              <Toaster />
-              <AppContent />
+              <HelmetProvider>
+                <Toaster />
+                <AppContent />
+              </HelmetProvider>
             </TooltipProvider>
           </StabilityProvider>
         </TenantProvider>
