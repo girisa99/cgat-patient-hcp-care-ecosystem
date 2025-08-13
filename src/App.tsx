@@ -44,6 +44,7 @@ import TherapySelection from '@/pages/TherapySelection';
 import CreditApplication from '@/pages/CreditApplication';
 import AgentCreationWizard from '@/components/agentic/AgentCreationWizard';
 import AgentWorkflowStudio from '@/pages/AgentWorkflowStudio';
+import { AgentBuilderProvider } from '@/components/agent-builder/AgentBuilderProvider';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -124,12 +125,16 @@ const AppContent = () => {
                   } />
                   <Route path="/agents/new" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
-                      <AgentCreationWizard />
+                      <AgentBuilderProvider>
+                        <AgentCreationWizard />
+                      </AgentBuilderProvider>
                     </ProtectedRoute>
                   } />
                   <Route path="/agents/workflow-studio" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
-                      <AgentWorkflowStudio />
+                      <AgentBuilderProvider>
+                        <AgentWorkflowStudio />
+                      </AgentBuilderProvider>
                     </ProtectedRoute>
                   } />
                   <Route path="/testing" element={
