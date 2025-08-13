@@ -44,6 +44,7 @@ import TherapySelection from '@/pages/TherapySelection';
 import CreditApplication from '@/pages/CreditApplication';
 import AgentCreationWizard from '@/components/agentic/AgentCreationWizard';
 import AgentWorkflowStudio from '@/pages/AgentWorkflowStudio';
+import MCPDemo from '@/pages/MCPDemo';
 import { AgentBuilderProvider } from '@/components/agent-builder/AgentBuilderProvider';
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -135,6 +136,11 @@ const AppContent = () => {
                       <AgentBuilderProvider>
                         <AgentWorkflowStudio />
                       </AgentBuilderProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/mcp" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
+                      <MCPDemo />
                     </ProtectedRoute>
                   } />
                   <Route path="/testing" element={

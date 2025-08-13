@@ -15,10 +15,8 @@ import ModePicker from '@/components/agent-builder/ModePicker';
 import { Helmet } from 'react-helmet-async';
 import { useApiServices } from '@/hooks/useApiServices';
 import { EnhancedLSPanel } from '@/components/label-studio/EnhancedLSPanel';
-import MCPDemoComponent from '@/components/MCPDemoComponent';
 import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
 import { supabase } from '@/integrations/supabase/client';
-interface AgentWorkflowStudioProps {
   embedded?: boolean;
 }
 
@@ -30,8 +28,6 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
   
   const [currentStep, setCurrentStep] = useState('usecase');
   const [previewMode, setPreviewMode] = useState(false);
-  const [lsProjectId, setLsProjectId] = useState<number | undefined>();
-  const [showMCP, setShowMCP] = useState(false);
 
   // Default Label Studio project to last used from latest agent
   useEffect(() => {
@@ -449,11 +445,10 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
               <TabsContent value="mcp" level="child" className="space-y-4">
                 <div className="space-y-2">
                   <p className="text-sm text-muted-foreground">Model Context Protocol tools for agent actions.</p>
-                  <Button variant="outline" onClick={() => setShowMCP((v) => !v)}>
-                    {showMCP ? 'Hide MCP Tools' : 'Open MCP Tools'}
+                  <Button variant="outline" onClick={() => navigate('/mcp')}>
+                    Open MCP Tools Page
                   </Button>
                 </div>
-                {showMCP && <MCPDemoComponent />}
               </TabsContent>
               
               <TabsContent value="knowledge" level="child">
@@ -722,7 +717,7 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
           </div>
 
           <div className="flex items-center gap-3">
-            <div className="hidden md:block"><ModePicker /></div>
+            <div><ModePicker /></div>
             <Button variant="outline" onClick={handleReset}>
               <RotateCcw className="h-4 w-4 mr-1" />
               Reset
@@ -818,6 +813,18 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
             </CardContent>
           </Card>
         )}
+        <div className="fixed bottom-0 left-0 right-0 border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 z-40">
+          <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <ModePicker />
+              <Button variant="outline" onClick={() => navigate('/mcp')}>MCP Tools</Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" onClick={gotoPrev} disabled={wizardSteps.findIndex(s => s.id === currentStep) === 0}>Previous</Button>
+              <Button onClick={gotoNext} disabled={wizardSteps.findIndex(s => s.id === currentStep) === wizardSteps.length - 1}>Next</Button>
+            </div>
+          </div>
+        </div>
       </div>
     </Wrapper>
   );

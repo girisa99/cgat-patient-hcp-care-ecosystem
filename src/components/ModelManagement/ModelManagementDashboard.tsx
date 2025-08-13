@@ -53,6 +53,12 @@ export const ModelManagementDashboard: React.FC = () => {
   const allModels = getAvailableModels();
   const localModels = allModels.filter(m => m.isLocal);
   const apiModels = allModels.filter(m => !m.isLocal);
+  const providerPriority = ['anthropic','openai','azure','google'] as const;
+  const sortedApiModels = [...apiModels].sort((a, b) => {
+    const ai = providerPriority.indexOf(a.provider as any);
+    const bi = providerPriority.indexOf(b.provider as any);
+    return (ai === -1 ? 999 : ai) - (bi === -1 ? 999 : bi);
+  });
 
   if (isLoading) {
     return (
@@ -153,7 +159,7 @@ export const ModelManagementDashboard: React.FC = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {apiModels.map(model => (
+                  {sortedApiModels.map(model => (
                     <div key={model.id} className="flex items-center justify-between p-3 border rounded-lg">
                       <div>
                         <div className="font-medium">{model.name}</div>

@@ -68,13 +68,13 @@ export const useModelRouting = (): UseModelRoutingReturn => {
         // Create default preferences
         const defaultPrefs: UserModelPreferences = {
           userId: 'current-user',
-          preferredModels: {
-            chat: 'phi-3-mini',
-            code: 'phi-3-mini',
-            medical: 'gpt-4o-mini',
-            embeddings: 'distilbert-base',
-            classification: 'distilbert-base'
-          },
+      preferredModels: {
+        chat: 'gemini-1.5-flash',
+        code: 'phi-3-mini',
+        medical: 'gemini-1.5-flash',
+        embeddings: 'distilbert-base',
+        classification: 'distilbert-base'
+      },
           fallbackStrategy: 'local-first',
           maxCostPerRequest: 0.01,
           allowLocalModels: true,

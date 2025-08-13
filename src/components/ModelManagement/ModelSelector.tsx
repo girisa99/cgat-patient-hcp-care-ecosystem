@@ -24,9 +24,9 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
     currentPreferences || {
       userId: 'current-user',
       preferredModels: {
-        chat: 'phi-3-mini',
+        chat: 'gemini-1.5-flash',
         code: 'phi-3-mini', 
-        medical: 'gpt-4o-mini',
+        medical: 'gemini-1.5-flash',
         embeddings: 'distilbert-base',
         classification: 'distilbert-base'
       },
@@ -289,6 +289,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                   {/* Explicit models */}
                   {ALL_MODELS
                     .filter(m => m.capabilities.includes(capability))
+                    .sort((a, b) => { const p = ['anthropic','openai','azure','google']; const ai = p.indexOf(a.provider as any); const bi = p.indexOf(b.provider as any); return (ai===-1?999:ai) - (bi===-1?999:bi); })
                     .map(model => (
                       <ModelCard
                         key={model.id}
@@ -352,7 +353,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
                 Large language models accessed via API
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {apiModels.map(model => (
+                {[...apiModels].sort((a, b) => { const p = ['anthropic','openai','azure','google']; const ai = p.indexOf(a.provider as any); const bi = p.indexOf(b.provider as any); return (ai===-1?999:ai) - (bi===-1?999:bi); }).map(model => (
                   <Card key={model.id}>
                     <CardHeader className="pb-3">
                       <CardTitle className="text-sm flex items-center gap-2">
