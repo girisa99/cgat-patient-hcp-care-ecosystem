@@ -215,8 +215,8 @@ export const AgentCreationWizard = () => {
   const handleSelectTemplate = (templateId: string) => {
     const selectedTemplate = templates.find(t => t.id === templateId);
     if (selectedTemplate) {
-        setState({
-          ...state,
+        setState((prev) => ({
+          ...prev,
           templateId,
           name: selectedTemplate.name,
           description: selectedTemplate.description || '',
@@ -226,7 +226,10 @@ export const AgentCreationWizard = () => {
           secondaryColor: selectedTemplate.secondary_color,
           accentColor: selectedTemplate.accent_color,
           logoUrl: selectedTemplate.logo_url || '',
-        });
+          // Ensure wizard recognizes template path and advance to Canvas
+          startOption: 'template',
+          step: Math.max(prev.step, 2),
+        }));
     }
   };
 

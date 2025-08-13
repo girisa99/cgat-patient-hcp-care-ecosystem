@@ -188,6 +188,7 @@ export const AgentTemplates: React.FC<AgentTemplatesProps> = ({
     : agentTemplates.filter(template => template.category === selectedCategory);
 
   const handleUseTemplate = (template: AgentTemplate) => {
+    console.log('Use Template clicked:', template.id);
     setSelectedTemplate(template);
     onSelectTemplate?.(template.id);
     toast({
