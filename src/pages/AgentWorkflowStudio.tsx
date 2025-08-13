@@ -17,6 +17,7 @@ import { useApiServices } from '@/hooks/useApiServices';
 import { EnhancedLSPanel } from '@/components/label-studio/EnhancedLSPanel';
 import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
 import { supabase } from '@/integrations/supabase/client';
+interface AgentWorkflowStudioProps {
   embedded?: boolean;
 }
 
@@ -28,6 +29,7 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
   
   const [currentStep, setCurrentStep] = useState('usecase');
   const [previewMode, setPreviewMode] = useState(false);
+  const [lsProjectId, setLsProjectId] = useState<number | undefined>(undefined);
 
   // Default Label Studio project to last used from latest agent
   useEffect(() => {
