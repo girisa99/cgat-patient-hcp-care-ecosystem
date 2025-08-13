@@ -3,7 +3,7 @@
  * Supports both Large Language Models (API-based) and Small Language Models (local/edge)
  */
 
-export type ModelProvider = 'openai' | 'anthropic' | 'huggingface' | 'local' | 'ollama' | 'webllm';
+export type ModelProvider = 'openai' | 'anthropic' | 'google' | 'huggingface' | 'local' | 'ollama' | 'webllm';
 
 export type ModelSize = 'small' | 'medium' | 'large' | 'xl';
 
@@ -467,6 +467,38 @@ export const LARGE_LANGUAGE_MODELS: ModelConfig[] = [
     costPerToken: 0.00025,
     description: 'Anthropic Claude 3 Haiku - Fast and efficient',
     tags: ['anthropic', 'fast', 'efficient', 'api']
+  },
+  {
+    id: 'gemini-1.5-flash',
+    name: 'Gemini 1.5 Flash',
+    provider: 'google',
+    modelId: 'gemini-1.5-flash',
+    size: 'medium',
+    capabilities: ['text', 'chat', 'code'],
+    maxTokens: 16384,
+    contextWindow: 1000000,
+    isLocal: false,
+    requiresApiKey: true,
+    latency: 'low',
+    accuracy: 'high',
+    description: 'Google Gemini 1.5 Flash - Fast, versatile multimodal chat/code model',
+    tags: ['google', 'gemini', 'fast', 'api']
+  },
+  {
+    id: 'gemini-1.5-pro',
+    name: 'Gemini 1.5 Pro',
+    provider: 'google',
+    modelId: 'gemini-1.5-pro',
+    size: 'large',
+    capabilities: ['text', 'chat', 'code'],
+    maxTokens: 32768,
+    contextWindow: 1000000,
+    isLocal: false,
+    requiresApiKey: true,
+    latency: 'medium',
+    accuracy: 'very-high',
+    description: 'Google Gemini 1.5 Pro - Higher accuracy for complex tasks',
+    tags: ['google', 'gemini', 'accurate', 'api']
   }
 ];
 
