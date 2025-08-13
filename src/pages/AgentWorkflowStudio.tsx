@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -11,7 +11,12 @@ import AppLayout from '@/components/layout/AppLayout';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useNavigate } from 'react-router-dom';
 import { useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
-
+import ModePicker from '@/components/agent-builder/ModePicker';
+import { Helmet } from 'react-helmet-async';
+import { useApiServices } from '@/hooks/useApiServices';
+import { EnhancedLSPanel } from '@/components/label-studio/EnhancedLSPanel';
+import MCPDemoComponent from '@/components/MCPDemoComponent';
+import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
 interface AgentWorkflowStudioProps {
   embedded?: boolean;
 }
