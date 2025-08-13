@@ -221,15 +221,23 @@ export const AgentCreationWizard = () => {
           name: selectedTemplate.name,
           description: selectedTemplate.description || '',
           purpose: selectedTemplate.description || '',
-          tagline: selectedTemplate.tagline || '',
+          tagline: selectedTemplate.tagline || prev.tagline || '',
           primaryColor: selectedTemplate.primary_color,
           secondaryColor: selectedTemplate.secondary_color,
           accentColor: selectedTemplate.accent_color,
-          logoUrl: selectedTemplate.logo_url || '',
+          logoUrl: selectedTemplate.logo_url || prev.logoUrl || '',
           // Ensure wizard recognizes template path and advance to Canvas
           startOption: 'template',
           step: Math.max(prev.step, 2),
         }));
+    } else {
+      // Fallback: advance to Canvas even if template isn't in DB (e.g., static list selection)
+      setState((prev) => ({
+        ...prev,
+        templateId,
+        startOption: 'template',
+        step: Math.max(prev.step, 2),
+      }));
     }
   };
 
