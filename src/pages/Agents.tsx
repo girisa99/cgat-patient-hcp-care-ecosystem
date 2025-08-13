@@ -217,7 +217,7 @@ const AgentsInner = () => {
                     <p className="text-sm text-muted-foreground">Loading Enhanced Workflow Builder...</p>
                   </div>
                 </div>}>
-                  {React.createElement(React.lazy(() => import('@/pages/AgentWorkflowStudio').then(m => ({ default: m.default }))), { embedded: true })}
+                  {React.createElement(React.lazy(() => import('@/components/agent-builder/EmbeddedWorkflowStudio').then(m => ({ default: m.default }))))}
                 </Suspense>
               </div>
             </TabsContent>
