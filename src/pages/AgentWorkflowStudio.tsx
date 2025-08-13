@@ -17,6 +17,7 @@ import { useApiServices } from '@/hooks/useApiServices';
 import { EnhancedLSPanel } from '@/components/label-studio/EnhancedLSPanel';
 import MCPDemoComponent from '@/components/MCPDemoComponent';
 import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
+import { supabase } from '@/integrations/supabase/client';
 interface AgentWorkflowStudioProps {
   embedded?: boolean;
 }
@@ -24,10 +25,54 @@ interface AgentWorkflowStudioProps {
 const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = false }) => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useMasterToast();
-  const { mode } = useAgentBuilder();
+  const { mode, user } = useAgentBuilder();
+  const { apiServices, isLoading: isLoadingServices } = useApiServices();
   
   const [currentStep, setCurrentStep] = useState('usecase');
   const [previewMode, setPreviewMode] = useState(false);
+  const [lsProjectId, setLsProjectId] = useState<number | undefined>();
+  const [showMCP, setShowMCP] = useState(false);
+
+  // Default Label Studio project to last used from latest agent
+  useEffect(() => {
+    (async () => {
+      try {
+        const { data: auth } = await supabase.auth.getUser();
+        const userId = auth.user?.id || user?.id;
+        if (!userId) return;
+        const { data, error } = await supabase
+          .from('agents')
+          .select('configuration, created_at, created_by')
+          .eq('created_by', userId)
+          .order('created_at', { ascending: false })
+          .limit(1);
+        if (!error && data && data.length) {
+          const lastProjectId = (data[0] as any)?.configuration?.labelStudioBinding?.projectId;
+          if (lastProjectId) setLsProjectId(Number(lastProjectId));
+        }
+      } catch {}
+    })();
+  }, [user?.id]);
+
+  // Keyboard navigation: Left/Right to move between steps
+  const gotoPrev = () => {
+    const idx = wizardSteps.findIndex(s => s.id === currentStep);
+    if (idx > 0) setCurrentStep(wizardSteps[idx - 1].id);
+  };
+  const gotoNext = () => {
+    const idx = wizardSteps.findIndex(s => s.id === currentStep);
+    if (idx < wizardSteps.length - 1) setCurrentStep(wizardSteps[idx + 1].id);
+  };
+  useEffect(() => {
+    const handler = (e: KeyboardEvent) => {
+      const tag = (e.target as HTMLElement)?.tagName;
+      if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+      if (e.key === 'ArrowLeft') gotoPrev();
+      if (e.key === 'ArrowRight') gotoNext();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [currentStep]);
 
   // Wizard steps based on user requirements
   const wizardSteps = [
@@ -353,38 +398,62 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
               Configure connectors, knowledge base, and RAG settings
             </p>
             
-            <Tabs defaultValue="connectors" className="max-w-6xl mx-auto">
-              <TabsList className="grid w-full grid-cols-3" level="child">
+            <Tabs defaultValue="models" className="max-w-6xl mx-auto">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-6" level="child">
+                <TabsTrigger value="models" level="child">AI Models</TabsTrigger>
                 <TabsTrigger value="connectors" level="child">System Connectors</TabsTrigger>
+                <TabsTrigger value="label" level="child">Label Studio</TabsTrigger>
+                <TabsTrigger value="mcp" level="child">MCP</TabsTrigger>
                 <TabsTrigger value="knowledge" level="child">Knowledge Base</TabsTrigger>
-                <TabsTrigger value="rag" level="child">RAG Configuration</TabsTrigger>
+                <TabsTrigger value="rag" level="child">RAG</TabsTrigger>
               </TabsList>
               
+              <TabsContent value="models" level="child" className="space-y-4">
+                <ModelManagementDashboard />
+              </TabsContent>
+              
               <TabsContent value="connectors" level="child" className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {isLoadingServices ? (
+                  <div className="text-sm text-muted-foreground p-4">Loading services…</div>
+                ) : apiServices.length ? (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {apiServices.map((svc: any) => (
+                      <Card key={svc.id}>
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="font-medium">{svc.name}</div>
+                              <div className="text-xs text-muted-foreground">{svc.type} • {svc.base_url || 'no base URL'}</div>
+                            </div>
+                            <Badge variant={svc.status === 'active' ? 'outline' : 'secondary'}>
+                              {svc.status || 'unknown'}
+                            </Badge>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
                   <Card>
                     <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">Electronic Health Records</div>
-                          <div className="text-sm text-muted-foreground">EPIC, Cerner Integration</div>
-                        </div>
-                        <Badge variant="outline">Connected</Badge>
-                      </div>
+                      <div className="text-sm text-muted-foreground">No connectors found. Add integrations in API Ecosystem.</div>
                     </CardContent>
                   </Card>
-                  <Card>
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="font-medium">Payment Gateway</div>
-                          <div className="text-sm text-muted-foreground">Stripe, PayPal</div>
-                        </div>
-                        <Badge variant="secondary">Available</Badge>
-                      </div>
-                    </CardContent>
-                  </Card>
+                )}
+              </TabsContent>
+              
+              <TabsContent value="label" level="child" className="space-y-4">
+                <EnhancedLSPanel projectId={lsProjectId} />
+              </TabsContent>
+              
+              <TabsContent value="mcp" level="child" className="space-y-4">
+                <div className="space-y-2">
+                  <p className="text-sm text-muted-foreground">Model Context Protocol tools for agent actions.</p>
+                  <Button variant="outline" onClick={() => setShowMCP((v) => !v)}>
+                    {showMCP ? 'Hide MCP Tools' : 'Open MCP Tools'}
+                  </Button>
                 </div>
+                {showMCP && <MCPDemoComponent />}
               </TabsContent>
               
               <TabsContent value="knowledge" level="child">
@@ -634,6 +703,11 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
   return (
     <Wrapper>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <Helmet>
+          <title>Agent Workflow Builder | Prompt, Visual, Manual</title>
+          <meta name="description" content="Build AI agents with Prompt, Visual, or Manual modes. Configure models (OpenAI, Anthropic, Azure, Gemini), connectors, Label Studio, and MCP." />
+          <link rel="canonical" href="/agents/workflow-studio" />
+        </Helmet>
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -647,7 +721,8 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
             </p>
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
+            <div className="hidden md:block"><ModePicker /></div>
             <Button variant="outline" onClick={handleReset}>
               <RotateCcw className="h-4 w-4 mr-1" />
               Reset
