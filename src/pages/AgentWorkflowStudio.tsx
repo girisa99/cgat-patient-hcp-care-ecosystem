@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterToast } from '@/hooks/useMasterToast';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
 import ModePicker from '@/components/agent-builder/ModePicker';
 import { Helmet } from 'react-helmet-async';
