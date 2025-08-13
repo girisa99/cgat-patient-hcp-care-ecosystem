@@ -29,7 +29,7 @@ interface WorkflowStudioState {
   deploymentConfig: any;
 }
 
-const AgentWorkflowStudio: React.FC = () => {
+const AgentWorkflowStudio: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useMasterToast();
   const { saveAgentSession, deployAgent } = useAgentPersistence();
@@ -145,8 +145,10 @@ const AgentWorkflowStudio: React.FC = () => {
     { title: 'Deploy', description: 'Launch your agent', icon: Rocket }
   ];
 
+  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => embedded ? <>{children}</> : <AppLayout>{children}</AppLayout>;
+
   return (
-    <AppLayout>
+    <Wrapper>
       <div className="p-6 max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -623,7 +625,7 @@ const AgentWorkflowStudio: React.FC = () => {
           </div>
         </div>
       </div>
-    </AppLayout>
+    </Wrapper>
   );
 };
 

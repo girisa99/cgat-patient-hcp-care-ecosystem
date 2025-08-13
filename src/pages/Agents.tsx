@@ -29,6 +29,8 @@ import { Badge } from '@/components/ui/badge';
 // Removed Helmet to prevent context errors
 // Role-specific components - defined before use to avoid React error #185
 import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
+import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
+import ModePicker from '@/components/agent-builder/ModePicker';
 
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
@@ -59,7 +61,7 @@ const AgentSettingsView = () => {
   );
 };
 
-const Agents = () => {
+const AgentsInner = () => {
   console.log('🚀 Agents page rendering...');
   const [activeTab, setActiveTab] = useState('ecosystem');
   const [showPresentation, setShowPresentation] = useState(false);
@@ -70,6 +72,14 @@ const Agents = () => {
   const isSuperAdmin = userRoles.includes('superAdmin');
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
+
+  // Start mode from AgentBuilder context
+  const { mode } = useAgentBuilder();
+
+  // Move user based on selected start mode
+  useEffect(() => {
+    setActiveTab(mode === 'manual' ? 'ecosystem' : 'workflow-studio');
+  }, [mode]);
 
   // Minimal SEO without Helmet to avoid context errors
   useEffect(() => {
@@ -141,6 +151,10 @@ const Agents = () => {
             </div>
           </div>
 
+          <div className="mt-4">
+            <ModePicker />
+          </div>
+
           {/* AI Presentation Display */}
           {showPresentation && (
             <div className="mb-8">
@@ -203,7 +217,7 @@ const Agents = () => {
                     <p className="text-sm text-muted-foreground">Loading Enhanced Workflow Builder...</p>
                   </div>
                 </div>}>
-                  {React.createElement(React.lazy(() => import('@/pages/AgentWorkflowStudio').then(m => ({ default: m.default }))))}
+                  {React.createElement(React.lazy(() => import('@/pages/AgentWorkflowStudio').then(m => ({ default: m.default }))), { embedded: true })}
                 </Suspense>
               </div>
             </TabsContent>
@@ -268,5 +282,11 @@ const Agents = () => {
     );
   }
 };
+
+const Agents: React.FC = () => (
+  <AgentBuilderProvider>
+    <AgentsInner />
+  </AgentBuilderProvider>
+);
 
 export default Agents;
