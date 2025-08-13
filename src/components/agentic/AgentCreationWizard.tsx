@@ -212,35 +212,46 @@ export const AgentCreationWizard = () => {
   };
 
   // Template selection handler
-  const handleSelectTemplate = (templateId: string) => {
-    const selectedTemplate = templates.find(t => t.id === templateId);
+  const handleSelectTemplate = (tpl: { id: string; name: string }) => {
+    // Try to find by exact ID (UUID from DB)
+    let selectedTemplate = templates.find(t => t.id === tpl.id);
+
+    // If not found (e.g., static template id), try fallback by name match
+    if (!selectedTemplate) {
+      const targetName = (tpl.name || '').toLowerCase();
+      selectedTemplate = templates.find(t => (t.name || '').toLowerCase() === targetName);
+      if (selectedTemplate) {
+        console.log('Matched template by name:', tpl.name, '→', selectedTemplate.id);
+      }
+    }
+
     if (selectedTemplate) {
-        setState((prev) => ({
-          ...prev,
-          templateId,
-          name: selectedTemplate.name,
-          description: selectedTemplate.description || '',
-          purpose: selectedTemplate.description || '',
-          tagline: selectedTemplate.tagline || prev.tagline || '',
-          primaryColor: selectedTemplate.primary_color,
-          secondaryColor: selectedTemplate.secondary_color,
-          accentColor: selectedTemplate.accent_color,
-          logoUrl: selectedTemplate.logo_url || prev.logoUrl || '',
-          // Ensure wizard recognizes template path and advance to Canvas
-          startOption: 'template',
-          step: Math.max(prev.step, 2),
-        }));
+      setState((prev) => ({
+        ...prev,
+        templateId: selectedTemplate!.id,
+        name: selectedTemplate!.name,
+        description: selectedTemplate!.description || '',
+        purpose: selectedTemplate!.description || '',
+        tagline: (selectedTemplate as any).tagline || prev.tagline || '',
+        primaryColor: (selectedTemplate as any).primary_color,
+        secondaryColor: (selectedTemplate as any).secondary_color,
+        accentColor: (selectedTemplate as any).accent_color,
+        logoUrl: (selectedTemplate as any).logo_url || prev.logoUrl || '',
+        // Ensure wizard recognizes template path and advance to Canvas
+        startOption: 'template',
+        step: Math.max(prev.step, 2),
+      }));
     } else {
       // Fallback: advance to Canvas even if template isn't in DB (e.g., static list selection)
       setState((prev) => ({
         ...prev,
-        templateId,
+        templateId: tpl.id,
+        name: prev.name || tpl.name,
         startOption: 'template',
         step: Math.max(prev.step, 2),
       }));
     }
   };
-
   // Connector selection handler
   const handleConnectorChange = (ids: string[]) => {
     setState({ ...state, connectorIds: ids });
