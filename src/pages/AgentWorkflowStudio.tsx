@@ -1,151 +1,630 @@
-import React, { useState, useRef } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-// Steps component removed for now
 import { 
-  Workflow, Sparkles, Bot, Play, CheckCircle, Settings, 
-  Users, MessageCircle, Monitor, ArrowRight, Download,
-  Save, Eye, Rocket, TestTube, RotateCcw, X
+  Target, Map, Bot, Settings, Phone, TestTube, Rocket, 
+  ArrowRight, CheckCircle, RotateCcw, Eye, X, Workflow
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useNavigate } from 'react-router-dom';
-import { 
-  CustomerJourneyBuilder, 
-  AIWorkflowGenerator, 
-  NoCodeAgentConfigurator,
-  IntegratedWorkflowBuilder 
-} from '@/components/workflow-builder';
-import { AgentTemplates } from '@/components/agentic/AgentTemplates';
-import { useAgentPersistence } from '@/hooks/useAgentPersistence';
+import { useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
 
-interface WorkflowStudioState {
-  currentStep: number;
-  workflow: any;
-  agentConfiguration: any;
-  generatedCode: string;
-  deploymentConfig: any;
+interface AgentWorkflowStudioProps {
+  embedded?: boolean;
 }
 
-const AgentWorkflowStudio: React.FC<{ embedded?: boolean }> = ({ embedded = false }) => {
+const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = false }) => {
   const navigate = useNavigate();
   const { showSuccess, showError } = useMasterToast();
-  const { saveAgentSession, deployAgent } = useAgentPersistence();
+  const { mode } = useAgentBuilder();
   
-  const [studioState, setStudioState] = useState<WorkflowStudioState>({
-    currentStep: 0,
-    workflow: null,
-    agentConfiguration: null,
-    generatedCode: '',
-    deploymentConfig: null
-  });
-
-  const [activeTab, setActiveTab] = useState('generator');
-  const [isDeploying, setIsDeploying] = useState(false);
+  const [currentStep, setCurrentStep] = useState('usecase');
   const [previewMode, setPreviewMode] = useState(false);
-  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
-  const [showGuidedStart, setShowGuidedStart] = useState(true);
 
-  // Workflow generation complete
-  const handleWorkflowGenerated = (workflow: any) => {
-    setStudioState(prev => ({ ...prev, workflow, currentStep: 1 }));
-    setActiveTab('builder');
-    showSuccess('Workflow generated! You can now refine it visually or proceed to configuration.');
-  };
-
-  // Agent configuration complete
-  const handleConfigurationComplete = (config: any, code: string) => {
-    setStudioState(prev => ({ 
-      ...prev, 
-      agentConfiguration: config, 
-      generatedCode: code,
-      currentStep: 2 
-    }));
-    setActiveTab('review');
-    showSuccess('Agent configured! Ready for review and testing.');
-  };
-
-  // Deploy agent
-  const handleDeploy = async () => {
-    if (!studioState.workflow || !studioState.agentConfiguration) {
-      showError('Please complete workflow and configuration first');
-      return;
+  // Wizard steps based on user requirements
+  const wizardSteps = [
+    { 
+      id: 'usecase', 
+      title: 'Use Case Definition', 
+      description: 'Define your agent purpose and scope',
+      icon: Target,
+      completed: false 
+    },
+    { 
+      id: 'journey', 
+      title: 'Customer Journey', 
+      description: 'Map the customer experience flow',
+      icon: Map,
+      completed: false 
+    },
+    { 
+      id: 'ecosystem', 
+      title: 'Agent Ecosystem', 
+      description: 'Configure canvas, actions & templates',
+      icon: Bot,
+      completed: false 
+    },
+    { 
+      id: 'config', 
+      title: 'System Configuration', 
+      description: 'Connectors, knowledge base & RAG',
+      icon: Settings,
+      completed: false 
+    },
+    { 
+      id: 'channels', 
+      title: 'Channel & Voice Setup', 
+      description: 'Communication channels and voice',
+      icon: Phone,
+      completed: false 
+    },
+    { 
+      id: 'testing', 
+      title: 'Testing', 
+      description: 'Validate before deployment',
+      icon: TestTube,
+      completed: false 
+    },
+    { 
+      id: 'deployment', 
+      title: 'Deployment', 
+      description: 'Launch your agent',
+      icon: Rocket,
+      completed: false 
     }
-
-    setIsDeploying(true);
-    
-    try {
-      // Save agent session with all workflow data
-      const sessionData = {
-        name: studioState.agentConfiguration.basic.name,
-        description: studioState.agentConfiguration.basic.description,
-        canvas: {
-          workflow_steps: studioState.workflow.nodes,
-          workflow_edges: studioState.workflow.edges,
-          configuration: studioState.agentConfiguration
-        },
-        actions: {
-          capabilities: studioState.agentConfiguration.capabilities,
-          channels: studioState.agentConfiguration.channels
-        },
-        deployment: studioState.agentConfiguration.deployment
-      };
-
-      await saveAgentSession(sessionData);
-      
-      // Deploy with configuration
-      await deployAgent(studioState.agentConfiguration.deployment);
-      
-      setStudioState(prev => ({ ...prev, currentStep: 3 }));
-      showSuccess('Agent deployed successfully!');
-      
-      // Navigate to agent management
-      setTimeout(() => {
-        navigate('/agents');
-      }, 2000);
-      
-    } catch (error) {
-      showError('Deployment failed. Please try again.');
-    } finally {
-      setIsDeploying(false);
-    }
-  };
-
-  // Test configuration
-  const handleTest = () => {
-    if (!studioState.agentConfiguration) {
-      showError('Please complete configuration first');
-      return;
-    }
-
-    // Simulate testing
-    showSuccess('Test environment launched! Check the preview panel.');
-    setPreviewMode(true);
-  };
-
-  // Reset workflow studio
-  const handleReset = () => {
-    setStudioState({
-      currentStep: 0,
-      workflow: null,
-      agentConfiguration: null,
-      generatedCode: '',
-      deploymentConfig: null
-    });
-    setActiveTab('generator');
-    setPreviewMode(false);
-  };
-
-  const steps = [
-    { title: 'Generate Workflow', description: 'Create customer journey with AI', icon: Sparkles },
-    { title: 'Configure Agent', description: 'Set up AI agent capabilities', icon: Settings },
-    { title: 'Review & Test', description: 'Test before deployment', icon: TestTube },
-    { title: 'Deploy', description: 'Launch your agent', icon: Rocket }
   ];
 
-  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => embedded ? <>{children}</> : <AppLayout>{children}</AppLayout>;
+  const handleStepComplete = (stepId: string) => {
+    const currentIndex = wizardSteps.findIndex(step => step.id === stepId);
+    const nextStep = wizardSteps[currentIndex + 1];
+    
+    if (nextStep) {
+      setCurrentStep(nextStep.id);
+      showSuccess(`${wizardSteps[currentIndex].title} completed! Moving to ${nextStep.title}.`);
+    } else {
+      showSuccess('Agent creation completed successfully!');
+    }
+  };
+
+  const handleReset = () => {
+    setCurrentStep('usecase');
+    setPreviewMode(false);
+    showSuccess('Workflow reset. Starting fresh!');
+  };
+
+  // Render content based on build mode and current step
+  const renderStepContent = () => {
+    const stepContent = {
+      usecase: (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <Target className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Define Your Use Case</h2>
+            <p className="text-muted-foreground mb-6 max-w-2xl mx-auto">
+              Start by clearly defining what your AI agent should do. This helps generate the most relevant customer journey and configuration.
+            </p>
+            
+            {mode === 'prompt' && (
+              <div className="max-w-2xl mx-auto">
+                <div className="p-6 border rounded-lg bg-muted/30">
+                  <h3 className="font-semibold mb-4">Describe Your Agent (AI Prompt Mode)</h3>
+                  <textarea 
+                    className="w-full h-32 p-3 border rounded-lg resize-none"
+                    placeholder="Example: Create a patient onboarding agent that guides new patients through registration, insurance verification, and medical history collection. The agent should be empathetic, collect required documents, and schedule initial appointments."
+                  />
+                  <Button className="mt-4" onClick={() => handleStepComplete('usecase')}>
+                    Generate Journey with AI
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {mode === 'manual' && (
+              <div className="max-w-2xl mx-auto">
+                <div className="p-6 border rounded-lg bg-muted/30">
+                  <h3 className="font-semibold mb-4">Manual Configuration</h3>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Agent Name</label>
+                      <input type="text" className="w-full p-2 border rounded" placeholder="e.g., Patient Onboarding Assistant" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Primary Purpose</label>
+                      <select className="w-full p-2 border rounded">
+                        <option>Patient Onboarding</option>
+                        <option>Appointment Scheduling</option>
+                        <option>Treatment Support</option>
+                        <option>Insurance Processing</option>
+                        <option>Custom</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Target Audience</label>
+                      <input type="text" className="w-full p-2 border rounded" placeholder="e.g., New patients, Existing patients, Care providers" />
+                    </div>
+                  </div>
+                  <Button className="mt-4" onClick={() => handleStepComplete('usecase')}>
+                    Continue to Journey Mapping
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {mode === 'visual' && (
+              <div className="max-w-2xl mx-auto">
+                <div className="p-6 border rounded-lg bg-muted/30">
+                  <h3 className="font-semibold mb-4">Visual Builder Mode</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Use drag-and-drop canvas to visually design your agent workflow
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="p-4 border rounded cursor-pointer hover:bg-muted/50">
+                      <Bot className="h-8 w-8 mb-2" />
+                      <div className="text-sm font-medium">Healthcare Agent</div>
+                      <div className="text-xs text-muted-foreground">Patient care focused</div>
+                    </div>
+                    <div className="p-4 border rounded cursor-pointer hover:bg-muted/50">
+                      <Target className="h-8 w-8 mb-2" />
+                      <div className="text-sm font-medium">Custom Agent</div>
+                      <div className="text-xs text-muted-foreground">Build from scratch</div>
+                    </div>
+                  </div>
+                  <Button className="mt-4" onClick={() => handleStepComplete('usecase')}>
+                    Open Visual Canvas
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      ),
+
+      journey: (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <Map className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Customer Journey Mapping</h2>
+            <p className="text-muted-foreground mb-6">
+              Define the customer experience flow and touchpoints
+            </p>
+            
+            <div className="max-w-4xl mx-auto">
+              <div className="p-6 border rounded-lg">
+                <h3 className="font-semibold mb-4">Journey Designer</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-4 p-4 border rounded">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">1</div>
+                    <div className="flex-1">
+                      <div className="font-medium">Initial Contact</div>
+                      <div className="text-sm text-muted-foreground">Patient reaches out for care</div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  
+                  <div className="flex items-center gap-4 p-4 border rounded">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">2</div>
+                    <div className="flex-1">
+                      <div className="font-medium">Information Gathering</div>
+                      <div className="text-sm text-muted-foreground">Collect patient details and needs</div>
+                    </div>
+                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                  </div>
+                  
+                  <div className="flex items-center gap-4 p-4 border rounded">
+                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">3</div>
+                    <div className="flex-1">
+                      <div className="font-medium">Processing & Routing</div>
+                      <div className="text-sm text-muted-foreground">Determine best care pathway</div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex gap-2 mt-6">
+                    <Button variant="outline">
+                      Add Step
+                    </Button>
+                    <Button onClick={() => handleStepComplete('journey')}>
+                      Generate Agent Ecosystem
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      ),
+
+      ecosystem: (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <Bot className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Agent Ecosystem</h2>
+            <p className="text-muted-foreground mb-6">
+              Configure canvas, actions, and templates
+            </p>
+            
+            <Tabs defaultValue="overview" className="max-w-6xl mx-auto">
+              <TabsList className="grid w-full grid-cols-4" level="child">
+                <TabsTrigger value="overview" level="child">Overview</TabsTrigger>
+                <TabsTrigger value="canvas" level="child">Canvas</TabsTrigger>
+                <TabsTrigger value="actions" level="child">Actions</TabsTrigger>
+                <TabsTrigger value="templates" level="child">Templates</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="overview" level="child" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <Workflow className="h-8 w-8 mx-auto mb-2 text-primary" />
+                      <div className="font-medium">Workflow Nodes</div>
+                      <div className="text-2xl font-bold">12</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <Target className="h-8 w-8 mx-auto mb-2 text-primary" />
+                      <div className="font-medium">Decision Points</div>
+                      <div className="text-2xl font-bold">5</div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4 text-center">
+                      <Bot className="h-8 w-8 mx-auto mb-2 text-primary" />
+                      <div className="font-medium">AI Actions</div>
+                      <div className="text-2xl font-bold">8</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="canvas" level="child">
+                <div className="p-6 border rounded-lg min-h-[400px] bg-muted/10">
+                  <div className="text-center py-16">
+                    <Workflow className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">Visual Workflow Canvas</h3>
+                    <p className="text-muted-foreground">Drag and drop interface for building agent workflows</p>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="actions" level="child">
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium mb-2">Data Collection</div>
+                        <div className="text-sm text-muted-foreground">Gather patient information</div>
+                        <Badge variant="outline" className="mt-2">Active</Badge>
+                      </CardContent>
+                    </Card>
+                    <Card>
+                      <CardContent className="p-4">
+                        <div className="font-medium mb-2">Appointment Booking</div>
+                        <div className="text-sm text-muted-foreground">Schedule patient visits</div>
+                        <Badge variant="outline" className="mt-2">Active</Badge>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="templates" level="child">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 text-center">
+                      <Bot className="h-8 w-8 mx-auto mb-2" />
+                      <div className="font-medium">Healthcare Onboarding</div>
+                      <div className="text-xs text-muted-foreground mt-1">Complete patient intake process</div>
+                    </CardContent>
+                  </Card>
+                  <Card className="cursor-pointer hover:shadow-md transition-shadow">
+                    <CardContent className="p-4 text-center">
+                      <Target className="h-8 w-8 mx-auto mb-2" />
+                      <div className="font-medium">Appointment Management</div>
+                      <div className="text-xs text-muted-foreground mt-1">Scheduling and reminders</div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            <div className="mt-6">
+              <Button onClick={() => handleStepComplete('ecosystem')}>
+                Continue to Configuration
+              </Button>
+            </div>
+          </div>
+        </div>
+      ),
+
+      config: (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <Settings className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">System Configuration</h2>
+            <p className="text-muted-foreground mb-6">
+              Configure connectors, knowledge base, and RAG settings
+            </p>
+            
+            <Tabs defaultValue="connectors" className="max-w-6xl mx-auto">
+              <TabsList className="grid w-full grid-cols-3" level="child">
+                <TabsTrigger value="connectors" level="child">System Connectors</TabsTrigger>
+                <TabsTrigger value="knowledge" level="child">Knowledge Base</TabsTrigger>
+                <TabsTrigger value="rag" level="child">RAG Configuration</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="connectors" level="child" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">Electronic Health Records</div>
+                          <div className="text-sm text-muted-foreground">EPIC, Cerner Integration</div>
+                        </div>
+                        <Badge variant="outline">Connected</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">Payment Gateway</div>
+                          <div className="text-sm text-muted-foreground">Stripe, PayPal</div>
+                        </div>
+                        <Badge variant="secondary">Available</Badge>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="knowledge" level="child">
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="font-medium mb-2">Medical Knowledge Base</div>
+                      <div className="text-sm text-muted-foreground mb-4">
+                        Upload and manage medical protocols, procedures, and reference materials
+                      </div>
+                      <div className="flex gap-2">
+                        <Button variant="outline" size="sm">Upload Documents</Button>
+                        <Button variant="outline" size="sm">Manage Sources</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="rag" level="child">
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="font-medium mb-4">RAG Configuration</div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium">Embedding Model</label>
+                          <select className="w-full mt-1 p-2 border rounded">
+                            <option>OpenAI Ada v2</option>
+                            <option>Cohere Embed v3</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Chunk Size</label>
+                          <input type="number" defaultValue={1024} className="w-full mt-1 p-2 border rounded" />
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            <div className="mt-6">
+              <Button onClick={() => handleStepComplete('config')}>
+                Continue to Channels Setup
+              </Button>
+            </div>
+          </div>
+        </div>
+      ),
+
+      channels: (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <Phone className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Channel & Voice Setup</h2>
+            <p className="text-muted-foreground mb-6">
+              Configure communication channels and voice settings
+            </p>
+            
+            <Tabs defaultValue="channels" className="max-w-6xl mx-auto">
+              <TabsList className="grid w-full grid-cols-3" level="child">
+                <TabsTrigger value="channels" level="child">Channels</TabsTrigger>
+                <TabsTrigger value="voice" level="child">Voice Settings</TabsTrigger>
+                <TabsTrigger value="integration" level="child">Integration</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="channels" level="child" className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <Card className="cursor-pointer">
+                    <CardContent className="p-4 text-center">
+                      <Phone className="h-8 w-8 mx-auto mb-2" />
+                      <div className="font-medium">Phone</div>
+                      <div className="text-xs text-muted-foreground mt-1">Voice calls</div>
+                      <Badge variant="outline" className="mt-2">Configure</Badge>
+                    </CardContent>
+                  </Card>
+                  <Card className="cursor-pointer">
+                    <CardContent className="p-4 text-center">
+                      <Bot className="h-8 w-8 mx-auto mb-2" />
+                      <div className="font-medium">Web Chat</div>
+                      <div className="text-xs text-muted-foreground mt-1">Website integration</div>
+                      <Badge variant="outline" className="mt-2">Configure</Badge>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="voice" level="child">
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="font-medium mb-4">Voice Configuration</div>
+                      <div className="space-y-3">
+                        <div>
+                          <label className="text-sm font-medium">Voice Model</label>
+                          <select className="w-full mt-1 p-2 border rounded">
+                            <option>OpenAI TTS</option>
+                            <option>ElevenLabs</option>
+                            <option>Azure Speech</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="text-sm font-medium">Voice Type</label>
+                          <select className="w-full mt-1 p-2 border rounded">
+                            <option>Professional Female</option>
+                            <option>Professional Male</option>
+                            <option>Friendly Female</option>
+                            <option>Friendly Male</option>
+                          </select>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+              
+              <TabsContent value="integration" level="child">
+                <div className="space-y-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <div className="font-medium mb-2">Integration Code</div>
+                      <div className="text-sm text-muted-foreground mb-4">
+                        Embed this code in your website or application
+                      </div>
+                      <pre className="text-xs bg-muted p-4 rounded overflow-auto">
+                        {`<script>
+  // Agent integration code
+  window.HealthcareAgent = {
+    apiKey: 'your-api-key',
+    agentId: 'agent-123'
+  };
+</script>`}
+                      </pre>
+                    </CardContent>
+                  </Card>
+                </div>
+              </TabsContent>
+            </Tabs>
+            
+            <div className="mt-6">
+              <Button onClick={() => handleStepComplete('channels')}>
+                Continue to Testing
+              </Button>
+            </div>
+          </div>
+        </div>
+      ),
+
+      testing: (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <TestTube className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Testing Phase</h2>
+            <p className="text-muted-foreground mb-6">
+              Validate your agent before deployment
+            </p>
+            
+            <div className="max-w-4xl mx-auto space-y-4">
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4">Test Scenarios</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <div className="font-medium">New Patient Registration</div>
+                        <div className="text-sm text-muted-foreground">Complete onboarding flow</div>
+                      </div>
+                      <Button variant="outline" size="sm">Run Test</Button>
+                    </div>
+                    <div className="flex items-center justify-between p-3 border rounded">
+                      <div>
+                        <div className="font-medium">Appointment Scheduling</div>
+                        <div className="text-sm text-muted-foreground">Book and manage appointments</div>
+                      </div>
+                      <Button variant="outline" size="sm">Run Test</Button>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 flex gap-2">
+                    <Button variant="outline">Run All Tests</Button>
+                    <Button onClick={() => handleStepComplete('testing')}>
+                      Proceed to Deployment
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      ),
+
+      deployment: (
+        <div className="space-y-6">
+          <div className="text-center py-8">
+            <Rocket className="h-16 w-16 text-primary mx-auto mb-4" />
+            <h2 className="text-2xl font-bold mb-2">Deployment</h2>
+            <p className="text-muted-foreground mb-6">
+              Launch your agent to production
+            </p>
+            
+            <div className="max-w-2xl mx-auto">
+              <Card>
+                <CardContent className="p-6">
+                  <h3 className="font-semibold mb-4">Deployment Summary</h3>
+                  <div className="space-y-3 text-left">
+                    <div className="flex justify-between">
+                      <span>Agent Name:</span>
+                      <span className="font-medium">Patient Onboarding Assistant</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Channels:</span>
+                      <span className="font-medium">Web, Phone, Chat</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span>Status:</span>
+                      <Badge variant="outline">Ready to Deploy</Badge>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-6 flex gap-2">
+                    <Button variant="outline" onClick={() => setPreviewMode(true)}>
+                      Preview
+                    </Button>
+                    <Button onClick={() => {
+                      showSuccess('Agent deployed successfully!');
+                      setTimeout(() => navigate('/agents'), 2000);
+                    }}>
+                      Deploy Agent
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </div>
+      )
+    };
+
+    return stepContent[currentStep as keyof typeof stepContent] || stepContent.usecase;
+  };
+
+  const Wrapper: React.FC<{ children: React.ReactNode }> = ({ children }) => 
+    embedded ? <>{children}</> : <AppLayout>{children}</AppLayout>;
 
   return (
     <Wrapper>
@@ -155,11 +634,11 @@ const AgentWorkflowStudio: React.FC<{ embedded?: boolean }> = ({ embedded = fals
           <div>
             <h1 className="text-3xl font-bold flex items-center gap-3">
               <Workflow className="h-8 w-8 text-primary" />
-              Agent Workflow Studio
-              <Badge variant="secondary">AI-Powered</Badge>
+              Agent Workflow Builder
+              <Badge variant="secondary">{mode.charAt(0).toUpperCase() + mode.slice(1)} Mode</Badge>
             </h1>
             <p className="text-muted-foreground mt-2">
-              Create, configure, and deploy AI agents through visual workflows - no coding required
+              Build intelligent healthcare agents with guided workflows
             </p>
           </div>
 
@@ -170,460 +649,95 @@ const AgentWorkflowStudio: React.FC<{ embedded?: boolean }> = ({ embedded = fals
             </Button>
             <Button variant="outline" onClick={() => setPreviewMode(!previewMode)}>
               <Eye className="h-4 w-4 mr-1" />
-              {previewMode ? 'Hide Preview' : 'Show Preview'}
+              {previewMode ? 'Hide Preview' : 'Preview'}
             </Button>
           </div>
         </div>
 
-        {/* Guided Start Banner */}
-        {showGuidedStart && (
-          <Card className="border-dashed">
-            <CardContent className="p-4 md:p-6">
-              <div className="flex items-start justify-between gap-4">
-                <div>
-                  <h3 className="font-semibold text-foreground">Start your build</h3>
-                  <p className="text-sm text-muted-foreground">Choose a path: use AI prompts, build a manual journey, or start from a template. You can switch anytime.</p>
-                </div>
-                <Button variant="ghost" size="sm" aria-label="Dismiss guide" onClick={() => setShowGuidedStart(false)}>
-                  <X className="h-4 w-4" />
-                </Button>
-              </div>
-              <div className="mt-4 grid grid-cols-1 sm:grid-cols-3 gap-2">
-                <Button variant="outline" onClick={() => setActiveTab('generator')} className="justify-start">
-                  <Sparkles className="h-4 w-4 mr-2" /> Prompt-based (AI)
-                </Button>
-                <Button variant="outline" onClick={() => setActiveTab('manual')} className="justify-start">
-                  <Users className="h-4 w-4 mr-2" /> Manual Journey
-                </Button>
-                <Button variant="outline" onClick={() => setActiveTab('templates')} className="justify-start">
-                  <Bot className="h-4 w-4 mr-2" /> Templates
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {/* Progress Steps */}
+        {/* Progress Wizard */}
         <Card>
           <CardContent className="p-6">
-            <div className="flex items-center justify-between mb-6">
-              {steps.map((step, index) => {
+            <div className="flex items-center justify-between mb-6 overflow-x-auto scrollbar-hide">
+              {wizardSteps.map((step, index) => {
                 const IconComponent = step.icon;
-                const isActive = index === studioState.currentStep;
-                const isCompleted = index < studioState.currentStep;
+                const isActive = currentStep === step.id;
+                const isCompleted = step.completed;
+                const stepIndex = wizardSteps.findIndex(s => s.id === currentStep);
+                const currentIndex = wizardSteps.findIndex(s => s.id === step.id);
+                const isPast = currentIndex < stepIndex;
                 
                 return (
-                  <div key={index} className="flex items-center">
+                  <div key={step.id} className="flex items-center nav-item">
                     <div className={`
-                      flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all
+                      flex items-center justify-center w-10 h-10 rounded-full border-2 transition-all cursor-pointer
                       ${isActive ? 'border-primary bg-primary text-primary-foreground' : ''}
-                      ${isCompleted ? 'border-green-500 bg-green-500 text-white' : 'border-muted'}
-                      ${!isActive && !isCompleted ? 'border-muted text-muted-foreground' : ''}
-                    `}>
-                      {isCompleted ? (
+                      ${isPast ? 'border-green-500 bg-green-500 text-white' : 'border-muted'}
+                      ${!isActive && !isPast ? 'border-muted text-muted-foreground' : ''}
+                    `}
+                    onClick={() => setCurrentStep(step.id)}
+                    >
+                      {isPast ? (
                         <CheckCircle className="h-5 w-5" />
                       ) : (
                         <IconComponent className="h-5 w-5" />
                       )}
                     </div>
                     
-                    <div className="ml-3 flex-1">
-                      <div className={`text-sm font-medium ${
-                        isActive ? 'text-primary' : isCompleted ? 'text-green-600' : 'text-muted-foreground'
+                    <div className="ml-3 flex-1 min-w-0">
+                      <div className={`text-sm font-medium text-stable ${
+                        isActive ? 'text-primary' : isPast ? 'text-green-600' : 'text-muted-foreground'
                       }`}>
                         {step.title}
                       </div>
-                      <div className="text-xs text-muted-foreground">
+                      <div className="text-xs text-muted-foreground text-stable">
                         {step.description}
                       </div>
                     </div>
                     
-                    {index < steps.length - 1 && (
-                      <ArrowRight className="h-4 w-4 text-muted-foreground mx-4" />
+                    {index < wizardSteps.length - 1 && (
+                      <ArrowRight className="h-4 w-4 text-muted-foreground mx-4 flex-shrink-0" />
                     )}
                   </div>
                 );
               })}
             </div>
-
-            {/* Quick Stats */}
-            <div className="grid grid-cols-4 gap-4">
-              <div className="text-center p-3 bg-muted/30 rounded-lg">
-                <div className="text-lg font-bold">{studioState.workflow ? '✓' : '—'}</div>
-                <div className="text-xs text-muted-foreground">Workflow</div>
-              </div>
-              <div className="text-center p-3 bg-muted/30 rounded-lg">
-                <div className="text-lg font-bold">{studioState.agentConfiguration ? '✓' : '—'}</div>
-                <div className="text-xs text-muted-foreground">Configuration</div>
-              </div>
-              <div className="text-center p-3 bg-muted/30 rounded-lg">
-                <div className="text-lg font-bold">{studioState.generatedCode ? '✓' : '—'}</div>
-                <div className="text-xs text-muted-foreground">Code Generated</div>
-              </div>
-              <div className="text-center p-3 bg-muted/30 rounded-lg">
-                <div className="text-lg font-bold">{studioState.currentStep >= 3 ? '✓' : '—'}</div>
-                <div className="text-xs text-muted-foreground">Deployed</div>
-              </div>
-            </div>
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-          {/* Main Content */}
-          <div className="lg:col-span-3">
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-primary" />
-                    Workflow Builder
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    {studioState.currentStep >= 2 && (
-                      <>
-                        <Button variant="outline" onClick={handleTest}>
-                          <TestTube className="h-4 w-4 mr-1" />
-                          Test
-                        </Button>
-                        <Button 
-                          onClick={handleDeploy}
-                          disabled={isDeploying}
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          <Rocket className="h-4 w-4 mr-1" />
-                          {isDeploying ? 'Deploying...' : 'Deploy Agent'}
-                        </Button>
-                      </>
-                    )}
+        {/* Main Content */}
+        <Card>
+          <CardContent className="p-0">
+            {renderStepContent()}
+          </CardContent>
+        </Card>
+
+        {/* Preview Panel */}
+        {previewMode && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Eye className="h-5 w-5" />
+                Agent Preview
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="p-4 border rounded-lg bg-muted/10">
+                <div className="text-center py-8">
+                  <Bot className="h-12 w-12 text-primary mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">Patient Onboarding Assistant</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Hello! I'm here to help you get started with your healthcare journey.
+                  </p>
+                  <div className="mt-4 flex justify-center gap-2">
+                    <Badge variant="outline">Active</Badge>
+                    <Badge variant="outline">Web Chat</Badge>
+                    <Badge variant="outline">Phone Ready</Badge>
                   </div>
                 </div>
-              </CardHeader>
-              <CardContent className="p-0">
-                <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-6 m-4 mb-0">
-                    <TabsTrigger 
-                      value="generator" 
-                      className="flex items-center gap-2"
-                      disabled={studioState.currentStep > 1}
-                    >
-                      <Sparkles className="h-4 w-4" />
-                      AI Generator
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="manual" 
-                      className="flex items-center gap-2"
-                    >
-                      <Users className="h-4 w-4" />
-                      Manual Journey
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="templates" 
-                      className="flex items-center gap-2"
-                    >
-                      <Bot className="h-4 w-4" />
-                      Templates
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="builder" 
-                      className="flex items-center gap-2"
-                    >
-                      <Workflow className="h-4 w-4" />
-                      Integrated Builder
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="configurator" 
-                      className="flex items-center gap-2"
-                      disabled={!studioState.workflow}
-                    >
-                      <Settings className="h-4 w-4" />
-                      Agent Config
-                    </TabsTrigger>
-                    <TabsTrigger 
-                      value="review" 
-                      className="flex items-center gap-2"
-                      disabled={!studioState.agentConfiguration}
-                    >
-                      <Monitor className="h-4 w-4" />
-                      Review & Deploy
-                    </TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="generator" className="p-6 min-h-[600px]">
-                    <AIWorkflowGenerator 
-                      onWorkflowGenerated={handleWorkflowGenerated}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="manual" className="p-0 min-h-[600px]">
-                    <CustomerJourneyBuilder 
-                      initialWorkflow={studioState.workflow}
-                      onSave={(workflow) => {
-                        setStudioState(prev => ({ ...prev, workflow }));
-                        showSuccess('Journey saved. You can refine it visually or configure the agent.');
-                      }}
-                      onGenerateAgent={(workflow) => {
-                        setStudioState(prev => ({ ...prev, workflow }));
-                        setActiveTab('builder');
-                      }}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="templates" className="p-6 min-h-[600px]">
-                    <AgentTemplates 
-                      onSelectTemplate={(id) => {
-                        setSelectedTemplateId(id);
-                        setStudioState(prev => ({ 
-                          ...prev, 
-                          workflow: prev.workflow ?? { name: `Template: ${id}`, nodes: [], edges: [], templateId: id }
-                        }));
-                        showSuccess('Template selected! Continue in the Integrated Builder or generate prompts.');
-                        setActiveTab('builder');
-                      }}
-                      selectedTemplateId={selectedTemplateId || undefined}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="builder" className="p-0 min-h-[600px]">
-                    <IntegratedWorkflowBuilder 
-                      initialWorkflow={studioState.workflow}
-                      onSave={(workflow) => {
-                        setStudioState(prev => ({ ...prev, workflow }));
-                        showSuccess('Integrated workflow saved successfully!');
-                      }}
-                      onGenerateAgent={(workflow) => {
-                        setStudioState(prev => ({ ...prev, workflow }));
-                        setActiveTab('configurator');
-                      }}
-                      onTest={(testData) => {
-                        showSuccess('Real-time testing completed!');
-                        setPreviewMode(true);
-                      }}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="configurator" className="p-6 min-h-[600px]">
-                    <NoCodeAgentConfigurator 
-                      workflow={studioState.workflow}
-                      onConfigurationComplete={handleConfigurationComplete}
-                      onPreview={(config) => {
-                        showSuccess('Configuration preview ready!');
-                        setPreviewMode(true);
-                      }}
-                    />
-                  </TabsContent>
-
-                  <TabsContent value="review" className="p-6 min-h-[600px]">
-                    <div className="space-y-6">
-                      {/* Configuration Summary */}
-                      <Card>
-                        <CardHeader>
-                          <CardTitle className="text-lg">Configuration Summary</CardTitle>
-                        </CardHeader>
-                        <CardContent className="space-y-4">
-                          {studioState.agentConfiguration && (
-                            <>
-                              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                <div>
-                                  <h4 className="font-medium text-sm">Agent Details</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {studioState.agentConfiguration.basic.name}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {studioState.agentConfiguration.basic.description}
-                                  </p>
-                                </div>
-                                <div>
-                                  <h4 className="font-medium text-sm">Channels</h4>
-                                  <div className="flex flex-wrap gap-1 mt-1">
-                                    {Object.entries(studioState.agentConfiguration.channels)
-                                      .filter(([_, config]: [string, any]) => config.enabled)
-                                      .map(([channel, _]) => (
-                                        <Badge key={channel} variant="outline" className="text-xs">
-                                          {channel}
-                                        </Badge>
-                                      ))}
-                                  </div>
-                                </div>
-                                <div>
-                                  <h4 className="font-medium text-sm">AI Model</h4>
-                                  <p className="text-sm text-muted-foreground">
-                                    {studioState.agentConfiguration.capabilities.nlpModel}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    {studioState.agentConfiguration.capabilities.contextAwareness}% context awareness
-                                  </p>
-                                </div>
-                              </div>
-
-                              {/* Code Preview */}
-                              {studioState.generatedCode && (
-                                <div className="mt-6">
-                                  <h4 className="font-medium text-sm mb-2">Generated Code Preview</h4>
-                                  <pre className="text-xs bg-muted p-4 rounded overflow-auto max-h-32">
-                                    <code>{studioState.generatedCode.substring(0, 300)}...</code>
-                                  </pre>
-                                  <Button variant="outline" size="sm" className="mt-2">
-                                    <Download className="h-3 w-3 mr-1" />
-                                    Download Full Code
-                                  </Button>
-                                </div>
-                              )}
-
-                              {/* Deployment Actions */}
-                              <div className="flex items-center justify-between pt-4 border-t">
-                                <div className="flex items-center gap-2">
-                                  <CheckCircle className="h-4 w-4 text-green-600" />
-                                  <span className="text-sm">Ready for deployment</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Button variant="outline" onClick={handleTest}>
-                                    <TestTube className="h-4 w-4 mr-1" />
-                                    Test Configuration
-                                  </Button>
-                                  <Button 
-                                    onClick={handleDeploy}
-                                    disabled={isDeploying}
-                                    className="bg-primary hover:bg-primary/90"
-                                  >
-                                    <Rocket className="h-4 w-4 mr-1" />
-                                    {isDeploying ? 'Deploying...' : 'Deploy Now'}
-                                  </Button>
-                                </div>
-                              </div>
-                            </>
-                          )}
-                        </CardContent>
-                      </Card>
-
-                      {/* Deployment Success */}
-                      {studioState.currentStep >= 3 && (
-                        <Card className="border-green-200 bg-green-50 dark:bg-green-900/20">
-                          <CardContent className="p-6">
-                            <div className="flex items-center gap-3">
-                              <CheckCircle className="h-6 w-6 text-green-600" />
-                              <div>
-                                <h3 className="font-semibold text-green-800 dark:text-green-200">
-                                  Agent Deployed Successfully!
-                                </h3>
-                                <p className="text-sm text-green-600 dark:text-green-300">
-                                  Your agent is now live and ready to handle customer interactions.
-                                </p>
-                              </div>
-                            </div>
-                            <div className="mt-4 flex items-center gap-2">
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => navigate('/agents')}
-                              >
-                                <Monitor className="h-4 w-4 mr-1" />
-                                View in Dashboard
-                              </Button>
-                              <Button 
-                                variant="outline" 
-                                size="sm"
-                                onClick={() => handleReset()}
-                              >
-                                <Sparkles className="h-4 w-4 mr-1" />
-                                Create Another Agent
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      )}
-                    </div>
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Sidebar */}
-          <div className="space-y-4">
-            {/* Quick Actions */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-2">
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={() => setActiveTab('generator')}
-                >
-                  <Sparkles className="h-4 w-4 mr-2" />
-                  Start New Workflow
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  disabled={!studioState.workflow}
-                  onClick={() => setActiveTab('builder')}
-                >
-                  <Workflow className="h-4 w-4 mr-2" />
-                  Edit Workflow
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="w-full justify-start"
-                  onClick={() => navigate('/agents')}
-                >
-                  <Monitor className="h-4 w-4 mr-2" />
-                  Agent Dashboard
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Help & Tips */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-sm">Tips & Best Practices</CardTitle>
-              </CardHeader>
-              <CardContent className="text-xs text-muted-foreground space-y-2">
-                <p>💡 Start with a clear use case for better AI generation</p>
-                <p>🎯 Define specific touchpoints and decision points</p>
-                <p>⚙️ Configure automation levels based on complexity</p>
-                <p>🧪 Always test before deploying to production</p>
-                <p>📊 Monitor performance after deployment</p>
-              </CardContent>
-            </Card>
-
-            {/* Preview Panel */}
-            {previewMode && studioState.agentConfiguration && (
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-sm flex items-center gap-2">
-                    <Eye className="h-4 w-4" />
-                    Live Preview
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="p-3 bg-muted rounded text-xs">
-                    <p className="font-medium">Agent: {studioState.agentConfiguration.basic.name}</p>
-                    <p className="text-muted-foreground mt-1">
-                      {studioState.agentConfiguration.basic.description}
-                    </p>
-                  </div>
-                  <div className="space-y-2">
-                    <div className="text-xs">
-                      <span className="font-medium">Status:</span> Ready to Deploy
-                    </div>
-                    <div className="text-xs">
-                      <span className="font-medium">Channels:</span> {
-                        Object.entries(studioState.agentConfiguration.channels)
-                          .filter(([_, config]: [string, any]) => config.enabled)
-                          .length
-                      } enabled
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </Wrapper>
   );
