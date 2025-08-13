@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Helmet } from 'react-helmet-async';
+// Removed Helmet to prevent context errors
 // Role-specific components - defined before use to avoid React error #185
 import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
 
@@ -71,6 +71,24 @@ const Agents = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
+  // Minimal SEO without Helmet to avoid context errors
+  useEffect(() => {
+    try {
+      document.title = 'Agents – Visual Workflow, Templates, Prompts';
+      const metaDesc = document.querySelector('meta[name="description"]') || document.createElement('meta');
+      metaDesc.setAttribute('name', 'description');
+      metaDesc.setAttribute('content', 'Build and deploy healthcare AI agents with visual workflows, templates, and prompt-based generation.');
+      if (!metaDesc.parentElement) document.head.appendChild(metaDesc);
+
+      const linkCanonical = document.querySelector('link[rel="canonical"]') || document.createElement('link');
+      linkCanonical.setAttribute('rel', 'canonical');
+      linkCanonical.setAttribute('href', '/agents');
+      if (!linkCanonical.parentElement) document.head.appendChild(linkCanonical);
+    } catch (e) {
+      // no-op
+    }
+  }, []);
+
   // Generate available tabs based on user roles - reorganized for better UX flow
   const availableTabs = [
     { id: 'ecosystem', label: 'Agent Ecosystem', component: 'AgenticEcosystem' },
@@ -87,11 +105,6 @@ const Agents = () => {
   try {
     return (
       <AppLayout>
-        <Helmet>
-          <title>Agents – Visual Workflow, Templates, Prompts</title>
-          <meta name="description" content="Build and deploy healthcare AI agents with visual workflows, templates, and prompt-based generation." />
-          <link rel="canonical" href="/agents" />
-        </Helmet>
         <div className="space-y-6">
           {/* Role-specific header */}
           <div className="flex items-center justify-between">
