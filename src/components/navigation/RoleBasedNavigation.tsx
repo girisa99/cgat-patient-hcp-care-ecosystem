@@ -171,8 +171,8 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
           </div>
 
           {/* Center: Main Navigation - Fixed overflow and text stability */}
-          <nav className="flex items-center flex-1 justify-center min-w-0 px-2">
-            <div className="flex items-center gap-1 max-w-full overflow-x-auto scrollbar-hide nav-item">
+          <nav className="flex items-center flex-1 justify-start min-w-0 px-2 overflow-hidden" aria-label="Primary">
+            <div className="flex items-center gap-1 max-w-full flex-nowrap overflow-x-auto scrollbar-hide">
               {/* Dashboard */}
               <div className="nav-item">
                 <Link to="/">
