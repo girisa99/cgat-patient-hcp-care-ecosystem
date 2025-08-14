@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Steps, Step } from '@/components/ui/steps';
 
 interface AgentTemplate {
   id: string;
@@ -344,26 +345,18 @@ export const AgentTemplates: React.FC<AgentTemplatesProps> = ({
             <DialogDescription>Sequential stages defined for this template</DialogDescription>
           </DialogHeader>
           {previewStages && previewStages.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {previewStages.map((stage: any, idx: number) => (
-                <Card key={stage.id || idx}>
-                  <CardHeader>
-                    <CardTitle className="text-base">{idx + 1}. {stage.title || stage.name || stage.id || 'Stage'}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <p className="text-sm text-muted-foreground">{stage.description || 'No description provided.'}</p>
-                    <div className="text-xs text-muted-foreground">
-                      {Array.isArray(stage.steps) && (
-                        <div>Steps: {stage.steps.length}</div>
-                      )}
-                      {Array.isArray(stage.requirements) && (
-                        <div>Requirements: {stage.requirements.length}</div>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+            <div className="w-full overflow-x-auto">
+              <Steps className="min-w-max px-2">
+                {previewStages.map((stage: any, idx: number) => (
+                  <Step
+                    key={stage.id || idx}
+                    title={`${idx + 1}. ${stage.title || stage.name || 'Stage'}`}
+                    description={stage.description || (Array.isArray(stage.steps) ? `${stage.steps.length} step(s)` : ' ')}
+                  />
+                ))}
+              </Steps>
             </div>
+
           ) : (
             <div className="p-3 rounded bg-muted text-sm text-muted-foreground">
               No journey stages defined for this template in the database.

@@ -674,18 +674,18 @@ export const AgentCreationWizard = () => {
         <p className="text-muted-foreground">Review the stages for this template. Navigation is sequential.</p>
       </div>
       {state.journeyStages && state.journeyStages.length > 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {state.journeyStages.map((stage: any, idx: number) => (
-            <Card key={stage.id || idx}>
-              <CardHeader>
-                <CardTitle className="text-base">{idx + 1}. {stage.title || stage.id || 'Stage'}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-sm text-muted-foreground">{stage.description || 'No description provided.'}</p>
-              </CardContent>
-            </Card>
-          ))}
+        <div className="w-full overflow-x-auto">
+          <Steps className="min-w-max px-2">
+            {state.journeyStages.map((stage: any, idx: number) => (
+              <Step
+                key={stage.id || idx}
+                title={`${idx + 1}. ${stage.title || stage.name || 'Stage'}`}
+                description={stage.description || (Array.isArray(stage.steps) ? `${stage.steps.length} step(s)` : ' ') }
+              />
+            ))}
+          </Steps>
         </div>
+
       ) : (
         <div className="p-3 rounded bg-muted text-sm text-muted-foreground">
           No journey stages defined for this template yet. You can proceed and configure stages later.
