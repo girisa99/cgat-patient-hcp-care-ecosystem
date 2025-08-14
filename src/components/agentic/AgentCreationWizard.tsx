@@ -22,6 +22,8 @@ import ModePicker from '@/components/agent-builder/ModePicker';
 import LSBindingPanel, { type LSBinding } from '@/components/label-studio/LSBindingPanel';
 import { useLabelStudio } from '@/hooks/useLabelStudio';
 import { Switch } from '@/components/ui/switch';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import JourneyEditor from '@/components/agentic/JourneyEditor';
 
 interface Template {
   id: string;
@@ -113,6 +115,8 @@ export const AgentCreationWizard = () => {
       autoScaling: false
     }
   });
+
+  const [showJourneyEditor, setShowJourneyEditor] = useState(false);
 
   const [templates, setTemplates] = useState<Template[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -669,9 +673,16 @@ export const AgentCreationWizard = () => {
     
     // Step 3: Journey Overview
     <div className="space-y-6" key="step-3">
-      <div>
-        <h3 className="text-lg font-medium">Journey Overview</h3>
-        <p className="text-muted-foreground">Review the stages for this template. Navigation is sequential.</p>
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-medium">Journey Overview</h3>
+          <p className="text-muted-foreground">Review the stages for this template. Navigation is sequential.</p>
+        </div>
+        {state.templateId && (
+          <Button variant="outline" onClick={() => setShowJourneyEditor(true)}>
+            Edit Stages
+          </Button>
+        )}
       </div>
       {state.journeyStages && state.journeyStages.length > 0 ? (
         <div className="w-full overflow-x-auto">
