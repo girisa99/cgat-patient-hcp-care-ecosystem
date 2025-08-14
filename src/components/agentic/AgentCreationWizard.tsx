@@ -33,6 +33,7 @@ interface Template {
   secondary_color: string;
   accent_color: string;
   configuration: any;
+  journey_stages?: any[];
 }
 
 interface WizardState {
@@ -63,6 +64,8 @@ interface WizardState {
   labelStudio?: LSBinding;
   // Whether to use Label Studio in this build
   useLabelStudio: boolean;
+  // Journey stages loaded from selected template (DB)
+  journeyStages: any[];
   deploymentConfig: {
     parallel: boolean;
     compliance: boolean;
@@ -102,6 +105,7 @@ export const AgentCreationWizard = () => {
       appliesTo: { prompts: true, visual: false, templates: false }
     },
     useLabelStudio: false,
+    journeyStages: [],
     deploymentConfig: {
       parallel: false,
       compliance: true,
@@ -129,7 +133,11 @@ export const AgentCreationWizard = () => {
           .order('name');
         
         if (error) throw error;
-        setTemplates(data || []);
+        const normalized = (data || []).map((t: any) => ({
+          ...t,
+          journey_stages: Array.isArray((t as any).journey_stages) ? (t as any).journey_stages : []
+        }));
+        setTemplates(normalized as Template[]);
       } catch (error) {
         console.error('Error fetching templates:', error);
         toast({
@@ -194,17 +202,19 @@ export const AgentCreationWizard = () => {
         const hasBasicInfo = state.startOption === 'template' ? state.templateId !== null : (state.name !== '' && state.agentType !== null);
         // Category mapping is optional - don't require it for step completion
         return hasBasicInfo;
-      case 2: // Canvas customization
+      case 2: // Journey overview (read-only)
+        return true;
+      case 3: // Canvas customization
         return state.name !== '' && state.tagline !== '';
-      case 3: // Agent Actions & Tasks
+      case 4: // Agent Actions & Tasks
         return true; // Optional - can proceed without actions
-      case 4: // Connectors & AI Models
+      case 5: // Connectors & AI Models
         return true; // Optional
-      case 5: // Knowledge Base
+      case 6: // Knowledge Base
         return true; // Optional
-      case 6: // RAG & Compliance
+      case 7: // RAG & Compliance
         return true; // Optional
-      case 7: // Deployment
+      case 8: // Deployment
         return true; // Configuration is always valid
       default:
         return false;
@@ -237,7 +247,8 @@ export const AgentCreationWizard = () => {
         secondaryColor: (selectedTemplate as any).secondary_color,
         accentColor: (selectedTemplate as any).accent_color,
         logoUrl: (selectedTemplate as any).logo_url || prev.logoUrl || '',
-        // Ensure wizard recognizes template path and advance to Canvas
+        journeyStages: (selectedTemplate as any).journey_stages || [],
+        // Ensure wizard recognizes template path and advance to Journey overview
         startOption: 'template',
         step: Math.max(prev.step, 2),
       }));
@@ -655,8 +666,34 @@ export const AgentCreationWizard = () => {
       )}
     </div>,
     
-    // Step 3: Canvas Customization  
+    // Step 3: Journey Overview
     <div className="space-y-6" key="step-3">
+      <div>
+        <h3 className="text-lg font-medium">Journey Overview</h3>
+        <p className="text-muted-foreground">Review the stages for this template. Navigation is sequential.</p>
+      </div>
+      {state.journeyStages && state.journeyStages.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {state.journeyStages.map((stage: any, idx: number) => (
+            <Card key={stage.id || idx}>
+              <CardHeader>
+                <CardTitle className="text-base">{idx + 1}. {stage.title || stage.id || 'Stage'}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground">{stage.description || 'No description provided.'}</p>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="p-3 rounded bg-muted text-sm text-muted-foreground">
+          No journey stages defined for this template yet. You can proceed and configure stages later.
+        </div>
+      )}
+    </div>,
+    
+    // Step 4: Canvas Customization  
+    <div className="space-y-6" key="step-4">
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-medium">Customize Your Agent</h3>
@@ -696,7 +733,7 @@ export const AgentCreationWizard = () => {
     </div>,
 
     // Step 4: Agent Actions & Tasks
-    <div className="space-y-6" key="step-4">
+    <div className="space-y-6" key="step-5">
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-medium">Agent Actions & Tasks</h3>
         {state.useLabelStudio && hasLS && state.labelStudio?.appliesTo?.prompts && (
@@ -714,7 +751,7 @@ export const AgentCreationWizard = () => {
     </div>,
 
     // Step 5: System Connectors & AI Models
-    <div className="space-y-6" key="step-5">
+    <div className="space-y-6" key="step-6">
       <div>
         <h3 className="text-lg font-medium">System Connectors & AI Models</h3>
         <p className="text-muted-foreground">Connect external systems and configure AI models for your agent</p>
@@ -899,7 +936,7 @@ export const AgentCreationWizard = () => {
     </div>,
     
     // Step 7: RAG & Compliance
-    <div className="space-y-6" key="step-7">
+    <div className="space-y-6" key="step-8">
       <div>
         <h3 className="text-lg font-medium">RAG Configuration & Compliance</h3>
         <p className="text-muted-foreground">Set up retrieval and compliance workflows</p>
@@ -920,7 +957,7 @@ export const AgentCreationWizard = () => {
     </div>,
     
     // Step 8: Deployment
-    <div className="space-y-6" key="step-8">
+    <div className="space-y-6" key="step-9">
       <div>
         <h3 className="text-lg font-medium">Deployment Configuration</h3>
         <p className="text-muted-foreground">Configure your agent deployment settings</p>
@@ -1033,6 +1070,7 @@ export const AgentCreationWizard = () => {
           >
             <Step title="Start" description="Choose approach" />
             <Step title="Setup" description="Template or custom" />
+            <Step title="Journey" description="Stages overview" />
             <Step title="Canvas" description="Customize appearance" />
             <Step title="Actions" description="Configure tasks" />
             <Step title="Connectors" description="System integrations" />

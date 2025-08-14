@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -825,6 +825,7 @@ export type Database = {
           description: string | null
           id: string
           is_default: boolean | null
+          journey_stages: Json
           logo_url: string | null
           name: string
           primary_color: string | null
@@ -841,6 +842,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean | null
+          journey_stages?: Json
           logo_url?: string | null
           name: string
           primary_color?: string | null
@@ -857,6 +859,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_default?: boolean | null
+          journey_stages?: Json
           logo_url?: string | null
           name?: string
           primary_color?: string | null
@@ -7534,7 +7537,7 @@ export type Database = {
         Returns: boolean
       }
       assign_user_role: {
-        Args: { p_user_id: string; p_role_name: string }
+        Args: { p_role_name: string; p_user_id: string }
         Returns: undefined
       }
       auto_sync_demo_user_access: {
@@ -7544,15 +7547,15 @@ export type Database = {
       calculate_financial_risk_score: {
         Args: {
           p_annual_revenue_range: string
-          p_years_in_operation: number
-          p_debt_to_equity_ratio: number
           p_current_ratio: number
           p_days_sales_outstanding: number
+          p_debt_to_equity_ratio: number
+          p_years_in_operation: number
         }
         Returns: number
       }
       check_duplicate_agent_name: {
-        Args: { p_name: string; p_user_id: string; p_exclude_id?: string }
+        Args: { p_exclude_id?: string; p_name: string; p_user_id: string }
         Returns: boolean
       }
       check_user_has_role: {
@@ -7563,7 +7566,7 @@ export type Database = {
         Returns: boolean
       }
       cleanup_old_draft_agents: {
-        Args: { p_user_id?: string; p_confirm?: boolean }
+        Args: { p_confirm?: boolean; p_user_id?: string }
         Returns: Json
       }
       continuous_test_generation: {
@@ -7572,16 +7575,16 @@ export type Database = {
       }
       create_patient_profile_and_role: {
         Args: {
-          p_user_id: string
-          p_first_name: string
-          p_last_name: string
           p_email: string
           p_facility_id?: string
+          p_first_name: string
+          p_last_name: string
+          p_user_id: string
         }
         Returns: Json
       }
       detect_schema_from_data: {
-        Args: { sample_data: Json; max_samples?: number }
+        Args: { max_samples?: number; sample_data: Json }
         Returns: Json
       }
       detect_system_functionality: {
@@ -7597,7 +7600,7 @@ export type Database = {
         Returns: undefined
       }
       execute_comprehensive_test_suite: {
-        Args: { suite_type?: string; batch_size?: number }
+        Args: { batch_size?: number; suite_type?: string }
         Returns: Json
       }
       generate_api_key: {
@@ -7634,9 +7637,9 @@ export type Database = {
       get_daily_fix_stats: {
         Args: { days_back?: number; target_user_id?: string }
         Returns: {
-          fix_date: string
           category: string
           fix_count: number
+          fix_date: string
           severity_breakdown: Json
         }[]
       }
@@ -7647,38 +7650,38 @@ export type Database = {
       get_old_draft_agents: {
         Args: { p_user_id?: string }
         Returns: {
+          created_at: string
+          days_old: number
           id: string
           name: string
-          created_at: string
-          updated_at: string
-          days_old: number
           table_source: string
+          updated_at: string
         }[]
       }
       get_user_accessible_facilities: {
         Args: { user_id: string }
         Returns: {
+          access_level: string
           facility_id: string
           facility_name: string
-          access_level: string
         }[]
       }
       get_user_effective_modules: {
         Args: { check_user_id: string }
         Returns: {
-          module_id: string
-          module_name: string
-          module_description: string
           access_source: string
           expires_at: string
+          module_description: string
+          module_id: string
+          module_name: string
         }[]
       }
       get_user_effective_permissions: {
         Args: { check_user_id: string; facility_id?: string }
         Returns: {
+          expires_at: string
           permission_name: string
           source: string
-          expires_at: string
         }[]
       }
       get_user_roles: {
@@ -7688,13 +7691,13 @@ export type Database = {
         }[]
       }
       has_permission: {
-        Args: { user_id: string; permission_name: string }
+        Args: { permission_name: string; user_id: string }
         Returns: boolean
       }
       has_role: {
         Args: {
-          user_id: string
           role_name: Database["public"]["Enums"]["user_role"]
+          user_id: string
         }
         Returns: boolean
       }
@@ -7724,86 +7727,86 @@ export type Database = {
       }
       log_credit_application_audit: {
         Args: {
-          p_credit_application_id: string
           p_action_type: string
-          p_field_changed?: string
-          p_old_value?: string
-          p_new_value?: string
           p_additional_context?: Json
+          p_credit_application_id: string
+          p_field_changed?: string
+          p_new_value?: string
+          p_old_value?: string
         }
         Returns: undefined
       }
       log_onboarding_audit: {
         Args: {
-          p_onboarding_id: string
-          p_action_type: string
           p_action_description: string
-          p_section_affected?: string
-          p_old_values?: Json
+          p_action_type: string
           p_new_values?: Json
+          p_old_values?: Json
+          p_onboarding_id: string
+          p_section_affected?: string
         }
         Returns: undefined
       }
       log_prompt_governance: {
         Args: {
-          p_prompt_text: string
           p_analysis_results: Json
+          p_blocking_reasons?: Json
           p_compliance_score?: number
-          p_violations_found?: Json
+          p_enhanced_prompt?: string
           p_enhancements_applied?: Json
           p_original_prompt?: string
-          p_enhanced_prompt?: string
+          p_prompt_text: string
+          p_violations_found?: Json
           p_was_blocked?: boolean
-          p_blocking_reasons?: Json
         }
         Returns: string
       }
       log_security_event: {
         Args: {
-          p_user_id: string
-          p_event_type: string
-          p_severity: string
           p_description: string
+          p_event_type: string
           p_metadata?: Json
+          p_severity: string
+          p_user_id: string
         }
         Returns: undefined
       }
       log_stability_event: {
         Args: {
-          p_monitoring_session_id: string
-          p_event_type: string
           p_event_data?: Json
-          p_severity?: string
+          p_event_type: string
           p_file_path?: string
+          p_monitoring_session_id: string
           p_rule_name?: string
+          p_severity?: string
           p_violation_details?: Json
         }
         Returns: string
       }
       log_user_activity: {
         Args: {
-          p_user_id: string
-          p_activity_type: string
           p_activity_description: string
-          p_module_name?: string
+          p_activity_type: string
           p_metadata?: Json
+          p_module_name?: string
+          p_user_id: string
         }
         Returns: undefined
       }
       log_verification_activity: {
         Args: {
-          activity_type: string
           activity_description: string
+          activity_type: string
           metadata_info?: Json
         }
         Returns: undefined
       }
       secure_assign_user_role: {
-        Args: { target_user_id: string; target_role_name: string }
+        Args: { target_role_name: string; target_user_id: string }
         Returns: Json
       }
       secure_remove_user_role: {
-        Args: { target_user_id: string; target_role_name: string }
+        Args: { target_role_name: string; target_user_id: string }
         Returns: Json
       }
       sync_active_issues: {
@@ -7829,8 +7832,8 @@ export type Database = {
       user_has_permission: {
         Args: {
           check_user_id: string
-          permission_name: string
           facility_id?: string
+          permission_name: string
         }
         Returns: boolean
       }
