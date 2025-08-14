@@ -1012,6 +1012,34 @@ export const AgentCreationWizard = () => {
         </CardContent>
       </Card>
       
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Monitoring & Scaling</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Enable Monitoring</div>
+              <div className="text-sm text-muted-foreground">Collect health metrics and performance</div>
+            </div>
+            <Switch
+              checked={state.deploymentConfig.monitoring}
+              onCheckedChange={(v) => handleDeploymentConfigChange({ monitoring: v })}
+            />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <div className="font-medium">Auto Scaling</div>
+              <div className="text-sm text-muted-foreground">Scale instances automatically based on load</div>
+            </div>
+            <Switch
+              checked={state.deploymentConfig.autoScaling}
+              onCheckedChange={(v) => handleDeploymentConfigChange({ autoScaling: v })}
+            />
+          </div>
+        </CardContent>
+      </Card>
+
       <AgentDeployment 
         agents={[]}
         onDeploy={() => {}}
