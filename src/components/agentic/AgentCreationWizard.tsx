@@ -24,6 +24,7 @@ import { useLabelStudio } from '@/hooks/useLabelStudio';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import JourneyEditor from '@/components/agentic/JourneyEditor';
+import { useAgentPersistence } from '@/hooks/useAgentPersistence';
 
 interface Template {
   id: string;
@@ -68,6 +69,7 @@ interface WizardState {
   useLabelStudio: boolean;
   // Journey stages loaded from selected template (DB)
   journeyStages: any[];
+  sessionId: string | null;
   deploymentConfig: {
     parallel: boolean;
     compliance: boolean;
@@ -108,6 +110,7 @@ export const AgentCreationWizard = () => {
     },
     useLabelStudio: false,
     journeyStages: [],
+    sessionId: null,
     deploymentConfig: {
       parallel: false,
       compliance: true,
@@ -125,6 +128,8 @@ export const AgentCreationWizard = () => {
   const [showAIModelSelector, setShowAIModelSelector] = useState(false);
   const [selectedAIModels, setSelectedAIModels] = useState<string[]>([]);
   const { listProjectTasks, listTaskAnnotations, loading: lsLoading } = useLabelStudio();
+  const { saveAgentSession, saveDeployment } = useAgentPersistence(state.sessionId || undefined);
+  
   
   // Fetch templates on component mount
   useEffect(() => {
@@ -299,6 +304,36 @@ export const AgentCreationWizard = () => {
       ...state, 
       deploymentConfig: { ...state.deploymentConfig, ...config } 
     });
+  };
+
+  // Journey editor apply handler -> snapshot to agent_sessions.deployment
+  const handleJourneyApplied = async (stages: any[]) => {
+    setState(prev => ({ ...prev, journeyStages: stages }));
+    const snapshot = {
+      template_id: state.templateId,
+      stages,
+      snapshot_at: new Date().toISOString()
+    };
+    try {
+      if (state.sessionId) {
+        await saveDeployment({ ...state.deploymentConfig, journey_stages_snapshot: snapshot });
+      } else {
+        const created: any = await saveAgentSession({
+          name: state.name || 'Untitled Agent',
+          template_id: state.templateId || undefined,
+          current_step: 'journey',
+          deployment: { ...state.deploymentConfig, journey_stages_snapshot: snapshot }
+        }, 'journey');
+        if (created?.id) {
+          setState(prev => ({ ...prev, sessionId: created.id }));
+        }
+      }
+      toast({ title: 'Journey saved', description: 'Snapshot stored in session' });
+    } catch (e: any) {
+      toast({ title: 'Failed to save journey', description: e?.message || 'Unknown error', variant: 'destructive' });
+    } finally {
+      setShowJourneyEditor(false);
+    }
   };
 
   // Label Studio seeding helpers
@@ -1124,6 +1159,18 @@ export const AgentCreationWizard = () => {
       <div className="min-h-[400px] py-4">
         {stepContent[state.step]}
       </div>
+
+      {/* Journey Editor Dialog */}
+      <Dialog open={showJourneyEditor} onOpenChange={setShowJourneyEditor}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Edit Journey Stages</DialogTitle>
+          </DialogHeader>
+          {state.templateId && (
+            <JourneyEditor templateId={state.templateId} onApplied={handleJourneyApplied} />
+          )}
+        </DialogContent>
+      </Dialog>
 
       <div className="flex justify-between">
         <Button 
