@@ -569,6 +569,7 @@ export const AgentCreationWizard = () => {
             onSelectTemplate={handleSelectTemplate}
             selectedTemplateId={state.templateId}
             onCustomizeFurther={() => setState(prev => ({ ...prev, startOption: 'template', step: 2 }))}
+            dbTemplates={templates}
           />
         </div>
       ) : (

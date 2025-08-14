@@ -8,6 +8,7 @@ import {
   Clock, CheckCircle, Workflow
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface AgentTemplate {
   id: string;
@@ -173,15 +174,20 @@ interface AgentTemplatesProps {
   onSelectTemplate?: (template: { id: string; name: string }) => void;
   selectedTemplateId?: string | null;
   onCustomizeFurther?: () => void;
+  dbTemplates?: Array<{ id: string; name: string; journey_stages?: any[] }>; // real DB templates for journey preview
 }
 
 export const AgentTemplates: React.FC<AgentTemplatesProps> = ({ 
   onSelectTemplate, 
   selectedTemplateId,
   onCustomizeFurther,
+  dbTemplates,
 }) => {
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
+  const [previewTemplateName, setPreviewTemplateName] = useState<string>('');
+  const [previewStages, setPreviewStages] = useState<any[]>([]);
 
   const categories = ['All', 'Healthcare', 'Insurance', 'Onboarding', 'Clinical', 'Support', 'Safety', 'Development', 'Product', 'CRM', 'Scheduling', 'Quality', 'Research'];
 
@@ -197,6 +203,16 @@ export const AgentTemplates: React.FC<AgentTemplatesProps> = ({
       title: "Template Selected",
       description: `Starting configuration for ${template.name}. Pre-configured systems will be automatically connected.`,
     });
+  };
+
+  const handlePreviewJourney = (template: AgentTemplate) => {
+    // Prefer ID match, else name match (case-insensitive)
+    const match = dbTemplates?.find((t) => t.id === template.id) ||
+      dbTemplates?.find((t) => (t.name || '').toLowerCase() === (template.name || '').toLowerCase());
+
+    setPreviewTemplateName(template.name);
+    setPreviewStages(Array.isArray(match?.journey_stages) ? (match!.journey_stages as any[]) : []);
+    setPreviewOpen(true);
   };
 
   const handleDeployTemplate = () => {
@@ -299,18 +315,62 @@ export const AgentTemplates: React.FC<AgentTemplatesProps> = ({
                   <div className="text-sm text-muted-foreground">
                     Setup: {template.estimatedSetupTime}
                   </div>
-                  <Button 
-                    onClick={() => handleUseTemplate(template)}
-                    className="gap-2"
-                  >
-                    Use Template
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button 
+                      variant="outline"
+                      onClick={() => handlePreviewJourney(template)}
+                    >
+                      Preview Journey
+                    </Button>
+                    <Button 
+                      onClick={() => handleUseTemplate(template)}
+                      className="gap-2"
+                    >
+                      Use Template
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
           );
         })}
       </div>
+
+      {/* Journey Preview Dialog */}
+      <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
+        <DialogContent className="sm:max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Journey Preview — {previewTemplateName}</DialogTitle>
+            <DialogDescription>Sequential stages defined for this template</DialogDescription>
+          </DialogHeader>
+          {previewStages && previewStages.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {previewStages.map((stage: any, idx: number) => (
+                <Card key={stage.id || idx}>
+                  <CardHeader>
+                    <CardTitle className="text-base">{idx + 1}. {stage.title || stage.name || stage.id || 'Stage'}</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2">
+                    <p className="text-sm text-muted-foreground">{stage.description || 'No description provided.'}</p>
+                    <div className="text-xs text-muted-foreground">
+                      {Array.isArray(stage.steps) && (
+                        <div>Steps: {stage.steps.length}</div>
+                      )}
+                      {Array.isArray(stage.requirements) && (
+                        <div>Requirements: {stage.requirements.length}</div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="p-3 rounded bg-muted text-sm text-muted-foreground">
+              No journey stages defined for this template in the database.
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* Template Configuration Modal */}
       {selectedTemplate && (
