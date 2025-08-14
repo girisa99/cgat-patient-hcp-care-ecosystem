@@ -2,6 +2,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
+const sb = supabase as unknown as any;
+
 export interface JourneyStage {
   id?: string;
   template_id: string;
@@ -29,7 +31,7 @@ export const useJourneyStages = (templateId?: string | null) => {
     queryKey: ['journey-stages', templateId],
     queryFn: async () => {
       if (!templateId) return [] as JourneyStage[];
-      const { data, error } = await supabase
+      const { data, error } = await sb
         .from('agent_template_journey_stages')
         .select('*')
         .eq('template_id', templateId)
@@ -61,7 +63,7 @@ export const useJourneyStages = (templateId?: string | null) => {
         dependencies: input.dependencies ?? [],
         validation_checkpoints: input.validation_checkpoints ?? [],
       } as JourneyStage;
-      const { data: inserted, error } = await supabase
+      const { data: inserted, error } = await sb
         .from('agent_template_journey_stages')
         .insert(payload)
         .select('*')
@@ -78,7 +80,7 @@ export const useJourneyStages = (templateId?: string | null) => {
 
   const updateStage = useMutation({
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<JourneyStage> }) => {
-      const { error } = await supabase
+      const { error } = await sb
         .from('agent_template_journey_stages')
         .update(updates)
         .eq('id', id);
@@ -93,7 +95,7 @@ export const useJourneyStages = (templateId?: string | null) => {
 
   const deleteStage = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
+      const { error } = await sb
         .from('agent_template_journey_stages')
         .delete()
         .eq('id', id);
@@ -114,12 +116,12 @@ export const useJourneyStages = (templateId?: string | null) => {
       const b = list[toIndex];
       if (!a || !b) return;
       // swap their order_index
-      const { error: e1 } = await supabase
+      const { error: e1 } = await sb
         .from('agent_template_journey_stages')
         .update({ order_index: b.order_index })
         .eq('id', a.id);
       if (e1) throw e1;
-      const { error: e2 } = await supabase
+      const { error: e2 } = await sb
         .from('agent_template_journey_stages')
         .update({ order_index: a.order_index })
         .eq('id', b.id);
