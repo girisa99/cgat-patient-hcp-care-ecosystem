@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -105,7 +105,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
             <Card 
               key={useCase.id}
               className={`cursor-pointer transition-colors ${
-                state.use_case.id === useCase.id ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
+                state.use_case?.id === useCase.id ? 'ring-2 ring-primary' : 'hover:bg-muted/50'
               }`}
               onClick={() => selectUseCase(useCase)}
             >
@@ -186,30 +186,30 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
         <Progress value={state.completion_score} className="mb-4" />
         
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {state.completed_stages.length}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">
+                {state.completed_stages.length}
+              </div>
+              <div className="text-sm text-muted-foreground">Stages Complete</div>
             </div>
-            <div className="text-sm text-muted-foreground">Stages Complete</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {state.canvas.nodes.length}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">
+                {state.canvas.nodes.length}
+              </div>
+              <div className="text-sm text-muted-foreground">Workflow Nodes</div>
             </div>
-            <div className="text-sm text-muted-foreground">Workflow Nodes</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {state.actions.assigned_actions.length}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-purple-600">
+                {state.actions.assigned_actions.length}
+              </div>
+              <div className="text-sm text-muted-foreground">Actions Configured</div>
             </div>
-            <div className="text-sm text-muted-foreground">Actions Configured</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-orange-600">
-              {state.validation_results.filter(v => v.status === 'error').length}
+            <div className="text-center">
+              <div className="text-2xl font-bold text-orange-600">
+                {state.validation_results.filter(v => v.status === 'error').length}
+              </div>
+              <div className="text-sm text-muted-foreground">Issues to Fix</div>
             </div>
-            <div className="text-sm text-muted-foreground">Issues to Fix</div>
-          </div>
         </div>
       </CardContent>
     </Card>
@@ -375,7 +375,7 @@ export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }
           <div>
             <h1 className="text-3xl font-bold">Unified Agent Builder</h1>
             <p className="text-muted-foreground">
-              {state.name || 'Untitled Agent'} • {state.use_case.name}
+              {state.name || 'Untitled Agent'} • {state.use_case?.name || 'No use case selected'}
             </p>
           </div>
           <div className="flex gap-2">

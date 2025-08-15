@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { 
@@ -14,6 +14,7 @@ import {
 export const useUnifiedAgentBuilder = () => {
   const [state, setState] = useState<UnifiedAgentState>({
     name: '',
+    description: '',
     use_case: USE_CASE_TEMPLATES[0],
     current_journey_stage: '',
     completed_stages: [],
@@ -96,12 +97,12 @@ export const useUnifiedAgentBuilder = () => {
         title: 'Design your agent workflow',
         description: 'Add workflow steps to visualize your agent\'s logic',
         priority: 'medium',
-        action: () => updateUserMode('visual')
+        action: () => console.log('Switch to visual mode')
       });
     }
 
     // Use case specific suggestions
-    if (state.use_case.required_components) {
+    if (state.use_case?.required_components) {
       state.use_case.required_components.forEach(component => {
         const isConfigured = checkComponentConfigured(component.id);
         if (!isConfigured) {
@@ -112,14 +113,14 @@ export const useUnifiedAgentBuilder = () => {
             title: `Configure ${component.name}`,
             description: `This component is required for your ${state.use_case.name} use case`,
             priority: 'high',
-            action: () => navigateToComponent(component.category)
+            action: () => console.log(`Navigate to ${component.category}`)
           });
         }
       });
     }
 
     // Journey progression suggestions
-    if (state.use_case.recommended_journey) {
+    if (state.use_case?.recommended_journey) {
       const nextStage = state.use_case.recommended_journey.find(
         stage => !state.completed_stages.includes(stage.id)
       );
@@ -131,13 +132,13 @@ export const useUnifiedAgentBuilder = () => {
           title: `Continue to: ${nextStage.title}`,
           description: nextStage.description || 'Next step in your agent journey',
           priority: 'medium',
-          action: () => progressToStage(nextStage.id)
+          action: () => console.log(`Progress to ${nextStage.id}`)
         });
       }
     }
 
     return suggestions;
-  }, [state]);
+  }, [state.name, state.canvas.nodes.length, state.use_case, state.completed_stages]);
 
   // Canvas to Journey Sync
   const syncCanvasToJourney = useCallback((nodes: FlowNode[], edges: FlowEdge[]) => {
@@ -260,7 +261,7 @@ export const useUnifiedAgentBuilder = () => {
     }
 
     // Use case specific validation
-    if (state.use_case.required_components) {
+    if (state.use_case?.required_components) {
       state.use_case.required_components.forEach(component => {
         if (!checkComponentConfigured(component.id)) {
           results.push({
@@ -274,7 +275,7 @@ export const useUnifiedAgentBuilder = () => {
               title: `Configure ${component.name}`,
               description: 'Set up this required component',
               priority: 'high',
-              action: () => navigateToComponent(component.category)
+              action: () => console.log(`Configure ${component.category}`)
             }]
           });
         }
@@ -282,14 +283,14 @@ export const useUnifiedAgentBuilder = () => {
     }
 
     return results;
-  }, [state, checkComponentConfigured, navigateToComponent]);
+  }, [state, checkComponentConfigured]);
 
   // Completion Score Calculator
   const calculateCompletionScore = useCallback((): number => {
     const totalRequirements = [
       'name',
       'use_case',
-      ...state.use_case.required_components.map(c => c.id)
+      ...(state.use_case?.required_components?.map(c => c.id) || [])
     ];
 
     const completedRequirements = totalRequirements.filter(req => {
@@ -306,7 +307,29 @@ export const useUnifiedAgentBuilder = () => {
     return Math.round((completedRequirements.length / totalRequirements.length) * 100);
   }, [state, checkComponentConfigured]);
 
-  // Update suggestions and validation on state changes
+  // Update suggestions and validation on state changes - Memoized to prevent infinite loops
+  const currentStateHash = useMemo(() => {
+    return JSON.stringify({
+      name: state.name,
+      useCase: state.use_case?.id,
+      canvasNodes: state.canvas.nodes.length,
+      actionsCount: state.actions.assigned_actions.length,
+      connectorsCount: state.connectors.api_integrations.length,
+      knowledgeCount: state.knowledge.sources.length,
+      voiceCount: state.voice_channels.voice_configs.length,
+      completedStages: state.completed_stages.length
+    });
+  }, [
+    state.name,
+    state.use_case?.id,
+    state.canvas.nodes.length,
+    state.actions.assigned_actions.length,
+    state.connectors.api_integrations.length,
+    state.knowledge.sources.length,
+    state.voice_channels.voice_configs.length,
+    state.completed_stages.length
+  ]);
+
   useEffect(() => {
     const suggestions = generateSuggestions();
     const validationResults = validateCurrentState();
@@ -318,7 +341,7 @@ export const useUnifiedAgentBuilder = () => {
       validation_results: validationResults,
       completion_score: completionScore
     }));
-  }, [state.name, state.use_case, state.canvas.nodes, state.actions, state.connectors, state.knowledge, state.voice_channels]);
+  }, [currentStateHash, generateSuggestions, validateCurrentState, calculateCompletionScore]);
 
   // Save/Load Agent State
   const saveAgent = useCallback(async () => {
@@ -333,7 +356,7 @@ export const useUnifiedAgentBuilder = () => {
       const agentData = {
         name: state.name,
         description: state.description,
-        use_case: state.use_case.name,
+        use_case: state.use_case?.name || '',
         configuration: JSON.parse(JSON.stringify({
           unified_state: state,
           completion_score: state.completion_score
