@@ -28,6 +28,16 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -83,6 +93,9 @@ const AgentsInner = () => {
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const [isDeletingInProgress, setIsDeletingInProgress] = useState(false);
+  const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
+  const [showDeleteInProgressDialog, setShowDeleteInProgressDialog] = useState(false);
   const { userRoles, user } = useMasterAuth();
   const { userSessions, isLoading: sessionsLoading, setCurrentSessionId } = useAgentBuilder();
   const { deleteSession } = useAgentSession();
@@ -222,12 +235,9 @@ const AgentsInner = () => {
   };
 
   // Delete all draft agents and sessions for current user
-  const handleDeleteAllDrafts = async () => {
+  const performDeleteAllDrafts = async () => {
     if (isDeletingAll) return;
     if (!user?.id) return;
-    
-    const confirmDelete = window.confirm('Delete ALL drafts (agents and sessions)? This cannot be undone.');
-    if (!confirmDelete) return;
     
     setIsDeletingAll(true);
     try {
@@ -261,6 +271,48 @@ const AgentsInner = () => {
       toast.error('Failed to delete all drafts');
     } finally {
       setIsDeletingAll(false);
+      setShowDeleteAllDialog(false);
+    }
+  };
+
+  // Delete all in_progress agents and sessions for current user
+  const performDeleteInProgress = async () => {
+    if (isDeletingInProgress) return;
+    if (!user?.id) return;
+    
+    setIsDeletingInProgress(true);
+    try {
+      const [sessionsRes, agentsRes] = await Promise.all([
+        supabase
+          .from('agent_sessions')
+          .delete()
+          .eq('status', 'in_progress')
+          .eq('user_id', user.id),
+        supabase
+          .from('agents')
+          .delete()
+          .eq('status', 'in_progress')
+          .eq('created_by', user.id),
+      ]);
+      
+      if (sessionsRes.error) throw sessionsRes.error;
+      if (agentsRes.error) throw agentsRes.error;
+      
+      // Update local list: keep draft items only
+      const remaining = draftSessions.filter(s => s.status !== 'in_progress');
+      setDraftSessions(remaining);
+      toast.success('All in-progress agents and sessions deleted');
+      
+      if (remaining.length === 0) {
+        setShowSessionOptions(false);
+        setShowWelcomeFlow(true);
+      }
+    } catch (error) {
+      console.error('Error deleting in-progress items:', error);
+      toast.error('Failed to delete in-progress items');
+    } finally {
+      setIsDeletingInProgress(false);
+      setShowDeleteInProgressDialog(false);
     }
   };
   // Continue with saved progress
@@ -430,17 +482,80 @@ const AgentsInner = () => {
                   </Button>
                   <Button 
                     variant="outline" 
-                    onClick={handleDeleteAllDrafts}
+                    onClick={() => setShowDeleteAllDialog(true)}
                     disabled={isDeletingAll}
                     className="w-full mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
                   >
-                    {isDeletingAll ? 'Deleting...' : 'Delete ALL Drafts'}
+                    Delete ALL Drafts
                   </Button>
+                  
+                  {draftSessions.filter(s => s.status === 'in_progress').length > 0 && (
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setShowDeleteInProgressDialog(true)}
+                      disabled={isDeletingInProgress}
+                      className="w-full mt-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50"
+                    >
+                      Delete In-Progress Agents
+                    </Button>
+                  )}
                 </div>
               )}
             </div>
           </div>
         </div>
+        
+        {/* Delete All Drafts Dialog */}
+        <AlertDialog open={showDeleteAllDialog} onOpenChange={setShowDeleteAllDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-red-500" />
+                Delete ALL Drafts
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete all draft agents and sessions. This action cannot be undone.
+                Are you sure you want to continue?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingAll}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={performDeleteAllDrafts}
+                disabled={isDeletingAll}
+                className="bg-destructive hover:bg-destructive/90"
+              >
+                {isDeletingAll ? 'Deleting...' : 'Delete All Drafts'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
+        
+        {/* Delete In-Progress Dialog */}
+        <AlertDialog open={showDeleteInProgressDialog} onOpenChange={setShowDeleteInProgressDialog}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-amber-500" />
+                Delete In-Progress Agents
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                This will permanently delete all in-progress agents and sessions. This action cannot be undone.
+                Are you sure you want to continue?
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={isDeletingInProgress}>Cancel</AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={performDeleteInProgress}
+                disabled={isDeletingInProgress}
+                className="bg-amber-600 hover:bg-amber-700"
+              >
+                {isDeletingInProgress ? 'Deleting...' : 'Delete In-Progress Items'}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     );
   }
