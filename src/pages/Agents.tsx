@@ -50,8 +50,8 @@ import ModePicker from '@/components/agent-builder/ModePicker';
 import { IntelligentQuestionnaire } from '@/components/agent-builder/IntelligentQuestionnaire';
 import { Intelligence } from './Intelligence';
 
-// Lazy load the workflow studio
-const EmbeddedWorkflowStudio = React.lazy(() => import('@/components/agent-builder/EmbeddedWorkflowStudio'));
+// Direct import instead of lazy loading to fix dynamic import error
+import EmbeddedWorkflowStudio from '@/components/agent-builder/EmbeddedWorkflowStudio';
 
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
@@ -732,14 +732,7 @@ const AgentsInner = () => {
                     <Badge variant="outline" className="text-xs">Real-time Testing</Badge>
                   </div>
                 </div>
-                <Suspense fallback={<div className="flex items-center justify-center p-8">
-                  <div className="text-center">
-                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                    <p className="text-sm text-muted-foreground">Loading Enhanced Workflow Builder...</p>
-                  </div>
-                </div>}>
-                  <EmbeddedWorkflowStudio />
-                </Suspense>
+                <EmbeddedWorkflowStudio />
               </div>
             </TabsContent>
             

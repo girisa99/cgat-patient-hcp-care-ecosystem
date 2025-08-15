@@ -120,13 +120,15 @@ const getInitialQuestions = (): DynamicQuestion[] => [
   }
 ];
 
-// Generate follow-up questions based on responses
+// Generate follow-up questions based on responses - with deduplication
 const generateFollowUpQuestions = async (responses: QuestionnaireResponse[]): Promise<DynamicQuestion[]> => {
   const experienceLevel = responses.find(r => r.questionId === 'experience_level')?.value;
   const motivation = responses.find(r => r.questionId === 'primary_motivation')?.value;
   const problemClarity = responses.find(r => r.questionId === 'problem_clarity')?.value;
 
   const followUpQuestions: DynamicQuestion[] = [];
+  
+  console.log('🔍 Generating follow-ups for:', { experienceLevel, motivation, problemClarity });
 
   // Beginner path
   if (experienceLevel?.includes('Complete beginner')) {
@@ -428,6 +430,7 @@ export const DynamicQuestionnaireEngine: React.FC<DynamicQuestionnaireEngineProp
   const [responses, setResponses] = useState<QuestionnaireResponse[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [currentAnalysis, setCurrentAnalysis] = useState<Partial<QuestionnaireAnalysis>>({});
+  const [generatedFollowUps, setGeneratedFollowUps] = useState<Set<string>>(new Set()); // Track generated follow-ups
 
   const currentQuestion = currentQuestions[currentQuestionIndex];
   const progress = ((currentQuestionIndex + responses.length) / (currentQuestions.length + responses.length)) * 100;
@@ -456,16 +459,38 @@ export const DynamicQuestionnaireEngine: React.FC<DynamicQuestionnaireEngineProp
       }
     }
 
-    // Generate follow-up questions dynamically
-    if (currentQuestionIndex === currentQuestions.length - 1) {
+    // Generate follow-up questions dynamically - but prevent duplicates
+    const responseKey = `${questionId}-${JSON.stringify(value)}`;
+    if (currentQuestionIndex === currentQuestions.length - 1 && !generatedFollowUps.has(responseKey)) {
       const followUps = await generateFollowUpQuestions(updatedResponses);
       if (followUps.length > 0) {
-        setCurrentQuestions(prev => [...prev, ...followUps]);
+        // Filter out questions that already exist
+        const newQuestions = followUps.filter(followUp => 
+          !currentQuestions.some(existing => existing.id === followUp.id)
+        );
+        
+        if (newQuestions.length > 0) {
+          console.log(`Adding ${newQuestions.length} new follow-up questions:`, newQuestions.map(q => q.id));
+          setCurrentQuestions(prev => [...prev, ...newQuestions]);
+          setGeneratedFollowUps(prev => new Set([...prev, responseKey]));
+        }
       }
     }
   }, [responses, currentQuestionIndex, onAnalysisUpdate]);
 
   const handleNext = () => {
+    const currentResponse = responses.find(r => r.questionId === currentQuestion?.id);
+    
+    // Only advance if current question is answered (or optional)
+    if (currentQuestion?.required && !currentResponse) {
+      toast({
+        title: "Question Required",
+        description: "Please answer this question before continuing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
     if (currentQuestionIndex < currentQuestions.length - 1) {
       setCurrentQuestionIndex(prev => prev + 1);
     } else {
