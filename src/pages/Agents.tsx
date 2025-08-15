@@ -183,7 +183,7 @@ const AgentsInner = () => {
     try {
       // Call the cleanup function from Supabase
       const { data, error } = await supabase.rpc('cleanup_old_draft_agents', {
-        p_user_id: null, // null means current user
+        p_user_id: user?.id,
         p_confirm: true
       });
       
@@ -221,28 +221,36 @@ const AgentsInner = () => {
     }
   };
 
-  // Delete all draft sessions for current user
+  // Delete all draft agents and sessions for current user
   const handleDeleteAllDrafts = async () => {
     if (isDeletingAll) return;
     if (!user?.id) return;
     
-    const confirmDelete = window.confirm('Delete ALL draft agents? This cannot be undone.');
+    const confirmDelete = window.confirm('Delete ALL drafts (agents and sessions)? This cannot be undone.');
     if (!confirmDelete) return;
     
     setIsDeletingAll(true);
     try {
-      const { error } = await supabase
-        .from('agent_sessions')
-        .delete()
-        .eq('status', 'draft')
-        .eq('user_id', user.id);
+      const [sessionsRes, agentsRes] = await Promise.all([
+        supabase
+          .from('agent_sessions')
+          .delete()
+          .eq('status', 'draft')
+          .eq('user_id', user.id),
+        supabase
+          .from('agents')
+          .delete()
+          .eq('status', 'draft')
+          .eq('created_by', user.id),
+      ]);
       
-      if (error) throw error;
+      if (sessionsRes.error) throw sessionsRes.error;
+      if (agentsRes.error) throw agentsRes.error;
       
       // Update local list: keep in_progress items only
       const remaining = draftSessions.filter(s => s.status !== 'draft');
       setDraftSessions(remaining);
-      toast.success('All draft agents deleted');
+      toast.success('All draft agents and sessions deleted');
       
       if (remaining.length === 0) {
         setShowSessionOptions(false);
