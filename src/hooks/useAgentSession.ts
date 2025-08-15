@@ -133,7 +133,7 @@ export const useAgentSession = (sessionId?: string) => {
       return data as AgentSession;
     },
     onSuccess: (data) => {
-      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user?.id] });
       setCurrentSession(data);
       toast({
         title: "Session Created",
@@ -183,7 +183,7 @@ export const useAgentSession = (sessionId?: string) => {
     },
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['agent-session', data.id] });
-      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user?.id] });
       setCurrentSession(data);
     },
     onError: (error: any) => {
@@ -254,7 +254,7 @@ export const useAgentSession = (sessionId?: string) => {
     },
     onSuccess: () => {
       console.log('🔄 Invalidating queries after successful delete');
-      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user?.id] });
       
       // Show both toast types to test which one works
       toast({

@@ -252,7 +252,7 @@ const AgentsInner = () => {
       console.log('🗑️ RPC result (drafts):', data);
       
       // Refresh state
-      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       
       // Update local
@@ -289,7 +289,7 @@ const AgentsInner = () => {
       console.log('🗑️ RPC result (in-progress):', data);
       
       // Refresh state
-      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       
       const remaining = draftSessions.filter(s => s.status !== 'in_progress');

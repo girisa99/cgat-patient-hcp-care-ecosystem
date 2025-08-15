@@ -88,7 +88,7 @@ export const useDraftCleanup = () => {
       return data as unknown as CleanupResult;
     },
     onSuccess: (result) => {
-      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user?.id] });
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       queryClient.invalidateQueries({ queryKey: ['draft-cleanup-preview'] });
       queryClient.invalidateQueries({ queryKey: ['old-draft-agents'] });
