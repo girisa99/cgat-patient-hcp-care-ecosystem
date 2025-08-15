@@ -20,6 +20,7 @@ import {
   Target
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 
 export interface DynamicQuestion {
@@ -483,13 +484,41 @@ export const DynamicQuestionnaireEngine: React.FC<DynamicQuestionnaireEngineProp
     try {
       const finalAnalysis = await analyzeResponses(responses);
       
-      // TODO: Store questionnaire session once types are updated
-      // Database storage will be enabled after the migration is reflected in types
-      console.log('Questionnaire completed:', {
-        responses: responses.length,
-        suitabilityScore: finalAnalysis.suitabilityScore,
-        recommendation: finalAnalysis.agentRecommendation
-      });
+      // Store questionnaire session in database
+      try {
+        const { data: user } = await supabase.auth.getUser();
+        
+        if (user.user) {
+          const sessionData = {
+            user_id: user.user.id,
+            responses: responses as any,
+            analysis: finalAnalysis as any,
+            session_type: 'dynamic_onboarding' as const,
+            suitability_score: finalAnalysis.suitabilityScore,
+            agent_recommendation: finalAnalysis.agentRecommendation,
+            recommended_path: finalAnalysis.recommendedPath,
+            complexity_level: finalAnalysis.complexityLevel,
+            estimated_timeline: finalAnalysis.estimatedTimeline,
+            resources_needed: finalAnalysis.resourcesNeeded as any,
+            insights: finalAnalysis.insights as any,
+            completed_at: new Date().toISOString()
+          };
+
+          const { error: insertError } = await supabase
+            .from('questionnaire_sessions')
+            .insert(sessionData);
+
+          if (insertError) {
+            console.error('Failed to store questionnaire session:', insertError);
+            // Continue without blocking user experience
+          } else {
+            console.log('Questionnaire session stored successfully');
+          }
+        }
+      } catch (dbError) {
+        console.error('Database error while storing questionnaire session:', dbError);
+        // Continue without blocking user experience
+      }
 
       onComplete(responses, finalAnalysis);
     } catch (error) {
