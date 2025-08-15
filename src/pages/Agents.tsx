@@ -33,6 +33,9 @@ import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builde
 import ModePicker from '@/components/agent-builder/ModePicker';
 import { WelcomeFlow } from '@/components/agent-builder/WelcomeFlow';
 
+// Lazy load the workflow studio
+const EmbeddedWorkflowStudio = React.lazy(() => import('@/components/agent-builder/EmbeddedWorkflowStudio'));
+
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
 };
@@ -268,7 +271,7 @@ const AgentsInner = () => {
                     <p className="text-sm text-muted-foreground">Loading Enhanced Workflow Builder...</p>
                   </div>
                 </div>}>
-                  {React.createElement(React.lazy(() => import('@/components/agent-builder/EmbeddedWorkflowStudio').then(m => ({ default: m.default }))))}
+                  <EmbeddedWorkflowStudio />
                 </Suspense>
               </div>
             </TabsContent>
