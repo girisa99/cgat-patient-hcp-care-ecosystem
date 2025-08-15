@@ -35,16 +35,18 @@ export const useAgentSession = (sessionId?: string) => {
 
   // Fetch user's sessions
   const { data: userSessions = [] } = useQuery({
-    queryKey: ['user-agent-sessions'],
+    queryKey: ['user-agent-sessions', user?.id],
     queryFn: async () => {
+      if (!user?.id) return [] as AgentSession[];
       const { data, error } = await supabase
         .from('agent_sessions')
         .select('*')
+        .eq('user_id', user.id)
         .order('updated_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching user sessions:', error);
-        return [];
+        return [] as AgentSession[];
       }
 
       return (data || []) as AgentSession[];
