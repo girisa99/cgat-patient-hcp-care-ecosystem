@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -10,22 +10,17 @@ import { Progress } from '@/components/ui/progress';
 import { 
   Bot, 
   Brain, 
-  MessageSquare, 
-  Target, 
   ArrowRight, 
   ArrowLeft,
   CheckCircle,
   AlertTriangle,
-  Lightbulb,
-  BarChart3,
-  Clock,
   Users,
   Building,
   Zap,
-  HelpCircle
+  Target
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+
 
 export interface DynamicQuestion {
   id: string;

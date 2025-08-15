@@ -1,19 +1,13 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
+
 import { 
   Bot, 
-  Users, 
-  MessageSquare, 
   Target, 
   ArrowRight,
-  CheckCircle,
-  Star,
   Lightbulb,
-  BarChart3,
-  HelpCircle,
-  ExternalLink
+  BarChart3
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DynamicQuestionnaireEngine, QuestionnaireAnalysis, QuestionnaireResponse } from './DynamicQuestionnaireEngine';
