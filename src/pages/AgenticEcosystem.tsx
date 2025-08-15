@@ -35,7 +35,11 @@ interface Agent {
   updated_at?: string;
 }
 
-const AgenticEcosystem = () => {
+interface AgenticEcosystemProps {
+  openBuilderSignal?: number;
+}
+
+const AgenticEcosystem: React.FC<AgenticEcosystemProps> = ({ openBuilderSignal }) => {
   console.log('🤖 AgenticEcosystem component rendering...');
   
   const [activeTab, setActiveTab] = useState('overview');
@@ -49,6 +53,15 @@ const AgenticEcosystem = () => {
   React.useEffect(() => {
     console.log('📋 Active tab is now:', activeTab);
   }, [activeTab]);
+
+  // Open builder on signal from parent
+  React.useEffect(() => {
+    if (openBuilderSignal) {
+      console.log('🎯 Received openBuilderSignal, switching to basic_info');
+      setShowWelcomeFlow(false);
+      setActiveTab('basic_info');
+    }
+  }, [openBuilderSignal]);
 
   // Fetch real agents data from database - using the same source as MinimalAgentBuilder
   const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({

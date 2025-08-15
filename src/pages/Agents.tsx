@@ -86,6 +86,7 @@ const AgentsInner = () => {
   const [showWelcomeFlow, setShowWelcomeFlow] = useState(false);
   const [welcomeData, setWelcomeData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('ecosystem');
+  const [openBuilderSignal, setOpenBuilderSignal] = useState(0);
   const [showPresentation, setShowPresentation] = useState(false);
   const [showProgressOptions, setShowProgressOptions] = useState(false);
   const [showSessionOptions, setShowSessionOptions] = useState(false);
@@ -253,7 +254,7 @@ const AgentsInner = () => {
       
       // Refresh state
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      queryClient.invalidateQueries({ queryKey: ['agents', user?.id] });
       
       // Update local
       const remaining = draftSessions.filter(s => s.status !== 'draft');
@@ -290,7 +291,7 @@ const AgentsInner = () => {
       
       // Refresh state
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user?.id] });
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      queryClient.invalidateQueries({ queryKey: ['agents', user?.id] });
       
       const remaining = draftSessions.filter(s => s.status !== 'in_progress');
       setDraftSessions(remaining);
@@ -596,7 +597,13 @@ const AgentsInner = () => {
 
   // Show welcome flow for new agents
   if (showWelcomeFlow) {
-    return <WelcomeFlow onComplete={handleWelcomeComplete} />;
+    return (
+      <AppLayout>
+        <div className="p-4">
+          <WelcomeFlow onComplete={handleWelcomeComplete} />
+        </div>
+      </AppLayout>
+    );
   }
 
   // Add error boundary for debugging
@@ -646,12 +653,13 @@ const AgentsInner = () => {
                 <Workflow className="w-4 h-4" />
                 Visual Workflow Builder
               </Button>
-              <Link to="/agents/new">
-                <Button className="flex items-center gap-2">
-                  <Bot className="w-4 h-4" />
-                  New Agent
-                </Button>
-              </Link>
+              <Button className="flex items-center gap-2" onClick={() => {
+                setActiveTab('ecosystem');
+                setOpenBuilderSignal((v) => v + 1);
+              }}>
+                <Bot className="w-4 h-4" />
+                New Agent
+              </Button>
               <Button 
                 variant="outline" 
                 onClick={() => setShowPresentation(!showPresentation)}
@@ -697,7 +705,7 @@ const AgentsInner = () => {
             </TabsList>
 
             <TabsContent value="ecosystem" className="parent-tab-content">
-              <AgenticEcosystem />
+              <AgenticEcosystem openBuilderSignal={openBuilderSignal} />
             </TabsContent>
             
             <TabsContent value="workflow-studio" className="parent-tab-content">
