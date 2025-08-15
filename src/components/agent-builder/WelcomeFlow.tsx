@@ -15,7 +15,9 @@ import {
   Workflow,
   MessageCircle,
   User,
-  RefreshCw
+  RefreshCw,
+  ArrowLeft,
+  Edit
 } from 'lucide-react';
 
 interface WelcomeFlowProps {
@@ -265,23 +267,35 @@ export const WelcomeFlow: React.FC<WelcomeFlowProps> = ({ onComplete }) => {
               <span className="text-sm text-muted-foreground">
                 {useCase.length} characters
               </span>
-              <Button 
-                onClick={analyzeUseCase}
-                disabled={!useCase.trim() || isAnalyzing}
-                className="flex items-center gap-2"
-              >
-                {isAnalyzing ? (
-                  <>
-                    <RefreshCw className="w-4 h-4 animate-spin" />
-                    Analyzing...
-                  </>
-                ) : (
-                  <>
-                    <Lightbulb className="w-4 h-4" />
-                    Analyze Use Case
-                  </>
+              <div className="flex gap-2">
+                {currentStep > 0 && (
+                  <Button 
+                    variant="outline"
+                    onClick={() => setCurrentStep(0)}
+                    className="flex items-center gap-2"
+                  >
+                    <ArrowLeft className="w-4 h-4" />
+                    Back
+                  </Button>
                 )}
-              </Button>
+                <Button 
+                  onClick={analyzeUseCase}
+                  disabled={!useCase.trim() || isAnalyzing}
+                  className="flex items-center gap-2"
+                >
+                  {isAnalyzing ? (
+                    <>
+                      <RefreshCw className="w-4 h-4 animate-spin" />
+                      Analyzing...
+                    </>
+                  ) : (
+                    <>
+                      <Lightbulb className="w-4 h-4" />
+                      Analyze Use Case
+                    </>
+                  )}
+                </Button>
+              </div>
             </div>
           </CardContent>
         </Card>
@@ -400,7 +414,18 @@ export const WelcomeFlow: React.FC<WelcomeFlowProps> = ({ onComplete }) => {
           </div>
         </div>
 
-        <div className="flex justify-center">
+        <div className="flex justify-between items-center">
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              onClick={() => setCurrentStep(1)}
+              className="flex items-center gap-2"
+            >
+              <Edit className="w-4 h-4" />
+              Edit Use Case
+            </Button>
+          </div>
+          
           <Button onClick={() => setCurrentStep(3)} className="flex items-center gap-2">
             <CheckCircle className="w-4 h-4" />
             Looks Good, Continue
@@ -505,13 +530,24 @@ export const WelcomeFlow: React.FC<WelcomeFlowProps> = ({ onComplete }) => {
           </Card>
         </div>
 
-        <Card className="bg-amber-50 border-amber-200">
-          <CardContent className="p-4">
-            <p className="text-sm text-amber-800">
-              <strong>💡 Don't worry!</strong> You can switch between modes at any time during the configuration process.
-            </p>
-          </CardContent>
-        </Card>
+        <div className="flex justify-between items-center">
+          <Button 
+            variant="outline"
+            onClick={() => setCurrentStep(2)}
+            className="flex items-center gap-2"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            Back to Analysis
+          </Button>
+          
+          <Card className="bg-amber-50 border-amber-200 flex-1 mx-4">
+            <CardContent className="p-4">
+              <p className="text-sm text-amber-800">
+                <strong>💡 Don't worry!</strong> You can switch between modes at any time during the configuration process.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     )
   ];
