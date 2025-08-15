@@ -1199,6 +1199,54 @@ export type Database = {
         }
         Relationships: []
       }
+      alternative_solutions: {
+        Row: {
+          category: string
+          complexity_level: string | null
+          contact_info: Json | null
+          created_at: string | null
+          description: string | null
+          external_url: string | null
+          id: string
+          implementation_time: string | null
+          is_active: boolean | null
+          name: string
+          pricing_info: string | null
+          suitability_criteria: Json
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          complexity_level?: string | null
+          contact_info?: Json | null
+          created_at?: string | null
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          implementation_time?: string | null
+          is_active?: boolean | null
+          name: string
+          pricing_info?: string | null
+          suitability_criteria?: Json
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          complexity_level?: string | null
+          contact_info?: Json | null
+          created_at?: string | null
+          description?: string | null
+          external_url?: string | null
+          id?: string
+          implementation_time?: string | null
+          is_active?: boolean | null
+          name?: string
+          pricing_info?: string | null
+          suitability_criteria?: Json
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       api_consumption_logs: {
         Row: {
           api_integration_id: string
@@ -5955,6 +6003,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      questionnaire_sessions: {
+        Row: {
+          agent_recommendation: string | null
+          analysis: Json
+          completed_at: string | null
+          complexity_level: string | null
+          created_at: string | null
+          estimated_timeline: string | null
+          id: string
+          insights: Json | null
+          recommended_path: string | null
+          resources_needed: Json | null
+          responses: Json
+          session_type: string
+          suitability_score: number | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          agent_recommendation?: string | null
+          analysis?: Json
+          completed_at?: string | null
+          complexity_level?: string | null
+          created_at?: string | null
+          estimated_timeline?: string | null
+          id?: string
+          insights?: Json | null
+          recommended_path?: string | null
+          resources_needed?: Json | null
+          responses?: Json
+          session_type?: string
+          suitability_score?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          agent_recommendation?: string | null
+          analysis?: Json
+          completed_at?: string | null
+          complexity_level?: string | null
+          created_at?: string | null
+          estimated_timeline?: string | null
+          id?: string
+          insights?: Json | null
+          recommended_path?: string | null
+          resources_needed?: Json | null
+          responses?: Json
+          session_type?: string
+          suitability_score?: number | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
       }
       rag_recommendations: {
         Row: {
