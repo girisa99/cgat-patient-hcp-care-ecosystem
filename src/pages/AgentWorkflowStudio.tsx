@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Target, Map, Bot, Settings, Phone, TestTube, Rocket, 
   ArrowRight, CheckCircle, RotateCcw, Eye, X, Workflow
@@ -18,6 +19,7 @@ import { EnhancedLSPanel } from '@/components/label-studio/EnhancedLSPanel';
 import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedJourneyDesigner, type JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
+import MCPDemoComponent from '@/components/MCPDemoComponent';
 interface AgentWorkflowStudioProps {
   embedded?: boolean;
 }
@@ -490,11 +492,33 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
               </TabsContent>
               
               <TabsContent value="mcp" level="child" className="space-y-4">
-                <div className="space-y-2">
-                  <p className="text-sm text-muted-foreground">Model Context Protocol tools for agent actions.</p>
-                  <Button variant="outline" onClick={() => navigate('/mcp')}>
-                    Open MCP Tools Page
-                  </Button>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">Model Context Protocol tools for agent actions.</p>
+                    <div className="text-xs text-muted-foreground bg-blue-50 dark:bg-blue-950 p-3 rounded-lg border">
+                      <strong>What is MCP Tools?</strong> Model Context Protocol provides standardized tools for your agent to interact with external systems, databases, and APIs. Use this to connect your agent to healthcare systems, file systems, and other data sources.
+                    </div>
+                  </div>
+                  
+                  <Dialog>
+                    <DialogTrigger asChild>
+                      <Button variant="outline">
+                        Configure MCP Tools
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent className="max-w-4xl h-[80vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>MCP Tools Configuration</DialogTitle>
+                      </DialogHeader>
+                      <div className="mt-4">
+                        <MCPDemoComponent />
+                      </div>
+                    </DialogContent>
+                  </Dialog>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    <strong>Default Mode:</strong> MCP servers start in development mode. Use the dialog above to configure and start your MCP servers without leaving this workflow.
+                  </div>
                 </div>
               </TabsContent>
               
@@ -864,7 +888,19 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
           <div className="max-w-7xl mx-auto px-6 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
               <ModePicker />
-              <Button variant="outline" onClick={() => navigate('/mcp')}>MCP Tools</Button>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">MCP Tools</Button>
+                </DialogTrigger>
+                <DialogContent className="max-w-4xl h-[80vh] overflow-y-auto">
+                  <DialogHeader>
+                    <DialogTitle>MCP Tools Configuration</DialogTitle>
+                  </DialogHeader>
+                  <div className="mt-4">
+                    <MCPDemoComponent />
+                  </div>
+                </DialogContent>
+              </Dialog>
             </div>
             <div className="flex items-center gap-2">
               <Button variant="outline" onClick={gotoPrev} disabled={wizardSteps.findIndex(s => s.id === currentStep) === 0}>Previous</Button>

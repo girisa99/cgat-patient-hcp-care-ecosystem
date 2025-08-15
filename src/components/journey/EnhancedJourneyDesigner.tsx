@@ -72,6 +72,45 @@ export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = (
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [aiSuggestions, setAiSuggestions] = useState<JourneyStep[]>([]);
   const [showAISuggestions, setShowAISuggestions] = useState(false);
+  
+  // Local drafts to prevent input resets while typing
+  const [drafts, setDrafts] = useState<Record<string, { title: string; description: string }>>({});
+
+  // Initialize drafts when steps change
+  React.useEffect(() => {
+    const newDrafts: Record<string, { title: string; description: string }> = {};
+    steps.forEach(step => {
+      if (!drafts[step.id]) {
+        newDrafts[step.id] = {
+          title: step.title,
+          description: step.description
+        };
+      }
+    });
+    if (Object.keys(newDrafts).length > 0) {
+      setDrafts(prev => ({ ...prev, ...newDrafts }));
+    }
+  }, [steps]);
+
+  const updateDraft = (stepId: string, field: 'title' | 'description', value: string) => {
+    setDrafts(prev => ({
+      ...prev,
+      [stepId]: {
+        ...prev[stepId],
+        [field]: value
+      }
+    }));
+  };
+
+  const saveDraft = (stepId: string) => {
+    const draft = drafts[stepId];
+    if (draft) {
+      updateStep(stepId, { 
+        title: draft.title,
+        description: draft.description 
+      });
+    }
+  };
 
   // Move step up or down
   const moveStep = useCallback((stepId: string, direction: 'up' | 'down') => {
@@ -384,14 +423,16 @@ export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = (
                     {editingStep === step.id ? (
                       <div className="flex-1 space-y-2">
                         <Input
-                          value={step.title}
-                          onChange={(e) => updateStep(step.id, { title: e.target.value })}
+                          value={drafts[step.id]?.title ?? step.title}
+                          onChange={(e) => updateDraft(step.id, 'title', e.target.value)}
+                          onBlur={() => saveDraft(step.id)}
                           className="font-medium"
                           placeholder="Step title"
                         />
                         <Input
-                          value={step.description}
-                          onChange={(e) => updateStep(step.id, { description: e.target.value })}
+                          value={drafts[step.id]?.description ?? step.description}
+                          onChange={(e) => updateDraft(step.id, 'description', e.target.value)}
+                          onBlur={() => saveDraft(step.id)}
                           className="text-sm"
                           placeholder="Step description"
                         />
@@ -550,11 +591,19 @@ export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = (
       </div>
 
       {onGenerateEcosystem && (
-        <div className="flex justify-center pt-4">
-          <Button onClick={onGenerateEcosystem} size="lg" className="flex items-center gap-2">
-            <Bot className="w-5 h-5" />
-            Generate Agent Ecosystem
-          </Button>
+        <div className="space-y-3">
+          <div className="text-center text-sm text-muted-foreground bg-green-50 dark:bg-green-950 p-3 rounded-lg border">
+            <strong>What does "Generate Agent Ecosystem" do?</strong><br />
+            This creates a complete agent configuration based on your journey steps, including:
+            • Canvas workflow visualization • Action templates • Knowledge bases • Integration connectors
+            <br />It moves you to the next phase where you'll configure these generated components.
+          </div>
+          <div className="flex justify-center">
+            <Button onClick={onGenerateEcosystem} size="lg" className="flex items-center gap-2">
+              <Bot className="w-5 h-5" />
+              Generate Agent Ecosystem
+            </Button>
+          </div>
         </div>
       )}
     </div>
