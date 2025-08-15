@@ -46,7 +46,10 @@ const generateUseCaseSpecificSteps = (useCase: string, modelType: string): Journ
   const steps: JourneyStep[] = [];
 
   // Healthcare-specific comprehensive suggestions
-  if (lowerUseCase.includes('healthcare') || lowerUseCase.includes('medical') || lowerUseCase.includes('patient')) {
+  if (lowerUseCase.includes('healthcare') || lowerUseCase.includes('medical') || lowerUseCase.includes('patient') || 
+      lowerUseCase.includes('health') || lowerUseCase.includes('clinical') || lowerUseCase.includes('hospital') ||
+      lowerUseCase.includes('doctor') || lowerUseCase.includes('nurse') || lowerUseCase.includes('care') ||
+      lowerUseCase.includes('treatment') || lowerUseCase.includes('diagnosis') || lowerUseCase.includes('therapy')) {
     steps.push(
       {
         id: `ai-step-${Date.now()}-1`,
@@ -140,7 +143,10 @@ const generateUseCaseSpecificSteps = (useCase: string, modelType: string): Journ
   }
 
   // Insurance/Prior Authorization comprehensive workflow
-  if (lowerUseCase.includes('insurance') || lowerUseCase.includes('authorization') || lowerUseCase.includes('benefits') || lowerUseCase.includes('claims')) {
+  if (lowerUseCase.includes('insurance') || lowerUseCase.includes('authorization') || lowerUseCase.includes('benefits') || lowerUseCase.includes('claims') ||
+      lowerUseCase.includes('coverage') || lowerUseCase.includes('eligibility') || lowerUseCase.includes('payer') ||
+      lowerUseCase.includes('copay') || lowerUseCase.includes('deductible') || lowerUseCase.includes('billing') ||
+      lowerUseCase.includes('reimbursement') || lowerUseCase.includes('prior auth') || lowerUseCase.includes('preauthorization')) {
     steps.push(
       {
         id: `ai-step-${Date.now()}-10`,
@@ -234,7 +240,10 @@ const generateUseCaseSpecificSteps = (useCase: string, modelType: string): Journ
   }
 
   // Customer Support comprehensive workflow
-  if (lowerUseCase.includes('customer') || lowerUseCase.includes('support') || lowerUseCase.includes('service') || lowerUseCase.includes('help')) {
+  if (lowerUseCase.includes('customer') || lowerUseCase.includes('support') || lowerUseCase.includes('service') || lowerUseCase.includes('help') ||
+      lowerUseCase.includes('inquiry') || lowerUseCase.includes('ticket') || lowerUseCase.includes('complaint') ||
+      lowerUseCase.includes('feedback') || lowerUseCase.includes('chat') || lowerUseCase.includes('call center') ||
+      lowerUseCase.includes('helpdesk') || lowerUseCase.includes('resolution') || lowerUseCase.includes('escalation')) {
     steps.push(
       {
         id: `ai-step-${Date.now()}-20`,
@@ -339,7 +348,10 @@ const generateUseCaseSpecificSteps = (useCase: string, modelType: string): Journ
   }
 
   // Document Processing comprehensive workflow
-  if (lowerUseCase.includes('document') || lowerUseCase.includes('processing') || lowerUseCase.includes('ocr') || lowerUseCase.includes('extraction')) {
+  if (lowerUseCase.includes('document') || lowerUseCase.includes('processing') || lowerUseCase.includes('ocr') || lowerUseCase.includes('extraction') ||
+      lowerUseCase.includes('form') || lowerUseCase.includes('pdf') || lowerUseCase.includes('scan') ||
+      lowerUseCase.includes('invoice') || lowerUseCase.includes('receipt') || lowerUseCase.includes('contract') ||
+      lowerUseCase.includes('data entry') || lowerUseCase.includes('digitization') || lowerUseCase.includes('automation')) {
     steps.push(
       {
         id: `ai-step-${Date.now()}-30`,
@@ -439,6 +451,275 @@ const generateUseCaseSpecificSteps = (useCase: string, modelType: string): Journ
         requirements: ['Audit Standards', 'Compliance Rules', 'Reporting Templates', 'Archive Storage'],
         estimatedDuration: 4,
         dependencies: ['Data Integration & System Updates']
+      }
+    );
+  }
+
+  // E-commerce & Sales comprehensive workflow
+  if (lowerUseCase.includes('ecommerce') || lowerUseCase.includes('e-commerce') || lowerUseCase.includes('sales') || lowerUseCase.includes('order') ||
+      lowerUseCase.includes('product') || lowerUseCase.includes('checkout') || lowerUseCase.includes('cart') ||
+      lowerUseCase.includes('purchase') || lowerUseCase.includes('payment') || lowerUseCase.includes('shopping') ||
+      lowerUseCase.includes('recommendation') || lowerUseCase.includes('inventory') || lowerUseCase.includes('fulfillment')) {
+    steps.push(
+      {
+        id: `ai-step-${Date.now()}-40`,
+        title: 'Customer Journey & Behavior Analysis',
+        description: 'Analyze customer behavior patterns and journey touchpoints for personalized experience',
+        type: 'decision',
+        connectors: ['Analytics Engine', 'Behavior Tracker', 'Journey Mapper', 'Personalization Engine'],
+        actions: ['Behavior Analysis', 'Journey Mapping', 'Personalization Rules', 'Segment Classification'],
+        requirements: ['Analytics Platform', 'Customer Data', 'ML Models', 'Real-time Processing'],
+        estimatedDuration: 6,
+        dependencies: ['Customer Authentication']
+      },
+      {
+        id: `ai-step-${Date.now()}-41`,
+        title: 'AI-Powered Product Recommendation',
+        description: 'Generate personalized product recommendations based on user preferences and behavior',
+        type: 'decision',
+        connectors: ['Recommendation Engine', 'Product Catalog', 'User Preferences', 'ML Models'],
+        actions: ['Preference Analysis', 'Collaborative Filtering', 'Content-based Filtering', 'Hybrid Recommendations'],
+        requirements: ['ML Models', 'Product Data', 'User History', 'Real-time Processing'],
+        estimatedDuration: 5,
+        dependencies: ['Customer Journey & Behavior Analysis']
+      },
+      {
+        id: `ai-step-${Date.now()}-42`,
+        title: 'Dynamic Pricing & Inventory Management',
+        description: 'Optimize pricing and manage inventory based on demand, competition, and availability',
+        type: 'decision',
+        connectors: ['Pricing Engine', 'Inventory System', 'Market Analysis', 'Demand Forecasting'],
+        actions: ['Price Optimization', 'Inventory Tracking', 'Demand Prediction', 'Competitor Analysis'],
+        requirements: ['Pricing Algorithms', 'Inventory Data', 'Market Data', 'Forecasting Models'],
+        estimatedDuration: 7,
+        dependencies: ['AI-Powered Product Recommendation']
+      },
+      {
+        id: `ai-step-${Date.now()}-43`,
+        title: 'Shopping Cart & Checkout Optimization',
+        description: 'Optimize cart experience and checkout flow to reduce abandonment',
+        type: 'action',
+        connectors: ['Cart Management', 'Checkout Service', 'Payment Gateway', 'Fraud Detection'],
+        actions: ['Cart Optimization', 'Checkout Flow', 'Payment Processing', 'Fraud Prevention'],
+        requirements: ['Cart System', 'Payment Processing', 'Fraud Detection', 'Security'],
+        estimatedDuration: 8,
+        dependencies: ['Dynamic Pricing & Inventory Management']
+      },
+      {
+        id: `ai-step-${Date.now()}-44`,
+        title: 'Order Processing & Fulfillment',
+        description: 'Automated order processing with intelligent fulfillment routing and tracking',
+        type: 'integration',
+        connectors: ['Order Management', 'Fulfillment Centers', 'Shipping Carriers', 'Tracking System'],
+        actions: ['Order Validation', 'Fulfillment Routing', 'Shipping Selection', 'Status Updates'],
+        requirements: ['Order System', 'Fulfillment Network', 'Shipping APIs', 'Tracking System'],
+        estimatedDuration: 6,
+        dependencies: ['Shopping Cart & Checkout Optimization']
+      },
+      {
+        id: `ai-step-${Date.now()}-45`,
+        title: 'Customer Communication & Support',
+        description: 'Proactive customer communication and intelligent support throughout the purchase journey',
+        type: 'integration',
+        connectors: ['Communication Hub', 'Support System', 'Notification Service', 'Feedback Collector'],
+        actions: ['Proactive Communication', 'Support Routing', 'Issue Resolution', 'Feedback Collection'],
+        requirements: ['Communication Platform', 'Support Tools', 'Notification System', 'CRM Integration'],
+        estimatedDuration: 5,
+        dependencies: ['Order Processing & Fulfillment']
+      },
+      {
+        id: `ai-step-${Date.now()}-46`,
+        title: 'Post-Purchase Analytics & Retention',
+        description: 'Analyze purchase data and implement retention strategies for long-term customer value',
+        type: 'integration',
+        connectors: ['Analytics Platform', 'CRM System', 'Marketing Automation', 'Loyalty Program'],
+        actions: ['Purchase Analysis', 'Retention Strategies', 'Loyalty Rewards', 'Cross-sell Opportunities'],
+        requirements: ['Analytics Tools', 'CRM Data', 'Marketing Platform', 'Loyalty System'],
+        estimatedDuration: 7,
+        dependencies: ['Customer Communication & Support']
+      }
+    );
+  }
+
+  // Financial Services & Banking workflow
+  if (lowerUseCase.includes('financial') || lowerUseCase.includes('finance') || lowerUseCase.includes('banking') || lowerUseCase.includes('loan') ||
+      lowerUseCase.includes('credit') || lowerUseCase.includes('investment') || lowerUseCase.includes('payment') ||
+      lowerUseCase.includes('transaction') || lowerUseCase.includes('fraud') || lowerUseCase.includes('compliance') ||
+      lowerUseCase.includes('risk') || lowerUseCase.includes('kyc') || lowerUseCase.includes('aml')) {
+    steps.push(
+      {
+        id: `ai-step-${Date.now()}-50`,
+        title: 'KYC & Identity Verification',
+        description: 'Know Your Customer verification with document validation and identity checks',
+        type: 'validation',
+        connectors: ['Identity Verification Service', 'Document Scanner', 'Biometric Validator', 'Watchlist Checker'],
+        actions: ['Document Verification', 'Identity Matching', 'Biometric Validation', 'Watchlist Screening'],
+        requirements: ['KYC Regulations', 'Document Processing', 'Biometric Technology', 'Compliance Database'],
+        estimatedDuration: 8,
+        dependencies: ['Customer Application']
+      },
+      {
+        id: `ai-step-${Date.now()}-51`,
+        title: 'Credit Risk Assessment',
+        description: 'AI-powered credit risk evaluation using multiple data sources and scoring models',
+        type: 'decision',
+        connectors: ['Credit Bureau APIs', 'Risk Models', 'Alternative Data', 'Scoring Engine'],
+        actions: ['Credit History Analysis', 'Alternative Data Processing', 'Risk Scoring', 'Decision Matrix'],
+        requirements: ['Credit Data', 'Risk Models', 'Alternative Data Sources', 'Regulatory Compliance'],
+        estimatedDuration: 10,
+        dependencies: ['KYC & Identity Verification']
+      },
+      {
+        id: `ai-step-${Date.now()}-52`,
+        title: 'Fraud Detection & Prevention',
+        description: 'Real-time fraud detection using behavioral analysis and machine learning',
+        type: 'validation',
+        connectors: ['Fraud Detection Engine', 'Behavioral Analytics', 'Device Fingerprinting', 'Transaction Monitor'],
+        actions: ['Behavioral Analysis', 'Device Profiling', 'Transaction Monitoring', 'Risk Assessment'],
+        requirements: ['ML Models', 'Behavioral Data', 'Device Intelligence', 'Real-time Processing'],
+        estimatedDuration: 6,
+        dependencies: ['Credit Risk Assessment']
+      },
+      {
+        id: `ai-step-${Date.now()}-53`,
+        title: 'Regulatory Compliance & Reporting',
+        description: 'Ensure compliance with financial regulations and generate required reports',
+        type: 'validation',
+        connectors: ['Compliance Engine', 'Regulatory Database', 'Audit System', 'Report Generator'],
+        actions: ['Compliance Validation', 'Regulatory Check', 'Audit Trail', 'Report Generation'],
+        requirements: ['Regulatory Knowledge', 'Compliance Rules', 'Audit Requirements', 'Reporting Standards'],
+        estimatedDuration: 7,
+        dependencies: ['Fraud Detection & Prevention']
+      },
+      {
+        id: `ai-step-${Date.now()}-54`,
+        title: 'Automated Decision & Approval',
+        description: 'Intelligent decision-making with automated approvals and exception handling',
+        type: 'decision',
+        connectors: ['Decision Engine', 'Approval Workflow', 'Exception Handler', 'Notification System'],
+        actions: ['Decision Processing', 'Approval Logic', 'Exception Handling', 'Status Communication'],
+        requirements: ['Decision Models', 'Approval Rules', 'Exception Workflows', 'Communication Templates'],
+        estimatedDuration: 5,
+        dependencies: ['Regulatory Compliance & Reporting']
+      },
+      {
+        id: `ai-step-${Date.now()}-55`,
+        title: 'Account Setup & Onboarding',
+        description: 'Streamlined account creation and customer onboarding with digital processes',
+        type: 'action',
+        connectors: ['Account Management', 'Digital Onboarding', 'Document Management', 'Integration APIs'],
+        actions: ['Account Creation', 'Document Collection', 'Digital Signatures', 'System Integration'],
+        requirements: ['Account Systems', 'Digital Tools', 'Document Storage', 'Integration Capabilities'],
+        estimatedDuration: 8,
+        dependencies: ['Automated Decision & Approval']
+      },
+      {
+        id: `ai-step-${Date.now()}-56`,
+        title: 'Ongoing Monitoring & Portfolio Management',
+        description: 'Continuous monitoring of accounts and portfolio performance with proactive management',
+        type: 'integration',
+        connectors: ['Monitoring System', 'Portfolio Manager', 'Alert Engine', 'Analytics Platform'],
+        actions: ['Account Monitoring', 'Performance Tracking', 'Risk Management', 'Portfolio Optimization'],
+        requirements: ['Monitoring Tools', 'Analytics Platform', 'Risk Management', 'Performance Metrics'],
+        estimatedDuration: 9,
+        dependencies: ['Account Setup & Onboarding']
+      }
+    );
+  }
+
+  // HR & Recruitment workflow
+  if (lowerUseCase.includes('hr') || lowerUseCase.includes('human resources') || lowerUseCase.includes('recruitment') || lowerUseCase.includes('hiring') ||
+      lowerUseCase.includes('employee') || lowerUseCase.includes('candidate') || lowerUseCase.includes('interview') ||
+      lowerUseCase.includes('onboarding') || lowerUseCase.includes('performance') || lowerUseCase.includes('payroll') ||
+      lowerUseCase.includes('talent') || lowerUseCase.includes('job') || lowerUseCase.includes('resume')) {
+    steps.push(
+      {
+        id: `ai-step-${Date.now()}-60`,
+        title: 'Job Posting & Candidate Sourcing',
+        description: 'Intelligent job posting optimization and multi-channel candidate sourcing',
+        type: 'action',
+        connectors: ['Job Boards', 'Social Media', 'ATS Integration', 'Candidate Database'],
+        actions: ['Job Description Optimization', 'Multi-channel Posting', 'Candidate Search', 'Source Tracking'],
+        requirements: ['Job Board APIs', 'Social Media Integration', 'ATS System', 'Candidate Database'],
+        estimatedDuration: 4,
+        dependencies: ['Job Requirements']
+      },
+      {
+        id: `ai-step-${Date.now()}-61`,
+        title: 'AI-Powered Resume Screening',
+        description: 'Automated resume analysis and candidate ranking using NLP and matching algorithms',
+        type: 'decision',
+        connectors: ['Resume Parser', 'NLP Engine', 'Matching Algorithm', 'Scoring System'],
+        actions: ['Resume Parsing', 'Skills Extraction', 'Experience Analysis', 'Candidate Scoring'],
+        requirements: ['NLP Models', 'Skills Database', 'Matching Logic', 'Scoring Algorithms'],
+        estimatedDuration: 6,
+        dependencies: ['Job Posting & Candidate Sourcing']
+      },
+      {
+        id: `ai-step-${Date.now()}-62`,
+        title: 'Candidate Assessment & Testing',
+        description: 'Comprehensive candidate evaluation through skills tests and behavioral assessments',
+        type: 'validation',
+        connectors: ['Assessment Platform', 'Skills Testing', 'Video Interview', 'Behavioral Analysis'],
+        actions: ['Skills Testing', 'Behavioral Assessment', 'Video Analysis', 'Performance Evaluation'],
+        requirements: ['Assessment Tools', 'Testing Platform', 'Video Processing', 'Evaluation Criteria'],
+        estimatedDuration: 8,
+        dependencies: ['AI-Powered Resume Screening']
+      },
+      {
+        id: `ai-step-${Date.now()}-63`,
+        title: 'Interview Scheduling & Coordination',
+        description: 'Intelligent interview scheduling with calendar integration and stakeholder coordination',
+        type: 'integration',
+        connectors: ['Calendar Systems', 'Video Conferencing', 'Scheduling AI', 'Notification Service'],
+        actions: ['Calendar Integration', 'Availability Matching', 'Interview Scheduling', 'Stakeholder Coordination'],
+        requirements: ['Calendar APIs', 'Video Platform', 'Scheduling Logic', 'Communication Tools'],
+        estimatedDuration: 5,
+        dependencies: ['Candidate Assessment & Testing']
+      },
+      {
+        id: `ai-step-${Date.now()}-64`,
+        title: 'Interview Analysis & Decision Support',
+        description: 'AI-powered interview analysis with structured feedback and hiring recommendations',
+        type: 'decision',
+        connectors: ['Interview Analysis', 'Feedback Aggregator', 'Decision Support', 'Bias Detection'],
+        actions: ['Interview Transcription', 'Sentiment Analysis', 'Feedback Compilation', 'Decision Recommendation'],
+        requirements: ['Transcription Service', 'Analysis Models', 'Feedback System', 'Decision Framework'],
+        estimatedDuration: 7,
+        dependencies: ['Interview Scheduling & Coordination']
+      },
+      {
+        id: `ai-step-${Date.now()}-65`,
+        title: 'Offer Management & Negotiation',
+        description: 'Automated offer generation with negotiation support and competitive analysis',
+        type: 'action',
+        connectors: ['Compensation Database', 'Market Analysis', 'Offer Generator', 'Negotiation Support'],
+        actions: ['Market Research', 'Offer Calculation', 'Package Design', 'Negotiation Analytics'],
+        requirements: ['Compensation Data', 'Market Intelligence', 'Offer Templates', 'Negotiation Tools'],
+        estimatedDuration: 6,
+        dependencies: ['Interview Analysis & Decision Support']
+      },
+      {
+        id: `ai-step-${Date.now()}-66`,
+        title: 'Employee Onboarding & Integration',
+        description: 'Comprehensive digital onboarding with personalized learning paths and integration support',
+        type: 'integration',
+        connectors: ['HRIS System', 'Learning Platform', 'IT Provisioning', 'Onboarding Portal'],
+        actions: ['Account Setup', 'Document Processing', 'Training Assignment', 'Integration Support'],
+        requirements: ['HRIS Integration', 'Learning Management', 'IT Systems', 'Onboarding Platform'],
+        estimatedDuration: 8,
+        dependencies: ['Offer Management & Negotiation']
+      },
+      {
+        id: `ai-step-${Date.now()}-67`,
+        title: 'Performance Tracking & Development',
+        description: 'Ongoing performance monitoring with development planning and career guidance',
+        type: 'integration',
+        connectors: ['Performance System', 'Goal Tracking', 'Development Platform', 'Analytics Dashboard'],
+        actions: ['Performance Monitoring', 'Goal Management', 'Development Planning', 'Career Guidance'],
+        requirements: ['Performance Tools', 'Goal System', 'Development Resources', 'Analytics Platform'],
+        estimatedDuration: 9,
+        dependencies: ['Employee Onboarding & Integration']
       }
     );
   }
