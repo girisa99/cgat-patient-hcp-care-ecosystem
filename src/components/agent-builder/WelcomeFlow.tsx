@@ -46,13 +46,7 @@ export const WelcomeFlow: React.FC<WelcomeFlowProps> = ({ onComplete }) => {
   const [selectedMode, setSelectedMode] = useState<'prompt' | 'visual' | 'manual' | null>(null);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Check if user has visited before
-  useEffect(() => {
-    const hasVisited = localStorage.getItem('agent-builder-visited');
-    if (hasVisited) {
-      setIsReturningUser(true);
-    }
-  }, []);
+  // Always start fresh for each new agent
 
   const analyzeUseCase = async () => {
     if (!useCase.trim()) return;
@@ -187,9 +181,6 @@ export const WelcomeFlow: React.FC<WelcomeFlowProps> = ({ onComplete }) => {
 
   const handleModeSelection = (mode: 'prompt' | 'visual' | 'manual') => {
     setSelectedMode(mode);
-    
-    // Mark user as visited
-    localStorage.setItem('agent-builder-visited', 'true');
     
     onComplete({
       useCase,

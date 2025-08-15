@@ -79,26 +79,23 @@ const AgentsInner = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Check if user should see welcome flow
-  useEffect(() => {
-    const hasCompletedWelcome = localStorage.getItem('agent-builder-welcome-complete');
-    if (hasCompletedWelcome) {
-      setShowWelcomeFlow(false);
-    }
-  }, []);
+  // Always start with welcome flow for new agents
+  const startNewAgent = () => {
+    setShowWelcomeFlow(true);
+    setWelcomeData(null);
+    setActiveTab('ecosystem');
+  };
 
   const handleWelcomeComplete = (data: any) => {
     setWelcomeData(data);
     setShowWelcomeFlow(false);
-    localStorage.setItem('agent-builder-welcome-complete', 'true');
     
     // Set initial tab based on selected mode
     if (data.selectedMode === 'prompt') {
-      // For now, redirect to workflow studio in prompt mode
       setActiveTab('workflow-studio');
     } else if (data.selectedMode === 'visual') {
       setActiveTab('workflow-studio');
-    } else {
+    } else if (data.selectedMode === 'manual') {
       setActiveTab('ecosystem');
     }
   };
@@ -159,10 +156,7 @@ const AgentsInner = () => {
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => {
-                    localStorage.removeItem('agent-builder-welcome-complete');
-                    setShowWelcomeFlow(true);
-                  }}
+                  onClick={startNewAgent}
                 >
                   Start New Agent
                 </Button>
