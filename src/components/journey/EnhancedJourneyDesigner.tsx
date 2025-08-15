@@ -37,6 +37,10 @@ export interface JourneyStep {
   requirements?: string[];
   estimatedDuration?: number;
   dependencies?: string[];
+  stakeholders?: string[];
+  businessValue?: string;
+  riskLevel?: 'low' | 'medium' | 'high';
+  automationLevel?: 'manual' | 'semi-automated' | 'fully-automated';
 }
 
 interface AIModel {
