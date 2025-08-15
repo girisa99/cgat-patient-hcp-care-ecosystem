@@ -82,7 +82,8 @@ const AgentsInner = () => {
   const [draftSessions, setDraftSessions] = useState<any[]>([]);
   const [isDeleting, setIsDeleting] = useState<string | null>(null);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
-  const { userRoles } = useMasterAuth();
+  const [isDeletingAll, setIsDeletingAll] = useState(false);
+  const { userRoles, user } = useMasterAuth();
   const { userSessions, isLoading: sessionsLoading, setCurrentSessionId } = useAgentBuilder();
   const { deleteSession } = useAgentSession();
   console.log('🎭 User roles:', userRoles);
@@ -220,6 +221,40 @@ const AgentsInner = () => {
     }
   };
 
+  // Delete all draft sessions for current user
+  const handleDeleteAllDrafts = async () => {
+    if (isDeletingAll) return;
+    if (!user?.id) return;
+    
+    const confirmDelete = window.confirm('Delete ALL draft agents? This cannot be undone.');
+    if (!confirmDelete) return;
+    
+    setIsDeletingAll(true);
+    try {
+      const { error } = await supabase
+        .from('agent_sessions')
+        .delete()
+        .eq('status', 'draft')
+        .eq('user_id', user.id);
+      
+      if (error) throw error;
+      
+      // Update local list: keep in_progress items only
+      const remaining = draftSessions.filter(s => s.status !== 'draft');
+      setDraftSessions(remaining);
+      toast.success('All draft agents deleted');
+      
+      if (remaining.length === 0) {
+        setShowSessionOptions(false);
+        setShowWelcomeFlow(true);
+      }
+    } catch (error) {
+      console.error('Error deleting all drafts:', error);
+      toast.error('Failed to delete all drafts');
+    } finally {
+      setIsDeletingAll(false);
+    }
+  };
   // Continue with saved progress
   const continueProgress = () => {
     if (savedProgress) {
@@ -384,6 +419,14 @@ const AgentsInner = () => {
                     className="w-full text-orange-600 hover:text-orange-700 hover:bg-orange-50"
                   >
                     {isBulkDeleting ? 'Cleaning...' : 'Delete Old Drafts (7+ days)'}
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleDeleteAllDrafts}
+                    disabled={isDeletingAll}
+                    className="w-full mt-2 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  >
+                    {isDeletingAll ? 'Deleting...' : 'Delete ALL Drafts'}
                   </Button>
                 </div>
               )}
