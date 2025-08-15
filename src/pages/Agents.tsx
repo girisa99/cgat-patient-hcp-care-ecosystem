@@ -47,7 +47,7 @@ import { toast } from 'sonner';
 import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
 import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
 import ModePicker from '@/components/agent-builder/ModePicker';
-import { WelcomeFlow } from '@/components/agent-builder/WelcomeFlow';
+import { AgentOnboardingQuestionnaire } from '@/components/agent-builder/AgentOnboardingQuestionnaire';
 
 // Lazy load the workflow studio
 const EmbeddedWorkflowStudio = React.lazy(() => import('@/components/agent-builder/EmbeddedWorkflowStudio'));
@@ -600,7 +600,7 @@ const AgentsInner = () => {
     return (
       <AppLayout>
         <div className="p-4">
-          <WelcomeFlow onComplete={handleWelcomeComplete} />
+          <AgentOnboardingQuestionnaire onComplete={handleWelcomeComplete} />
         </div>
       </AppLayout>
     );
