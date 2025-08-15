@@ -17,6 +17,7 @@ import { useApiServices } from '@/hooks/useApiServices';
 import { EnhancedLSPanel } from '@/components/label-studio/EnhancedLSPanel';
 import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
 import { supabase } from '@/integrations/supabase/client';
+import { EnhancedJourneyDesigner, type JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
 interface AgentWorkflowStudioProps {
   embedded?: boolean;
 }
@@ -282,55 +283,29 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
               Define the customer experience flow and touchpoints
             </p>
             
-            <div className="max-w-4xl mx-auto">
-              <div className="p-6 border rounded-lg">
-                <h3 className="font-semibold mb-4">Journey Designer</h3>
-                <div className="space-y-4">
-                  {journeySteps.map((step, index) => (
-                    <div key={step.id} className="flex items-center gap-4 p-4 border rounded group">
-                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">
-                        {step.id}
-                      </div>
-                      <div className="flex-1">
-                        <input
-                          type="text"
-                          className="font-medium bg-transparent border-none w-full focus:bg-background focus:border focus:rounded px-2 py-1"
-                          value={step.title}
-                          onChange={(e) => handleStepUpdate(step.id, 'title', e.target.value)}
-                        />
-                        <input
-                          type="text"
-                          className="text-sm text-muted-foreground bg-transparent border-none w-full focus:bg-background focus:border focus:rounded px-2 py-1"
-                          value={step.description}
-                          onChange={(e) => handleStepUpdate(step.id, 'description', e.target.value)}
-                        />
-                      </div>
-                      {index < journeySteps.length - 1 && (
-                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                      )}
-                      {journeySteps.length > 2 && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleRemoveStep(step.id)}
-                          className="opacity-0 group-hover:opacity-100 transition-opacity"
-                        >
-                          <X className="h-4 w-4" />
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  
-                  <div className="flex gap-2 mt-6">
-                    <Button variant="outline" onClick={handleAddStep}>
-                      Add Step
-                    </Button>
-                    <Button onClick={() => handleStepComplete('journey')}>
-                      Generate Agent Ecosystem
-                    </Button>
-                  </div>
-                </div>
-              </div>
+            <div className="max-w-6xl mx-auto">
+              <EnhancedJourneyDesigner
+                steps={journeySteps.map(step => ({
+                  id: step.id,
+                  title: step.title,
+                  description: step.description,
+                  type: 'action' as const,
+                  connectors: [],
+                  actions: [],
+                  requirements: [],
+                  estimatedDuration: 5
+                }))}
+                useCase={selectedUseCase || ''}
+                onStepsChange={(newSteps) => {
+                  const updatedSteps = newSteps.map(step => ({
+                    id: step.id,
+                    title: step.title,
+                    description: step.description
+                  }));
+                  setJourneySteps(updatedSteps);
+                }}
+                onGenerateEcosystem={() => handleStepComplete('journey')}
+              />
             </div>
           </div>
         </div>
