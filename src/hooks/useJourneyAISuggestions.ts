@@ -45,7 +45,7 @@ const generateComprehensiveWorkflow = (useCase: string, modelType: string): Jour
   const baseId = Date.now();
   
   // Generate 10-12 comprehensive steps for ANY use case
-  return [
+  const steps: JourneyStep[] = [
     {
       id: `ai-step-${baseId}-1`,
       title: 'Requirements Analysis & Stakeholder Identification',
@@ -226,7 +226,9 @@ const generateComprehensiveWorkflow = (useCase: string, modelType: string): Jour
       estimatedDuration: 10,
       dependencies: ['Compliance & Audit Trail Management']
     }
-  ].map(step => {
+  ];
+
+  return steps.map(step => {
     // Enhance with model-specific capabilities
     switch (modelType) {
       case 'llm':
