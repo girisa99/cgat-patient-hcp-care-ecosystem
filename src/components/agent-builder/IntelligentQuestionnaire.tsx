@@ -1,13 +1,17 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 import { 
   Bot, 
   Target, 
   ArrowRight,
   Lightbulb,
-  BarChart3
+  BarChart3,
+  Zap,
+  MessageSquare
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { DynamicQuestionnaireEngine, QuestionnaireAnalysis, QuestionnaireResponse } from './DynamicQuestionnaireEngine';
@@ -24,13 +28,60 @@ interface IntelligentQuestionnaireProps {
 
 export const IntelligentQuestionnaire: React.FC<IntelligentQuestionnaireProps> = ({ onComplete }) => {
   const { toast } = useToast();
-  const [currentPhase, setCurrentPhase] = useState<'welcome' | 'questionnaire' | 'results'>('welcome');
+  const [currentPhase, setCurrentPhase] = useState<'welcome' | 'questionnaire' | 'results' | 'direct-prompt'>('welcome');
   const [responses, setResponses] = useState<QuestionnaireResponse[]>([]);
   const [analysis, setAnalysis] = useState<QuestionnaireAnalysis | null>(null);
   const [currentAnalysis, setCurrentAnalysis] = useState<Partial<QuestionnaireAnalysis>>({});
+  const [directPrompt, setDirectPrompt] = useState('');
 
   const handleStartQuestionnaire = () => {
     setCurrentPhase('questionnaire');
+  };
+
+  const handleSkipToPrompt = () => {
+    setCurrentPhase('direct-prompt');
+  };
+
+  const handleDirectPromptSubmit = () => {
+    if (!directPrompt.trim()) {
+      toast({
+        title: "Missing Information",
+        description: "Please describe what you want to build before continuing.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create minimal analysis for direct prompt users
+    const minimalAnalysis: QuestionnaireAnalysis = {
+      suitabilityScore: 85,
+      complexityLevel: 'Medium' as const,
+      recommendedPath: 'guided' as const,
+      agentRecommendation: 'good-fit' as const,
+      insights: {
+        strengths: ['Clear use case defined', 'Ready to start building'],
+        gaps: ['Limited context provided'],
+        recommendations: ['Start with guided agent builder', 'Define detailed requirements'],
+        alternativesSuggested: []
+      },
+      nextQuestions: [],
+      estimatedTimeline: '1-2 weeks',
+      resourcesNeeded: ['Basic configuration', 'Testing phase']
+    };
+
+    // Create minimal response for tracking
+    const minimalResponse: QuestionnaireResponse = {
+      questionId: 'direct-prompt',
+      value: directPrompt,
+      timestamp: new Date()
+    };
+
+    onComplete({
+      responses: [minimalResponse],
+      analysis: minimalAnalysis,
+      selectedMode: 'prompt',
+      proceedWithAgent: true
+    });
   };
 
   const handleQuestionnaireComplete = (responses: QuestionnaireResponse[], analysis: QuestionnaireAnalysis) => {
@@ -156,10 +207,76 @@ export const IntelligentQuestionnaire: React.FC<IntelligentQuestionnaireProps> =
             Start Smart Assessment
             <ArrowRight className="w-4 h-4" />
           </Button>
+          <Button 
+            onClick={handleSkipToPrompt}
+            variant="outline"
+            className="w-full flex items-center justify-center gap-2"
+            size="lg"
+          >
+            <Zap className="w-4 h-4" />
+            Skip to Direct Prompt
+          </Button>
           <p className="text-xs text-muted-foreground">
-            Takes 5-10 minutes • Completely personalized • No commitment required
+            Assessment takes 5-10 minutes • Direct prompt gets you started faster
           </p>
         </div>
+      </div>
+    );
+  }
+
+  if (currentPhase === 'direct-prompt') {
+    return (
+      <div className="max-w-2xl mx-auto space-y-6">
+        <div className="text-center">
+          <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mb-4">
+            <MessageSquare className="w-8 h-8 text-primary" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Describe Your Vision</h2>
+          <p className="text-muted-foreground">
+            Tell us what you want to build and we'll help you create the perfect AI agent
+          </p>
+        </div>
+
+        <Card>
+          <CardContent className="p-6">
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="direct-prompt" className="text-base font-medium">
+                  What would you like your AI agent to do?
+                </Label>
+                <p className="text-sm text-muted-foreground mb-3">
+                  Be as specific as possible. Examples: "Help customers with support tickets", "Analyze sales data and create reports", "Schedule meetings and manage my calendar"
+                </p>
+                <Textarea
+                  id="direct-prompt"
+                  placeholder="I want to build an AI agent that..."
+                  value={directPrompt}
+                  onChange={(e) => setDirectPrompt(e.target.value)}
+                  rows={6}
+                  className="resize-none"
+                />
+              </div>
+              
+              <div className="flex gap-3 pt-4">
+                <Button
+                  onClick={() => setCurrentPhase('welcome')}
+                  variant="outline"
+                  className="flex-1"
+                >
+                  Back
+                </Button>
+                <Button
+                  onClick={handleDirectPromptSubmit}
+                  className="flex-1"
+                  disabled={!directPrompt.trim()}
+                >
+                  Continue Building
+                  <ArrowRight className="w-4 h-4 ml-2" />
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
