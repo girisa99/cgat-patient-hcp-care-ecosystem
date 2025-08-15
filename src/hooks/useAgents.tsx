@@ -5,6 +5,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 interface Agent {
   id: string;
@@ -31,6 +32,7 @@ interface Agent {
 export const useAgents = () => {
   const { showSuccess, showError } = useMasterToast();
   const queryClient = useQueryClient();
+  const { user } = useMasterAuth();
 
   // Check for duplicate agent name
   const checkDuplicateName = async (name: string, userId: string, excludeId?: string) => {
@@ -50,24 +52,21 @@ export const useAgents = () => {
 
   // Fetch agents from database
   const { data: agents = [], isLoading, error } = useQuery({
-    queryKey: ['agents'],
+    queryKey: ['agents', user?.id],
+    enabled: !!user?.id,
     queryFn: async (): Promise<Agent[]> => {
-      console.log('🤖 Fetching agents from database...');
-      
+      console.log('🤖 Fetching MY agents from database...', { userId: user?.id });
       const { data, error } = await supabase
         .from('agents')
         .select('*')
+        .eq('created_by', user!.id)
         .order('created_at', { ascending: false });
-
       if (error) {
         console.error('❌ Error fetching agents:', error);
         throw error;
       }
-
-      console.log('✅ Agents loaded:', data?.length || 0, 'Raw data:', data);
-      const result = data || [];
-      console.log('🔄 Returning agents array:', result, 'Type:', typeof result, 'Is Array:', Array.isArray(result));
-      return result;
+      console.log('✅ Agents loaded (filtered):', data?.length || 0);
+      return data || [];
     },
     staleTime: 300000,
     refetchOnWindowFocus: false,
@@ -115,7 +114,7 @@ export const useAgents = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      queryClient.invalidateQueries({ queryKey: ['agents', user?.id] });
       showSuccess('Agent Created', 'Agent created successfully');
     },
     onError: (error: any) => {
@@ -154,7 +153,7 @@ export const useAgents = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      queryClient.invalidateQueries({ queryKey: ['agents', user?.id] });
       showSuccess('Agent Updated', 'Agent updated successfully');
     },
     onError: (error: any) => {
@@ -174,7 +173,7 @@ export const useAgents = () => {
       return agentId;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      queryClient.invalidateQueries({ queryKey: ['agents', user?.id] });
       showSuccess('Agent Deleted', 'Agent deleted successfully');
     },
     onError: (error: any) => {

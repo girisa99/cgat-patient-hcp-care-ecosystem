@@ -10,6 +10,7 @@ import { toast as sonnerToast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DraftCleanupDialog } from '@/components/agents/DraftCleanupDialog';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 interface Agent {
   id: string;
@@ -27,6 +28,7 @@ const AgenticEcosystem = () => {
   console.log('🤖 AgenticEcosystem component rendering...');
   
   const [activeTab, setActiveTab] = useState('overview');
+  const { user } = useMasterAuth();
 
   // Debug active tab changes
   React.useEffect(() => {
@@ -35,45 +37,34 @@ const AgenticEcosystem = () => {
 
   // Fetch real agents data from database - using the same source as MinimalAgentBuilder
   const { data: agents = [], isLoading: agentsLoading, refetch: refetchAgents } = useQuery({
-    queryKey: ['agents'],
+    queryKey: ['agents', user?.id],
+    enabled: !!user?.id,
     queryFn: async () => {
-      console.log('🤖 AgenticEcosystem: Fetching agents from agents table...');
-      
+      console.log('🤖 AgenticEcosystem: Fetching MY agents only...', { userId: user?.id });
       const { data, error } = await supabase
         .from('agents')
         .select('*')
+        .eq('created_by', user!.id)
         .order('created_at', { ascending: false });
-      
-      console.log('🐛 AgenticEcosystem DEBUG: query result:', { data, error, dataType: typeof data, isArray: Array.isArray(data) });
-      
+      console.log('🐛 AgenticEcosystem DEBUG (filtered):', { count: data?.length, error });
       if (error) {
         console.error('Error fetching agents:', error);
         return [];
       }
-      
-      // Transform the data to match our Agent interface with comprehensive null safety
       const safeData = data || [];
-      console.log('🔄 Transforming data:', { safeData, length: safeData.length });
-      
-      return safeData.map((item: any) => {
-        // Ensure item is defined and has basic properties
-        const safeItem = item || {};
-        console.log('🔧 Processing item:', safeItem);
-        
-        return {
-          id: safeItem.id || `agent-${Date.now()}-${Math.random()}`,
-          name: safeItem.name || 'Unnamed Agent',
-          description: safeItem.description || '',
-          status: safeItem.status === 'active' ? 'deployed' : 'draft',
-          connections: Array.isArray(safeItem.categories) ? safeItem.categories : [],
-          role: safeItem.agent_type || 'general',
-          template: safeItem.brand || 'default',
-          created_at: safeItem.created_at || new Date().toISOString(),
-          updated_at: safeItem.updated_at || new Date().toISOString()
-        };
-      }) as Agent[];
+      return safeData.map((item: any) => ({
+        id: item?.id,
+        name: item?.name || 'Unnamed Agent',
+        description: item?.description || '',
+        status: item?.status === 'active' ? 'deployed' : (item?.status || 'draft'),
+        connections: Array.isArray(item?.categories) ? item.categories : [],
+        role: item?.agent_type || 'general',
+        template: item?.brand || 'default',
+        created_at: item?.created_at,
+        updated_at: item?.updated_at
+      })) as Agent[];
     },
-    refetchInterval: 30000, // Refresh every 30 seconds
+    refetchInterval: 30000,
   });
 
   // Fetch real ecosystem stats - always enabled to avoid conditional hook issues
