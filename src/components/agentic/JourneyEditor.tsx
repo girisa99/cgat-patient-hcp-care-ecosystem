@@ -15,6 +15,55 @@ interface JourneyEditorProps {
 export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, onApplied }) => {
   const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages, refetch } = useJourneyStages(templateId);
 
+  // Local drafts to prevent input resets while typing; save on blur
+  const [drafts, setDrafts] = React.useState<Record<string, any>>({});
+
+  React.useEffect(() => {
+    setDrafts((prev) => {
+      const next = { ...prev } as Record<string, any>;
+      (stages || []).forEach((s, idx) => {
+        const idKey = s.id || `idx-${idx}`;
+        if (!next[idKey]) {
+          next[idKey] = {
+            title: s.title || '',
+            owner_role: s.owner_role || '',
+            description: s.description || '',
+            expected_duration_minutes: s.expected_duration_minutes != null ? String(s.expected_duration_minutes) : '',
+            entry_criteria_text: (s.entry_criteria || []).join(', '),
+            tasks_checklist_text: (s.tasks_checklist || []).join('\n'),
+            outputs_success_criteria_text: (s.outputs_success_criteria || []).join('\n'),
+            risks_text: (s.risks || []).join(', '),
+            dependencies_text: (s.dependencies || []).join(', '),
+            validation_checkpoints_text: (s.validation_checkpoints || []).join('\n'),
+          };
+        }
+      });
+      return next;
+    });
+  }, [stages]);
+
+  const updateDraft = (idKey: string, field: string, value: string) => {
+    setDrafts((prev) => ({ ...prev, [idKey]: { ...(prev[idKey] || {}), [field]: value } }));
+  };
+
+  const saveDraft = async (idKey: string, s: JourneyStage) => {
+    const d = drafts[idKey];
+    if (!s.id || !d) return;
+    const updates: Partial<JourneyStage> = {
+      title: d.title,
+      owner_role: d.owner_role || null,
+      description: d.description || null,
+      expected_duration_minutes: d.expected_duration_minutes ? Number(d.expected_duration_minutes) : null,
+      entry_criteria: (d.entry_criteria_text || '').split(',').map((v: string) => v.trim()).filter(Boolean),
+      tasks_checklist: (d.tasks_checklist_text || '').split('\n').map((v: string) => v.trim()).filter(Boolean),
+      outputs_success_criteria: (d.outputs_success_criteria_text || '').split('\n').map((v: string) => v.trim()).filter(Boolean),
+      risks: (d.risks_text || '').split(',').map((v: string) => v.trim()).filter(Boolean),
+      dependencies: (d.dependencies_text || '').split(',').map((v: string) => v.trim()).filter(Boolean),
+      validation_checkpoints: (d.validation_checkpoints_text || '').split('\n').map((v: string) => v.trim()).filter(Boolean),
+    };
+    await handleUpdate(s.id, updates);
+  };
+
   const handleAdd = async () => {
     await createStage({ title: 'New Stage' });
     await refetch();
@@ -26,9 +75,13 @@ export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, onAppl
 
   const handleDelete = async (id: string) => {
     await deleteStage(id);
+    setDrafts((prev) => {
+      const next = { ...prev };
+      delete next[id];
+      return next;
+    });
     await refetch();
   };
-
   const handleReorder = async (from: number, to: number) => {
     if (to < 0 || to >= stages.length) return;
     await reorderStages({ fromIndex: from, toIndex: to });
@@ -86,48 +139,89 @@ export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, onAppl
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Title</label>
-                  <Input defaultValue={s.title} onBlur={(e) => s.id && handleUpdate(s.id, { title: e.target.value })} />
+                  <Input
+                    value={drafts[s.id || String(idx)]?.title ?? (s.title || '')}
+                    onChange={(e) => updateDraft(s.id || String(idx), 'title', e.target.value)}
+                    onBlur={() => saveDraft(s.id || String(idx), s)}
+                  />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">Owner Role</label>
-                  <Input defaultValue={s.owner_role || ''} onBlur={(e) => s.id && handleUpdate(s.id, { owner_role: e.target.value })} />
+                  <Input
+                    value={drafts[s.id || String(idx)]?.owner_role ?? (s.owner_role || '')}
+                    onChange={(e) => updateDraft(s.id || String(idx), 'owner_role', e.target.value)}
+                    onBlur={() => saveDraft(s.id || String(idx), s)}
+                  />
                 </div>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Description</label>
-                <Textarea defaultValue={s.description || ''} onBlur={(e) => s.id && handleUpdate(s.id, { description: e.target.value })} />
+                <Textarea
+                  value={drafts[s.id || String(idx)]?.description ?? (s.description || '')}
+                  onChange={(e) => updateDraft(s.id || String(idx), 'description', e.target.value)}
+                  onBlur={() => saveDraft(s.id || String(idx), s)}
+                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Expected Duration (min)</label>
-                  <Input type="number" defaultValue={s.expected_duration_minutes || ''} onBlur={(e) => s.id && handleUpdate(s.id, { expected_duration_minutes: Number(e.target.value || 0) })} />
+                  <Input
+                    type="number"
+                    value={drafts[s.id || String(idx)]?.expected_duration_minutes ?? (s.expected_duration_minutes != null ? String(s.expected_duration_minutes) : '')}
+                    onChange={(e) => updateDraft(s.id || String(idx), 'expected_duration_minutes', e.target.value)}
+                    onBlur={() => saveDraft(s.id || String(idx), s)}
+                  />
                 </div>
                 <div className="md:col-span-2">
                   <label className="text-xs text-muted-foreground">Entry Criteria (comma-separated)</label>
-                  <Input defaultValue={(s.entry_criteria || []).join(', ')} onBlur={(e) => s.id && handleUpdate(s.id, { entry_criteria: e.target.value.split(',').map(v => v.trim()).filter(Boolean) })} />
+                  <Input
+                    value={drafts[s.id || String(idx)]?.entry_criteria_text ?? (s.entry_criteria || []).join(', ')}
+                    onChange={(e) => updateDraft(s.id || String(idx), 'entry_criteria_text', e.target.value)}
+                    onBlur={() => saveDraft(s.id || String(idx), s)}
+                  />
                 </div>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Tasks Checklist (one per line)</label>
-                <Textarea defaultValue={(s.tasks_checklist || []).join('\n')} onBlur={(e) => s.id && handleUpdate(s.id, { tasks_checklist: e.target.value.split('\n').map(v => v.trim()).filter(Boolean) })} />
+                <Textarea
+                  value={drafts[s.id || String(idx)]?.tasks_checklist_text ?? (s.tasks_checklist || []).join('\n')}
+                  onChange={(e) => updateDraft(s.id || String(idx), 'tasks_checklist_text', e.target.value)}
+                  onBlur={() => saveDraft(s.id || String(idx), s)}
+                />
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Outputs / Success Criteria (one per line)</label>
-                <Textarea defaultValue={(s.outputs_success_criteria || []).join('\n')} onBlur={(e) => s.id && handleUpdate(s.id, { outputs_success_criteria: e.target.value.split('\n').map(v => v.trim()).filter(Boolean) })} />
+                <Textarea
+                  value={drafts[s.id || String(idx)]?.outputs_success_criteria_text ?? (s.outputs_success_criteria || []).join('\n')}
+                  onChange={(e) => updateDraft(s.id || String(idx), 'outputs_success_criteria_text', e.target.value)}
+                  onBlur={() => saveDraft(s.id || String(idx), s)}
+                />
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-muted-foreground">Risks (comma-separated)</label>
-                  <Input defaultValue={(s.risks || []).join(', ')} onBlur={(e) => s.id && handleUpdate(s.id, { risks: e.target.value.split(',').map(v => v.trim()).filter(Boolean) })} />
+                  <Input
+                    value={drafts[s.id || String(idx)]?.risks_text ?? (s.risks || []).join(', ')}
+                    onChange={(e) => updateDraft(s.id || String(idx), 'risks_text', e.target.value)}
+                    onBlur={() => saveDraft(s.id || String(idx), s)}
+                  />
                 </div>
                 <div>
                   <label className="text-xs text-muted-foreground">Dependencies (comma-separated)</label>
-                  <Input defaultValue={(s.dependencies || []).join(', ')} onBlur={(e) => s.id && handleUpdate(s.id, { dependencies: e.target.value.split(',').map(v => v.trim()).filter(Boolean) })} />
+                  <Input
+                    value={drafts[s.id || String(idx)]?.dependencies_text ?? (s.dependencies || []).join(', ')}
+                    onChange={(e) => updateDraft(s.id || String(idx), 'dependencies_text', e.target.value)}
+                    onBlur={() => saveDraft(s.id || String(idx), s)}
+                  />
                 </div>
               </div>
               <div>
                 <label className="text-xs text-muted-foreground">Validation Checkpoints (one per line)</label>
-                <Textarea defaultValue={(s.validation_checkpoints || []).join('\n')} onBlur={(e) => s.id && handleUpdate(s.id, { validation_checkpoints: e.target.value.split('\n').map(v => v.trim()).filter(Boolean) })} />
+                <Textarea
+                  value={drafts[s.id || String(idx)]?.validation_checkpoints_text ?? (s.validation_checkpoints || []).join('\n')}
+                  onChange={(e) => updateDraft(s.id || String(idx), 'validation_checkpoints_text', e.target.value)}
+                  onBlur={() => saveDraft(s.id || String(idx), s)}
+                />
               </div>
             </CardContent>
           </Card>
