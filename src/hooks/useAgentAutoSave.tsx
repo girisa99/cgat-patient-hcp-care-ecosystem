@@ -43,11 +43,10 @@ export const useAgentAutoSave = ({
 
         if (sessionId) {
           return await autoSave.mutateAsync({ sessionId, updates: saveData });
-        } else if (data.name) {
-          // Create new session if none exists
-          const newSession = await createSession.mutateAsync(data);
-          console.log('✅ New session created:', newSession?.id);
-          return newSession;
+        } else {
+          // NO AUTO-CREATION - require explicit session creation
+          console.log('⚠️ No session ID provided - skipping auto-save. User must create session first.');
+          throw new Error('Session must be created explicitly before saving');
         }
       });
 

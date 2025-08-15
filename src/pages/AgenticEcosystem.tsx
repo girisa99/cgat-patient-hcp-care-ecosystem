@@ -4,13 +4,24 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { UnifiedAgentBuilder as EnhancedAgentBuilder } from '@/components/unified/UnifiedAgentBuilder';
-import { Bot, Network, Settings, Rocket, Plus, Brain } from 'lucide-react';
+import { Bot, Network, Settings, Rocket, Plus, Brain, Trash2, AlertTriangle } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { toast as sonnerToast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { DraftCleanupDialog } from '@/components/agents/DraftCleanupDialog';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { WelcomeFlow } from '@/components/agent-builder/WelcomeFlow';
+import { 
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface Agent {
   id: string;
@@ -29,6 +40,10 @@ const AgenticEcosystem = () => {
   
   const [activeTab, setActiveTab] = useState('overview');
   const { user } = useMasterAuth();
+  const queryClient = useQueryClient();
+  const [showWelcomeFlow, setShowWelcomeFlow] = useState(false);
+  const [showPurgeDialog, setShowPurgeDialog] = useState(false);
+  const [isPurging, setIsPurging] = useState(false);
 
   // Debug active tab changes
   React.useEffect(() => {
@@ -171,6 +186,48 @@ const AgenticEcosystem = () => {
     }
   };
 
+  // Purge all sessions and draft agents
+  const performPurgeAll = async () => {
+    if (!user?.id || isPurging) return;
+    
+    console.log('🗑️ PURGING all agent work for user:', user.id);
+    setIsPurging(true);
+    
+    try {
+      const { data, error } = await supabase.rpc('cleanup_user_agent_work', {
+        p_user_id: user.id,
+        p_statuses: ['draft', 'in_progress']
+      });
+      
+      if (error) throw error;
+      
+      console.log('🗑️ Purge result:', data);
+      
+      // Refresh all queries
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions', user.id] });
+      queryClient.invalidateQueries({ queryKey: ['agents', user.id] });
+      queryClient.refetchQueries();
+      
+      const totalDeleted = (data as any)?.total_deleted || 0;
+      
+      toast({
+        title: "Purge Complete",
+        description: `Successfully deleted ${totalDeleted} agent sessions and drafts.`,
+      });
+      
+      setShowPurgeDialog(false);
+    } catch (error: any) {
+      console.error('❌ Purge error:', error);
+      toast({
+        title: "Purge Failed", 
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsPurging(false);
+    }
+  };
+
   return (
     <>
       {/* Draft Cleanup Dialog */}
@@ -184,10 +241,20 @@ const AgenticEcosystem = () => {
             Comprehensive platform for Cell, Gene, Advanced & Personalized treatments with AI orchestration
           </p>
         </div>
-        <Button onClick={handleCreateAgent} className="bg-primary hover:bg-primary/90">
-          <Plus className="h-4 w-4 mr-2" />
-          Create New Agent
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            onClick={() => setShowPurgeDialog(true)}
+            className="text-red-600 hover:text-red-700"
+          >
+            <Trash2 className="h-4 w-4 mr-2" />
+            Purge All Sessions
+          </Button>
+          <Button onClick={handleCreateAgent} className="bg-primary hover:bg-primary/90">
+            <Plus className="h-4 w-4 mr-2" />
+            Create New Agent
+          </Button>
+        </div>
       </div>
 
       {/* Real Stats from Database */}
@@ -284,8 +351,86 @@ const AgenticEcosystem = () => {
           </TabsTrigger>
         </TabsList>
 
-           <TabsContent value="overview" className="child-tab-content space-y-6">
-            {/* My Agents - Real Data */}
+            <TabsContent value="overview" className="child-tab-content space-y-6">
+             {/* Welcome Flow Integration */}
+             {showWelcomeFlow ? (
+               <Card>
+                 <CardContent className="p-6">
+                   <WelcomeFlow 
+                     onComplete={(data) => {
+                       console.log('Welcome flow completed:', data);
+                       setShowWelcomeFlow(false);
+                       setActiveTab('basic_info');
+                     }}
+                   />
+                 </CardContent>
+               </Card>
+             ) : (
+               <>
+                 {/* Welcome Message & Steps */}
+                 <Card className="border-2 border-primary/20 bg-gradient-to-r from-primary/5 to-primary/10">
+                   <CardHeader>
+                     <div className="flex items-center gap-3">
+                       <Bot className="h-8 w-8 text-primary" />
+                       <div>
+                         <CardTitle className="text-2xl">Welcome Back!</CardTitle>
+                         <CardDescription className="text-base">
+                           Ready to build another intelligent healthcare agent? Let's get started with your journey.
+                         </CardDescription>
+                       </div>
+                     </div>
+                   </CardHeader>
+                   <CardContent className="space-y-6">
+                     {/* 4 Steps Process */}
+                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                       <div className="flex items-start gap-3 p-4 bg-white/60 rounded-lg border">
+                         <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">1</div>
+                         <div>
+                           <h4 className="font-semibold text-sm mb-1">Define Use Case</h4>
+                           <p className="text-xs text-muted-foreground">Describe what your agent should accomplish</p>
+                         </div>
+                       </div>
+                       <div className="flex items-start gap-3 p-4 bg-white/60 rounded-lg border">
+                         <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">2</div>
+                         <div>
+                           <h4 className="font-semibold text-sm mb-1">Journey Design</h4>
+                           <p className="text-xs text-muted-foreground">Map out the conversation flow and steps</p>
+                         </div>
+                       </div>
+                       <div className="flex items-start gap-3 p-4 bg-white/60 rounded-lg border">
+                         <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">3</div>
+                         <div>
+                           <h4 className="font-semibold text-sm mb-1">Configure Actions</h4>
+                           <p className="text-xs text-muted-foreground">Set up integrations and automations</p>
+                         </div>
+                       </div>
+                       <div className="flex items-start gap-3 p-4 bg-white/60 rounded-lg border">
+                         <div className="flex-shrink-0 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">4</div>
+                         <div>
+                           <h4 className="font-semibold text-sm mb-1">Deploy & Test</h4>
+                           <p className="text-xs text-muted-foreground">Launch your agent and monitor performance</p>
+                         </div>
+                       </div>
+                     </div>
+                     
+                     {/* Action Buttons */}
+                     <div className="flex gap-3">
+                       <Button 
+                         onClick={() => setShowWelcomeFlow(true)}
+                         className="bg-primary hover:bg-primary/90"
+                       >
+                         Start New Agent Journey
+                       </Button>
+                       <Button variant="outline" onClick={() => setActiveTab('basic_info')}>
+                         Skip to Builder
+                       </Button>
+                     </div>
+                   </CardContent>
+                 </Card>
+               </>
+             )}
+             
+             {/* My Agents - Real Data */}
             <Card>
               <CardHeader>
                 <CardTitle>My Agents</CardTitle>
@@ -373,6 +518,32 @@ const AgenticEcosystem = () => {
 
       </Tabs>
       </div>
+      
+      {/* Purge Confirmation Dialog */}
+      <AlertDialog open={showPurgeDialog} onOpenChange={setShowPurgeDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-500" />
+              Purge All Agent Work
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently delete ALL your draft agents, agent sessions, and in-progress work. 
+              This action cannot be undone. Are you absolutely sure?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={performPurgeAll}
+              disabled={isPurging}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {isPurging ? 'Purging...' : 'Yes, Purge Everything'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 };
