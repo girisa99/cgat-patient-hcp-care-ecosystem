@@ -25,6 +25,7 @@ import {
   RefreshCw
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { AISuggestionsPanel } from '@/components/journey/AISuggestionsPanel';
 
 export interface JourneyStep {
   id: string;
@@ -323,66 +324,22 @@ export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = (
                 AI Suggestions
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl">
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
               <DialogHeader>
-                <DialogTitle>Generate AI-Powered Step Suggestions</DialogTitle>
+                <DialogTitle>AI-Powered Journey Suggestions</DialogTitle>
               </DialogHeader>
               
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">
-                  Choose an AI model to generate intelligent step suggestions based on your use case.
-                </p>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                  {aiModels.map(model => (
-                    <Button
-                      key={model.id}
-                      variant="outline"
-                      className="flex items-center gap-2 h-auto p-4 justify-start"
-                      onClick={() => generateAISuggestions(model)}
-                      disabled={isGeneratingAI}
-                    >
-                      {model.icon}
-                      <div className="text-left">
-                        <div className="font-medium">{model.name}</div>
-                        <div className="text-xs text-muted-foreground capitalize">
-                          {model.type} based suggestions
-                        </div>
-                      </div>
-                      {isGeneratingAI && <RefreshCw className="w-4 h-4 animate-spin ml-auto" />}
-                    </Button>
-                  ))}
-                </div>
-
-                {showAISuggestions && aiSuggestions.length > 0 && (
-                  <div className="mt-6 space-y-3">
-                    <h4 className="font-medium">Generated Suggestions</h4>
-                    {aiSuggestions.map((suggestion, index) => (
-                      <Card key={suggestion.id} className="p-3">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <h5 className="font-medium text-sm">{suggestion.title}</h5>
-                            <p className="text-xs text-muted-foreground mb-2">{suggestion.description}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {suggestion.actions?.slice(0, 3).map(action => (
-                                <Badge key={action} variant="secondary" className="text-xs">
-                                  {action}
-                                </Badge>
-                              ))}
-                            </div>
-                          </div>
-                          <Button
-                            size="sm"
-                            onClick={() => addAISuggestion(suggestion, steps.length)}
-                            className="ml-2"
-                          >
-                            <Plus className="w-3 h-3" />
-                          </Button>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                )}
+              <div className="overflow-y-auto">
+                <AISuggestionsPanel
+                  useCase={useCase}
+                  onAddStep={(step, position) => addAISuggestion(step, position || steps.length)}
+                  onAddAllSteps={(suggestedSteps) => {
+                    suggestedSteps.forEach((step, index) => {
+                      addAISuggestion(step, steps.length + index);
+                    });
+                  }}
+                  currentStepsCount={steps.length}
+                />
               </div>
             </DialogContent>
           </Dialog>
