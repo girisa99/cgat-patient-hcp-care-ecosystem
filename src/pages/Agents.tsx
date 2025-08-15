@@ -11,6 +11,7 @@ import EnhancedDeploymentReadyView from '@/components/deployment/EnhancedDeploym
 import { Link } from 'react-router-dom';
 import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useQueryClient } from '@tanstack/react-query';
 import { 
   Bot, 
   Settings, 
@@ -97,6 +98,7 @@ const AgentsInner = () => {
   const [showDeleteAllDialog, setShowDeleteAllDialog] = useState(false);
   const [showDeleteInProgressDialog, setShowDeleteInProgressDialog] = useState(false);
   const { userRoles, user } = useMasterAuth();
+  const queryClient = useQueryClient();
   const { userSessions, isLoading: sessionsLoading, setCurrentSessionId } = useAgentBuilder();
   const { deleteSession } = useAgentSession();
   console.log('🎭 User roles:', userRoles);
@@ -262,6 +264,10 @@ const AgentsInner = () => {
       setDraftSessions(remaining);
       toast.success('All draft agents and sessions deleted');
       
+      // Force refetch of sessions/agents
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
+      
       if (remaining.length === 0) {
         setShowSessionOptions(false);
         setShowWelcomeFlow(true);
@@ -302,6 +308,10 @@ const AgentsInner = () => {
       const remaining = draftSessions.filter(s => s.status !== 'in_progress');
       setDraftSessions(remaining);
       toast.success('All in-progress agents and sessions deleted');
+      
+      // Force refetch of sessions/agents
+      queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
+      queryClient.invalidateQueries({ queryKey: ['agents'] });
       
       if (remaining.length === 0) {
         setShowSessionOptions(false);
