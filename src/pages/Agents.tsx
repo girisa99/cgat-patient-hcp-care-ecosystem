@@ -72,8 +72,11 @@ const AgentsInner = () => {
   const [activeTab, setActiveTab] = useState('ecosystem');
   const [showPresentation, setShowPresentation] = useState(false);
   const [showProgressOptions, setShowProgressOptions] = useState(false);
+  const [showSessionOptions, setShowSessionOptions] = useState(false);
   const [savedProgress, setSavedProgress] = useState<any>(null);
+  const [draftSessions, setDraftSessions] = useState<any[]>([]);
   const { userRoles } = useMasterAuth();
+  const { userSessions, isLoading: sessionsLoading, setCurrentSessionId } = useAgentBuilder();
   console.log('🎭 User roles:', userRoles);
 
   // Role-based access control
@@ -81,8 +84,22 @@ const AgentsInner = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Check for saved progress on component mount
+  // Check for existing sessions and saved progress on component mount
   useEffect(() => {
+    if (sessionsLoading) return;
+    
+    // First check for existing draft/in-progress agent sessions
+    const draftAgentSessions = userSessions?.filter(session => 
+      session.status === 'draft' || session.status === 'in_progress'
+    ) || [];
+    
+    if (draftAgentSessions.length > 0) {
+      setDraftSessions(draftAgentSessions);
+      setShowSessionOptions(true);
+      return;
+    }
+    
+    // Then check for saved welcome flow progress
     const savedAgentProgress = localStorage.getItem('agent-builder-progress');
     if (savedAgentProgress) {
       try {
@@ -97,17 +114,30 @@ const AgentsInner = () => {
     } else {
       setShowWelcomeFlow(true);
     }
-  }, []);
+  }, [userSessions, sessionsLoading]);
 
   // Start new agent flow
   const startNewAgent = () => {
-    // Clear any existing progress
+    // Clear any existing progress and sessions
     localStorage.removeItem('agent-builder-progress');
     setSavedProgress(null);
     setShowProgressOptions(false);
+    setShowSessionOptions(false);
+    setDraftSessions([]);
     setWelcomeData(null);
+    setCurrentSessionId(null);
     setActiveTab('ecosystem');
     setShowWelcomeFlow(true);
+  };
+
+  // Resume existing agent session
+  const resumeSession = (session: any) => {
+    setCurrentSessionId(session.id);
+    setShowSessionOptions(false);
+    // Navigate to the appropriate tab based on session progress
+    if (session.current_step) {
+      setActiveTab('workflow-studio'); // Or determine based on current_step
+    }
   };
 
   // Continue with saved progress
@@ -199,6 +229,54 @@ const AgentsInner = () => {
     { id: 'active-deployments', label: 'Active Deployments', component: 'ActiveDeployments' },
     ...(isSuperAdmin ? [{ id: 'settings', label: 'Agent Settings', component: 'AgentSettingsView' }] : []),
   ];
+
+  // Show session options if user has existing agent sessions
+  if (showSessionOptions && draftSessions.length > 0) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
+        <div className="max-w-lg w-full">
+          <div className="bg-white rounded-2xl shadow-lg border p-8">
+            <div className="text-center mb-6">
+              <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-4">
+                <Bot className="w-8 h-8 text-blue-600" />
+              </div>
+              <h2 className="text-2xl font-bold mb-2">Welcome Back!</h2>
+              <p className="text-muted-foreground">
+                You have {draftSessions.length} agent{draftSessions.length > 1 ? 's' : ''} in progress. 
+                Choose one to continue or start a new agent.
+              </p>
+            </div>
+            
+            <div className="space-y-3 mb-6">
+              {draftSessions.map((session) => (
+                <div 
+                  key={session.id} 
+                  className="bg-blue-50 rounded-lg p-4 cursor-pointer hover:bg-blue-100 transition-colors"
+                  onClick={() => resumeSession(session)}
+                >
+                  <h3 className="font-semibold text-blue-900 mb-1">
+                    {session.name || 'Untitled Agent'}
+                  </h3>
+                  <p className="text-sm text-blue-700 mb-2">
+                    Status: {session.status} • Step: {session.current_step}
+                  </p>
+                  <p className="text-xs text-blue-600">
+                    Last updated: {new Date(session.updated_at).toLocaleDateString()}
+                  </p>
+                </div>
+              ))}
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Button variant="outline" onClick={startNewAgent} className="w-full">
+                Start New Agent
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   // Show progress options if user has saved work
   if (showProgressOptions && savedProgress) {
