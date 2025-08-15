@@ -552,8 +552,12 @@ export type Database = {
           agent_id: string
           conversation_data: Json
           created_at: string
+          current_journey_stage_id: string | null
           healthcare_context: Json | null
           id: string
+          journey_completed_at: string | null
+          journey_context: Json | null
+          journey_started_at: string | null
           metadata: Json | null
           session_id: string
           status: string
@@ -565,8 +569,12 @@ export type Database = {
           agent_id: string
           conversation_data?: Json
           created_at?: string
+          current_journey_stage_id?: string | null
           healthcare_context?: Json | null
           id?: string
+          journey_completed_at?: string | null
+          journey_context?: Json | null
+          journey_started_at?: string | null
           metadata?: Json | null
           session_id: string
           status?: string
@@ -578,8 +586,12 @@ export type Database = {
           agent_id?: string
           conversation_data?: Json
           created_at?: string
+          current_journey_stage_id?: string | null
           healthcare_context?: Json | null
           id?: string
+          journey_completed_at?: string | null
+          journey_context?: Json | null
+          journey_started_at?: string | null
           metadata?: Json | null
           session_id?: string
           status?: string
@@ -3893,6 +3905,47 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      journey_stage_transitions: {
+        Row: {
+          conversation_id: string
+          created_at: string | null
+          from_stage_id: string | null
+          id: string
+          to_stage_id: string
+          transition_data: Json | null
+          transition_reason: string | null
+          triggered_by: string | null
+        }
+        Insert: {
+          conversation_id: string
+          created_at?: string | null
+          from_stage_id?: string | null
+          id?: string
+          to_stage_id: string
+          transition_data?: Json | null
+          transition_reason?: string | null
+          triggered_by?: string | null
+        }
+        Update: {
+          conversation_id?: string
+          created_at?: string | null
+          from_stage_id?: string | null
+          id?: string
+          to_stage_id?: string
+          transition_data?: Json | null
+          transition_reason?: string | null
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fk_journey_transitions_conversation"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       knowledge_base: {
         Row: {
@@ -7701,6 +7754,10 @@ export type Database = {
         }
         Returns: boolean
       }
+      initialize_conversation_journey: {
+        Args: { p_agent_id: string; p_conversation_id: string }
+        Returns: Json
+      }
       initialize_onboarding_workflow: {
         Args: { p_onboarding_id: string }
         Returns: undefined
@@ -7800,6 +7857,15 @@ export type Database = {
           metadata_info?: Json
         }
         Returns: undefined
+      }
+      progress_journey_stage: {
+        Args: {
+          p_conversation_id: string
+          p_next_stage_id?: string
+          p_reason?: string
+          p_transition_data?: Json
+        }
+        Returns: Json
       }
       secure_assign_user_role: {
         Args: { target_role_name: string; target_user_id: string }

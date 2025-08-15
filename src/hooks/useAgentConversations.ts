@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useJourneyExecution, JourneyContext } from './useJourneyExecution';
 
 interface Conversation {
   id: string;
@@ -12,6 +13,10 @@ interface Conversation {
   conversation_data: any[];
   metadata?: Record<string, any>;
   healthcare_context?: Record<string, any>;
+  current_journey_stage_id?: string;
+  journey_context?: JourneyContext;
+  journey_started_at?: string;
+  journey_completed_at?: string;
   created_at: string;
   updated_at: string;
 }
@@ -28,6 +33,7 @@ export const useAgentConversations = () => {
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const journeyExecution = useJourneyExecution();
 
   // Fetch conversations
   const fetchConversations = async (agentId?: string) => {
@@ -45,7 +51,7 @@ export const useAgentConversations = () => {
       const { data, error: fetchError } = await query;
 
       if (fetchError) throw fetchError;
-      setConversations((data || []) as Conversation[]);
+      setConversations((data || []) as unknown as Conversation[]);
     } catch (err) {
       console.error('Error fetching conversations:', err);
       setError(err instanceof Error ? err.message : 'Unknown error');
@@ -54,12 +60,13 @@ export const useAgentConversations = () => {
     }
   };
 
-  // Create new conversation
+  // Create new conversation with journey initialization
   const createConversation = async (
     agentId: string,
     sessionId: string,
     title?: string,
-    metadata?: Record<string, any>
+    metadata?: Record<string, any>,
+    initializeJourney = true
   ) => {
     try {
       const { data, error: createError } = await supabase
@@ -79,14 +86,26 @@ export const useAgentConversations = () => {
       if (createError || !data) throw (createError || new Error('Conversation not created'));
 
 
+      // Initialize journey if requested
+      if (initializeJourney) {
+        try {
+          await journeyExecution.initializeJourney(data.id, agentId);
+        } catch (journeyError) {
+          console.warn('Journey initialization failed:', journeyError);
+          // Continue even if journey init fails
+        }
+      }
+
       await fetchConversations();
       
       toast({
         title: "Conversation Created",
-        description: "New conversation session started",
+        description: initializeJourney 
+          ? "New conversation started with journey stages"
+          : "New conversation session started",
       });
 
-      return data as Conversation;
+      return data as unknown as Conversation;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Failed to create conversation';
       setError(errorMessage);
@@ -277,5 +296,15 @@ export const useAgentConversations = () => {
     getConversationsByAgent,
     getConversationsByStatus,
     refetch: fetchConversations,
+    
+    // Journey-related methods
+    initializeConversationJourney: journeyExecution.initializeJourney,
+    progressJourneyStage: journeyExecution.progressStage,
+    getJourneyContext: journeyExecution.getJourneyContext,
+    getCurrentJourneyStage: journeyExecution.getCurrentStage,
+    getStageTransitions: journeyExecution.getStageTransitions,
+    isJourneyComplete: journeyExecution.isJourneyComplete,
+    getJourneyProgress: journeyExecution.getProgressPercentage,
+    validateStageConditions: journeyExecution.validateStageConditions,
   };
 };
