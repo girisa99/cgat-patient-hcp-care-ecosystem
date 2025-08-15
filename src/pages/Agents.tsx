@@ -31,6 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
 import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
 import ModePicker from '@/components/agent-builder/ModePicker';
+import { WelcomeFlow } from '@/components/agent-builder/WelcomeFlow';
 
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
@@ -63,6 +64,8 @@ const AgentSettingsView = () => {
 
 const AgentsInner = () => {
   console.log('🚀 Agents page rendering...');
+  const [showWelcomeFlow, setShowWelcomeFlow] = useState(true);
+  const [welcomeData, setWelcomeData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('ecosystem');
   const [showPresentation, setShowPresentation] = useState(false);
   const { userRoles } = useMasterAuth();
@@ -73,13 +76,29 @@ const AgentsInner = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Start mode from AgentBuilder context
-  const { mode } = useAgentBuilder();
-
-  // Move user based on selected start mode
+  // Check if user should see welcome flow
   useEffect(() => {
-    setActiveTab(mode === 'manual' ? 'ecosystem' : 'workflow-studio');
-  }, [mode]);
+    const hasCompletedWelcome = localStorage.getItem('agent-builder-welcome-complete');
+    if (hasCompletedWelcome) {
+      setShowWelcomeFlow(false);
+    }
+  }, []);
+
+  const handleWelcomeComplete = (data: any) => {
+    setWelcomeData(data);
+    setShowWelcomeFlow(false);
+    localStorage.setItem('agent-builder-welcome-complete', 'true');
+    
+    // Set initial tab based on selected mode
+    if (data.selectedMode === 'prompt') {
+      // For now, redirect to workflow studio in prompt mode
+      setActiveTab('workflow-studio');
+    } else if (data.selectedMode === 'visual') {
+      setActiveTab('workflow-studio');
+    } else {
+      setActiveTab('ecosystem');
+    }
+  };
 
   // Minimal SEO without Helmet to avoid context errors
   useEffect(() => {
@@ -111,11 +130,43 @@ const AgentsInner = () => {
     ...(isSuperAdmin ? [{ id: 'settings', label: 'Agent Settings', component: 'AgentSettingsView' }] : []),
   ];
 
+  // Show welcome flow first
+  if (showWelcomeFlow) {
+    return <WelcomeFlow onComplete={handleWelcomeComplete} />;
+  }
+
   // Add error boundary for debugging
   try {
     return (
       <AppLayout>
         <div className="space-y-6">
+          {/* Welcome data summary */}
+          {welcomeData && (
+            <div className="bg-gradient-to-r from-green-50 to-blue-50 border border-green-200 rounded-lg p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-green-900">
+                    {welcomeData.analysisResult?.title || 'Agent Configuration'}
+                  </h3>
+                  <p className="text-sm text-green-700 mt-1">
+                    Mode: {welcomeData.selectedMode} • 
+                    {welcomeData.isReturningUser ? ' Returning User' : ' New User'}
+                  </p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    localStorage.removeItem('agent-builder-welcome-complete');
+                    setShowWelcomeFlow(true);
+                  }}
+                >
+                  Start New Agent
+                </Button>
+              </div>
+            </div>
+          )}
+
           {/* Role-specific header */}
           <div className="flex items-center justify-between">
             <div>
