@@ -22,10 +22,15 @@ import {
   Grid,
   Rocket,
   Activity,
-  Workflow
+  Workflow,
+  Trash2,
+  AlertTriangle
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { useAgentSession } from '@/hooks/useAgentSession';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 // Removed Helmet to prevent context errors
 // Role-specific components - defined before use to avoid React error #185
 import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
@@ -75,8 +80,11 @@ const AgentsInner = () => {
   const [showSessionOptions, setShowSessionOptions] = useState(false);
   const [savedProgress, setSavedProgress] = useState<any>(null);
   const [draftSessions, setDraftSessions] = useState<any[]>([]);
+  const [isDeleting, setIsDeleting] = useState<string | null>(null);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const { userRoles } = useMasterAuth();
   const { userSessions, isLoading: sessionsLoading, setCurrentSessionId } = useAgentBuilder();
+  const { deleteSession } = useAgentSession();
   console.log('🎭 User roles:', userRoles);
 
   // Role-based access control
@@ -137,6 +145,78 @@ const AgentsInner = () => {
     // Navigate to the appropriate tab based on session progress
     if (session.current_step) {
       setActiveTab('workflow-studio'); // Or determine based on current_step
+    }
+  };
+
+  // Delete individual draft session
+  const handleDeleteSession = async (sessionId: string, sessionName: string) => {
+    if (isDeleting) return;
+    
+    setIsDeleting(sessionId);
+    try {
+      await deleteSession.mutateAsync(sessionId);
+      
+      // Update local state
+      setDraftSessions(prev => prev.filter(s => s.id !== sessionId));
+      
+      toast.success(`Deleted "${sessionName || 'Untitled Agent'}" successfully`);
+      
+      // If no more draft sessions, hide the dialog
+      if (draftSessions.length <= 1) {
+        setShowSessionOptions(false);
+        setShowWelcomeFlow(true);
+      }
+    } catch (error) {
+      console.error('Error deleting session:', error);
+      toast.error('Failed to delete agent session');
+    } finally {
+      setIsDeleting(null);
+    }
+  };
+
+  // Bulk delete old draft sessions
+  const handleBulkDeleteOldDrafts = async () => {
+    if (isBulkDeleting) return;
+    
+    setIsBulkDeleting(true);
+    try {
+      // Call the cleanup function from Supabase
+      const { data, error } = await supabase.rpc('cleanup_old_draft_agents', {
+        p_user_id: null, // null means current user
+        p_confirm: true
+      });
+      
+      if (error) throw error;
+      
+      // Type the data response properly
+      const result = data as any;
+      const deletedSessions = result?.deleted_sessions || 0;
+      
+      if (deletedSessions > 0) {
+        toast.success(`Deleted ${deletedSessions} old draft sessions`);
+        
+        // Refresh the sessions list
+        const updatedSessions = draftSessions.filter(session => {
+          const daysSinceUpdate = Math.floor(
+            (Date.now() - new Date(session.updated_at).getTime()) / (1000 * 60 * 60 * 24)
+          );
+          return daysSinceUpdate < 7; // Keep sessions newer than 7 days
+        });
+        
+        setDraftSessions(updatedSessions);
+        
+        if (updatedSessions.length === 0) {
+          setShowSessionOptions(false);
+          setShowWelcomeFlow(true);
+        }
+      } else {
+        toast.info('No old draft sessions found to delete');
+      }
+    } catch (error) {
+      console.error('Error cleaning up old drafts:', error);
+      toast.error('Failed to clean up old draft sessions');
+    } finally {
+      setIsBulkDeleting(false);
     }
   };
 
@@ -251,18 +331,37 @@ const AgentsInner = () => {
               {draftSessions.map((session) => (
                 <div 
                   key={session.id} 
-                  className="bg-blue-50 rounded-lg p-4 cursor-pointer hover:bg-blue-100 transition-colors"
-                  onClick={() => resumeSession(session)}
+                  className="bg-blue-50 rounded-lg p-4 border hover:border-blue-300 transition-colors"
                 >
-                  <h3 className="font-semibold text-blue-900 mb-1">
-                    {session.name || 'Untitled Agent'}
-                  </h3>
-                  <p className="text-sm text-blue-700 mb-2">
-                    Status: {session.status} • Step: {session.current_step}
-                  </p>
-                  <p className="text-xs text-blue-600">
-                    Last updated: {new Date(session.updated_at).toLocaleDateString()}
-                  </p>
+                  <div className="flex items-start justify-between">
+                    <div 
+                      className="flex-1 cursor-pointer"
+                      onClick={() => resumeSession(session)}
+                    >
+                      <h3 className="font-semibold text-blue-900 mb-1">
+                        {session.name || 'Untitled Agent'}
+                      </h3>
+                      <p className="text-sm text-blue-700 mb-2">
+                        Status: {session.status} • Step: {session.current_step}
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        Last updated: {new Date(session.updated_at).toLocaleDateString()}
+                      </p>
+                    </div>
+                    
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSession(session.id, session.name);
+                      }}
+                      disabled={isDeleting === session.id}
+                      className="text-red-600 hover:text-red-700 hover:bg-red-50 ml-2"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -271,6 +370,23 @@ const AgentsInner = () => {
               <Button variant="outline" onClick={startNewAgent} className="w-full">
                 Start New Agent
               </Button>
+              
+              {draftSessions.length > 1 && (
+                <div className="border-t pt-3">
+                  <div className="flex items-center gap-2 mb-2">
+                    <AlertTriangle className="h-4 w-4 text-orange-500" />
+                    <span className="text-sm font-medium text-gray-700">Cleanup Options</span>
+                  </div>
+                  <Button 
+                    variant="outline" 
+                    onClick={handleBulkDeleteOldDrafts}
+                    disabled={isBulkDeleting}
+                    className="w-full text-orange-600 hover:text-orange-700 hover:bg-orange-50"
+                  >
+                    {isBulkDeleting ? 'Cleaning...' : 'Delete Old Drafts (7+ days)'}
+                  </Button>
+                </div>
+              )}
             </div>
           </div>
         </div>
