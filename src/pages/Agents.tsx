@@ -67,10 +67,12 @@ const AgentSettingsView = () => {
 
 const AgentsInner = () => {
   console.log('🚀 Agents page rendering...');
-  const [showWelcomeFlow, setShowWelcomeFlow] = useState(true);
+  const [showWelcomeFlow, setShowWelcomeFlow] = useState(false);
   const [welcomeData, setWelcomeData] = useState<any>(null);
   const [activeTab, setActiveTab] = useState('ecosystem');
   const [showPresentation, setShowPresentation] = useState(false);
+  const [showProgressOptions, setShowProgressOptions] = useState(false);
+  const [savedProgress, setSavedProgress] = useState<any>(null);
   const { userRoles } = useMasterAuth();
   console.log('🎭 User roles:', userRoles);
 
@@ -79,16 +81,64 @@ const AgentsInner = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Always start with welcome flow for new agents
+  // Check for saved progress on component mount
+  useEffect(() => {
+    const savedAgentProgress = localStorage.getItem('agent-builder-progress');
+    if (savedAgentProgress) {
+      try {
+        const progress = JSON.parse(savedAgentProgress);
+        setSavedProgress(progress);
+        setShowProgressOptions(true);
+      } catch (error) {
+        console.error('Failed to parse saved progress:', error);
+        localStorage.removeItem('agent-builder-progress');
+        setShowWelcomeFlow(true);
+      }
+    } else {
+      setShowWelcomeFlow(true);
+    }
+  }, []);
+
+  // Start new agent flow
   const startNewAgent = () => {
-    setShowWelcomeFlow(true);
+    // Clear any existing progress
+    localStorage.removeItem('agent-builder-progress');
+    setSavedProgress(null);
+    setShowProgressOptions(false);
     setWelcomeData(null);
     setActiveTab('ecosystem');
+    setShowWelcomeFlow(true);
+  };
+
+  // Continue with saved progress
+  const continueProgress = () => {
+    if (savedProgress) {
+      setWelcomeData(savedProgress);
+      setShowProgressOptions(false);
+      setShowWelcomeFlow(false);
+      // Set tab based on saved mode
+      if (savedProgress.selectedMode === 'visual') {
+        setActiveTab('workflow-studio');
+      } else if (savedProgress.selectedMode === 'prompt') {
+        setActiveTab('workflow-studio');
+      } else {
+        setActiveTab('ecosystem');
+      }
+    }
   };
 
   const handleWelcomeComplete = (data: any) => {
+    // Save progress to localStorage
+    const progressData = {
+      ...data,
+      timestamp: new Date().toISOString(),
+      lastStep: 'welcome-complete'
+    };
+    localStorage.setItem('agent-builder-progress', JSON.stringify(progressData));
+    
     setWelcomeData(data);
     setShowWelcomeFlow(false);
+    setShowProgressOptions(false);
     
     // Set initial tab based on selected mode
     if (data.selectedMode === 'prompt') {
@@ -99,6 +149,26 @@ const AgentsInner = () => {
       setActiveTab('ecosystem');
     }
   };
+
+  // Save progress whenever important changes happen
+  const saveProgress = (additionalData: any = {}) => {
+    if (welcomeData) {
+      const updatedProgress = {
+        ...welcomeData,
+        ...additionalData,
+        timestamp: new Date().toISOString(),
+        currentTab: activeTab
+      };
+      localStorage.setItem('agent-builder-progress', JSON.stringify(updatedProgress));
+    }
+  };
+
+  // Update progress when tab changes
+  useEffect(() => {
+    if (welcomeData) {
+      saveProgress({ currentTab: activeTab });
+    }
+  }, [activeTab, welcomeData]);
 
   // Minimal SEO without Helmet to avoid context errors
   useEffect(() => {
@@ -130,7 +200,48 @@ const AgentsInner = () => {
     ...(isSuperAdmin ? [{ id: 'settings', label: 'Agent Settings', component: 'AgentSettingsView' }] : []),
   ];
 
-  // Show welcome flow first
+  // Show progress options if user has saved work
+  if (showProgressOptions && savedProgress) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white flex items-center justify-center p-4">
+        <div className="max-w-md w-full">
+          <div className="bg-white rounded-2xl shadow-lg border p-8 text-center">
+            <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mb-6">
+              <Bot className="w-8 h-8 text-blue-600" />
+            </div>
+            
+            <h2 className="text-2xl font-bold mb-2">Welcome Back!</h2>
+            <p className="text-muted-foreground mb-2">
+              You have work in progress on an agent.
+            </p>
+            
+            <div className="bg-blue-50 rounded-lg p-4 mb-6 text-left">
+              <h3 className="font-semibold text-blue-900 mb-1">
+                {savedProgress.analysisResult?.title || 'Healthcare Agent'}
+              </h3>
+              <p className="text-sm text-blue-700 mb-2">
+                Mode: {savedProgress.selectedMode?.charAt(0).toUpperCase() + savedProgress.selectedMode?.slice(1)}
+              </p>
+              <p className="text-xs text-blue-600">
+                Last worked on: {new Date(savedProgress.timestamp).toLocaleDateString()}
+              </p>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <Button onClick={continueProgress} className="w-full">
+                Continue Where I Left Off
+              </Button>
+              <Button variant="outline" onClick={startNewAgent} className="w-full">
+                Start New Agent
+              </Button>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Show welcome flow for new agents
   if (showWelcomeFlow) {
     return <WelcomeFlow onComplete={handleWelcomeComplete} />;
   }

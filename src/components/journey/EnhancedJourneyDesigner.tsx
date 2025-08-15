@@ -109,6 +109,23 @@ export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = (
     onStepsChange(newSteps);
     setEditingStep(newStep.id);
     
+    // Save progress to localStorage
+    const currentProgress = localStorage.getItem('agent-builder-progress');
+    if (currentProgress) {
+      try {
+        const progress = JSON.parse(currentProgress);
+        const updatedProgress = {
+          ...progress,
+          journeySteps: newSteps,
+          timestamp: new Date().toISOString(),
+          lastStep: 'journey-design'
+        };
+        localStorage.setItem('agent-builder-progress', JSON.stringify(updatedProgress));
+      } catch (error) {
+        console.error('Failed to save journey progress:', error);
+      }
+    }
+    
     toast({
       title: "Step added",
       description: "New journey step added successfully",
@@ -121,6 +138,23 @@ export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = (
       step.id === stepId ? { ...step, ...updates } : step
     );
     onStepsChange(newSteps);
+    
+    // Save progress to localStorage
+    const currentProgress = localStorage.getItem('agent-builder-progress');
+    if (currentProgress) {
+      try {
+        const progress = JSON.parse(currentProgress);
+        const updatedProgress = {
+          ...progress,
+          journeySteps: newSteps,
+          timestamp: new Date().toISOString(),
+          lastStep: 'journey-design'
+        };
+        localStorage.setItem('agent-builder-progress', JSON.stringify(updatedProgress));
+      } catch (error) {
+        console.error('Failed to save journey progress:', error);
+      }
+    }
   }, [steps, onStepsChange]);
 
   // Remove step
