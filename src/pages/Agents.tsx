@@ -48,6 +48,7 @@ import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
 import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
 import ModePicker from '@/components/agent-builder/ModePicker';
 import { IntelligentQuestionnaire } from '@/components/agent-builder/IntelligentQuestionnaire';
+import { Intelligence } from './Intelligence';
 
 // Lazy load the workflow studio
 const EmbeddedWorkflowStudio = React.lazy(() => import('@/components/agent-builder/EmbeddedWorkflowStudio'));
