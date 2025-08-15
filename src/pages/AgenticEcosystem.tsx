@@ -26,17 +26,7 @@ interface Agent {
 const AgenticEcosystem = () => {
   console.log('🤖 AgenticEcosystem component rendering...');
   
-  const [activeTab, setActiveTab] = useState(() => {
-    // Restore tab from localStorage on page load
-    try {
-      if (typeof window !== 'undefined') {
-        return localStorage.getItem('agenticEcosystem_activeTab') || 'overview';
-      }
-    } catch (error) {
-      console.error('Error accessing localStorage:', error);
-    }
-    return 'overview';
-  });
+  const [activeTab, setActiveTab] = useState('overview');
 
   // Debug active tab changes
   React.useEffect(() => {
@@ -267,8 +257,6 @@ const AgenticEcosystem = () => {
       <Tabs value={activeTab} onValueChange={(value) => {
         console.log('🔀 AgenticEcosystem tab changed from', activeTab, 'to', value);
         setActiveTab(value);
-        // Persist tab state to localStorage
-        localStorage.setItem('agenticEcosystem_activeTab', value);
       }} className="w-full">
         <TabsList className="child-tabs grid grid-cols-4 h-auto">
           <TabsTrigger 
