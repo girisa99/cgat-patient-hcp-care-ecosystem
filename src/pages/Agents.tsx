@@ -109,22 +109,11 @@ const AgentsInner = () => {
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Check for existing sessions and saved progress on component mount
+  // Check only for saved progress on component mount (not draft sessions)
   useEffect(() => {
     if (sessionsLoading) return;
     
-    // First check for existing draft/in-progress agent sessions
-    const draftAgentSessions = userSessions?.filter(session => 
-      session.status === 'draft' || session.status === 'in_progress'
-    ) || [];
-    
-    if (draftAgentSessions.length > 0) {
-      setDraftSessions(draftAgentSessions);
-      setShowSessionOptions(true);
-      return;
-    }
-    
-    // Then check for saved welcome flow progress
+    // Check for saved welcome flow progress only
     const savedAgentProgress = localStorage.getItem('agent-builder-progress');
     if (savedAgentProgress) {
       try {
@@ -139,10 +128,21 @@ const AgentsInner = () => {
     } else {
       setShowWelcomeFlow(true);
     }
-  }, [userSessions, sessionsLoading]);
+  }, [sessionsLoading]);
 
-  // Start new agent flow
+  // Start new agent flow - check for drafts first
   const startNewAgent = () => {
+    // Check for existing draft/in-progress agent sessions before starting
+    const draftAgentSessions = userSessions?.filter(session => 
+      session.status === 'draft' || session.status === 'in_progress'
+    ) || [];
+    
+    if (draftAgentSessions.length > 0) {
+      setDraftSessions(draftAgentSessions);
+      setShowSessionOptions(true);
+      return;
+    }
+    
     // Clear any existing progress and sessions
     localStorage.removeItem('agent-builder-progress');
     setSavedProgress(null);
