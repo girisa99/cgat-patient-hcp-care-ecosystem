@@ -19,7 +19,11 @@ import {
 } from 'lucide-react';
 import { useUnifiedAgentBuilder } from '@/hooks/useUnifiedAgentBuilder';
 
-export const UnifiedAgentBuilder: React.FC = () => {
+interface UnifiedAgentBuilderProps {
+  step?: string;
+}
+
+export const UnifiedAgentBuilder: React.FC<UnifiedAgentBuilderProps> = ({ step }) => {
   const {
     state,
     setState,
@@ -34,7 +38,19 @@ export const UnifiedAgentBuilder: React.FC = () => {
     USE_CASE_TEMPLATES
   } = useUnifiedAgentBuilder();
 
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(step || 'overview');
+
+  // Map step prop to appropriate tab
+  React.useEffect(() => {
+    if (step) {
+      const stepMap: Record<string, string> = {
+        'basic_info': 'overview',
+        'canvas': 'canvas',
+        'actions': 'actions'
+      };
+      setActiveTab(stepMap[step] || step);
+    }
+  }, [step]);
 
   // Smart mode selector
   const renderModeSelector = () => (
