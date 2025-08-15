@@ -49,7 +49,13 @@ export const useAgentSession = (sessionId?: string) => {
         return [] as AgentSession[];
       }
 
-      return (data || []) as AgentSession[];
+      const result = (data || []) as AgentSession[];
+      console.log('📦 useAgentSession: fetched user sessions', {
+        count: result.length,
+        userId: user.id,
+        sampleUserIds: Array.from(new Set(result.slice(0, 10).map((s: any) => (s as any).user_id))),
+      });
+      return result;
     },
   });
 

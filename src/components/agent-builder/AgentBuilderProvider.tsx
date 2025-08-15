@@ -133,12 +133,22 @@ export const AgentBuilderProvider: React.FC<AgentBuilderProviderProps> = ({
     }
   }, [mode]);
 
+  // Ensure session isolation: filter strictly by current user_id as extra safety
+  const filteredUserSessions = (userSessions || []).filter((s: any) => s?.user_id === user?.id);
+  if ((userSessions?.length || 0) !== (filteredUserSessions.length || 0)) {
+    console.log('🔒 AgentBuilderProvider: filtered sessions for current user', {
+      before: userSessions?.length || 0,
+      after: filteredUserSessions.length,
+      uniqueUserIds: Array.from(new Set((userSessions || []).map((s: any) => s?.user_id))).slice(0, 5),
+    });
+  }
+
   const contextValue: AgentBuilderContextType = {
     // Session Management
     currentSessionId,
     setCurrentSessionId,
     currentSession,
-    userSessions: userSessions || [],
+    userSessions: filteredUserSessions,
     
     // Step Management
     currentStep,
