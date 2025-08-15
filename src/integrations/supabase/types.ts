@@ -7622,6 +7622,10 @@ export type Database = {
         Args: { p_confirm?: boolean; p_user_id?: string }
         Returns: Json
       }
+      cleanup_user_agent_work: {
+        Args: { p_statuses?: string[]; p_user_id?: string }
+        Returns: Json
+      }
       continuous_test_generation: {
         Args: Record<PropertyKey, never>
         Returns: Json

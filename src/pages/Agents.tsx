@@ -236,50 +236,36 @@ const AgentsInner = () => {
     }
   };
 
-  // Delete all draft agents and sessions for current user
+  // Delete all draft agents and sessions for current user (server-side RPC)
   const performDeleteAllDrafts = async () => {
     if (isDeletingAll) return;
     if (!user?.id) return;
     
-    console.log('🗑️ Deleting ALL drafts for user:', user.id);
-    console.log('🗑️ Current draft sessions:', draftSessions.length);
-    
+    console.log('🗑️ Deleting ALL drafts via RPC for user:', user.id);
     setIsDeletingAll(true);
     try {
-      const [sessionsRes, agentsRes] = await Promise.all([
-        supabase
-          .from('agent_sessions')
-          .delete()
-          .eq('status', 'draft')
-          .eq('user_id', user.id),
-        supabase
-          .from('agents')
-          .delete()
-          .eq('status', 'draft')
-          .eq('created_by', user.id),
-      ]);
+      const { data, error } = await supabase.rpc('cleanup_user_agent_work', {
+        p_user_id: user.id,
+        p_statuses: ['draft']
+      });
+      if (error) throw error;
+      console.log('🗑️ RPC result (drafts):', data);
       
-      console.log('🗑️ Sessions delete result:', sessionsRes);
-      console.log('🗑️ Agents delete result:', agentsRes);
-      
-      if (sessionsRes.error) throw sessionsRes.error;
-      if (agentsRes.error) throw agentsRes.error;
-      
-      // Update local list: keep in_progress items only
-      const remaining = draftSessions.filter(s => s.status !== 'draft');
-      setDraftSessions(remaining);
-      toast.success(`Deleted ${draftSessions.filter(s => s.status === 'draft').length} draft items`);
-      
-      // Force refetch of sessions/agents
+      // Refresh state
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       
+      // Update local
+      const remaining = draftSessions.filter(s => s.status !== 'draft');
+      setDraftSessions(remaining);
+      const totalDeleted = (data as any)?.total_deleted ?? 0;
+      toast.success(`Deleted ${totalDeleted} draft items`);
       if (remaining.length === 0) {
         setShowSessionOptions(false);
         setShowWelcomeFlow(true);
       }
     } catch (error) {
-      console.error('❌ Error deleting all drafts:', error);
+      console.error('❌ Error deleting all drafts via RPC:', error);
       toast.error('Failed to delete all drafts');
     } finally {
       setIsDeletingAll(false);
@@ -287,50 +273,35 @@ const AgentsInner = () => {
     }
   };
 
-  // Delete all in_progress agents and sessions for current user
+  // Delete all in_progress agents and sessions for current user (server-side RPC)
   const performDeleteInProgress = async () => {
     if (isDeletingInProgress) return;
     if (!user?.id) return;
     
-    console.log('🗑️ Deleting ALL in-progress for user:', user.id);
-    console.log('🗑️ Current in-progress sessions:', draftSessions.filter(s => s.status === 'in_progress').length);
-    
+    console.log('🗑️ Deleting ALL in-progress via RPC for user:', user.id);
     setIsDeletingInProgress(true);
     try {
-      const [sessionsRes, agentsRes] = await Promise.all([
-        supabase
-          .from('agent_sessions')
-          .delete()
-          .eq('status', 'in_progress')
-          .eq('user_id', user.id),
-        supabase
-          .from('agents')
-          .delete()
-          .eq('status', 'in_progress')
-          .eq('created_by', user.id),
-      ]);
+      const { data, error } = await supabase.rpc('cleanup_user_agent_work', {
+        p_user_id: user.id,
+        p_statuses: ['in_progress']
+      });
+      if (error) throw error;
+      console.log('🗑️ RPC result (in-progress):', data);
       
-      console.log('🗑️ In-progress sessions delete result:', sessionsRes);
-      console.log('🗑️ In-progress agents delete result:', agentsRes);
-      
-      if (sessionsRes.error) throw sessionsRes.error;
-      if (agentsRes.error) throw agentsRes.error;
-      
-      // Update local list: keep draft items only
-      const remaining = draftSessions.filter(s => s.status !== 'in_progress');
-      setDraftSessions(remaining);
-      toast.success(`Deleted ${draftSessions.filter(s => s.status === 'in_progress').length} in-progress items`);
-      
-      // Force refetch of sessions/agents
+      // Refresh state
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
       queryClient.invalidateQueries({ queryKey: ['agents'] });
       
+      const remaining = draftSessions.filter(s => s.status !== 'in_progress');
+      setDraftSessions(remaining);
+      const totalDeleted = (data as any)?.total_deleted ?? 0;
+      toast.success(`Deleted ${totalDeleted} in-progress items`);
       if (remaining.length === 0) {
         setShowSessionOptions(false);
         setShowWelcomeFlow(true);
       }
     } catch (error) {
-      console.error('❌ Error deleting in-progress items:', error);
+      console.error('❌ Error deleting in-progress via RPC:', error);
       toast.error('Failed to delete in-progress items');
     } finally {
       setIsDeletingInProgress(false);
