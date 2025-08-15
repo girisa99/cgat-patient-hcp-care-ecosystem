@@ -30,6 +30,13 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
   const [currentStep, setCurrentStep] = useState('usecase');
   const [previewMode, setPreviewMode] = useState(false);
   const [lsProjectId, setLsProjectId] = useState<number | undefined>(undefined);
+  const [journeySteps, setJourneySteps] = useState([
+    { id: '1', title: 'Initial Contact', description: 'Patient reaches out for care' },
+    { id: '2', title: 'Information Gathering', description: 'Collect patient details and needs' },
+    { id: '3', title: 'Processing & Routing', description: 'Determine best care pathway' }
+  ]);
+  const [selectedUseCase, setSelectedUseCase] = useState<string>('patient-onboarding');
+  const [agentName, setAgentName] = useState<string>('Patient Onboarding Assistant');
 
   // Default Label Studio project to last used from latest agent
   useEffect(() => {
@@ -137,6 +144,32 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
     }
   };
 
+  const handleAddStep = () => {
+    const newStepId = (journeySteps.length + 1).toString();
+    const newStep = {
+      id: newStepId,
+      title: `New Step ${newStepId}`,
+      description: 'Describe this step in the customer journey'
+    };
+    setJourneySteps([...journeySteps, newStep]);
+    showSuccess('New journey step added successfully!');
+  };
+
+  const handleRemoveStep = (stepId: string) => {
+    if (journeySteps.length <= 2) {
+      showError('Cannot remove step. Minimum 2 steps required.');
+      return;
+    }
+    setJourneySteps(journeySteps.filter(step => step.id !== stepId));
+    showSuccess('Journey step removed successfully!');
+  };
+
+  const handleStepUpdate = (stepId: string, field: 'title' | 'description', value: string) => {
+    setJourneySteps(journeySteps.map(step => 
+      step.id === stepId ? { ...step, [field]: value } : step
+    ));
+  };
+
   const handleReset = () => {
     setCurrentStep('usecase');
     setPreviewMode(false);
@@ -174,26 +207,36 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
               <div className="max-w-2xl mx-auto">
                 <div className="p-6 border rounded-lg bg-muted/30">
                   <h3 className="font-semibold mb-4">Manual Configuration</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Agent Name</label>
-                      <input type="text" className="w-full p-2 border rounded" placeholder="e.g., Patient Onboarding Assistant" />
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Agent Name</label>
+                        <input 
+                          type="text" 
+                          className="w-full p-2 border rounded" 
+                          placeholder="e.g., Patient Onboarding Assistant" 
+                          value={agentName}
+                          onChange={(e) => setAgentName(e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Primary Purpose</label>
+                        <select 
+                          className="w-full p-2 border rounded"
+                          value={selectedUseCase}
+                          onChange={(e) => setSelectedUseCase(e.target.value)}
+                        >
+                          <option value="patient-onboarding">Patient Onboarding</option>
+                          <option value="appointment-scheduling">Appointment Scheduling</option>
+                          <option value="treatment-support">Treatment Support</option>
+                          <option value="insurance-processing">Insurance Processing</option>
+                          <option value="custom">Custom</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Target Audience</label>
+                        <input type="text" className="w-full p-2 border rounded" placeholder="e.g., New patients, Existing patients, Care providers" />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Primary Purpose</label>
-                      <select className="w-full p-2 border rounded">
-                        <option>Patient Onboarding</option>
-                        <option>Appointment Scheduling</option>
-                        <option>Treatment Support</option>
-                        <option>Insurance Processing</option>
-                        <option>Custom</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Target Audience</label>
-                      <input type="text" className="w-full p-2 border rounded" placeholder="e.g., New patients, Existing patients, Care providers" />
-                    </div>
-                  </div>
                   <Button className="mt-4" onClick={() => handleStepComplete('usecase')}>
                     Continue to Journey Mapping
                   </Button>
@@ -243,34 +286,43 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
               <div className="p-6 border rounded-lg">
                 <h3 className="font-semibold mb-4">Journey Designer</h3>
                 <div className="space-y-4">
-                  <div className="flex items-center gap-4 p-4 border rounded">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">1</div>
-                    <div className="flex-1">
-                      <div className="font-medium">Initial Contact</div>
-                      <div className="text-sm text-muted-foreground">Patient reaches out for care</div>
+                  {journeySteps.map((step, index) => (
+                    <div key={step.id} className="flex items-center gap-4 p-4 border rounded group">
+                      <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">
+                        {step.id}
+                      </div>
+                      <div className="flex-1">
+                        <input
+                          type="text"
+                          className="font-medium bg-transparent border-none w-full focus:bg-background focus:border focus:rounded px-2 py-1"
+                          value={step.title}
+                          onChange={(e) => handleStepUpdate(step.id, 'title', e.target.value)}
+                        />
+                        <input
+                          type="text"
+                          className="text-sm text-muted-foreground bg-transparent border-none w-full focus:bg-background focus:border focus:rounded px-2 py-1"
+                          value={step.description}
+                          onChange={(e) => handleStepUpdate(step.id, 'description', e.target.value)}
+                        />
+                      </div>
+                      {index < journeySteps.length - 1 && (
+                        <ArrowRight className="h-4 w-4 text-muted-foreground" />
+                      )}
+                      {journeySteps.length > 2 && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleRemoveStep(step.id)}
+                          className="opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      )}
                     </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  
-                  <div className="flex items-center gap-4 p-4 border rounded">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">2</div>
-                    <div className="flex-1">
-                      <div className="font-medium">Information Gathering</div>
-                      <div className="text-sm text-muted-foreground">Collect patient details and needs</div>
-                    </div>
-                    <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                  </div>
-                  
-                  <div className="flex items-center gap-4 p-4 border rounded">
-                    <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm">3</div>
-                    <div className="flex-1">
-                      <div className="font-medium">Processing & Routing</div>
-                      <div className="text-sm text-muted-foreground">Determine best care pathway</div>
-                    </div>
-                  </div>
+                  ))}
                   
                   <div className="flex gap-2 mt-6">
-                    <Button variant="outline">
+                    <Button variant="outline" onClick={handleAddStep}>
                       Add Step
                     </Button>
                     <Button onClick={() => handleStepComplete('journey')}>
@@ -302,26 +354,44 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
               </TabsList>
               
               <TabsContent value="overview" level="child" className="space-y-4">
+                <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-semibold mb-2">Generated for: {agentName}</h4>
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Use Case: {selectedUseCase.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Based on {journeySteps.length} journey steps: {journeySteps.map(step => step.title).join(' → ')}
+                  </p>
+                </div>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Workflow className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <div className="font-medium">Workflow Nodes</div>
-                      <div className="text-2xl font-bold">12</div>
+                      <div className="text-2xl font-bold">{journeySteps.length * 4}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {journeySteps.length} journey × 4 nodes each
+                      </div>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Target className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <div className="font-medium">Decision Points</div>
-                      <div className="text-2xl font-bold">5</div>
+                      <div className="text-2xl font-bold">{Math.max(journeySteps.length - 1, 1)}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Between journey steps
+                      </div>
                     </CardContent>
                   </Card>
                   <Card>
                     <CardContent className="p-4 text-center">
                       <Bot className="h-8 w-8 mx-auto mb-2 text-primary" />
                       <div className="font-medium">AI Actions</div>
-                      <div className="text-2xl font-bold">8</div>
+                      <div className="text-2xl font-bold">{journeySteps.length * 2}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        2 AI actions per step
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
