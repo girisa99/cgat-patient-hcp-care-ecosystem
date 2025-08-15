@@ -241,6 +241,9 @@ const AgentsInner = () => {
     if (isDeletingAll) return;
     if (!user?.id) return;
     
+    console.log('🗑️ Deleting ALL drafts for user:', user.id);
+    console.log('🗑️ Current draft sessions:', draftSessions.length);
+    
     setIsDeletingAll(true);
     try {
       const [sessionsRes, agentsRes] = await Promise.all([
@@ -256,13 +259,16 @@ const AgentsInner = () => {
           .eq('created_by', user.id),
       ]);
       
+      console.log('🗑️ Sessions delete result:', sessionsRes);
+      console.log('🗑️ Agents delete result:', agentsRes);
+      
       if (sessionsRes.error) throw sessionsRes.error;
       if (agentsRes.error) throw agentsRes.error;
       
       // Update local list: keep in_progress items only
       const remaining = draftSessions.filter(s => s.status !== 'draft');
       setDraftSessions(remaining);
-      toast.success('All draft agents and sessions deleted');
+      toast.success(`Deleted ${draftSessions.filter(s => s.status === 'draft').length} draft items`);
       
       // Force refetch of sessions/agents
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
@@ -273,7 +279,7 @@ const AgentsInner = () => {
         setShowWelcomeFlow(true);
       }
     } catch (error) {
-      console.error('Error deleting all drafts:', error);
+      console.error('❌ Error deleting all drafts:', error);
       toast.error('Failed to delete all drafts');
     } finally {
       setIsDeletingAll(false);
@@ -285,6 +291,9 @@ const AgentsInner = () => {
   const performDeleteInProgress = async () => {
     if (isDeletingInProgress) return;
     if (!user?.id) return;
+    
+    console.log('🗑️ Deleting ALL in-progress for user:', user.id);
+    console.log('🗑️ Current in-progress sessions:', draftSessions.filter(s => s.status === 'in_progress').length);
     
     setIsDeletingInProgress(true);
     try {
@@ -301,13 +310,16 @@ const AgentsInner = () => {
           .eq('created_by', user.id),
       ]);
       
+      console.log('🗑️ In-progress sessions delete result:', sessionsRes);
+      console.log('🗑️ In-progress agents delete result:', agentsRes);
+      
       if (sessionsRes.error) throw sessionsRes.error;
       if (agentsRes.error) throw agentsRes.error;
       
       // Update local list: keep draft items only
       const remaining = draftSessions.filter(s => s.status !== 'in_progress');
       setDraftSessions(remaining);
-      toast.success('All in-progress agents and sessions deleted');
+      toast.success(`Deleted ${draftSessions.filter(s => s.status === 'in_progress').length} in-progress items`);
       
       // Force refetch of sessions/agents
       queryClient.invalidateQueries({ queryKey: ['user-agent-sessions'] });
@@ -318,7 +330,7 @@ const AgentsInner = () => {
         setShowWelcomeFlow(true);
       }
     } catch (error) {
-      console.error('Error deleting in-progress items:', error);
+      console.error('❌ Error deleting in-progress items:', error);
       toast.error('Failed to delete in-progress items');
     } finally {
       setIsDeletingInProgress(false);
