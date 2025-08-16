@@ -105,6 +105,7 @@ export const AgentTabs: React.FC<AgentTabsProps> = ({
                 key={tab.id}
                 value={tab.id}
                 className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-background min-w-0"
+                title={`${tab.label}: ${tab.description}`}
               >
                 <IconComponent className="h-4 w-4 flex-shrink-0" />
                 <span className="text-xs font-medium text-center leading-tight truncate max-w-full">{tab.label}</span>
