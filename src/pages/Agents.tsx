@@ -16,7 +16,8 @@ import {
   ArrowLeft,
   Database,
   Mic,
-  Zap
+  Zap,
+  Building2
 } from 'lucide-react';
 
 // Import agent builder components
@@ -196,10 +197,10 @@ const AgentsInner = () => {
           activeTab={agentBuilderTab}
           onTabChange={setAgentBuilderTab}
         >
-          {/* Visual Mode Tabs */}
+          {/* Visual Mode Tab Contents */}
           {selectedMode === 'visual' && (
             <>
-              <TabsContent value="canvas-designer" className="space-y-6">
+              <TabsContent value="canvas-designer" level="parent">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
@@ -215,25 +216,111 @@ const AgentsInner = () => {
                       <div className="text-center space-y-2">
                         <Workflow className="w-12 h-12 text-muted-foreground mx-auto" />
                         <p className="text-muted-foreground">Visual workflow builder integration coming soon</p>
-                        <Button variant="outline" size="sm">
-                          Start Building
-                        </Button>
+                        <Button variant="outline" size="sm">Start Building</Button>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="flow-testing" className="space-y-6">
+              <TabsContent value="models-templates" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bot className="w-5 h-5" />
+                      Models & Templates
+                    </CardTitle>
+                    <CardDescription>AI models and workflow templates</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Bot className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">AI models and templates configuration</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="actions-tasks" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="w-5 h-5" />
+                      Actions & Tasks
+                    </CardTitle>
+                    <CardDescription>Define automated actions and tasks</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Actions and tasks configuration</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="connectors-api" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Database className="w-5 h-5" />
+                      Connectors & APIs
+                    </CardTitle>
+                    <CardDescription>External system integrations</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Connectors and API configuration</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="system-config" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      System Configuration
+                    </CardTitle>
+                    <CardDescription>Core system settings and parameters</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">System configuration settings</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="treatment-centers" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="w-5 h-5" />
+                      Treatment Centers
+                    </CardTitle>
+                    <CardDescription>Healthcare facility configurations</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Treatment centers management</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="flow-testing" level="parent">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <TestTube className="w-5 h-5" />
                       Flow Testing
                     </CardTitle>
-                    <CardDescription>
-                      Test your visual workflow with sample data
-                    </CardDescription>
+                    <CardDescription>Test your workflow in real-time</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-8">
@@ -243,114 +330,319 @@ const AgentsInner = () => {
                   </CardContent>
                 </Card>
               </TabsContent>
+
+              <TabsContent value="voice-config" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Mic className="w-5 h-5" />
+                      Voice Configuration
+                    </CardTitle>
+                    <CardDescription>Voice and speech settings</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Mic className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Voice configuration settings</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="live-agent-transfer" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Live Agent Transfer
+                    </CardTitle>
+                    <CardDescription>Human handoff configurations</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Live agent transfer settings</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="channel-matrix" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Grid className="w-5 h-5" />
+                      Enhanced Channel Matrix
+                    </CardTitle>
+                    <CardDescription>Multi-channel deployment matrix</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Grid className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Channel matrix configuration</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="deployment-ready" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Rocket className="w-5 h-5" />
+                      Deployment Ready
+                    </CardTitle>
+                    <CardDescription>Pre-deployment validation and checks</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Deployment readiness validation</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="deployment-flow" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Rocket className="w-5 h-5" />
+                      Deployment Flow
+                    </CardTitle>
+                    <CardDescription>Complete deployment pipeline</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Deployment flow management</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
             </>
           )}
 
-          {/* Manual Mode Tabs */}
+          {/* Manual Mode Tab Contents */}
           {selectedMode === 'manual' && (
             <>
-              <TabsContent value="agent-config" className="space-y-6">
+              <TabsContent value="agent-config" level="parent">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Settings className="w-5 h-5" />
                       Agent Configuration
                     </CardTitle>
-                    <CardDescription>
-                      Configure your agent's basic settings and behavior
-                    </CardDescription>
+                    <CardDescription>Basic agent settings and behavior</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-8">
                       <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Agent configuration forms will be here</p>
+                      <p className="text-muted-foreground">Agent configuration forms</p>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="actions-connectors" className="space-y-6">
+              <TabsContent value="models-templates" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Bot className="w-5 h-5" />
+                      Models & Templates
+                    </CardTitle>
+                    <CardDescription>AI models and configuration templates</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Bot className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Models and templates configuration</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="actions-tasks" level="parent">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Zap className="w-5 h-5" />
-                      Actions & Connectors
+                      Actions & Tasks
                     </CardTitle>
-                    <CardDescription>
-                      Define actions and external system integrations
-                    </CardDescription>
+                    <CardDescription>Define automated actions and task workflows</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-8">
                       <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Actions and connectors configuration</p>
+                      <p className="text-muted-foreground">Actions and task workflows</p>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="knowledge-base" className="space-y-6">
+              <TabsContent value="connectors-api" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Database className="w-5 h-5" />
+                      Connectors & APIs
+                    </CardTitle>
+                    <CardDescription>External system integrations and APIs</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">System integrations and APIs</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="knowledge-base" level="parent">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Database className="w-5 h-5" />
                       Knowledge Base
                     </CardTitle>
-                    <CardDescription>
-                      Upload documents and configure data sources
-                    </CardDescription>
+                    <CardDescription>Upload documents and data sources</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-8">
                       <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Knowledge base configuration</p>
+                      <p className="text-muted-foreground">Knowledge base management</p>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
 
-              <TabsContent value="voice-channels" className="space-y-6">
+              <TabsContent value="system-config" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Settings className="w-5 h-5" />
+                      System Configuration
+                    </CardTitle>
+                    <CardDescription>Advanced system settings and parameters</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Advanced system configuration</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="treatment-centers" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="w-5 h-5" />
+                      Treatment Centers
+                    </CardTitle>
+                    <CardDescription>Healthcare facility management</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Healthcare facility management</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="voice-config" level="parent">
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <Mic className="w-5 h-5" />
-                      Voice Channels
+                      Voice Configuration
                     </CardTitle>
-                    <CardDescription>
-                      Configure voice and audio capabilities
-                    </CardDescription>
+                    <CardDescription>Voice channels and speech settings</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="text-center py-8">
                       <Mic className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Voice channel configuration</p>
+                      <p className="text-muted-foreground">Voice channels and speech settings</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="live-agent-transfer" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      Live Agent Transfer
+                    </CardTitle>
+                    <CardDescription>Human agent handoff settings</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Live agent handoff configuration</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="channel-matrix" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Grid className="w-5 h-5" />
+                      Enhanced Channel Matrix
+                    </CardTitle>
+                    <CardDescription>Multi-channel deployment configuration</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Grid className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Multi-channel deployment setup</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="deployment-ready" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Rocket className="w-5 h-5" />
+                      Deployment Ready
+                    </CardTitle>
+                    <CardDescription>Deployment readiness validation</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Pre-deployment validation checks</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="deployment-flow" level="parent">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Rocket className="w-5 h-5" />
+                      Deployment Flow
+                    </CardTitle>
+                    <CardDescription>End-to-end deployment process</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center py-8">
+                      <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                      <p className="text-muted-foreground">Complete deployment process</p>
                     </div>
                   </CardContent>
                 </Card>
               </TabsContent>
             </>
           )}
-
-          {/* Common Deployment Tab */}
-          <TabsContent value="deployment" className="space-y-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Rocket className="w-5 h-5" />
-                  Deployment
-                </CardTitle>
-                <CardDescription>
-                  Deploy your agent to various channels and platforms
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8">
-                  <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                  <p className="text-muted-foreground">Deployment configuration and channel setup</p>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </AgentTabs>
 
         {/* Prompt Assistant */}
