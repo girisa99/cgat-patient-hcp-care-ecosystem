@@ -54,6 +54,7 @@ import ModePicker from '@/components/agent-builder/ModePicker';
 import { IntelligentQuestionnaire } from '@/components/agent-builder/IntelligentQuestionnaire';
 import { Intelligence } from './Intelligence';
 import EmbeddedWorkflowStudio from '@/components/agent-builder/EmbeddedWorkflowStudio';
+import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
 
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
@@ -104,18 +105,35 @@ const AgentsInner = () => {
 
   const { userRoles, user } = useMasterAuth();
   const queryClient = useQueryClient();
-  const { userSessions, isLoading: sessionsLoading, setCurrentSessionId } = useAgentBuilder();
+  const { userSessions, isLoading: sessionsLoading, setCurrentSessionId, currentSessionId, actions, setActions } = useAgentBuilder();
 
   // Role-based access control
   const isSuperAdmin = userRoles.includes('superAdmin');
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
+  // Initialize questionnaire before mode selection for first-time users
+  useEffect(() => {
+    try {
+      const completed = localStorage.getItem('agentBuilder_questionnaireCompleted') === 'true';
+      setHasCompletedQuestionnaire(completed);
+      const firstTime = !completed && (userSessions?.length ?? 0) === 0;
+      if (firstTime) {
+        setShowQuestionnaire(true);
+        setShowModeSelector(false);
+      }
+    } catch (e) {
+      console.warn('Questionnaire init failed:', e);
+    }
+  }, [userSessions]);
+
   // Handle questionnaire completion
   const handleQuestionnaireComplete = (data: any) => {
     console.log('Questionnaire completed:', data);
     setHasCompletedQuestionnaire(true);
     setShowQuestionnaire(false);
+    try { localStorage.setItem('agentBuilder_questionnaireCompleted', 'true'); } catch {}
+    setShowModeSelector(true);
     toast.success('Questionnaire completed! Now select your building method.');
   };
 
@@ -214,6 +232,7 @@ const AgentsInner = () => {
               variant="outline"
               onClick={() => setShowPromptAssistant(!showPromptAssistant)}
               className="flex items-center gap-2"
+              title="Open AI Prompt Assistant"
             >
               <Bot className="w-4 h-4" />
               AI Assistant
@@ -310,7 +329,7 @@ const AgentsInner = () => {
                                 <Button size="sm" variant="outline" title="Add knowledge sources">Add Sources</Button>
                               </div>
                             </div>
-                            <Button className="w-full" title="Continue to canvas builder">
+                            <Button className="w-full" title="Continue to canvas builder" onClick={() => setVisualWorkflowSubTab('canvas')}>
                               Continue to Canvas Builder
                             </Button>
                           </CardContent>
@@ -329,25 +348,7 @@ const AgentsInner = () => {
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
-                            <div className="h-96 border border-dashed border-muted-foreground/25 rounded-lg flex items-center justify-center">
-                              <div className="text-center space-y-4">
-                                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto">
-                                  <Workflow className="w-8 h-8 text-primary" />
-                                </div>
-                                <div>
-                                  <h3 className="font-medium">Canvas Builder Ready</h3>
-                                  <p className="text-sm text-muted-foreground">Start building your workflow visually</p>
-                                </div>
-                                <div className="flex gap-2 justify-center">
-                                  <Button size="sm" title="Start with a template">
-                                    📋 Use Template
-                                  </Button>
-                                  <Button size="sm" variant="outline" title="Start from scratch">
-                                    ⚡ Start Fresh
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
+                            <EmbeddedWorkflowStudio />
                           </CardContent>
                         </Card>
                       </TabsContent>
@@ -364,25 +365,11 @@ const AgentsInner = () => {
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div className="grid gap-4">
-                              <div className="p-4 border rounded-lg">
-                                <h4 className="font-medium mb-2">Available Actions</h4>
-                                <div className="grid grid-cols-2 gap-2">
-                                  <Button size="sm" variant="outline" title="Send messages or notifications">
-                                    📧 Send Messages
-                                  </Button>
-                                  <Button size="sm" variant="outline" title="Schedule appointments">
-                                    📅 Schedule Appointments
-                                  </Button>
-                                  <Button size="sm" variant="outline" title="Collect user information">
-                                    📝 Collect Information
-                                  </Button>
-                                  <Button size="sm" variant="outline" title="Transfer to human agent">
-                                    👥 Transfer to Human
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
+                            <ActionsTab
+                              sessionId={currentSessionId || ''}
+                              actions={actions}
+                              onActionsChange={setActions}
+                            />
                           </CardContent>
                         </Card>
                       </TabsContent>
