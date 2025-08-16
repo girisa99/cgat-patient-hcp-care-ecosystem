@@ -55,7 +55,11 @@ import { IntelligentQuestionnaire } from '@/components/agent-builder/Intelligent
 import { Intelligence } from './Intelligence';
 import EmbeddedWorkflowStudio from '@/components/agent-builder/EmbeddedWorkflowStudio';
 import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
-
+import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
+import { KnowledgeBaseManager } from '@/components/agentic/KnowledgeBaseManager';
+import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
+import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosystem';
+import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
 };
@@ -312,21 +316,21 @@ const AgentsInner = () => {
                                   <h4 className="font-medium">Agent Purpose</h4>
                                   <p className="text-sm text-muted-foreground">Define what your agent will do</p>
                                 </div>
-                                <Button size="sm" title="Configure agent purpose">Configure</Button>
+                                <Button size="sm" title="Configure agent purpose" onClick={() => setVisualWorkflowSubTab('configuration')}>Configure</Button>
                               </div>
                               <div className="flex items-center justify-between p-4 border rounded-lg">
                                 <div>
                                   <h4 className="font-medium">Communication Style</h4>
                                   <p className="text-sm text-muted-foreground">Set the agent's personality and tone</p>
                                 </div>
-                                <Button size="sm" variant="outline" title="Set communication style">Set Style</Button>
+                                <Button size="sm" variant="outline" title="Set communication style" onClick={() => setVisualWorkflowSubTab('configuration')}>Set Style</Button>
                               </div>
                               <div className="flex items-center justify-between p-4 border rounded-lg">
                                 <div>
                                   <h4 className="font-medium">Knowledge Sources</h4>
                                   <p className="text-sm text-muted-foreground">Add documents and data sources</p>
                                 </div>
-                                <Button size="sm" variant="outline" title="Add knowledge sources">Add Sources</Button>
+                                <Button size="sm" variant="outline" title="Add knowledge sources" onClick={() => setVisualWorkflowSubTab('actions')}>Add Sources</Button>
                               </div>
                             </div>
                             <Button className="w-full" title="Continue to canvas builder" onClick={() => setVisualWorkflowSubTab('canvas')}>
@@ -423,10 +427,7 @@ const AgentsInner = () => {
                     <CardDescription>AI models and workflow templates</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <Bot className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">AI models and templates configuration</p>
-                    </div>
+                    <ModelManagementDashboard />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -441,10 +442,11 @@ const AgentsInner = () => {
                     <CardDescription>Define automated actions and tasks</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <Zap className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Actions and tasks configuration</p>
-                    </div>
+                    <ActionsTab
+                      sessionId={currentSessionId || ''}
+                      actions={actions}
+                      onActionsChange={setActions}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -458,11 +460,19 @@ const AgentsInner = () => {
                     </CardTitle>
                     <CardDescription>External system integrations</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Connectors and API configuration</p>
-                    </div>
+                  <CardContent className="space-y-6">
+                    <EnhancedConnectorSystem 
+                      agentId={currentSessionId || ''}
+                      actions={actions.map(action => ({
+                        id: action.id,
+                        name: action.name,
+                        type: action.type,
+                        category: action.category,
+                        description: action.description
+                      }))}
+                      onAssignmentsChange={() => {}}
+                    />
+                    <AgenticAPIEcosystem />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -513,10 +523,7 @@ const AgentsInner = () => {
                     <CardDescription>Test your workflow in real-time</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <TestTube className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Workflow testing interface</p>
-                    </div>
+                    <AgentTestingInterface />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -531,10 +538,7 @@ const AgentsInner = () => {
                     <CardDescription>Voice and speech settings</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <Mic className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Voice configuration settings</p>
-                    </div>
+                    <ChannelAndVoiceSetup />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -567,10 +571,7 @@ const AgentsInner = () => {
                     <CardDescription>Multi-channel deployment matrix</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <Grid className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Channel matrix configuration</p>
-                    </div>
+                    <AgentChannelAssignmentMatrix />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -585,10 +586,7 @@ const AgentsInner = () => {
                     <CardDescription>Pre-deployment validation and checks</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Deployment readiness validation</p>
-                    </div>
+                    <EnhancedDeploymentReadyView />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -602,11 +600,9 @@ const AgentsInner = () => {
                     </CardTitle>
                     <CardDescription>Complete deployment pipeline</CardDescription>
                   </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <Rocket className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Deployment flow management</p>
-                    </div>
+                  <CardContent className="space-y-6">
+                    <DeploymentManagementInterface />
+                    <ActiveDeploymentsView />
                   </CardContent>
                 </Card>
               </TabsContent>
@@ -698,10 +694,17 @@ const AgentsInner = () => {
                     <CardDescription>Upload documents and data sources</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center py-8">
-                      <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Knowledge base management</p>
-                    </div>
+                    <KnowledgeBaseManager
+                      agentId={currentSessionId || ''}
+                      actions={actions.map(action => ({
+                        id: action.id,
+                        name: action.name,
+                        type: action.type,
+                        category: action.category,
+                        description: action.description
+                      }))}
+                      onKnowledgeSourcesChange={() => {}}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>
