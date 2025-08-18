@@ -104,7 +104,7 @@ export const StreamlinedAgentWizard = () => {
   });
   
   // AI-powered journey generation
-  const { steps: aiSuggestions, isLoading: isGeneratingAI, generateSuggestions } = useJourneyAISuggestions();
+  const { suggestions: aiSuggestions, isLoading: isGeneratingAI, generateSuggestions } = useJourneyAISuggestions();
   
   // Use cases management
   const { useCases, isLoading: isLoadingUseCases, isAdding: isAddingUseCase, addUseCase, getUseCaseById } = useUseCases();

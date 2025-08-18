@@ -107,7 +107,7 @@ export const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({
   currentStepsCount
 }) => {
   const { toast } = useToast();
-  const { steps: suggestions, isLoading, generateSuggestions } = useJourneyAISuggestions();
+  const { suggestions, isLoading, generateSuggestions } = useJourneyAISuggestions();
   const [expandedStep, setExpandedStep] = useState<string | null>(null);
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
 
