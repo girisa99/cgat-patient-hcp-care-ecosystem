@@ -262,12 +262,21 @@ const AgentsInner = () => {
               <h1 className="text-2xl font-bold">Choose Your Building Approach</h1>
               <p className="text-muted-foreground">Select how you'd like to build your agent</p>
             </div>
-            {hasCompletedQuestionnaire && (
-              <Button variant="outline" onClick={handleBackToQuestionnaire}>
-                <ArrowLeft className="w-4 h-4 mr-1" />
-                Back to Questionnaire  
+            <div className="flex items-center gap-2">
+              {!hasCompletedQuestionnaire ? (
+                <Button variant="secondary" onClick={() => setShowQuestionnaire(true)}>
+                  Start Guided Questionnaire
+                </Button>
+              ) : (
+                <Button variant="outline" onClick={handleBackToQuestionnaire}>
+                  <ArrowLeft className="w-4 h-4 mr-1" />
+                  Back to Questionnaire  
+                </Button>
+              )}
+              <Button variant="outline" onClick={() => handleModeSelect('visual' as any)} title="Skip straight to Visual Workflow">
+                Quick Start (Visual)
               </Button>
-            )}
+            </div>
           </div>
           <ModeSelector 
             onModeSelect={handleModeSelect}
