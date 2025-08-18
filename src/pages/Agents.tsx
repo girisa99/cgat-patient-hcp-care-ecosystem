@@ -149,6 +149,22 @@ const AgentsInner = () => {
     }
   }, [userSessions]);
 
+  // Auto-open Canvas after wizard completion
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem('agentBuilder_next');
+      if (stored) {
+        const cfg = JSON.parse(stored);
+        localStorage.removeItem('agentBuilder_next');
+        setSelectedMode('visual' as any);
+        setShowModeSelector(false);
+        setAgentBuilderTab(cfg.tab || 'canvas-designer');
+        setVisualWorkflowSubTab(cfg.subTab || 'canvas');
+        toast.success('Continuing on Canvas for branding');
+      }
+    } catch {}
+  }, []);
+
   // Handle questionnaire completion - proceed to mode selection
   const handleQuestionnaireComplete = (data: any) => {
     console.log('Questionnaire completed:', data);

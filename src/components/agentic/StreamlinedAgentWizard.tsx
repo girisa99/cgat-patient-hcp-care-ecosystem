@@ -3,14 +3,14 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Steps, Step } from '@/components/ui/steps';
-import { EnhancedAgentCanvas } from './EnhancedAgentCanvas';
+
 import { AgentTemplates } from './AgentTemplates';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { CircleCheckBig, Bot, Settings, Users, Sparkles, Eye, Brain, Tags, Move, Trash2, ChevronUp, ChevronDown, Plus } from 'lucide-react';
+import { CircleCheckBig, Bot, Settings, Users, Sparkles, Trash2, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { CategoryMapping } from './CategoryMapping';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import JourneyEditor from '@/components/agentic/JourneyEditor';
@@ -160,17 +160,12 @@ export const StreamlinedAgentWizard = () => {
   // Check if current step is complete
   const isStepComplete = (step: number) => {
     switch (step) {
-      case 0: // Start preference
+      case 0:
         return state.startOption !== null;
-      case 1: // Template/Agent type selection with category mapping
-        const hasBasicInfo = state.startOption === 'template' 
-          ? state.templateId !== null 
-          : (state.name !== '' && state.agentType !== null);
-        return hasBasicInfo;
-      case 2: // Journey overview (read-only)
-        return true;
-      case 3: // Canvas customization - final step
-        return state.name !== '' && state.tagline !== '';
+      case 1:
+        return state.startOption === 'template' ? state.templateId !== null : (state.name !== '' && state.agentType !== null);
+      case 2:
+        return true; // AI journey generation / review
       default:
         return false;
     }
@@ -237,8 +232,9 @@ const handleSelectTemplate = async (tpl: { id: string; name: string }) => {
   // Journey editor apply handler
   const handleJourneyApplied = async (stages: any[]) => {
     setState(prev => ({ ...prev, journeyStages: stages }));
+    await persistJourneyToTemplate(stages);
     setShowJourneyEditor(false);
-    toast({ title: 'Journey updated', description: 'Journey stages have been customized' });
+    toast({ title: 'Journey updated', description: 'Journey stages saved to template' });
   };
 
   // AI-powered journey generation handlers
@@ -296,12 +292,9 @@ useEffect(() => {
   console.log('🔄 StreamlinedAgentWizard initialized, step:', state.step);
 }, []);
 
-// If journey stages already exist, skip directly to Canvas step
+// Keep current step when stages change to avoid unexpected jumps
 useEffect(() => {
-  if (state.journeyStages.length > 0 && state.step < 3) {
-    setState(prev => ({ ...prev, step: 3 }));
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  // No auto-navigation; user controls progression
 }, [state.journeyStages.length]);
   const handleStepSelection = (stepId: string, isSelected: boolean) => {
     setState(prev => ({
@@ -1066,37 +1059,12 @@ const { data: agent, error: agentError } = await supabase
       </div>
     </div>,
     
-    // Step 4: Canvas Customization (Final Step)
-    <div className="space-y-6" key="step-4">
-      <div>
-        <h3 className="text-lg font-medium">Customize Your Agent</h3>
-        <p className="text-muted-foreground">Brand and customize your agent's visual appearance</p>
-      </div>
-      <EnhancedAgentCanvas 
-        initialName={state.name}
-        initialTagline={state.tagline}
-        initialPrimaryColor={state.primaryColor}
-        initialSecondaryColor={state.secondaryColor}
-        initialAccentColor={state.accentColor}
-        initialLogo={state.logoUrl}
-        onNameChange={(name) => updateField('name', name)}
-        onTaglineChange={(tagline) => updateField('tagline', tagline)}
-        onPrimaryColorChange={(color) => updateField('primaryColor', color)}
-        onSecondaryColorChange={(color) => updateField('secondaryColor', color)}
-        onAccentColorChange={(color) => updateField('accentColor', color)}
-        onLogoChange={(file, url) => {
-          updateField('logoFile', file);
-          updateField('logoUrl', url);
-        }}
-      />
-    </div>
   ];
 
   const stepTitles = [
     "Choose Approach", 
     "Configure & Categorize", 
-    "AI Journey Generation", 
-    "Brand & Customize"
+    "AI Journey Generation"
   ];
 
   return (
