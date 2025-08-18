@@ -10,10 +10,16 @@ import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useNavigate } from 'react-router-dom';
-import { CircleCheckBig, Bot, Settings, Users } from 'lucide-react';
+import { CircleCheckBig, Bot, Settings, Users, Sparkles, Eye, Brain, Tags, Move, Trash2, ChevronUp, ChevronDown, Plus } from 'lucide-react';
 import { CategoryMapping } from './CategoryMapping';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import JourneyEditor from '@/components/agentic/JourneyEditor';
+import { useJourneyAISuggestions } from '@/hooks/useJourneyAISuggestions';
+import { JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface Template {
   id: string;
@@ -47,6 +53,11 @@ interface WizardState {
   selectedTopics: string[];
   // Journey stages from template
   journeyStages: any[];
+  // AI-powered journey generation
+  useCase: string;
+  selectedAIModel: string;
+  aiGeneratedSteps: JourneyStep[];
+  selectedStepIds: string[];
 }
 
 export const StreamlinedAgentWizard = () => {
@@ -67,7 +78,11 @@ export const StreamlinedAgentWizard = () => {
     selectedCategories: [],
     selectedBusinessUnits: [],
     selectedTopics: [],
-    journeyStages: []
+    journeyStages: [],
+    useCase: '',
+    selectedAIModel: 'llm',
+    aiGeneratedSteps: [],
+    selectedStepIds: []
   });
 
   const [showJourneyEditor, setShowJourneyEditor] = useState(false);
@@ -75,6 +90,9 @@ export const StreamlinedAgentWizard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  
+  // AI-powered journey generation
+  const { steps: aiSuggestions, isLoading: isGeneratingAI, generateSuggestions } = useJourneyAISuggestions();
 
   // Fetch templates on component mount
   useEffect(() => {
@@ -191,6 +209,130 @@ export const StreamlinedAgentWizard = () => {
     setState(prev => ({ ...prev, journeyStages: stages }));
     setShowJourneyEditor(false);
     toast({ title: 'Journey updated', description: 'Journey stages have been customized' });
+  };
+
+  // AI-powered journey generation handlers
+  const generateAIJourneySteps = async () => {
+    let fullUseCase = state.useCase;
+    if (!fullUseCase.trim()) {
+      fullUseCase = `${state.name} - ${state.description}`;
+    }
+    
+    // Add context from categories, business units, and topics
+    const context = [];
+    if (state.selectedCategories.length > 0) {
+      context.push(`Categories: ${state.selectedCategories.join(', ')}`);
+    }
+    if (state.selectedBusinessUnits.length > 0) {
+      context.push(`Business Units: ${state.selectedBusinessUnits.join(', ')}`);
+    }
+    if (state.selectedTopics.length > 0) {
+      context.push(`Topics: ${state.selectedTopics.join(', ')}`);
+    }
+    if (state.agentType) {
+      context.push(`Agent Type: ${state.agentType}`);
+    }
+    
+    const enhancedUseCase = context.length > 0 
+      ? `${fullUseCase} | Context: ${context.join(' | ')}`
+      : fullUseCase;
+    
+    await generateSuggestions(enhancedUseCase, state.selectedAIModel);
+  };
+
+  useEffect(() => {
+    if (aiSuggestions.length > 0) {
+      setState(prev => ({
+        ...prev,
+        aiGeneratedSteps: aiSuggestions,
+        selectedStepIds: aiSuggestions.map(step => step.id) // Select all by default
+      }));
+    }
+  }, [aiSuggestions]);
+
+  const handleStepSelection = (stepId: string, isSelected: boolean) => {
+    setState(prev => ({
+      ...prev,
+      selectedStepIds: isSelected 
+        ? [...prev.selectedStepIds, stepId]
+        : prev.selectedStepIds.filter(id => id !== stepId)
+    }));
+  };
+
+  const moveStep = (stepId: string, direction: 'up' | 'down') => {
+    setState(prev => {
+      const steps = [...prev.aiGeneratedSteps];
+      const currentIndex = steps.findIndex(step => step.id === stepId);
+      if (currentIndex === -1) return prev;
+
+      const newIndex = direction === 'up' ? currentIndex - 1 : currentIndex + 1;
+      if (newIndex < 0 || newIndex >= steps.length) return prev;
+
+      [steps[currentIndex], steps[newIndex]] = [steps[newIndex], steps[currentIndex]];
+      
+      return { ...prev, aiGeneratedSteps: steps };
+    });
+  };
+
+  const removeStep = (stepId: string) => {
+    setState(prev => ({
+      ...prev,
+      aiGeneratedSteps: prev.aiGeneratedSteps.filter(step => step.id !== stepId),
+      selectedStepIds: prev.selectedStepIds.filter(id => id !== stepId)
+    }));
+  };
+
+  const addCustomStep = () => {
+    const newStep: JourneyStep = {
+      id: `custom-${Date.now()}`,
+      title: 'Custom Step',
+      description: 'Add your custom step description here',
+      type: 'action',
+      connectors: [],
+      actions: [],
+      requirements: [],
+      stakeholders: [],
+      businessValue: '',
+      riskLevel: 'low',
+      automationLevel: 'manual',
+      estimatedDuration: 30,
+      dependencies: []
+    };
+    
+    setState(prev => ({
+      ...prev,
+      aiGeneratedSteps: [...prev.aiGeneratedSteps, newStep],
+      selectedStepIds: [...prev.selectedStepIds, newStep.id]
+    }));
+  };
+
+  const applySelectedSteps = () => {
+    const selectedSteps = state.aiGeneratedSteps.filter(step => 
+      state.selectedStepIds.includes(step.id)
+    );
+    
+    // Convert AI steps to journey stages format
+    const journeyStages = selectedSteps.map((step, index) => ({
+      id: step.id,
+      title: step.title,
+      description: step.description,
+      type: step.type,
+      order_index: index,
+      owner_role: step.stakeholders?.[0] || 'System',
+      entry_criteria: step.requirements || [],
+      tasks_checklist: step.actions || [],
+      expected_duration_minutes: step.estimatedDuration || 30,
+      outputs_success_criteria: [step.businessValue],
+      risks: step.riskLevel ? [{ level: step.riskLevel, description: 'Risk assessment needed' }] : [],
+      dependencies: step.dependencies || [],
+      validation_checkpoints: ['Quality check', 'Approval required']
+    }));
+
+    setState(prev => ({ ...prev, journeyStages }));
+    toast({ 
+      title: 'Journey Applied!', 
+      description: `${selectedSteps.length} AI-generated steps added to your journey` 
+    });
   };
 
   // Complete wizard - this will now redirect to parent tabs for actions, connectors, etc.
@@ -441,36 +583,239 @@ export const StreamlinedAgentWizard = () => {
       )}
     </div>,
     
-    // Step 3: Journey Overview
+    // Step 3: AI-Powered Journey Generation
     <div className="space-y-6" key="step-3">
-      <div className="flex items-center justify-between">
+      <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-medium">Journey Overview</h3>
-          <p className="text-muted-foreground">Review the stages for your agent. You can customize these stages.</p>
+          <h3 className="text-lg font-medium">AI-Powered Journey Generation</h3>
+          <p className="text-muted-foreground">Generate detailed journey steps using advanced AI models tailored to your use case</p>
         </div>
-        {(state.templateId || state.journeyStages.length > 0) && (
-          <Button variant="outline" onClick={() => setShowJourneyEditor(true)}>
-            Edit Journey Stages
+
+        {/* Use Case Input */}
+        <div className="space-y-3">
+          <Label htmlFor="useCase">Detailed Use Case Description</Label>
+          <Textarea
+            id="useCase"
+            placeholder="Describe your use case in detail. Be specific about processes, stakeholders, requirements, and goals..."
+            value={state.useCase}
+            onChange={(e) => updateField('useCase', e.target.value)}
+            className="min-h-[100px]"
+          />
+          <p className="text-xs text-muted-foreground">
+            The more detailed your use case, the better AI can generate relevant journey steps
+          </p>
+        </div>
+
+        {/* AI Model Selection */}
+        <div className="space-y-3">
+          <Label>Select AI Model Type</Label>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            {[
+              { id: 'llm', name: 'LLM', icon: <Sparkles className="w-4 h-4" />, desc: 'Large Language Models' },
+              { id: 'sml', name: 'SML', icon: <Brain className="w-4 h-4" />, desc: 'Small Language Models' },
+              { id: 'vision', name: 'VLM', icon: <Eye className="w-4 h-4" />, desc: 'Vision Language Models' },
+              { id: 'mcp', name: 'MCP', icon: <Bot className="w-4 h-4" />, desc: 'Multi-Context Processing' }
+            ].map((model) => (
+              <Card
+                key={model.id}
+                className={`cursor-pointer transition-all ${state.selectedAIModel === model.id ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+                onClick={() => updateField('selectedAIModel', model.id)}
+              >
+                <CardContent className="pt-3 pb-3">
+                  <div className="text-center space-y-2">
+                    <div className="mx-auto w-8 h-8 flex items-center justify-center">
+                      {model.icon}
+                    </div>
+                    <div>
+                      <h4 className="font-medium text-sm">{model.name}</h4>
+                      <p className="text-xs text-muted-foreground">{model.desc}</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        </div>
+
+        {/* Generate Button */}
+        <div className="flex justify-center">
+          <Button
+            onClick={generateAIJourneySteps}
+            disabled={(!state.useCase.trim() && !state.name.trim()) || isGeneratingAI}
+            size="lg"
+            className="px-8"
+          >
+            {isGeneratingAI ? (
+              <>
+                <Sparkles className="w-4 h-4 mr-2 animate-spin" />
+                Generating Journey Steps...
+              </>
+            ) : (
+              <>
+                <Sparkles className="w-4 h-4 mr-2" />
+                Generate Journey Steps with AI
+              </>
+            )}
           </Button>
+        </div>
+
+        {/* AI Generated Steps Preview */}
+        {state.aiGeneratedSteps.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <h4 className="font-medium">AI-Generated Journey Steps</h4>
+                <p className="text-sm text-muted-foreground">
+                  {state.selectedStepIds.length} of {state.aiGeneratedSteps.length} steps selected
+                </p>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" onClick={addCustomStep}>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add Custom Step
+                </Button>
+                <Button 
+                  onClick={applySelectedSteps}
+                  disabled={state.selectedStepIds.length === 0}
+                  size="sm"
+                >
+                  Apply Selected Steps ({state.selectedStepIds.length})
+                </Button>
+              </div>
+            </div>
+
+            <ScrollArea className="h-[600px] w-full border rounded-lg">
+              <div className="p-4 space-y-3">
+                {state.aiGeneratedSteps.map((step, index) => (
+                  <Card key={step.id} className="border-l-4 border-l-primary/20">
+                    <CardContent className="pt-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex items-center gap-2 pt-1">
+                          <Checkbox
+                            checked={state.selectedStepIds.includes(step.id)}
+                            onCheckedChange={(checked) => handleStepSelection(step.id, !!checked)}
+                          />
+                        </div>
+                        
+                        <div className="flex-1 space-y-2">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">
+                              {step.type}
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {step.estimatedDuration || 30}min
+                            </Badge>
+                            <Badge variant="secondary" className="text-xs">
+                              {step.automationLevel}
+                            </Badge>
+                          </div>
+                          
+                          <h5 className="font-medium">{step.title}</h5>
+                          <p className="text-sm text-muted-foreground">{step.description}</p>
+                          
+                          {step.businessValue && (
+                            <div className="text-xs text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-900/20 p-2 rounded">
+                              <strong>Business Value:</strong> {step.businessValue}
+                            </div>
+                          )}
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                            {step.connectors && step.connectors.length > 0 && (
+                              <div>
+                                <strong>Connectors:</strong>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {step.connectors.slice(0, 3).map((connector, idx) => (
+                                    <Badge key={idx} variant="outline" className="text-xs">{connector}</Badge>
+                                  ))}
+                                  {step.connectors.length > 3 && (
+                                    <Badge variant="outline" className="text-xs">+{step.connectors.length - 3} more</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            
+                            {step.actions && step.actions.length > 0 && (
+                              <div>
+                                <strong>Actions:</strong>
+                                <div className="flex flex-wrap gap-1 mt-1">
+                                  {step.actions.slice(0, 3).map((action, idx) => (
+                                    <Badge key={idx} variant="secondary" className="text-xs">{action}</Badge>
+                                  ))}
+                                  {step.actions.length > 3 && (
+                                    <Badge variant="secondary" className="text-xs">+{step.actions.length - 3} more</Badge>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
+
+                          {step.stakeholders && step.stakeholders.length > 0 && (
+                            <div className="text-xs">
+                              <strong>Stakeholders:</strong> {step.stakeholders.join(', ')}
+                            </div>
+                          )}
+                        </div>
+                        
+                        <div className="flex flex-col gap-1">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => moveStep(step.id, 'up')}
+                            disabled={index === 0}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronUp className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => moveStep(step.id, 'down')}
+                            disabled={index === state.aiGeneratedSteps.length - 1}
+                            className="h-8 w-8 p-0"
+                          >
+                            <ChevronDown className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeStep(step.id)}
+                            className="h-8 w-8 p-0 text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </ScrollArea>
+          </div>
+        )}
+
+        {/* Applied Journey Stages */}
+        {state.journeyStages.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <h4 className="font-medium">Applied Journey Stages</h4>
+              <Button variant="outline" size="sm" onClick={() => setShowJourneyEditor(true)}>
+                Fine-tune Stages
+              </Button>
+            </div>
+            <div className="w-full overflow-x-auto">
+              <Steps className="min-w-max px-2">
+                {state.journeyStages.map((stage: any, idx: number) => (
+                  <Step
+                    key={stage.id || idx}
+                    title={`${idx + 1}. ${stage.title || stage.name || 'Stage'}`}
+                    description={stage.description || `Step ${idx + 1}`}
+                  />
+                ))}
+              </Steps>
+            </div>
+          </div>
         )}
       </div>
-      {state.journeyStages && state.journeyStages.length > 0 ? (
-        <div className="w-full overflow-x-auto">
-          <Steps className="min-w-max px-2">
-            {state.journeyStages.map((stage: any, idx: number) => (
-              <Step
-                key={stage.id || idx}
-                title={`${idx + 1}. ${stage.title || stage.name || 'Stage'}`}
-                description={stage.description || (Array.isArray(stage.steps) ? `${stage.steps.length} step(s)` : ' ')}
-              />
-            ))}
-          </Steps>
-        </div>
-      ) : (
-        <div className="p-3 rounded bg-muted text-sm text-muted-foreground">
-          No journey stages defined yet. You can add stages or proceed to customize your agent's appearance.
-        </div>
-      )}
     </div>,
     
     // Step 4: Canvas Customization (Final Step)
@@ -502,7 +847,7 @@ export const StreamlinedAgentWizard = () => {
   const stepTitles = [
     "Choose Approach", 
     "Configure & Categorize", 
-    "Review Journey", 
+    "AI Journey Generation", 
     "Brand & Customize"
   ];
 
