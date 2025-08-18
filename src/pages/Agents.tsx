@@ -17,8 +17,12 @@ import {
   Database,
   Mic,
   Zap,
-  Building2
+  Building2,
+  Plus
 } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 
 // Import agent builder components
 import { ModeSelector, type AgentMode } from '@/components/agent-builder/ModeSelector';
@@ -60,6 +64,7 @@ import { KnowledgeBaseManager } from '@/components/agentic/KnowledgeBaseManager'
 import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
 import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosystem';
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
+import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
 };
@@ -105,7 +110,7 @@ const AgentsInner = () => {
   const [agentBuilderTab, setAgentBuilderTab] = useState('canvas-designer');
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
-  const [visualWorkflowSubTab, setVisualWorkflowSubTab] = useState('wizard');
+  const [visualWorkflowSubTab, setVisualWorkflowSubTab] = useState('use-case');
 
   const { userRoles, user } = useMasterAuth();
   const queryClient = useQueryClient();
@@ -156,7 +161,7 @@ const AgentsInner = () => {
     // Set default tab based on mode
     if (mode === 'visual') {
       setAgentBuilderTab('canvas-designer');
-      setVisualWorkflowSubTab('wizard');
+      setVisualWorkflowSubTab('use-case');
     } else {
       setAgentBuilderTab('agent-config');
     }
@@ -267,7 +272,21 @@ const AgentsInner = () => {
                   <CardContent>
                     {/* Visual Workflow Subtabs */}
                     <Tabs value={visualWorkflowSubTab} onValueChange={setVisualWorkflowSubTab} className="w-full">
-                      <TabsList level="child" className="grid w-full grid-cols-4">
+                      <TabsList level="child" className="grid w-full grid-cols-5">
+                        <TabsTrigger 
+                          level="child" 
+                          value="use-case"
+                          title="Select your agent's use case"
+                        >
+                          🎯 Use Case
+                        </TabsTrigger>
+                        <TabsTrigger 
+                          level="child" 
+                          value="journey"
+                          title="Define journey stages"
+                        >
+                          🗺️ Journey
+                        </TabsTrigger>
                         <TabsTrigger 
                           level="child" 
                           value="wizard"
@@ -278,7 +297,7 @@ const AgentsInner = () => {
                         <TabsTrigger 
                           level="child" 
                           value="canvas"
-                          title="Visual drag-and-drop workflow builder"
+                          title="Visual canvas with palette, logo & templates"
                         >
                           🎨 Canvas
                         </TabsTrigger>
@@ -289,52 +308,159 @@ const AgentsInner = () => {
                         >
                           ⚡ Actions
                         </TabsTrigger>
-                        <TabsTrigger 
-                          level="child" 
-                          value="configuration"
-                          title="Agent settings and configuration"
-                        >
-                          ⚙️ Configuration
-                        </TabsTrigger>
                       </TabsList>
+
+                      <TabsContent value="use-case" level="child" className="mt-6">
+                        <Card className="border-dashed">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              🎯 Select Use Case
+                              <Badge variant="secondary">Step 1 of 5</Badge>
+                            </CardTitle>
+                            <CardDescription>
+                              Choose what type of agent you want to build
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="grid gap-4 md:grid-cols-2">
+                              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setVisualWorkflowSubTab('journey')}>
+                                <CardContent className="p-4">
+                                  <div className="space-y-2">
+                                    <div className="text-lg font-medium">🏥 Healthcare Assistant</div>
+                                    <p className="text-sm text-muted-foreground">Patient support, provider onboarding, care management</p>
+                                    <Button size="sm" className="w-full">Select This Use Case</Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setVisualWorkflowSubTab('journey')}>
+                                <CardContent className="p-4">
+                                  <div className="space-y-2">
+                                    <div className="text-lg font-medium">💼 Business Operations</div>
+                                    <p className="text-sm text-muted-foreground">Workflow automation, data processing, reporting</p>
+                                    <Button size="sm" className="w-full">Select This Use Case</Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setVisualWorkflowSubTab('journey')}>
+                                <CardContent className="p-4">
+                                  <div className="space-y-2">
+                                    <div className="text-lg font-medium">🎓 Education & Training</div>
+                                    <p className="text-sm text-muted-foreground">Learning paths, skill assessment, progress tracking</p>
+                                    <Button size="sm" className="w-full">Select This Use Case</Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setVisualWorkflowSubTab('journey')}>
+                                <CardContent className="p-4">
+                                  <div className="space-y-2">
+                                    <div className="text-lg font-medium">🔧 Custom Solution</div>
+                                    <p className="text-sm text-muted-foreground">Build from scratch with custom requirements</p>
+                                    <Button size="sm" className="w-full">Select This Use Case</Button>
+                                  </div>
+                                </CardContent>
+                              </Card>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
+
+                      <TabsContent value="journey" level="child" className="mt-6">
+                        <Card className="border-dashed">
+                          <CardHeader>
+                            <CardTitle className="flex items-center gap-2">
+                              🗺️ Journey Stages
+                              <Badge variant="secondary">Step 2 of 5</Badge>
+                            </CardTitle>
+                            <CardDescription>
+                              Define the stages your agent will guide users through
+                            </CardDescription>
+                          </CardHeader>
+                          <CardContent className="space-y-4">
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">1</div>
+                                  <div>
+                                    <div className="font-medium">Initial Assessment</div>
+                                    <div className="text-sm text-muted-foreground">Gather user requirements and context</div>
+                                  </div>
+                                </div>
+                                <Button size="sm" variant="ghost">Edit</Button>
+                              </div>
+                              <div className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">2</div>
+                                  <div>
+                                    <div className="font-medium">Solution Design</div>
+                                    <div className="text-sm text-muted-foreground">Create personalized action plan</div>
+                                  </div>
+                                </div>
+                                <Button size="sm" variant="ghost">Edit</Button>
+                              </div>
+                              <div className="flex items-center justify-between p-3 border rounded-lg">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">3</div>
+                                  <div>
+                                    <div className="font-medium">Implementation</div>
+                                    <div className="text-sm text-muted-foreground">Execute the solution step by step</div>
+                                  </div>
+                                </div>
+                                <Button size="sm" variant="ghost">Edit</Button>
+                              </div>
+                            </div>
+                            <div className="flex gap-2">
+                              <Button variant="outline" size="sm">
+                                <Plus className="w-4 h-4 mr-1" />
+                                Add Stage
+                              </Button>
+                              <Button className="flex-1" onClick={() => setVisualWorkflowSubTab('wizard')}>
+                                Continue to Wizard Setup
+                              </Button>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      </TabsContent>
 
                       <TabsContent value="wizard" level="child" className="mt-6">
                         <Card className="border-dashed">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                               🧙‍♂️ Setup Wizard
-                              <Badge variant="secondary">Step 1 of 4</Badge>
+                              <Badge variant="secondary">Step 3 of 5</Badge>
                             </CardTitle>
                             <CardDescription>
-                              Let us guide you through setting up your agent step-by-step
+                              Configure your agent's core settings and behavior
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
                             <div className="grid gap-4">
-                              <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                  <h4 className="font-medium">Agent Purpose</h4>
-                                  <p className="text-sm text-muted-foreground">Define what your agent will do</p>
-                                </div>
-                                <Button size="sm" title="Configure agent purpose" onClick={() => setVisualWorkflowSubTab('configuration')}>Configure</Button>
-                              </div>
-                              <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                  <h4 className="font-medium">Communication Style</h4>
-                                  <p className="text-sm text-muted-foreground">Set the agent's personality and tone</p>
-                                </div>
-                                <Button size="sm" variant="outline" title="Set communication style" onClick={() => setVisualWorkflowSubTab('configuration')}>Set Style</Button>
-                              </div>
-                              <div className="flex items-center justify-between p-4 border rounded-lg">
-                                <div>
-                                  <h4 className="font-medium">Knowledge Sources</h4>
-                                  <p className="text-sm text-muted-foreground">Add documents and data sources</p>
-                                </div>
-                                <Button size="sm" variant="outline" title="Add knowledge sources" onClick={() => setVisualWorkflowSubTab('actions')}>Add Sources</Button>
-                              </div>
+                              <Card>
+                                <CardContent className="p-4">
+                                  <div className="space-y-4">
+                                    <div>
+                                      <Label htmlFor="agent-name">Agent Name</Label>
+                                      <Input id="agent-name" placeholder="Enter your agent's name" />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="agent-purpose">Agent Purpose</Label>
+                                      <Textarea id="agent-purpose" placeholder="Describe what your agent will do..." rows={3} />
+                                    </div>
+                                    <div>
+                                      <Label htmlFor="communication-style">Communication Style</Label>
+                                      <select className="w-full p-2 border rounded-md">
+                                        <option value="">Select communication style</option>
+                                        <option value="professional">Professional & Formal</option>
+                                        <option value="friendly">Friendly & Conversational</option>
+                                        <option value="supportive">Supportive & Empathetic</option>
+                                        <option value="concise">Direct & Concise</option>
+                                      </select>
+                                    </div>
+                                  </div>
+                                </CardContent>
+                              </Card>
                             </div>
-                            <Button className="w-full" title="Continue to canvas builder" onClick={() => setVisualWorkflowSubTab('canvas')}>
-                              Continue to Canvas Builder
+                            <Button className="w-full" onClick={() => setVisualWorkflowSubTab('canvas')}>
+                              Continue to Visual Canvas
                             </Button>
                           </CardContent>
                         </Card>
@@ -344,15 +470,27 @@ const AgentsInner = () => {
                         <Card className="border-dashed">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                              🎨 Visual Workflow Canvas
-                              <Badge variant="secondary">Drag & Drop</Badge>
+                              🎨 Visual Canvas & Branding
+                              <Badge variant="secondary">Step 4 of 5</Badge>
                             </CardTitle>
                             <CardDescription>
-                              Design your agent's conversation flow visually
+                              Customize your agent's visual appearance with color palette, logo, and templates
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
-                            <EmbeddedWorkflowStudio />
+                            <EnhancedAgentCanvas 
+                              initialName=""
+                              initialTagline=""
+                              initialPrimaryColor="#3b82f6"
+                              initialSecondaryColor="#8b5cf6"
+                              initialAccentColor="#06b6d4"
+                              onNameChange={(name) => console.log('Name changed:', name)}
+                              onTaglineChange={(tagline) => console.log('Tagline changed:', tagline)}
+                              onPrimaryColorChange={(color) => console.log('Primary color changed:', color)}
+                              onSecondaryColorChange={(color) => console.log('Secondary color changed:', color)}
+                              onAccentColorChange={(color) => console.log('Accent color changed:', color)}
+                              onLogoChange={(file, url) => console.log('Logo changed:', file, url)}
+                            />
                           </CardContent>
                         </Card>
                       </TabsContent>
@@ -362,7 +500,7 @@ const AgentsInner = () => {
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                               ⚡ Actions & Tasks
-                              <Badge variant="secondary">Automated</Badge>
+                              <Badge variant="secondary">Step 5 of 5</Badge>
                             </CardTitle>
                             <CardDescription>
                               Define what your agent can do and automate
@@ -374,40 +512,10 @@ const AgentsInner = () => {
                               actions={actions}
                               onActionsChange={setActions}
                             />
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-
-                      <TabsContent value="configuration" level="child" className="mt-6">
-                        <Card className="border-dashed">
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              ⚙️ Agent Configuration
-                              <Badge variant="secondary">Settings</Badge>
-                            </CardTitle>
-                            <CardDescription>
-                              Fine-tune your agent's behavior and settings
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <div className="grid gap-4">
-                              <div className="p-4 border rounded-lg">
-                                <h4 className="font-medium mb-2">Basic Settings</h4>
-                                <div className="space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm">Agent Name</span>
-                                    <Button size="sm" variant="outline" title="Set agent name">Edit</Button>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm">Response Time</span>
-                                    <Button size="sm" variant="outline" title="Configure response timing">Configure</Button>
-                                  </div>
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm">Language Settings</span>
-                                    <Button size="sm" variant="outline" title="Set language preferences">Set Language</Button>
-                                  </div>
-                                </div>
-                              </div>
+                            <div className="pt-4 border-t">
+                              <Button className="w-full" size="lg">
+                                🚀 Deploy Your Agent
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
