@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Plus, X, ChevronDown, ChevronUp } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
+import { useUseCases } from '@/hooks/useUseCases';
 
 interface UseCaseSelectorProps {
   selectedUseCase: string;
@@ -22,6 +23,7 @@ export const UseCaseSelector: React.FC<UseCaseSelectorProps> = ({
   const [newUseCase, setNewUseCase] = useState('');
   const [showAddUseCase, setShowAddUseCase] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
+  const { addUseCase } = useUseCases();
 
   // Generate use cases based on categories and topics
   const generatedUseCases = useMemo(() => {
@@ -148,16 +150,25 @@ export const UseCaseSelector: React.FC<UseCaseSelectorProps> = ({
     return [...generatedUseCases, ...customUseCases].sort();
   }, [generatedUseCases, customUseCases]);
 
-  const handleAddUseCase = () => {
-    if (newUseCase.trim() && !allUseCases.includes(newUseCase.trim())) {
-      const updatedCustomUseCases = [...customUseCases, newUseCase.trim()];
-      setCustomUseCases(updatedCustomUseCases);
+  const handleAddUseCase = async () => {
+    const name = newUseCase.trim();
+    if (!name) return;
+    try {
+      // Persist to database so it appears in all dropdowns
+      await addUseCase({ name, category: 'general' });
+
+      // Keep local list for immediate UI feedback
+      if (!allUseCases.includes(name)) {
+        const updatedCustomUseCases = [...customUseCases, name];
+        setCustomUseCases(updatedCustomUseCases);
+      }
+
+      onUseCaseChange(name);
       setNewUseCase('');
       setShowAddUseCase(false);
-      toast({
-        title: 'Success',
-        description: 'New use case added successfully'
-      });
+      toast({ title: 'Success', description: 'New use case added successfully' });
+    } catch (e: any) {
+      toast({ title: 'Failed', description: e.message || 'Could not add use case', variant: 'destructive' });
     }
   };
 

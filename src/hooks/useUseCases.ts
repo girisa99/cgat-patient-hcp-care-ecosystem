@@ -249,6 +249,60 @@ export const useUseCases = () => {
     fetchUseCases();
   }, []);
 
+  // Real-time sync with use_cases changes
+  useEffect(() => {
+    const channel = supabase
+      .channel('use_cases_changes')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'use_cases' }, (payload: any) => {
+        const data = payload.new;
+        const typedData: UseCase = {
+          ...data,
+          complexity: data.complexity as 'simple' | 'moderate' | 'complex',
+          recommended_journey: Array.isArray(data.recommended_journey) ? data.recommended_journey : [],
+          required_components: Array.isArray(data.required_components) ? data.required_components : [],
+          optional_components: Array.isArray(data.optional_components) ? data.optional_components : [],
+          templates: typeof data.templates === 'object' ? data.templates : {},
+          description: data.description || undefined,
+          industry: data.industry || undefined,
+          created_by: data.created_by || undefined,
+          created_at: data.created_at || undefined,
+          updated_at: data.updated_at || undefined
+        };
+        setUseCases(prev => {
+          // avoid duplicates
+          if (prev.some(u => u.id === typedData.id)) return prev;
+          return [...prev, typedData];
+        });
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'use_cases' }, (payload: any) => {
+        const data = payload.new;
+        const typedData: UseCase = {
+          ...data,
+          complexity: data.complexity as 'simple' | 'moderate' | 'complex',
+          recommended_journey: Array.isArray(data.recommended_journey) ? data.recommended_journey : [],
+          required_components: Array.isArray(data.required_components) ? data.required_components : [],
+          optional_components: Array.isArray(data.optional_components) ? data.optional_components : [],
+          templates: typeof data.templates === 'object' ? data.templates : {},
+          description: data.description || undefined,
+          industry: data.industry || undefined,
+          created_by: data.created_by || undefined,
+          created_at: data.created_at || undefined,
+          updated_at: data.updated_at || undefined
+        };
+        setUseCases(prev => prev.map(u => (u.id === typedData.id ? typedData : u)));
+      })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'use_cases' }, (payload: any) => {
+        const id = payload.old?.id;
+        if (!id) return;
+        setUseCases(prev => prev.filter(u => u.id !== id));
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
+
   return {
     useCases,
     isLoading,
