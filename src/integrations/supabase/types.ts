@@ -828,6 +828,63 @@ export type Database = {
           },
         ]
       }
+      agent_template_journey_stages: {
+        Row: {
+          created_at: string
+          dependencies: Json | null
+          description: string | null
+          entry_criteria: Json | null
+          expected_duration_minutes: number | null
+          id: string
+          order_index: number
+          outputs_success_criteria: Json | null
+          owner_role: string | null
+          risks: Json | null
+          sla: Json | null
+          tasks_checklist: Json | null
+          template_id: string
+          title: string
+          updated_at: string
+          validation_checkpoints: Json | null
+        }
+        Insert: {
+          created_at?: string
+          dependencies?: Json | null
+          description?: string | null
+          entry_criteria?: Json | null
+          expected_duration_minutes?: number | null
+          id?: string
+          order_index?: number
+          outputs_success_criteria?: Json | null
+          owner_role?: string | null
+          risks?: Json | null
+          sla?: Json | null
+          tasks_checklist?: Json | null
+          template_id: string
+          title: string
+          updated_at?: string
+          validation_checkpoints?: Json | null
+        }
+        Update: {
+          created_at?: string
+          dependencies?: Json | null
+          description?: string | null
+          entry_criteria?: Json | null
+          expected_duration_minutes?: number | null
+          id?: string
+          order_index?: number
+          outputs_success_criteria?: Json | null
+          owner_role?: string | null
+          risks?: Json | null
+          sla?: Json | null
+          tasks_checklist?: Json | null
+          template_id?: string
+          title?: string
+          updated_at?: string
+          validation_checkpoints?: Json | null
+        }
+        Relationships: []
+      }
       agent_templates: {
         Row: {
           accent_color: string | null
