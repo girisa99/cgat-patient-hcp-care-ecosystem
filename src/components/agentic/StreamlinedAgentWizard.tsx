@@ -530,12 +530,11 @@ const { data: agent, error: agentError } = await supabase
       
       if (agentError || !agent) throw (agentError ?? new Error('Agent session not created'));
       
-      setIsComplete(true);
-      
-      toast({
-        title: 'Setup Complete!',
-        description: 'Agent foundation configured. Continue with models & actions in the next tabs.',
-      });
+      // Navigate to main canvas in Agent Builder
+      try { localStorage.setItem('agentBuilder_next', JSON.stringify({ mode: 'visual', tab: 'canvas-designer', subTab: 'canvas' })); } catch {}
+      toast({ title: 'Setup Complete!', description: 'Opening Canvas to continue branding.' });
+      navigate('/agents');
+      return;
       
     } catch (error) {
       console.error('Error saving agent setup:', error);
@@ -549,28 +548,6 @@ const { data: agent, error: agentError } = await supabase
     }
   };
 
-  if (isComplete) {
-    return (
-      <div className="flex flex-col items-center justify-center py-12 px-4 space-y-6">
-        <div className="bg-green-100 dark:bg-green-900/20 rounded-full p-3">
-          <CircleCheckBig className="h-16 w-16 text-green-600 dark:text-green-500" />
-        </div>
-        <h2 className="text-2xl font-bold text-center">Foundation Setup Complete!</h2>
-        <p className="text-muted-foreground text-center max-w-md">
-          Your agent's core configuration is ready. Continue setting up models, actions, 
-          connectors, and knowledge base in the dedicated tabs above.
-        </p>
-        <div className="flex gap-3">
-          <Button variant="outline" onClick={() => window.location.reload()}>
-            Configure Models & Actions
-          </Button>
-          <Button onClick={() => navigate('/agents')}>
-            View All Agents
-          </Button>
-        </div>
-      </div>
-    );
-  }
 
   // Streamlined step content - only 4 steps
   const stepContent = [
@@ -810,70 +787,6 @@ const { data: agent, error: agentError } = await supabase
           </p>
         </div>
 
-        {/* AI Model Selection */}
-        <div className="space-y-3">
-          <Label>Select AI Provider & Model</Label>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            {[
-              { 
-                id: 'gpt-4.1-2025-04-14', 
-                provider: 'openai' as const,
-                name: 'GPT-4.1 (OpenAI)', 
-                icon: <Sparkles className="w-4 h-4" />, 
-                desc: 'Most capable for complex healthcare reasoning',
-                pricing: 'Premium'
-              },
-              { 
-                id: 'gpt-5-mini-2025-08-07', 
-                provider: 'openai' as const,
-                name: 'GPT-5 Mini (OpenAI)', 
-                icon: <Sparkles className="w-4 h-4" />, 
-                desc: 'Fast and efficient for healthcare workflows',
-                pricing: 'Low Cost'
-              },
-              { 
-                id: 'claude-sonnet-4-20250514', 
-                provider: 'anthropic' as const,
-                name: 'Claude Sonnet 4', 
-                icon: <Brain className="w-4 h-4" />, 
-                desc: 'Excellent reasoning for healthcare optimization',
-                pricing: 'Standard'
-              },
-              { 
-                id: 'llama-3.1-sonar-large-128k-online', 
-                provider: 'perplexity' as const,
-                name: 'Sonar Large (Perplexity)', 
-                icon: <Eye className="w-4 h-4" />, 
-                desc: 'Real-time data for current standards',
-                pricing: 'Standard'
-              }
-            ].map((model) => (
-              <Card
-                key={model.id}
-                className={`cursor-pointer transition-all ${state.selectedAIModel === model.id ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
-                onClick={() => {
-                  updateField('selectedAIModel', model.id);
-                  updateField('selectedAIProvider', model.provider);
-                }}
-              >
-                <CardContent className="pt-3 pb-3">
-                  <div className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        {model.icon}
-                        <h4 className="font-medium text-sm">{model.name}</h4>
-                      </div>
-                      <Badge variant="outline" className="text-xs">
-                        {model.pricing}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground text-left">{model.desc}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </div>
 
         {/* Generate Button */}
         <div className="flex justify-center">
