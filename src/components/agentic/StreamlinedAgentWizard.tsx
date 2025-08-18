@@ -265,6 +265,15 @@ export const StreamlinedAgentWizard = () => {
     }
   }, [aiSuggestions]);
 
+  // Auto-generate when a use case is selected from dropdown
+  useEffect(() => {
+    if (state.selectedUseCaseId) {
+      generateAIJourneySteps();
+    }
+    // We intentionally don't include generateAIJourneySteps in deps to avoid duplicate runs
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.selectedUseCaseId]);
+
   const handleStepSelection = (stepId: string, isSelected: boolean) => {
     setState(prev => ({
       ...prev,

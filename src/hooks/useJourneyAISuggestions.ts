@@ -14,13 +14,18 @@ export const useJourneyAISuggestions = (): JourneyAISuggestions => {
 
   const generateSuggestions = useCallback(async (useCase: string, modelType: string) => {
     setIsLoading(true);
-    
     try {
-      // Simulate API call - in real implementation, this would call Perplexity or OpenAI
-      await new Promise(resolve => setTimeout(resolve, 2000));
-      
-      const generatedSteps = generateComprehensiveWorkflow(useCase, modelType);
-      setSuggestions(generatedSteps);
+      const res = await fetch(`https://ithspbabhmdntioslfqe.functions.supabase.co/generate-journey-suggestions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ useCase, modelType })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data?.error || 'Failed to generate suggestions');
+      }
+      const steps = Array.isArray(data?.steps) ? data.steps : [];
+      setSuggestions(steps);
     } catch (error) {
       console.error('Failed to generate AI suggestions:', error);
       setSuggestions([]);
