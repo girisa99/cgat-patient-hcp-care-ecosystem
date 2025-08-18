@@ -375,8 +375,9 @@ async function persistJourneyToTemplate(stages: any[]) {
           primary_color: state.primaryColor,
           secondary_color: state.secondaryColor,
           accent_color: state.accentColor,
-          journey_stages: [], // we store normalized stages below
-          is_default: false
+          journey_stages: [], // we store normalized stages below and JSON snapshot too
+          is_default: false,
+          created_by: (await supabase.auth.getUser()).data.user?.id || null
         })
         .select('id')
         .maybeSingle();
@@ -385,7 +386,7 @@ async function persistJourneyToTemplate(stages: any[]) {
       setState(prev => ({ ...prev, templateId: tplId }));
     }
 
-    // Clear existing stages and insert new ordered list
+    // Clear existing stages and insert new ordered list (normalized table)
     await supabase.from('agent_template_journey_stages').delete().eq('template_id', tplId);
 
     if (Array.isArray(stages) && stages.length > 0) {
@@ -407,6 +408,13 @@ async function persistJourneyToTemplate(stages: any[]) {
       const { error: insErr } = await supabase.from('agent_template_journey_stages').insert(payload);
       if (insErr) throw insErr;
     }
+
+    // Also persist a JSON snapshot on the template for quick preview
+    const { error: updErr } = await supabase
+      .from('agent_templates')
+      .update({ journey_stages: stages })
+      .eq('id', tplId);
+    if (updErr) throw updErr;
 
     toast({ title: 'Journey saved', description: `Saved ${stages.length} stage(s) to template` });
     return tplId;
