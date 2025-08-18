@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Workflow, 
   Settings, 
@@ -101,15 +102,24 @@ export const AgentTabs: React.FC<AgentTabsProps> = ({
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             return (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-background min-w-0"
-                title={`${tab.label}: ${tab.description}`}
-              >
-                <IconComponent className="h-4 w-4 flex-shrink-0" />
-                <span className="text-xs font-medium text-center leading-tight truncate max-w-full">{tab.label}</span>
-              </TabsTrigger>
+              <Tooltip key={tab.id}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger
+                    value={tab.id}
+                    className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-background min-w-0"
+                    aria-label={tab.label}
+                  >
+                    <IconComponent className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-xs font-medium text-center leading-tight truncate max-w-full">{tab.label}</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom">
+                  <div className="space-y-0.5">
+                    <div className="font-medium text-xs">{tab.label}</div>
+                    <div className="text-[11px] opacity-90 max-w-[220px]">{tab.description}</div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </TabsList>
