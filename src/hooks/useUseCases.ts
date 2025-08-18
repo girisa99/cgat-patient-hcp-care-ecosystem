@@ -118,6 +118,8 @@ export const useUseCases = () => {
 
       // Add to local state
       setUseCases(prev => [...prev, typedData]);
+      // Broadcast to other components (same page) to refresh dropdowns immediately
+      window.dispatchEvent(new CustomEvent('usecase:added', { detail: typedData }));
 
       toast({
         title: 'Success!',
@@ -269,7 +271,6 @@ export const useUseCases = () => {
           updated_at: data.updated_at || undefined
         };
         setUseCases(prev => {
-          // avoid duplicates
           if (prev.some(u => u.id === typedData.id)) return prev;
           return [...prev, typedData];
         });
@@ -298,8 +299,19 @@ export const useUseCases = () => {
       })
       .subscribe();
 
+    const localAdd = (e: Event) => {
+      const detail = (e as CustomEvent).detail as UseCase | undefined;
+      if (!detail) return;
+      setUseCases(prev => {
+        if (prev.some(u => u.id === detail.id)) return prev;
+        return [...prev, detail];
+      });
+    };
+    window.addEventListener('usecase:added', localAdd as EventListener);
+
     return () => {
       supabase.removeChannel(channel);
+      window.removeEventListener('usecase:added', localAdd as EventListener);
     };
   }, []);
 
