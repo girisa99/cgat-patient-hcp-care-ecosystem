@@ -89,48 +89,10 @@ const ExternalIntegrationTab: React.FC = () => {
   };
 
   const handleViewDetails = (api: any) => {
-    const detailsWindow = window.open('', '_blank', 'width=800,height=600');
-    if (detailsWindow) {
-      detailsWindow.document.write(`
-        <html>
-          <head>
-            <title>${api.external_name} - Details</title>
-            <style>
-              body { font-family: Arial, sans-serif; padding: 20px; }
-              .detail-section { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px; }
-              .badge { display: inline-block; padding: 4px 8px; background: #007bff; color: white; border-radius: 3px; font-size: 12px; margin-right: 5px; }
-              .status-active { background: #28a745; }
-              .status-draft { background: #6c757d; }
-            </style>
-          </head>
-          <body>
-            <h1>${api.external_name}</h1>
-            
-            <div class="detail-section">
-              <h2>Basic Information</h2>
-              <p><strong>Description:</strong> ${api.external_description || 'No description available'}</p>
-              <p><strong>Category:</strong> ${api.category || 'Not specified'}</p>
-              <p><strong>Version:</strong> ${api.version || '1.0.0'}</p>
-              <p><strong>Status:</strong> <span class="badge status-${api.status}">${api.status}</span></p>
-            </div>
-
-            <div class="detail-section">
-              <h2>Configuration</h2>
-              <p><strong>Base URL:</strong> ${api.base_url || 'Not configured'}</p>
-              <p><strong>Pricing Model:</strong> ${api.pricing_model || 'Not specified'}</p>
-              <p><strong>Visibility:</strong> ${api.visibility || 'Private'}</p>
-            </div>
-
-            <div class="detail-section">
-              <h2>Timestamps</h2>
-              <p><strong>Created:</strong> ${new Date(api.created_at).toLocaleString()}</p>
-              ${api.published_at ? `<p><strong>Published:</strong> ${new Date(api.published_at).toLocaleString()}</p>` : ''}
-            </div>
-          </body>
-        </html>
-      `);
-      detailsWindow.document.close();
-    }
+    DOMSecurity.createAPIDetailsWindow({
+      ...api,
+      name: api.external_name
+    }, 'external');
   };
 
   const handleConfigure = (api: any) => {

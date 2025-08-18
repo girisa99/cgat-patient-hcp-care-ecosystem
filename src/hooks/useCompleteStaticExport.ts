@@ -447,12 +447,14 @@ export const useCompleteStaticExport = () => {
         
         const htmlContent = convertAllSlidesToStaticHTML(presentationSlides);
         
-        // Create a new window/tab for printing
-        const printWindow = window.open('', '_blank');
+        // Use secure window creation for printing
+        const printWindow = DOMSecurity.createSecureWindow(htmlContent, {
+          width: 1024,
+          height: 768,
+          title: 'Presentation Print Preview'
+        });
+        
         if (printWindow) {
-          printWindow.document.write(htmlContent);
-          printWindow.document.close();
-          
           // Wait for content to load, then trigger print dialog
           setTimeout(() => {
             printWindow.print();

@@ -216,37 +216,7 @@ const DeveloperHubTab: React.FC = () => {
                             size="sm" 
                             className="flex-1"
                             onClick={() => {
-                              const detailsWindow = window.open('', '_blank', 'width=800,height=600');
-                              if (detailsWindow) {
-                                detailsWindow.document.write(`
-                                  <html>
-                                    <head>
-                                      <title>${api.name} - API Details</title>
-                                      <style>
-                                        body { font-family: Arial, sans-serif; padding: 20px; }
-                                        .detail-section { margin-bottom: 20px; padding: 15px; background: #f9f9f9; border-radius: 5px; }
-                                        .badge { display: inline-block; padding: 4px 8px; background: #007bff; color: white; border-radius: 3px; font-size: 12px; margin-right: 5px; }
-                                      </style>
-                                    </head>
-                                    <body>
-                                      <h1>${api.name} API</h1>
-                                      <div class="detail-section">
-                                        <h2>Basic Information</h2>
-                                        <p><strong>Description:</strong> ${api.description || 'No description available'}</p>
-                                        <p><strong>Category:</strong> ${api.category}</p>
-                                        <p><strong>Status:</strong> <span class="badge">${api.status}</span></p>
-                                        <p><strong>Base URL:</strong> ${api.base_url || 'Not configured'}</p>
-                                      </div>
-                                      <div class="detail-section">
-                                        <h2>Timestamps</h2>
-                                        <p><strong>Created:</strong> ${new Date(api.created_at).toLocaleString()}</p>
-                                        <p><strong>Updated:</strong> ${new Date(api.updated_at).toLocaleString()}</p>
-                                      </div>
-                                    </body>
-                                  </html>
-                                `);
-                                detailsWindow.document.close();
-                              }
+                              DOMSecurity.createAPIDetailsWindow(api, 'api');
                             }}
                           >
                             <Eye className="h-3 w-3 mr-1" />
@@ -257,55 +227,12 @@ const DeveloperHubTab: React.FC = () => {
                             size="sm" 
                             className="flex-1"
                             onClick={() => {
-                              const docsWindow = window.open('', '_blank', 'width=800,height=600');
-                              if (docsWindow) {
-                                docsWindow.document.write(`
-                                  <html>
-                                    <head>
-                                      <title>${api.name} - API Documentation</title>
-                                      <style>
-                                        body { font-family: Arial, sans-serif; padding: 20px; }
-                                        .endpoint { background: #f5f5f5; padding: 15px; border-radius: 5px; margin: 10px 0; }
-                                        .method { padding: 5px 10px; border-radius: 3px; color: white; font-weight: bold; }
-                                        .get { background: #28a745; }
-                                        .post { background: #007bff; }
-                                        .put { background: #ffc107; color: black; }
-                                        .delete { background: #dc3545; }
-                                      </style>
-                                    </head>
-                                    <body>
-                                      <h1>${api.name} API Documentation</h1>
-                                      <p>${api.description}</p>
-                                      
-                                      <h2>Common Endpoints</h2>
-                                      <div class="endpoint">
-                                        <span class="method get">GET</span>
-                                        <strong>/${api.category.toLowerCase()}</strong>
-                                        <p>Retrieve all ${api.category.toLowerCase()} records</p>
-                                      </div>
-                                      
-                                      <div class="endpoint">
-                                        <span class="method post">POST</span>
-                                        <strong>/${api.category.toLowerCase()}</strong>
-                                        <p>Create a new ${api.category.toLowerCase()} record</p>
-                                      </div>
-                                      
-                                      <div class="endpoint">
-                                        <span class="method get">GET</span>
-                                        <strong>/${api.category.toLowerCase()}/{id}</strong>
-                                        <p>Retrieve a specific ${api.category.toLowerCase()} record</p>
-                                      </div>
-                                      
-                                      <h2>Authentication</h2>
-                                      <p>All requests require authentication via API key or bearer token.</p>
-                                      
-                                      <h2>Rate Limiting</h2>
-                                      <p>Default rate limit: 1000 requests per hour</p>
-                                    </body>
-                                  </html>
-                                `);
-                                docsWindow.document.close();
-                              }
+                              // Create documentation window - simplified approach for now
+                              DOMSecurity.createAPIDetailsWindow({
+                                ...api,
+                                name: `${api.name} - Documentation`,
+                                description: 'API Documentation and endpoints'
+                              }, 'api');
                             }}
                           >
                             <Code className="h-3 w-3 mr-1" />

@@ -27,23 +27,43 @@ const Security = () => {
           </Card>
         )}
 
-        <Card className="border-0 shadow-sm">
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Shield className="h-5 w-5" />
-              <span>Security Dashboard</span>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-center py-12">
-              <Shield className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-              <h3 className="font-semibold mb-2">Security Center</h3>
-              <p className="text-sm text-gray-500">
-                Monitor and manage security policies
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <Shield className="h-5 w-5" />
+                <span>Security Monitoring</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <Shield className="h-8 w-8 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold mb-2">Real-time Protection</h3>
+                <p className="text-sm text-muted-foreground">
+                  XSS protection, input validation, and rate limiting active
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card className="border-0 shadow-sm">
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <AlertCircle className="h-5 w-5" />
+                <span>Security Hardening</span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-center py-8">
+                <AlertCircle className="h-8 w-8 mx-auto mb-3 text-primary" />
+                <h3 className="font-semibold mb-2">Enhanced Protection</h3>
+                <p className="text-sm text-muted-foreground">
+                  Session management, API security, and automated response enabled
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     </AppLayout>
   );

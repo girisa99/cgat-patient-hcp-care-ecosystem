@@ -29,8 +29,10 @@ const createSimpleApp = () => {
   container.appendChild(title);
   container.appendChild(message);
   
-  // Clear the root and add our content
-  rootElement.innerHTML = '';
+  // Clear the root safely and add our content
+  while (rootElement.firstChild) {
+    rootElement.removeChild(rootElement.firstChild);
+  }
   rootElement.appendChild(container);
   
   console.log('✅ Basic app rendered successfully!');
@@ -72,7 +74,11 @@ const loadReactApp = () => {
     console.error('❌ Error loading React:', error);
     
     const rootElement = document.getElementById("root");
-    rootElement.innerHTML += '<p style="color: red; margin: 10px 0;">❌ React failed to load: ' + error.message + '</p>';
+    const errorElement = document.createElement('p');
+    errorElement.style.color = 'red';
+    errorElement.style.margin = '10px 0';
+    errorElement.textContent = '❌ React failed to load: ' + error.message;
+    rootElement.appendChild(errorElement);
   });
 };
 

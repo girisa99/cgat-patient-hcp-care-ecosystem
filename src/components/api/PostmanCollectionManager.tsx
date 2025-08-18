@@ -223,34 +223,15 @@ const PostmanCollectionManager: React.FC = () => {
       const collectionData = await generateCollection(collection.apiId, collection.name);
       
       if (collectionData) {
-        // Create a modal or new window to display collection details
-        const detailsWindow = window.open('', '_blank', 'width=800,height=600');
-        if (detailsWindow) {
-          detailsWindow.document.write(`
-            <html>
-              <head>
-                <title>${collection.name} - Collection Details</title>
-                <style>
-                  body { font-family: Arial, sans-serif; padding: 20px; }
-                  pre { background: #f5f5f5; padding: 15px; border-radius: 5px; overflow: auto; }
-                  .header { border-bottom: 1px solid #ddd; padding-bottom: 10px; margin-bottom: 20px; }
-                </style>
-              </head>
-              <body>
-                <div class="header">
-                  <h1>${collection.name}</h1>
-                  <p>${collection.description}</p>
-                </div>
-                <h2>Collection JSON</h2>
-                <pre>${JSON.stringify(collectionData, null, 2)}</pre>
-              </body>
-            </html>
-          `);
-          detailsWindow.document.close();
-        }
-        
-        showSuccess(`Viewing collection: ${collection.name}`);
+        // Use secure DOM manipulation instead of document.write
+        DOMSecurity.createAPIDetailsWindow({
+          name: collection.name,
+          description: collection.description,
+          collectionData
+        }, 'collection');
       }
+        
+      showSuccess(`Viewing collection: ${collection.name}`);
     } catch (error) {
       showError('Failed to view collection details');
     }
