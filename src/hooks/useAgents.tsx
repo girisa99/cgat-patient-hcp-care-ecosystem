@@ -72,6 +72,17 @@ export const useAgents = () => {
     refetchOnWindowFocus: false,
   });
 
+  // Debug logging for useAgents hook
+  console.log('🔍 useAgents Debug Info:', {
+    userExists: !!user,
+    userId: user?.id,
+    queryEnabled: !!user?.id,
+    isLoading,
+    agentsCount: agents?.length || 0,
+    errorMessage: error?.message,
+    agentsData: agents
+  });
+
   const createAgentMutation = useMutation({
     mutationFn: async (agentData: {
       name: string;
