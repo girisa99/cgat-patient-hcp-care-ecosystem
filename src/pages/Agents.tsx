@@ -67,7 +67,7 @@ import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/Agen
 import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { JourneyEditor } from '@/components/agentic/JourneyEditor';
-import { AgentCreationWizard } from '@/components/agentic/AgentCreationWizard';
+import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
 import { useToast } from '@/hooks/use-toast';
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
@@ -444,7 +444,7 @@ const AgentsInner = () => {
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <AgentCreationWizard />
+                            <StreamlinedAgentWizard />
                             <div className="flex gap-2 pt-4">
                               <Button variant="outline" onClick={handleBackToJourney}>
                                 <ArrowLeft className="w-4 h-4 mr-1" />
