@@ -65,6 +65,10 @@ import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector
 import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosystem';
 import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
 import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
+import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
+import { JourneyEditor } from '@/components/agentic/JourneyEditor';
+import { AgentCreationWizard } from '@/components/agentic/AgentCreationWizard';
+import { useToast } from '@/hooks/use-toast';
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
 };
@@ -105,56 +109,62 @@ const AgentsInner = () => {
   
   // New agent builder state
   const [selectedMode, setSelectedMode] = useState<AgentMode | null>(null);
-  const [showModeSelector, setShowModeSelector] = useState(true);
+  const [showModeSelector, setShowModeSelector] = useState(false);
   const [showPromptAssistant, setShowPromptAssistant] = useState(false);
   const [agentBuilderTab, setAgentBuilderTab] = useState('canvas-designer');
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
   const [visualWorkflowSubTab, setVisualWorkflowSubTab] = useState('use-case');
+  const [selectedUseCase, setSelectedUseCase] = useState('');
+  const [journeyStages, setJourneyStages] = useState<any[]>([]);
+  const [wizardData, setWizardData] = useState<any>({});
 
   const { userRoles, user } = useMasterAuth();
   const queryClient = useQueryClient();
   const { userSessions, isLoading: sessionsLoading, setCurrentSessionId, currentSessionId, actions, setActions } = useAgentBuilder();
+  const { toast: toastHook } = useToast();
 
   // Role-based access control
   const isSuperAdmin = userRoles.includes('superAdmin');
   const isOnboardingTeam = userRoles.includes('onboardingTeam');
   const isAdmin = userRoles.includes('admin');
 
-  // Initialize questionnaire before mode selection for first-time users
+  // Initialize questionnaire first for new users
   useEffect(() => {
     try {
       const completed = localStorage.getItem('agentBuilder_questionnaireCompleted') === 'true';
       setHasCompletedQuestionnaire(completed);
-      const firstTime = !completed && (userSessions?.length ?? 0) === 0;
-      if (firstTime) {
+      
+      // Show questionnaire first for new users, then mode selector
+      if (!completed && (userSessions?.length ?? 0) === 0) {
         setShowQuestionnaire(true);
         setShowModeSelector(false);
+      } else {
+        setShowQuestionnaire(false);
+        setShowModeSelector(true);
       }
     } catch (e) {
       console.warn('Questionnaire init failed:', e);
+      setShowModeSelector(true);
     }
   }, [userSessions]);
 
-  // Handle questionnaire completion
+  // Handle questionnaire completion - proceed to mode selection
   const handleQuestionnaireComplete = (data: any) => {
     console.log('Questionnaire completed:', data);
     setHasCompletedQuestionnaire(true);
     setShowQuestionnaire(false);
-    try { localStorage.setItem('agentBuilder_questionnaireCompleted', 'true'); } catch {}
     setShowModeSelector(true);
-    toast.success('Questionnaire completed! Now select your building method.');
+    
+    try { 
+      localStorage.setItem('agentBuilder_questionnaireCompleted', 'true'); 
+    } catch {}
+    
+    toast.success('Great! Now choose your building approach.');
   };
 
-  // Handle mode selection
+  // Handle mode selection - proceed to use case selection
   const handleModeSelect = (mode: AgentMode) => {
-    // Show questionnaire if not completed and first time building
-    if (!hasCompletedQuestionnaire && !userSessions?.length) {
-      setShowQuestionnaire(true);
-      setSelectedMode(mode);
-      return;
-    }
-
     setSelectedMode(mode);
     setShowModeSelector(false);
     
@@ -169,10 +179,50 @@ const AgentsInner = () => {
     toast.success(`Switched to ${mode === 'visual' ? 'Visual Workflow' : 'Manual Configuration'} mode`);
   };
 
+  // Handle use case selection - proceed to journey stages
+  const handleUseCaseSelect = (useCase: string) => {
+    setSelectedUseCase(useCase);
+    setVisualWorkflowSubTab('journey');
+    toast.success('Use case selected! Now define your journey stages.');
+  };
+
+  // Handle journey completion - proceed to wizard
+  const handleJourneyComplete = (stages: any[]) => {
+    setJourneyStages(stages);
+    setVisualWorkflowSubTab('wizard');
+    toast.success('Journey stages defined! Complete your agent setup.');
+  };
+
+  // Handle wizard completion - proceed to canvas
+  const handleWizardComplete = (data: any) => {
+    setWizardData(data);
+    setVisualWorkflowSubTab('canvas');
+    toast.success('Setup complete! Customize your agent\'s appearance.');
+  };
+
+  // Back navigation handlers
+  const handleBackToQuestionnaire = () => {
+    setShowModeSelector(false);
+    setShowQuestionnaire(true);
+  };
+
   const handleBackToModeSelector = () => {
     setShowModeSelector(true);
     setSelectedMode(null);
     setShowPromptAssistant(false);
+  };
+
+  const handleBackToUseCase = () => {
+    setVisualWorkflowSubTab('use-case');
+    setSelectedUseCase('');
+  };
+
+  const handleBackToJourney = () => {
+    setVisualWorkflowSubTab('journey');
+  };
+
+  const handleBackToWizard = () => {
+    setVisualWorkflowSubTab('wizard');
   };
 
   const handlePromptGenerate = (prompt: string, generatedConfig: any) => {
@@ -194,7 +244,9 @@ const AgentsInner = () => {
     return (
       <AppLayout>
         <div className="p-6">
-          <IntelligentQuestionnaire onComplete={handleQuestionnaireComplete} />
+          <IntelligentQuestionnaire 
+            onComplete={handleQuestionnaireComplete} 
+          />
         </div>
       </AppLayout>
     );
@@ -205,6 +257,18 @@ const AgentsInner = () => {
     return (
       <AppLayout>
         <div className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <h1 className="text-2xl font-bold">Choose Your Building Approach</h1>
+              <p className="text-muted-foreground">Select how you'd like to build your agent</p>
+            </div>
+            {hasCompletedQuestionnaire && (
+              <Button variant="outline" onClick={handleBackToQuestionnaire}>
+                <ArrowLeft className="w-4 h-4 mr-1" />
+                Back to Questionnaire  
+              </Button>
+            )}
+          </div>
           <ModeSelector 
             onModeSelect={handleModeSelect}
             selectedMode={selectedMode || undefined}
@@ -218,7 +282,7 @@ const AgentsInner = () => {
   return (
     <AppLayout>
       <div className="space-y-6">
-        {/* Header with mode switch option */}
+        {/* Header with navigation and mode info */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
@@ -308,50 +372,31 @@ const AgentsInner = () => {
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                               🎯 Select Use Case
-                              <Badge variant="secondary">Step 1 of 5</Badge>
+                              <Badge variant="secondary">Step 1 of 4</Badge>
                             </CardTitle>
                             <CardDescription>
-                              Choose what type of agent you want to build
+                              Choose what type of agent you want to build or describe your specific needs
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div className="grid gap-4 md:grid-cols-2">
-                              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setVisualWorkflowSubTab('journey')}>
-                                <CardContent className="p-4">
-                                  <div className="space-y-2">
-                                    <div className="text-lg font-medium">🏥 Healthcare Assistant</div>
-                                    <p className="text-sm text-muted-foreground">Patient support, provider onboarding, care management</p>
-                                    <Button size="sm" className="w-full">Select This Use Case</Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setVisualWorkflowSubTab('journey')}>
-                                <CardContent className="p-4">
-                                  <div className="space-y-2">
-                                    <div className="text-lg font-medium">💼 Business Operations</div>
-                                    <p className="text-sm text-muted-foreground">Workflow automation, data processing, reporting</p>
-                                    <Button size="sm" className="w-full">Select This Use Case</Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setVisualWorkflowSubTab('journey')}>
-                                <CardContent className="p-4">
-                                  <div className="space-y-2">
-                                    <div className="text-lg font-medium">🎓 Education & Training</div>
-                                    <p className="text-sm text-muted-foreground">Learning paths, skill assessment, progress tracking</p>
-                                    <Button size="sm" className="w-full">Select This Use Case</Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
-                              <Card className="cursor-pointer hover:shadow-md transition-shadow" onClick={() => setVisualWorkflowSubTab('journey')}>
-                                <CardContent className="p-4">
-                                  <div className="space-y-2">
-                                    <div className="text-lg font-medium">🔧 Custom Solution</div>
-                                    <p className="text-sm text-muted-foreground">Build from scratch with custom requirements</p>
-                                    <Button size="sm" className="w-full">Select This Use Case</Button>
-                                  </div>
-                                </CardContent>
-                              </Card>
+                            <UseCaseSelector
+                              selectedUseCase={selectedUseCase}
+                              onUseCaseChange={handleUseCaseSelect}
+                              selectedCategories={[]}
+                              selectedTopics={[]}
+                            />
+                            <div className="flex gap-2 pt-4">
+                              <Button variant="outline" onClick={handleBackToModeSelector}>
+                                <ArrowLeft className="w-4 h-4 mr-1" />
+                                Back to Mode Selection
+                              </Button>
+                              <Button 
+                                className="flex-1" 
+                                disabled={!selectedUseCase}
+                                onClick={() => handleUseCaseSelect(selectedUseCase)}
+                              >
+                                Continue to Journey Stages
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
@@ -362,52 +407,25 @@ const AgentsInner = () => {
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
                               🗺️ Journey Stages
-                              <Badge variant="secondary">Step 2 of 5</Badge>
+                              <Badge variant="secondary">Step 2 of 4</Badge>
                             </CardTitle>
                             <CardDescription>
-                              Define the stages your agent will guide users through
+                              Define the stages your agent will guide users through. Add, edit, or get AI suggestions for optimal user journeys.
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div className="space-y-3">
-                              <div className="flex items-center justify-between p-3 border rounded-lg bg-muted/50">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-medium">1</div>
-                                  <div>
-                                    <div className="font-medium">Initial Assessment</div>
-                                    <div className="text-sm text-muted-foreground">Gather user requirements and context</div>
-                                  </div>
-                                </div>
-                                <Button size="sm" variant="ghost">Edit</Button>
-                              </div>
-                              <div className="flex items-center justify-between p-3 border rounded-lg">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">2</div>
-                                  <div>
-                                    <div className="font-medium">Solution Design</div>
-                                    <div className="text-sm text-muted-foreground">Create personalized action plan</div>
-                                  </div>
-                                </div>
-                                <Button size="sm" variant="ghost">Edit</Button>
-                              </div>
-                              <div className="flex items-center justify-between p-3 border rounded-lg">
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-full bg-muted text-muted-foreground flex items-center justify-center text-sm font-medium">3</div>
-                                  <div>
-                                    <div className="font-medium">Implementation</div>
-                                    <div className="text-sm text-muted-foreground">Execute the solution step by step</div>
-                                  </div>
-                                </div>
-                                <Button size="sm" variant="ghost">Edit</Button>
-                              </div>
-                            </div>
-                            <div className="flex gap-2">
-                              <Button variant="outline" size="sm">
-                                <Plus className="w-4 h-4 mr-1" />
-                                Add Stage
+                            {/* Generate a temporary template ID for journey editing */}
+                            <JourneyEditor 
+                              templateId={currentSessionId || 'temp-journey'}
+                              onApplied={handleJourneyComplete}
+                            />
+                            <div className="flex gap-2 pt-4">
+                              <Button variant="outline" onClick={handleBackToUseCase}>
+                                <ArrowLeft className="w-4 h-4 mr-1" />
+                                Back to Use Case
                               </Button>
-                              <Button className="flex-1" onClick={() => setVisualWorkflowSubTab('wizard')}>
-                                Continue to Wizard Setup
+                              <Button className="flex-1" onClick={() => handleJourneyComplete(journeyStages)}>
+                                Continue to Setup Wizard
                               </Button>
                             </div>
                           </CardContent>
@@ -418,43 +436,21 @@ const AgentsInner = () => {
                         <Card className="border-dashed">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                              🧙‍♂️ Setup Wizard
+                              🧙‍♂️ Agent Creation Wizard
                               <Badge variant="secondary">Step 3 of 4</Badge>
                             </CardTitle>
                             <CardDescription>
-                              Configure your agent's core settings and behavior. Actions & configurations will be available after model/template selection.
+                              Complete your agent setup with categories, business units, topics, and single/multi-agent configurations
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            <div className="grid gap-4">
-                              <Card>
-                                <CardContent className="p-4">
-                                  <div className="space-y-4">
-                                    <div>
-                                      <Label htmlFor="agent-name">Agent Name</Label>
-                                      <Input id="agent-name" placeholder="Enter your agent's name" />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="agent-purpose">Agent Purpose</Label>
-                                      <Textarea id="agent-purpose" placeholder="Describe what your agent will do..." rows={3} />
-                                    </div>
-                                    <div>
-                                      <Label htmlFor="communication-style">Communication Style</Label>
-                                      <select className="w-full p-2 border rounded-md">
-                                        <option value="">Select communication style</option>
-                                        <option value="professional">Professional & Formal</option>
-                                        <option value="friendly">Friendly & Conversational</option>
-                                        <option value="supportive">Supportive & Empathetic</option>
-                                        <option value="concise">Direct & Concise</option>
-                                      </select>
-                                    </div>
-                                  </div>
-                                </CardContent>
-                              </Card>
+                            <AgentCreationWizard />
+                            <div className="flex gap-2 pt-4">
+                              <Button variant="outline" onClick={handleBackToJourney}>
+                                <ArrowLeft className="w-4 h-4 mr-1" />
+                                Back to Journey
+                              </Button>
                             </div>
-                            <Button className="w-full" onClick={() => setVisualWorkflowSubTab('canvas')}>
-                              Continue to Visual Canvas
-                            </Button>
                           </CardContent>
                         </Card>
                       </TabsContent>
@@ -467,36 +463,35 @@ const AgentsInner = () => {
                               <Badge variant="secondary">Step 4 of 4</Badge>
                             </CardTitle>
                             <CardDescription>
-                              Customize your agent's visual appearance. After completing this step, proceed to Models & Templates to configure actions and advanced settings.
+                              Customize your agent's visual appearance with color palette, logo upload, templates, and preview functionality
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
                             <EnhancedAgentCanvas 
-                              initialName=""
-                              initialTagline=""
+                              initialName={wizardData.name || ""}
+                              initialTagline={wizardData.tagline || ""}
                               initialPrimaryColor="#3b82f6"
                               initialSecondaryColor="#8b5cf6"
                               initialAccentColor="#06b6d4"
-                              onNameChange={(name) => console.log('Name changed:', name)}
-                              onTaglineChange={(tagline) => console.log('Tagline changed:', tagline)}
-                              onPrimaryColorChange={(color) => console.log('Primary color changed:', color)}
-                              onSecondaryColorChange={(color) => console.log('Secondary color changed:', color)}
-                              onAccentColorChange={(color) => console.log('Accent color changed:', color)}
-                              onLogoChange={(file, url) => console.log('Logo changed:', file, url)}
+                              onNameChange={(name) => setWizardData(prev => ({...prev, name}))}
+                              onTaglineChange={(tagline) => setWizardData(prev => ({...prev, tagline}))}
+                              onPrimaryColorChange={(color) => setWizardData(prev => ({...prev, primaryColor: color}))}
+                              onSecondaryColorChange={(color) => setWizardData(prev => ({...prev, secondaryColor: color}))}
+                              onAccentColorChange={(color) => setWizardData(prev => ({...prev, accentColor: color}))}
+                              onLogoChange={(file, url) => setWizardData(prev => ({...prev, logoFile: file, logoUrl: url}))}
                             />
-                            <div className="pt-6 border-t mt-6">
-                              <div className="text-center space-y-3">
-                                <p className="text-sm text-muted-foreground">
-                                  Ready to configure models, actions, and advanced settings?
-                                </p>
-                                <Button 
-                                  className="w-full" 
-                                  size="lg"
-                                  onClick={() => setAgentBuilderTab('models-templates')}
-                                >
-                                  🤖 Continue to Models & Templates
-                                </Button>
-                              </div>
+                            <div className="flex gap-2 pt-6 border-t mt-6">
+                              <Button variant="outline" onClick={handleBackToWizard}>
+                                <ArrowLeft className="w-4 h-4 mr-1" />
+                                Back to Wizard
+                              </Button>
+                              <Button 
+                                className="flex-1" 
+                                size="lg"
+                                onClick={() => setAgentBuilderTab('models-templates')}
+                              >
+                                🤖 Complete Setup & Configure Models
+                              </Button>
                             </div>
                           </CardContent>
                         </Card>
