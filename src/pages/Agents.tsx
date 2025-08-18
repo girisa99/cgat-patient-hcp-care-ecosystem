@@ -417,6 +417,7 @@ const AgentsInner = () => {
                             {/* Generate a temporary template ID for journey editing */}
                             <JourneyEditor 
                               templateId={currentSessionId || 'temp-journey'}
+                              useCase={selectedUseCase}
                               onApplied={handleJourneyComplete}
                             />
                             <div className="flex gap-2 pt-4">

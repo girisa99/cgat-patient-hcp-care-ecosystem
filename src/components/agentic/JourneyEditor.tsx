@@ -6,13 +6,16 @@ import { Textarea } from '@/components/ui/textarea';
 import { Steps, Step } from '@/components/ui/steps';
 import { useJourneyStages, JourneyStage } from '@/hooks/useJourneyStages';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
+import { AISuggestionsPanel } from '@/components/journey/AISuggestionsPanel';
+import type { JourneyStep as AIStep } from '@/hooks/useJourneyAISuggestions';
 
 interface JourneyEditorProps {
   templateId: string;
+  useCase?: string;
   onApplied?: (stages: JourneyStage[]) => void;
 }
 
-export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, onApplied }) => {
+export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, useCase, onApplied }) => {
   const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages, refetch } = useJourneyStages(templateId);
 
   // Local drafts to prevent input resets while typing; save on blur
@@ -93,6 +96,43 @@ export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, onAppl
     onApplied?.(stages);
   };
 
+  // Map an AI suggestion to a journey stage and insert it
+  const addAIStep = async (step: AIStep, position?: number) => {
+    await createStage({
+      title: step.title,
+      description: step.description || null,
+      owner_role: (step.stakeholders && step.stakeholders[0]) || null,
+      entry_criteria: step.requirements || [],
+      tasks_checklist: step.actions || [],
+      expected_duration_minutes: step.estimatedDuration || null,
+      outputs_success_criteria: [],
+      risks: step.riskLevel ? [step.riskLevel] : [],
+      dependencies: step.dependencies || [],
+      validation_checkpoints: [],
+      order_index: position ?? stages.length,
+    });
+    await refetch();
+  };
+
+  const addAllAISteps = async (steps: AIStep[]) => {
+    for (let i = 0; i < steps.length; i++) {
+      const s = steps[i];
+      await createStage({
+        title: s.title,
+        description: s.description || null,
+        owner_role: (s.stakeholders && s.stakeholders[0]) || null,
+        entry_criteria: s.requirements || [],
+        tasks_checklist: s.actions || [],
+        expected_duration_minutes: s.estimatedDuration || null,
+        outputs_success_criteria: [],
+        risks: s.riskLevel ? [s.riskLevel] : [],
+        dependencies: s.dependencies || [],
+        validation_checkpoints: [],
+        order_index: stages.length + i,
+      });
+    }
+    await refetch();
+  };
   return (
     <div className="space-y-4">
       <div>
@@ -107,6 +147,16 @@ export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, onAppl
           ))}
         </Steps>
       </div>
+
+      {/* AI Suggestions Panel */}
+      {useCase && (
+        <AISuggestionsPanel
+          useCase={useCase}
+          onAddStep={addAIStep}
+          onAddAllSteps={addAllAISteps}
+          currentStepsCount={stages.length}
+        />
+      )}
 
       <div className="space-y-3 max-h-[50vh] overflow-auto pr-1">
         {isLoading && <div className="text-sm text-muted-foreground">Loading stages…</div>}
