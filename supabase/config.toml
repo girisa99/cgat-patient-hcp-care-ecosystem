@@ -49,3 +49,6 @@ verify_jwt = false
 
 [functions.perplexity-recommend]
 verify_jwt = true
+
+[functions.security-monitor]
+verify_jwt = true
