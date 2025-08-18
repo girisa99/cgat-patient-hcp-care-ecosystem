@@ -1,6 +1,7 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Workflow, 
   Settings, 
@@ -100,16 +101,24 @@ export const AgentTabs: React.FC<AgentTabsProps> = ({
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             return (
-              <TabsTrigger
-                key={tab.id}
-                value={tab.id}
-                className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-background min-w-0 h-auto"
-                aria-label={tab.label}
-              >
-                <IconComponent className="h-4 w-4 flex-shrink-0" />
-                <span className="text-xs font-medium text-center leading-tight">{tab.label}</span>
-                <span className="text-[10px] text-muted-foreground text-center leading-tight px-1">{tab.description}</span>
-              </TabsTrigger>
+              <Tooltip key={tab.id}>
+                <TooltipTrigger asChild>
+                  <TabsTrigger
+                    value={tab.id}
+                    className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-background min-w-0 h-auto"
+                    aria-label={tab.label}
+                  >
+                    <IconComponent className="h-4 w-4 flex-shrink-0" />
+                    <span className="text-xs font-medium text-center leading-tight">{tab.label}</span>
+                  </TabsTrigger>
+                </TooltipTrigger>
+                <TooltipContent side="bottom" className="max-w-[280px] z-50 bg-popover text-popover-foreground border shadow-md">
+                  <div className="space-y-1">
+                    <div className="font-medium text-sm">{tab.label}</div>
+                    <div className="text-xs opacity-90 leading-relaxed">{tab.description}</div>
+                  </div>
+                </TooltipContent>
+              </Tooltip>
             );
           })}
         </TabsList>
