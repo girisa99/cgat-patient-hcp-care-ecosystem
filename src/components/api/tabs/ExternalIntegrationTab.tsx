@@ -18,6 +18,7 @@ import ApiIntegrationCreator from '../ApiIntegrationCreator';
 import { useExternalApis } from '@/hooks/useExternalApis';
 import { useExternalApiPublishing } from '@/hooks/useExternalApiPublishing';
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
+import { DOMSecurity } from '@/utils/security/domSecurity';
 
 const ExternalIntegrationTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');

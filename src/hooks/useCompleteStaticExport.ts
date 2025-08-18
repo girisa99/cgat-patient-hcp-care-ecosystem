@@ -5,6 +5,7 @@
 
 import React, { useCallback } from 'react';
 import { toast } from 'sonner';
+import { DOMSecurity } from '@/utils/security/domSecurity';
 
 interface Slide {
   id: number;

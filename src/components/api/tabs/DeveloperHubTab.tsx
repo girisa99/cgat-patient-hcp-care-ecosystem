@@ -20,6 +20,7 @@ import ApiSandboxEnvironment from '../ApiSandboxEnvironment';
 import ApiEndpointManager from '../ApiEndpointManager';
 import ApiKeyManager from '../ApiKeyManager';
 import PostmanCollectionManager from '../PostmanCollectionManager';
+import { DOMSecurity } from '@/utils/security/domSecurity';
 
 const DeveloperHubTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');

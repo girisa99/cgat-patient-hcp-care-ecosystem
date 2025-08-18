@@ -164,10 +164,10 @@ export const useAdvancedSecurityMonitoring = (): UseAdvancedSecurityMonitoringRe
 
         case 'alert_admin':
           await createAlert({
-            type: 'security_violation',
+            alert_type: 'unusual_pattern',
             severity: incident.severity,
-            message: `Security incident: ${incident.description}`,
-            metadata: {
+            alert_details: {
+              message: `Security incident: ${incident.description}`,
               incident_id: incident.id,
               response_action: response.action
             }

@@ -130,7 +130,7 @@ export class InputSanitizer {
     // Use existing API validation
     const validationResult = APIValidator.validateApiInput(data);
     
-    if (!validationResult.isValid) {
+    if (!validationResult.success) {
       throw new Error(`Invalid input: ${validationResult.errors.join(', ')}`);
     }
 
