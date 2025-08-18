@@ -10,6 +10,7 @@ import {
 import { toast } from '@/hooks/use-toast';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Steps, Step } from '@/components/ui/steps';
+import { supabase } from '@/integrations/supabase/client';
 
 interface AgentTemplate {
   id: string;
@@ -196,25 +197,43 @@ export const AgentTemplates: React.FC<AgentTemplatesProps> = ({
     ? agentTemplates 
     : agentTemplates.filter(template => template.category === selectedCategory);
 
-  const handleUseTemplate = (template: AgentTemplate) => {
-    console.log('Use Template clicked:', template.id);
-    setSelectedTemplate(template);
-    onSelectTemplate?.({ id: template.id, name: template.name });
-    toast({
-      title: "Template Selected",
-      description: `Starting configuration for ${template.name}. Pre-configured systems will be automatically connected.`,
-    });
-  };
+const handleUseTemplate = (template: AgentTemplate) => {
+  console.log('Use Template clicked:', template.id);
+  setSelectedTemplate(template);
+  // Resolve to real DB template id when available (by id or by name)
+  const match = dbTemplates?.find((t) => t.id === template.id) ||
+    dbTemplates?.find((t) => (t.name || '').toLowerCase() === (template.name || '').toLowerCase());
+  const resolvedId = match?.id || template.id;
+  onSelectTemplate?.({ id: resolvedId, name: template.name });
+  toast({
+    title: "Template Selected",
+    description: `Starting configuration for ${template.name}. Pre-configured systems will be automatically connected.`,
+  });
+};
 
-  const handlePreviewJourney = (template: AgentTemplate) => {
-    // Prefer ID match, else name match (case-insensitive)
-    const match = dbTemplates?.find((t) => t.id === template.id) ||
-      dbTemplates?.find((t) => (t.name || '').toLowerCase() === (template.name || '').toLowerCase());
+const handlePreviewJourney = async (template: AgentTemplate) => {
+  // Prefer ID match, else name match (case-insensitive)
+  const match = dbTemplates?.find((t) => t.id === template.id) ||
+    dbTemplates?.find((t) => (t.name || '').toLowerCase() === (template.name || '').toLowerCase());
 
-    setPreviewTemplateName(template.name);
-    setPreviewStages(Array.isArray(match?.journey_stages) ? (match!.journey_stages as any[]) : []);
-    setPreviewOpen(true);
-  };
+  setPreviewTemplateName(template.name);
+  let stages: any[] = Array.isArray(match?.journey_stages) ? (match!.journey_stages as any[]) : [];
+
+  // Fallback to normalized table if JSON column is empty
+  if ((!stages || stages.length === 0) && match?.id) {
+    const { data, error } = await supabase
+      .from('agent_template_journey_stages')
+      .select('*')
+      .eq('template_id', match.id)
+      .order('order_index');
+    if (!error && Array.isArray(data)) {
+      stages = data as any[];
+    }
+  }
+
+  setPreviewStages(stages);
+  setPreviewOpen(true);
+};
 
   const handleDeployTemplate = () => {
     if (!selectedTemplate) return;

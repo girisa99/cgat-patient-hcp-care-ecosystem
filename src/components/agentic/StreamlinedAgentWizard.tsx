@@ -176,40 +176,53 @@ export const StreamlinedAgentWizard = () => {
     }
   };
 
-  // Template selection handler
-  const handleSelectTemplate = (tpl: { id: string; name: string }) => {
-    let selectedTemplate = templates.find(t => t.id === tpl.id);
+// Template selection handler
+const handleSelectTemplate = async (tpl: { id: string; name: string }) => {
+  let selectedTemplate = templates.find(t => t.id === tpl.id);
 
-    if (!selectedTemplate) {
-      const targetName = (tpl.name || '').toLowerCase();
-      selectedTemplate = templates.find(t => (t.name || '').toLowerCase() === targetName);
+  if (!selectedTemplate) {
+    const targetName = (tpl.name || '').toLowerCase();
+    selectedTemplate = templates.find(t => (t.name || '').toLowerCase() === targetName);
+  }
+
+  if (selectedTemplate) {
+    // If DB template lacks embedded JSON stages, fetch normalized stages
+    let stages = Array.isArray(selectedTemplate.journey_stages) ? selectedTemplate.journey_stages : [];
+    if (stages.length === 0) {
+      const { data, error } = await supabase
+        .from('agent_template_journey_stages')
+        .select('*')
+        .eq('template_id', selectedTemplate.id)
+        .order('order_index');
+      if (!error && Array.isArray(data)) {
+        stages = data as any[];
+      }
     }
 
-    if (selectedTemplate) {
-      setState((prev) => ({
-        ...prev,
-        templateId: selectedTemplate!.id,
-        name: selectedTemplate!.name,
-        description: selectedTemplate!.description || '',
-        tagline: selectedTemplate!.tagline || prev.tagline || '',
-        primaryColor: selectedTemplate!.primary_color,
-        secondaryColor: selectedTemplate!.secondary_color,
-        accentColor: selectedTemplate!.accent_color,
-        logoUrl: selectedTemplate!.logo_url || prev.logoUrl || '',
-        journeyStages: selectedTemplate!.journey_stages || [],
-        startOption: 'template',
-        step: Math.max(prev.step, 2),
-      }));
-    } else {
-      setState((prev) => ({
-        ...prev,
-        templateId: tpl.id,
-        name: prev.name || tpl.name,
-        startOption: 'template',
-        step: Math.max(prev.step, 2),
-      }));
-    }
-  };
+    setState((prev) => ({
+      ...prev,
+      templateId: selectedTemplate!.id,
+      name: selectedTemplate!.name,
+      description: selectedTemplate!.description || '',
+      tagline: selectedTemplate!.tagline || prev.tagline || '',
+      primaryColor: selectedTemplate!.primary_color,
+      secondaryColor: selectedTemplate!.secondary_color,
+      accentColor: selectedTemplate!.accent_color,
+      logoUrl: selectedTemplate!.logo_url || prev.logoUrl || '',
+      journeyStages: stages || [],
+      startOption: 'template',
+      step: Math.max(prev.step, 2),
+    }));
+  } else {
+    setState((prev) => ({
+      ...prev,
+      templateId: tpl.id,
+      name: prev.name || tpl.name,
+      startOption: 'template',
+      step: Math.max(prev.step, 2),
+    }));
+  }
+};
 
   // Start option handler
   const handleStartOption = (option: 'template' | 'scratch') => {
@@ -277,12 +290,19 @@ export const StreamlinedAgentWizard = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selectedUseCaseId]);
 
-  // Force close dialog when component loads
-  useEffect(() => {
-    setShowJourneyEditor(false);
-    console.log('🔄 StreamlinedAgentWizard initialized, step:', state.step);
-  }, []);
+// Force close dialog when component loads
+useEffect(() => {
+  setShowJourneyEditor(false);
+  console.log('🔄 StreamlinedAgentWizard initialized, step:', state.step);
+}, []);
 
+// If journey stages already exist, skip directly to Canvas step
+useEffect(() => {
+  if (state.journeyStages.length > 0 && state.step < 3) {
+    setState(prev => ({ ...prev, step: 3 }));
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [state.journeyStages.length]);
   const handleStepSelection = (stepId: string, isSelected: boolean) => {
     setState(prev => ({
       ...prev,
@@ -339,34 +359,92 @@ export const StreamlinedAgentWizard = () => {
     }));
   };
 
-  const applySelectedSteps = () => {
-    const selectedSteps = state.aiGeneratedSteps.filter(step => 
-      state.selectedStepIds.includes(step.id)
-    );
-    
-    // Convert AI steps to journey stages format
-    const journeyStages = selectedSteps.map((step, index) => ({
-      id: step.id,
-      title: step.title,
-      description: step.description,
-      type: step.type,
-      order_index: index,
-      owner_role: step.stakeholders?.[0] || 'System',
-      entry_criteria: step.requirements || [],
-      tasks_checklist: step.actions || [],
-      expected_duration_minutes: step.estimatedDuration || 30,
-      outputs_success_criteria: [step.businessValue],
-      risks: step.riskLevel ? [{ level: step.riskLevel, description: 'Risk assessment needed' }] : [],
-      dependencies: step.dependencies || [],
-      validation_checkpoints: ['Quality check', 'Approval required']
-    }));
+// Persist journey stages to the selected (or new) template
+async function persistJourneyToTemplate(stages: any[]) {
+  try {
+    let tplId = state.templateId;
 
-    setState(prev => ({ ...prev, journeyStages }));
-    toast({ 
-      title: 'Journey Applied!', 
-      description: `${selectedSteps.length} AI-generated steps added to your journey` 
-    });
-  };
+    // Create a new template if starting from scratch or no template selected
+    if (!tplId || state.startOption === 'scratch') {
+      const { data: newTpl, error: tplErr } = await supabase
+        .from('agent_templates')
+        .insert({
+          name: state.name || 'New Agent Template',
+          description: state.description || state.name || 'Generated template',
+          tagline: state.tagline || null,
+          primary_color: state.primaryColor,
+          secondary_color: state.secondaryColor,
+          accent_color: state.accentColor,
+          journey_stages: [], // we store normalized stages below
+          is_default: false
+        })
+        .select('id')
+        .maybeSingle();
+      if (tplErr || !newTpl) throw (tplErr ?? new Error('Template creation failed'));
+      tplId = newTpl.id as string;
+      setState(prev => ({ ...prev, templateId: tplId }));
+    }
+
+    // Clear existing stages and insert new ordered list
+    await supabase.from('agent_template_journey_stages').delete().eq('template_id', tplId);
+
+    if (Array.isArray(stages) && stages.length > 0) {
+      const payload = stages.map((s, idx) => ({
+        template_id: tplId,
+        order_index: idx,
+        title: s.title,
+        description: s.description,
+        type: s.type || 'action',
+        owner_role: s.owner_role || 'System',
+        entry_criteria: s.entry_criteria || [],
+        tasks_checklist: s.tasks_checklist || [],
+        expected_duration_minutes: s.expected_duration_minutes || 30,
+        outputs_success_criteria: s.outputs_success_criteria || [],
+        risks: s.risks || [],
+        dependencies: s.dependencies || [],
+        validation_checkpoints: s.validation_checkpoints || []
+      }));
+      const { error: insErr } = await supabase.from('agent_template_journey_stages').insert(payload);
+      if (insErr) throw insErr;
+    }
+
+    toast({ title: 'Journey saved', description: `Saved ${stages.length} stage(s) to template` });
+    return tplId;
+  } catch (e: any) {
+    console.error('Error persisting journey:', e);
+    toast({ title: 'Error saving journey', description: e.message || String(e), variant: 'destructive' });
+    return null;
+  }
+}
+
+const applySelectedSteps = async () => {
+  const selectedSteps = state.aiGeneratedSteps.filter(step => 
+    state.selectedStepIds.includes(step.id)
+  );
+  
+  // Convert AI steps to journey stages format
+  const journeyStages = selectedSteps.map((step, index) => ({
+    title: step.title,
+    description: step.description,
+    type: step.type,
+    order_index: index,
+    owner_role: step.stakeholders?.[0] || 'System',
+    entry_criteria: step.requirements || [],
+    tasks_checklist: step.actions || [],
+    expected_duration_minutes: step.estimatedDuration || 30,
+    outputs_success_criteria: [step.businessValue],
+    risks: step.riskLevel ? [{ level: step.riskLevel, description: 'Risk assessment needed' }] : [],
+    dependencies: step.dependencies || [],
+    validation_checkpoints: ['Quality check', 'Approval required']
+  }));
+
+  setState(prev => ({ ...prev, journeyStages }));
+  await persistJourneyToTemplate(journeyStages);
+  toast({ 
+    title: 'Journey Applied!', 
+    description: `${selectedSteps.length} AI-generated steps added to your journey` 
+  });
+};
 
   // Add new use case handler
   const handleAddNewUseCase = async () => {
@@ -421,33 +499,33 @@ export const StreamlinedAgentWizard = () => {
         logoUrl = data.publicUrl;
       }
 
-      // Create agent session for further configuration in parent tabs
-      const { data: agent, error: agentError } = await supabase
-        .from('agent_sessions')
-        .insert({
-          name: state.name,
-          description: state.description || state.name,
-          current_step: 'models-templates', // Next step in parent tabs
-          canvas: {
-            logoUrl,
-            tagline: state.tagline,
-            primaryColor: state.primaryColor,
-            secondaryColor: state.secondaryColor,
-            accentColor: state.accentColor,
-            name: state.name
-          },
-          basic_info: {
-            agentType: state.agentType,
-            categories: state.selectedCategories,
-            businessUnits: state.selectedBusinessUnits,
-            topics: state.selectedTopics,
-            templateId: state.templateId,
-            journeyStages: state.journeyStages
-          },
-          user_id: (await supabase.auth.getUser()).data.user?.id
-        })
-        .select('id')
-        .maybeSingle();
+// Create agent session for further configuration in parent tabs
+const { data: agent, error: agentError } = await supabase
+  .from('agent_sessions')
+  .insert({
+    name: state.name,
+    description: state.description || state.name,
+    current_step: 'models-templates', // Next step in parent tabs
+    canvas: {
+      logoUrl,
+      tagline: state.tagline,
+      primaryColor: state.primaryColor,
+      secondaryColor: state.secondaryColor,
+      accentColor: state.accentColor,
+      name: state.name
+    },
+    basic_info: {
+      agentType: state.agentType,
+      categories: state.selectedCategories,
+      businessUnits: state.selectedBusinessUnits,
+      topics: state.selectedTopics,
+      templateId: state.templateId || (await persistJourneyToTemplate(state.journeyStages)),
+      journeyStages: state.journeyStages
+    },
+    user_id: (await supabase.auth.getUser()).data.user?.id
+  })
+  .select('id')
+  .maybeSingle();
       
       if (agentError || !agent) throw (agentError ?? new Error('Agent session not created'));
       
