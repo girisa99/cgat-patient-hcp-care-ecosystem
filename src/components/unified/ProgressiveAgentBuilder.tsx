@@ -421,6 +421,12 @@ const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = ({ step 
         <ModeSpecificConfiguration
           mode={state.user_mode}
           capturedRequirements={capturedRequirements}
+          useCaseData={{
+            name: useCaseInput.name,
+            description: useCaseInput.description,
+            selectedUseCase: state.use_case,
+            journeyStages: state.custom_journey || []
+          }}
           onConfigurationComplete={(config) => {
             console.log('Configuration completed:', config);
             // Update the unified state with the configuration
@@ -428,6 +434,24 @@ const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = ({ step 
               ...prev,
               configuration: config
             }));
+          }}
+          onModeRedirect={(mode, data) => {
+            console.log('Redirecting to mode:', mode, 'with data:', data);
+            // Save current state and redirect
+            setState(prev => ({
+              ...prev,
+              user_mode: mode,
+              configuration: data
+            }));
+            
+            // Trigger navigation based on mode
+            if (mode === 'visual') {
+              // Navigate to visual workflow with pre-populated data
+              window.location.href = '/agents?tab=visual-workflow&data=' + encodeURIComponent(JSON.stringify(data));
+            } else if (mode === 'expert') {
+              // Navigate to manual configuration
+              window.location.href = '/agents?tab=manual-configuration&data=' + encodeURIComponent(JSON.stringify(data));
+            }
           }}
         />
       </CardContent>

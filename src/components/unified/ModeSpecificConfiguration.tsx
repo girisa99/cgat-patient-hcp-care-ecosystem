@@ -10,9 +10,11 @@ import {
   Zap,
   Settings,
   ArrowRight,
-  Check
+  Check,
+  ExternalLink
 } from 'lucide-react';
 import { UnifiedAgentState } from '@/types/unified-agent-builder';
+import { useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
 
 interface ModeSpecificConfigurationProps {
   mode: UnifiedAgentState['user_mode'];
@@ -22,17 +24,27 @@ interface ModeSpecificConfigurationProps {
     steps: string[];
     integrations: string[];
   };
+  useCaseData?: {
+    name: string;
+    description: string;
+    selectedUseCase?: any;
+    journeyStages?: any[];
+  };
   onConfigurationComplete?: (config: any) => void;
+  onModeRedirect?: (mode: 'visual' | 'expert', data?: any) => void;
 }
 
 const ModeSpecificConfiguration: React.FC<ModeSpecificConfigurationProps> = ({
   mode,
   capturedRequirements,
-  onConfigurationComplete
+  useCaseData,
+  onConfigurationComplete,
+  onModeRedirect
 }) => {
   const [promptInput, setPromptInput] = useState('');
   const [manualConfig, setManualConfig] = useState<Record<string, any>>({});
   const [visualNodes, setVisualNodes] = useState<any[]>([]);
+  const agentBuilder = useAgentBuilder();
 
   // Prompt-based configuration
   const renderPromptConfiguration = () => (
@@ -102,100 +114,136 @@ For example:
   );
 
   // Visual workflow configuration
-  const renderVisualConfiguration = () => (
+  const renderVisualConfiguration = () => {
+    
+    const handleLaunchVisualWorkflow = () => {
+      // Prepare data to pass to visual workflow
+      const workflowData = {
+        useCase: useCaseData,
+        requirements: capturedRequirements,
+        journeyStages: useCaseData?.journeyStages || [],
+        initialNodes: capturedRequirements.steps.map((step, idx) => ({
+          id: `step-${idx}`,
+          type: 'workflow',
+          label: step,
+          position: { x: idx * 200, y: 100 }
+        }))
+      };
+
+      // If we have the agent builder context, create a session
+      if (agentBuilder && useCaseData) {
+        agentBuilder.createSession(useCaseData.name, useCaseData.description, 'visual')
+          .then((sessionId) => {
+            console.log('Created session for visual workflow:', sessionId);
+            onModeRedirect?.('visual', { sessionId, ...workflowData });
+          })
+          .catch((error) => {
+            console.error('Failed to create session:', error);
+            onModeRedirect?.('visual', workflowData);
+          });
+      } else {
+        onModeRedirect?.('visual', workflowData);
+      }
+    };
+
+     return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Eye className="h-5 w-5" />
-            Visual Workflow Builder
+            Launch Visual Workflow Builder
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <p className="text-sm text-muted-foreground">
-            Drag and connect components to build your agent's workflow visually.
-          </p>
-          
-          {/* Simulated visual canvas */}
-          <div className="border-2 border-dashed border-muted-foreground/20 rounded-lg p-8 min-h-64 bg-muted/10">
-            <div className="text-center space-y-4">
-              <Eye className="h-12 w-12 mx-auto text-muted-foreground" />
-              <div>
-                <h3 className="font-medium">Visual Canvas</h3>
-                <p className="text-sm text-muted-foreground">
-                  Interactive drag-and-drop interface will be shown here
-                </p>
-              </div>
-              <div className="grid grid-cols-3 gap-2 max-w-md mx-auto">
-                {capturedRequirements.connectors.slice(0, 3).map((connector, idx) => (
-                  <div key={idx} className="p-2 bg-blue-100 dark:bg-blue-950/30 rounded text-xs text-center">
-                    {connector}
-                  </div>
-                ))}
-                {capturedRequirements.actions.slice(0, 3).map((action, idx) => (
-                  <div key={idx} className="p-2 bg-green-100 dark:bg-green-950/30 rounded text-xs text-center">
-                    {action}
-                  </div>
-                ))}
-              </div>
-              <Button 
-                onClick={() => {
-                  // Initialize visual canvas
-                  onConfigurationComplete?.({ 
-                    type: 'visual', 
-                    nodes: capturedRequirements.steps.map((step, idx) => ({
-                      id: `step-${idx}`,
-                      type: 'workflow',
-                      label: step,
-                      position: { x: idx * 200, y: 100 }
-                    })),
-                    requirements: capturedRequirements 
-                  });
-                }}
-              >
-                Initialize Visual Builder
-              </Button>
-            </div>
+          <div className="bg-blue-50 dark:bg-blue-950/20 p-4 rounded-lg">
+            <p className="text-sm text-blue-700 dark:text-blue-300">
+              <strong>Ready to launch:</strong> Your use case and journey stages will be automatically configured in the visual builder.
+            </p>
           </div>
-        </CardContent>
-      </Card>
 
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Available Components</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
+          {/* Show what will be transferred */}
+          <div className="space-y-3">
             <div>
-              <h4 className="text-sm font-medium mb-2">Connectors</h4>
-              <div className="space-y-1">
-                {capturedRequirements.connectors.map((connector, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm">
-                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
-                    {connector}
-                  </div>
-                ))}
-              </div>
+              <h4 className="font-medium text-sm">Use Case Information</h4>
+              <p className="text-sm text-muted-foreground">
+                {useCaseData?.name} - {useCaseData?.description}
+              </p>
             </div>
+            
+            {useCaseData?.journeyStages && useCaseData.journeyStages.length > 0 && (
+              <div>
+                <h4 className="font-medium text-sm">Journey Stages ({useCaseData.journeyStages.length})</h4>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  {useCaseData.journeyStages.map((stage: any, idx: number) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      {stage.title || `Stage ${idx + 1}`}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div>
-              <h4 className="text-sm font-medium mb-2">Actions</h4>
-              <div className="space-y-1">
-                {capturedRequirements.actions.map((action, idx) => (
-                  <div key={idx} className="flex items-center gap-2 text-sm">
-                    <div className="w-3 h-3 bg-green-500 rounded"></div>
-                    {action}
+              <h4 className="font-medium text-sm">Components to Configure</h4>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                {capturedRequirements.connectors.length > 0 && (
+                  <div className="text-xs">
+                    <strong>Connectors:</strong> {capturedRequirements.connectors.join(', ')}
                   </div>
-                ))}
+                )}
+                {capturedRequirements.actions.length > 0 && (
+                  <div className="text-xs">
+                    <strong>Actions:</strong> {capturedRequirements.actions.join(', ')}
+                  </div>
+                )}
               </div>
             </div>
           </div>
+
+          <Button 
+            onClick={handleLaunchVisualWorkflow}
+            className="w-full flex items-center gap-2"
+          >
+            <ExternalLink className="h-4 w-4" />
+            Launch Visual Workflow Builder
+          </Button>
+          
+          <p className="text-xs text-muted-foreground text-center">
+            This will open the visual canvas with your use case and journey stages pre-configured
+          </p>
         </CardContent>
       </Card>
     </div>
-  );
+    );
+  };
 
   // Manual form-based configuration
-  const renderManualConfiguration = () => (
+  const renderManualConfiguration = () => {
+    
+    const handleLaunchManualConfiguration = () => {
+      const configData = {
+        useCase: useCaseData,
+        requirements: capturedRequirements,
+        journeyStages: useCaseData?.journeyStages || [],
+        manualConfig
+      };
+
+      if (agentBuilder && useCaseData) {
+        agentBuilder.createSession(useCaseData.name, useCaseData.description, 'expert')
+          .then((sessionId) => {
+            onModeRedirect?.('expert', { sessionId, ...configData });
+          })
+          .catch((error) => {
+            console.error('Failed to create session:', error);
+            onModeRedirect?.('expert', configData);
+          });
+      } else {
+        onModeRedirect?.('expert', configData);
+      }
+    };
+
+    return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
@@ -314,24 +362,38 @@ For example:
             </div>
           )}
 
-          <div className="border-t pt-4">
+          <div className="border-t pt-4 space-y-3">
             <Button 
               onClick={() => {
                 onConfigurationComplete?.({ 
-                  type: 'manual', 
+                  type: 'expert', 
                   configuration: manualConfig,
                   requirements: capturedRequirements 
                 });
               }}
+              variant="outline"
               className="w-full"
             >
-              Save Manual Configuration
+              Save Current Configuration
             </Button>
+            
+            <Button 
+              onClick={handleLaunchManualConfiguration}
+              className="w-full flex items-center gap-2"
+            >
+              <ExternalLink className="h-4 w-4" />
+              Launch Full Manual Configuration
+            </Button>
+            
+            <p className="text-xs text-muted-foreground text-center">
+              Launch the complete manual configuration with your use case pre-filled
+            </p>
           </div>
         </CardContent>
       </Card>
     </div>
-  );
+    );
+  };
 
   const renderConfiguration = () => {
     switch (mode) {
