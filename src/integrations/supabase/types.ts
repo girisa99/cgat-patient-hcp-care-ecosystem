@@ -7123,6 +7123,60 @@ export type Database = {
         }
         Relationships: []
       }
+      use_cases: {
+        Row: {
+          category: string
+          complexity: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          industry: string | null
+          is_active: boolean | null
+          is_system_template: boolean | null
+          name: string
+          optional_components: Json | null
+          recommended_journey: Json | null
+          required_components: Json | null
+          templates: Json | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          complexity?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          is_system_template?: boolean | null
+          name: string
+          optional_components?: Json | null
+          recommended_journey?: Json | null
+          required_components?: Json | null
+          templates?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          complexity?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          industry?: string | null
+          is_active?: boolean | null
+          is_system_template?: boolean | null
+          name?: string
+          optional_components?: Json | null
+          recommended_journey?: Json | null
+          required_components?: Json | null
+          templates?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_activity_logs: {
         Row: {
           activity_description: string

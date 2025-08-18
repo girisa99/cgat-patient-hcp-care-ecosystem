@@ -20,6 +20,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useUseCases, UseCase } from '@/hooks/useUseCases';
 
 interface Template {
   id: string;
@@ -55,9 +56,11 @@ interface WizardState {
   journeyStages: any[];
   // AI-powered journey generation
   useCase: string;
+  selectedUseCaseId: string;
   selectedAIModel: string;
   aiGeneratedSteps: JourneyStep[];
   selectedStepIds: string[];
+  showAddUseCaseDialog: boolean;
 }
 
 export const StreamlinedAgentWizard = () => {
@@ -80,9 +83,11 @@ export const StreamlinedAgentWizard = () => {
     selectedTopics: [],
     journeyStages: [],
     useCase: '',
+    selectedUseCaseId: '',
     selectedAIModel: 'llm',
     aiGeneratedSteps: [],
-    selectedStepIds: []
+    selectedStepIds: [],
+    showAddUseCaseDialog: false
   });
 
   const [showJourneyEditor, setShowJourneyEditor] = useState(false);
@@ -90,9 +95,19 @@ export const StreamlinedAgentWizard = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [newUseCaseData, setNewUseCaseData] = useState({
+    name: '',
+    description: '',
+    category: 'general',
+    complexity: 'moderate' as 'simple' | 'moderate' | 'complex',
+    industry: ''
+  });
   
   // AI-powered journey generation
   const { steps: aiSuggestions, isLoading: isGeneratingAI, generateSuggestions } = useJourneyAISuggestions();
+  
+  // Use cases management
+  const { useCases, isLoading: isLoadingUseCases, isAdding: isAddingUseCase, addUseCase, getUseCaseById } = useUseCases();
 
   // Fetch templates on component mount
   useEffect(() => {
@@ -333,6 +348,39 @@ export const StreamlinedAgentWizard = () => {
       title: 'Journey Applied!', 
       description: `${selectedSteps.length} AI-generated steps added to your journey` 
     });
+  };
+
+  // Add new use case handler
+  const handleAddNewUseCase = async () => {
+    try {
+      if (!newUseCaseData.name.trim()) {
+        toast({
+          title: 'Validation Error',
+          description: 'Use case name is required',
+          variant: 'destructive'
+        });
+        return;
+      }
+
+      const newUseCase = await addUseCase(newUseCaseData);
+      
+      // Select the newly created use case
+      updateField('selectedUseCaseId', newUseCase.id);
+      updateField('useCase', newUseCase.description || newUseCase.name);
+      
+      // Close dialog and reset form
+      updateField('showAddUseCaseDialog', false);
+      setNewUseCaseData({
+        name: '',
+        description: '',
+        category: 'general',
+        complexity: 'moderate',
+        industry: ''
+      });
+      
+    } catch (error) {
+      console.error('Error adding new use case:', error);
+    }
   };
 
   // Complete wizard - this will now redirect to parent tabs for actions, connectors, etc.
@@ -591,16 +639,75 @@ export const StreamlinedAgentWizard = () => {
           <p className="text-muted-foreground">Generate detailed journey steps using advanced AI models tailored to your use case</p>
         </div>
 
-        {/* Use Case Input */}
-        <div className="space-y-3">
-          <Label htmlFor="useCase">Detailed Use Case Description</Label>
-          <Textarea
-            id="useCase"
-            placeholder="Describe your use case in detail. Be specific about processes, stakeholders, requirements, and goals..."
-            value={state.useCase}
-            onChange={(e) => updateField('useCase', e.target.value)}
-            className="min-h-[100px]"
-          />
+         {/* Use Case Selection Section */}
+         <div className="space-y-4">
+           <div className="flex items-center justify-between">
+             <Label className="text-base font-medium">Use Case Selection</Label>
+             <Button 
+               variant="outline" 
+               size="sm"
+               onClick={() => updateField('showAddUseCaseDialog', true)}
+               disabled={isAddingUseCase}
+             >
+               <Plus className="w-4 h-4 mr-1" />
+               Add New Use Case
+             </Button>
+           </div>
+           
+           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+             <div className="space-y-2">
+               <Label htmlFor="useCaseDropdown">Choose from existing use cases:</Label>
+               <Select
+                 value={state.selectedUseCaseId}
+                 onValueChange={(value) => {
+                   updateField('selectedUseCaseId', value);
+                   const selectedUseCase = getUseCaseById(value);
+                   if (selectedUseCase) {
+                     updateField('useCase', selectedUseCase.description || selectedUseCase.name);
+                   }
+                 }}
+                 disabled={isLoadingUseCases}
+               >
+                 <SelectTrigger id="useCaseDropdown" className="bg-background">
+                   <SelectValue placeholder={isLoadingUseCases ? "Loading use cases..." : "Select a use case"} />
+                 </SelectTrigger>
+                 <SelectContent className="bg-background border shadow-lg z-50">
+                   {useCases.map((useCase) => (
+                     <SelectItem key={useCase.id} value={useCase.id} className="hover:bg-accent">
+                       <div className="flex flex-col">
+                         <span className="font-medium">{useCase.name}</span>
+                         <span className="text-xs text-muted-foreground">
+                           {useCase.category} • {useCase.complexity} • {useCase.industry || 'General'}
+                         </span>
+                       </div>
+                     </SelectItem>
+                   ))}
+                 </SelectContent>
+               </Select>
+             </div>
+           </div>
+
+           <div className="text-center text-muted-foreground">
+             <span className="text-sm">OR</span>
+           </div>
+         </div>
+
+         {/* Manual Use Case Input */}
+         <div className="space-y-3">
+           <Label htmlFor="useCase">Detailed Use Case Description</Label>
+           <Textarea
+             id="useCase"
+             placeholder="Describe your use case in detail. Be specific about processes, stakeholders, requirements, and goals..."
+             value={state.useCase}
+             onChange={(e) => {
+               updateField('useCase', e.target.value);
+               // Clear selected use case if user starts typing manually
+               if (state.selectedUseCaseId) {
+                 updateField('selectedUseCaseId', '');
+               }
+             }}
+             className="min-h-[100px]"
+           />
           <p className="text-xs text-muted-foreground">
             The more detailed your use case, the better AI can generate relevant journey steps
           </p>
@@ -920,6 +1027,104 @@ export const StreamlinedAgentWizard = () => {
             templateId={state.templateId || 'custom'}
             onApplied={handleJourneyApplied}
           />
+        </DialogContent>
+      </Dialog>
+
+      {/* Add New Use Case Dialog */}
+      <Dialog open={state.showAddUseCaseDialog} onOpenChange={(open) => updateField('showAddUseCaseDialog', open)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Add New Use Case</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="newUseCaseName">Use Case Name *</Label>
+                <Input 
+                  id="newUseCaseName"
+                  value={newUseCaseData.name}
+                  onChange={(e) => setNewUseCaseData(prev => ({ ...prev, name: e.target.value }))}
+                  placeholder="Enter use case name"
+                />
+              </div>
+              <div>
+                <Label htmlFor="newUseCaseCategory">Category</Label>
+                <Select 
+                  value={newUseCaseData.category}
+                  onValueChange={(value) => setNewUseCaseData(prev => ({ ...prev, category: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="general">General</SelectItem>
+                    <SelectItem value="healthcare">Healthcare</SelectItem>
+                    <SelectItem value="finance">Finance</SelectItem>
+                    <SelectItem value="customer_service">Customer Service</SelectItem>
+                    <SelectItem value="document_processing">Document Processing</SelectItem>
+                    <SelectItem value="automation">Automation</SelectItem>
+                    <SelectItem value="analytics">Analytics</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="newUseCaseComplexity">Complexity</Label>
+                <Select 
+                  value={newUseCaseData.complexity}
+                  onValueChange={(value: 'simple' | 'moderate' | 'complex') => 
+                    setNewUseCaseData(prev => ({ ...prev, complexity: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select complexity" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="simple">Simple</SelectItem>
+                    <SelectItem value="moderate">Moderate</SelectItem>
+                    <SelectItem value="complex">Complex</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label htmlFor="newUseCaseIndustry">Industry</Label>
+                <Input 
+                  id="newUseCaseIndustry"
+                  value={newUseCaseData.industry}
+                  onChange={(e) => setNewUseCaseData(prev => ({ ...prev, industry: e.target.value }))}
+                  placeholder="e.g., Healthcare, Finance, etc."
+                />
+              </div>
+            </div>
+
+            <div>
+              <Label htmlFor="newUseCaseDescription">Description</Label>
+              <Textarea 
+                id="newUseCaseDescription"
+                value={newUseCaseData.description}
+                onChange={(e) => setNewUseCaseData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Detailed description of the use case..."
+                className="min-h-[100px]"
+              />
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => updateField('showAddUseCaseDialog', false)}
+                disabled={isAddingUseCase}
+              >
+                Cancel
+              </Button>
+              <Button 
+                onClick={handleAddNewUseCase}
+                disabled={!newUseCaseData.name.trim() || isAddingUseCase}
+              >
+                {isAddingUseCase ? 'Adding...' : 'Add Use Case'}
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
