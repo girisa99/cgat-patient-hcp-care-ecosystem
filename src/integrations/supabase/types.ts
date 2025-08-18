@@ -6319,6 +6319,57 @@ export type Database = {
         }
         Relationships: []
       }
+      security_alerts: {
+        Row: {
+          alert_details: Json
+          alert_type: string
+          created_at: string
+          id: string
+          ip_address: unknown | null
+          resolution_notes: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          resource_accessed: string | null
+          severity: string
+          status: string
+          updated_at: string
+          user_agent: string | null
+          user_id: string | null
+        }
+        Insert: {
+          alert_details?: Json
+          alert_type: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resource_accessed?: string | null
+          severity: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          alert_details?: Json
+          alert_type?: string
+          created_at?: string
+          id?: string
+          ip_address?: unknown | null
+          resolution_notes?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          resource_accessed?: string | null
+          severity?: string
+          status?: string
+          updated_at?: string
+          user_agent?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       security_events: {
         Row: {
           created_at: string | null
