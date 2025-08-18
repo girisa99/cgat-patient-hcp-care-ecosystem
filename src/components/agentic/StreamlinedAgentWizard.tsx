@@ -270,11 +270,18 @@ export const StreamlinedAgentWizard = () => {
   // Auto-generate when a use case is selected from dropdown
   useEffect(() => {
     if (state.selectedUseCaseId) {
+      console.log('🔄 Auto-generating AI journey for selected use case:', state.selectedUseCaseId);
       generateAIJourneySteps();
     }
     // We intentionally don't include generateAIJourneySteps in deps to avoid duplicate runs
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [state.selectedUseCaseId]);
+
+  // Force close dialog when component loads
+  useEffect(() => {
+    setShowJourneyEditor(false);
+    console.log('🔄 StreamlinedAgentWizard initialized, step:', state.step);
+  }, []);
 
   const handleStepSelection = (stepId: string, isSelected: boolean) => {
     setState(prev => ({
@@ -792,7 +799,10 @@ export const StreamlinedAgentWizard = () => {
         {/* Generate Button */}
         <div className="flex justify-center">
           <Button
-            onClick={generateAIJourneySteps}
+            onClick={() => {
+              console.log('🤖 Generate button clicked, useCase:', state.useCase);
+              generateAIJourneySteps();
+            }}
             disabled={(!state.useCase.trim() && !state.name.trim()) || isGeneratingAI}
             size="lg"
             className="px-8"
