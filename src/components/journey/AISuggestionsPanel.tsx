@@ -51,52 +51,54 @@ interface AISuggestionsPanelProps {
 interface AIModel {
   id: string;
   name: string;
-  type: 'mcp' | 'sml' | 'llm' | 'vision' | 'label-studio';
+  provider: 'openai' | 'perplexity' | 'anthropic';
+  model: string;
   icon: React.ReactNode;
   description: string;
   bestFor: string[];
+  pricing: string;
 }
 
 const aiModels: AIModel[] = [
   { 
-    id: 'llm', 
-    name: 'Large Language Models', 
-    type: 'llm', 
+    id: 'gpt-4', 
+    name: 'GPT-4.1 (OpenAI)', 
+    provider: 'openai',
+    model: 'gpt-4.1-2025-04-14',
     icon: <Sparkles className="w-4 h-4" />,
-    description: 'Advanced text processing and decision-making capabilities',
-    bestFor: ['Natural Language Processing', 'Content Generation', 'Complex Reasoning']
+    description: 'Most capable model for complex reasoning and workflow design',
+    bestFor: ['Complex Workflows', 'Healthcare Compliance', 'Detailed Analysis'],
+    pricing: 'Premium'
   },
   { 
-    id: 'vision', 
-    name: 'Vision Models', 
-    type: 'vision', 
-    icon: <Eye className="w-4 h-4" />,
-    description: 'Document analysis and visual content processing',
-    bestFor: ['OCR Processing', 'Image Analysis', 'Document Validation']
+    id: 'gpt-5-mini', 
+    name: 'GPT-5 Mini (OpenAI)', 
+    provider: 'openai',
+    model: 'gpt-5-mini-2025-08-07',
+    icon: <Zap className="w-4 h-4" />,
+    description: 'Fast and efficient for well-defined healthcare workflows',
+    bestFor: ['Quick Generation', 'Standard Processes', 'Cost-Effective'],
+    pricing: 'Low Cost'
   },
   { 
-    id: 'mcp', 
-    name: 'MCP Models', 
-    type: 'mcp', 
-    icon: <Bot className="w-4 h-4" />,
-    description: 'Multi-modal context processing with state management',
-    bestFor: ['Context Management', 'Multi-step Workflows', 'State Persistence']
-  },
-  { 
-    id: 'sml', 
-    name: 'Small Language Models', 
-    type: 'sml', 
+    id: 'claude-sonnet', 
+    name: 'Claude Sonnet 4 (Anthropic)', 
+    provider: 'anthropic',
+    model: 'claude-sonnet-4-20250514',
     icon: <Brain className="w-4 h-4" />,
-    description: 'Efficient processing for specific tasks',
-    bestFor: ['Classification', 'Simple NLP', 'Fast Processing']
+    description: 'Excellent reasoning for healthcare workflow optimization',
+    bestFor: ['Medical Logic', 'Safety Protocols', 'Compliance'],
+    pricing: 'Standard'
   },
   { 
-    id: 'label-studio', 
-    name: 'Label Studio', 
-    type: 'label-studio', 
-    icon: <Tags className="w-4 h-4" />,
-    description: 'Data labeling and annotation workflows',
-    bestFor: ['Data Annotation', 'Quality Control', 'Training Data']
+    id: 'perplexity-large', 
+    name: 'Sonar Large (Perplexity)', 
+    provider: 'perplexity',
+    model: 'llama-3.1-sonar-large-128k-online',
+    icon: <Eye className="w-4 h-4" />,
+    description: 'Real-time data access for current healthcare standards',
+    bestFor: ['Current Guidelines', 'Research-Based', 'Live Data'],
+    pricing: 'Standard'
   },
 ];
 
@@ -129,7 +131,7 @@ export const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({
     }
 
     setSelectedModel(model);
-    await generateSuggestions(useCase, model.type);
+    await generateSuggestions(useCase, model.provider);
     
     if (suggestions.length > 0) {
       toast({
@@ -222,7 +224,12 @@ export const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({
                   )}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="font-medium text-sm">{model.name}</div>
+                  <div className="flex items-center justify-between">
+                    <div className="font-medium text-sm">{model.name}</div>
+                    <Badge variant="outline" className="text-xs">
+                      {model.pricing}
+                    </Badge>
+                  </div>
                   <p className="text-xs text-muted-foreground mt-0.5">{model.description}</p>
                   <div className="flex flex-wrap gap-1 mt-1">
                     {model.bestFor.slice(0, 2).map(use => (

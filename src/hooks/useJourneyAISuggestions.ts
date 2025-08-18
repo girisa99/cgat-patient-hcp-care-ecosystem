@@ -24,7 +24,7 @@ export const useJourneyAISuggestions = () => {
   const [suggestions, setSuggestions] = useState<JourneyStep[]>([]);
   const { toast } = useToast();
 
-  const generateSuggestions = async (useCase: string, context?: string) => {
+  const generateSuggestions = async (useCase: string, provider: string = 'openai') => {
     if (!useCase?.trim()) {
       toast({
         title: "Use Case Required",
@@ -41,8 +41,8 @@ export const useJourneyAISuggestions = () => {
       const { data, error } = await supabase.functions.invoke('generate-journey-suggestions', {
         body: {
           useCase: useCase.trim(),
-          modelType: 'llm',
-          context: context || 'Healthcare workflow automation'
+          provider: provider,
+          context: 'Healthcare workflow automation'
         }
       });
 
@@ -71,11 +71,11 @@ export const useJourneyAISuggestions = () => {
       
       const errorMessage = error.message || 'Failed to generate journey suggestions';
       
-      // Check if it's an OpenAI API key issue
-      if (errorMessage.includes('OPENAI_API_KEY')) {
+      // Check if it's an API key issue
+      if (errorMessage.includes('API key not configured')) {
         toast({
-          title: "OpenAI API Key Required",
-          description: "Please configure your OpenAI API key in the Edge Function secrets to generate AI suggestions",
+          title: "API Key Required",
+          description: "Please configure the required API key in your Supabase Edge Function secrets",
           variant: "destructive",
         });
       } else {
