@@ -1,7 +1,6 @@
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { 
   Workflow, 
   Settings, 
@@ -43,33 +42,32 @@ export const AgentTabs: React.FC<AgentTabsProps> = ({
   const getTabsForMode = (mode: AgentMode) => {
     if (mode === 'visual') {
       return [
-        { id: 'canvas-designer', label: 'Canvas Designer', icon: Workflow, description: 'Visual drag-and-drop workflow builder' },
-        { id: 'models-templates', label: 'Models & Templates', icon: Bot, description: 'AI models and workflow templates' },
-        { id: 'actions-tasks', label: 'Actions & Tasks', icon: Zap, description: 'Define automated actions and tasks' },
-        { id: 'connectors-api', label: 'Connectors & APIs', icon: Network, description: 'External system integrations' },
-        { id: 'system-config', label: 'System Configuration', icon: Cog, description: 'Core system settings and parameters' },
-        { id: 'treatment-centers', label: 'Treatment Centers', icon: Building2, description: 'Healthcare facility configurations' },
-        { id: 'flow-testing', label: 'Flow Testing', icon: TestTube, description: 'Test your workflow in real-time' },
-        { id: 'voice-config', label: 'Voice Configuration', icon: Mic, description: 'Voice and speech settings' },
-        { id: 'live-agent-transfer', label: 'Live Agent Transfer', icon: Phone, description: 'Human handoff configurations' },
-        { id: 'channel-matrix', label: 'Enhanced Channel Matrix', icon: Grid3x3, description: 'Multi-channel deployment matrix' },
-        { id: 'deployment-ready', label: 'Deployment Ready', icon: CheckCircle, description: 'Pre-deployment validation and checks' },
-        { id: 'deployment-flow', label: 'Deployment Flow', icon: GitBranch, description: 'Complete deployment pipeline' }
+        { id: 'canvas-designer', label: 'Canvas Designer', icon: Workflow, description: 'Visual drag-and-drop workflow builder with guided setup, journey stages, and customization' },
+        { id: 'models-templates', label: 'Models & Templates', icon: Bot, description: 'AI models and workflow templates for different use cases and industries' },
+        { id: 'connectors-api', label: 'Connectors & APIs', icon: Network, description: 'External system integrations and API connections for data exchange' },
+        { id: 'system-config', label: 'System Configuration', icon: Cog, description: 'Core system settings, security parameters, and performance configurations' },
+        { id: 'treatment-centers', label: 'Treatment Centers', icon: Building2, description: 'Healthcare facility configurations and provider network management' },
+        { id: 'flow-testing', label: 'Flow Testing', icon: TestTube, description: 'Test your workflow in real-time with simulation and debugging tools' },
+        { id: 'voice-config', label: 'Voice Configuration', icon: Mic, description: 'Voice channels, speech recognition, and audio processing settings' },
+        { id: 'live-agent-transfer', label: 'Live Agent Transfer', icon: Phone, description: 'Human handoff configurations and escalation workflows' },
+        { id: 'channel-matrix', label: 'Enhanced Channel Matrix', icon: Grid3x3, description: 'Multi-channel deployment matrix and cross-platform management' },
+        { id: 'deployment-ready', label: 'Deployment Ready', icon: CheckCircle, description: 'Pre-deployment validation, security checks, and readiness assessment' },
+        { id: 'deployment-flow', label: 'Deployment Flow', icon: GitBranch, description: 'Complete deployment pipeline with staging, testing, and production rollout' }
       ];
     } else {
       return [
-        { id: 'agent-config', label: 'Agent Configuration', icon: Settings, description: 'Basic agent settings and behavior' },
-        { id: 'models-templates', label: 'Models & Templates', icon: Bot, description: 'AI models and configuration templates' },
-        { id: 'actions-tasks', label: 'Actions & Tasks', icon: Zap, description: 'Define automated actions and task workflows' },
-        { id: 'connectors-api', label: 'Connectors & APIs', icon: Network, description: 'External system integrations and APIs' },
-        { id: 'knowledge-base', label: 'Knowledge Base', icon: Database, description: 'Upload documents and data sources' },
-        { id: 'system-config', label: 'System Configuration', icon: Cog, description: 'Advanced system settings and parameters' },
-        { id: 'treatment-centers', label: 'Treatment Centers', icon: Building2, description: 'Healthcare facility management' },
-        { id: 'voice-config', label: 'Voice Configuration', icon: Mic, description: 'Voice channels and speech settings' },
-        { id: 'live-agent-transfer', label: 'Live Agent Transfer', icon: Phone, description: 'Human agent handoff settings' },
-        { id: 'channel-matrix', label: 'Enhanced Channel Matrix', icon: Grid3x3, description: 'Multi-channel deployment configuration' },
-        { id: 'deployment-ready', label: 'Deployment Ready', icon: CheckCircle, description: 'Deployment readiness validation' },
-        { id: 'deployment-flow', label: 'Deployment Flow', icon: GitBranch, description: 'End-to-end deployment process' }
+        { id: 'agent-config', label: 'Agent Configuration', icon: Settings, description: 'Basic agent settings, behavior parameters, and core configuration options' },
+        { id: 'models-templates', label: 'Models & Templates', icon: Bot, description: 'AI models selection, prompt templates, and pre-built configuration templates' },
+        { id: 'actions-tasks', label: 'Actions & Tasks', icon: Zap, description: 'Define automated actions, task workflows, and agent capabilities' },
+        { id: 'connectors-api', label: 'Connectors & APIs', icon: Network, description: 'External system integrations, API connections, and data source management' },
+        { id: 'knowledge-base', label: 'Knowledge Base', icon: Database, description: 'Upload documents, manage data sources, and configure RAG systems' },
+        { id: 'system-config', label: 'System Configuration', icon: Cog, description: 'Advanced system settings, security parameters, and performance tuning' },
+        { id: 'treatment-centers', label: 'Treatment Centers', icon: Building2, description: 'Healthcare facility management and provider network configuration' },
+        { id: 'voice-config', label: 'Voice Configuration', icon: Mic, description: 'Voice channels, speech recognition settings, and audio processing' },
+        { id: 'live-agent-transfer', label: 'Live Agent Transfer', icon: Phone, description: 'Human agent handoff settings and escalation workflows' },
+        { id: 'channel-matrix', label: 'Enhanced Channel Matrix', icon: Grid3x3, description: 'Multi-channel deployment configuration and platform management' },
+        { id: 'deployment-ready', label: 'Deployment Ready', icon: CheckCircle, description: 'Deployment readiness validation and final configuration checks' },
+        { id: 'deployment-flow', label: 'Deployment Flow', icon: GitBranch, description: 'End-to-end deployment process and environment management' }
       ];
     }
   };
@@ -98,28 +96,20 @@ export const AgentTabs: React.FC<AgentTabsProps> = ({
       </div>
 
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
-        <TabsList className="grid w-full grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-12 h-auto p-1 gap-1">
+        <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 h-auto p-1 gap-1">
           {tabs.map((tab) => {
             const IconComponent = tab.icon;
             return (
-              <Tooltip key={tab.id}>
-                <TooltipTrigger asChild>
-                  <TabsTrigger
-                    value={tab.id}
-                    className="flex flex-col items-center gap-1 py-2 px-1 data-[state=active]:bg-background min-w-0"
-                    aria-label={tab.label}
-                  >
-                    <IconComponent className="h-4 w-4 flex-shrink-0" />
-                    <span className="text-xs font-medium text-center leading-tight truncate max-w-full">{tab.label}</span>
-                  </TabsTrigger>
-                </TooltipTrigger>
-                <TooltipContent side="bottom">
-                  <div className="space-y-0.5">
-                    <div className="font-medium text-xs">{tab.label}</div>
-                    <div className="text-[11px] opacity-90 max-w-[220px]">{tab.description}</div>
-                  </div>
-                </TooltipContent>
-              </Tooltip>
+              <TabsTrigger
+                key={tab.id}
+                value={tab.id}
+                className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-background min-w-0 h-auto"
+                aria-label={tab.label}
+              >
+                <IconComponent className="h-4 w-4 flex-shrink-0" />
+                <span className="text-xs font-medium text-center leading-tight">{tab.label}</span>
+                <span className="text-[10px] text-muted-foreground text-center leading-tight px-1">{tab.description}</span>
+              </TabsTrigger>
             );
           })}
         </TabsList>
