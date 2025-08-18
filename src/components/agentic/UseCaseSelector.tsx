@@ -23,7 +23,7 @@ export const UseCaseSelector: React.FC<UseCaseSelectorProps> = ({
   const [newUseCase, setNewUseCase] = useState('');
   const [showAddUseCase, setShowAddUseCase] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
-  const { addUseCase } = useUseCases();
+  const { addUseCase, useCases, isLoading } = useUseCases();
 
   // Generate use cases based on categories and topics
   const generatedUseCases = useMemo(() => {
@@ -145,10 +145,13 @@ export const UseCaseSelector: React.FC<UseCaseSelectorProps> = ({
     return Array.from(useCases).sort();
   }, [selectedCategories, selectedTopics]);
 
-  // Combine generated and custom use cases
+  // Include DB use cases and combine with generated + custom
+  const dbUseCaseNames = useMemo(() => useCases.map(u => u.name).filter(Boolean), [useCases]);
+
   const allUseCases = useMemo(() => {
-    return [...generatedUseCases, ...customUseCases].sort();
-  }, [generatedUseCases, customUseCases]);
+    const set = new Set<string>([...generatedUseCases, ...dbUseCaseNames, ...customUseCases]);
+    return Array.from(set).sort();
+  }, [generatedUseCases, dbUseCaseNames, customUseCases]);
 
   const handleAddUseCase = async () => {
     const name = newUseCase.trim();
@@ -204,7 +207,9 @@ export const UseCaseSelector: React.FC<UseCaseSelectorProps> = ({
       {isOpen && (
         <Card className="absolute top-full left-0 right-0 z-[100] mt-1 max-h-80 overflow-hidden shadow-lg bg-background border">
           <div className="p-2 space-y-1 overflow-y-auto max-h-64 bg-background">
-            {allUseCases.length === 0 ? (
+            {isLoading ? (
+              <div className="p-2 text-sm text-muted-foreground text-center">Loading use cases...</div>
+            ) : allUseCases.length === 0 ? (
               <div className="p-2 text-sm text-muted-foreground text-center">
                 Select categories or topics to see suggested use cases
               </div>
