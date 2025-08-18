@@ -8096,6 +8096,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      log_sensitive_data_access: {
+        Args: { operation_type: string; record_id?: string; table_name: string }
+        Returns: undefined
+      }
       log_stability_event: {
         Args: {
           p_event_data?: Json
