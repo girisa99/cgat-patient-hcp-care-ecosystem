@@ -31,13 +31,47 @@ export const useJourneyStages = (templateId?: string | null) => {
     queryKey: ['journey-stages', templateId],
     queryFn: async () => {
       if (!templateId) return [] as JourneyStage[];
-      const { data, error } = await sb
-        .from('agent_template_journey_stages')
-        .select('*')
-        .eq('template_id', templateId)
-        .order('order_index', { ascending: true });
-      if (error) throw error;
-      return (data || []) as JourneyStage[];
+      // Try normalized table first; fall back to template JSON if inaccessible or empty
+      try {
+        const { data: rows, error: tableError } = await sb
+          .from('agent_template_journey_stages')
+          .select('*')
+          .eq('template_id', templateId)
+          .order('order_index', { ascending: true });
+        if (!tableError && Array.isArray(rows) && rows.length > 0) {
+          return rows as JourneyStage[];
+        }
+      } catch (e) {
+        // Ignore and fall back to template JSON
+      }
+
+      // Fallback: read from agent_templates.journey_stages JSON
+      const { data: tmpl, error: tmplError } = await sb
+        .from('agent_templates')
+        .select('journey_stages')
+        .eq('id', templateId)
+        .maybeSingle();
+      if (tmplError) throw tmplError;
+      const raw = (tmpl?.journey_stages ?? []) as any[];
+      const mapped = raw.map((s: any, idx: number) => ({
+        id: s.id,
+        template_id: templateId,
+        order_index: s.order_index ?? idx,
+        title: s.title ?? `Stage ${idx + 1}`,
+        description: s.description ?? null,
+        owner_role: s.owner_role ?? null,
+        entry_criteria: s.entry_criteria ?? [],
+        tasks_checklist: s.tasks_checklist ?? [],
+        expected_duration_minutes: s.expected_duration_minutes ?? null,
+        sla: s.sla ?? {},
+        outputs_success_criteria: s.outputs_success_criteria ?? [],
+        risks: s.risks ?? [],
+        dependencies: s.dependencies ?? [],
+        validation_checkpoints: s.validation_checkpoints ?? [],
+        created_at: s.created_at ?? undefined,
+        updated_at: s.updated_at ?? undefined,
+      })) as JourneyStage[];
+      return mapped;
     },
     enabled,
     staleTime: 10_000,

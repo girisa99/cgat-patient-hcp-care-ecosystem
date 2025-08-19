@@ -121,7 +121,7 @@ const AgentsInner = () => {
 
   const { userRoles, user } = useMasterAuth();
   const queryClient = useQueryClient();
-  const { userSessions, isLoading: sessionsLoading, setCurrentSessionId, currentSessionId, actions, setActions } = useAgentBuilder();
+  const { userSessions, isLoading: sessionsLoading, setCurrentSessionId, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
   const { toast: toastHook } = useToast();
 
   // Role-based access control
@@ -149,20 +149,26 @@ const AgentsInner = () => {
     }
   }, [userSessions]);
 
-  // Auto-open Canvas after wizard completion
+  // Auto-open Canvas after wizard completion or when receiving a global open event
   useEffect(() => {
+    const openCanvas = (cfg?: any) => {
+      setSelectedMode('visual' as any);
+      setShowModeSelector(false);
+      setAgentBuilderTab(cfg?.tab || 'canvas-designer');
+      setVisualWorkflowSubTab(cfg?.subTab || 'canvas');
+      toast.success('Continuing on Canvas');
+    };
     try {
       const stored = localStorage.getItem('agentBuilder_next');
       if (stored) {
         const cfg = JSON.parse(stored);
         localStorage.removeItem('agentBuilder_next');
-        setSelectedMode('visual' as any);
-        setShowModeSelector(false);
-        setAgentBuilderTab(cfg.tab || 'canvas-designer');
-        setVisualWorkflowSubTab(cfg.subTab || 'canvas');
-        toast.success('Continuing on Canvas for branding');
+        openCanvas(cfg);
       }
     } catch {}
+    const handler = (e: any) => openCanvas(e?.detail);
+    window.addEventListener('agentBuilder:openCanvas', handler as any);
+    return () => window.removeEventListener('agentBuilder:openCanvas', handler as any);
   }, []);
 
   // Handle questionnaire completion - proceed to mode selection
@@ -441,7 +447,7 @@ const AgentsInner = () => {
                           <CardContent className="space-y-4">
                             {/* Generate a temporary template ID for journey editing */}
                             <JourneyEditor 
-                              templateId={currentSessionId || 'temp-journey'}
+                              templateId={currentSession?.template_id || currentSessionId || undefined}
                               useCase={selectedUseCase}
                               onApplied={handleJourneyComplete}
                             />
