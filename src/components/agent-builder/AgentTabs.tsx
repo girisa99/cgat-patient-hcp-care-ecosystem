@@ -98,8 +98,8 @@ export const AgentTabs: React.FC<AgentTabsProps> = ({
 
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
         <TooltipProvider delayDuration={100}>
-          <div className="w-full overflow-x-auto scrollbar-hide">
-            <TabsList className="flex flex-nowrap items-center h-auto p-1 gap-1 w-max">
+          <div className="w-full overflow-x-auto scrollbar-hide pb-1">
+            <TabsList className="flex items-center h-auto p-1 gap-1 w-fit" style={{ minWidth: 'max-content' }}>
               {tabs.map((tab) => {
                 const IconComponent = tab.icon;
                 return (
