@@ -45,43 +45,27 @@ export class SecurityHeaders {
 
   /**
    * Apply security headers to document
+   * Note: CSP and X-Frame-Options only work as HTTP headers, not meta tags
    */
   static applySecurityHeaders(config: SecurityConfig = {}): void {
     const finalConfig = { ...this.DEFAULT_CONFIG, ...config };
 
-    if (finalConfig.enableCSP) {
-      this.addMetaCSP();
-    }
-
-    // Add security-related meta tags
-    if (finalConfig.enableXSSProtection) {
-      this.addMetaTag('http-equiv', 'X-XSS-Protection', '1; mode=block');
-    }
-
-    if (finalConfig.enableClickjackProtection) {
-      this.addMetaTag('http-equiv', 'X-Frame-Options', 'DENY');
-    }
-
-    if (finalConfig.enableContentTypeNoSniff) {
-      this.addMetaTag('http-equiv', 'X-Content-Type-Options', 'nosniff');
-    }
-
+    // CSP and X-Frame-Options are ignored in meta tags by browsers
+    // These must be set as HTTP response headers by the server
+    
+    // Only add meta tags that actually work in meta elements
     if (finalConfig.enableReferrerPolicy) {
       this.addMetaTag('name', 'referrer', 'strict-origin-when-cross-origin');
     }
   }
 
   /**
-   * Add CSP meta tag
+   * Note: CSP meta tags are ignored by browsers for frame-ancestors directive
+   * This method is kept for reference but should not be used
    */
   private static addMetaCSP(): void {
-    const existing = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
-    if (existing) return;
-
-    const meta = document.createElement('meta');
-    meta.httpEquiv = 'Content-Security-Policy';
-    meta.content = this.generateCSP();
-    document.head.appendChild(meta);
+    // Removed: CSP meta tags don't work for frame-ancestors and cause browser warnings
+    console.warn('CSP meta tags are not recommended - use HTTP headers instead');
   }
 
   /**
