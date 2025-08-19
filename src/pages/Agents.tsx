@@ -157,6 +157,25 @@ const AgentsInner = () => {
       setVisualWorkflowSubTab(cfg?.subTab || 'canvas');
       toast.success('Continuing on Canvas');
     };
+    
+    const handleWizardComplete = (e: any) => {
+      const { sessionId, switchTab, wizardData } = e.detail || {};
+      console.log('🎉 Wizard completed, switching to:', switchTab, { sessionId, wizardData });
+      
+      if (sessionId) {
+        setCurrentSessionId(sessionId);
+      }
+      
+      if (switchTab) {
+        setSelectedMode('visual' as any);
+        setShowModeSelector(false);
+        setAgentBuilderTab(switchTab);
+        toast.success('Wizard completed! Now configure your models and templates.');
+      } else {
+        openCanvas(e.detail);
+      }
+    };
+    
     try {
       const stored = localStorage.getItem('agentBuilder_next');
       if (stored) {
@@ -165,10 +184,16 @@ const AgentsInner = () => {
         openCanvas(cfg);
       }
     } catch {}
-    const handler = (e: any) => openCanvas(e?.detail);
-    window.addEventListener('agentBuilder:openCanvas', handler as any);
-    return () => window.removeEventListener('agentBuilder:openCanvas', handler as any);
-  }, []);
+    
+    const canvasHandler = (e: any) => openCanvas(e?.detail);
+    window.addEventListener('agentBuilder:openCanvas', canvasHandler as any);
+    window.addEventListener('agentBuilder:completeWizard', handleWizardComplete as any);
+    
+    return () => {
+      window.removeEventListener('agentBuilder:openCanvas', canvasHandler as any);
+      window.removeEventListener('agentBuilder:completeWizard', handleWizardComplete as any);
+    };
+  }, [setCurrentSessionId]);
 
   // Handle questionnaire completion - proceed to mode selection
   const handleQuestionnaireComplete = (data: any) => {

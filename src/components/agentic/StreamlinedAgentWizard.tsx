@@ -480,7 +480,7 @@ const applySelectedSteps = async () => {
     }
   };
 
-  // Complete wizard - this will now redirect to parent tabs for actions, connectors, etc.
+  // Complete wizard - Signal parent to switch to Models & Templates tab
   const handleCompleteSetup = async () => {
     console.log('🚀 Complete Foundation Setup clicked!', {
       step: state.step,
@@ -506,41 +506,55 @@ const applySelectedSteps = async () => {
         logoUrl = data.publicUrl;
       }
 
-// Create agent session for further configuration in parent tabs
-const { data: agent, error: agentError } = await supabase
-  .from('agent_sessions')
-  .insert({
-    name: state.name,
-    description: state.description || state.name,
-    current_step: 'basic_info', // DB-safe starting step; UI will jump to Canvas
-    canvas: {
-      logoUrl,
-      tagline: state.tagline,
-      primaryColor: state.primaryColor,
-      secondaryColor: state.secondaryColor,
-      accentColor: state.accentColor,
-      name: state.name
-    },
-    basic_info: {
-      agentType: state.agentType,
-      categories: state.selectedCategories,
-      businessUnits: state.selectedBusinessUnits,
-      topics: state.selectedTopics,
-      templateId: state.templateId || (await persistJourneyToTemplate(state.journeyStages)),
-      journeyStages: state.journeyStages
-    },
-    user_id: (await supabase.auth.getUser()).data.user?.id
-  })
-  .select('id')
-  .maybeSingle();
+      // Create agent session for further configuration in parent tabs
+      const { data: agent, error: agentError } = await supabase
+        .from('agent_sessions')
+        .insert({
+          name: state.name,
+          description: state.description || state.name,
+          current_step: 'models_selection', // Next logical step after foundation
+          canvas: {
+            logoUrl,
+            tagline: state.tagline,
+            primaryColor: state.primaryColor,
+            secondaryColor: state.secondaryColor,
+            accentColor: state.accentColor,
+            name: state.name
+          },
+          basic_info: {
+            agentType: state.agentType,
+            categories: state.selectedCategories,
+            businessUnits: state.selectedBusinessUnits,
+            topics: state.selectedTopics,
+            templateId: state.templateId || (await persistJourneyToTemplate(state.journeyStages)),
+            journeyStages: state.journeyStages
+          },
+          user_id: (await supabase.auth.getUser()).data.user?.id
+        })
+        .select('id')
+        .maybeSingle();
       
       if (agentError || !agent) throw (agentError ?? new Error('Agent session not created'));
       
-      // Navigate to main canvas in Agent Builder
-      try { localStorage.setItem('agentBuilder_next', JSON.stringify({ mode: 'visual', tab: 'canvas-designer', subTab: 'canvas' })); } catch {}
-      try { window.dispatchEvent(new CustomEvent('agentBuilder:openCanvas', { detail: { tab: 'canvas-designer', subTab: 'canvas' } })); } catch {}
-      toast({ title: 'Setup Complete!', description: 'Opening Canvas to continue building your agent.' });
-      navigate('/agents');
+      // Signal parent component to switch to Models & Templates tab
+      try { 
+        window.dispatchEvent(new CustomEvent('agentBuilder:completeWizard', { 
+          detail: { 
+            sessionId: agent.id,
+            switchTab: 'models-templates',
+            wizardData: state
+          } 
+        })); 
+      } catch (e) {
+        console.warn('Failed to dispatch completion event:', e);
+      }
+      
+      toast({ 
+        title: 'Foundation Setup Complete!', 
+        description: 'Switching to Models & Templates configuration...' 
+      });
+      
+      setIsComplete(true);
       return;
       
     } catch (error) {
@@ -924,6 +938,7 @@ const { data: agent, error: agentError } = await supabase
           <JourneyEditor 
             templateId={state.templateId || undefined}
             sessionId={undefined}
+            useCase={state.useCase || `${state.name} - ${state.description}`}
             onApplied={handleJourneyApplied}
           />
         </DialogContent>
