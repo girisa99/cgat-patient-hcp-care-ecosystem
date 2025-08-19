@@ -68,7 +68,7 @@ import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { JourneyEditor } from '@/components/agentic/JourneyEditor';
 import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
-import { useToast } from '@/hooks/use-toast';
+import { ReactFlowWrapper as CustomerJourneyBuilder } from '@/components/workflow-builder/ReactFlowWrapper';
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
 };
@@ -122,7 +122,6 @@ const AgentsInner = () => {
   const { userRoles, user } = useMasterAuth();
   const queryClient = useQueryClient();
   const { userSessions, isLoading: sessionsLoading, setCurrentSessionId, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
-  const { toast: toastHook } = useToast();
 
   // Role-based access control
   const isSuperAdmin = userRoles.includes('superAdmin');
@@ -251,11 +250,33 @@ const AgentsInner = () => {
     console.log('Generated config:', generatedConfig);
     
     if (selectedMode === 'visual') {
-      // Apply visual configuration
+      // Apply visual configuration - show visual workflow with generated nodes
       console.log('Applying visual workflow:', generatedConfig);
+      
+      // Store the generated workflow data
+      setWizardData(prev => ({
+        ...prev,
+        generatedWorkflow: generatedConfig,
+        prompt: prompt
+      }));
+      
+      // Switch to canvas view to show the visual workflow
+      setVisualWorkflowSubTab('canvas');
+      setAgentBuilderTab('canvas-designer');
+      
+      toast.success('Visual workflow generated! View it on the canvas.');
     } else {
       // Apply manual configuration
       console.log('Applying manual config:', generatedConfig);
+      
+      // Store the generated config
+      setWizardData(prev => ({
+        ...prev,
+        generatedConfig: generatedConfig,
+        prompt: prompt
+      }));
+      
+      toast.success('Configuration generated! Review the settings.');
     }
     
     setShowPromptAssistant(false);
@@ -499,6 +520,35 @@ const AgentsInner = () => {
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
+                            {/* Show Visual Workflow if generated */}
+                            {wizardData.generatedWorkflow && (
+                              <div className="mb-6">
+                                <div className="flex items-center justify-between mb-4">
+                                  <h3 className="text-lg font-semibold">AI Generated Workflow</h3>
+                                  <Badge variant="secondary">From: "{wizardData.prompt || 'AI Assistant'}"</Badge>
+                                </div>
+                                <div className="h-96 border rounded-lg bg-muted/10">
+                                  <CustomerJourneyBuilder 
+                                    initialWorkflow={wizardData.generatedWorkflow}
+                                    onSave={(workflow) => {
+                                      setWizardData(prev => ({...prev, savedWorkflow: workflow}));
+                                      toast.success('Visual workflow saved!');
+                                    }}
+                                    onGenerateAgent={(workflow) => {
+                                      console.log('Generate agent from workflow:', workflow);
+                                      toast.success('Agent configuration generated from workflow!');
+                                    }}
+                                  />
+                                </div>
+                                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
+                                  <p className="text-sm text-blue-700">
+                                    <strong>✨ AI Generated:</strong> This visual workflow was created from your prompt. 
+                                    You can modify nodes, connections, and settings using the visual editor above.
+                                  </p>
+                                </div>
+                              </div>
+                            )}
+
                             <EnhancedAgentCanvas 
                               initialName={wizardData.name || ""}
                               initialTagline={wizardData.tagline || ""}

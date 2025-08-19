@@ -610,7 +610,7 @@ const { data: agent, error: agentError } = await supabase
       </div>
     </div>,
     
-    // Step 2: Template Selection or Agent Configuration with Categories
+    // Step 2: Template Selection or Agent Configuration with Journey
     <div className="space-y-6" key="step-2">
       {state.startOption === 'template' ? (
         state.templateId ? (
@@ -618,7 +618,7 @@ const { data: agent, error: agentError } = await supabase
           <div>
             <div className="mb-6">
               <h3 className="text-lg font-medium">Configure Selected Template</h3>
-              <p className="text-muted-foreground">Customize your {state.name} agent with categories and settings</p>
+              <p className="text-muted-foreground">Customize your {state.name} agent with categories and journey stages</p>
             </div>
             
             {/* Template Summary */}
@@ -633,6 +633,51 @@ const { data: agent, error: agentError } = await supabase
                     <p className="text-sm text-muted-foreground">{state.description}</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Journey Stages Section */}
+            <Card className="mb-6">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="text-lg">Journey Stages</CardTitle>
+                    <p className="text-sm text-muted-foreground">Define the sequential steps for this template</p>
+                  </div>
+                  <Button variant="outline" onClick={() => setShowJourneyEditor(true)}>
+                    {state.journeyStages.length > 0 ? 'Edit Stages' : 'Add Stages'}
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {state.journeyStages && state.journeyStages.length > 0 ? (
+                  <div className="space-y-2">
+                    <div className="text-sm font-medium">Current Stages ({state.journeyStages.length}):</div>
+                    <div className="grid gap-2">
+                      {state.journeyStages.slice(0, 3).map((stage: any, idx: number) => (
+                        <div key={idx} className="flex items-center gap-2 p-2 bg-muted rounded">
+                          <div className="w-6 h-6 bg-primary/10 rounded-full flex items-center justify-center text-xs">
+                            {idx + 1}
+                          </div>
+                          <span className="text-sm font-medium">{stage.title}</span>
+                          {stage.description && (
+                            <span className="text-xs text-muted-foreground">- {stage.description.slice(0, 50)}...</span>
+                          )}
+                        </div>
+                      ))}
+                      {state.journeyStages.length > 3 && (
+                        <div className="text-xs text-muted-foreground">
+                          +{state.journeyStages.length - 3} more stages...
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-6 text-muted-foreground">
+                    <p>No journey stages defined yet.</p>
+                    <p className="text-sm">Click "Add Stages" to get started with AI suggestions.</p>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -878,6 +923,7 @@ const { data: agent, error: agentError } = await supabase
           </DialogHeader>
           <JourneyEditor 
             templateId={state.templateId || undefined}
+            sessionId={undefined}
             onApplied={handleJourneyApplied}
           />
         </DialogContent>
