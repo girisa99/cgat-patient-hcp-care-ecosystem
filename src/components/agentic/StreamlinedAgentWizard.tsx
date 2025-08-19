@@ -512,7 +512,7 @@ const { data: agent, error: agentError } = await supabase
   .insert({
     name: state.name,
     description: state.description || state.name,
-    current_step: 'models-templates', // Next step in parent tabs
+    current_step: 'canvas', // Next step - canvas design
     canvas: {
       logoUrl,
       tagline: state.tagline,
@@ -538,7 +538,7 @@ const { data: agent, error: agentError } = await supabase
       
       // Navigate to main canvas in Agent Builder
       try { localStorage.setItem('agentBuilder_next', JSON.stringify({ mode: 'visual', tab: 'canvas-designer', subTab: 'canvas' })); } catch {}
-      toast({ title: 'Setup Complete!', description: 'Opening Canvas to continue branding.' });
+      toast({ title: 'Setup Complete!', description: 'Opening Canvas to continue building your agent.' });
       navigate('/agents');
       return;
       
