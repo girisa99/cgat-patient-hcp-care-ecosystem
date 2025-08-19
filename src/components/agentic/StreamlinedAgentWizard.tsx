@@ -15,7 +15,7 @@ import { CategoryMapping } from './CategoryMapping';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import JourneyEditor from '@/components/agentic/JourneyEditor';
 import { useJourneyAISuggestions } from '@/hooks/useJourneyAISuggestions';
-import { JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
+import type { JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';

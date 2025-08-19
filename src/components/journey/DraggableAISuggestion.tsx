@@ -10,7 +10,7 @@ import {
   GripVertical,
   ArrowRight
 } from 'lucide-react';
-import { JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
+import type { JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
 
 interface DraggableAISuggestionProps {
   step: JourneyStep;

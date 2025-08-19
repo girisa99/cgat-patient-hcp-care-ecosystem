@@ -285,11 +285,11 @@ const AgentsInner = () => {
         prompt: prompt
       }));
       
-      // Stay aligned with guided flow order
+      // Stay aligned with guided flow order but show the generated workflow immediately
       setAgentBuilderTab('canvas-designer');
-      setVisualWorkflowSubTab('use-case');
+      setVisualWorkflowSubTab('canvas');
       
-      toast.success('Workflow generated! Start with Use Case → Journey → Wizard → Canvas.');
+      toast.success('Workflow generated! Showing preview on Canvas.');
     } else {
       // Apply manual configuration
       console.log('Applying manual config:', generatedConfig);

@@ -36,7 +36,7 @@ import {
   Zap,
   GripVertical
 } from 'lucide-react';
-import { JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
+import type { JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
 import { useJourneyAISuggestions } from '@/hooks/useJourneyAISuggestions';
 import { useToast } from '@/hooks/use-toast';
 import { DraggableAISuggestion } from '@/components/journey/DraggableAISuggestion';
