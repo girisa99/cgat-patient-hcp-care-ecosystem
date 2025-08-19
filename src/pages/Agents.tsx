@@ -195,6 +195,13 @@ const AgentsInner = () => {
     };
   }, [setCurrentSessionId]);
 
+  // Hide global PromptAssistant when on Canvas to avoid overlap with AI Workflow Assistant
+  useEffect(() => {
+    if (selectedMode === 'visual' && agentBuilderTab === 'canvas-designer' && visualWorkflowSubTab === 'canvas') {
+      setShowPromptAssistant(false);
+    }
+  }, [selectedMode, agentBuilderTab, visualWorkflowSubTab]);
+
   // Handle questionnaire completion - proceed to mode selection
   const handleQuestionnaireComplete = (data: any) => {
     console.log('Questionnaire completed:', data);
@@ -552,7 +559,7 @@ const AgentsInner = () => {
                                   <h3 className="text-lg font-semibold">AI Generated Workflow</h3>
                                   <Badge variant="secondary">From: "{wizardData.prompt || 'AI Assistant'}"</Badge>
                                 </div>
-                                <div className="h-96 border rounded-lg bg-muted/10 overflow-hidden">
+                                <div className="min-h-[60vh] h-[70vh] border rounded-lg bg-muted/10 overflow-hidden">
                                   <CustomerJourneyBuilder 
                                     initialWorkflow={wizardData.generatedWorkflow}
                                     onSave={(workflow) => {
@@ -941,7 +948,7 @@ const AgentsInner = () => {
         </AgentTabs>
 
         {/* Prompt Assistant */}
-        {selectedMode && (
+        {selectedMode && !(selectedMode === 'visual' && agentBuilderTab === 'canvas-designer' && visualWorkflowSubTab === 'canvas') && (
           <PromptAssistant
             mode={selectedMode}
             isVisible={showPromptAssistant}

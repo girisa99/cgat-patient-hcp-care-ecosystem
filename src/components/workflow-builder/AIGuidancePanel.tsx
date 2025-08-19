@@ -244,7 +244,7 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 w-96 h-[600px] shadow-xl z-50 flex flex-col">
+    <Card className="fixed bottom-4 right-4 w-[24rem] h-[70vh] max-h-[85vh] shadow-xl z-50 flex flex-col overflow-hidden">
       <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -258,7 +258,7 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
         </CardTitle>
       </CardHeader>
 
-      <CardContent className="flex-1 flex flex-col p-3 space-y-3">
+      <CardContent className="flex-1 flex flex-col p-3 space-y-3 overflow-hidden">
         {/* Conversation Area */}
         <div className="flex-1 flex flex-col min-h-0">
           <div className="flex items-center justify-between mb-2">
@@ -327,7 +327,7 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
             {isAnalyzing && <RefreshCw className="h-3 w-3 animate-spin" />}
           </h4>
           
-          <ScrollArea className="max-h-48">
+          <ScrollArea className="max-h-64">
             <div className="space-y-2">
               {suggestions.map((suggestion) => (
                 <Card

@@ -13,7 +13,7 @@ import {
   Lightbulb, Target, TrendingUp, CheckCircle
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
-import { CustomerJourneyBuilder } from './CustomerJourneyBuilder';
+import { ReactFlowWrapper } from './ReactFlowWrapper';
 
 interface UseCaseTemplate {
   id: string;
@@ -445,8 +445,8 @@ export const AIWorkflowGenerator: React.FC<AIWorkflowGeneratorProps> = ({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="h-96 border rounded-lg">
-              <CustomerJourneyBuilder 
+            <div className="h-[70vh] min-h-[60vh] border rounded-lg">
+              <ReactFlowWrapper 
                 initialWorkflow={generatedWorkflow}
                 onSave={(workflow) => {
                   showSuccess('Workflow saved successfully!');

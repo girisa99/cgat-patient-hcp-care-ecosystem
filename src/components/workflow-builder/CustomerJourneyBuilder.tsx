@@ -426,7 +426,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
 
       <div className="flex flex-1">
         {/* Node Palette */}
-        <div className="w-64 border-r bg-muted/30 p-4">
+        <div className="w-64 border-r bg-muted/30 p-4 h-full overflow-y-auto">
           <h3 className="font-medium mb-3">Add Components</h3>
           <div className="space-y-2">
             <Button 
@@ -517,6 +517,9 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
               setShowNodeConfig(true);
             }}
             fitView
+            panOnScroll
+            zoomOnScroll
+            panOnDrag
             attributionPosition="bottom-right"
           >
             <Controls />
