@@ -21,9 +21,12 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Bot, MessageCircle, Phone, Mail, Calendar, CheckCircle, 
   AlertTriangle, Clock, Users, Workflow, Sparkles, Settings,
-  Play, Pause, RotateCcw, Save, Download, Upload, Eye
+  Play, Pause, RotateCcw, Save, Download, Upload, Eye, Plus, Trash2
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { NodeConfigurationPanel } from './NodeConfigurationPanel';
+import { AIGuidancePanel } from './AIGuidancePanel';
+import { NodeTemplateLibrary } from './NodeTemplateLibrary';
 
 // Custom Node Components
 const CustomerNode = ({ data }: { data: any }) => (
@@ -181,8 +184,15 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
+  const [showAIGuidance, setShowAIGuidance] = useState(true);
+  const [showNodeConfig, setShowNodeConfig] = useState(false);
+  const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
   const { showSuccess, showError } = useMasterToast();
   const { setViewport, getViewport } = useReactFlow();
+
+  // Available connectors and AI models for configuration
+  const availableConnectors = ['Supabase', 'OpenAI', 'Stripe', 'Twilio', 'SendGrid', 'Zoom'];
+  const aiModels = ['gpt-4o-mini', 'gpt-4o', 'claude-3-haiku', 'claude-3-sonnet'];
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -285,12 +295,87 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
       data: {
         label: `New ${type}`,
         description: `Configure this ${type}`,
+        order: nodes.length,
+        active: true,
+        variables: [],
+        apis: [],
+        dataStorage: { enabled: false, storageType: 'memory', retentionDays: 30, maxRecords: 1000, fields: [] },
         ...(type === 'touchpoint' && { channel: 'chat', automationLevel: 50 }),
-        ...(type === 'agent' && { capabilities: ['General'] }),
+        ...(type === 'agent' && { capabilities: ['General'], aiModel: 'gpt-4o-mini' }),
         ...(type === 'decision' && { conditions: ['Yes', 'No'] })
       }
     };
     setNodes(prev => [...prev, newNode]);
+  };
+
+  // Update node configuration
+  const updateNode = (nodeId: string, updates: any) => {
+    setNodes(prev => prev.map(node => 
+      node.id === nodeId ? { ...node, ...updates } : node
+    ));
+  };
+
+  // Delete node
+  const deleteNode = (nodeId: string) => {
+    setNodes(prev => prev.filter(node => node.id !== nodeId));
+    setEdges(prev => prev.filter(edge => edge.source !== nodeId && edge.target !== nodeId));
+    if (selectedNode?.id === nodeId) {
+      setSelectedNode(null);
+      setShowNodeConfig(false);
+    }
+    showSuccess('Node deleted successfully');
+  };
+
+  // Handle AI guidance suggestions
+  const handleAISuggestion = (suggestion: any) => {
+    switch (suggestion.action) {
+      case 'Add Customer Touchpoint':
+        addNode('customer');
+        break;
+      case 'Add Decision Node':
+        addNode('decision');
+        break;
+      case 'Add AI Agent':
+        addNode('agent');
+        break;
+      case 'Add Connections':
+        if (nodes.length >= 2) {
+          const newEdge = {
+            id: `edge-${Date.now()}`,
+            source: nodes[0].id,
+            target: nodes[1].id,
+            markerEnd: { type: MarkerType.ArrowClosed },
+            style: { stroke: '#8b5cf6' }
+          };
+          setEdges(prev => [...prev, newEdge]);
+        }
+        break;
+      default:
+        showSuccess('Suggestion applied!');
+    }
+  };
+
+  // Handle user prompts from AI assistant
+  const handleUserPrompt = (prompt: string) => {
+    // Process user prompts and potentially modify workflow
+    console.log('Processing user prompt:', prompt);
+  };
+
+  // Add template-based node
+  const addTemplateNode = (template: any, position: { x: number; y: number }) => {
+    const newNode = {
+      id: `${Date.now()}`,
+      type: template.type,
+      position,
+      data: {
+        ...template.defaultData,
+        templateId: template.id,
+        isTemplate: true
+      }
+    };
+    setNodes(prev => [...prev, newNode]);
+    setShowTemplateLibrary(false);
+    showSuccess(`${template.name} template added!`);
   };
 
   return (
@@ -304,6 +389,15 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         </div>
         
         <div className="flex items-center gap-2">
+          <Button 
+            variant="outline" 
+            size="sm" 
+            onClick={() => setShowTemplateLibrary(true)}
+          >
+            <Sparkles className="h-4 w-4 mr-1" />
+            Templates
+          </Button>
+          
           <Button 
             variant="outline" 
             size="sm" 
@@ -414,7 +508,14 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             nodeTypes={nodeTypes}
-            onNodeClick={(event, node) => setSelectedNode(node)}
+            onNodeClick={(event, node) => {
+              setSelectedNode(node);
+              setShowNodeConfig(true);
+            }}
+            onNodeDoubleClick={(event, node) => {
+              setSelectedNode(node);
+              setShowNodeConfig(true);
+            }}
             fitView
             attributionPosition="bottom-right"
           >
@@ -423,51 +524,40 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
             <Background gap={20} size={1} />
           </ReactFlow>
 
-          {/* Node Properties Panel */}
-          {selectedNode && (
-            <Card className="absolute top-4 right-4 w-72 max-h-96 overflow-auto">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm flex items-center justify-between">
-                  Node Properties
-                  <Button 
-                    variant="ghost" 
-                    size="sm" 
-                    onClick={() => setSelectedNode(null)}
-                  >
-                    ×
-                  </Button>
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <div>
-                  <label className="text-xs font-medium">Type</label>
-                  <p className="text-sm capitalize">{selectedNode.type || 'unknown'}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Label</label>
-                  <p className="text-sm">{String(selectedNode.data?.label || 'No label')}</p>
-                </div>
-                <div>
-                  <label className="text-xs font-medium">Description</label>
-                  <p className="text-sm text-muted-foreground">
-                    {String(selectedNode.data?.description || 'No description available')}
-                  </p>
-                </div>
-                {selectedNode.type === 'agent' && selectedNode.data?.capabilities && Array.isArray(selectedNode.data.capabilities) && (
-                  <div>
-                    <label className="text-xs font-medium">Capabilities</label>
-                    <div className="flex flex-wrap gap-1 mt-1">
-                      {selectedNode.data.capabilities.map((cap: string, idx: number) => (
-                        <Badge key={idx} variant="secondary" className="text-xs">{cap}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+          {/* Enhanced Node Configuration Panel */}
+          {showNodeConfig && selectedNode && (
+            <div className="absolute top-4 right-4 z-10">
+              <NodeConfigurationPanel
+                node={selectedNode}
+                onUpdate={updateNode}
+                onDelete={deleteNode}
+                onClose={() => {
+                  setShowNodeConfig(false);
+                  setSelectedNode(null);
+                }}
+                availableConnectors={availableConnectors}
+                aiModels={aiModels}
+              />
+            </div>
           )}
         </div>
       </div>
+
+      {/* Node Template Library */}
+      <NodeTemplateLibrary
+        onAddTemplate={addTemplateNode}
+        isOpen={showTemplateLibrary}
+        onClose={() => setShowTemplateLibrary(false)}
+      />
+
+      {/* AI Guidance Panel */}
+      <AIGuidancePanel
+        currentWorkflow={{ nodes, edges }}
+        onApplySuggestion={handleAISuggestion}
+        onUserPrompt={handleUserPrompt}
+        isVisible={showAIGuidance}
+        onToggle={() => setShowAIGuidance(!showAIGuidance)}
+      />
     </div>
   );
 };
