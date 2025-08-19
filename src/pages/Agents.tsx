@@ -275,7 +275,7 @@ const AgentsInner = () => {
     console.log('Generated config:', generatedConfig);
     
     if (selectedMode === 'visual') {
-      // Apply visual configuration - show visual workflow with generated nodes
+      // Apply visual configuration - store generated nodes, keep flow at beginning (Use Case)
       console.log('Applying visual workflow:', generatedConfig);
       
       // Store the generated workflow data
@@ -285,11 +285,11 @@ const AgentsInner = () => {
         prompt: prompt
       }));
       
-      // Switch to canvas view to show the visual workflow
-      setVisualWorkflowSubTab('canvas');
+      // Stay aligned with guided flow order
       setAgentBuilderTab('canvas-designer');
+      setVisualWorkflowSubTab('use-case');
       
-      toast.success('Visual workflow generated! View it on the canvas.');
+      toast.success('Workflow generated! Start with Use Case → Journey → Wizard → Canvas.');
     } else {
       // Apply manual configuration
       console.log('Applying manual config:', generatedConfig);
@@ -552,7 +552,7 @@ const AgentsInner = () => {
                                   <h3 className="text-lg font-semibold">AI Generated Workflow</h3>
                                   <Badge variant="secondary">From: "{wizardData.prompt || 'AI Assistant'}"</Badge>
                                 </div>
-                                <div className="h-96 border rounded-lg bg-muted/10">
+                                <div className="h-96 border rounded-lg bg-muted/10 overflow-hidden">
                                   <CustomerJourneyBuilder 
                                     initialWorkflow={wizardData.generatedWorkflow}
                                     onSave={(workflow) => {
