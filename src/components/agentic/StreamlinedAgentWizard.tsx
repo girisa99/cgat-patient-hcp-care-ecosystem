@@ -171,53 +171,53 @@ export const StreamlinedAgentWizard = () => {
     }
   };
 
-// Template selection handler
-const handleSelectTemplate = async (tpl: { id: string; name: string }) => {
-  let selectedTemplate = templates.find(t => t.id === tpl.id);
+  // Template selection handler
+  const handleSelectTemplate = async (tpl: { id: string; name: string }) => {
+    let selectedTemplate = templates.find(t => t.id === tpl.id);
 
-  if (!selectedTemplate) {
-    const targetName = (tpl.name || '').toLowerCase();
-    selectedTemplate = templates.find(t => (t.name || '').toLowerCase() === targetName);
-  }
-
-  if (selectedTemplate) {
-    // If DB template lacks embedded JSON stages, fetch normalized stages
-    let stages = Array.isArray(selectedTemplate.journey_stages) ? selectedTemplate.journey_stages : [];
-    if (stages.length === 0) {
-      const { data, error } = await supabase
-        .from('agent_template_journey_stages')
-        .select('*')
-        .eq('template_id', selectedTemplate.id)
-        .order('order_index');
-      if (!error && Array.isArray(data)) {
-        stages = data as any[];
-      }
+    if (!selectedTemplate) {
+      const targetName = (tpl.name || '').toLowerCase();
+      selectedTemplate = templates.find(t => (t.name || '').toLowerCase() === targetName);
     }
 
-    setState((prev) => ({
-      ...prev,
-      templateId: selectedTemplate!.id,
-      name: selectedTemplate!.name,
-      description: selectedTemplate!.description || '',
-      tagline: selectedTemplate!.tagline || prev.tagline || '',
-      primaryColor: selectedTemplate!.primary_color,
-      secondaryColor: selectedTemplate!.secondary_color,
-      accentColor: selectedTemplate!.accent_color,
-      logoUrl: selectedTemplate!.logo_url || prev.logoUrl || '',
-      journeyStages: stages || [],
-      startOption: 'template',
-      step: Math.max(prev.step, 2),
-    }));
-  } else {
-    setState((prev) => ({
-      ...prev,
-      templateId: tpl.id,
-      name: prev.name || tpl.name,
-      startOption: 'template',
-      step: Math.max(prev.step, 2),
-    }));
-  }
-};
+    if (selectedTemplate) {
+      // If DB template lacks embedded JSON stages, fetch normalized stages
+      let stages = Array.isArray(selectedTemplate.journey_stages) ? selectedTemplate.journey_stages : [];
+      if (stages.length === 0) {
+        const { data, error } = await supabase
+          .from('agent_template_journey_stages')
+          .select('*')
+          .eq('template_id', selectedTemplate.id)
+          .order('order_index');
+        if (!error && Array.isArray(data)) {
+          stages = data as any[];
+        }
+      }
+
+      setState((prev) => ({
+        ...prev,
+        templateId: selectedTemplate!.id,
+        name: selectedTemplate!.name,
+        description: selectedTemplate!.description || '',
+        tagline: selectedTemplate!.tagline || prev.tagline || '',
+        primaryColor: selectedTemplate!.primary_color,
+        secondaryColor: selectedTemplate!.secondary_color,
+        accentColor: selectedTemplate!.accent_color,
+        logoUrl: selectedTemplate!.logo_url || prev.logoUrl || '',
+        journeyStages: stages || [],
+        startOption: 'template',
+        step: 1, // Stay on step 1 to show configuration
+      }));
+    } else {
+      setState((prev) => ({
+        ...prev,
+        templateId: tpl.id,
+        name: prev.name || tpl.name,
+        startOption: 'template',
+        step: 1, // Stay on step 1 to show configuration
+      }));
+    }
+  };
 
   // Start option handler
   const handleStartOption = (option: 'template' | 'scratch') => {
@@ -606,18 +606,99 @@ const { data: agent, error: agentError } = await supabase
     // Step 2: Template Selection or Agent Configuration with Categories
     <div className="space-y-6" key="step-2">
       {state.startOption === 'template' ? (
-        <div>
-          <div className="mb-6">
-            <h3 className="text-lg font-medium">Select a Template</h3>
-            <p className="text-muted-foreground">Choose from our pre-configured agent templates</p>
+        state.templateId ? (
+          // Show template configuration after selection
+          <div>
+            <div className="mb-6">
+              <h3 className="text-lg font-medium">Configure Selected Template</h3>
+              <p className="text-muted-foreground">Customize your {state.name} agent with categories and settings</p>
+            </div>
+            
+            {/* Template Summary */}
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 bg-primary/10 rounded-lg flex items-center justify-center">
+                    <Bot className="h-6 w-6 text-primary" />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold">{state.name}</h4>
+                    <p className="text-sm text-muted-foreground">{state.description}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Category Mapping for Template */}
+            <div className="space-y-6">
+              <div>
+                <Label className="text-base font-medium">Agent Type</Label>
+                <p className="text-sm text-muted-foreground mb-3">Choose whether to create a single agent or multiple coordinated agents</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Card 
+                    className={`cursor-pointer transition-all ${state.agentType === 'single' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+                    onClick={() => updateField('agentType', 'single')}
+                  >
+                    <CardContent className="pt-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Bot className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Single Agent</h4>
+                          <p className="text-sm text-muted-foreground">One focused agent for specific tasks</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  
+                  <Card 
+                    className={`cursor-pointer transition-all ${state.agentType === 'multiple' ? 'ring-2 ring-primary' : 'hover:shadow-md'}`}
+                    onClick={() => updateField('agentType', 'multiple')}
+                  >
+                    <CardContent className="pt-4">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-10 h-10 bg-purple-100 rounded-full flex items-center justify-center">
+                          <Users className="h-5 w-5 text-purple-600" />
+                        </div>
+                        <div>
+                          <h4 className="font-medium">Multiple Agents</h4>
+                          <p className="text-sm text-muted-foreground">Coordinated team of specialized agents</p>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </div>
+              
+              {/* Category Mapping for Template */}
+              <div className="mt-8 space-y-3">
+                <CategoryMapping
+                  selectedCategories={state.selectedCategories}
+                  selectedBusinessUnits={state.selectedBusinessUnits}
+                  selectedTopics={state.selectedTopics}
+                  onCategoriesChange={(categories) => updateField('selectedCategories', categories)}
+                  onBusinessUnitsChange={(units) => updateField('selectedBusinessUnits', units)}
+                  onTopicsChange={(topics) => updateField('selectedTopics', topics)}
+                />
+              </div>
+            </div>
           </div>
-          <AgentTemplates 
-            onSelectTemplate={handleSelectTemplate}
-            selectedTemplateId={state.templateId}
-            onCustomizeFurther={() => setState(prev => ({ ...prev, step: 2 }))}
-            dbTemplates={templates}
-          />
-        </div>
+        ) : (
+          // Show template selection
+          <div>
+            <div className="mb-6">
+              <h3 className="text-lg font-medium">Select a Template</h3>
+              <p className="text-muted-foreground">Choose from our pre-configured agent templates</p>
+            </div>
+            <AgentTemplates 
+              onSelectTemplate={handleSelectTemplate}
+              selectedTemplateId={state.templateId}
+              onCustomizeFurther={() => setState(prev => ({ ...prev, step: 2 }))}
+              dbTemplates={templates}
+            />
+          </div>
+        )
       ) : (
         <div>
           <div className="mb-6">
