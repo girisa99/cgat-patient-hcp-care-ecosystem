@@ -877,7 +877,7 @@ const { data: agent, error: agentError } = await supabase
             <DialogTitle>Customize Journey Stages</DialogTitle>
           </DialogHeader>
           <JourneyEditor 
-            templateId={state.templateId || 'custom'}
+            templateId={state.templateId || undefined}
             onApplied={handleJourneyApplied}
           />
         </DialogContent>

@@ -8,15 +8,66 @@ import { useJourneyStages, JourneyStage } from '@/hooks/useJourneyStages';
 import { ArrowDown, ArrowUp, Plus, Trash2 } from 'lucide-react';
 import { AISuggestionsPanel } from '@/components/journey/AISuggestionsPanel';
 import type { JourneyStep as AIStep } from '@/hooks/useJourneyAISuggestions';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from '@/hooks/use-toast';
 
 interface JourneyEditorProps {
-  templateId: string;
+  templateId?: string;
+  sessionId?: string;
   useCase?: string;
   onApplied?: (stages: JourneyStage[]) => void;
 }
 
-export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, useCase, onApplied }) => {
-  const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages, refetch } = useJourneyStages(templateId);
+export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, sessionId, useCase, onApplied }) => {
+  const [effectiveTemplateId, setEffectiveTemplateId] = React.useState<string | undefined>(templateId);
+  React.useEffect(() => setEffectiveTemplateId(templateId), [templateId]);
+  const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages, refetch } = useJourneyStages(effectiveTemplateId);
+
+  // If no template yet, offer to create one (avoids 'No templateId provided')
+  if (!effectiveTemplateId) {
+    const createTemplate = async () => {
+      try {
+        const user = (await supabase.auth.getUser()).data.user;
+        const { data: tpl, error } = await supabase
+          .from('agent_templates')
+          .insert({
+            name: 'New Agent Template',
+            description: useCase ? `Journey for: ${useCase}` : null,
+            template_type: 'custom',
+            is_default: false,
+            created_by: user?.id ?? null,
+            journey_stages: [],
+          })
+          .select('id')
+          .maybeSingle();
+        if (error || !tpl) throw (error ?? new Error('Template creation failed'));
+
+        // If linked session provided, attach template to session
+        if (sessionId) {
+          await supabase
+            .from('agent_sessions')
+            .update({ template_id: tpl.id })
+            .eq('id', sessionId);
+        }
+
+        setEffectiveTemplateId(tpl.id);
+        toast({ title: 'Template created', description: 'You can now add journey stages.' });
+      } catch (e: any) {
+        toast({ title: 'Failed to create template', description: e?.message, variant: 'destructive' });
+      }
+    };
+
+    return (
+      <Card>
+        <CardContent className="py-6 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            No template is linked yet. Create a template to manage journey stages.
+          </p>
+          <Button onClick={createTemplate}>Create Template</Button>
+        </CardContent>
+      </Card>
+    );
+  }
 
   // Local drafts to prevent input resets while typing; save on blur
   const [drafts, setDrafts] = React.useState<Record<string, any>>({});

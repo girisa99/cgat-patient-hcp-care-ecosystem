@@ -445,9 +445,9 @@ const AgentsInner = () => {
                             </CardDescription>
                           </CardHeader>
                           <CardContent className="space-y-4">
-                            {/* Generate a temporary template ID for journey editing */}
                             <JourneyEditor 
-                              templateId={currentSession?.template_id || currentSessionId || undefined}
+                              templateId={currentSession?.template_id || undefined}
+                              sessionId={currentSessionId}
                               useCase={selectedUseCase}
                               onApplied={handleJourneyComplete}
                             />
