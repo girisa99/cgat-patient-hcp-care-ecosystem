@@ -1,10 +1,10 @@
 import React from 'react';
-import ProtectedMasterAuthForm from '@/components/auth/ProtectedMasterAuthForm';
+import MasterAuthForm from '@/components/auth/MasterAuthForm';
 
 const Login: React.FC = () => {
   console.log('🔐 Login page component rendering...');
   
-  return <ProtectedMasterAuthForm />;
+  return <MasterAuthForm />;
 };
 
 export default Login;
