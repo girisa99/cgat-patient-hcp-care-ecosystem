@@ -98,31 +98,33 @@ export const AgentTabs: React.FC<AgentTabsProps> = ({
 
       <Tabs value={activeTab} onValueChange={onTabChange} className="w-full">
         <TooltipProvider delayDuration={100}>
-          <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 h-auto p-1 gap-1">
-            {tabs.map((tab) => {
-              const IconComponent = tab.icon;
-              return (
-                <Tooltip key={tab.id}>
-                  <TooltipTrigger asChild>
-                    <TabsTrigger
-                      value={tab.id}
-                      className="flex flex-col items-center gap-1 py-3 px-2 data-[state=active]:bg-background min-w-0 h-auto"
-                      aria-label={tab.label}
-                    >
-                      <IconComponent className="h-4 w-4 flex-shrink-0" />
-                      <span className="text-xs font-medium text-center leading-tight">{tab.label}</span>
-                    </TabsTrigger>
-                  </TooltipTrigger>
-                  <TooltipContent side="bottom" sideOffset={8} className="max-w-[280px] z-50 bg-popover text-popover-foreground border shadow-md">
-                    <div className="space-y-1">
-                      <div className="font-medium text-sm">{tab.label}</div>
-                      <div className="text-xs opacity-90 leading-relaxed">{tab.description}</div>
-                    </div>
-                  </TooltipContent>
-                </Tooltip>
-              );
-            })}
-          </TabsList>
+          <div className="w-full overflow-x-auto scrollbar-hide">
+            <TabsList className="inline-flex h-auto p-1 gap-1 min-w-full w-max">
+              {tabs.map((tab) => {
+                const IconComponent = tab.icon;
+                return (
+                  <Tooltip key={tab.id}>
+                    <TooltipTrigger asChild>
+                      <TabsTrigger
+                        value={tab.id}
+                        className="flex flex-col items-center gap-1 py-3 px-3 data-[state=active]:bg-background min-w-fit h-auto whitespace-nowrap flex-shrink-0"
+                        aria-label={tab.label}
+                      >
+                        <IconComponent className="h-4 w-4 flex-shrink-0" />
+                        <span className="text-xs font-medium text-center leading-tight">{tab.label}</span>
+                      </TabsTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" sideOffset={8} className="max-w-[280px] z-50 bg-popover text-popover-foreground border shadow-md">
+                      <div className="space-y-1">
+                        <div className="font-medium text-sm">{tab.label}</div>
+                        <div className="text-xs opacity-90 leading-relaxed">{tab.description}</div>
+                      </div>
+                    </TooltipContent>
+                  </Tooltip>
+                );
+              })}
+            </TabsList>
+          </div>
         </TooltipProvider>
 
         {children}
