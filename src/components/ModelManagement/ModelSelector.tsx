@@ -13,11 +13,13 @@ import { Cpu, Zap, DollarSign, Shield, Cloud, HardDrive, Wand2 } from 'lucide-re
 interface ModelSelectorProps {
   onPreferencesChange: (preferences: UserModelPreferences) => void;
   currentPreferences?: UserModelPreferences;
+  selectedTemplate?: any;
 }
 
 export const ModelSelector: React.FC<ModelSelectorProps> = ({
   onPreferencesChange,
-  currentPreferences
+  currentPreferences,
+  selectedTemplate
 }) => {
   const { toast } = useToast();
   const [preferences, setPreferences] = useState<UserModelPreferences>(
@@ -70,14 +72,25 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   };
 
   const applyAutosuggest = () => {
-    // Default: Auto (Claude/OpenAI) for conversational tasks; real model IDs for others
-    const suggestions = {
+    // Template-aware suggestions
+    let suggestions = {
       chat: 'auto-hybrid',
       medical: 'auto-hybrid',
       code: 'gpt-4o-mini',
       embeddings: 'distilbert-base',
       classification: 'distilbert-base'
     } as UserModelPreferences['preferredModels'];
+
+    // Adjust suggestions based on template type
+    if (selectedTemplate) {
+      if (selectedTemplate.template_type === 'healthcare' || selectedTemplate.name?.toLowerCase().includes('healthcare')) {
+        suggestions.medical = 'claude-3-5-sonnet-20241022';
+        suggestions.chat = 'claude-3-5-sonnet-20241022';
+      } else if (selectedTemplate.template_type === 'code' || selectedTemplate.name?.toLowerCase().includes('code')) {
+        suggestions.code = 'gpt-4o-mini';
+        suggestions.chat = 'gpt-4o-mini';
+      }
+    }
 
     const updated = {
       ...preferences,
@@ -90,7 +103,12 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
 
     setPreferences(updated);
     onPreferencesChange(updated);
-    toast({ title: 'Autosuggest applied', description: 'Model choices updated. You can override any selection.' });
+    
+    const templateInfo = selectedTemplate ? ` for ${selectedTemplate.name} template` : '';
+    toast({ 
+      title: 'Smart suggestions applied', 
+      description: `AI models optimized${templateInfo}. You can customize any selection.` 
+    });
   };
 
   const getModelIcon = (model: ModelConfig) => {
@@ -225,11 +243,23 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
             </div>
           </div>
 
-          {/* Autosuggest - apply on click */}
-          <div className="flex justify-end">
-            <Button variant="secondary" size="sm" onClick={applyAutosuggest} className="flex items-center gap-2">
+          {/* Template-aware autosuggest */}
+          <div className="flex justify-between items-center">
+            <div>
+              {selectedTemplate && (
+                <p className="text-sm text-muted-foreground">
+                  Optimizing for: <span className="font-medium">{selectedTemplate.name}</span>
+                </p>
+              )}
+            </div>
+            <Button 
+              variant="secondary" 
+              size="sm" 
+              onClick={applyAutosuggest} 
+              className="flex items-center gap-2"
+            >
               <Wand2 className="h-4 w-4" />
-              Apply Autosuggest
+              Apply Smart Suggestions
             </Button>
           </div>
         </CardContent>

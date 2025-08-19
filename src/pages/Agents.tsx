@@ -804,7 +804,16 @@ const AgentsInner = () => {
                     <CardDescription>AI models and configuration templates</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <ModelManagementDashboard />
+                    <ModelManagementDashboard 
+                      selectedTemplate={currentSession ? {
+                        id: currentSession.template_id,
+                        name: currentSession.name,
+                        description: currentSession.description,
+                        template_type: currentSession.template_type,
+                        journey_stages: []
+                      } : undefined}
+                      templateId={currentSession?.template_id}
+                    />
                   </CardContent>
                 </Card>
               </TabsContent>

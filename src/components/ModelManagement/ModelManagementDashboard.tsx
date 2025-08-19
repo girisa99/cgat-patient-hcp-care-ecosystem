@@ -10,7 +10,15 @@ import { UserModelPreferences, ModelCapability } from '@/types/ModelTypes';
 import { Settings, Zap, Brain, TestTube, BarChart } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
-export const ModelManagementDashboard: React.FC = () => {
+interface ModelManagementDashboardProps {
+  selectedTemplate?: any;
+  templateId?: string;
+}
+
+export const ModelManagementDashboard: React.FC<ModelManagementDashboardProps> = ({ 
+  selectedTemplate, 
+  templateId 
+}) => {
   const { toast } = useToast();
   const {
     preferences,
@@ -75,10 +83,20 @@ export const ModelManagementDashboard: React.FC = () => {
     <div className="p-6 space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-foreground">Model Management</h1>
+          <h1 className="text-3xl font-bold text-foreground">Models & Templates</h1>
           <p className="text-muted-foreground">
-            Configure Small Language Models (SLMs) and routing preferences
+            Configure AI models, templates, and actions for your agent
           </p>
+          {selectedTemplate && (
+            <div className="mt-2 p-2 bg-secondary/50 rounded-md">
+              <p className="text-sm text-foreground font-medium">
+                Selected Template: {selectedTemplate.name || 'Unnamed Template'}
+              </p>
+              <p className="text-xs text-muted-foreground">
+                {selectedTemplate.description || 'Template configured for your agent'}
+              </p>
+            </div>
+          )}
         </div>
         <div className="flex items-center gap-2">
           <Badge variant="outline">{allModels.length} Models Available</Badge>
@@ -87,19 +105,23 @@ export const ModelManagementDashboard: React.FC = () => {
         </div>
       </div>
 
-      <Tabs defaultValue="preferences" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="preferences" className="flex items-center gap-2">
-            <Settings className="h-4 w-4" />
-            Preferences
-          </TabsTrigger>
-          <TabsTrigger value="models" className="flex items-center gap-2">
+      <Tabs defaultValue="model-selection" className="space-y-6">
+        <TabsList className="grid w-full grid-cols-5">
+          <TabsTrigger value="model-selection" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
-            Models
+            Model Selection
           </TabsTrigger>
-          <TabsTrigger value="testing" className="flex items-center gap-2">
+          <TabsTrigger value="available-models" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" />
+            Available Models
+          </TabsTrigger>
+          <TabsTrigger value="api-models" className="flex items-center gap-2">
+            <Zap className="h-4 w-4" />
+            API Models
+          </TabsTrigger>
+          <TabsTrigger value="actions-tasks" className="flex items-center gap-2">
             <TestTube className="h-4 w-4" />
-            Testing
+            Actions & Tasks
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart className="h-4 w-4" />
@@ -107,166 +129,131 @@ export const ModelManagementDashboard: React.FC = () => {
           </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="preferences">
+        <TabsContent value="model-selection">
           <ModelSelector
             onPreferencesChange={handlePreferencesChange}
             currentPreferences={preferences || undefined}
+            selectedTemplate={selectedTemplate}
           />
         </TabsContent>
 
-        <TabsContent value="models">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5" />
-                  Local Small Language Models
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {localModels.map(model => (
-                    <div key={model.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{model.name}</div>
-                        <div className="text-sm text-muted-foreground">{model.description}</div>
-                        <div className="flex gap-1 mt-1">
-                          {model.capabilities.map(cap => (
-                            <Badge key={cap} variant="outline" className="text-xs">
-                              {cap}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="default">Local</Badge>
-                        <div className="text-xs text-muted-foreground mt-1">
-                          {model.minRam}GB RAM
-                        </div>
+        <TabsContent value="available-models">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Brain className="h-5 w-5" />
+                Local Small Language Models
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {localModels.map(model => (
+                  <div key={model.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{model.name}</div>
+                      <div className="text-sm text-muted-foreground">{model.description}</div>
+                      <div className="flex gap-1 mt-1">
+                        {model.capabilities.map(cap => (
+                          <Badge key={cap} variant="outline" className="text-xs">
+                            {cap}
+                          </Badge>
+                        ))}
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Zap className="h-5 w-5" />
-                  API Language Models
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {sortedApiModels.map(model => (
-                    <div key={model.id} className="flex items-center justify-between p-3 border rounded-lg">
-                      <div>
-                        <div className="font-medium">{model.name}</div>
-                        <div className="text-sm text-muted-foreground">{model.description}</div>
-                        <div className="flex gap-1 mt-1">
-                          {model.capabilities.map(cap => (
-                            <Badge key={cap} variant="outline" className="text-xs">
-                              {cap}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <Badge variant="secondary">API</Badge>
-                        {model.costPerToken && (
-                          <div className="text-xs text-muted-foreground mt-1">
-                            ${model.costPerToken}/token
-                          </div>
-                        )}
+                    <div className="text-right">
+                      <Badge variant="default">Local</Badge>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {model.minRam}GB RAM
                       </div>
                     </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
-        <TabsContent value="testing">
+        <TabsContent value="api-models">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                API Language Models
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {sortedApiModels.map(model => (
+                  <div key={model.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <div className="font-medium">{model.name}</div>
+                      <div className="text-sm text-muted-foreground">{model.description}</div>
+                      <div className="flex gap-1 mt-1">
+                        {model.capabilities.map(cap => (
+                          <Badge key={cap} variant="outline" className="text-xs">
+                            {cap}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <Badge variant="secondary">API</Badge>
+                      {model.costPerToken && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          ${model.costPerToken}/token
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="actions-tasks">
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <TestTube className="h-5 w-5" />
-                Model Routing Test
+                Actions & Tasks Configuration
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="text-sm font-medium">Task Type</label>
-                  <select 
-                    className="w-full mt-1 p-2 border rounded-md"
-                    value={testRequest.taskType}
-                    onChange={(e) => setTestRequest(prev => ({ 
-                      ...prev, 
-                      taskType: e.target.value as ModelCapability 
-                    }))}
-                  >
-                    <option value="chat">Chat</option>
-                    <option value="code">Code</option>
-                    <option value="medical">Medical</option>
-                    <option value="embeddings">Embeddings</option>
-                    <option value="classification">Classification</option>
-                  </select>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="text-sm text-muted-foreground">
+                  Configure automated actions and tasks for your agent based on the selected template and models.
                 </div>
-                <div>
-                  <label className="text-sm font-medium">Priority</label>
-                  <select 
-                    className="w-full mt-1 p-2 border rounded-md"
-                    value={testRequest.priority}
-                    onChange={(e) => setTestRequest(prev => ({ 
-                      ...prev, 
-                      priority: e.target.value as 'low' | 'medium' | 'high' 
-                    }))}
-                  >
-                    <option value="low">Low</option>
-                    <option value="medium">Medium</option>
-                    <option value="high">High</option>
-                    <option value="critical">Critical</option>
-                  </select>
+                {selectedTemplate && (
+                  <div className="p-4 bg-secondary/20 rounded-lg">
+                    <h4 className="font-medium mb-2">Template-Based Actions</h4>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm font-medium">Journey Stages</p>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedTemplate.journey_stages?.length || 0} configured stages
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm font-medium">Agent Type</p>
+                        <p className="text-xs text-muted-foreground">
+                          {selectedTemplate.template_type || 'custom'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">Actions and tasks configuration will be implemented here</p>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    This will integrate with your selected models and template
+                  </p>
                 </div>
               </div>
-              
-              <div>
-                <label className="text-sm font-medium">Test Input</label>
-                <textarea
-                  className="w-full mt-1 p-2 border rounded-md"
-                  rows={3}
-                  value={testRequest.inputText}
-                  onChange={(e) => setTestRequest(prev => ({ 
-                    ...prev, 
-                    inputText: e.target.value 
-                  }))}
-                  placeholder="Enter test input text..."
-                />
-              </div>
-
-              <div className="flex items-center gap-4">
-                <label className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    checked={testRequest.requiresPrivacy}
-                    onChange={(e) => setTestRequest(prev => ({ 
-                      ...prev, 
-                      requiresPrivacy: e.target.checked 
-                    }))}
-                  />
-                  <span className="text-sm">Requires Privacy (Local Only)</span>
-                </label>
-              </div>
-
-              <Button onClick={handleTestRouting} className="w-full">
-                Test Model Routing
-              </Button>
             </CardContent>
           </Card>
         </TabsContent>
+
 
         <TabsContent value="analytics">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
