@@ -482,6 +482,12 @@ const applySelectedSteps = async () => {
 
   // Complete wizard - this will now redirect to parent tabs for actions, connectors, etc.
   const handleCompleteSetup = async () => {
+    console.log('🚀 Complete Foundation Setup clicked!', {
+      step: state.step,
+      isStepComplete: isStepComplete(state.step),
+      state: state
+    });
+    
     setIsSaving(true);
     try {
       // Save the basic agent configuration
@@ -842,7 +848,18 @@ const { data: agent, error: agentError } = await supabase
             </Button>
           ) : (
             <Button
-              onClick={handleCompleteSetup}
+              onClick={() => {
+                console.log('🔄 Button clicked - Current state:', {
+                  step: state.step,
+                  isComplete: isStepComplete(state.step),
+                  isSaving,
+                  templateId: state.templateId,
+                  startOption: state.startOption,
+                  name: state.name,
+                  agentType: state.agentType
+                });
+                handleCompleteSetup();
+              }}
               disabled={!isStepComplete(state.step) || isSaving}
               className="bg-green-600 hover:bg-green-700"
             >
