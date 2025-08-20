@@ -69,6 +69,7 @@ import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { JourneyEditor } from '@/components/agentic/JourneyEditor';
 import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
 import { ReactFlowWrapper as CustomerJourneyBuilder } from '@/components/workflow-builder/ReactFlowWrapper';
+import { FlowiseStyleWorkflow } from '@/components/workflow-builder/FlowiseStyleWorkflow';
 const OnboardingAgentsView = () => {
   return <TreatmentCentersView />;
 };
@@ -654,100 +655,23 @@ const AgentsInner = () => {
                         </Card>
                       </TabsContent>
 
-                      <TabsContent value="canvas" level="child" className="mt-6">
                         <Card className="border-dashed">
                           <CardHeader>
                             <CardTitle className="flex items-center gap-2">
-                              🎨 Visual Canvas & Branding
+                              🎨 Enhanced Visual Canvas
                               <Badge variant="secondary">Step 4 of 4</Badge>
                             </CardTitle>
                             <CardDescription>
-                              Customize your agent's visual appearance with color palette, logo upload, templates, and preview functionality
+                              Design and connect nodes on the Flowise-style canvas. Full CRUD on LLMs, VLMs, MCP, channels, APIs.
                             </CardDescription>
                           </CardHeader>
                           <CardContent>
-                            {/* Show Visual Workflow if generated */}
-                            {wizardData.generatedWorkflow && (
-                              <div className="mb-6">
-                                <div className="flex items-center justify-between mb-4">
-                                  <h3 className="text-lg font-semibold">AI Generated Workflow</h3>
-                                  <Badge variant="secondary">From: "{wizardData.prompt || 'AI Assistant'}"</Badge>
-                                </div>
-                                <div className="min-h-[60vh] h-[70vh] border rounded-lg bg-muted/10 overflow-hidden">
-                                  <CustomerJourneyBuilder 
-                                    initialWorkflow={wizardData.generatedWorkflow}
-                                    // Pass unified builder context if available
-                                    useCaseData={urlContext?.useCaseData || (selectedUseCase ? { 
-                                      name: selectedUseCase, 
-                                      description: 'Selected use case',
-                                      selectedUseCase: null
-                                    } : undefined)}
-                                    capturedRequirements={urlContext?.capturedRequirements}
-                                    journeyStages={urlContext?.journeyStages || journeyStages}
-                                    sessionId={urlContext?.sessionId || currentSessionId}
-                                    onSave={async (workflow) => {
-                                      try { localStorage.setItem('customerJourney_draft_v1', JSON.stringify(workflow)); } catch {}
-                                      setWizardData(prev => ({...prev, savedWorkflow: workflow}));
-                                      try {
-                                        const draftId = localStorage.getItem('customerJourney_draft_id');
-                                        const payload: any = {
-                                          name: wizardData?.prompt ? `AI Generated: ${String(wizardData.prompt).slice(0, 32)}` : 'Visual Workflow Draft',
-                                          description: 'Draft saved from Visual Workflow Builder',
-                                          workflow_data: workflow,
-                                          status: 'draft',
-                                          created_by: user?.id,
-                                        };
-                                        if (draftId) {
-                                          const { error } = await (supabase as any)
-                                            .from('agent_workflows')
-                                            .update({ ...payload, created_by: undefined })
-                                            .eq('id', draftId)
-                                            .select()
-                                            .single();
-                                          if (error) throw error;
-                                        } else {
-                                          const { data, error } = await (supabase as any)
-                                            .from('agent_workflows')
-                                            .insert(payload)
-                                            .select()
-                                            .single();
-                                          if (error) throw error;
-                                          if (data?.id) localStorage.setItem('customerJourney_draft_id', data.id);
-                                        }
-                                        toast.success('Visual workflow saved to drafts!');
-                                      } catch (e) {
-                                        console.error('Save draft failed:', e);
-                                        toast.error('Could not save to drafts. Local draft kept.');
-                                      }
-                                    }}
-                                    onGenerateAgent={(workflow) => {
-                                      console.log('Generate agent from workflow:', workflow);
-                                      toast.success('Agent configuration generated from workflow!');
-                                    }}
-                                  />
-                                </div>
-                                <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
-                                  <p className="text-sm text-blue-700">
-                                    <strong>✨ AI Generated:</strong> This visual workflow was created from your prompt. 
-                                    You can modify nodes, connections, and settings using the visual editor above.
-                                  </p>
-                                </div>
-                              </div>
-                            )}
-
-                            <EnhancedAgentCanvas 
-                              initialName={wizardData.name || ""}
-                              initialTagline={wizardData.tagline || ""}
-                              initialPrimaryColor="#3b82f6"
-                              initialSecondaryColor="#8b5cf6"
-                              initialAccentColor="#06b6d4"
-                              onNameChange={(name) => setWizardData(prev => ({...prev, name}))}
-                              onTaglineChange={(tagline) => setWizardData(prev => ({...prev, tagline}))}
-                              onPrimaryColorChange={(color) => setWizardData(prev => ({...prev, primaryColor: color}))}
-                              onSecondaryColorChange={(color) => setWizardData(prev => ({...prev, secondaryColor: color}))}
-                              onAccentColorChange={(color) => setWizardData(prev => ({...prev, accentColor: color}))}
-                              onLogoChange={(file, url) => setWizardData(prev => ({...prev, logoFile: file, logoUrl: url}))}
-                            />
+                            <div className="min-h-[60vh] h-[70vh] border rounded-lg bg-muted/10 overflow-hidden">
+                              <FlowiseStyleWorkflow />
+                            </div>
+                            <div className="mt-3 text-xs text-muted-foreground">
+                              Tip: Use the left node library to add components. Right panel shows active connectors and selected node details.
+                            </div>
                             <div className="flex gap-2 pt-6 border-t mt-6">
                               <Button variant="outline" onClick={handleBackToWizard}>
                                 <ArrowLeft className="w-4 h-4 mr-1" />
@@ -763,7 +687,6 @@ const AgentsInner = () => {
                             </div>
                           </CardContent>
                         </Card>
-                      </TabsContent>
                     </Tabs>
                   </CardContent>
                 </Card>
