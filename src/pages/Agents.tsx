@@ -1,337 +1,81 @@
-import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { toast } from 'sonner';
-import { 
-  Bot, 
-  Users, 
-  Settings, 
-  Rocket, 
-  TestTube, 
-  Grid,
-  Workflow,
-  Presentation,
-  ArrowLeft,
-  Database,
-  Mic,
-  Zap,
-  Building2,
-  Plus
-} from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { 
+  Bot, 
+  Settings, 
+  Workflow, 
+  ArrowRight,
+  Database,
+  Zap,
+  ArrowLeft,
+  Lightbulb,
+  MessageCircle
+} from 'lucide-react';
 
-// Import agent builder components
+// Import existing components
 import { ModeSelector, type AgentMode } from '@/components/agent-builder/ModeSelector';
 import { PromptAssistant } from '@/components/agent-builder/PromptAssistant';
-import AgentTabs from '@/components/agent-builder/AgentTabs';
-import AppLayout from '@/components/layout/AppLayout';
-import AgenticEcosystem from '@/pages/AgenticEcosystem';
-import { DeploymentManagementInterface } from '@/components/deployment/DeploymentManagementInterface';
-import { AgentTestingInterface } from '@/components/agent-testing/AgentTestingInterface';
-import ChannelAndVoiceSetup from '@/components/agent-deployment/ChannelAndVoiceSetup';
-import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
-import DeploymentReadyView from '@/components/deployment/DeploymentReadyView';
-import EnhancedDeploymentReadyView from '@/components/deployment/EnhancedDeploymentReadyView';
-import { Link } from 'react-router-dom';
-import ActiveDeploymentsView from '@/components/deployment/ActiveDeploymentsView';
-import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { useQueryClient } from '@tanstack/react-query';
-import { 
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import { useAgentSession } from '@/hooks/useAgentSession';
-import { supabase } from '@/integrations/supabase/client';
-import TreatmentCentersView from '@/components/onboarding/TreatmentCentersView';
 import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
-import ModePicker from '@/components/agent-builder/ModePicker';
 import { IntelligentQuestionnaire } from '@/components/agent-builder/IntelligentQuestionnaire';
-import { Intelligence } from './Intelligence';
-import EmbeddedWorkflowStudio from '@/components/agent-builder/EmbeddedWorkflowStudio';
-import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
-import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
-import { KnowledgeBaseManager } from '@/components/agentic/KnowledgeBaseManager';
-import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
-import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosystem';
-import { AgentChannelAssignmentMatrix } from '@/components/agent-deployment/AgentChannelAssignmentMatrix';
-import { EnhancedAgentCanvas } from '@/components/agentic/EnhancedAgentCanvas';
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { JourneyEditor } from '@/components/agentic/JourneyEditor';
 import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
 import { ReactFlowWrapper as CustomerJourneyBuilder } from '@/components/workflow-builder/ReactFlowWrapper';
-import { FlowiseStyleWorkflow } from '@/components/workflow-builder/FlowiseStyleWorkflow';
-const OnboardingAgentsView = () => {
-  return <TreatmentCentersView />;
-};
-
-const AgentSettingsView = () => {
-  return (
-    <div className="space-y-6">
-      <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-        <h3 className="text-lg font-semibold text-red-900 mb-2">
-          SuperAdmin Only - Agent Configuration
-        </h3>
-        <p className="text-red-700">
-          Advanced agent settings and configurations - SuperAdmin exclusive access.
-        </p>
-      </div>
-      
-      <div className="space-y-4">
-        <div className="bg-card rounded-lg border p-4">
-          <h4 className="font-medium mb-2">Global Agent Settings</h4>
-          <p className="text-sm text-muted-foreground">
-            Configure system-wide agent parameters and security settings.
-          </p>
-        </div>
-      </div>
-    </div>
-  );
-};
+import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
+import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
+import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
+import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosystem';
+import AppLayout from '@/components/layout/AppLayout';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { toast } from 'sonner';
 
 const AgentsInner = () => {
-  console.log('🚀 Agents page rendering...');
-  
-  // Original state
-  const [showWelcomeFlow, setShowWelcomeFlow] = useState(false);
-  const [welcomeData, setWelcomeData] = useState<any>(null);
-  const [activeTab, setActiveTab] = useState('ecosystem');
-  const [openBuilderSignal, setOpenBuilderSignal] = useState(0);
-  const [showPresentation, setShowPresentation] = useState(false);
-  
-  // New agent builder state
+  // State management
   const [selectedMode, setSelectedMode] = useState<AgentMode | null>(null);
   const [showModeSelector, setShowModeSelector] = useState(false);
-  const [showPromptAssistant, setShowPromptAssistant] = useState(false);
-  const [agentBuilderTab, setAgentBuilderTab] = useState('canvas-designer');
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
   const [visualWorkflowSubTab, setVisualWorkflowSubTab] = useState('use-case');
   const [selectedUseCase, setSelectedUseCase] = useState('');
   const [journeyStages, setJourneyStages] = useState<any[]>([]);
   const [wizardData, setWizardData] = useState<any>({});
+  const [agentBuilderTab, setAgentBuilderTab] = useState('agent-config');
+  const [showPromptAssistant, setShowPromptAssistant] = useState(false);
 
-  // Parse URL context for visual workflow from unified builder
-  const parseContextFromURL = () => {
-    const params = new URLSearchParams(window.location.search);
-    const contextParam = params.get('context');
-    if (contextParam) {
-      try {
-        return JSON.parse(contextParam);
-      } catch (error) {
-        console.error('Failed to parse context from URL:', error);
-      }
-    }
-    return null;
-  };
+  const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
 
-  const [urlContext] = useState(parseContextFromURL());
-
-  // Set active tab from URL parameter and initialize context
+  // Initialize questionnaire for new users
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const tabParam = params.get('tab');
+    const completed = localStorage.getItem('agentBuilder_questionnaireCompleted') === 'true';
+    setHasCompletedQuestionnaire(completed);
     
-    if (tabParam === 'visual-workflow' && urlContext) {
-      console.log('🎯 Loading visual workflow with unified builder context:', urlContext);
-      setActiveTab('ecosystem');
-      setSelectedMode('visual' as any);
+    if (!completed && (userSessions?.length ?? 0) === 0) {
+      setShowQuestionnaire(true);
       setShowModeSelector(false);
-      setAgentBuilderTab('canvas-designer');
-      setVisualWorkflowSubTab('use-case');
-      
-      // Initialize with context data
-      if (urlContext.useCaseData) {
-        setSelectedUseCase(urlContext.useCaseData.name || '');
-      }
-      if (urlContext.journeyStages) {
-        setJourneyStages(urlContext.journeyStages);
-      }
-      
-      // Clear URL params to clean up the URL
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      setShowPromptAssistant(true);
-      toast.success('Visual workflow loaded. Start from Use Case.');
-    } else if (tabParam === 'configuration' && urlContext) {
-      console.log('🎯 Loading manual configuration with context:', urlContext);
-      setActiveTab('ecosystem');
-      setSelectedMode('manual' as any);
-      setShowModeSelector(false);
-      setAgentBuilderTab('models');
-      
-      // Clear URL params
-      window.history.replaceState({}, document.title, window.location.pathname);
-      
-      toast.success('Manual configuration loaded with your requirements!');
-    }
-  }, [urlContext]);
-
-  const { userRoles, user } = useMasterAuth();
-  const queryClient = useQueryClient();
-  const { userSessions, isLoading: sessionsLoading, setCurrentSessionId, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
-
-  // Role-based access control
-  const isSuperAdmin = userRoles.includes('superAdmin');
-  const isOnboardingTeam = userRoles.includes('onboardingTeam');
-  const isAdmin = userRoles.includes('admin');
-
-  // Initialize questionnaire first for new users
-  useEffect(() => {
-    try {
-      // If we already have a rehydrated builder state, don't override it
-      const raw = localStorage.getItem('agentBuilder_state_v1');
-      if (raw) {
-        const s = JSON.parse(raw);
-        if (s?.selectedMode) {
-          return; // Respect saved mode/tabs; avoids jumping back to start
-        }
-      }
-
-      const completed = localStorage.getItem('agentBuilder_questionnaireCompleted') === 'true';
-      setHasCompletedQuestionnaire(completed);
-      
-      // Show questionnaire first for new users, then mode selector
-      if (!completed && (userSessions?.length ?? 0) === 0) {
-        setShowQuestionnaire(true);
-        setShowModeSelector(false);
-      } else {
-        setShowQuestionnaire(false);
-        setShowModeSelector(true);
-      }
-    } catch (e) {
-      console.warn('Questionnaire init failed:', e);
+    } else {
+      setShowQuestionnaire(false);
       setShowModeSelector(true);
     }
   }, [userSessions]);
 
-  // Auto-open Canvas after wizard completion or when receiving a global open event
-  useEffect(() => {
-    const openCanvas = (cfg?: any) => {
-      setSelectedMode('visual' as any);
-      setShowModeSelector(false);
-      setAgentBuilderTab(cfg?.tab || 'canvas-designer');
-      setVisualWorkflowSubTab(cfg?.subTab || 'canvas');
-      toast.success('Continuing on Canvas');
-    };
-    
-    const handleWizardComplete = (e: any) => {
-      const { sessionId, switchTab, wizardData } = e.detail || {};
-      console.log('🎉 Wizard completed, switching to:', switchTab, { sessionId, wizardData });
-      
-      if (sessionId) {
-        setCurrentSessionId(sessionId);
-      }
-      
-      if (switchTab) {
-        setSelectedMode('visual' as any);
-        setShowModeSelector(false);
-        setAgentBuilderTab(switchTab);
-        toast.success('Wizard completed! Now configure your models and templates.');
-      } else {
-        openCanvas(e.detail);
-      }
-    };
-    
-    try {
-      const stored = localStorage.getItem('agentBuilder_next');
-      if (stored) {
-        const cfg = JSON.parse(stored);
-        localStorage.removeItem('agentBuilder_next');
-        openCanvas(cfg);
-      }
-    } catch {}
-    
-    const canvasHandler = (e: any) => openCanvas(e?.detail);
-    window.addEventListener('agentBuilder:openCanvas', canvasHandler as any);
-    window.addEventListener('agentBuilder:completeWizard', handleWizardComplete as any);
-    
-    return () => {
-      window.removeEventListener('agentBuilder:openCanvas', canvasHandler as any);
-      window.removeEventListener('agentBuilder:completeWizard', handleWizardComplete as any);
-    };
-  }, [setCurrentSessionId]);
-
-  // Keep PromptAssistant available across all steps and modes (no auto-hide)
-  // Removed auto-hide to honor user request.
-
-  // Persist builder state (mode, tabs, wizard data) to avoid resets on refresh
-  useEffect(() => {
-    try {
-      const state = {
-        selectedMode,
-        agentBuilderTab,
-        visualWorkflowSubTab,
-        wizardData,
-        showModeSelector,
-        showQuestionnaire,
-        hasCompletedQuestionnaire,
-      };
-      localStorage.setItem('agentBuilder_state_v1', JSON.stringify(state));
-    } catch {}
-  }, [selectedMode, agentBuilderTab, visualWorkflowSubTab, wizardData, showModeSelector, showQuestionnaire, hasCompletedQuestionnaire]);
-
-  // Rehydrate builder state on mount
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem('agentBuilder_state_v1');
-      if (raw) {
-        const s = JSON.parse(raw);
-        if (s.selectedMode) setSelectedMode(s.selectedMode);
-        if (s.agentBuilderTab) setAgentBuilderTab(s.agentBuilderTab);
-        if (s.visualWorkflowSubTab) setVisualWorkflowSubTab(s.visualWorkflowSubTab);
-        if (s.wizardData) setWizardData(s.wizardData);
-        if (typeof s.showModeSelector === 'boolean') setShowModeSelector(s.showModeSelector);
-        if (typeof s.showQuestionnaire === 'boolean') setShowQuestionnaire(s.showQuestionnaire);
-        if (typeof s.hasCompletedQuestionnaire === 'boolean') setHasCompletedQuestionnaire(s.hasCompletedQuestionnaire);
-      }
-    } catch {}
-  }, []);
-
-  // Load saved canvas draft if present
-  useEffect(() => {
-    try {
-      if (!wizardData?.generatedWorkflow) {
-        const draft = localStorage.getItem('customerJourney_draft_v1');
-        if (draft) {
-          setWizardData((prev) => ({ ...prev, generatedWorkflow: JSON.parse(draft) }));
-        }
-      }
-    } catch {}
-  }, []);
-
-
-  // Handle questionnaire completion - proceed to mode selection
+  // Event handlers
   const handleQuestionnaireComplete = (data: any) => {
-    console.log('Questionnaire completed:', data);
     setHasCompletedQuestionnaire(true);
     setShowQuestionnaire(false);
     setShowModeSelector(true);
-    
-    try { 
-      localStorage.setItem('agentBuilder_questionnaireCompleted', 'true'); 
-    } catch {}
-    
+    localStorage.setItem('agentBuilder_questionnaireCompleted', 'true');
     toast.success('Great! Now choose your building approach.');
   };
 
-  // Handle mode selection - proceed to use case selection
   const handleModeSelect = (mode: AgentMode) => {
     setSelectedMode(mode);
     setShowModeSelector(false);
     
-    // Set default tab based on mode
     if (mode === 'visual') {
-      setAgentBuilderTab('canvas-designer');
       setVisualWorkflowSubTab('use-case');
     } else {
       setAgentBuilderTab('agent-config');
@@ -340,7 +84,6 @@ const AgentsInner = () => {
     toast.success(`Switched to ${mode === 'visual' ? 'Visual Workflow' : 'Manual Configuration'} mode`);
   };
 
-  // Handle use case selection - proceed to journey stages
   const handleUseCaseSelect = (useCase: string) => {
     setSelectedUseCase(useCase);
     setVisualWorkflowSubTab('journey');
@@ -348,79 +91,397 @@ const AgentsInner = () => {
     setShowPromptAssistant(true);
   };
 
-  // Handle journey completion - proceed to wizard
   const handleJourneyComplete = (stages: any[]) => {
     setJourneyStages(stages);
     setVisualWorkflowSubTab('wizard');
     toast.success('Journey stages defined! Complete your agent setup.');
   };
 
-  // Handle wizard completion - proceed to canvas
   const handleWizardComplete = (data: any) => {
     setWizardData(data);
     setVisualWorkflowSubTab('canvas');
     toast.success('Setup complete! Customize your agent\'s appearance.');
   };
 
-  // Back navigation handlers
-  const handleBackToQuestionnaire = () => {
-    setShowModeSelector(false);
-    setShowQuestionnaire(true);
-  };
-
-  const handleBackToModeSelector = () => {
-    setShowModeSelector(true);
-    setSelectedMode(null);
-    setShowPromptAssistant(false);
-  };
-
-  const handleBackToUseCase = () => {
-    setVisualWorkflowSubTab('use-case');
-    setSelectedUseCase('');
-  };
-
-  const handleBackToJourney = () => {
-    setVisualWorkflowSubTab('journey');
-  };
-
-  const handleBackToWizard = () => {
-    setVisualWorkflowSubTab('wizard');
-  };
-
   const handlePromptGenerate = (prompt: string, generatedConfig: any) => {
-    console.log('Generated config:', generatedConfig);
-    
     if (selectedMode === 'visual') {
-      // Apply visual configuration - store generated nodes, keep flow aligned to start (Use Case → Journey → Wizard → Canvas)
-      console.log('Applying visual workflow:', generatedConfig);
-      
-      // Store the generated workflow data
       setWizardData(prev => ({
         ...prev,
         generatedWorkflow: generatedConfig,
         prompt: prompt
       }));
-      
-      // Guide user to Journey stage to review and refine before canvas
-      setAgentBuilderTab('canvas-designer');
       setVisualWorkflowSubTab('journey');
-      
       toast.success('Workflow generated! Proceed to Journey to review and refine.');
     } else {
-      // Apply manual configuration
-      console.log('Applying manual config:', generatedConfig);
-      
-      // Store the generated config
       setWizardData(prev => ({
         ...prev,
         generatedConfig: generatedConfig,
         prompt: prompt
       }));
-      
       toast.success('Configuration generated! Review the settings.');
     }
-    
-    // keep assistant open
+  };
+
+  // FlowiseAI Layout
+  const renderFlowiseLayout = () => {
+    return (
+      <div className="h-screen flex bg-background">
+        {/* Left Panel - Node Library & Tools */}
+        <div className="w-80 border-r bg-card flex flex-col">
+          <div className="p-4 border-b">
+            <h2 className="font-semibold text-lg">Agent Builder</h2>
+            <p className="text-sm text-muted-foreground">FlowiseAI Style</p>
+          </div>
+          
+          {/* Mode Selector as Tabs */}
+          <div className="p-4 border-b">
+            <div className="flex gap-2">
+              <Button 
+                variant={selectedMode === 'visual' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleModeSelect('visual' as any)}
+              >
+                <Workflow className="w-4 h-4 mr-1" />
+                Visual
+              </Button>
+              <Button 
+                variant={selectedMode === 'manual' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleModeSelect('manual' as any)}
+              >
+                <Settings className="w-4 h-4 mr-1" />
+                Manual
+              </Button>
+            </div>
+          </div>
+
+          {/* Content based on mode and step */}
+          <div className="flex-1 overflow-auto p-4">
+            {selectedMode === 'visual' && (
+              <div className="space-y-4">
+                {visualWorkflowSubTab === 'use-case' && (
+                  <div>
+                    <h3 className="font-medium mb-3">Use Case Selection</h3>
+                    <UseCaseSelector
+                      selectedUseCase={selectedUseCase}
+                      onUseCaseChange={handleUseCaseSelect}
+                      selectedCategories={[]}
+                      selectedTopics={[]}
+                    />
+                  </div>
+                )}
+                
+                {visualWorkflowSubTab === 'journey' && (
+                  <div>
+                    <h3 className="font-medium mb-3">Journey Design</h3>
+                    <JourneyEditor />
+                  </div>
+                )}
+                
+                {visualWorkflowSubTab === 'wizard' && (
+                  <div>
+                    <h3 className="font-medium mb-3">Agent Setup</h3>
+                    <StreamlinedAgentWizard />
+                  </div>
+                )}
+                
+                {visualWorkflowSubTab === 'canvas' && (
+                  <div>
+                    <h3 className="font-medium mb-3">Visual Canvas</h3>
+                    <div className="space-y-2">
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Bot className="w-4 h-4 mr-2" />
+                        Agent Nodes
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <MessageCircle className="w-4 h-4 mr-2" />
+                        Chat Nodes
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start">
+                        <Database className="w-4 h-4 mr-2" />
+                        Data Nodes
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {selectedMode === 'manual' && (
+              <div className="space-y-4">
+                <h3 className="font-medium mb-3">Manual Configuration</h3>
+                <div className="space-y-2">
+                  <Button 
+                    variant={agentBuilderTab === 'agent-config' ? 'default' : 'outline'} 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => setAgentBuilderTab('agent-config')}
+                  >
+                    <Settings className="w-4 h-4 mr-2" />
+                    Agent Config
+                  </Button>
+                  <Button 
+                    variant={agentBuilderTab === 'models-templates' ? 'default' : 'outline'} 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => setAgentBuilderTab('models-templates')}
+                  >
+                    <Bot className="w-4 h-4 mr-2" />
+                    Models
+                  </Button>
+                  <Button 
+                    variant={agentBuilderTab === 'connectors-api' ? 'default' : 'outline'} 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => setAgentBuilderTab('connectors-api')}
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Connectors
+                  </Button>
+                  <Button 
+                    variant={agentBuilderTab === 'actions-tasks' ? 'default' : 'outline'} 
+                    size="sm" 
+                    className="w-full justify-start"
+                    onClick={() => setAgentBuilderTab('actions-tasks')}
+                  >
+                    <Zap className="w-4 h-4 mr-2" />
+                    Actions
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Center Canvas Area */}
+        <div className="flex-1 flex flex-col">
+          {/* Top Bar */}
+          <div className="h-14 border-b bg-card flex items-center justify-between px-4">
+            <div className="flex items-center gap-4">
+              {/* Breadcrumb Navigation */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                {selectedMode === 'visual' && (
+                  <>
+                    <Button variant="ghost" size="sm" onClick={() => setVisualWorkflowSubTab('use-case')}>
+                      Use Case
+                    </Button>
+                    <ArrowRight className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" onClick={() => setVisualWorkflowSubTab('journey')}>
+                      Journey
+                    </Button>
+                    <ArrowRight className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" onClick={() => setVisualWorkflowSubTab('wizard')}>
+                      Setup
+                    </Button>
+                    <ArrowRight className="w-4 h-4" />
+                    <Button variant="ghost" size="sm" onClick={() => setVisualWorkflowSubTab('canvas')}>
+                      Canvas
+                    </Button>
+                  </>
+                )}
+                {selectedMode === 'manual' && (
+                  <span className="font-medium">Manual Configuration - {agentBuilderTab}</span>
+                )}
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => setShowPromptAssistant(!showPromptAssistant)}>
+                <Lightbulb className="w-4 h-4 mr-1" />
+                AI Assistant
+              </Button>
+            </div>
+          </div>
+
+          {/* Main Content Area */}
+          <div className="flex-1 overflow-hidden">
+            {selectedMode === 'visual' && visualWorkflowSubTab === 'canvas' && (
+              <CustomerJourneyBuilder
+                useCaseData={{
+                  name: selectedUseCase,
+                  description: 'Visual workflow canvas',
+                  detailedUseCase: wizardData?.prompt,
+                  targetUsers: 'Healthcare users',
+                  expectedOutcomes: 'Automated agent workflow'
+                }}
+                capturedRequirements={{
+                  connectors: ['Supabase', 'OpenAI'],
+                  actions: ['Process', 'Respond'],
+                  steps: ['Intake', 'Process', 'Response'],
+                  integrations: ['Healthcare APIs']
+                }}
+                journeyStages={journeyStages}
+                sessionId={currentSessionId}
+                onSave={(workflow) => console.log('Workflow saved:', workflow)}
+                onGenerateAgent={(workflow) => console.log('Agent generated:', workflow)}
+              />
+            )}
+            
+            {selectedMode === 'visual' && visualWorkflowSubTab !== 'canvas' && (
+              <div className="p-6">
+                {visualWorkflowSubTab === 'use-case' && (
+                  <div className="max-w-2xl">
+                    <h2 className="text-2xl font-bold mb-4">Select Your Use Case</h2>
+                    <p className="text-muted-foreground mb-6">Choose or define what your agent should accomplish</p>
+                    <UseCaseSelector
+                      selectedUseCase={selectedUseCase}
+                      onUseCaseChange={handleUseCaseSelect}
+                      selectedCategories={[]}
+                      selectedTopics={[]}
+                    />
+                  </div>
+                )}
+                
+                {visualWorkflowSubTab === 'journey' && (
+                  <div className="max-w-4xl">
+                    <h2 className="text-2xl font-bold mb-4">Design Customer Journey</h2>
+                    <p className="text-muted-foreground mb-6">Map out the stages and touchpoints</p>
+                    <JourneyEditor />
+                  </div>
+                )}
+                
+                {visualWorkflowSubTab === 'wizard' && (
+                  <div className="max-w-3xl">
+                    <h2 className="text-2xl font-bold mb-4">Configure Your Agent</h2>
+                    <p className="text-muted-foreground mb-6">Set up the agent's behavior and capabilities</p>
+                    <StreamlinedAgentWizard />
+                  </div>
+                )}
+              </div>
+            )}
+            
+            {selectedMode === 'manual' && (
+              <div className="h-full">
+                {agentBuilderTab === 'agent-config' && (
+                  <div className="p-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Settings className="w-5 h-5" />
+                          Agent Configuration
+                        </CardTitle>
+                        <CardDescription>Basic agent settings and behavior</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-6">
+                          <div className="p-4 border rounded-lg">
+                            <h4 className="font-medium mb-4">Basic Agent Settings</h4>
+                            <div className="grid gap-4">
+                              <div className="grid gap-2">
+                                <Label htmlFor="agent-name">Agent Name</Label>
+                                <Input id="agent-name" placeholder="Enter your agent's name" />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="agent-description">Description</Label>
+                                <Textarea id="agent-description" placeholder="Describe what your agent does..." rows={3} />
+                              </div>
+                              <div className="grid gap-2">
+                                <Label htmlFor="response-time">Response Time (seconds)</Label>
+                                <Input id="response-time" type="number" placeholder="5" />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                
+                {agentBuilderTab === 'models-templates' && (
+                  <div className="p-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Bot className="w-5 h-5" />
+                          Models & Templates
+                        </CardTitle>
+                        <CardDescription>AI models and configuration templates</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ModelManagementDashboard />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                
+                {agentBuilderTab === 'connectors-api' && (
+                  <div className="p-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Database className="w-5 h-5" />
+                          Connectors & APIs
+                        </CardTitle>
+                        <CardDescription>External system integrations</CardDescription>
+                      </CardHeader>
+                      <CardContent className="space-y-6">
+                        <EnhancedConnectorSystem 
+                          agentId={currentSessionId || ''}
+                          actions={actions.map(action => ({
+                            id: action.id,
+                            name: action.name,
+                            type: action.type,
+                            category: action.category,
+                            description: action.description
+                          }))}
+                          onAssignmentsChange={() => {}}
+                        />
+                        <AgenticAPIEcosystem />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+                
+                {agentBuilderTab === 'actions-tasks' && (
+                  <div className="p-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Zap className="w-5 h-5" />
+                          Actions & Tasks
+                        </CardTitle>
+                        <CardDescription>Define automated actions and task workflows</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <ActionsTab
+                          sessionId={currentSessionId || ''}
+                          actions={actions}
+                          onActionsChange={setActions}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
+        {/* Right Panel - Properties & Configuration */}
+        {showPromptAssistant && (
+          <div className="w-80 border-l bg-card flex flex-col">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="font-semibold">AI Assistant</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowPromptAssistant(false)}
+              >
+                ×
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto p-4">
+              <PromptAssistant
+                mode={selectedMode as any}
+                onGenerate={handlePromptGenerate}
+                isVisible={true}
+                onToggle={() => setShowPromptAssistant(!showPromptAssistant)}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+    );
   };
 
   // Show questionnaire if needed
@@ -436,7 +497,7 @@ const AgentsInner = () => {
     );
   }
 
-  // Show mode selector if no mode selected or user wants to change mode
+  // Show mode selector if no mode selected
   if (showModeSelector || !selectedMode) {
     return (
       <AppLayout>
@@ -447,595 +508,23 @@ const AgentsInner = () => {
               <p className="text-muted-foreground">Select how you'd like to build your agent</p>
             </div>
             <div className="flex items-center gap-2">
-              {!hasCompletedQuestionnaire ? (
-                <Button variant="secondary" onClick={() => setShowQuestionnaire(true)}>
-                  Start Guided Questionnaire
-                </Button>
-              ) : (
-                <Button variant="outline" onClick={handleBackToQuestionnaire}>
-                  <ArrowLeft className="w-4 h-4 mr-1" />
-                  Back to Questionnaire  
-                </Button>
-              )}
               <Button variant="outline" onClick={() => handleModeSelect('visual' as any)} title="Skip straight to Visual Workflow">
                 Quick Start (Visual)
               </Button>
             </div>
           </div>
+
           <ModeSelector 
-            onModeSelect={handleModeSelect}
-            selectedMode={selectedMode || undefined}
+            selectedMode={selectedMode}
+            onModeSelect={(mode) => handleModeSelect(mode as any)}
           />
         </div>
       </AppLayout>
     );
   }
 
-  // Main agent builder interface
-  return (
-    <AppLayout>
-      <div className="space-y-6">
-        {/* Header with navigation and mode info */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              variant="ghost"
-              onClick={handleBackToModeSelector}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Change Mode
-            </Button>
-            <div>
-              <h1 className="text-3xl font-bold text-foreground">Agent Builder</h1>
-              <p className="text-muted-foreground mt-1">
-                Building with {selectedMode === 'visual' ? 'Visual Workflow' : 'Manual Configuration'} mode
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="outline"
-              onClick={() => {
-                if (selectedMode === 'visual') {
-                  setAgentBuilderTab('canvas-designer');
-                  setVisualWorkflowSubTab('use-case');
-                }
-                setShowPromptAssistant((prev) => !prev);
-              }}
-              className="flex items-center gap-2"
-              title="Open AI Prompt Assistant"
-            >
-              <Bot className="w-4 h-4" />
-              AI Assistant
-            </Button>
-          </div>
-        </div>
-
-        {/* Agent Builder Tabs */}
-        <AgentTabs
-          mode={selectedMode}
-          activeTab={agentBuilderTab}
-          onTabChange={setAgentBuilderTab}
-        >
-          {/* Visual Mode Tab Contents */}
-          {selectedMode === 'visual' && (
-            <>
-              <TabsContent value="canvas-designer" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Workflow className="w-5 h-5" />
-                      Visual Workflow Builder
-                    </CardTitle>
-                    <CardDescription>
-                      Build your agent using guided wizard, visual canvas, actions, and configuration
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    {/* Visual Workflow Subtabs */}
-                    <Tabs value={visualWorkflowSubTab} onValueChange={setVisualWorkflowSubTab} className="w-full">
-                      <TabsList level="child" className="grid w-full grid-cols-4">
-                        <TabsTrigger 
-                          level="child" 
-                          value="use-case"
-                          title="Select your agent's use case"
-                        >
-                          🎯 Use Case
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          level="child" 
-                          value="journey"
-                          title="Define journey stages"
-                        >
-                          🗺️ Journey
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          level="child" 
-                          value="wizard"
-                          title="Guided setup wizard for your agent"
-                        >
-                          🧙‍♂️ Wizard
-                        </TabsTrigger>
-                        <TabsTrigger 
-                          level="child" 
-                          value="canvas"
-                          title="Visual canvas with palette, logo & templates"
-                        >
-                          🎨 Canvas
-                        </TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="use-case" level="child" className="mt-6">
-                        <Card className="border-dashed">
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              🎯 Select Use Case
-                              <Badge variant="secondary">Step 1 of 4</Badge>
-                            </CardTitle>
-                            <CardDescription>
-                              Choose what type of agent you want to build or describe your specific needs
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <UseCaseSelector
-                              selectedUseCase={selectedUseCase}
-                              onUseCaseChange={handleUseCaseSelect}
-                              selectedCategories={[]}
-                              selectedTopics={[]}
-                            />
-                            <div className="flex gap-2 pt-4">
-                              <Button variant="outline" onClick={handleBackToModeSelector}>
-                                <ArrowLeft className="w-4 h-4 mr-1" />
-                                Back to Mode Selection
-                              </Button>
-                              <Button 
-                                className="flex-1" 
-                                disabled={!selectedUseCase}
-                                onClick={() => handleUseCaseSelect(selectedUseCase)}
-                              >
-                                Continue to Journey Stages
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-
-                      <TabsContent value="journey" level="child" className="mt-6">
-                        <Card className="border-dashed">
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              🗺️ Journey Stages
-                              <Badge variant="secondary">Step 2 of 4</Badge>
-                            </CardTitle>
-                            <CardDescription>
-                              Define the stages your agent will guide users through. Add, edit, or get AI suggestions for optimal user journeys.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <JourneyEditor 
-                              templateId={currentSession?.template_id || undefined}
-                              sessionId={currentSessionId}
-                              useCase={selectedUseCase}
-                              onApplied={handleJourneyComplete}
-                            />
-                            <div className="flex gap-2 pt-4">
-                              <Button variant="outline" onClick={handleBackToUseCase}>
-                                <ArrowLeft className="w-4 h-4 mr-1" />
-                                Back to Use Case
-                              </Button>
-                              <Button className="flex-1" onClick={() => handleJourneyComplete(journeyStages)}>
-                                Continue to Setup Wizard
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-
-                      <TabsContent value="wizard" level="child" className="mt-6">
-                        <Card className="border-dashed">
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              🧙‍♂️ Agent Creation Wizard
-                              <Badge variant="secondary">Step 3 of 4</Badge>
-                            </CardTitle>
-                            <CardDescription>
-                              Complete your agent setup with categories, business units, topics, and single/multi-agent configurations
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent className="space-y-4">
-                            <StreamlinedAgentWizard />
-                            <div className="flex gap-2 pt-4">
-                              <Button variant="outline" onClick={handleBackToJourney}>
-                                <ArrowLeft className="w-4 h-4 mr-1" />
-                                Back to Journey
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      </TabsContent>
-
-                        <Card className="border-dashed">
-                          <CardHeader>
-                            <CardTitle className="flex items-center gap-2">
-                              🎨 Enhanced Visual Canvas
-                              <Badge variant="secondary">Step 4 of 4</Badge>
-                            </CardTitle>
-                            <CardDescription>
-                              Design and connect nodes on the Flowise-style canvas. Full CRUD on LLMs, VLMs, MCP, channels, APIs.
-                            </CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="min-h-[60vh] h-[70vh] border rounded-lg bg-muted/10 overflow-hidden">
-                              <FlowiseStyleWorkflow />
-                            </div>
-                            <div className="mt-3 text-xs text-muted-foreground">
-                              Tip: Use the left node library to add components. Right panel shows active connectors and selected node details.
-                            </div>
-                            <div className="flex gap-2 pt-6 border-t mt-6">
-                              <Button variant="outline" onClick={handleBackToWizard}>
-                                <ArrowLeft className="w-4 h-4 mr-1" />
-                                Back to Wizard
-                              </Button>
-                              <Button 
-                                className="flex-1" 
-                                size="lg"
-                                onClick={() => setAgentBuilderTab('models-templates')}
-                              >
-                                🤖 Complete Setup & Configure Models
-                              </Button>
-                            </div>
-                          </CardContent>
-                        </Card>
-                    </Tabs>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="models-templates" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bot className="w-5 h-5" />
-                      AI Models & Templates
-                    </CardTitle>
-                    <CardDescription>
-                      Configure AI models, select templates, and define actions & tasks for your agent
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ModelManagementDashboard />
-                    
-                    {/* Actions & Tasks Section - Integrated after model selection */}
-                    <div className="mt-8 pt-6 border-t">
-                      <div className="mb-4">
-                        <h3 className="text-lg font-semibold mb-2">Actions & Tasks Configuration</h3>
-                        <p className="text-sm text-muted-foreground">
-                          Define what your agent can do and automate based on the selected model and templates.
-                        </p>
-                      </div>
-                      <ActionsTab
-                        sessionId={currentSessionId || ''}
-                        actions={actions}
-                        onActionsChange={setActions}
-                      />
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="agent-config" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="w-5 h-5" />
-                      Agent Configuration
-                    </CardTitle>
-                    <CardDescription>
-                      Configure basic agent settings, behavior, and core parameters
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="font-medium mb-4">Basic Agent Settings</h4>
-                        <div className="grid gap-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="agent-name">Agent Name</Label>
-                            <Input id="agent-name" placeholder="Enter your agent's name" />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="agent-description">Description</Label>
-                            <Textarea id="agent-description" placeholder="Describe what your agent does..." rows={3} />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="response-time">Response Time (seconds)</Label>
-                            <Input id="response-time" type="number" placeholder="5" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="connectors-api" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="w-5 h-5" />
-                      Connectors & APIs
-                    </CardTitle>
-                    <CardDescription>External system integrations</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <EnhancedConnectorSystem 
-                      agentId={currentSessionId || ''}
-                      actions={actions.map(action => ({
-                        id: action.id,
-                        name: action.name,
-                        type: action.type,
-                        category: action.category,
-                        description: action.description
-                      }))}
-                      onAssignmentsChange={() => {}}
-                    />
-                    <AgenticAPIEcosystem />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="system-config" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="w-5 h-5" />
-                      System Configuration
-                    </CardTitle>
-                    <CardDescription>Core system settings and parameters</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <Settings className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">System configuration settings</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="treatment-centers" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Building2 className="w-5 h-5" />
-                      Treatment Centers
-                    </CardTitle>
-                    <CardDescription>Healthcare facility configurations</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <Building2 className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Treatment centers management</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="flow-testing" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <TestTube className="w-5 h-5" />
-                      Flow Testing
-                    </CardTitle>
-                    <CardDescription>Test your workflow in real-time</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <AgentTestingInterface />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="voice-config" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Mic className="w-5 h-5" />
-                      Voice Configuration
-                    </CardTitle>
-                    <CardDescription>Voice and speech settings</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ChannelAndVoiceSetup />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="live-agent-transfer" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Users className="w-5 h-5" />
-                      Live Agent Transfer
-                    </CardTitle>
-                    <CardDescription>Human handoff configurations</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center py-8">
-                      <Users className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                      <p className="text-muted-foreground">Live agent transfer settings</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="channel-matrix" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Grid className="w-5 h-5" />
-                      Enhanced Channel Matrix
-                    </CardTitle>
-                    <CardDescription>Multi-channel deployment matrix</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <AgentChannelAssignmentMatrix />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="deployment-ready" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Rocket className="w-5 h-5" />
-                      Deployment Ready
-                    </CardTitle>
-                    <CardDescription>Pre-deployment validation and checks</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <EnhancedDeploymentReadyView />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="deployment-flow" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Rocket className="w-5 h-5" />
-                      Deployment Flow
-                    </CardTitle>
-                    <CardDescription>Complete deployment pipeline</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    <DeploymentManagementInterface />
-                    <ActiveDeploymentsView />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </>
-          )}
-
-          {/* Manual Mode Tab Contents */}
-          {selectedMode === 'manual' && (
-            <>
-              <TabsContent value="agent-config" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Settings className="w-5 h-5" />
-                      Agent Configuration
-                    </CardTitle>
-                    <CardDescription>Basic agent settings and behavior</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-6">
-                      <div className="p-4 border rounded-lg">
-                        <h4 className="font-medium mb-4">Basic Agent Settings</h4>
-                        <div className="grid gap-4">
-                          <div className="grid gap-2">
-                            <Label htmlFor="manual-agent-name">Agent Name</Label>
-                            <Input id="manual-agent-name" placeholder="Enter your agent's name" />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="manual-agent-description">Description</Label>
-                            <Textarea id="manual-agent-description" placeholder="Describe what your agent does..." rows={3} />
-                          </div>
-                          <div className="grid gap-2">
-                            <Label htmlFor="manual-response-time">Response Time (seconds)</Label>
-                            <Input id="manual-response-time" type="number" placeholder="5" />
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="models-templates" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Bot className="w-5 h-5" />
-                      Models & Templates
-                    </CardTitle>
-                    <CardDescription>AI models and configuration templates</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ModelManagementDashboard 
-                      selectedTemplate={currentSession ? {
-                        id: currentSession.template_id,
-                        name: currentSession.name,
-                        description: currentSession.description,
-                        template_type: currentSession.template_type,
-                        journey_stages: []
-                      } : undefined}
-                      templateId={currentSession?.template_id}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="actions-tasks" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Zap className="w-5 h-5" />
-                      Actions & Tasks
-                    </CardTitle>
-                    <CardDescription>Define automated actions and task workflows</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <ActionsTab
-                      sessionId={currentSessionId || ''}
-                      actions={actions}
-                      onActionsChange={setActions}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-
-              <TabsContent value="knowledge-base" level="parent">
-                <Card>
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Database className="w-5 h-5" />
-                      Knowledge Base
-                    </CardTitle>
-                    <CardDescription>Upload documents and data sources</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <KnowledgeBaseManager
-                      agentId={currentSessionId || ''}
-                      actions={actions.map(action => ({
-                        id: action.id,
-                        name: action.name,
-                        type: action.type,
-                        category: action.category,
-                        description: action.description
-                      }))}
-                      onKnowledgeSourcesChange={() => {}}
-                    />
-                  </CardContent>
-                </Card>
-              </TabsContent>
-            </>
-          )}
-        </AgentTabs>
-
-        {/* Prompt Assistant */}
-        {selectedMode && (
-          <PromptAssistant
-            mode={selectedMode}
-            isVisible={showPromptAssistant}
-            onToggle={() => setShowPromptAssistant(!showPromptAssistant)}
-            onGenerate={handlePromptGenerate}
-          />
-        )}
-      </div>
-    </AppLayout>
-  );
+  // Main render - FlowiseAI Layout
+  return renderFlowiseLayout();
 };
 
 const Agents: React.FC = () => (
