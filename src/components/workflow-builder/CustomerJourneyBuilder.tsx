@@ -34,6 +34,7 @@ import { AutoSuggestConnector } from './AutoSuggestConnector';
 import { autoConnectEngine } from './AutoConnectEngine';
 import { WorkflowAssetPanel } from './WorkflowAssetPanel';
 import { UniversalAccessManager } from './UniversalAccessManager';
+import { AdvancedReactFlowWrapper } from './AdvancedReactFlow';
 
 // Custom Node Components
 const CustomerNode = ({ data }: { data: any }) => (
@@ -403,6 +404,15 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
     requirements: capturedRequirements,
     stages: journeyStages?.length || 0
   } : null;
+  // Workflow context for advanced features
+  const workflowContext = {
+    type: 'visual' as const,
+    stage: 'canvas' as const,
+    useCaseData,
+    capturedRequirements,
+    journeyStages
+  };
+  
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -839,13 +849,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         selectedNode={selectedNode}
         nodes={nodes}
         edges={edges}
-        workflowContext={{
-          type: 'visual',
-          stage: 'canvas',
-          useCaseData,
-          capturedRequirements,
-          journeyStages
-        }}
+        workflowContext={workflowContext}
         onAssetSelect={(assets) => showSuccess('Assets integrated')}
         onDataLibrarySelect={(libraries) => showSuccess('Data libraries connected')}
         onVariablesChange={(variables) => showSuccess('Variables updated')}
@@ -853,6 +857,16 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         onSuggestionAccepted={handleAISuggestion}
         onNextStepSuggestion={(steps) => console.log('Next steps:', steps)}
       />
+
+      {/* Advanced ReactFlow - All features enabled */}
+      {workflowContext.type === 'visual' && (
+        <AdvancedReactFlowWrapper
+          initialNodes={nodes}
+          initialEdges={edges}
+          onSave={handleSave}
+          workflowType="visual"
+        />
+      )}
 
       {/* Legacy Asset Panel - Keep for backward compatibility */}
       <WorkflowAssetPanel
