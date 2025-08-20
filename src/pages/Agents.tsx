@@ -132,7 +132,7 @@ const AgentsInner = () => {
     }
   };
 
-  // FlowiseAI Layout - Matching screenshot structure
+  // Genie AI Layout - Matching screenshot structure exactly
   const renderFlowiseLayout = () => {
     return (
       <div className="h-screen flex flex-col bg-background">
@@ -140,19 +140,8 @@ const AgentsInner = () => {
         <div className="h-14 border-b bg-card flex items-center justify-between px-6">
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold">Agent Builder</h1>
-              <Badge variant="secondary" className="text-xs">FlowiseAI Style</Badge>
-            </div>
-            
-            {/* Breadcrumb Navigation */}
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Button variant="ghost" size="sm" className="h-8 px-3">Use Case</Button>
-              <ArrowRight className="w-4 h-4" />
-              <Button variant="ghost" size="sm" className="h-8 px-3">Journey</Button>
-              <ArrowRight className="w-4 h-4" />
-              <Button variant="ghost" size="sm" className="h-8 px-3">Setup</Button>
-              <ArrowRight className="w-4 h-4" />
-              <Button variant="default" size="sm" className="h-8 px-3">Canvas</Button>
+              <h1 className="text-lg font-semibold">Visual Workflow Builder</h1>
+              <Badge variant="secondary" className="text-xs">USE-CASE</Badge>
             </div>
           </div>
           
@@ -174,105 +163,139 @@ const AgentsInner = () => {
 
         {/* Main Content - Three Panel Layout */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Journey Designer & Node Library */}
+          {/* Left Panel - Journey Designer */}
           <div className="w-80 border-r bg-card flex flex-col">
             <div className="p-4 border-b">
               <h3 className="font-medium text-sm">Journey Designer</h3>
               <p className="text-xs text-muted-foreground mt-1">Drag steps to build your workflow</p>
             </div>
             
-            {/* Visual Canvas Section */}
+            {/* Journey Design Section */}
             <div className="p-4 border-b">
-              <h4 className="font-medium text-sm mb-3">Visual Canvas</h4>
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-accent">
-                  <Bot className="w-4 h-4 text-blue-500" />
-                  <span className="text-sm">Agent Nodes</span>
-                </div>
-                <div className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-accent">
-                  <MessageCircle className="w-4 h-4 text-green-500" />
-                  <span className="text-sm">Chat Nodes</span>
-                </div>
-                <div className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-accent">
-                  <Database className="w-4 h-4 text-purple-500" />
-                  <span className="text-sm">Data Nodes</span>
-                </div>
-              </div>
-            </div>
-
-            {/* Enhanced Journey Designer */}
-            <div className="flex-1 overflow-auto p-4">
-              <h4 className="font-medium text-sm mb-3">Enhanced Journey Designer</h4>
+              <h4 className="font-medium text-sm mb-3">Journey Design</h4>
               <p className="text-xs text-muted-foreground mb-4">
-                Design, reorder, and enhance your journey steps with AI assistance
+                No template is linked yet. Create a template to manage journey stages.
               </p>
               
-              {/* Add Components Section */}
-              <div className="space-y-3">
-                <h5 className="font-medium text-xs text-muted-foreground uppercase tracking-wider">Add Components</h5>
-                
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-accent">
-                    <Bot className="w-4 h-4 text-orange-500" />
-                    <span className="text-sm">Customer Touchpoint</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-accent">
-                    <Zap className="w-4 h-4 text-blue-500" />
-                    <span className="text-sm">Interaction Point</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-accent">
-                    <Sparkles className="w-4 h-4 text-purple-500" />
-                    <span className="text-sm">AI Agent</span>
-                  </div>
-                  <div className="flex items-center gap-2 p-2 border rounded cursor-pointer hover:bg-accent">
-                    <ArrowRight className="w-4 h-4 text-yellow-500" />
-                    <span className="text-sm">Decision Point</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Templates */}
-              <div className="mt-6 space-y-3">
-                <h5 className="font-medium text-xs text-muted-foreground uppercase tracking-wider">Quick Templates</h5>
-                
-                <div className="space-y-2">
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    Patient Onboarding
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    Appointment Scheduling  
-                  </Button>
-                  <Button variant="outline" size="sm" className="w-full justify-start text-xs">
-                    Insurance Verification
-                  </Button>
-                </div>
-              </div>
-
-              {/* Advanced ReactFlow Builder */}
-              <div className="mt-6">
-                <h5 className="font-medium text-xs text-muted-foreground uppercase tracking-wider mb-3">Advanced ReactFlow Builder</h5>
-                <div className="bg-secondary/20 rounded p-3">
-                  <div className="flex gap-2 mb-2">
-                    <Button variant="outline" size="sm" className="flex-1 text-xs">Layout</Button>
-                    <Button variant="ghost" size="sm" className="flex-1 text-xs">Nodes</Button>
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    <p className="mb-2">Validation Issues:</p>
-                    <ul className="space-y-1 text-xs">
-                      <li>• Isolated nodes found: Process, Response</li>
-                      <li>• No start node defined</li>
-                      <li>• No end node defined</li>
-                    </ul>
-                  </div>
-                </div>
-              </div>
-
-              <Button className="w-full mt-4" onClick={() => {
-                toast.success('AI suggestions generated!');
-              }}>
-                <Lightbulb className="w-4 h-4 mr-2" />
-                Add Final Step
+              <Button 
+                onClick={() => {
+                  toast.success('Template created successfully!');
+                }}
+                className="w-full mb-4"
+              >
+                Create Template
               </Button>
+            </div>
+
+            {/* Journey Stages Form */}
+            <div className="flex-1 overflow-auto p-4">
+              <h4 className="font-medium text-sm mb-3">Journey Stages</h4>
+              <p className="text-xs text-muted-foreground mb-4">
+                Define the sequential steps for this template
+              </p>
+
+              <div className="space-y-4">
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <span className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs">1</span>
+                  <span>New Stage</span>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Title</Label>
+                      <Input placeholder="New Stage" className="mt-1 h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Owner Role</Label>
+                      <Input placeholder="" className="mt-1 h-8" />
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <Label className="text-xs">Description</Label>
+                    <Textarea placeholder="" className="mt-1 min-h-[60px] text-xs" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Expected Duration (min)</Label>
+                      <Input type="number" className="mt-1 h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Entry Criteria (comma-separated)</Label>
+                      <Input placeholder="" className="mt-1 h-8" />
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Tasks Checklist (one per line)</Label>
+                    <Textarea placeholder="" className="mt-1 min-h-[60px] text-xs" />
+                  </div>
+
+                  <div>
+                    <Label className="text-xs">Outputs / Success Criteria (one per line)</Label>
+                    <Textarea placeholder="" className="mt-1 min-h-[60px] text-xs" />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label className="text-xs">Risks (comma-separated)</Label>
+                      <Input placeholder="" className="mt-1 h-8" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Dependencies (comma-separated)</Label>
+                      <Input placeholder="" className="mt-1 h-8" />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center pt-2">
+                    <div className="flex gap-1">
+                      <Button size="sm" variant="outline" className="w-8 h-8 p-0">
+                        <ArrowUp className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="outline" className="w-8 h-8 p-0">
+                        <ArrowDown className="w-3 h-3" />
+                      </Button>
+                      <Button size="sm" variant="destructive" className="w-8 h-8 p-0">
+                        <X className="w-3 h-3" />
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex justify-between pt-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      toast.success('Stage added successfully!');
+                    }}
+                  >
+                    <Plus className="w-4 h-4 mr-1" />
+                    Add Stage
+                  </Button>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        toast.success('Journey refreshed!');
+                      }}
+                    >
+                      Refresh
+                    </Button>
+                    <Button
+                      size="sm"
+                      onClick={() => {
+                        toast.success('Journey stages applied to AI models!');
+                      }}
+                    >
+                      Apply
+                    </Button>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -293,90 +316,84 @@ const AgentsInner = () => {
               </div>
             </div>
             
-            <div className="flex-1 relative">
-              <CustomerJourneyBuilder
-                useCaseData={{
-                  name: 'Patient Onboarding',
-                  description: 'Visual workflow canvas',
-                  detailedUseCase: 'Healthcare workflow for patient onboarding',
-                  targetUsers: 'Healthcare users',
-                  expectedOutcomes: 'Automated patient onboarding workflow'
-                }}
-                capturedRequirements={{
-                  connectors: ['Supabase', 'OpenAI'],
-                  actions: ['Process', 'Respond'],
-                  steps: ['Intake', 'Process', 'Response'],
-                  integrations: ['Healthcare APIs']
-                }}
-                journeyStages={journeyStages}
-                sessionId={currentSessionId}
-                onSave={(workflow) => console.log('Workflow saved:', workflow)}
-                onGenerateAgent={(workflow) => console.log('Agent generated:', workflow)}
-              />
+            <div className="flex-1 flex items-center justify-center">
+              <div className="text-center">
+                <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                  <Bot className="w-8 h-8 text-primary" />
+                </div>
+                <h3 className="text-lg font-medium mb-2">Genie AI-Style Canvas</h3>
+                <p className="text-muted-foreground text-sm max-w-xs mb-4">
+                  Drag journey steps from the left panel to build your intelligent agent workflow
+                </p>
+                <Button onClick={() => {
+                  // Start building functionality
+                  toast.success('Building workflow...');
+                }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  Start Building
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* Right Panel - Node Configuration */}
+          {/* Right Panel - AI Models & Config */}
           <div className="w-80 border-l bg-card flex flex-col">
             <div className="p-4 border-b">
-              <h3 className="font-medium text-sm">Node Configuration</h3>
-              <p className="text-xs text-muted-foreground mt-1">Configure selected node settings</p>
+              <h3 className="font-medium text-sm">AI Models & Config</h3>
+              <p className="text-xs text-muted-foreground mt-1">Configure AI models and settings</p>
             </div>
             
             <div className="flex-1 overflow-auto p-4">
-              {/* Node Configuration Tabs */}
-              <div className="border-b mb-4">
-                <div className="flex gap-1">
-                  <Button variant="default" size="sm" className="h-8 px-3 text-xs">Basic</Button>
-                  <Button variant="ghost" size="sm" className="h-8 px-3 text-xs">Variables</Button>
-                  <Button variant="ghost" size="sm" className="h-8 px-3 text-xs">APIs</Button>
-                  <Button variant="ghost" size="sm" className="h-8 px-3 text-xs">Storage</Button>
-                </div>
-              </div>
-
-              {/* Configuration Form */}
               <div className="space-y-4">
-                <div>
-                  <Label className="text-xs">Type</Label>
-                  <Input className="mt-1 h-8" defaultValue="" />
+                <div className="flex items-center justify-between">
+                  <h4 className="font-medium text-sm">AI Models</h4>
+                  <Button size="sm" className="h-6 px-2 text-xs">
+                    <Plus className="w-3 h-3 mr-1" />
+                    Add Model
+                  </Button>
                 </div>
                 
-                <div>
-                  <Label className="text-xs">Label</Label>
-                  <Input className="mt-1 h-8" defaultValue="Patient Onboarding" />
+                {/* AI Model Cards */}
+                <div className="space-y-3">
+                  <Card className="p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-primary/10 rounded flex items-center justify-center">
+                        <Bot className="w-3 h-3 text-primary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-xs">GPT-4 Turbo</p>
+                        <p className="text-xs text-muted-foreground">OpenAI Language Model</p>
+                      </div>
+                      <Badge variant="secondary" className="text-xs">Active</Badge>
+                    </div>
+                  </Card>
+                  
+                  <Card className="p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="w-6 h-6 bg-secondary/10 rounded flex items-center justify-center">
+                        <Sparkles className="w-3 h-3 text-secondary" />
+                      </div>
+                      <div className="flex-1">
+                        <p className="font-medium text-xs">Claude 3.5 Sonnet</p>
+                        <p className="text-xs text-muted-foreground">Anthropic Reasoning Model</p>  
+                      </div>
+                      <Badge variant="outline" className="text-xs">Available</Badge>
+                    </div>
+                  </Card>
                 </div>
                 
-                <div>
-                  <Label className="text-xs">Description</Label>
-                  <Textarea className="mt-1 min-h-[60px] text-xs" defaultValue="Visual workflow canvas" />
-                </div>
-
-                <div>
-                  <Label className="text-xs">Connector</Label>
-                  <select className="w-full mt-1 h-8 px-2 border rounded text-xs">
-                    <option>Select connector</option>
-                    <option>Supabase</option>
-                    <option>OpenAI</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center gap-2">
-                  <input type="checkbox" className="w-4 h-4" defaultChecked />
-                  <Label className="text-xs">Active</Label>
-                </div>
-
+                {/* Configuration Section */}
                 <div className="pt-4 border-t">
-                  <h4 className="font-medium text-xs mb-3">Settings</h4>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1 text-xs h-7">
-                      Simulate
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7">
-                      Save
-                    </Button>
-                    <Button variant="outline" size="sm" className="flex-1 text-xs h-7">
-                      Load
-                    </Button>
+                  <h4 className="font-medium text-sm mb-3">Configuration</h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-xs">Temperature</Label>
+                      <Input type="number" min="0" max="1" step="0.1" defaultValue="0.7" className="h-7 text-xs" />
+                    </div>
+                    <div>
+                      <Label className="text-xs">Max Tokens</Label>
+                      <Input type="number" defaultValue="2048" className="h-7 text-xs" />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -384,11 +401,11 @@ const AgentsInner = () => {
           </div>
         </div>
 
-        {/* AI Assistant Panel (fixed positioning to not block interface) */}
+        {/* AI Assistant Panel (fixed positioning) */}
         {showPromptAssistant && (
           <div className="fixed top-4 right-4 w-96 max-h-[80vh] border bg-card rounded-lg shadow-lg flex flex-col z-50">
             <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="font-semibold">AI Workflow Assistant</h3>
+              <h3 className="font-semibold text-sm">AI Workflow Assistant</h3>
               <Button 
                 variant="ghost" 
                 size="sm" 
@@ -401,30 +418,30 @@ const AgentsInner = () => {
             <div className="flex-1 overflow-auto p-4">
               <div className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium">Conversation</Label>
+                  <Label className="text-xs font-medium">Conversation</Label>
                   <p className="text-xs text-muted-foreground mb-3">
                     Hi! I'm your AI assistant. I'll help guide you through building your workflow. What would you like to create?
                   </p>
                   <Textarea 
                     placeholder="Describe your agent: e.g. Create a customer support agent that handles inquiries and escalates complex issues..."
-                    className="min-h-[100px]"
+                    className="min-h-[80px] text-xs"
                   />
                 </div>
                 <Button 
-                  className="w-full"
+                  className="w-full h-8"
                   onClick={() => {
                     toast.success('Workflow generated!');
                     setShowPromptAssistant(false);
                   }}
                 >
-                  <Sparkles className="w-4 h-4 mr-2" />
+                  <Sparkles className="w-3 h-3 mr-2" />
                   Generate Workflow
                 </Button>
                 <div className="text-xs text-muted-foreground bg-secondary/20 p-3 rounded">
                   <p className="font-medium mb-1">Smart Suggestions</p>
                   <ul className="space-y-1">
-                    <li>• Add Decision Points</li>
-                    <li>• Add AI Agent</li>
+                    <li>• Add Decision Points (medium)</li>
+                    <li>• Add AI Agent (medium)</li>
                   </ul>
                 </div>
               </div>
@@ -474,7 +491,7 @@ const AgentsInner = () => {
     );
   }
 
-  // Main render - FlowiseAI Layout
+  // Main render - Genie AI Layout
   return renderFlowiseLayout();
 };
 
