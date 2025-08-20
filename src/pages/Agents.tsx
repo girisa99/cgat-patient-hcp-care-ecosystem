@@ -392,7 +392,7 @@ const AgentsInner = () => {
     console.log('Generated config:', generatedConfig);
     
     if (selectedMode === 'visual') {
-      // Apply visual configuration - store generated nodes, keep flow at beginning (Use Case)
+      // Apply visual configuration - store generated nodes, keep flow aligned to start (Use Case → Journey → Wizard → Canvas)
       console.log('Applying visual workflow:', generatedConfig);
       
       // Store the generated workflow data
@@ -402,11 +402,11 @@ const AgentsInner = () => {
         prompt: prompt
       }));
       
-      // Stay aligned with guided flow order but show the generated workflow immediately
+      // Guide user to Journey stage to review and refine before canvas
       setAgentBuilderTab('canvas-designer');
-      setVisualWorkflowSubTab('canvas');
+      setVisualWorkflowSubTab('journey');
       
-      toast.success('Workflow generated! Showing preview on Canvas.');
+      toast.success('Workflow generated! Proceed to Journey to review and refine.');
     } else {
       // Apply manual configuration
       console.log('Applying manual config:', generatedConfig);
@@ -497,7 +497,13 @@ const AgentsInner = () => {
           <div className="flex items-center gap-2">
             <Button
               variant="outline"
-              onClick={() => setShowPromptAssistant(!showPromptAssistant)}
+              onClick={() => {
+                if (selectedMode === 'visual') {
+                  setAgentBuilderTab('canvas-designer');
+                  setVisualWorkflowSubTab('use-case');
+                }
+                setShowPromptAssistant((prev) => !prev);
+              }}
               className="flex items-center gap-2"
               title="Open AI Prompt Assistant"
             >
