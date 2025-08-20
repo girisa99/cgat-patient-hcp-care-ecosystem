@@ -33,6 +33,9 @@ import {
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
+// Enhanced Panels
+import { EnhancedNodeLibraryPanel } from './panels/EnhancedNodeLibraryPanel';
+
 // Connectors
 import { AgentTokConnector } from './connectors/AgentTokConnector';
 import { AttioConnector } from './connectors/AttioConnector';
@@ -337,7 +340,7 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
   ]);
 
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const [showConnectorPanel, setShowConnectorPanel] = useState(false);
+  const [showNodeLibrary, setShowNodeLibrary] = useState(true);
   const [activeConnector, setActiveConnector] = useState<'agenttok' | 'attio' | null>(null);
 
   const onConnect = useCallback((params: Connection) => {
@@ -366,6 +369,25 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
     showSuccess(`${type} node added`);
   };
 
+  const handleNodeSelect = (nodeItem: any) => {
+    const newNode: Node = {
+      id: `${Date.now()}`,
+      type: `flowise${nodeItem.type === 'llm' || nodeItem.type === 'vlm' ? 'Agent' : 
+                  nodeItem.type === 'api' || nodeItem.type === 'mcp' ? 'Data' : 'Integration'}`,
+      position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
+      data: { 
+        label: nodeItem.name,
+        description: nodeItem.description,
+        model: nodeItem.provider,
+        capabilities: nodeItem.capabilities,
+        status: nodeItem.status,
+        configuration: nodeItem.configuration
+      }
+    };
+    setNodes((nds) => [...nds, newNode]);
+    showSuccess(`${nodeItem.name} node added to canvas`);
+  };
+
   const handleSave = () => {
     const workflowData = {
       nodes,
@@ -382,158 +404,212 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
   };
 
   return (
-    <div className="h-screen w-full" style={{ backgroundColor: theme.colors.background }}>
-      <ReactFlow
-        nodes={nodes}
-        edges={edges}
-        onNodesChange={onNodesChange}
-        onEdgesChange={onEdgesChange}
-        onConnect={onConnect}
-        nodeTypes={nodeTypes}
-        edgeTypes={edgeTypes}
-        fitView
-        style={styles.reactFlow}
-        onNodeClick={(_, node) => setSelectedNode(node)}
-        deleteKeyCode={['Backspace', 'Delete']}
-      >
-        <Controls 
-          style={styles.controls}
-          className="react-flow__controls"
+    <div className="h-screen w-full flex" style={{ backgroundColor: theme.colors.background }}>
+      {/* Enhanced Node Library Panel */}
+      <div className={`transition-all duration-300 ${showNodeLibrary ? 'w-80' : 'w-0'} overflow-hidden`}>
+        <EnhancedNodeLibraryPanel
+          isOpen={showNodeLibrary}
+          onToggle={() => setShowNodeLibrary(!showNodeLibrary)}
+          onNodeSelect={handleNodeSelect}
         />
-        <MiniMap 
-          style={styles.miniMap}
-          className="react-flow__minimap"
-          nodeColor={(node) => {
-            if (node.type?.includes('Agent')) return theme.colors.node.agent;
-            if (node.type?.includes('Data')) return theme.colors.node.data;
-            if (node.type?.includes('Integration')) return theme.colors.node.integration;
-            return theme.colors.primary;
-          }}
-        />
-        <Background 
-          gap={20} 
-          size={1}
-          color={theme.colors.border.default}
-        />
-        
-        {/* Top Toolbar */}
-        <Panel position="top-left">
-          <div className="flex items-center gap-2 p-3 rounded-lg" style={styles.panel}>
-            <Button
-              onClick={toggleTheme}
-              variant="outline"
-              size="sm"
-              className="h-8 w-8 p-0"
-            >
-              {theme.dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
-            </Button>
-            <Button
-              onClick={() => addNode('Agent')}
-              variant="outline"
-              size="sm"
-            >
-              <Bot className="h-4 w-4 mr-2" />
-              Agent
-            </Button>
-            <Button
-              onClick={() => addNode('Data')}
-              variant="outline"
-              size="sm"
-            >
-              <Database className="h-4 w-4 mr-2" />
-              Data
-            </Button>
-            <Button
-              onClick={() => addNode('Integration')}
-              variant="outline"
-              size="sm"
-            >
-              <Zap className="h-4 w-4 mr-2" />
-              Integration
-            </Button>
-            <Button
-              onClick={handleSave}
-              variant="default"
-              size="sm"
-            >
-              <Save className="h-4 w-4 mr-2" />
-              Save
-            </Button>
-          </div>
-        </Panel>
+      </div>
 
-        {/* Right Side Panel */}
-        <Panel position="top-right">
-          <div className="w-80 max-h-[80vh] overflow-y-auto" style={styles.panel}>
-            <div className="p-4">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="font-semibold" style={{ color: theme.colors.text.primary }}>
-                  Connectors
-                </h3>
-                <Button 
-                  onClick={() => setShowConnectorPanel(!showConnectorPanel)}
+      {/* Main ReactFlow Canvas */}
+      <div className="flex-1 relative">
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+          onConnect={onConnect}
+          nodeTypes={nodeTypes}
+          edgeTypes={edgeTypes}
+          fitView
+          style={styles.reactFlow}
+          onNodeClick={(_, node) => setSelectedNode(node)}
+          deleteKeyCode={['Backspace', 'Delete']}
+        >
+          <Controls 
+            style={styles.controls}
+            className="react-flow__controls"
+          />
+          <MiniMap 
+            style={styles.miniMap}
+            className="react-flow__minimap"
+            nodeColor={(node) => {
+              if (node.type?.includes('Agent')) return theme.colors.node.agent;
+              if (node.type?.includes('Data')) return theme.colors.node.data;
+              if (node.type?.includes('Integration')) return theme.colors.node.integration;
+              return theme.colors.primary;
+            }}
+          />
+          <Background 
+            gap={20} 
+            size={1}
+            color={theme.colors.border.default}
+          />
+          
+          {/* Top Toolbar */}
+          <Panel position="top-left">
+            <div className="flex items-center gap-2 p-3 rounded-lg" style={styles.panel}>
+              {!showNodeLibrary && (
+                <Button
+                  onClick={() => setShowNodeLibrary(true)}
                   variant="outline"
                   size="sm"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 mr-2" />
+                  Nodes
                 </Button>
-              </div>
-
-              {showConnectorPanel && (
-                <div className="space-y-2 mb-4">
-                  <Button
-                    onClick={() => setActiveConnector('agenttok')}
-                    variant={activeConnector === 'agenttok' ? 'default' : 'outline'}
-                    className="w-full justify-start"
-                  >
-                    <MessageCircle className="h-4 w-4 mr-2" />
-                    AgentTok
-                  </Button>
-                  <Button
-                    onClick={() => setActiveConnector('attio')}
-                    variant={activeConnector === 'attio' ? 'default' : 'outline'}
-                    className="w-full justify-start"
-                  >
-                    <Database className="h-4 w-4 mr-2" />
-                    Attio CRM
-                  </Button>
-                </div>
               )}
+              <Button
+                onClick={toggleTheme}
+                variant="outline"
+                size="sm"
+                className="h-8 w-8 p-0"
+              >
+                {theme.dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
+              <Button
+                onClick={() => addNode('Agent')}
+                variant="outline"
+                size="sm"
+              >
+                <Bot className="h-4 w-4 mr-2" />
+                Quick Agent
+              </Button>
+              <Button
+                onClick={handleSave}
+                variant="default"
+                size="sm"
+              >
+                <Save className="h-4 w-4 mr-2" />
+                Save Workflow
+              </Button>
+            </div>
+          </Panel>
 
-              {activeConnector === 'agenttok' && (
-                <AgentTokConnector
-                  onConnect={(config) => {
-                    showSuccess('AgentTok connected successfully!');
-                    setActiveConnector(null);
-                  }}
-                />
-              )}
-
-              {activeConnector === 'attio' && (
-                <AttioConnector
-                  onConnect={(config) => {
-                    showSuccess('Attio CRM connected successfully!');
-                    setActiveConnector(null);
-                  }}
-                />
-              )}
-
-              {selectedNode && !activeConnector && (
+          {/* Right Side Panel - Connectors & Selected Node Info */}
+          <Panel position="top-right">
+            <div className="w-80 max-h-[80vh] overflow-y-auto" style={styles.panel}>
+              <div className="p-4 space-y-4">
+                {/* Active Connectors */}
                 <div>
-                  <h4 className="font-medium mb-2" style={{ color: theme.colors.text.primary }}>
-                    Selected Node
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-sm" style={{ color: theme.colors.text.primary }}>
+                      Active Connectors
+                    </h3>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Button
+                      onClick={() => setActiveConnector(activeConnector === 'agenttok' ? null : 'agenttok')}
+                      variant={activeConnector === 'agenttok' ? 'default' : 'outline'}
+                      className="w-full justify-start text-xs"
+                      size="sm"
+                    >
+                      <MessageCircle className="h-3 w-3 mr-2" />
+                      AgentTok Integration
+                    </Button>
+                    <Button
+                      onClick={() => setActiveConnector(activeConnector === 'attio' ? null : 'attio')}
+                      variant={activeConnector === 'attio' ? 'default' : 'outline'}
+                      className="w-full justify-start text-xs"
+                      size="sm"
+                    >
+                      <Database className="h-3 w-3 mr-2" />
+                      Attio CRM
+                    </Button>
+                  </div>
+
+                  {activeConnector === 'agenttok' && (
+                    <div className="border rounded-lg p-3 mt-3">
+                      <AgentTokConnector />
+                    </div>
+                  )}
+
+                  {activeConnector === 'attio' && (
+                    <div className="border rounded-lg p-3 mt-3">
+                      <AttioConnector />
+                    </div>
+                  )}
+                </div>
+
+                {/* Selected Node Details */}
+                {selectedNode && (
+                  <div className="border rounded-lg p-3">
+                    <h4 className="font-medium mb-2 text-sm" style={{ color: theme.colors.text.primary }}>
+                      Node Properties
+                    </h4>
+                    <div className="space-y-2 text-xs" style={{ color: theme.colors.text.secondary }}>
+                      <div className="flex justify-between">
+                        <span className="font-medium">Type:</span>
+                        <Badge variant="outline" className="text-xs">
+                          {selectedNode.type?.replace('flowise', '')}
+                        </Badge>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="font-medium">ID:</span>
+                        <span className="font-mono text-xs">{selectedNode.id}</span>
+                      </div>
+                      {selectedNode.data?.label && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Name:</span>
+                          <span>{String(selectedNode.data.label)}</span>
+                        </div>
+                      )}
+                      {selectedNode.data?.status && (
+                        <div className="flex justify-between">
+                          <span className="font-medium">Status:</span>
+                          <Badge 
+                            variant={selectedNode.data.status === 'active' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {String(selectedNode.data.status)}
+                          </Badge>
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Quick Actions */}
+                    <div className="flex gap-1 mt-3">
+                      <Button variant="outline" size="sm" className="flex-1 text-xs">
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button variant="outline" size="sm" className="flex-1 text-xs">
+                        <Copy className="h-3 w-3 mr-1" />
+                        Clone
+                      </Button>
+                      <Button variant="destructive" size="sm" className="flex-1 text-xs">
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Workflow Stats */}
+                <div className="border rounded-lg p-3">
+                  <h4 className="font-medium mb-2 text-sm" style={{ color: theme.colors.text.primary }}>
+                    Workflow Stats
                   </h4>
-                  <div className="text-sm space-y-1" style={{ color: theme.colors.text.secondary }}>
-                    <div>Type: {selectedNode.type}</div>
-                    <div>ID: {selectedNode.id}</div>
-                    <div>Label: {selectedNode.data?.label as string}</div>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="text-center p-2 bg-accent/50 rounded">
+                      <div className="font-bold text-lg">{nodes.length}</div>
+                      <div className="text-muted-foreground">Nodes</div>
+                    </div>
+                    <div className="text-center p-2 bg-accent/50 rounded">
+                      <div className="font-bold text-lg">{edges.length}</div>
+                      <div className="text-muted-foreground">Connections</div>
+                    </div>
                   </div>
                 </div>
-              )}
+              </div>
             </div>
-          </div>
-        </Panel>
-      </ReactFlow>
+          </Panel>
+        </ReactFlow>
+      </div>
     </div>
   );
 };
