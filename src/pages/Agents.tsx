@@ -307,15 +307,34 @@ const AgentsInner = () => {
               </div>
             </div>
             <div className="flex-1 overflow-hidden">
-              {rightPanelTab === 'config' && (
+              {rightPanelTab === 'config' && selectedNode && (
                 <NodeConfigurationPanel
-                  selectedNode={selectedNode}
-                  onNodeUpdate={(nodeId, updates) => {
+                  node={selectedNode}
+                  onUpdate={(nodeId, updates) => {
                     console.log('Node configuration updated:', nodeId, updates);
                   }}
+                  onDelete={(nodeId) => {
+                    console.log('Node deleted:', nodeId);
+                    setSelectedNode(null);
+                  }}
+                  onClose={() => setSelectedNode(null)}
+                  availableConnectors={[
+                    'REST API', 'GraphQL', 'WebSocket', 'Database', 
+                    'Email', 'SMS', 'Slack', 'Teams', 'Webhook'
+                  ]}
+                  aiModels={[
+                    'gpt-4o-mini', 'gpt-4o', 'claude-3-sonnet', 
+                    'claude-3-haiku', 'gemini-pro', 'llama-3'
+                  ]}
                 />
               )}
               {rightPanelTab === 'libraries' && <LibrariesAndActions />}
+              {rightPanelTab === 'config' && !selectedNode && (
+                <div className="p-4 text-center text-sm text-muted-foreground">
+                  <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Select a node to configure its properties</p>
+                </div>
+              )}
               {rightPanelTab === 'assistant' && (
                 <div className="p-4 space-y-4 h-full flex flex-col">
                   <div>
