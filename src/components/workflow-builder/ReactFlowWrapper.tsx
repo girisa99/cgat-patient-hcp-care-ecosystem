@@ -6,6 +6,23 @@ interface ReactFlowWrapperProps {
   initialWorkflow?: any;
   onSave?: (workflow: any) => void;
   onGenerateAgent?: (workflow: any) => void;
+  // Unified builder context
+  useCaseData?: {
+    name: string;
+    description: string;
+    selectedUseCase?: any;
+    detailedUseCase?: string;
+    targetUsers?: string;
+    expectedOutcomes?: string;
+  };
+  capturedRequirements?: {
+    connectors: string[];
+    actions: string[];
+    steps: string[];
+    integrations: string[];
+  };
+  journeyStages?: any[];
+  sessionId?: string;
 }
 
 export const ReactFlowWrapper: React.FC<ReactFlowWrapperProps> = (props) => {

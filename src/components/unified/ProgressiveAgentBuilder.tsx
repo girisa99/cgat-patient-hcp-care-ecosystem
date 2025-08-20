@@ -447,10 +447,44 @@ const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = ({ step 
             // Trigger navigation based on mode
             if (mode === 'visual') {
               // Navigate to visual workflow with pre-populated data
-              window.location.href = '/agents?tab=visual-workflow&data=' + encodeURIComponent(JSON.stringify(data));
+              const contextData = {
+                useCaseData: {
+                  name: useCaseInput.name,
+                  description: useCaseInput.description,
+                  detailedUseCase: useCaseInput.detailedUseCase,
+                  targetUsers: useCaseInput.targetUsers,
+                  expectedOutcomes: useCaseInput.expectedOutcomes,
+                  selectedUseCase: state.use_case
+                },
+                capturedRequirements,
+                journeyStages: state.custom_journey || [],
+                sessionId: data.sessionId || null
+              };
+              
+              // Navigate to visual workflow tab with context
+              const params = new URLSearchParams({
+                tab: 'visual-workflow',
+                context: JSON.stringify(contextData)
+              });
+              window.location.href = `/agents?${params.toString()}`;
             } else if (mode === 'expert') {
-              // Navigate to manual configuration
-              window.location.href = '/agents?tab=manual-configuration&data=' + encodeURIComponent(JSON.stringify(data));
+              // Navigate to manual configuration with context
+              const contextData = {
+                useCaseData: {
+                  name: useCaseInput.name,
+                  description: useCaseInput.description,
+                  selectedUseCase: state.use_case
+                },
+                capturedRequirements,
+                manualConfig: data.manualConfig || {}
+              };
+              
+              const params = new URLSearchParams({
+                tab: 'configuration',
+                mode: 'expert',
+                context: JSON.stringify(contextData)
+              });
+              window.location.href = `/agents?${params.toString()}`;
             }
           }}
         />

@@ -119,6 +119,61 @@ const AgentsInner = () => {
   const [journeyStages, setJourneyStages] = useState<any[]>([]);
   const [wizardData, setWizardData] = useState<any>({});
 
+  // Parse URL context for visual workflow from unified builder
+  const parseContextFromURL = () => {
+    const params = new URLSearchParams(window.location.search);
+    const contextParam = params.get('context');
+    if (contextParam) {
+      try {
+        return JSON.parse(contextParam);
+      } catch (error) {
+        console.error('Failed to parse context from URL:', error);
+      }
+    }
+    return null;
+  };
+
+  const [urlContext] = useState(parseContextFromURL());
+
+  // Set active tab from URL parameter and initialize context
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tabParam = params.get('tab');
+    
+    if (tabParam === 'visual-workflow' && urlContext) {
+      console.log('🎯 Loading visual workflow with unified builder context:', urlContext);
+      setActiveTab('ecosystem');
+      setSelectedMode('visual' as any);
+      setShowModeSelector(false);
+      setAgentBuilderTab('canvas-designer');
+      setVisualWorkflowSubTab('canvas');
+      
+      // Initialize with context data
+      if (urlContext.useCaseData) {
+        setSelectedUseCase(urlContext.useCaseData.name || '');
+      }
+      if (urlContext.journeyStages) {
+        setJourneyStages(urlContext.journeyStages);
+      }
+      
+      // Clear URL params to clean up the URL
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      toast.success('Visual workflow loaded with your use case and requirements!');
+    } else if (tabParam === 'configuration' && urlContext) {
+      console.log('🎯 Loading manual configuration with context:', urlContext);
+      setActiveTab('ecosystem');
+      setSelectedMode('expert' as any);
+      setShowModeSelector(false);
+      setAgentBuilderTab('models');
+      
+      // Clear URL params
+      window.history.replaceState({}, document.title, window.location.pathname);
+      
+      toast.success('Manual configuration loaded with your requirements!');
+    }
+  }, [urlContext]);
+
   const { userRoles, user } = useMasterAuth();
   const queryClient = useQueryClient();
   const { userSessions, isLoading: sessionsLoading, setCurrentSessionId, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
@@ -617,6 +672,15 @@ const AgentsInner = () => {
                                 <div className="min-h-[60vh] h-[70vh] border rounded-lg bg-muted/10 overflow-hidden">
                                   <CustomerJourneyBuilder 
                                     initialWorkflow={wizardData.generatedWorkflow}
+                                    // Pass unified builder context if available
+                                    useCaseData={urlContext?.useCaseData || (selectedUseCase ? { 
+                                      name: selectedUseCase, 
+                                      description: 'Selected use case',
+                                      selectedUseCase: null
+                                    } : undefined)}
+                                    capturedRequirements={urlContext?.capturedRequirements}
+                                    journeyStages={urlContext?.journeyStages || journeyStages}
+                                    sessionId={urlContext?.sessionId || currentSessionId}
                                     onSave={async (workflow) => {
                                       try { localStorage.setItem('customerJourney_draft_v1', JSON.stringify(workflow)); } catch {}
                                       setWizardData(prev => ({...prev, savedWorkflow: workflow}));

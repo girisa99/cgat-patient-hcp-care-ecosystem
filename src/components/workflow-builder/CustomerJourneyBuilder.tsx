@@ -23,7 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Bot, MessageCircle, Phone, Mail, Calendar, CheckCircle, 
   AlertTriangle, Clock, Users, Workflow, Sparkles, Settings,
-  Play, Pause, RotateCcw, Save, Download, Upload, Eye, Plus, Trash2
+  Play, Pause, RotateCcw, Save, Download, Upload, Eye, Plus, Trash2, Lightbulb
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { NodeConfigurationPanel } from './NodeConfigurationPanel';
@@ -180,15 +180,171 @@ interface CustomerJourneyBuilderProps {
   onSave?: (workflow: any) => void;
   onGenerateAgent?: (workflow: any) => void;
   initialWorkflow?: any;
+  // Unified builder context
+  useCaseData?: {
+    name: string;
+    description: string;
+    selectedUseCase?: any;
+    detailedUseCase?: string;
+    targetUsers?: string;
+    expectedOutcomes?: string;
+  };
+  capturedRequirements?: {
+    connectors: string[];
+    actions: string[];
+    steps: string[];
+    integrations: string[];
+  };
+  journeyStages?: any[];
+  sessionId?: string;
 }
 
 export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
   onSave,
   onGenerateAgent,
-  initialWorkflow
+  initialWorkflow,
+  useCaseData,
+  capturedRequirements,
+  journeyStages,
+  sessionId
 }) => {
-  const [nodes, setNodes, onNodesChange] = useNodesState(initialWorkflow?.nodes || initialNodes);
-  const [edges, setEdges, onEdgesChange] = useEdgesState(initialWorkflow?.edges || initialEdges);
+  // Generate initial nodes from unified builder context
+  const generateContextualNodes = () => {
+    if (!capturedRequirements && !journeyStages) return initialNodes;
+    
+    const contextualNodes: Node[] = [];
+    let xPos = 50;
+    
+    // Add use case header node if we have use case data
+    if (useCaseData) {
+      contextualNodes.push({
+        id: 'use-case',
+        type: 'customer',
+        position: { x: xPos, y: 50 },
+        data: {
+          label: useCaseData.name || 'Use Case',
+          description: useCaseData.description || 'Generated from unified builder',
+          persona: useCaseData.targetUsers || 'Target Users',
+          context: useCaseData
+        }
+      });
+      xPos += 250;
+    }
+    
+    // Add nodes from journey stages
+    if (journeyStages && journeyStages.length > 0) {
+      journeyStages.forEach((stage, idx) => {
+        contextualNodes.push({
+          id: `stage-${idx}`,
+          type: 'touchpoint',
+          position: { x: xPos, y: 150 },
+          data: {
+            label: stage.title || `Stage ${idx + 1}`,
+            description: stage.description || 'Journey stage',
+            channel: 'chat',
+            automationLevel: 70,
+            stage: stage
+          }
+        });
+        xPos += 220;
+      });
+    }
+    
+    // Add nodes from captured requirements steps
+    if (capturedRequirements?.steps && capturedRequirements.steps.length > 0) {
+      capturedRequirements.steps.forEach((step, idx) => {
+        contextualNodes.push({
+          id: `step-${idx}`,
+          type: 'agent',
+          position: { x: 50 + (idx * 280), y: 300 },
+          data: {
+            label: step,
+            description: `AI agent for ${step}`,
+            capabilities: ['Processing', 'Analysis'],
+            aiModel: 'gpt-4o-mini',
+            step: step
+          }
+        });
+      });
+    }
+    
+    // Add decision nodes for complex workflows
+    if (capturedRequirements?.integrations && capturedRequirements.integrations.length > 1) {
+      contextualNodes.push({
+        id: 'routing-decision',
+        type: 'decision',
+        position: { x: 300, y: 450 },
+        data: {
+          label: 'Route to Integration',
+          description: 'Determine which integration to use',
+          conditions: capturedRequirements.integrations.slice(0, 3)
+        }
+      });
+    }
+    
+    return contextualNodes.length > 0 ? contextualNodes : initialNodes;
+  };
+
+  // Generate contextual edges
+  const generateContextualEdges = () => {
+    const contextualEdges: Edge[] = [];
+    
+    if (useCaseData && (journeyStages?.length || capturedRequirements?.steps?.length)) {
+      // Connect use case to first stage/step
+      const firstNodeId = journeyStages?.length ? 'stage-0' : capturedRequirements?.steps?.length ? 'step-0' : null;
+      if (firstNodeId) {
+        contextualEdges.push({
+          id: 'use-case-flow',
+          source: 'use-case',
+          target: firstNodeId,
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: '#8b5cf6' }
+        });
+      }
+    }
+    
+    // Connect journey stages sequentially
+    if (journeyStages && journeyStages.length > 1) {
+      for (let i = 0; i < journeyStages.length - 1; i++) {
+        contextualEdges.push({
+          id: `stage-${i}-${i + 1}`,
+          source: `stage-${i}`,
+          target: `stage-${i + 1}`,
+          markerEnd: { type: MarkerType.ArrowClosed },
+          style: { stroke: '#10b981' }
+        });
+      }
+    }
+    
+    // Connect stages to steps if both exist
+    if (journeyStages?.length && capturedRequirements?.steps?.length) {
+      contextualEdges.push({
+        id: 'stage-to-step',
+        source: `stage-${Math.floor(journeyStages.length / 2)}`,
+        target: 'step-0',
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: '#f59e0b' }
+      });
+    }
+    
+    return contextualEdges.length > 0 ? contextualEdges : initialEdges;
+  };
+  const [nodes, setNodes, onNodesChange] = useNodesState(
+    initialWorkflow?.nodes || 
+    (useCaseData || capturedRequirements || journeyStages ? generateContextualNodes() : initialNodes)
+  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    initialWorkflow?.edges || 
+    (useCaseData || capturedRequirements || journeyStages ? generateContextualEdges() : initialEdges)
+  );
+  
+  // Display unified builder context in the UI
+  const contextInfo = useCaseData ? {
+    title: useCaseData.name,
+    description: useCaseData.description,
+    requirements: capturedRequirements,
+    stages: journeyStages?.length || 0
+  } : null;
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
   const [previewMode, setPreviewMode] = useState(false);
@@ -388,6 +544,33 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
 
   return (
     <div className="h-full flex flex-col">
+      {/* Context Information Header */}
+      {contextInfo && (
+        <div className="bg-gradient-to-r from-primary/10 to-secondary/10 border-b p-4 space-y-2">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-primary" />
+              <h3 className="font-semibold text-lg">{contextInfo.title}</h3>
+              <Badge variant="secondary">From Unified Builder</Badge>
+            </div>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              {contextInfo.requirements?.connectors?.length && (
+                <Badge variant="outline">{contextInfo.requirements.connectors.length} Connectors</Badge>
+              )}
+              {contextInfo.requirements?.actions?.length && (
+                <Badge variant="outline">{contextInfo.requirements.actions.length} Actions</Badge>
+              )}
+              {contextInfo.stages > 0 && (
+                <Badge variant="outline">{contextInfo.stages} Journey Stages</Badge>
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">
+            {contextInfo.description} • Pre-configured with your requirements and journey stages
+          </p>
+        </div>
+      )}
+      
       {/* Toolbar */}
       <div className="flex items-center justify-between p-4 border-b bg-background">
         <div className="flex items-center gap-2">
