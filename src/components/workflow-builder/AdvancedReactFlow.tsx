@@ -466,6 +466,44 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
     return () => window.removeEventListener('apply-access-suggestions', handler as EventListener);
   }, [setNodes, showSuccess]);
 
+  // Add suggested nodes from contextual access overlay
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { currentNodeId, nodeType, nodeLabel, nodeDesc } = e.detail || {};
+      if (!currentNodeId || !nodeType || !nodeLabel) return;
+
+      const currentNode = nodes.find(n => n.id === currentNodeId);
+      if (!currentNode) return;
+
+      const newNodeId = `${nodeType}-${Date.now()}`;
+      const newNode = {
+        id: newNodeId,
+        type: nodeType,
+        position: {
+          x: currentNode.position.x + 200,
+          y: currentNode.position.y + 100
+        },
+        data: {
+          label: nodeLabel,
+          description: nodeDesc
+        }
+      };
+
+      const newEdge = {
+        id: `${currentNodeId}-${newNodeId}`,
+        source: currentNodeId,
+        target: newNodeId,
+        type: 'smoothstep'
+      };
+
+      setNodes((nds) => [...nds, newNode]);
+      setEdges((eds) => [...eds, newEdge]);
+      showSuccess('Node added', `${nodeLabel} connected to workflow`);
+    };
+    window.addEventListener('add-suggested-node', handler as EventListener);
+    return () => window.removeEventListener('add-suggested-node', handler as EventListener);
+  }, [nodes, setNodes, setEdges, showSuccess]);
+
   // Auto-layout when algorithm changes
 useEffect(() => {
     if (nodes.length === 0) return;

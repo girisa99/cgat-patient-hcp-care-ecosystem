@@ -34,7 +34,12 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
             'Set up A/B testing for this touchpoint'
           ],
           connectors: ['CRM Integration', 'Analytics Tracker', 'Feedback System'],
-          security: ['Data Encryption', 'Access Control', 'Audit Logging']
+          security: ['Data Encryption', 'Access Control', 'Audit Logging'],
+          suggestedNodes: [
+            { type: 'agent', label: 'Support Agent', desc: 'Add AI assistant for customer queries' },
+            { type: 'decision', label: 'Route Decision', desc: 'Intelligently route customer requests' },
+            { type: 'data', label: 'Customer Data', desc: 'Store customer interaction history' }
+          ]
         };
       case 'agent':
         return {
@@ -48,7 +53,12 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
             'Implement fallback to human agent'
           ],
           connectors: ['Knowledge Base', 'Sentiment Analysis', 'Live Chat'],
-          security: ['API Rate Limiting', 'Content Filtering', 'User Authentication']
+          security: ['API Rate Limiting', 'Content Filtering', 'User Authentication'],
+          suggestedNodes: [
+            { type: 'data', label: 'Knowledge Base', desc: 'Add external knowledge source' },
+            { type: 'decision', label: 'Escalation Rule', desc: 'Route complex queries to humans' },
+            { type: 'action', label: 'Follow-up Action', desc: 'Automated follow-up sequences' }
+          ]
         };
       case 'decision':
         return {
@@ -62,7 +72,12 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
             'Implement decision logging for analysis'
           ],
           connectors: ['Rule Engine', 'Analytics', 'Workflow Logger'],
-          security: ['Decision Audit', 'Access Validation', 'Data Protection']
+          security: ['Decision Audit', 'Access Validation', 'Data Protection'],
+          suggestedNodes: [
+            { type: 'agent', label: 'Specialist Agent', desc: 'Add specialized AI for complex cases' },
+            { type: 'action', label: 'Notification Action', desc: 'Send alerts based on decisions' },
+            { type: 'data', label: 'Analytics Store', desc: 'Track decision outcomes' }
+          ]
         };
       default:
         return {
@@ -75,7 +90,12 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
             'Add validation rules'
           ],
           connectors: ['Generic API', 'Data Store', 'Notification'],
-          security: ['Basic Security', 'Data Validation', 'Error Handling']
+          security: ['Basic Security', 'Data Validation', 'Error Handling'],
+          suggestedNodes: [
+            { type: 'agent', label: 'AI Agent', desc: 'Add intelligent assistant' },
+            { type: 'decision', label: 'Logic Node', desc: 'Add conditional routing' },
+            { type: 'data', label: 'Data Source', desc: 'Connect external data' }
+          ]
         };
     }
   };
@@ -163,6 +183,40 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
                       <Link className="h-2 w-2 mr-1" />
                       {connector}
                     </Badge>
+                  ))}
+                </div>
+              </div>
+
+              {/* Suggested Nodes */}
+              <div>
+                <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                  <Bot className="h-3 w-3" />
+                  Suggested Nodes
+                </h4>
+                <div className="space-y-1">
+                  {data.suggestedNodes.map((suggestedNode, i) => (
+                    <div key={i} className="flex items-center justify-between p-2 bg-accent/30 rounded text-xs">
+                      <div className="flex-1">
+                        <div className="font-medium">{suggestedNode.label}</div>
+                        <div className="text-muted-foreground">{suggestedNode.desc}</div>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-6 text-xs px-2"
+                        onClick={() => {
+                          const detail = {
+                            currentNodeId: node.id,
+                            nodeType: suggestedNode.type,
+                            nodeLabel: suggestedNode.label,
+                            nodeDesc: suggestedNode.desc
+                          };
+                          window.dispatchEvent(new CustomEvent('add-suggested-node', { detail }));
+                        }}
+                      >
+                        Add
+                      </Button>
+                    </div>
                   ))}
                 </div>
               </div>
