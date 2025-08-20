@@ -529,7 +529,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
 
           {/* Enhanced Node Configuration Panel */}
           {showNodeConfig && selectedNode && (
-            <div className="absolute top-4 right-4 z-10">
+            <div className={`absolute top-4 ${showAIGuidance ? 'right-[26rem]' : 'right-4'} z-10`}>
               <NodeConfigurationPanel
                 node={selectedNode}
                 onUpdate={updateNode}

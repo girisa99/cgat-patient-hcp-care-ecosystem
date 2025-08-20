@@ -235,7 +235,7 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
     return (
       <Button
         onClick={onToggle}
-        className="fixed bottom-4 right-4 rounded-full p-3 shadow-lg z-50"
+        className="fixed right-4 top-16 rounded-full p-3 shadow-lg z-50"
         size="sm"
       >
         <Bot className="h-5 w-5" />
@@ -245,12 +245,12 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
 
   return (
     <motion.div
-      className="fixed bottom-4 right-4 z-50"
+      className="fixed right-4 top-16 z-50"
       drag
       dragMomentum={false}
-      dragConstraints={{ top: 0, left: 0, right: 0, bottom: 0 }}
+      dragElastic={0.1}
     >
-      <Card className="w-[24rem] h-[70vh] max-h-[85vh] shadow-xl flex flex-col overflow-hidden pointer-events-auto">
+      <Card className="w-[24rem] h-[calc(100vh-6rem)] max-h-[calc(100vh-6rem)] shadow-xl flex flex-col overflow-hidden pointer-events-auto">
         <CardHeader className="pb-3 flex-shrink-0 cursor-move select-none">
           <CardTitle className="text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">

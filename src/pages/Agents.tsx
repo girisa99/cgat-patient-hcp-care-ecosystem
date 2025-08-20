@@ -131,6 +131,15 @@ const AgentsInner = () => {
   // Initialize questionnaire first for new users
   useEffect(() => {
     try {
+      // If we already have a rehydrated builder state, don't override it
+      const raw = localStorage.getItem('agentBuilder_state_v1');
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s?.selectedMode) {
+          return; // Respect saved mode/tabs; avoids jumping back to start
+        }
+      }
+
       const completed = localStorage.getItem('agentBuilder_questionnaireCompleted') === 'true';
       setHasCompletedQuestionnaire(completed);
       
@@ -608,10 +617,40 @@ const AgentsInner = () => {
                                 <div className="min-h-[60vh] h-[70vh] border rounded-lg bg-muted/10 overflow-hidden">
                                   <CustomerJourneyBuilder 
                                     initialWorkflow={wizardData.generatedWorkflow}
-                                    onSave={(workflow) => {
+                                    onSave={async (workflow) => {
                                       try { localStorage.setItem('customerJourney_draft_v1', JSON.stringify(workflow)); } catch {}
                                       setWizardData(prev => ({...prev, savedWorkflow: workflow}));
-                                      toast.success('Visual workflow saved!');
+                                      try {
+                                        const draftId = localStorage.getItem('customerJourney_draft_id');
+                                        const payload: any = {
+                                          name: wizardData?.prompt ? `AI Generated: ${String(wizardData.prompt).slice(0, 32)}` : 'Visual Workflow Draft',
+                                          description: 'Draft saved from Visual Workflow Builder',
+                                          workflow_data: workflow,
+                                          status: 'draft',
+                                          created_by: user?.id,
+                                        };
+                                        if (draftId) {
+                                          const { error } = await supabase
+                                            .from('agent_workflows')
+                                            .update({ ...payload, created_by: undefined })
+                                            .eq('id', draftId)
+                                            .select()
+                                            .single();
+                                          if (error) throw error;
+                                        } else {
+                                          const { data, error } = await supabase
+                                            .from('agent_workflows')
+                                            .insert(payload)
+                                            .select()
+                                            .single();
+                                          if (error) throw error;
+                                          if (data?.id) localStorage.setItem('customerJourney_draft_id', data.id);
+                                        }
+                                        toast.success('Visual workflow saved to drafts!');
+                                      } catch (e) {
+                                        console.error('Save draft failed:', e);
+                                        toast.error('Could not save to drafts. Local draft kept.');
+                                      }
                                     }}
                                     onGenerateAgent={(workflow) => {
                                       console.log('Generate agent from workflow:', workflow);
