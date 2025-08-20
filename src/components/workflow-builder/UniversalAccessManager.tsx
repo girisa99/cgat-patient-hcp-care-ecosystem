@@ -352,38 +352,42 @@ export const UniversalAccessManager: React.FC<UniversalAccessManagerProps> = ({
           </div>
         </CardHeader>
         
-        <CardContent className="p-0 h-[calc(100%-5rem)]">
+        <CardContent className="p-0 h-[calc(100%-6rem)]">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
-            <div className="px-4 pb-2">
-              <TabsList className="grid w-full grid-cols-6 text-xs">
-                <TabsTrigger value="guidance" className="text-xs">
-                  <Lightbulb className="h-3 w-3 mr-1" />
-                  Guide
+            <div className="px-4 pb-2 border-b">
+              <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5">
+                <TabsTrigger value="guidance" className="text-xs px-1 h-7">
+                  <Lightbulb className="h-3 w-3" />
+                  <span className="hidden sm:inline ml-1">Guide</span>
                 </TabsTrigger>
-                <TabsTrigger value="assets" className="text-xs">
-                  <FileText className="h-3 w-3 mr-1" />
-                  Assets
+                <TabsTrigger value="assets" className="text-xs px-1 h-7">
+                  <FileText className="h-3 w-3" />
+                  <span className="hidden sm:inline ml-1">Assets</span>
                 </TabsTrigger>
-                <TabsTrigger value="data" className="text-xs">
-                  <Database className="h-3 w-3 mr-1" />
-                  Data
+                <TabsTrigger value="data" className="text-xs px-1 h-7">
+                  <Database className="h-3 w-3" />
+                  <span className="hidden sm:inline ml-1">Data</span>
                 </TabsTrigger>
-                <TabsTrigger value="variables" className="text-xs">
-                  <Settings2 className="h-3 w-3 mr-1" />
-                  Variables
+              </TabsList>
+              
+              {/* Second row of tabs */}
+              <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5 mt-1">
+                <TabsTrigger value="variables" className="text-xs px-1 h-7">
+                  <Settings2 className="h-3 w-3" />
+                  <span className="hidden sm:inline ml-1">Vars</span>
                 </TabsTrigger>
-                <TabsTrigger value="connectors" className="text-xs">
-                  <Link className="h-3 w-3 mr-1" />
-                  Connect
+                <TabsTrigger value="connectors" className="text-xs px-1 h-7">
+                  <Link className="h-3 w-3" />
+                  <span className="hidden sm:inline ml-1">Connect</span>
                 </TabsTrigger>
-                <TabsTrigger value="suggest" className="text-xs">
-                  <Brain className="h-3 w-3 mr-1" />
-                  AI
+                <TabsTrigger value="suggest" className="text-xs px-1 h-7">
+                  <Brain className="h-3 w-3" />
+                  <span className="hidden sm:inline ml-1">AI</span>
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 mt-2">
               <TabsContent value="guidance" className="h-full m-0">
                 <ScrollArea className="h-full px-4">
                   <ContextualGuidance
