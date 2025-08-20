@@ -12,7 +12,8 @@ import {
 import { AgentActionCreator } from './AgentActionCreator';
 import { TopicManager } from './TopicManager';
 import { FlowRecordCreator } from './FlowRecordCreator';
-import { CustomerJourneyBuilder } from './CustomerJourneyBuilder';
+import { FlowiseStyleWorkflow } from './FlowiseStyleWorkflow';
+import { FlowiseThemeProvider } from './FlowiseTheme';
 
 interface AgentStudioProps {
   initialAgent?: any;
@@ -82,6 +83,23 @@ export const EnhancedAgentStudio: React.FC<AgentStudioProps> = ({ initialAgent }
           <div className="flex-1 overflow-hidden">
             <TabsContent value="overview" className="h-full m-0">
               <div className="p-6 space-y-6 h-full overflow-y-auto">
+                {/* Enhanced Features Banner */}
+                <Card className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950 dark:to-purple-950 border-blue-200 dark:border-blue-800">
+                  <CardContent className="p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+                        <Wrench className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold text-blue-900 dark:text-blue-100">Enhanced Workflow Builder</h3>
+                        <p className="text-sm text-blue-700 dark:text-blue-300">
+                          Comprehensive node library • AI questionnaire • CRUD operations • FlowiseAI-style interface
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
                 {/* Agent Overview Cards */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   <Card>
@@ -144,9 +162,12 @@ export const EnhancedAgentStudio: React.FC<AgentStudioProps> = ({ initialAgent }
                 {/* Quick Actions */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Quick Actions</CardTitle>
+                    <CardTitle className="flex items-center gap-2">
+                      <Zap className="h-5 w-5" />
+                      Quick Actions & Wizards
+                    </CardTitle>
                   </CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <CardContent className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <Dialog open={showActionCreator} onOpenChange={setShowActionCreator}>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="h-20 flex flex-col gap-2">
@@ -170,11 +191,16 @@ export const EnhancedAgentStudio: React.FC<AgentStudioProps> = ({ initialAgent }
                       <span>Manage Topics</span>
                     </Button>
 
+                    <Button variant="outline" className="h-20 flex flex-col gap-2" onClick={() => setActiveTab('actions')}>
+                      <Bot className="h-6 w-6" />
+                      <span>Visual Builder</span>
+                    </Button>
+
                     <Dialog open={showFlowCreator} onOpenChange={setShowFlowCreator}>
                       <DialogTrigger asChild>
                         <Button variant="outline" className="h-20 flex flex-col gap-2">
                           <Database className="h-6 w-6" />
-                          <span>Create Flow</span>
+                          <span>Flow Designer</span>
                         </Button>
                       </DialogTrigger>
                       <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
@@ -225,39 +251,46 @@ export const EnhancedAgentStudio: React.FC<AgentStudioProps> = ({ initialAgent }
             </TabsContent>
 
             <TabsContent value="actions" className="h-full m-0">
-              <div className="p-6 h-full">
-                <div className="space-y-4 h-full">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-2xl font-bold">Agent Actions</h2>
-                      <p className="text-muted-foreground">
-                        Agents use actions to get things done intelligently and securely. These actions are configured and available to assign to a topic.
-                      </p>
+              <FlowiseThemeProvider>
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b bg-background">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-xl font-bold">Visual Workflow Builder</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Build intelligent agent workflows with comprehensive node library, AI recommendations, and full CRUD operations
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Dialog open={showActionCreator} onOpenChange={setShowActionCreator}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Zap className="h-4 w-4 mr-2" />
+                              New Action
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Create Agent Action</DialogTitle>
+                            </DialogHeader>
+                            <AgentActionCreator 
+                              onSave={() => setShowActionCreator(false)}
+                              onCancel={() => setShowActionCreator(false)}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                        <Badge variant="secondary" className="bg-blue-100 text-blue-700 dark:bg-blue-900 dark:text-blue-300">
+                          Enhanced Canvas
+                        </Badge>
+                      </div>
                     </div>
-                    <Dialog open={showActionCreator} onOpenChange={setShowActionCreator}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Zap className="h-4 w-4 mr-2" />
-                          New Agent Action
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Create Agent Action</DialogTitle>
-                        </DialogHeader>
-                        <AgentActionCreator 
-                          onSave={() => setShowActionCreator(false)}
-                          onCancel={() => setShowActionCreator(false)}
-                        />
-                      </DialogContent>
-                    </Dialog>
                   </div>
                   
-                  <div className="flex-1 border rounded-lg">
-                    <CustomerJourneyBuilder />
+                  <div className="flex-1 relative">
+                    <FlowiseStyleWorkflow />
                   </div>
                 </div>
-              </div>
+              </FlowiseThemeProvider>
             </TabsContent>
 
             <TabsContent value="topics" className="h-full m-0">
@@ -265,39 +298,46 @@ export const EnhancedAgentStudio: React.FC<AgentStudioProps> = ({ initialAgent }
             </TabsContent>
 
             <TabsContent value="flows" className="h-full m-0">
-              <div className="p-6 h-full">
-                <div className="space-y-4 h-full">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <h2 className="text-2xl font-bold">Flow Builder</h2>
-                      <p className="text-muted-foreground">
-                        Create and manage automated workflows and data flows
-                      </p>
+              <FlowiseThemeProvider>
+                <div className="h-full flex flex-col">
+                  <div className="p-4 border-b bg-background">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <h2 className="text-xl font-bold">Advanced Flow Designer</h2>
+                        <p className="text-sm text-muted-foreground">
+                          Create sophisticated agent flows with LLMs, VLMs, MCP servers, channels, and deployment-ready configurations
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Dialog open={showFlowCreator} onOpenChange={setShowFlowCreator}>
+                          <DialogTrigger asChild>
+                            <Button variant="outline" size="sm">
+                              <Database className="h-4 w-4 mr-2" />
+                              New Flow
+                            </Button>
+                          </DialogTrigger>
+                          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+                            <DialogHeader>
+                              <DialogTitle>Create Flow Record</DialogTitle>
+                            </DialogHeader>
+                            <FlowRecordCreator 
+                              onSave={() => setShowFlowCreator(false)}
+                              onCancel={() => setShowFlowCreator(false)}
+                            />
+                          </DialogContent>
+                        </Dialog>
+                        <Badge variant="secondary" className="bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300">
+                          FlowiseAI Style
+                        </Badge>
+                      </div>
                     </div>
-                    <Dialog open={showFlowCreator} onOpenChange={setShowFlowCreator}>
-                      <DialogTrigger asChild>
-                        <Button>
-                          <Database className="h-4 w-4 mr-2" />
-                          New Flow
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-                        <DialogHeader>
-                          <DialogTitle>Create Flow Record</DialogTitle>
-                        </DialogHeader>
-                        <FlowRecordCreator 
-                          onSave={() => setShowFlowCreator(false)}
-                          onCancel={() => setShowFlowCreator(false)}
-                        />
-                      </DialogContent>
-                    </Dialog>
                   </div>
                   
-                  <div className="flex-1 border rounded-lg">
-                    <CustomerJourneyBuilder />
+                  <div className="flex-1 relative">
+                    <FlowiseStyleWorkflow />
                   </div>
                 </div>
-              </div>
+              </FlowiseThemeProvider>
             </TabsContent>
           </div>
         </Tabs>
