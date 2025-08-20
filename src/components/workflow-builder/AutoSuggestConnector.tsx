@@ -18,6 +18,14 @@ interface AutoSuggestConnectorProps {
     steps: string[];
     integrations: string[];
   };
+  workflowContext?: {
+    type: 'visual' | 'manual';
+    stage: string;
+    useCaseData?: any;
+    capturedRequirements?: any;
+    journeyStages?: any[];
+  };
+  contextualSuggestions?: any[];
 }
 
 interface NodeSuggestion {
@@ -35,7 +43,9 @@ export const AutoSuggestConnector: React.FC<AutoSuggestConnectorProps> = ({
   selectedNode,
   onSuggestionAccepted,
   manualSteps = [],
-  capturedRequirements
+  capturedRequirements,
+  workflowContext,
+  contextualSuggestions = []
 }) => {
   const [promptInput, setPromptInput] = useState('');
   const [suggestions, setSuggestions] = useState<NodeSuggestion[]>([]);
