@@ -46,8 +46,11 @@ import { AIModelSelector } from '@/components/agentic/AIModelSelector';
 import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
 import { NodeConfigurationPanel } from '@/components/workflow-builder/NodeConfigurationPanel';
 import { NodePalette } from '@/components/workflow-builder/NodePalette';
+import { UniversalAccessManager } from '@/components/workflow-builder/UniversalAccessManager';
+import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
+import { Node } from '@xyflow/react';
 
 const AgentsInner = () => {
   // State management
@@ -61,8 +64,10 @@ const AgentsInner = () => {
   const [wizardData, setWizardData] = useState<any>({});
   const [agentBuilderTab, setAgentBuilderTab] = useState('agent-config');  
   const [showPromptAssistant, setShowPromptAssistant] = useState(false);
-  const [selectedNode, setSelectedNode] = useState<any | null>(null);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [leftPanelTab, setLeftPanelTab] = useState<'palette' | 'access'>('palette');
+  const [rightPanelTab, setRightPanelTab] = useState<'config' | 'libraries' | 'assistant'>('config');
 
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
   const { createSession, updateSession } = useAgentSession();
@@ -203,11 +208,35 @@ const AgentsInner = () => {
           </div>
         </div>
 
-        {/* Main Content - Three Panel Layout */}
+        {/* Main Content - Enhanced Four Panel Layout */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Node Palette */}
+          {/* Left Panel - Split: Node Palette & Universal Access Manager */}
           <div className="w-80 border-r bg-card flex flex-col">
-            <NodePalette />
+            <div className="border-b">
+              <div className="flex">
+                <Button
+                  variant={leftPanelTab === 'palette' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 rounded-none"
+                  onClick={() => setLeftPanelTab('palette')}
+                >
+                  <Workflow className="w-4 h-4 mr-1" />
+                  Palette
+                </Button>
+                <Button
+                  variant={leftPanelTab === 'access' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 rounded-none"
+                  onClick={() => setLeftPanelTab('access')}
+                >
+                  <Database className="w-4 h-4 mr-1" />
+                  Access
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {leftPanelTab === 'palette' ? <NodePalette /> : <div className="p-4"><p className="text-sm text-muted-foreground">Universal Access Manager - Coming Soon</p></div>}
+            </div>
           </div>
 
           {/* Center Canvas Area */}
@@ -215,11 +244,15 @@ const AgentsInner = () => {
             <div className="p-4 border-b bg-card">
               <div className="flex items-center justify-between">
                 <div>
-                  <h2 className="font-medium text-sm">Patient Onboarding</h2>
-                  <p className="text-xs text-muted-foreground">Visual workflow canvas - Pre-configured with your requirements and journey stages</p>
+                  <h2 className="font-medium text-sm">Advanced Workflow Builder</h2>
+                  <p className="text-xs text-muted-foreground">
+                    Drag nodes from palette, configure with AI assistance, connect to data sources and APIs
+                  </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">Builder</Badge>
+                  <Badge variant="secondary" className="text-xs">Auto-Code</Badge>
+                  <Badge variant="secondary" className="text-xs">AI-Powered</Badge>
+                  <Badge variant="outline" className="text-xs">Connected</Badge>
                 </div>
               </div>
             </div>
@@ -231,89 +264,116 @@ const AgentsInner = () => {
                 sessionId={currentSession?.id}
                 initialNodes={[]}
                 initialEdges={[]}
-                onNodeSelect={setSelectedNode}
-                onSave={(data) => {
-                  console.log('Canvas data saved:', data);
+                onNodeSelect={(node) => {
+                  setSelectedNode(node);
+                  setRightPanelTab('config');
                 }}
+                onSave={handleFlowSave}
               />
             </div>
           </div>
 
-          {/* Right Panel - AI Model Selection & Node Configuration */}
+          {/* Right Panel - Split: Configuration, Libraries & AI Assistant */}
           <div className="w-80 border-l bg-background flex flex-col">
-            {selectedNode ? (
-              <NodeConfigurationPanel
-                node={selectedNode}
-                onUpdate={(nodeId, updates) => {
-                  console.log('Node configuration updated:', nodeId, updates);
-                }}
-                onDelete={(nodeId) => {
-                  console.log('Node deleted from config panel:', nodeId);
-                  setSelectedNode(null);
-                }}
-                onClose={() => setSelectedNode(null)}
-                availableConnectors={[
-                  'REST API', 'GraphQL', 'WebSocket', 'Database', 
-                  'Email', 'SMS', 'Slack', 'Teams', 'Webhook'
-                ]}
-                aiModels={[
-                  'gpt-4o-mini', 'gpt-4o', 'claude-3-sonnet', 
-                  'claude-3-haiku', 'gemini-pro', 'llama-3'
-                ]}
-              />
-            ) : (
-              <div className="p-6 space-y-6">
-                <div>
-                  <h3 className="text-lg font-semibold mb-4">AI Model & Prompts</h3>
-                  <div className="space-y-4">
-                    <div>
-                      <Label htmlFor="model-select">Select AI Model</Label>
-                      <Select defaultValue="gpt-4o-mini">
-                        <SelectTrigger id="model-select">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="gpt-4o-mini">GPT-4O Mini</SelectItem>
-                          <SelectItem value="gpt-4o">GPT-4O</SelectItem>
-                          <SelectItem value="claude-3">Claude 3</SelectItem>
-                          <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
-                        </SelectContent>
-                      </Select>
+            <div className="border-b">
+              <div className="flex">
+                <Button
+                  variant={rightPanelTab === 'config' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 rounded-none text-xs"
+                  onClick={() => setRightPanelTab('config')}
+                >
+                  <Settings className="w-3 h-3 mr-1" />
+                  Config
+                </Button>
+                <Button
+                  variant={rightPanelTab === 'libraries' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 rounded-none text-xs"
+                  onClick={() => setRightPanelTab('libraries')}
+                >
+                  <Zap className="w-3 h-3 mr-1" />
+                  Actions
+                </Button>
+                <Button
+                  variant={rightPanelTab === 'assistant' ? 'default' : 'ghost'}
+                  size="sm"
+                  className="flex-1 rounded-none text-xs"
+                  onClick={() => setRightPanelTab('assistant')}
+                >
+                  <Bot className="w-3 h-3 mr-1" />
+                  AI
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              {rightPanelTab === 'config' && (
+                <NodeConfigurationPanel
+                  selectedNode={selectedNode}
+                  onNodeUpdate={(nodeId, updates) => {
+                    console.log('Node configuration updated:', nodeId, updates);
+                  }}
+                />
+              )}
+              {rightPanelTab === 'libraries' && <LibrariesAndActions />}
+              {rightPanelTab === 'assistant' && (
+                <div className="p-4 space-y-4 h-full flex flex-col">
+                  <div>
+                    <h3 className="text-sm font-semibold mb-2">AI Assistant</h3>
+                    <p className="text-xs text-muted-foreground mb-4">
+                      Get intelligent suggestions, auto-generate code, and receive guidance on workflow optimization.
+                    </p>
+                  </div>
+                  
+                  <div className="flex-1 space-y-4">
+                    <div className="bg-muted p-3 rounded-lg">
+                      <p className="text-xs text-muted-foreground">
+                        {selectedNode 
+                          ? `Selected: ${selectedNode.data?.label || 'Node'}. I can help configure this node, suggest improvements, or generate code.`
+                          : "Hi! I'm your AI workflow assistant. Select a node or ask me to help build your workflow."
+                        }
+                      </p>
                     </div>
                     
-                    <div>
-                      <Label htmlFor="system-prompt">System Prompt</Label>
-                      <Textarea 
-                        id="system-prompt"
-                        placeholder="Enter system prompt..."
-                        className="min-h-[100px]"
+                    <div className="space-y-2">
+                      <Textarea
+                        placeholder={selectedNode 
+                          ? "Ask me about this node or request changes..."
+                          : "Describe what you want to build or ask for help..."
+                        }
+                        className="text-xs min-h-[80px]"
                       />
+                      <Button size="sm" className="w-full">
+                        <MessageCircle className="h-3 w-3 mr-1" />
+                        Send Message
+                      </Button>
                     </div>
                     
-                    <div>
-                      <Label htmlFor="user-prompt">User Prompt Template</Label>
-                      <Textarea 
-                        id="user-prompt"
-                        placeholder="Enter user prompt template..."
-                        className="min-h-[100px]"
-                      />
+                    <div className="space-y-2">
+                      <h4 className="text-xs font-medium">Smart Actions</h4>
+                      <div className="grid gap-2">
+                        <Button size="sm" variant="outline" className="text-xs justify-start h-8">
+                          <Lightbulb className="h-3 w-3 mr-1" />
+                          Suggest Workflow
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs justify-start h-8">
+                          <ArrowRight className="h-3 w-3 mr-1" />
+                          Auto-Connect Nodes
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs justify-start h-8">
+                          <Database className="h-3 w-3 mr-1" />
+                          Generate Backend
+                        </Button>
+                        <Button size="sm" variant="outline" className="text-xs justify-start h-8">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          Optimize Flow
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
-                
-                {/* AI Assistant Toggle */}
-                <div className="border-t pt-6">
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => setShowAssistant(!showAssistant)}
-                  >
-                    <Bot className="w-4 h-4 mr-2" />
-                    {showAssistant ? 'Hide' : 'Show'} AI Assistant
-                  </Button>
-                </div>
-              </div>
-            )}
+              )}
+            </div>
           </div>
         </div>
 
