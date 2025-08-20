@@ -398,9 +398,12 @@ const validateWorkflow = (nodes: Node[], edges: Edge[]) => {
 };
 
 // Node Types Configuration
+import { workflowNodeTypes } from './nodes';
+
 const nodeTypes: NodeTypes = {
   custom: CustomNode,
   group: GroupNode,
+  ...workflowNodeTypes,
 };
 
 // Edge Types Configuration

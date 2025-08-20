@@ -45,6 +45,7 @@ import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDes
 import { AIModelSelector } from '@/components/agentic/AIModelSelector';
 import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
 import { NodeConfigurationPanel } from '@/components/workflow-builder/NodeConfigurationPanel';
+import { NodePalette } from '@/components/workflow-builder/NodePalette';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -204,140 +205,9 @@ const AgentsInner = () => {
 
         {/* Main Content - Three Panel Layout */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Journey Designer */}
+          {/* Left Panel - Node Palette */}
           <div className="w-80 border-r bg-card flex flex-col">
-            <div className="p-4 border-b">
-              <h3 className="font-medium text-sm">Journey Designer</h3>
-              <p className="text-xs text-muted-foreground mt-1">Drag steps to build your workflow</p>
-            </div>
-            
-            {/* Journey Design Section */}
-            <div className="p-4 border-b">
-              <h4 className="font-medium text-sm mb-3">Journey Design</h4>
-              <p className="text-xs text-muted-foreground mb-4">
-                No template is linked yet. Create a template to manage journey stages.
-              </p>
-              
-              <Button 
-                onClick={() => {
-                  toast.success('Template created successfully!');
-                }}
-                className="w-full mb-4"
-              >
-                Create Template
-              </Button>
-            </div>
-
-            {/* Journey Stages Form */}
-            <div className="flex-1 overflow-auto p-4">
-              <h4 className="font-medium text-sm mb-3">Journey Stages</h4>
-              <p className="text-xs text-muted-foreground mb-4">
-                Define the sequential steps for this template
-              </p>
-
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                  <span className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs">1</span>
-                  <span>New Stage</span>
-                </div>
-
-                <div className="space-y-3">
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Title</Label>
-                      <Input placeholder="New Stage" className="mt-1 h-8" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Owner Role</Label>
-                      <Input placeholder="" className="mt-1 h-8" />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label className="text-xs">Description</Label>
-                    <Textarea placeholder="" className="mt-1 min-h-[60px] text-xs" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Expected Duration (min)</Label>
-                      <Input type="number" className="mt-1 h-8" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Entry Criteria (comma-separated)</Label>
-                      <Input placeholder="" className="mt-1 h-8" />
-                    </div>
-                  </div>
-
-                  <div>
-                    <Label className="text-xs">Tasks Checklist (one per line)</Label>
-                    <Textarea placeholder="" className="mt-1 min-h-[60px] text-xs" />
-                  </div>
-
-                  <div>
-                    <Label className="text-xs">Outputs / Success Criteria (one per line)</Label>
-                    <Textarea placeholder="" className="mt-1 min-h-[60px] text-xs" />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2">
-                    <div>
-                      <Label className="text-xs">Risks (comma-separated)</Label>
-                      <Input placeholder="" className="mt-1 h-8" />
-                    </div>
-                    <div>
-                      <Label className="text-xs">Dependencies (comma-separated)</Label>
-                      <Input placeholder="" className="mt-1 h-8" />
-                    </div>
-                  </div>
-
-                  <div className="flex justify-between items-center pt-2">
-                    <div className="flex gap-1">
-                      <Button size="sm" variant="outline" className="w-8 h-8 p-0">
-                        <ArrowUp className="w-3 h-3" />
-                      </Button>
-                      <Button size="sm" variant="outline" className="w-8 h-8 p-0">
-                        <ArrowDown className="w-3 h-3" />
-                      </Button>
-                      <Button size="sm" variant="destructive" className="w-8 h-8 p-0">
-                        <X className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex justify-between pt-4">
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => {
-                      toast.success('Stage added successfully!');
-                    }}
-                  >
-                    <Plus className="w-4 h-4 mr-1" />
-                    Add Stage
-                  </Button>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        toast.success('Journey refreshed!');
-                      }}
-                    >
-                      Refresh
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => {
-                        toast.success('Journey stages applied to AI models!');
-                      }}
-                    >
-                      Apply
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
+            <NodePalette />
           </div>
 
           {/* Center Canvas Area */}
