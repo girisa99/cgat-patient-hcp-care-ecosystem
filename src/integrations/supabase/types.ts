@@ -1076,6 +1076,66 @@ export type Database = {
           },
         ]
       }
+      agent_workflows: {
+        Row: {
+          agent_session_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          metadata: Json | null
+          name: string
+          status: string
+          template_id: string | null
+          updated_at: string
+          version: number
+          workflow_data: Json
+        }
+        Insert: {
+          agent_session_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name: string
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+          version?: number
+          workflow_data?: Json
+        }
+        Update: {
+          agent_session_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          metadata?: Json | null
+          name?: string
+          status?: string
+          template_id?: string | null
+          updated_at?: string
+          version?: number
+          workflow_data?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_workflows_agent_session_id_fkey"
+            columns: ["agent_session_id"]
+            isOneToOne: false
+            referencedRelation: "agent_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_workflows_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agent_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agents: {
         Row: {
           agent_type: string | null
@@ -4492,6 +4552,56 @@ export type Database = {
         }
         Relationships: []
       }
+      node_configurations: {
+        Row: {
+          ai_model_config: Json | null
+          apis: Json | null
+          configuration_type: string
+          connectors: Json | null
+          created_at: string
+          data_storage: Json | null
+          id: string
+          node_id: string
+          updated_at: string
+          variables: Json | null
+          workflow_id: string
+        }
+        Insert: {
+          ai_model_config?: Json | null
+          apis?: Json | null
+          configuration_type: string
+          connectors?: Json | null
+          created_at?: string
+          data_storage?: Json | null
+          id?: string
+          node_id: string
+          updated_at?: string
+          variables?: Json | null
+          workflow_id: string
+        }
+        Update: {
+          ai_model_config?: Json | null
+          apis?: Json | null
+          configuration_type?: string
+          connectors?: Json | null
+          created_at?: string
+          data_storage?: Json | null
+          id?: string
+          node_id?: string
+          updated_at?: string
+          variables?: Json | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "node_configurations_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "agent_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notification_preferences: {
         Row: {
           created_at: string | null
@@ -7843,6 +7953,458 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_actions: {
+        Row: {
+          average_execution_time_ms: number | null
+          category: string
+          code: string | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          inputs: Json | null
+          is_custom: boolean | null
+          library_id: string | null
+          name: string
+          outputs: Json | null
+          parameters: Json | null
+          success_rate: number | null
+          type: string
+          updated_at: string
+          usage_count: number | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          average_execution_time_ms?: number | null
+          category: string
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inputs?: Json | null
+          is_custom?: boolean | null
+          library_id?: string | null
+          name: string
+          outputs?: Json | null
+          parameters?: Json | null
+          success_rate?: number | null
+          type: string
+          updated_at?: string
+          usage_count?: number | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          average_execution_time_ms?: number | null
+          category?: string
+          code?: string | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          inputs?: Json | null
+          is_custom?: boolean | null
+          library_id?: string | null
+          name?: string
+          outputs?: Json | null
+          parameters?: Json | null
+          success_rate?: number | null
+          type?: string
+          updated_at?: string
+          usage_count?: number | null
+          validation_rules?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_actions_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_libraries"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_collaborations: {
+        Row: {
+          cursor_position: Json | null
+          id: string
+          is_active: boolean
+          joined_at: string
+          last_active: string
+          permission: string
+          user_id: string
+          workflow_id: string
+        }
+        Insert: {
+          cursor_position?: Json | null
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          last_active?: string
+          permission?: string
+          user_id: string
+          workflow_id: string
+        }
+        Update: {
+          cursor_position?: Json | null
+          id?: string
+          is_active?: boolean
+          joined_at?: string
+          last_active?: string
+          permission?: string
+          user_id?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_collaborations_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "agent_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_connections: {
+        Row: {
+          action_id: string | null
+          configuration: Json | null
+          connection_type: string
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          library_id: string | null
+          operator_id: string | null
+          source_node_id: string
+          target_node_id: string
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          action_id?: string | null
+          configuration?: Json | null
+          connection_type: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          library_id?: string | null
+          operator_id?: string | null
+          source_node_id: string
+          target_node_id: string
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          action_id?: string | null
+          configuration?: Json | null
+          connection_type?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          library_id?: string | null
+          operator_id?: string | null
+          source_node_id?: string
+          target_node_id?: string
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_connections_action_id_fkey"
+            columns: ["action_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_actions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_connections_library_id_fkey"
+            columns: ["library_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_libraries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_connections_operator_id_fkey"
+            columns: ["operator_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_operators"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_deployments: {
+        Row: {
+          created_at: string
+          deployed_at: string | null
+          deployed_by: string | null
+          deployment_config: Json
+          deployment_name: string
+          environment: string
+          health_check_url: string | null
+          id: string
+          performance_metrics: Json | null
+          status: string
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          deployed_at?: string | null
+          deployed_by?: string | null
+          deployment_config?: Json
+          deployment_name: string
+          environment?: string
+          health_check_url?: string | null
+          id?: string
+          performance_metrics?: Json | null
+          status?: string
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          deployed_at?: string | null
+          deployed_by?: string | null
+          deployment_config?: Json
+          deployment_name?: string
+          environment?: string
+          health_check_url?: string | null
+          id?: string
+          performance_metrics?: Json | null
+          status?: string
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_deployments_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "agent_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_edges: {
+        Row: {
+          created_at: string
+          edge_data: Json | null
+          edge_id: string
+          edge_type: string | null
+          id: string
+          is_active: boolean
+          source_node_id: string
+          target_node_id: string
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          edge_data?: Json | null
+          edge_id: string
+          edge_type?: string | null
+          id?: string
+          is_active?: boolean
+          source_node_id: string
+          target_node_id: string
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          edge_data?: Json | null
+          edge_id?: string
+          edge_type?: string | null
+          id?: string
+          is_active?: boolean
+          source_node_id?: string
+          target_node_id?: string
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_edges_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "agent_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_libraries: {
+        Row: {
+          author: string | null
+          category: string
+          configuration: Json | null
+          created_at: string
+          created_by: string | null
+          dependencies: string[] | null
+          description: string | null
+          documentation_url: string | null
+          downloads: number | null
+          examples: Json | null
+          id: string
+          is_core: boolean | null
+          is_custom: boolean | null
+          is_installed: boolean | null
+          name: string
+          rating: number | null
+          repository_url: string | null
+          tags: string[] | null
+          updated_at: string
+          version: string
+        }
+        Insert: {
+          author?: string | null
+          category: string
+          configuration?: Json | null
+          created_at?: string
+          created_by?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          documentation_url?: string | null
+          downloads?: number | null
+          examples?: Json | null
+          id?: string
+          is_core?: boolean | null
+          is_custom?: boolean | null
+          is_installed?: boolean | null
+          name: string
+          rating?: number | null
+          repository_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          version?: string
+        }
+        Update: {
+          author?: string | null
+          category?: string
+          configuration?: Json | null
+          created_at?: string
+          created_by?: string | null
+          dependencies?: string[] | null
+          description?: string | null
+          documentation_url?: string | null
+          downloads?: number | null
+          examples?: Json | null
+          id?: string
+          is_core?: boolean | null
+          is_custom?: boolean | null
+          is_installed?: boolean | null
+          name?: string
+          rating?: number | null
+          repository_url?: string | null
+          tags?: string[] | null
+          updated_at?: string
+          version?: string
+        }
+        Relationships: []
+      }
+      workflow_nodes: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          node_data: Json
+          node_id: string
+          node_type: string
+          order_index: number | null
+          position_x: number
+          position_y: number
+          updated_at: string
+          workflow_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          node_data?: Json
+          node_id: string
+          node_type: string
+          order_index?: number | null
+          position_x: number
+          position_y: number
+          updated_at?: string
+          workflow_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          node_data?: Json
+          node_id?: string
+          node_type?: string
+          order_index?: number | null
+          position_x?: number
+          position_y?: number
+          updated_at?: string
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_nodes_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "agent_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_operators: {
+        Row: {
+          category: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          examples: string[] | null
+          id: string
+          is_binary: boolean | null
+          name: string
+          precedence: number | null
+          return_type: string | null
+          symbol: string
+          syntax: string
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          category: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          examples?: string[] | null
+          id?: string
+          is_binary?: boolean | null
+          name: string
+          precedence?: number | null
+          return_type?: string | null
+          symbol: string
+          syntax: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          examples?: string[] | null
+          id?: string
+          is_binary?: boolean | null
+          name?: string
+          precedence?: number | null
+          return_type?: string | null
+          symbol?: string
+          syntax?: string
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: []
       }
     }
     Views: {
