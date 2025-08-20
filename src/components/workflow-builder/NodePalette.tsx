@@ -19,69 +19,85 @@ interface NodePaletteItem {
 }
 
 const nodeTypes: NodePaletteItem[] = [
-  // Core Workflow Nodes
+  // Workflow Execution Nodes (Draggable to Canvas)
+  {
+    id: 'customer',
+    type: 'customer',
+    title: 'Customer',
+    icon: Users,
+    description: 'Customer touchpoint or interaction node',
+    category: 'core',
+    color: 'bg-blue-50 border-blue-200'
+  },
+  {
+    id: 'decision',
+    type: 'decision', 
+    title: 'Decision',
+    icon: Target,
+    description: 'Decision point for routing and logic',
+    category: 'core',
+    color: 'bg-yellow-50 border-yellow-200'
+  },
+  {
+    id: 'agent',
+    type: 'agent',
+    title: 'AI Agent',
+    icon: Bot,
+    description: 'Intelligent agent for processing and responses',
+    category: 'ai',
+    color: 'bg-indigo-50 border-indigo-200'
+  },
+  {
+    id: 'database',
+    type: 'database',
+    title: 'Database',
+    icon: Database,
+    description: 'Data storage and retrieval node',
+    category: 'integrations',
+    color: 'bg-cyan-50 border-cyan-200'
+  },
+  {
+    id: 'group',
+    type: 'group',
+    title: 'Group',
+    icon: Workflow,
+    description: 'Container for grouping related nodes',
+    category: 'core',
+    color: 'bg-gray-50 border-gray-200'
+  },
+
+  // Configuration Nodes (Opens Config Panels)
   {
     id: 'use-case',
     type: 'useCaseNode',
-    title: 'Use Case',
+    title: 'Use Case Config',
     icon: Lightbulb,
     description: 'Define the primary use case and requirements',
-    category: 'core',
+    category: 'actions',
     color: 'bg-yellow-50 border-yellow-200'
   },
   {
     id: 'journey-stages',
     type: 'journeyStagesNode',
-    title: 'Journey Stages',
+    title: 'Journey Config',
     icon: MapPin,
     description: 'Configure sequential journey stages',
-    category: 'core',
+    category: 'actions',
     color: 'bg-purple-50 border-purple-200'
   },
   {
-    id: 'wizard',
-    type: 'wizardNode',
-    title: 'Wizard Flow',
-    icon: Wand2,
-    description: 'Create step-by-step wizard flows',
-    category: 'core',
-    color: 'bg-emerald-50 border-emerald-200'
-  },
-  {
-    id: 'tasks',
-    type: 'tasksNode',
-    title: 'Tasks Config',
-    icon: CheckSquare,
-    description: 'Configure tasks and workflows',
-    category: 'core',
-    color: 'bg-blue-50 border-blue-200'
-  },
-
-  // AI & Intelligence
-  {
     id: 'ai-models',
     type: 'aiModelsNode',
-    title: 'AI Models',
+    title: 'AI Models Config',
     icon: Bot,
     description: 'Configure AI models and prompts',
     category: 'ai',
     color: 'bg-indigo-50 border-indigo-200'
   },
   {
-    id: 'knowledge-base',
-    type: 'knowledgeBaseNode',
-    title: 'Knowledge Base',
-    icon: Database,
-    description: 'Manage knowledge and documents',
-    category: 'ai',
-    color: 'bg-indigo-50 border-indigo-200'
-  },
-
-  // Actions & Automation
-  {
     id: 'actions',
     type: 'actionsNode',
-    title: 'Actions',
+    title: 'Actions Config',
     icon: Zap,
     description: 'Define automated actions and triggers',
     category: 'actions',
@@ -90,18 +106,27 @@ const nodeTypes: NodePaletteItem[] = [
   {
     id: 'connectors',
     type: 'connectorsNode',
-    title: 'Connectors',
+    title: 'Connectors Config',
     icon: Plug,
     description: 'Configure external integrations',
     category: 'integrations',
     color: 'bg-cyan-50 border-cyan-200'
+  },
+  {
+    id: 'knowledge-base',
+    type: 'knowledgeBaseNode',
+    title: 'Knowledge Base',
+    icon: Database,
+    description: 'Manage knowledge and documents',
+    category: 'integrations',
+    color: 'bg-indigo-50 border-indigo-200'
   },
 
   // Communication & Channels
   {
     id: 'channel-assignment',
     type: 'channelNode',
-    title: 'Channel Assignment',
+    title: 'Channel Config',
     icon: MessageCircle,
     description: 'Configure communication channels',
     category: 'integrations',
@@ -130,7 +155,7 @@ const nodeTypes: NodePaletteItem[] = [
   {
     id: 'testing',
     type: 'testingNode',
-    title: 'Testing',
+    title: 'Testing Config',
     icon: TestTube,
     description: 'Configure test cases and validation',
     category: 'deployment',
@@ -139,7 +164,7 @@ const nodeTypes: NodePaletteItem[] = [
   {
     id: 'deployment',
     type: 'deploymentNode',
-    title: 'Deployment',
+    title: 'Deployment Config',
     icon: Rocket,
     description: 'Configure deployment settings',
     category: 'deployment',
@@ -148,11 +173,11 @@ const nodeTypes: NodePaletteItem[] = [
 ];
 
 const categories = [
-  { id: 'core', name: 'Core Workflow', color: 'bg-slate-100' },
+  { id: 'core', name: 'Workflow Nodes', color: 'bg-slate-100' },
   { id: 'ai', name: 'AI & Intelligence', color: 'bg-indigo-100' },
-  { id: 'actions', name: 'Actions & Automation', color: 'bg-orange-100' },
-  { id: 'integrations', name: 'Integrations', color: 'bg-cyan-100' },
-  { id: 'deployment', name: 'Deployment', color: 'bg-green-100' }
+  { id: 'actions', name: 'Configuration', color: 'bg-orange-100' },
+  { id: 'integrations', name: 'Integrations & Data', color: 'bg-cyan-100' },
+  { id: 'deployment', name: 'Deployment & Testing', color: 'bg-green-100' }
 ];
 
 export const NodePalette: React.FC = () => {
@@ -170,7 +195,7 @@ export const NodePalette: React.FC = () => {
           Node Palette
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Drag nodes to the canvas to build your workflow
+          Drag <strong>Workflow Nodes</strong> (Customer, Agent, etc.) to canvas. Drag <strong>Config Nodes</strong> to open configuration panels.
         </p>
       </CardHeader>
       <CardContent className="p-0">
@@ -195,13 +220,15 @@ export const NodePalette: React.FC = () => {
                         draggable
                         onDragStart={(e) => onDragStart(e, node.type, {
                           label: node.title,
-                          type: node.type,
-                          category: node.category
+                          type: node.type.includes('Node') ? node.id : node.type, // Use simple type for workflow nodes
+                          category: node.category,
+                          isWorkflowNode: !node.type.includes('Node'), // Distinguish workflow vs config nodes
+                          configType: node.type.includes('Node') ? node.type : undefined
                         })}
                         className={`
                           p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing
                           hover:shadow-sm transition-all duration-200 hover:scale-[1.02]
-                          ${node.color}
+                          ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
                         `}
                       >
                         <div className="flex items-start gap-3">
@@ -209,8 +236,14 @@ export const NodePalette: React.FC = () => {
                             <node.icon className="h-4 w-4 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm text-foreground">
+                            <h4 className="font-medium text-sm text-foreground flex items-center gap-1">
                               {node.title}
+                              {!node.type.includes('Node') && (
+                                <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
+                              )}
+                              {node.type.includes('Node') && (
+                                <Badge variant="secondary" className="text-xs px-1 py-0">Config</Badge>
+                              )}
                             </h4>
                             <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                               {node.description}
