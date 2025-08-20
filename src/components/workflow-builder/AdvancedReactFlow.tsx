@@ -60,6 +60,41 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const [isEditing, setIsEditing] = useState(false);
+  const { getNodes, setNodes, getEdges, setEdges } = useReactFlow();
+  const rfNode = useStore((s) => s.nodeLookup.get(id));
+
+  const handleCopy = () => {
+    const base: any = rfNode;
+    if (!base) return;
+    const newId = `${id}-copy-${Date.now()}`;
+    const offset = {
+      x: (base.position?.x || 0) + 40,
+      y: (base.position?.y || 0) + 40,
+    };
+    const newNode: any = {
+      id: newId,
+      type: 'custom',
+      position: offset,
+      data: { ...data, label: `${data?.label || 'Node'} (copy)` },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  };
+
+  const handleDelete = () => {
+    const edges = getEdges();
+    setEdges(edges.filter((e) => e.source !== id && e.target !== id));
+    setNodes((nds) => nds.filter((n) => n.id !== id));
+  };
+
+  const setAsStart = () => {
+    setNodes((nds) =>
+      nds.map((n) =>
+        n.id === id
+          ? { ...n, data: { ...n.data, isStartNode: true } }
+          : { ...n, data: { ...n.data, isStartNode: false } }
+      )
+    );
+  };
   
   return (
     <>
@@ -74,11 +109,14 @@ const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: b
         <Button size="sm" variant="outline" onClick={() => setIsEditing(!isEditing)}>
           <Edit className="h-3 w-3" />
         </Button>
-        <Button size="sm" variant="outline">
+        <Button size="sm" variant="outline" onClick={handleCopy}>
           <Copy className="h-3 w-3" />
         </Button>
-        <Button size="sm" variant="destructive">
+        <Button size="sm" variant="destructive" onClick={handleDelete}>
           <Trash2 className="h-3 w-3" />
+        </Button>
+        <Button size="sm" variant="outline" onClick={setAsStart} title="Mark as Start">
+          <Target className="h-3 w-3" />
         </Button>
       </NodeToolbar>
       
@@ -96,9 +134,12 @@ const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: b
           id="top"
         />
         
-        <div className="flex items-center gap-2 mb-2">
+<div className="flex items-center gap-2 mb-2">
           {data.icon && <data.icon className="h-4 w-4 text-primary" />}
           <div className="font-bold text-sm">{data.label}</div>
+          {data.isStartNode && (
+            <Badge variant="secondary" className="text-[10px]">Start</Badge>
+          )}
           {data.status && (
             <Badge variant={data.status === 'active' ? 'default' : 'secondary'} className="text-xs">
               {data.status}
@@ -398,16 +439,42 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const reactFlowInstance = useReactFlow();
 
   // Auto-layout when algorithm changes
-  useEffect(() => {
-    if (selectedLayout !== 'manual' && nodes.length > 0) {
-      const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(
-        nodes,
-        edges,
-        selectedLayout as 'dagre' | 'elk'
-      );
-      setNodes(layoutedNodes);
-      setEdges(layoutedEdges);
-    }
+useEffect(() => {
+    if (nodes.length === 0) return;
+    if (selectedLayout === 'manual') return;
+
+    const runLayout = async () => {
+      if (selectedLayout === 'dagre') {
+        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, 'dagre');
+        setNodes(layoutedNodes);
+        setEdges(layoutedEdges);
+      } else if (selectedLayout === 'elk') {
+        try {
+          const elk = new ELK();
+          const graph: any = {
+            id: 'root',
+            layoutOptions: {
+              algorithm: 'layered',
+              'elk.direction': 'DOWN',
+              'elk.layered.spacing.nodeNodeBetweenLayers': '80',
+              'elk.spacing.nodeNode': '60'
+            },
+            children: nodes.map((n) => ({ id: n.id, width: 150, height: 100 })),
+            edges: edges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
+          };
+          const res: any = await elk.layout(graph);
+          const layoutedNodes = nodes.map((n) => {
+            const l = res.children?.find((c: any) => c.id === n.id);
+            return { ...n, position: { x: l?.x || 0, y: l?.y || 0 } };
+          });
+          setNodes(layoutedNodes);
+        } catch (e) {
+          // fall back to manual if ELK fails
+        }
+      }
+    };
+
+    runLayout();
   }, [selectedLayout]);
 
   // Validation

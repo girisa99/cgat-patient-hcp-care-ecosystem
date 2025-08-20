@@ -43,6 +43,7 @@ import { toast } from 'sonner';
 import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDesigner';
 import { AIModelSelector } from '@/components/agentic/AIModelSelector';
 import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
+import { supabase } from '@/integrations/supabase/client';
 
 const AgentsInner = () => {
   // State management
@@ -57,7 +58,40 @@ const AgentsInner = () => {
   const [agentBuilderTab, setAgentBuilderTab] = useState('agent-config');
   const [showPromptAssistant, setShowPromptAssistant] = useState(false);
 
-  const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
+const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
+  const { user } = useMasterAuth();
+
+  const handleFlowSave = async (flowData: any) => {
+    try {
+      if (!user) {
+        toast.error('Please sign in to save your canvas');
+        return;
+      }
+
+      if (currentSessionId) {
+        const { error } = await supabase
+          .from('agent_sessions')
+          .update({ canvas: flowData })
+          .eq('id', currentSessionId)
+          .eq('user_id', user.id);
+        if (error) throw error;
+        toast.success('Workflow saved to your current session');
+      } else {
+        const { error } = await supabase
+          .from('agent_sessions')
+          .insert({
+            name: 'Genie Flow',
+            user_id: user.id,
+            canvas: flowData,
+            status: 'draft'
+          });
+        if (error) throw error;
+        toast.success('Workflow saved');
+      }
+    } catch (e: any) {
+      toast.error(e?.message || 'Failed to save workflow');
+    }
+  };
 
   // Initialize questionnaire for new users
   useEffect(() => {
@@ -314,8 +348,8 @@ const AgentsInner = () => {
               </div>
             </div>
             {/* ReactFlow Builder */}
-            <div className="flex-1 min-h-0">
-              <AdvancedReactFlowWrapper fitParent />
+<div className="flex-1 min-h-0">
+              <AdvancedReactFlowWrapper fitParent onSave={handleFlowSave} />
             </div>
           </div>
 
