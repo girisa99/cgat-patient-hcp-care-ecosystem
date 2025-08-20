@@ -630,7 +630,7 @@ const AgentsInner = () => {
                                           created_by: user?.id,
                                         };
                                         if (draftId) {
-                                          const { error } = await supabase
+                                          const { error } = await (supabase as any)
                                             .from('agent_workflows')
                                             .update({ ...payload, created_by: undefined })
                                             .eq('id', draftId)
@@ -638,7 +638,7 @@ const AgentsInner = () => {
                                             .single();
                                           if (error) throw error;
                                         } else {
-                                          const { data, error } = await supabase
+                                          const { data, error } = await (supabase as any)
                                             .from('agent_workflows')
                                             .insert(payload)
                                             .select()
