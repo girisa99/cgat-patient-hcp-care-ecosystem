@@ -172,8 +172,8 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
   };
 
   return (
-    <Card className="w-96 max-h-[90vh] overflow-y-auto overscroll-contain">
-      <CardHeader className="pb-3">
+    <Card className="w-full min-w-[20rem] max-w-[28rem] max-h-[90vh] overflow-hidden flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4" />
@@ -195,14 +195,34 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
           </div>
         </CardTitle>
       </CardHeader>
-      <CardContent>
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 text-xs">
-            <TabsTrigger value="basic">Basic</TabsTrigger>
-            <TabsTrigger value="variables">Variables</TabsTrigger>
-            <TabsTrigger value="apis">APIs</TabsTrigger>
-            <TabsTrigger value="storage">Storage</TabsTrigger>
-          </TabsList>
+      <CardContent className="flex-1 overflow-hidden p-0">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          <div className="px-4 pb-2 border-b bg-background/50 flex-shrink-0">
+            <TabsList className="grid w-full grid-cols-2 h-8 gap-0.5">
+              <TabsTrigger value="basic" className="text-xs px-2 h-7">
+                <Bot className="h-3 w-3" />
+                <span className="ml-1 truncate">Basic</span>
+              </TabsTrigger>
+              <TabsTrigger value="variables" className="text-xs px-2 h-7">
+                <Variable className="h-3 w-3" />
+                <span className="ml-1 truncate">Vars</span>
+              </TabsTrigger>
+            </TabsList>
+            
+            {/* Second row of tabs */}
+            <TabsList className="grid w-full grid-cols-2 h-8 gap-0.5 mt-1">
+              <TabsTrigger value="apis" className="text-xs px-2 h-7">
+                <Code className="h-3 w-3" />
+                <span className="ml-1 truncate">APIs</span>
+              </TabsTrigger>
+              <TabsTrigger value="storage" className="text-xs px-2 h-7">
+                <Database className="h-3 w-3" />
+                <span className="ml-1 truncate">Storage</span>
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto px-4 py-2">
 
           <TabsContent value="basic" className="space-y-4">
             <div>
@@ -558,6 +578,7 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
               </div>
             )}
           </TabsContent>
+          </div>
         </Tabs>
       </CardContent>
     </Card>
