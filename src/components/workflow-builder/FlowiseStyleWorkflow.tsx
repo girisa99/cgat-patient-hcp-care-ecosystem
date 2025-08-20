@@ -311,34 +311,32 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
     ...initialNodes
   ]);
   
-  const [edges, setEdges, onEdgesChange] = useEdgesState([
-    {
-      id: 'e1-2',
-      source: '1',
-      target: '2',
-      markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: theme.colors.primary, strokeWidth: 2 }
-    } as Edge,
-    {
-      id: 'e1-3',
-      source: '1',
-      target: '3',
-      markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: theme.colors.primary, strokeWidth: 2 }
-    } as Edge,
-    {
-      id: 'e2-4',
-      source: '2',
-      target: '4',
-      markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: theme.colors.success, strokeWidth: 2 }
-    } as Edge,
-    ...initialEdges.map(edge => ({
-      ...edge,
-      markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: theme.colors.primary, strokeWidth: 2 }
-    } as Edge))
-  ]);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(
+    [
+      {
+        id: 'e1-2',
+        source: '1',
+        target: '2',
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: theme.colors.primary, strokeWidth: 2 }
+      },
+      {
+        id: 'e1-3',
+        source: '1',
+        target: '3',
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: theme.colors.primary, strokeWidth: 2 }
+      },
+      {
+        id: 'e2-4',
+        source: '2',
+        target: '4',
+        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: theme.colors.success, strokeWidth: 2 }
+      },
+      ...initialEdges
+    ]
+  );
 
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showConnectorPanel, setShowConnectorPanel] = useState(false);
