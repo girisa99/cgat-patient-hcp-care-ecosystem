@@ -122,7 +122,16 @@ const AgentsInner = () => {
       setShowQuestionnaire(false);
       setShowModeSelector(true);
     }
-  }, [userSessions]);
+}, [userSessions]);
+
+  // Open config panel when requested by overlays
+  useEffect(() => {
+    const handler = (e: any) => {
+      setRightPanelTab('config');
+    };
+    window.addEventListener('open-node-config', handler as EventListener);
+    return () => window.removeEventListener('open-node-config', handler as EventListener);
+  }, []);
 
   // Event handlers
   const handleQuestionnaireComplete = (data: any) => {

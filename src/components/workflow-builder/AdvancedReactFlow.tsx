@@ -449,6 +449,23 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const { autoSave } = useAgentSession();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
+  // Apply suggestions from contextual access overlay
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { nodeId, connectors } = e.detail || {};
+      if (!nodeId || !Array.isArray(connectors)) return;
+      setNodes((nds) => nds.map(n => {
+        if (n.id !== nodeId) return n;
+        const existing = Array.isArray(n.data?.connectors) ? n.data.connectors : [];
+        const merged = Array.from(new Set([...existing, ...connectors]));
+        return { ...n, data: { ...n.data, connectors: merged } };
+      }));
+      showSuccess('Suggestions applied', 'Connectors added to the selected node');
+    };
+    window.addEventListener('apply-access-suggestions', handler as EventListener);
+    return () => window.removeEventListener('apply-access-suggestions', handler as EventListener);
+  }, [setNodes, showSuccess]);
+
   // Auto-layout when algorithm changes
 useEffect(() => {
     if (nodes.length === 0) return;

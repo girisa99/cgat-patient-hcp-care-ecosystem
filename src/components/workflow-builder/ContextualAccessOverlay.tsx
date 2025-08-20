@@ -186,10 +186,27 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
           </ScrollArea>
 
           <div className="flex gap-2 pt-2 border-t">
-            <Button size="sm" className="flex-1 text-xs">
+            <Button 
+              size="sm" 
+              className="flex-1 text-xs"
+              onClick={() => {
+                const detail = { nodeId: node.id, connectors: data.connectors } as any;
+                window.dispatchEvent(new CustomEvent('apply-access-suggestions', { detail }));
+                onClose();
+              }}
+            >
               Apply Suggestions
             </Button>
-            <Button variant="outline" size="sm" className="text-xs">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="text-xs"
+              onClick={() => {
+                const detail = { nodeId: node.id } as any;
+                window.dispatchEvent(new CustomEvent('open-node-config', { detail }));
+                onClose();
+              }}
+            >
               Configure
             </Button>
           </div>
