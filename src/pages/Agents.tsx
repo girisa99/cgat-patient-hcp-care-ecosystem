@@ -48,6 +48,7 @@ import { NodeConfigurationPanel } from '@/components/workflow-builder/NodeConfig
 import { NodePalette } from '@/components/workflow-builder/NodePalette';
 import { UniversalAccessManager } from '@/components/workflow-builder/UniversalAccessManager';
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
+import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Node } from '@xyflow/react';
@@ -336,61 +337,21 @@ const AgentsInner = () => {
                 </div>
               )}
               {rightPanelTab === 'assistant' && (
-                <div className="p-4 space-y-4 h-full flex flex-col">
-                  <div>
-                    <h3 className="text-sm font-semibold mb-2">AI Assistant</h3>
-                    <p className="text-xs text-muted-foreground mb-4">
-                      Get intelligent suggestions, auto-generate code, and receive guidance on workflow optimization.
-                    </p>
-                  </div>
-                  
-                  <div className="flex-1 space-y-4">
-                    <div className="bg-muted p-3 rounded-lg">
-                      <p className="text-xs text-muted-foreground">
-                        {selectedNode 
-                          ? `Selected: ${selectedNode.data?.label || 'Node'}. I can help configure this node, suggest improvements, or generate code.`
-                          : "Hi! I'm your AI workflow assistant. Select a node or ask me to help build your workflow."
-                        }
-                      </p>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Textarea
-                        placeholder={selectedNode 
-                          ? "Ask me about this node or request changes..."
-                          : "Describe what you want to build or ask for help..."
-                        }
-                        className="text-xs min-h-[80px]"
-                      />
-                      <Button size="sm" className="w-full">
-                        <MessageCircle className="h-3 w-3 mr-1" />
-                        Send Message
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <h4 className="text-xs font-medium">Smart Actions</h4>
-                      <div className="grid gap-2">
-                        <Button size="sm" variant="outline" className="text-xs justify-start h-8">
-                          <Lightbulb className="h-3 w-3 mr-1" />
-                          Suggest Workflow
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-xs justify-start h-8">
-                          <ArrowRight className="h-3 w-3 mr-1" />
-                          Auto-Connect Nodes
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-xs justify-start h-8">
-                          <Database className="h-3 w-3 mr-1" />
-                          Generate Backend
-                        </Button>
-                        <Button size="sm" variant="outline" className="text-xs justify-start h-8">
-                          <Sparkles className="h-3 w-3 mr-1" />
-                          Optimize Flow
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                <AIAssistant
+                  selectedNode={selectedNode}
+                  onWorkflowGenerate={(suggestion) => {
+                    console.log('Generating workflow:', suggestion);
+                  }}
+                  onNodeConnect={() => {
+                    console.log('Auto-connecting nodes');
+                  }}
+                  onBackendGenerate={() => {
+                    console.log('Generating backend');
+                  }}
+                  onOptimizeFlow={() => {
+                    console.log('Optimizing flow');
+                  }}
+                />
               )}
             </div>
           </div>
