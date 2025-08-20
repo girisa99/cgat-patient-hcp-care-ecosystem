@@ -551,16 +551,27 @@ useEffect(() => {
 
     setEdges((eds) => {
       const updatedEdges = addEdge(newEdge, eds);
-      // Auto-save to backend if sessionId exists
-      if (sessionId) {
-        autoSave(sessionId, { 
-          canvas: { 
-            nodes, 
-            edges: updatedEdges,
-            viewport: reactFlowInstance.getViewport(),
-            metadata: { layout: selectedLayout, connectionMode, snapToGrid }
-          } 
-        });
+      // Auto-save to backend if sessionId exists  
+      if (sessionId && autoSave) {
+        try {
+          autoSave.mutate({ 
+            sessionId, 
+            updates: { 
+              canvas: { 
+                workflow_steps: nodes, 
+                connections: updatedEdges,
+                layout: {
+                  viewport: reactFlowInstance.getViewport(),
+                  selectedLayout, 
+                  connectionMode, 
+                  snapToGrid
+                }
+              } 
+            }
+          });
+        } catch (error) {
+          console.warn('Auto-save failed:', error);
+        }
       }
       return updatedEdges;
     });
@@ -588,15 +599,26 @@ useEffect(() => {
     setNodes((nds) => {
       const updatedNodes = [...nds, newNode];
       // Auto-save to backend if sessionId exists
-      if (sessionId) {
-        autoSave(sessionId, { 
-          canvas: { 
-            nodes: updatedNodes, 
-            edges,
-            viewport: reactFlowInstance.getViewport(),
-            metadata: { layout: selectedLayout, connectionMode, snapToGrid }
-          } 
-        });
+      if (sessionId && autoSave) {
+        try {
+          autoSave.mutate({ 
+            sessionId, 
+            updates: { 
+              canvas: { 
+                workflow_steps: updatedNodes, 
+                connections: edges,
+                layout: {
+                  viewport: reactFlowInstance.getViewport(),
+                  selectedLayout, 
+                  connectionMode, 
+                  snapToGrid
+                }
+              } 
+            }
+          });
+        } catch (error) {
+          console.warn('Auto-save failed:', error);
+        }
       }
       return updatedNodes;
     });
@@ -634,9 +656,21 @@ useEffect(() => {
       }
     };
     
-    if (sessionId && updateCanvas) {
+    if (sessionId && autoSave) {
       try {
-        await updateCanvas(sessionId, flowData);
+        autoSave.mutate({ 
+          sessionId, 
+          updates: { 
+            canvas: {
+              workflow_steps: flowData.nodes,
+              connections: flowData.edges,
+              layout: {
+                viewport: flowData.viewport,
+                ...flowData.metadata
+              }
+            }
+          } 
+        });
         showSuccess('Workflow saved to backend');
       } catch (error) {
         showError('Failed to save to backend, using local storage');

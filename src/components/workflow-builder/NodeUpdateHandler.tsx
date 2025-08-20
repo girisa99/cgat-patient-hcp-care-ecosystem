@@ -23,14 +23,21 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
       setNodes(updatedNodes);
       
       // Persist to backend if sessionId exists
-      if (sessionId) {
-        await autoSave(sessionId, {
-          canvas: {
-            nodes: updatedNodes,
-            edges: getEdges(),
-            metadata: { timestamp: new Date().toISOString() }
-          }
-        });
+      if (sessionId && autoSave) {
+        try {
+          autoSave.mutate({
+            sessionId,
+            updates: {
+              canvas: {
+                workflow_steps: updatedNodes,
+                connections: getEdges(),
+                layout: { timestamp: new Date().toISOString() }
+              }
+            }
+          });
+        } catch (error) {
+          console.warn('Auto-save failed:', error);
+        }
       }
       
       onNodeUpdate?.(nodeId, updates);
@@ -51,14 +58,21 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
       setEdges(updatedEdges);
       
       // Persist to backend if sessionId exists
-      if (sessionId) {
-        await autoSave(sessionId, {
-          canvas: {
-            nodes: updatedNodes,
-            edges: updatedEdges,
-            metadata: { timestamp: new Date().toISOString() }
-          }
-        });
+      if (sessionId && autoSave) {
+        try {
+          autoSave.mutate({
+            sessionId,
+            updates: {
+              canvas: {
+                workflow_steps: updatedNodes,
+                connections: updatedEdges,
+                layout: { timestamp: new Date().toISOString() }
+              }
+            }
+          });
+        } catch (error) {
+          console.warn('Auto-save failed:', error);
+        }
       }
       
       onNodeDelete?.(nodeId);
@@ -82,14 +96,21 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
         const updatedEdges = getEdges().filter(edge => !edge.selected);
         setEdges(updatedEdges);
         
-        if (sessionId) {
-          autoSave(sessionId, {
-            canvas: {
-              nodes: getNodes(),
-              edges: updatedEdges,
-              metadata: { timestamp: new Date().toISOString() }
-            }
-          });
+        if (sessionId && autoSave) {
+          try {
+            autoSave.mutate({
+              sessionId,
+              updates: {
+                canvas: {
+                  workflow_steps: getNodes(),
+                  connections: updatedEdges,
+                  layout: { timestamp: new Date().toISOString() }
+                }
+              }
+            });
+          } catch (error) {
+            console.warn('Auto-save failed:', error);
+          }
         }
         
         showSuccess(`${selectedEdges.length} edge(s) deleted`);
