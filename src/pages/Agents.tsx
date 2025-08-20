@@ -42,6 +42,7 @@ import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { toast } from 'sonner';
 import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDesigner';
 import { AIModelSelector } from '@/components/agentic/AIModelSelector';
+import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
 
 const AgentsInner = () => {
   // State management
@@ -300,7 +301,7 @@ const AgentsInner = () => {
           </div>
 
           {/* Center Canvas Area */}
-          <div className="flex-1 flex flex-col bg-gray-50/50">
+          <div className="flex-1 flex flex-col bg-gray-50/50 min-h-0">
             <div className="p-4 border-b bg-card">
               <div className="flex items-center justify-between">
                 <div>
@@ -308,31 +309,13 @@ const AgentsInner = () => {
                   <p className="text-xs text-muted-foreground">Visual workflow canvas - Pre-configured with your requirements and journey stages</p>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">2 connectors</Badge>
-                  <Button variant="outline" size="sm" className="h-6 px-2 text-xs">
-                    AI Workflow Assistant
-                  </Button>
+                  <Badge variant="secondary" className="text-xs">Builder</Badge>
                 </div>
               </div>
             </div>
-            
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-center">
-                <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Bot className="w-8 h-8 text-primary" />
-                </div>
-                <h3 className="text-lg font-medium mb-2">Genie AI-Style Canvas</h3>
-                <p className="text-muted-foreground text-sm max-w-xs mb-4">
-                  Drag journey steps from the left panel to build your intelligent agent workflow
-                </p>
-                <Button onClick={() => {
-                  // Start building functionality
-                  toast.success('Building workflow...');
-                }}>
-                  <Plus className="w-4 h-4 mr-2" />
-                  Start Building
-                </Button>
-              </div>
+            {/* ReactFlow Builder */}
+            <div className="flex-1 min-h-0">
+              <AdvancedReactFlowWrapper fitParent />
             </div>
           </div>
 

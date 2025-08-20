@@ -172,7 +172,7 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
   };
 
   return (
-    <Card className="w-96 max-h-[90vh] overflow-auto">
+    <Card className="w-96 max-h-[90vh] overflow-y-auto overscroll-contain">
       <CardHeader className="pb-3">
         <CardTitle className="text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">

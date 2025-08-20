@@ -371,6 +371,7 @@ interface AdvancedReactFlowProps {
   onSave?: (flowData: any) => void;
   onLoad?: (flowData: any) => void;
   workflowType?: 'visual' | 'manual';
+  fitParent?: boolean; // when true, use h-full instead of h-screen
 }
 
 export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
@@ -378,7 +379,8 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   initialEdges = [],
   onSave,
   onLoad,
-  workflowType = 'visual'
+  workflowType = 'visual',
+  fitParent = false,
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -591,7 +593,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   };
 
   return (
-    <div className="w-full h-screen flex flex-col">
+    <div className={`w-full ${fitParent ? 'h-full' : 'h-screen'} flex flex-col`}>
       {/* Advanced Toolbar */}
       <div className="border-b bg-background p-4">
         <div className="flex items-center justify-between mb-4">
