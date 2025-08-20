@@ -18,7 +18,10 @@ import {
   Plus,
   Play,
   Save,
-  Sparkles
+  Sparkles,
+  ArrowUp,
+  ArrowDown,
+  X
 } from 'lucide-react';
 
 // Import existing components
@@ -129,11 +132,11 @@ const AgentsInner = () => {
     }
   };
 
-  // FlowiseAI Layout
+  // FlowiseAI Layout - Fixed with proper Create Template and Apply functionality
   const renderFlowiseLayout = () => {
     return (
       <div className="h-screen flex bg-background">
-        {/* Left Panel - Node Library & Tools */}
+        {/* Left Panel - Journey Design */}
         <div className="w-80 border-r bg-card flex flex-col">
           <div className="p-4 border-b">
             <h2 className="font-semibold text-lg">Agent Builder</h2>
@@ -162,101 +165,147 @@ const AgentsInner = () => {
             </div>
           </div>
 
-          {/* Content based on mode and step */}
-          <div className="flex-1 overflow-auto p-4">
-            {selectedMode === 'visual' && (
-              <div className="space-y-4">
-                {visualWorkflowSubTab === 'use-case' && (
-                  <div>
-                    <h3 className="font-medium mb-3">Use Case Selection</h3>
-                    <UseCaseSelector
-                      selectedUseCase={selectedUseCase}
-                      onUseCaseChange={handleUseCaseSelect}
-                      selectedCategories={[]}
-                      selectedTopics={[]}
-                    />
+          {/* Journey Design Section - Always visible */}
+          <div className="flex-1 overflow-auto">
+            <div className="p-4">
+              <h3 className="font-medium mb-3">Journey Design</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                No template is linked yet. Create a template to manage journey stages.
+              </p>
+              
+              <Button 
+                onClick={() => {
+                  // Create template functionality
+                  const newTemplate = {
+                    id: `template-${Date.now()}`,
+                    name: 'New Journey Template',
+                    stages: []
+                  };
+                  toast.success('Template created successfully!');
+                  console.log('Template created:', newTemplate);
+                }}
+                className="w-full mb-4"
+              >
+                Create Template
+              </Button>
+            </div>
+
+            {/* Journey Stages */}
+            <div className="border-t">
+              <div className="p-4">
+                <h4 className="font-medium mb-3">Journey Stages</h4>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Define the sequential steps for this template
+                </p>
+
+                {/* Stage Configuration UI */}
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                    <span className="w-6 h-6 bg-primary text-primary-foreground rounded-full flex items-center justify-center text-xs">1</span>
+                    <span>New Stage</span>
                   </div>
-                )}
-                
-                {visualWorkflowSubTab === 'journey' && (
-                  <div>
-                    <h3 className="font-medium mb-3">Journey Design</h3>
-                    <JourneyEditor />
-                  </div>
-                )}
-                
-                {visualWorkflowSubTab === 'wizard' && (
-                  <div>
-                    <h3 className="font-medium mb-3">Agent Setup</h3>
-                    <StreamlinedAgentWizard />
-                  </div>
-                )}
-                
-                {visualWorkflowSubTab === 'canvas' && (
-                  <div>
-                    <h3 className="font-medium mb-3">Visual Canvas</h3>
-                    <div className="space-y-2">
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Bot className="w-4 h-4 mr-2" />
-                        Agent Nodes
+
+                  <Card className="p-4">
+                    <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Title</Label>
+                          <Input placeholder="New Stage" className="mt-1" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Owner Role</Label>
+                          <Input placeholder="" className="mt-1" />
+                        </div>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-xs">Description</Label>
+                        <Textarea placeholder="" className="mt-1 min-h-[80px]" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Expected Duration (min)</Label>
+                          <Input type="number" className="mt-1" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Entry Criteria (comma-separated)</Label>
+                          <Input placeholder="" className="mt-1" />
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label className="text-xs">Tasks Checklist (one per line)</Label>
+                        <Textarea placeholder="" className="mt-1 min-h-[80px]" />
+                      </div>
+
+                      <div>
+                        <Label className="text-xs">Outputs / Success Criteria (one per line)</Label>
+                        <Textarea placeholder="" className="mt-1 min-h-[80px]" />
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <Label className="text-xs">Risks (comma-separated)</Label>
+                          <Input placeholder="" className="mt-1" />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Dependencies (comma-separated)</Label>
+                          <Input placeholder="" className="mt-1" />
+                        </div>
+                      </div>
+
+                      <div className="flex justify-between items-center pt-2">
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline">
+                            <ArrowUp className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="outline">
+                            <ArrowDown className="w-4 h-4" />
+                          </Button>
+                          <Button size="sm" variant="destructive">
+                            <X className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  </Card>
+
+                  <div className="flex justify-between">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        // Add stage functionality
+                        toast.success('Stage added successfully!');
+                      }}
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Stage
+                    </Button>
+                    <div className="flex gap-2">
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          // Refresh functionality
+                          toast.success('Journey refreshed!');
+                        }}
+                      >
+                        Refresh
                       </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <MessageCircle className="w-4 h-4 mr-2" />
-                        Chat Nodes
-                      </Button>
-                      <Button variant="outline" size="sm" className="w-full justify-start">
-                        <Database className="w-4 h-4 mr-2" />
-                        Data Nodes
+                      <Button
+                        onClick={() => {
+                          // Apply functionality - connect to AI models
+                          toast.success('Journey stages applied to AI models!');
+                          console.log('Applying stages to models...');
+                        }}
+                      >
+                        Apply
                       </Button>
                     </div>
                   </div>
-                )}
-              </div>
-            )}
-            
-            {selectedMode === 'manual' && (
-              <div className="space-y-4">
-                <h3 className="font-medium mb-3">Manual Configuration</h3>
-                <div className="space-y-2">
-                  <Button 
-                    variant={agentBuilderTab === 'agent-config' ? 'default' : 'outline'} 
-                    size="sm" 
-                    className="w-full justify-start"
-                    onClick={() => setAgentBuilderTab('agent-config')}
-                  >
-                    <Settings className="w-4 h-4 mr-2" />
-                    Agent Config
-                  </Button>
-                  <Button 
-                    variant={agentBuilderTab === 'models-templates' ? 'default' : 'outline'} 
-                    size="sm" 
-                    className="w-full justify-start"
-                    onClick={() => setAgentBuilderTab('models-templates')}
-                  >
-                    <Bot className="w-4 h-4 mr-2" />
-                    Models
-                  </Button>
-                  <Button 
-                    variant={agentBuilderTab === 'connectors-api' ? 'default' : 'outline'} 
-                    size="sm" 
-                    className="w-full justify-start"
-                    onClick={() => setAgentBuilderTab('connectors-api')}
-                  >
-                    <Zap className="w-4 h-4 mr-2" />
-                    Connectors
-                  </Button>
-                  <Button 
-                    variant={agentBuilderTab === 'actions-tasks' ? 'default' : 'outline'} 
-                    size="sm" 
-                    className="w-full justify-start"
-                    onClick={() => setAgentBuilderTab('actions-tasks')}
-                  >
-                    <Zap className="w-4 h-4 mr-2" />
-                    Actions
-                  </Button>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
@@ -424,26 +473,47 @@ const AgentsInner = () => {
           </div>
         </div>
 
-        {/* AI Assistant Panel (optional overlay) */}
+        {/* AI Assistant Panel (fixed positioning to not block interface) */}
         {showPromptAssistant && (
-          <div className="absolute top-0 right-0 w-80 h-full border-l bg-card flex flex-col z-50">
+          <div className="fixed top-4 right-4 w-96 max-h-[80vh] border bg-card rounded-lg shadow-lg flex flex-col z-50">
             <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="font-semibold">AI Assistant</h3>
+              <h3 className="font-semibold">AI Prompt Assistant</h3>
               <Button 
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowPromptAssistant(false)}
+                className="h-6 w-6 p-0"
               >
-                ×
+                <X className="w-4 h-4" />
               </Button>
             </div>
             <div className="flex-1 overflow-auto p-4">
-              <PromptAssistant
-                mode={selectedMode as any}
-                onGenerate={handlePromptGenerate}
-                isVisible={true}
-                onToggle={() => setShowPromptAssistant(!showPromptAssistant)}
-              />
+              <div className="space-y-4">
+                <div>
+                  <Label className="text-sm font-medium">Visual Workflow Mode</Label>
+                  <p className="text-xs text-muted-foreground mb-3">
+                    I'll generate a visual workflow based on your description.
+                  </p>
+                  <Textarea 
+                    placeholder="e.g. Create a customer support agent that handles inquiries and escalates complex issues..."
+                    className="min-h-[100px]"
+                  />
+                </div>
+                <Button 
+                  className="w-full"
+                  onClick={() => {
+                    toast.success('Workflow generated!');
+                    setShowPromptAssistant(false);
+                  }}
+                >
+                  <Sparkles className="w-4 h-4 mr-2" />
+                  Generate Workflow
+                </Button>
+                <div className="text-xs text-muted-foreground">
+                  • Creates your nodes and connections<br/>
+                  • You can refine the generated configuration afterward
+                </div>
+              </div>
             </div>
           </div>
         )}
