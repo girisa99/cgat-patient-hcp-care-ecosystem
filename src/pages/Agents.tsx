@@ -146,7 +146,7 @@ const AgentsInner = () => {
       setSelectedMode('visual' as any);
       setShowModeSelector(false);
       setAgentBuilderTab('canvas-designer');
-      setVisualWorkflowSubTab('canvas');
+      setVisualWorkflowSubTab('use-case');
       
       // Initialize with context data
       if (urlContext.useCaseData) {
@@ -159,7 +159,7 @@ const AgentsInner = () => {
       // Clear URL params to clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
       
-      toast.success('Visual workflow loaded with your use case and requirements!');
+      toast.success('Visual workflow loaded. Start from Use Case.');
     } else if (tabParam === 'configuration' && urlContext) {
       console.log('🎯 Loading manual configuration with context:', urlContext);
       setActiveTab('ecosystem');

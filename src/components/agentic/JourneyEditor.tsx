@@ -23,51 +23,38 @@ export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, sessio
   React.useEffect(() => setEffectiveTemplateId(templateId), [templateId]);
   const { stages, isLoading, createStage, updateStage, deleteStage, reorderStages, refetch } = useJourneyStages(effectiveTemplateId);
 
-  // If no template yet, offer to create one (avoids 'No templateId provided')
-  if (!effectiveTemplateId) {
-    const createTemplate = async () => {
-      try {
-        const user = (await supabase.auth.getUser()).data.user;
-        const { data: tpl, error } = await supabase
-          .from('agent_templates')
-          .insert({
-            name: 'New Agent Template',
-            description: useCase ? `Journey for: ${useCase}` : null,
-            template_type: 'custom',
-            is_default: false,
-            created_by: user?.id ?? null,
-            journey_stages: [],
-          })
-          .select('id')
-          .maybeSingle();
-        if (error || !tpl) throw (error ?? new Error('Template creation failed'));
+  // Template creation helper (kept outside of render branches to preserve hook order)
+  const createTemplate = async () => {
+    try {
+      const user = (await supabase.auth.getUser()).data.user;
+      const { data: tpl, error } = await supabase
+        .from('agent_templates')
+        .insert({
+          name: 'New Agent Template',
+          description: useCase ? `Journey for: ${useCase}` : null,
+          template_type: 'custom',
+          is_default: false,
+          created_by: user?.id ?? null,
+          journey_stages: [],
+        })
+        .select('id')
+        .maybeSingle();
+      if (error || !tpl) throw (error ?? new Error('Template creation failed'));
 
-        // If linked session provided, attach template to session
-        if (sessionId) {
-          await supabase
-            .from('agent_sessions')
-            .update({ template_id: tpl.id })
-            .eq('id', sessionId);
-        }
-
-        setEffectiveTemplateId(tpl.id);
-        toast({ title: 'Template created', description: 'You can now add journey stages.' });
-      } catch (e: any) {
-        toast({ title: 'Failed to create template', description: e?.message, variant: 'destructive' });
+      // If linked session provided, attach template to session
+      if (sessionId) {
+        await supabase
+          .from('agent_sessions')
+          .update({ template_id: tpl.id })
+          .eq('id', sessionId);
       }
-    };
 
-    return (
-      <Card>
-        <CardContent className="py-6 space-y-3">
-          <p className="text-sm text-muted-foreground">
-            No template is linked yet. Create a template to manage journey stages.
-          </p>
-          <Button onClick={createTemplate}>Create Template</Button>
-        </CardContent>
-      </Card>
-    );
-  }
+      setEffectiveTemplateId(tpl.id);
+      toast({ title: 'Template created', description: 'You can now add journey stages.' });
+    } catch (e: any) {
+      toast({ title: 'Failed to create template', description: e?.message, variant: 'destructive' });
+    }
+  };
 
   // Local drafts to prevent input resets while typing; save on blur
   const [drafts, setDrafts] = React.useState<Record<string, any>>({});
@@ -186,158 +173,171 @@ export const JourneyEditor: React.FC<JourneyEditorProps> = ({ templateId, sessio
   };
   return (
     <div className="space-y-4">
-      <div>
-        <h4 className="text-base font-medium">Journey Stages</h4>
-        <p className="text-sm text-muted-foreground">Define the sequential steps for this template</p>
-      </div>
+      {!effectiveTemplateId ? (
+        <Card>
+          <CardContent className="py-6 space-y-3">
+            <p className="text-sm text-muted-foreground">
+              No template is linked yet. Create a template to manage journey stages.
+            </p>
+            <Button onClick={createTemplate}>Create Template</Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <div>
+            <h4 className="text-base font-medium">Journey Stages</h4>
+            <p className="text-sm text-muted-foreground">Define the sequential steps for this template</p>
+          </div>
 
-      <div className="w-full overflow-x-auto">
-        <Steps className="min-w-max px-2">
-          {stages.map((s, idx) => (
-            <Step key={s.id || idx} title={`${idx + 1}. ${s.title || 'Stage'}`} description={s.description || ' '} />
-          ))}
-        </Steps>
-      </div>
+          <div className="w-full overflow-x-auto">
+            <Steps className="min-w-max px-2">
+              {stages.map((s, idx) => (
+                <Step key={s.id || idx} title={`${idx + 1}. ${s.title || 'Stage'}`} description={s.description || ' '} />
+              ))}
+            </Steps>
+          </div>
 
-      {/* AI Suggestions Panel */}
-      {useCase && (
-        <AISuggestionsPanel
-          useCase={useCase}
-          onAddStep={addAIStep}
-          onAddAllSteps={addAllAISteps}
-          currentStepsCount={stages.length}
-        />
+          {/* AI Suggestions Panel */}
+          {useCase && (
+            <AISuggestionsPanel
+              useCase={useCase}
+              onAddStep={addAIStep}
+              onAddAllSteps={addAllAISteps}
+              currentStepsCount={stages.length}
+            />
+          )}
+
+          <div className="space-y-3 max-h-[50vh] overflow-auto pr-1">
+            {isLoading && <div className="text-sm text-muted-foreground">Loading stages…</div>}
+            {!isLoading && stages.length === 0 && (
+              <Card>
+                <CardContent className="py-6 text-sm text-muted-foreground">No stages yet. Add your first stage.</CardContent>
+              </Card>
+            )}
+            {stages.map((s, idx) => (
+              <Card key={s.id || idx}>
+                <CardHeader className="py-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm">Stage {idx + 1}</CardTitle>
+                    <div className="flex items-center gap-2">
+                      <Button size="icon" variant="outline" onClick={() => handleReorder(idx, idx - 1)}>
+                        <ArrowUp className="h-4 w-4" />
+                      </Button>
+                      <Button size="icon" variant="outline" onClick={() => handleReorder(idx, idx + 1)}>
+                        <ArrowDown className="h-4 w-4" />
+                      </Button>
+                      {s.id && (
+                        <Button size="icon" variant="destructive" onClick={() => handleDelete(s.id!)}>
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Title</label>
+                      <Input
+                        value={drafts[s.id || String(idx)]?.title ?? (s.title || '')}
+                        onChange={(e) => updateDraft(s.id || String(idx), 'title', e.target.value)}
+                        onBlur={() => saveDraft(s.id || String(idx), s)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Owner Role</label>
+                      <Input
+                        value={drafts[s.id || String(idx)]?.owner_role ?? (s.owner_role || '')}
+                        onChange={(e) => updateDraft(s.id || String(idx), 'owner_role', e.target.value)}
+                        onBlur={() => saveDraft(s.id || String(idx), s)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Description</label>
+                    <Textarea
+                      value={drafts[s.id || String(idx)]?.description ?? (s.description || '')}
+                      onChange={(e) => updateDraft(s.id || String(idx), 'description', e.target.value)}
+                      onBlur={() => saveDraft(s.id || String(idx), s)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Expected Duration (min)</label>
+                      <Input
+                        type="number"
+                        value={drafts[s.id || String(idx)]?.expected_duration_minutes ?? (s.expected_duration_minutes != null ? String(s.expected_duration_minutes) : '')}
+                        onChange={(e) => updateDraft(s.id || String(idx), 'expected_duration_minutes', e.target.value)}
+                        onBlur={() => saveDraft(s.id || String(idx), s)}
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="text-xs text-muted-foreground">Entry Criteria (comma-separated)</label>
+                      <Input
+                        value={drafts[s.id || String(idx)]?.entry_criteria_text ?? (s.entry_criteria || []).join(', ')}
+                        onChange={(e) => updateDraft(s.id || String(idx), 'entry_criteria_text', e.target.value)}
+                        onBlur={() => saveDraft(s.id || String(idx), s)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Tasks Checklist (one per line)</label>
+                    <Textarea
+                      value={drafts[s.id || String(idx)]?.tasks_checklist_text ?? (s.tasks_checklist || []).join('\n')}
+                      onChange={(e) => updateDraft(s.id || String(idx), 'tasks_checklist_text', e.target.value)}
+                      onBlur={() => saveDraft(s.id || String(idx), s)}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Outputs / Success Criteria (one per line)</label>
+                    <Textarea
+                      value={drafts[s.id || String(idx)]?.outputs_success_criteria_text ?? (s.outputs_success_criteria || []).join('\n')}
+                      onChange={(e) => updateDraft(s.id || String(idx), 'outputs_success_criteria_text', e.target.value)}
+                      onBlur={() => saveDraft(s.id || String(idx), s)}
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <div>
+                      <label className="text-xs text-muted-foreground">Risks (comma-separated)</label>
+                      <Input
+                        value={drafts[s.id || String(idx)]?.risks_text ?? (s.risks || []).join(', ')}
+                        onChange={(e) => updateDraft(s.id || String(idx), 'risks_text', e.target.value)}
+                        onBlur={() => saveDraft(s.id || String(idx), s)}
+                      />
+                    </div>
+                    <div>
+                      <label className="text-xs text-muted-foreground">Dependencies (comma-separated)</label>
+                      <Input
+                        value={drafts[s.id || String(idx)]?.dependencies_text ?? (s.dependencies || []).join(', ')}
+                        onChange={(e) => updateDraft(s.id || String(idx), 'dependencies_text', e.target.value)}
+                        onBlur={() => saveDraft(s.id || String(idx), s)}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-xs text-muted-foreground">Validation Checkpoints (one per line)</label>
+                    <Textarea
+                      value={drafts[s.id || String(idx)]?.validation_checkpoints_text ?? (s.validation_checkpoints || []).join('\n')}
+                      onChange={(e) => updateDraft(s.id || String(idx), 'validation_checkpoints_text', e.target.value)}
+                      onBlur={() => saveDraft(s.id || String(idx), s)}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+
+          <div className="flex items-center justify-between pt-2">
+            <Button variant="outline" className="gap-2" onClick={handleAdd}>
+              <Plus className="h-4 w-4" /> Add Stage
+            </Button>
+            <div className="flex items-center gap-2">
+              <Button variant="secondary" onClick={() => refetch()}>Refresh</Button>
+              <Button onClick={applyAndClose}>Apply</Button>
+            </div>
+          </div>
+        </>
       )}
-
-      <div className="space-y-3 max-h-[50vh] overflow-auto pr-1">
-        {isLoading && <div className="text-sm text-muted-foreground">Loading stages…</div>}
-        {!isLoading && stages.length === 0 && (
-          <Card>
-            <CardContent className="py-6 text-sm text-muted-foreground">No stages yet. Add your first stage.</CardContent>
-          </Card>
-        )}
-        {stages.map((s, idx) => (
-          <Card key={s.id || idx}>
-            <CardHeader className="py-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-sm">Stage {idx + 1}</CardTitle>
-                <div className="flex items-center gap-2">
-                  <Button size="icon" variant="outline" onClick={() => handleReorder(idx, idx - 1)}>
-                    <ArrowUp className="h-4 w-4" />
-                  </Button>
-                  <Button size="icon" variant="outline" onClick={() => handleReorder(idx, idx + 1)}>
-                    <ArrowDown className="h-4 w-4" />
-                  </Button>
-                  {s.id && (
-                    <Button size="icon" variant="destructive" onClick={() => handleDelete(s.id!)}>
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">Title</label>
-                  <Input
-                    value={drafts[s.id || String(idx)]?.title ?? (s.title || '')}
-                    onChange={(e) => updateDraft(s.id || String(idx), 'title', e.target.value)}
-                    onBlur={() => saveDraft(s.id || String(idx), s)}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Owner Role</label>
-                  <Input
-                    value={drafts[s.id || String(idx)]?.owner_role ?? (s.owner_role || '')}
-                    onChange={(e) => updateDraft(s.id || String(idx), 'owner_role', e.target.value)}
-                    onBlur={() => saveDraft(s.id || String(idx), s)}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Description</label>
-                <Textarea
-                  value={drafts[s.id || String(idx)]?.description ?? (s.description || '')}
-                  onChange={(e) => updateDraft(s.id || String(idx), 'description', e.target.value)}
-                  onBlur={() => saveDraft(s.id || String(idx), s)}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">Expected Duration (min)</label>
-                  <Input
-                    type="number"
-                    value={drafts[s.id || String(idx)]?.expected_duration_minutes ?? (s.expected_duration_minutes != null ? String(s.expected_duration_minutes) : '')}
-                    onChange={(e) => updateDraft(s.id || String(idx), 'expected_duration_minutes', e.target.value)}
-                    onBlur={() => saveDraft(s.id || String(idx), s)}
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="text-xs text-muted-foreground">Entry Criteria (comma-separated)</label>
-                  <Input
-                    value={drafts[s.id || String(idx)]?.entry_criteria_text ?? (s.entry_criteria || []).join(', ')}
-                    onChange={(e) => updateDraft(s.id || String(idx), 'entry_criteria_text', e.target.value)}
-                    onBlur={() => saveDraft(s.id || String(idx), s)}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Tasks Checklist (one per line)</label>
-                <Textarea
-                  value={drafts[s.id || String(idx)]?.tasks_checklist_text ?? (s.tasks_checklist || []).join('\n')}
-                  onChange={(e) => updateDraft(s.id || String(idx), 'tasks_checklist_text', e.target.value)}
-                  onBlur={() => saveDraft(s.id || String(idx), s)}
-                />
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Outputs / Success Criteria (one per line)</label>
-                <Textarea
-                  value={drafts[s.id || String(idx)]?.outputs_success_criteria_text ?? (s.outputs_success_criteria || []).join('\n')}
-                  onChange={(e) => updateDraft(s.id || String(idx), 'outputs_success_criteria_text', e.target.value)}
-                  onBlur={() => saveDraft(s.id || String(idx), s)}
-                />
-              </div>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div>
-                  <label className="text-xs text-muted-foreground">Risks (comma-separated)</label>
-                  <Input
-                    value={drafts[s.id || String(idx)]?.risks_text ?? (s.risks || []).join(', ')}
-                    onChange={(e) => updateDraft(s.id || String(idx), 'risks_text', e.target.value)}
-                    onBlur={() => saveDraft(s.id || String(idx), s)}
-                  />
-                </div>
-                <div>
-                  <label className="text-xs text-muted-foreground">Dependencies (comma-separated)</label>
-                  <Input
-                    value={drafts[s.id || String(idx)]?.dependencies_text ?? (s.dependencies || []).join(', ')}
-                    onChange={(e) => updateDraft(s.id || String(idx), 'dependencies_text', e.target.value)}
-                    onBlur={() => saveDraft(s.id || String(idx), s)}
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="text-xs text-muted-foreground">Validation Checkpoints (one per line)</label>
-                <Textarea
-                  value={drafts[s.id || String(idx)]?.validation_checkpoints_text ?? (s.validation_checkpoints || []).join('\n')}
-                  onChange={(e) => updateDraft(s.id || String(idx), 'validation_checkpoints_text', e.target.value)}
-                  onBlur={() => saveDraft(s.id || String(idx), s)}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <div className="flex items-center justify-between pt-2">
-        <Button variant="outline" className="gap-2" onClick={handleAdd}>
-          <Plus className="h-4 w-4" /> Add Stage
-        </Button>
-        <div className="flex items-center gap-2">
-          <Button variant="secondary" onClick={() => refetch()}>Refresh</Button>
-          <Button onClick={applyAndClose}>Apply</Button>
-        </div>
-      </div>
     </div>
   );
 };
