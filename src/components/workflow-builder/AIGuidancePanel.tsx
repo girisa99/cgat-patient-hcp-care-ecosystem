@@ -8,7 +8,7 @@ import {
   Bot, Lightbulb, ArrowRight, CheckCircle, AlertTriangle, 
   Sparkles, MessageCircle, Send, RefreshCw
 } from 'lucide-react';
-
+import { motion } from 'framer-motion';
 interface AIGuidanceStep {
   id: string;
   type: 'suggestion' | 'next_step' | 'improvement' | 'warning';
@@ -244,142 +244,152 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
   }
 
   return (
-    <Card className="fixed bottom-4 right-4 w-[24rem] h-[70vh] max-h-[85vh] shadow-xl z-50 flex flex-col overflow-hidden">
-      <CardHeader className="pb-3 flex-shrink-0">
-        <CardTitle className="text-sm flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Bot className="h-4 w-4 text-primary" />
-            AI Workflow Assistant
-            <Badge variant="secondary">Beta</Badge>
-          </div>
-          <Button variant="ghost" size="sm" onClick={onToggle}>
-            ×
-          </Button>
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent className="flex-1 flex flex-col p-3 space-y-3 overflow-hidden">
-        {/* Conversation Area */}
-        <div className="flex-1 flex flex-col min-h-0">
-          <div className="flex items-center justify-between mb-2">
-            <h4 className="text-xs font-medium">Conversation</h4>
-            <Button
-              size="sm"
-              variant="ghost"
-              onClick={analyzeWorkflow}
-              disabled={isAnalyzing}
-            >
-              <RefreshCw className={`h-3 w-3 ${isAnalyzing ? 'animate-spin' : ''}`} />
+    <motion.div
+      className="fixed bottom-4 right-4 z-50"
+      drag
+      dragMomentum={false}
+      dragConstraints={{ top: 0, left: 0, right: 0, bottom: 0 }}
+    >
+      <Card className="w-[24rem] h-[70vh] max-h-[85vh] shadow-xl flex flex-col overflow-hidden pointer-events-auto">
+        <CardHeader className="pb-3 flex-shrink-0 cursor-move select-none">
+          <CardTitle className="text-sm flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Bot className="h-4 w-4 text-primary" />
+              AI Workflow Assistant
+              <Badge variant="secondary">Beta</Badge>
+            </div>
+            <Button variant="ghost" size="sm" onClick={onToggle} type="button">
+              ×
             </Button>
-          </div>
-          
-          <ScrollArea className="flex-1 border rounded-md p-2">
-            <div className="space-y-2">
-              {conversationHistory.map((msg, idx) => (
-                <div
-                  key={idx}
-                  className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
+          </CardTitle>
+        </CardHeader>
+
+        <CardContent className="flex-1 flex flex-col p-3 space-y-3 overflow-hidden">
+          {/* Conversation Area */}
+          <div className="flex-1 flex flex-col min-h-0">
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="text-xs font-medium">Conversation</h4>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={analyzeWorkflow}
+                disabled={isAnalyzing}
+                type="button"
+              >
+                <RefreshCw className={`h-3 w-3 ${isAnalyzing ? 'animate-spin' : ''}`} />
+              </Button>
+            </div>
+            
+            <ScrollArea className="flex-1 border rounded-md p-2">
+              <div className="space-y-2">
+                {conversationHistory.map((msg, idx) => (
                   <div
-                    className={`max-w-[80%] p-2 rounded-lg text-xs ${
-                      msg.type === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-muted'
-                    }`}
+                    key={idx}
+                    className={`flex ${msg.type === 'user' ? 'justify-end' : 'justify-start'}`}
                   >
-                    {msg.message}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </ScrollArea>
-
-          {/* Input Area */}
-          <div className="flex gap-2 mt-2">
-            <Textarea
-              value={userPrompt}
-              onChange={(e) => setUserPrompt(e.target.value)}
-              placeholder="Ask me anything about your workflow..."
-              className="text-xs resize-none"
-              rows={2}
-              onKeyPress={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleUserPrompt();
-                }
-              }}
-            />
-            <Button
-              size="sm"
-              onClick={handleUserPrompt}
-              disabled={!userPrompt.trim()}
-            >
-              <Send className="h-3 w-3" />
-            </Button>
-          </div>
-        </div>
-
-        {/* Suggestions Section */}
-        <div className="flex-shrink-0">
-          <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
-            <Sparkles className="h-3 w-3" />
-            Smart Suggestions
-            {isAnalyzing && <RefreshCw className="h-3 w-3 animate-spin" />}
-          </h4>
-          
-          <ScrollArea className="max-h-64">
-            <div className="space-y-2">
-              {suggestions.map((suggestion) => (
-                <Card
-                  key={suggestion.id}
-                  className={`p-2 ${suggestion.completed ? 'opacity-50' : ''}`}
-                >
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-1 mb-1">
-                        {getTypeIcon(suggestion.type)}
-                        <span className="text-xs font-medium truncate">
-                          {suggestion.title}
-                        </span>
-                        <Badge
-                          variant="outline"
-                          className={`text-xs px-1 py-0 ${getPriorityColor(suggestion.priority)}`}
-                        >
-                          {suggestion.priority}
-                        </Badge>
-                      </div>
-                      <p className="text-xs text-muted-foreground">
-                        {suggestion.description}
-                      </p>
+                    <div
+                      className={`max-w-[80%] p-2 rounded-lg text-xs ${
+                        msg.type === 'user'
+                          ? 'bg-primary text-primary-foreground'
+                          : 'bg-muted'
+                      }`}
+                    >
+                      {msg.message}
                     </div>
-                    
-                    {!suggestion.completed && suggestion.action && (
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleApplySuggestion(suggestion)}
-                        className="text-xs px-2 py-1 h-6 flex-shrink-0"
-                      >
-                        {suggestion.action}
-                      </Button>
-                    )}
-                    
-                    {suggestion.completed && (
-                      <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
-                    )}
                   </div>
-                </Card>
-              ))}
-              
-              {suggestions.length === 0 && !isAnalyzing && (
-                <div className="text-center text-xs text-muted-foreground py-4">
-                  Your workflow looks great! Keep building or ask me for help.
-                </div>
-              )}
+                ))}
+              </div>
+            </ScrollArea>
+
+            {/* Input Area */}
+            <div className="flex gap-2 mt-2">
+              <Textarea
+                value={userPrompt}
+                onChange={(e) => setUserPrompt(e.target.value)}
+                placeholder="Ask me anything about your workflow..."
+                className="text-xs resize-none"
+                rows={2}
+                onKeyPress={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleUserPrompt();
+                  }
+                }}
+              />
+              <Button
+                size="sm"
+                onClick={handleUserPrompt}
+                disabled={!userPrompt.trim()}
+                type="button"
+              >
+                <Send className="h-3 w-3" />
+              </Button>
             </div>
-          </ScrollArea>
-        </div>
-      </CardContent>
-    </Card>
+          </div>
+
+          {/* Suggestions Section */}
+          <div className="flex-shrink-0">
+            <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+              <Sparkles className="h-3 w-3" />
+              Smart Suggestions
+              {isAnalyzing && <RefreshCw className="h-3 w-3 animate-spin" />}
+            </h4>
+            
+            <ScrollArea className="max-h-64">
+              <div className="space-y-2">
+                {suggestions.map((suggestion) => (
+                  <Card
+                    key={suggestion.id}
+                    className={`p-2 ${suggestion.completed ? 'opacity-50' : ''}`}
+                  >
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-1 mb-1">
+                          {getTypeIcon(suggestion.type)}
+                          <span className="text-xs font-medium truncate">
+                            {suggestion.title}
+                          </span>
+                          <Badge
+                            variant="outline"
+                            className={`text-xs px-1 py-0 ${getPriorityColor(suggestion.priority)}`}
+                          >
+                            {suggestion.priority}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-muted-foreground">
+                          {suggestion.description}
+                        </p>
+                      </div>
+                      
+                      {!suggestion.completed && suggestion.action && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleApplySuggestion(suggestion)}
+                          className="text-xs px-2 py-1 h-6 flex-shrink-0"
+                          type="button"
+                        >
+                          {suggestion.action}
+                        </Button>
+                      )}
+                      
+                      {suggestion.completed && (
+                        <CheckCircle className="h-4 w-4 text-green-500 flex-shrink-0" />
+                      )}
+                    </div>
+                  </Card>
+                ))}
+                
+                {suggestions.length === 0 && !isAnalyzing && (
+                  <div className="text-center text-xs text-muted-foreground py-4">
+                    Your workflow looks great! Keep building or ask me for help.
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </CardContent>
+      </Card>
+    </motion.div>
   );
 };

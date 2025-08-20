@@ -202,6 +202,52 @@ const AgentsInner = () => {
     }
   }, [selectedMode, agentBuilderTab, visualWorkflowSubTab]);
 
+  // Persist builder state (mode, tabs, wizard data) to avoid resets on refresh
+  useEffect(() => {
+    try {
+      const state = {
+        selectedMode,
+        agentBuilderTab,
+        visualWorkflowSubTab,
+        wizardData,
+        showModeSelector,
+        showQuestionnaire,
+        hasCompletedQuestionnaire,
+      };
+      localStorage.setItem('agentBuilder_state_v1', JSON.stringify(state));
+    } catch {}
+  }, [selectedMode, agentBuilderTab, visualWorkflowSubTab, wizardData, showModeSelector, showQuestionnaire, hasCompletedQuestionnaire]);
+
+  // Rehydrate builder state on mount
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem('agentBuilder_state_v1');
+      if (raw) {
+        const s = JSON.parse(raw);
+        if (s.selectedMode) setSelectedMode(s.selectedMode);
+        if (s.agentBuilderTab) setAgentBuilderTab(s.agentBuilderTab);
+        if (s.visualWorkflowSubTab) setVisualWorkflowSubTab(s.visualWorkflowSubTab);
+        if (s.wizardData) setWizardData(s.wizardData);
+        if (typeof s.showModeSelector === 'boolean') setShowModeSelector(s.showModeSelector);
+        if (typeof s.showQuestionnaire === 'boolean') setShowQuestionnaire(s.showQuestionnaire);
+        if (typeof s.hasCompletedQuestionnaire === 'boolean') setHasCompletedQuestionnaire(s.hasCompletedQuestionnaire);
+      }
+    } catch {}
+  }, []);
+
+  // Load saved canvas draft if present
+  useEffect(() => {
+    try {
+      if (!wizardData?.generatedWorkflow) {
+        const draft = localStorage.getItem('customerJourney_draft_v1');
+        if (draft) {
+          setWizardData((prev) => ({ ...prev, generatedWorkflow: JSON.parse(draft) }));
+        }
+      }
+    } catch {}
+  }, []);
+
+
   // Handle questionnaire completion - proceed to mode selection
   const handleQuestionnaireComplete = (data: any) => {
     console.log('Questionnaire completed:', data);
@@ -563,6 +609,7 @@ const AgentsInner = () => {
                                   <CustomerJourneyBuilder 
                                     initialWorkflow={wizardData.generatedWorkflow}
                                     onSave={(workflow) => {
+                                      try { localStorage.setItem('customerJourney_draft_v1', JSON.stringify(workflow)); } catch {}
                                       setWizardData(prev => ({...prev, savedWorkflow: workflow}));
                                       toast.success('Visual workflow saved!');
                                     }}
