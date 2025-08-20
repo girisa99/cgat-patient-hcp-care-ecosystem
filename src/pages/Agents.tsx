@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { 
   Bot, 
   Settings, 
@@ -13,7 +14,11 @@ import {
   Zap,
   ArrowLeft,
   Lightbulb,
-  MessageCircle
+  MessageCircle,
+  Plus,
+  Play,
+  Save,
+  Sparkles
 } from 'lucide-react';
 
 // Import existing components
@@ -32,6 +37,8 @@ import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosyst
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { toast } from 'sonner';
+import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDesigner';
+import { AIModelSelector } from '@/components/agentic/AIModelSelector';
 
 const AgentsInner = () => {
   // State management
@@ -253,39 +260,28 @@ const AgentsInner = () => {
           </div>
         </div>
 
-        {/* Center Canvas Area */}
+        {/* Center Canvas Area - FlowiseAI Style */}
         <div className="flex-1 flex flex-col">
-          {/* Top Bar */}
+          {/* Top Bar with Actions */}
           <div className="h-14 border-b bg-card flex items-center justify-between px-4">
             <div className="flex items-center gap-4">
-              {/* Breadcrumb Navigation */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                {selectedMode === 'visual' && (
-                  <>
-                    <Button variant="ghost" size="sm" onClick={() => setVisualWorkflowSubTab('use-case')}>
-                      Use Case
-                    </Button>
-                    <ArrowRight className="w-4 h-4" />
-                    <Button variant="ghost" size="sm" onClick={() => setVisualWorkflowSubTab('journey')}>
-                      Journey
-                    </Button>
-                    <ArrowRight className="w-4 h-4" />
-                    <Button variant="ghost" size="sm" onClick={() => setVisualWorkflowSubTab('wizard')}>
-                      Setup
-                    </Button>
-                    <ArrowRight className="w-4 h-4" />
-                    <Button variant="ghost" size="sm" onClick={() => setVisualWorkflowSubTab('canvas')}>
-                      Canvas
-                    </Button>
-                  </>
-                )}
-                {selectedMode === 'manual' && (
-                  <span className="font-medium">Manual Configuration - {agentBuilderTab}</span>
-                )}
-              </div>
+              <h1 className="text-lg font-semibold text-foreground">
+                {selectedMode === 'visual' ? 'Visual Workflow Builder' : 'Manual Agent Configuration'}
+              </h1>
+              <Badge variant="secondary" className="text-xs">
+                {selectedMode === 'visual' ? visualWorkflowSubTab : agentBuilderTab}
+              </Badge>
             </div>
             
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm">
+                <Save className="w-4 h-4 mr-1" />
+                Save
+              </Button>
+              <Button size="sm" className="bg-primary hover:bg-primary/90">
+                <Play className="w-4 h-4 mr-1" />
+                Deploy
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowPromptAssistant(!showPromptAssistant)}>
                 <Lightbulb className="w-4 h-4 mr-1" />
                 AI Assistant
@@ -293,173 +289,144 @@ const AgentsInner = () => {
             </div>
           </div>
 
-          {/* Main Content Area */}
-          <div className="flex-1 overflow-hidden">
-            {selectedMode === 'visual' && visualWorkflowSubTab === 'canvas' && (
-              <CustomerJourneyBuilder
-                useCaseData={{
-                  name: selectedUseCase,
-                  description: 'Visual workflow canvas',
-                  detailedUseCase: wizardData?.prompt,
-                  targetUsers: 'Healthcare users',
-                  expectedOutcomes: 'Automated agent workflow'
-                }}
-                capturedRequirements={{
-                  connectors: ['Supabase', 'OpenAI'],
-                  actions: ['Process', 'Respond'],
-                  steps: ['Intake', 'Process', 'Response'],
-                  integrations: ['Healthcare APIs']
-                }}
-                journeyStages={journeyStages}
-                sessionId={currentSessionId}
-                onSave={(workflow) => console.log('Workflow saved:', workflow)}
-                onGenerateAgent={(workflow) => console.log('Agent generated:', workflow)}
-              />
-            )}
-            
-            {selectedMode === 'visual' && visualWorkflowSubTab !== 'canvas' && (
-              <div className="p-6">
-                {visualWorkflowSubTab === 'use-case' && (
-                  <div className="max-w-2xl">
-                    <h2 className="text-2xl font-bold mb-4">Select Your Use Case</h2>
-                    <p className="text-muted-foreground mb-6">Choose or define what your agent should accomplish</p>
-                    <UseCaseSelector
-                      selectedUseCase={selectedUseCase}
-                      onUseCaseChange={handleUseCaseSelect}
-                      selectedCategories={[]}
-                      selectedTopics={[]}
-                    />
-                  </div>
+          {/* Main Content Area - FlowiseAI Canvas Style */}
+          <div className="flex-1 flex overflow-hidden bg-background">
+            {/* Left Panel - Journey Steps & Nodes */}
+            <div className="w-80 border-r bg-card overflow-hidden flex flex-col">
+              <div className="p-4 border-b">
+                <h3 className="font-medium text-sm text-foreground">Journey Designer</h3>
+                <p className="text-xs text-muted-foreground mt-1">Drag steps to build your workflow</p>
+              </div>
+              <div className="flex-1 overflow-auto p-4">
+                <EnhancedJourneyDesigner
+                  useCase={selectedUseCase || "Design an intelligent agent workflow with AI-powered journey steps"}
+                  steps={[]}
+                  onStepsChange={(steps) => {
+                    console.log('Journey steps updated:', steps);
+                    setJourneyStages(steps);
+                  }}
+                />
+              </div>
+            </div>
+
+            {/* Center Canvas */}
+            <div className="flex-1 flex flex-col">
+              <div className="flex-1 bg-gray-50/50 relative">
+                {selectedMode === 'visual' && visualWorkflowSubTab === 'canvas' && (
+                  <CustomerJourneyBuilder
+                    useCaseData={{
+                      name: selectedUseCase,
+                      description: 'Visual workflow canvas',
+                      detailedUseCase: wizardData?.prompt,
+                      targetUsers: 'Healthcare users',
+                      expectedOutcomes: 'Automated agent workflow'
+                    }}
+                    capturedRequirements={{
+                      connectors: ['Supabase', 'OpenAI'],
+                      actions: ['Process', 'Respond'],
+                      steps: ['Intake', 'Process', 'Response'],
+                      integrations: ['Healthcare APIs']
+                    }}
+                    journeyStages={journeyStages}
+                    sessionId={currentSessionId}
+                    onSave={(workflow) => console.log('Workflow saved:', workflow)}
+                    onGenerateAgent={(workflow) => console.log('Agent generated:', workflow)}
+                  />
                 )}
                 
-                {visualWorkflowSubTab === 'journey' && (
-                  <div className="max-w-4xl">
-                    <h2 className="text-2xl font-bold mb-4">Design Customer Journey</h2>
-                    <p className="text-muted-foreground mb-6">Map out the stages and touchpoints</p>
-                    <JourneyEditor />
-                  </div>
-                )}
-                
-                {visualWorkflowSubTab === 'wizard' && (
-                  <div className="max-w-3xl">
-                    <h2 className="text-2xl font-bold mb-4">Configure Your Agent</h2>
-                    <p className="text-muted-foreground mb-6">Set up the agent's behavior and capabilities</p>
-                    <StreamlinedAgentWizard />
+                {/* FlowiseAI-style canvas placeholder */}
+                {(!selectedMode || selectedMode !== 'visual' || visualWorkflowSubTab !== 'canvas') && (
+                  <div className="flex items-center justify-center h-full">
+                    <div className="text-center">
+                      <div className="w-16 h-16 mx-auto mb-4 bg-primary/10 rounded-full flex items-center justify-center">
+                        <Workflow className="w-8 h-8 text-primary" />
+                      </div>
+                      <h3 className="text-lg font-medium mb-2">FlowiseAI-Style Canvas</h3>
+                      <p className="text-muted-foreground text-sm max-w-xs">
+                        Drag journey steps from the left panel to build your intelligent agent workflow
+                      </p>
+                      <Button className="mt-4" onClick={() => {
+                        if (selectedMode === 'visual') {
+                          setVisualWorkflowSubTab('canvas');
+                        }
+                      }}>
+                        <Plus className="w-4 h-4 mr-2" />
+                        Start Building
+                      </Button>
+                    </div>
                   </div>
                 )}
               </div>
-            )}
-            
-            {selectedMode === 'manual' && (
-              <div className="h-full">
-                {agentBuilderTab === 'agent-config' && (
-                  <div className="p-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Settings className="w-5 h-5" />
-                          Agent Configuration
-                        </CardTitle>
-                        <CardDescription>Basic agent settings and behavior</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <div className="space-y-6">
-                          <div className="p-4 border rounded-lg">
-                            <h4 className="font-medium mb-4">Basic Agent Settings</h4>
-                            <div className="grid gap-4">
-                              <div className="grid gap-2">
-                                <Label htmlFor="agent-name">Agent Name</Label>
-                                <Input id="agent-name" placeholder="Enter your agent's name" />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label htmlFor="agent-description">Description</Label>
-                                <Textarea id="agent-description" placeholder="Describe what your agent does..." rows={3} />
-                              </div>
-                              <div className="grid gap-2">
-                                <Label htmlFor="response-time">Response Time (seconds)</Label>
-                                <Input id="response-time" type="number" placeholder="5" />
-                              </div>
-                            </div>
-                          </div>
+            </div>
+
+            {/* Right Panel - AI Models & Configuration */}
+            <div className="w-80 border-l bg-card overflow-hidden flex flex-col">
+              <div className="p-4 border-b">
+                <h3 className="font-medium text-sm text-foreground">AI Models & Config</h3>
+                <p className="text-xs text-muted-foreground mt-1">Configure AI models and settings</p>
+              </div>
+              <div className="flex-1 overflow-auto p-4">
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h4 className="font-medium">AI Models</h4>
+                    <Button size="sm" onClick={() => setShowPromptAssistant(true)}>
+                      <Plus className="w-4 h-4 mr-1" />
+                      Add Model
+                    </Button>
+                  </div>
+                  
+                  {/* Basic AI Model Display */}
+                  <div className="space-y-3">
+                    <Card className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                          <Bot className="w-4 h-4 text-primary" />
                         </div>
-                      </CardContent>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">GPT-4 Turbo</p>
+                          <p className="text-xs text-muted-foreground">OpenAI Language Model</p>
+                        </div>
+                        <Badge variant="secondary">Active</Badge>
+                      </div>
+                    </Card>
+                    
+                    <Card className="p-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 bg-secondary/10 rounded-lg flex items-center justify-center">
+                          <Sparkles className="w-4 h-4 text-secondary" />
+                        </div>
+                        <div className="flex-1">
+                          <p className="font-medium text-sm">Claude 3.5 Sonnet</p>
+                          <p className="text-xs text-muted-foreground">Anthropic Reasoning Model</p>  
+                        </div>
+                        <Badge variant="outline">Available</Badge>
+                      </div>
                     </Card>
                   </div>
-                )}
-                
-                {agentBuilderTab === 'models-templates' && (
-                  <div className="p-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Bot className="w-5 h-5" />
-                          Models & Templates
-                        </CardTitle>
-                        <CardDescription>AI models and configuration templates</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <ModelManagementDashboard />
-                      </CardContent>
-                    </Card>
+                  
+                  {/* Model Configuration */}
+                  <div className="pt-4 border-t">
+                    <h4 className="font-medium mb-3">Configuration</h4>
+                    <div className="space-y-3">
+                      <div>
+                        <Label htmlFor="temperature" className="text-xs">Temperature</Label>
+                        <Input id="temperature" type="number" min="0" max="1" step="0.1" defaultValue="0.7" className="h-8" />
+                      </div>
+                      <div>
+                        <Label htmlFor="maxTokens" className="text-xs">Max Tokens</Label>
+                        <Input id="maxTokens" type="number" defaultValue="2048" className="h-8" />
+                      </div>
+                    </div>
                   </div>
-                )}
-                
-                {agentBuilderTab === 'connectors-api' && (
-                  <div className="p-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Database className="w-5 h-5" />
-                          Connectors & APIs
-                        </CardTitle>
-                        <CardDescription>External system integrations</CardDescription>
-                      </CardHeader>
-                      <CardContent className="space-y-6">
-                        <EnhancedConnectorSystem 
-                          agentId={currentSessionId || ''}
-                          actions={actions.map(action => ({
-                            id: action.id,
-                            name: action.name,
-                            type: action.type,
-                            category: action.category,
-                            description: action.description
-                          }))}
-                          onAssignmentsChange={() => {}}
-                        />
-                        <AgenticAPIEcosystem />
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-                
-                {agentBuilderTab === 'actions-tasks' && (
-                  <div className="p-6">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Zap className="w-5 h-5" />
-                          Actions & Tasks
-                        </CardTitle>
-                        <CardDescription>Define automated actions and task workflows</CardDescription>
-                      </CardHeader>
-                      <CardContent>
-                        <ActionsTab
-                          sessionId={currentSessionId || ''}
-                          actions={actions}
-                          onActionsChange={setActions}
-                        />
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
+                </div>
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        {/* Right Panel - Properties & Configuration */}
+        {/* AI Assistant Panel (optional overlay) */}
         {showPromptAssistant && (
-          <div className="w-80 border-l bg-card flex flex-col">
+          <div className="absolute top-0 right-0 w-80 h-full border-l bg-card flex flex-col z-50">
             <div className="p-4 border-b flex items-center justify-between">
               <h3 className="font-semibold">AI Assistant</h3>
               <Button 
