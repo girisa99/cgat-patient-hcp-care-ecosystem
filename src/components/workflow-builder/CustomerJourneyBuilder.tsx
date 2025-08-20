@@ -32,6 +32,7 @@ import { NodeTemplateLibrary } from './NodeTemplateLibrary';
 import { EnhancedWorkflowNode, EnhancedNodeData } from './EnhancedWorkflowNode';
 import { AutoSuggestConnector } from './AutoSuggestConnector';
 import { autoConnectEngine } from './AutoConnectEngine';
+import { WorkflowAssetPanel } from './WorkflowAssetPanel';
 
 // Custom Node Components
 const CustomerNode = ({ data }: { data: any }) => (
@@ -407,6 +408,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
   const [showAIGuidance, setShowAIGuidance] = useState(true);
   const [showNodeConfig, setShowNodeConfig] = useState(false);
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
+  const [showAssetPanel, setShowAssetPanel] = useState(false);
   const { showSuccess, showError } = useMasterToast();
   const { setViewport, getViewport } = useReactFlow();
 
@@ -655,6 +657,25 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
             {isGenerating ? 'Generating...' : 'AI Generate'}
           </Button>
           
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowTemplateLibrary(!showTemplateLibrary)}
+            className="flex items-center gap-2"
+          >
+            <Plus className="w-4 h-4" />
+            Add Node
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowAssetPanel(!showAssetPanel)}
+            className="flex items-center gap-2"
+          >
+            <Settings className="w-4 h-4" />
+            Assets & Tools
+          </Button>
+          
           <Button variant="outline" size="sm" onClick={handleSave}>
             <Save className="h-4 w-4 mr-1" />
             Save
@@ -793,13 +814,6 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         </div>
       </div>
 
-      {/* Node Template Library */}
-      <NodeTemplateLibrary
-        onAddTemplate={addTemplateNode}
-        isOpen={showTemplateLibrary}
-        onClose={() => setShowTemplateLibrary(false)}
-      />
-
       {/* AI Guidance Panel */}
       <AIGuidancePanel
         currentWorkflow={{ nodes, edges }}
@@ -807,6 +821,36 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         onUserPrompt={handleUserPrompt}
         isVisible={showAIGuidance}
         onToggle={() => setShowAIGuidance(!showAIGuidance)}
+      />
+
+      {/* Node Template Library */}
+      <NodeTemplateLibrary
+        onAddTemplate={addTemplateNode}
+        isOpen={showTemplateLibrary}
+        onClose={() => setShowTemplateLibrary(false)}
+      />
+
+      {/* Workflow Asset Panel - Universal for all models/connectors */}
+      <WorkflowAssetPanel
+        isOpen={showAssetPanel}
+        onClose={() => setShowAssetPanel(false)}
+        selectedNode={selectedNode}
+        onAssetSelect={(assets) => {
+          console.log('Assets selected:', assets);
+          showSuccess('Assets integrated into workflow');
+        }}
+        onDataLibrarySelect={(libraries) => {
+          console.log('Data libraries selected:', libraries);
+          showSuccess('Data libraries connected');
+        }}
+        onVariablesChange={(variables) => {
+          console.log('Variables updated:', variables);
+          showSuccess('Workflow variables updated');
+        }}
+        onSuggestionAccepted={(suggestion) => {
+          console.log('AI suggestion accepted:', suggestion);
+          handleAISuggestion(suggestion);
+        }}
       />
     </div>
   );
