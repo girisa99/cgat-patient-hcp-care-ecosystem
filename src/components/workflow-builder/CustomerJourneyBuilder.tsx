@@ -34,7 +34,8 @@ import { AutoSuggestConnector } from './AutoSuggestConnector';
 import { autoConnectEngine } from './AutoConnectEngine';
 import { WorkflowAssetPanel } from './WorkflowAssetPanel';
 import { UniversalAccessManager } from './UniversalAccessManager';
-import { AdvancedReactFlowWrapper } from './AdvancedReactFlow';
+import { AdvancedReactFlow } from './AdvancedReactFlow';
+import { FlowiseStyleWorkflow } from './FlowiseStyleWorkflow';
 
 // Custom Node Components
 const CustomerNode = ({ data }: { data: any }) => (
@@ -860,7 +861,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
 
       {/* Advanced ReactFlow - All features enabled */}
       {workflowContext.type === 'visual' && (
-        <AdvancedReactFlowWrapper
+        <AdvancedReactFlow
           initialNodes={nodes}
           initialEdges={edges}
           onSave={handleSave}
