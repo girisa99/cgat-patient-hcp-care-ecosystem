@@ -48,7 +48,7 @@ import { NodeConfigurationPanel } from '@/components/workflow-builder/NodeConfig
 import { NodePalette } from '@/components/workflow-builder/NodePalette';
 import { UniversalAccessManager } from '@/components/workflow-builder/UniversalAccessManager';
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
-import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
+import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Node } from '@xyflow/react';
@@ -274,8 +274,13 @@ const AgentsInner = () => {
             </div>
           </div>
 
-          {/* Right Panel - Split: Configuration, Libraries & AI Assistant */}
-          <div className="w-80 border-l bg-background flex flex-col">
+          {/* Right Panel - Resizable Configuration, Libraries & AI Assistant */}
+          <ResizablePanel 
+            initialWidth={380}
+            minWidth={320}
+            maxWidth={800}
+            className="border-l bg-background flex flex-col"
+          >
             <div className="border-b">
               <div className="flex">
                 <Button
@@ -354,7 +359,7 @@ const AgentsInner = () => {
                 />
               )}
             </div>
-          </div>
+          </ResizablePanel>
         </div>
 
         {/* AI Assistant Panel (fixed positioning) */}
@@ -400,10 +405,31 @@ const AgentsInner = () => {
                     <li>• Add AI Agent (medium)</li>
                   </ul>
                 </div>
+                
+                <div className="space-y-2 mt-4">
+                  <p className="text-xs font-medium">Smart Actions</p>
+                  <Button size="sm" variant="outline" className="w-full text-xs justify-start">
+                    <Lightbulb className="w-3 h-3 mr-1" />
+                    Suggest Workflow
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full text-xs justify-start">
+                    <ArrowRight className="w-3 h-3 mr-1" />
+                    Auto-Connect Nodes
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full text-xs justify-start">
+                    <Database className="w-3 h-3 mr-1" />
+                    Generate Backend
+                  </Button>
+                  <Button size="sm" variant="outline" className="w-full text-xs justify-start">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    Optimize Flow
+                  </Button>
+                </div>
               </div>
             </div>
           </div>
         )}
+        </div>
       </div>
     );
   };

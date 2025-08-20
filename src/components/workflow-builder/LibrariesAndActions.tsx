@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -7,63 +7,16 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Package, Zap, Calculator, Database, Globe, Code, 
   Search, Plus, Star, Download, Book, Settings,
   Filter, Tag, Clock, TrendingUp, Shield, Workflow,
-  Edit, Trash2, Eye, Save, X, Check
+  Edit, Trash2, Eye, Save, X, Check, Loader2, RefreshCw
 } from 'lucide-react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from '@/components/ui/dialog';
-import { useMasterToast } from '@/hooks/useMasterToast';
-
-interface Library {
-  id: string;
-  name: string;
-  description: string;
-  version: string;
-  category: 'utility' | 'ai' | 'data' | 'api' | 'ui' | 'security';
-  rating: number;
-  downloads: number;
-  author: string;
-  tags: string[];
-  documentation: string;
-  examples: any[];
-  isInstalled: boolean;
-  isCore: boolean;
-}
-
-interface DefaultAction {
-  id: string;
-  name: string;
-  description: string;
-  type: 'transform' | 'validate' | 'calculate' | 'request' | 'condition' | 'loop';
-  category: string;
-  inputs: Array<{
-    name: string;
-    type: string;
-    required: boolean;
-    description: string;
-  }>;
-  outputs: Array<{
-    name: string;
-    type: string;
-    description: string;
-  }>;
-  code: string;
-  isCustom: boolean;
-  usage: number;
-}
-
-interface Operator {
-  id: string;
-  name: string;
-  symbol: string;
-  description: string;
-  category: 'arithmetic' | 'comparison' | 'logical' | 'string' | 'array' | 'object';
-  syntax: string;
-  examples: string[];
-}
+import { useWorkflowResources, WorkflowLibrary, WorkflowAction, WorkflowOperator } from '@/hooks/useWorkflowResources';
 
 interface CreateLibraryForm {
   name: string;
@@ -72,7 +25,7 @@ interface CreateLibraryForm {
   category: string;
   author: string;
   tags: string;
-  documentation: string;
+  documentation_url: string;
 }
 
 interface CreateActionForm {
@@ -83,15 +36,21 @@ interface CreateActionForm {
   code: string;
 }
 
+interface CreateOperatorForm {
+  name: string;
+  symbol: string;
+  description: string;
+  category: string;
+  syntax: string;
+  examples: string;
+}
+
 export const LibrariesAndActions: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [activeTab, setActiveTab] = useState('libraries');
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<any>(null);
-  const [libraries, setLibraries] = useState<Library[]>([]);
-  const [actions, setActions] = useState<DefaultAction[]>([]);
-  const [operators, setOperators] = useState<Operator[]>([]);
   const [createForm, setCreateForm] = useState<CreateLibraryForm>({
     name: '',
     description: '',
@@ -99,7 +58,7 @@ export const LibrariesAndActions: React.FC = () => {
     category: 'utility',
     author: '',
     tags: '',
-    documentation: ''
+    documentation_url: ''
   });
   const [createActionForm, setCreateActionForm] = useState<CreateActionForm>({
     name: '',
@@ -108,154 +67,54 @@ export const LibrariesAndActions: React.FC = () => {
     category: 'Custom',
     code: ''
   });
-  const { showSuccess, showError } = useMasterToast();
+  const [createOperatorForm, setCreateOperatorForm] = useState<CreateOperatorForm>({
+    name: '',
+    symbol: '',
+    description: '',
+    category: 'logical',
+    syntax: '',
+    examples: ''
+  });
 
-  // Initialize with mock data
-  useEffect(() => {
-    setLibraries([
-      {
-        id: '1',
-        name: 'Healthcare Utilities',
-        description: 'Essential utilities for healthcare workflow automation',
-        version: '2.1.0',
-        category: 'utility',
-        rating: 4.8,
-        downloads: 12500,
-        author: 'HealthTech Inc',
-        tags: ['healthcare', 'validation', 'conversion'],
-        documentation: 'https://docs.healthtech.com',
-        examples: [],
-        isInstalled: true,
-        isCore: true
-      },
-      {
-        id: '2',
-        name: 'AI Model Connectors',
-        description: 'Connect to various AI models and services',
-        version: '1.5.2',
-        category: 'ai',
-        rating: 4.6,
-        downloads: 8900,
-        author: 'AI Solutions',
-        tags: ['ai', 'llm', 'integration'],
-        documentation: 'https://docs.ai-solutions.com',
-        examples: [],
-        isInstalled: false,
-        isCore: false
-      },
-      {
-        id: '3',
-        name: 'Data Transformation Suite',
-        description: 'Comprehensive data transformation and validation tools',
-        version: '3.0.1',
-        category: 'data',
-        rating: 4.9,
-        downloads: 15600,
-        author: 'DataFlow Corp',
-        tags: ['data', 'etl', 'validation'],
-        documentation: 'https://docs.dataflow.com',
-        examples: [],
-        isInstalled: true,
-        isCore: false
-      }
-    ]);
+  const {
+    libraries,
+    actions,
+    operators,
+    isLoading,
+    createLibrary,
+    updateLibrary,
+    deleteLibrary,
+    toggleInstallLibrary,
+    createAction,
+    updateAction,
+    deleteAction,
+    useAction,
+    createOperator,
+    isCreatingLibrary,
+    isCreatingAction,
+    isCreatingOperator,
+    isTogglingInstall,
+    isUsingAction
+  } = useWorkflowResources({ 
+    category: selectedCategory, 
+    search: searchQuery 
+  });
 
-    setActions([
-      {
-        id: '1',
-        name: 'Format Patient ID',
-        description: 'Standardize patient ID format across systems',
-        type: 'transform',
-        category: 'Healthcare',
-        inputs: [
-          { name: 'patientId', type: 'string', required: true, description: 'Raw patient ID' },
-          { name: 'format', type: 'string', required: false, description: 'Target format pattern' }
-        ],
-        outputs: [
-          { name: 'formattedId', type: 'string', description: 'Standardized patient ID' }
-        ],
-        code: `function formatPatientId(patientId, format = 'PAT-{id}') {
-  const cleanId = patientId.replace(/[^0-9]/g, '');
-  return format.replace('{id}', cleanId.padStart(6, '0'));
-}`,
-        isCustom: false,
-        usage: 450
-      },
-      {
-        id: '2',
-        name: 'Validate Email',
-        description: 'Validate email address format and domain',
-        type: 'validate',
-        category: 'Validation',
-        inputs: [
-          { name: 'email', type: 'string', required: true, description: 'Email address to validate' }
-        ],
-        outputs: [
-          { name: 'isValid', type: 'boolean', description: 'Validation result' },
-          { name: 'errors', type: 'array', description: 'List of validation errors' }
-        ],
-        code: `function validateEmail(email) {
-  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-  const isValid = emailRegex.test(email);
-  const errors = [];
-  
-  if (!isValid) {
-    errors.push('Invalid email format');
-  }
-  
-  return { isValid, errors };
-}`,
-        isCustom: false,
-        usage: 890
-      }
-    ]);
-
-    setOperators([
-      {
-        id: '1',
-        name: 'Equals',
-        symbol: '==',
-        description: 'Compare two values for equality',
-        category: 'comparison',
-        syntax: 'value1 == value2',
-        examples: ['age == 25', 'status == "active"']
-      },
-      {
-        id: '2',
-        name: 'Greater Than',
-        symbol: '>',
-        description: 'Check if first value is greater than second',
-        category: 'comparison',
-        syntax: 'value1 > value2',
-        examples: ['score > 80', 'temperature > 98.6']
-      }
-    ]);
-  }, []);
-
-  // CRUD Operations for Libraries
-  const createLibrary = () => {
-    if (!createForm.name.trim()) {
-      showError('Library name is required');
-      return;
-    }
-
-    const newLibrary: Library = {
-      id: Date.now().toString(),
+  // Handle Library CRUD
+  const handleCreateLibrary = () => {
+    if (!createForm.name.trim()) return;
+    
+    createLibrary({
       name: createForm.name,
       description: createForm.description,
       version: createForm.version,
       category: createForm.category as any,
-      rating: 0,
-      downloads: 0,
       author: createForm.author,
       tags: createForm.tags.split(',').map(tag => tag.trim()).filter(Boolean),
-      documentation: createForm.documentation,
-      examples: [],
-      isInstalled: false,
-      isCore: false
-    };
+      documentation_url: createForm.documentation_url,
+      is_custom: true
+    });
 
-    setLibraries(prev => [...prev, newLibrary]);
     setCreateForm({
       name: '',
       description: '',
@@ -263,53 +122,33 @@ export const LibrariesAndActions: React.FC = () => {
       category: 'utility',
       author: '',
       tags: '',
-      documentation: ''
+      documentation_url: ''
     });
     setIsCreateDialogOpen(false);
-    showSuccess('Library created successfully');
   };
 
-  const updateLibrary = (id: string, updates: Partial<Library>) => {
-    setLibraries(prev => prev.map(lib => lib.id === id ? { ...lib, ...updates } : lib));
-    showSuccess('Library updated successfully');
+  const handleInstallLibrary = (library: WorkflowLibrary) => {
+    toggleInstallLibrary({
+      libraryId: library.id,
+      install: !library.is_installed
+    });
   };
 
-  const deleteLibrary = (id: string) => {
-    setLibraries(prev => prev.filter(lib => lib.id !== id));
-    showSuccess('Library deleted successfully');
-  };
-
-  const installLibrary = (id: string) => {
-    updateLibrary(id, { isInstalled: true });
-    showSuccess('Library installed successfully');
-  };
-
-  const uninstallLibrary = (id: string) => {
-    updateLibrary(id, { isInstalled: false });
-    showSuccess('Library uninstalled successfully');
-  };
-
-  // CRUD Operations for Actions
-  const createAction = () => {
-    if (!createActionForm.name.trim()) {
-      showError('Action name is required');
-      return;
-    }
-
-    const newAction: DefaultAction = {
-      id: Date.now().toString(),
+  // Handle Action CRUD
+  const handleCreateAction = () => {
+    if (!createActionForm.name.trim()) return;
+    
+    createAction({
       name: createActionForm.name,
       description: createActionForm.description,
       type: createActionForm.type as any,
       category: createActionForm.category,
+      code: createActionForm.code,
       inputs: [],
       outputs: [],
-      code: createActionForm.code,
-      isCustom: true,
-      usage: 0
-    };
+      is_custom: true
+    });
 
-    setActions(prev => [...prev, newAction]);
     setCreateActionForm({
       name: '',
       description: '',
@@ -318,47 +157,37 @@ export const LibrariesAndActions: React.FC = () => {
       code: ''
     });
     setIsCreateDialogOpen(false);
-    showSuccess('Action created successfully');
   };
 
-  const updateAction = (id: string, updates: Partial<DefaultAction>) => {
-    setActions(prev => prev.map(action => action.id === id ? { ...action, ...updates } : action));
-    showSuccess('Action updated successfully');
+  const handleUseAction = (action: WorkflowAction) => {
+    useAction(action.id);
   };
 
-  const deleteAction = (id: string) => {
-    setActions(prev => prev.filter(action => action.id !== id));
-    showSuccess('Action deleted successfully');
+  // Handle Operator CRUD
+  const handleCreateOperator = () => {
+    if (!createOperatorForm.name.trim()) return;
+    
+    createOperator({
+      name: createOperatorForm.name,
+      symbol: createOperatorForm.symbol,
+      description: createOperatorForm.description,
+      category: createOperatorForm.category as any,
+      syntax: createOperatorForm.syntax,
+      examples: createOperatorForm.examples.split(',').map(ex => ex.trim()).filter(Boolean)
+    });
+
+    setCreateOperatorForm({
+      name: '',
+      symbol: '',
+      description: '',
+      category: 'logical',
+      syntax: '',
+      examples: ''
+    });
+    setIsCreateDialogOpen(false);
   };
 
-  const useAction = (action: DefaultAction) => {
-    updateAction(action.id, { usage: action.usage + 1 });
-    showSuccess(`Added "${action.name}" to workflow`);
-  };
-
-  // Filter functions
-  const filteredLibraries = libraries.filter(lib => {
-    const matchesSearch = lib.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         lib.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || lib.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const filteredActions = actions.filter(action => {
-    const matchesSearch = action.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         action.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || action.category.toLowerCase() === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const filteredOperators = operators.filter(op => {
-    const matchesSearch = op.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         op.description.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || op.category === selectedCategory;
-    return matchesSearch && matchesCategory;
-  });
-
-  const LibraryCard = ({ library }: { library: Library }) => (
+  const LibraryCard = ({ library }: { library: WorkflowLibrary }) => (
     <Card className="cursor-pointer hover:shadow-md transition-shadow">
       <CardContent className="p-3">
         <div className="space-y-3">
@@ -366,7 +195,7 @@ export const LibrariesAndActions: React.FC = () => {
             <div className="flex items-center gap-2 min-w-0 flex-1">
               <Package className="h-4 w-4 text-primary flex-shrink-0" />
               <h4 className="font-medium text-sm truncate">{library.name}</h4>
-              {library.isCore && (
+              {library.is_core && (
                 <Badge variant="secondary" className="text-xs flex-shrink-0">Core</Badge>
               )}
             </div>
@@ -375,7 +204,7 @@ export const LibrariesAndActions: React.FC = () => {
                 size="sm"
                 variant="ghost"
                 className="h-6 w-6 p-0"
-                onClick={() => window.open(library.documentation, '_blank')}
+                onClick={() => window.open(library.documentation_url, '_blank')}
               >
                 <Book className="h-3 w-3" />
               </Button>
@@ -387,7 +216,7 @@ export const LibrariesAndActions: React.FC = () => {
               >
                 <Edit className="h-3 w-3" />
               </Button>
-              {!library.isCore && (
+              {library.is_custom && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -430,32 +259,28 @@ export const LibrariesAndActions: React.FC = () => {
             <span className="text-xs text-muted-foreground truncate">
               by {library.author}
             </span>
-            {library.isInstalled ? (
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-6 px-2 text-xs"
-                onClick={() => uninstallLibrary(library.id)}
-              >
-                Uninstall
-              </Button>
-            ) : (
-              <Button
-                size="sm"
-                variant="default"
-                className="h-6 px-2 text-xs"
-                onClick={() => installLibrary(library.id)}
-              >
-                Install
-              </Button>
-            )}
+            <Button
+              size="sm"
+              variant={library.is_installed ? "outline" : "default"}
+              className="h-6 px-2 text-xs"
+              onClick={() => handleInstallLibrary(library)}
+              disabled={isTogglingInstall}
+            >
+              {isTogglingInstall ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : library.is_installed ? (
+                "Uninstall"
+              ) : (
+                "Install"
+              )}
+            </Button>
           </div>
         </div>
       </CardContent>
     </Card>
   );
 
-  const ActionCard = ({ action }: { action: DefaultAction }) => (
+  const ActionCard = ({ action }: { action: WorkflowAction }) => (
     <Card className="cursor-pointer hover:shadow-md transition-shadow">
       <CardContent className="p-3">
         <div className="space-y-3">
@@ -484,7 +309,7 @@ export const LibrariesAndActions: React.FC = () => {
               >
                 <Edit className="h-3 w-3" />
               </Button>
-              {action.isCustom && (
+              {action.is_custom && (
                 <Button
                   size="sm"
                   variant="ghost"
@@ -502,11 +327,11 @@ export const LibrariesAndActions: React.FC = () => {
           </p>
           
           <div className="flex items-center gap-4 text-xs text-muted-foreground">
-            <span>Inputs: {action.inputs.length}</span>
-            <span>Outputs: {action.outputs.length}</span>
+            <span>Inputs: {action.inputs?.length || 0}</span>
+            <span>Outputs: {action.outputs?.length || 0}</span>
             <div className="flex items-center gap-1">
               <TrendingUp className="h-3 w-3" />
-              <span>{action.usage} uses</span>
+              <span>{action.usage_count} uses</span>
             </div>
           </div>
           
@@ -518,10 +343,17 @@ export const LibrariesAndActions: React.FC = () => {
               size="sm"
               variant="default"
               className="h-6 px-2 text-xs"
-              onClick={() => useAction(action)}
+              onClick={() => handleUseAction(action)}
+              disabled={isUsingAction}
             >
-              <Plus className="h-3 w-3 mr-1" />
-              Use
+              {isUsingAction ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <>
+                  <Plus className="h-3 w-3 mr-1" />
+                  Use
+                </>
+              )}
             </Button>
           </div>
         </div>
@@ -529,7 +361,7 @@ export const LibrariesAndActions: React.FC = () => {
     </Card>
   );
 
-  const OperatorCard = ({ operator }: { operator: Operator }) => (
+  const OperatorCard = ({ operator }: { operator: WorkflowOperator }) => (
     <Card className="cursor-pointer hover:shadow-md transition-shadow">
       <CardContent className="p-3">
         <div className="space-y-3">
@@ -563,10 +395,10 @@ export const LibrariesAndActions: React.FC = () => {
             <Badge variant="secondary" className="text-xs">
               {operator.category}
             </Badge>
-            <Button size="sm" variant="default" className="h-6 px-2 text-xs">
-              <Plus className="h-3 w-3 mr-1" />
-              Use
-            </Button>
+            <div className="flex items-center gap-1 text-xs text-muted-foreground">
+              <TrendingUp className="h-3 w-3" />
+              <span>{operator.usage_count} uses</span>
+            </div>
           </div>
         </div>
       </CardContent>
@@ -575,14 +407,17 @@ export const LibrariesAndActions: React.FC = () => {
 
   const CreateDialog = () => (
     <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
-      <DialogContent className="max-w-md">
+      <DialogContent className="max-w-md max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>
-            Create Custom {activeTab === 'libraries' ? 'Library' : 'Action'}
+            Create Custom {
+              activeTab === 'libraries' ? 'Library' : 
+              activeTab === 'actions' ? 'Action' : 'Operator'
+            }
           </DialogTitle>
         </DialogHeader>
         
-        {activeTab === 'libraries' ? (
+        {activeTab === 'libraries' && (
           <div className="space-y-4">
             <div>
               <Label htmlFor="name">Name</Label>
@@ -629,6 +464,8 @@ export const LibrariesAndActions: React.FC = () => {
                     <SelectItem value="api">API</SelectItem>
                     <SelectItem value="ui">UI</SelectItem>
                     <SelectItem value="security">Security</SelectItem>
+                    <SelectItem value="healthcare">Healthcare</SelectItem>
+                    <SelectItem value="integration">Integration</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -652,16 +489,18 @@ export const LibrariesAndActions: React.FC = () => {
               />
             </div>
             <div>
-              <Label htmlFor="documentation">Documentation URL</Label>
+              <Label htmlFor="documentation_url">Documentation URL</Label>
               <Input
-                id="documentation"
-                value={createForm.documentation}
-                onChange={(e) => setCreateForm(prev => ({ ...prev, documentation: e.target.value }))}
+                id="documentation_url"
+                value={createForm.documentation_url}
+                onChange={(e) => setCreateForm(prev => ({ ...prev, documentation_url: e.target.value }))}
                 placeholder="https://docs.example.com"
               />
             </div>
           </div>
-        ) : (
+        )}
+
+        {activeTab === 'actions' && (
           <div className="space-y-4">
             <div>
               <Label htmlFor="action-name">Name</Label>
@@ -699,6 +538,8 @@ export const LibrariesAndActions: React.FC = () => {
                     <SelectItem value="request">Request</SelectItem>
                     <SelectItem value="condition">Condition</SelectItem>
                     <SelectItem value="loop">Loop</SelectItem>
+                    <SelectItem value="trigger">Trigger</SelectItem>
+                    <SelectItem value="notification">Notification</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -725,18 +566,128 @@ export const LibrariesAndActions: React.FC = () => {
             </div>
           </div>
         )}
+
+        {activeTab === 'operators' && (
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="operator-name">Name</Label>
+              <Input
+                id="operator-name"
+                value={createOperatorForm.name}
+                onChange={(e) => setCreateOperatorForm(prev => ({ ...prev, name: e.target.value }))}
+                placeholder="Operator name"
+              />
+            </div>
+            <div>
+              <Label htmlFor="operator-symbol">Symbol</Label>
+              <Input
+                id="operator-symbol"
+                value={createOperatorForm.symbol}
+                onChange={(e) => setCreateOperatorForm(prev => ({ ...prev, symbol: e.target.value }))}
+                placeholder="e.g., ==, >, <"
+                className="font-mono"
+              />
+            </div>
+            <div>
+              <Label htmlFor="operator-description">Description</Label>
+              <Textarea
+                id="operator-description"
+                value={createOperatorForm.description}
+                onChange={(e) => setCreateOperatorForm(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="What does this operator do?"
+                rows={2}
+              />
+            </div>
+            <div>
+              <Label htmlFor="operator-category">Category</Label>
+              <Select
+                value={createOperatorForm.category}
+                onValueChange={(value) => setCreateOperatorForm(prev => ({ ...prev, category: value }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="arithmetic">Arithmetic</SelectItem>
+                  <SelectItem value="comparison">Comparison</SelectItem>
+                  <SelectItem value="logical">Logical</SelectItem>
+                  <SelectItem value="string">String</SelectItem>
+                  <SelectItem value="array">Array</SelectItem>
+                  <SelectItem value="object">Object</SelectItem>
+                  <SelectItem value="date">Date</SelectItem>
+                  <SelectItem value="math">Math</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label htmlFor="operator-syntax">Syntax</Label>
+              <Input
+                id="operator-syntax"
+                value={createOperatorForm.syntax}
+                onChange={(e) => setCreateOperatorForm(prev => ({ ...prev, syntax: e.target.value }))}
+                placeholder="value1 operator value2"
+                className="font-mono"
+              />
+            </div>
+            <div>
+              <Label htmlFor="operator-examples">Examples (comma-separated)</Label>
+              <Textarea
+                id="operator-examples"
+                value={createOperatorForm.examples}
+                onChange={(e) => setCreateOperatorForm(prev => ({ ...prev, examples: e.target.value }))}
+                placeholder="age > 18, score >= 80"
+                rows={2}
+                className="font-mono"
+              />
+            </div>
+          </div>
+        )}
         
         <DialogFooter>
           <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
             Cancel
           </Button>
-          <Button onClick={activeTab === 'libraries' ? createLibrary : createAction}>
+          <Button 
+            onClick={
+              activeTab === 'libraries' ? handleCreateLibrary :
+              activeTab === 'actions' ? handleCreateAction : 
+              handleCreateOperator
+            }
+            disabled={
+              activeTab === 'libraries' ? isCreatingLibrary :
+              activeTab === 'actions' ? isCreatingAction :
+              isCreatingOperator
+            }
+          >
+            {(isCreatingLibrary || isCreatingAction || isCreatingOperator) ? (
+              <Loader2 className="h-3 w-3 animate-spin mr-1" />
+            ) : (
+              <Plus className="h-3 w-3 mr-1" />
+            )}
             Create
           </Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
   );
+
+  if (isLoading) {
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-sm font-medium flex items-center gap-2">
+            <Package className="h-4 w-4" />
+            Libraries & Actions
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <Skeleton key={i} className="h-20 w-full" />
+          ))}
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="h-full">
@@ -778,6 +729,8 @@ export const LibrariesAndActions: React.FC = () => {
               <SelectItem value="ai">AI & ML</SelectItem>
               <SelectItem value="data">Data</SelectItem>
               <SelectItem value="api">API</SelectItem>
+              <SelectItem value="security">Security</SelectItem>
+              <SelectItem value="integration">Integration</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -786,9 +739,15 @@ export const LibrariesAndActions: React.FC = () => {
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
           <TabsList className="grid w-full grid-cols-3 h-8 mx-4 mb-2">
-            <TabsTrigger value="libraries" className="text-xs">Libraries</TabsTrigger>
-            <TabsTrigger value="actions" className="text-xs">Actions</TabsTrigger>
-            <TabsTrigger value="operators" className="text-xs">Operators</TabsTrigger>
+            <TabsTrigger value="libraries" className="text-xs">
+              Libraries ({libraries.length})
+            </TabsTrigger>
+            <TabsTrigger value="actions" className="text-xs">
+              Actions ({actions.length})
+            </TabsTrigger>
+            <TabsTrigger value="operators" className="text-xs">
+              Operators ({operators.length})
+            </TabsTrigger>
           </TabsList>
 
           <ScrollArea className="h-[calc(100vh-220px)]">
@@ -797,42 +756,66 @@ export const LibrariesAndActions: React.FC = () => {
                 <div className="flex items-center justify-between mb-4">
                   <h4 className="text-sm font-medium">Available Libraries</h4>
                   <Badge variant="secondary" className="text-xs">
-                    {filteredLibraries.length} libraries
+                    {libraries.length} total
                   </Badge>
                 </div>
-                <div className="grid gap-3">
-                  {filteredLibraries.map((library) => (
-                    <LibraryCard key={library.id} library={library} />
-                  ))}
-                </div>
+                {libraries.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">No libraries found</p>
+                    <p className="text-xs">Create a custom library to get started</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {libraries.map((library) => (
+                      <LibraryCard key={library.id} library={library} />
+                    ))}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="actions" className="mt-0 space-y-3">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-medium">Default Actions</h4>
+                  <h4 className="text-sm font-medium">Workflow Actions</h4>
                   <Badge variant="secondary" className="text-xs">
-                    {filteredActions.length} actions
+                    {actions.length} total
                   </Badge>
                 </div>
-                <div className="grid gap-3">
-                  {filteredActions.map((action) => (
-                    <ActionCard key={action.id} action={action} />
-                  ))}
-                </div>
+                {actions.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Zap className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">No actions found</p>
+                    <p className="text-xs">Create a custom action to get started</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {actions.map((action) => (
+                      <ActionCard key={action.id} action={action} />
+                    ))}
+                  </div>
+                )}
               </TabsContent>
 
               <TabsContent value="operators" className="mt-0 space-y-3">
                 <div className="flex items-center justify-between mb-4">
-                  <h4 className="text-sm font-medium">Available Operators</h4>
+                  <h4 className="text-sm font-medium">Logical Operators</h4>
                   <Badge variant="secondary" className="text-xs">
-                    {filteredOperators.length} operators
+                    {operators.length} total
                   </Badge>
                 </div>
-                <div className="grid gap-3">
-                  {filteredOperators.map((operator) => (
-                    <OperatorCard key={operator.id} operator={operator} />
-                  ))}
-                </div>
+                {operators.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <Calculator className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p className="text-sm">No operators found</p>
+                    <p className="text-xs">Create a custom operator to get started</p>
+                  </div>
+                ) : (
+                  <div className="grid gap-3">
+                    {operators.map((operator) => (
+                      <OperatorCard key={operator.id} operator={operator} />
+                    ))}
+                  </div>
+                )}
               </TabsContent>
             </div>
           </ScrollArea>
