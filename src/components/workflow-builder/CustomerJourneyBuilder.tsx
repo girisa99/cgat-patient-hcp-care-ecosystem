@@ -29,6 +29,9 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 import { NodeConfigurationPanel } from './NodeConfigurationPanel';
 import { AIGuidancePanel } from './AIGuidancePanel';
 import { NodeTemplateLibrary } from './NodeTemplateLibrary';
+import { EnhancedWorkflowNode, EnhancedNodeData } from './EnhancedWorkflowNode';
+import { AutoSuggestConnector } from './AutoSuggestConnector';
+import { autoConnectEngine } from './AutoConnectEngine';
 
 // Custom Node Components
 const CustomerNode = ({ data }: { data: any }) => (
@@ -105,6 +108,7 @@ const nodeTypes: NodeTypes = {
   touchpoint: TouchpointNode,
   decision: DecisionNode,
   agent: AgentNode,
+  enhanced: EnhancedWorkflowNode,
 };
 
 // Initial nodes for healthcare customer journey
@@ -208,45 +212,79 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
   journeyStages,
   sessionId
 }) => {
-  // Generate initial nodes from unified builder context
-  const generateContextualNodes = () => {
-    if (!capturedRequirements && !journeyStages) return initialNodes;
+  // Generate enhanced initial nodes from unified builder context
+  const generateContextualNodes = (): Node<EnhancedNodeData>[] => {
+    if (!capturedRequirements && !journeyStages) {
+      // Convert initial nodes to enhanced format
+      const enhancedInitialNodes: Node<EnhancedNodeData>[] = initialNodes.map(node => ({
+        ...node,
+        type: 'enhanced',
+        data: {
+          ...node.data,
+          type: node.type as any,
+          dataFields: ['input_data', 'output_data', 'status'],
+          connectors: [
+            { id: 'input', label: 'Input', type: 'input', position: Position.Left },
+            { id: 'output', label: 'Output', type: 'output', position: Position.Right }
+          ]
+        }
+      }));
+      return enhancedInitialNodes;
+    }
     
-    const contextualNodes: Node[] = [];
+    const contextualNodes: Node<EnhancedNodeData>[] = [];
     let xPos = 50;
     
     // Add use case header node if we have use case data
     if (useCaseData) {
       contextualNodes.push({
         id: 'use-case',
-        type: 'customer',
+        type: 'enhanced',
         position: { x: xPos, y: 50 },
         data: {
           label: useCaseData.name || 'Use Case',
           description: useCaseData.description || 'Generated from unified builder',
+          type: 'customer',
           persona: useCaseData.targetUsers || 'Target Users',
+          dataFields: ['use_case_id', 'target_users', 'expected_outcomes'],
+          connectors: [
+            { id: 'output', label: 'Use Case Output', type: 'output', position: Position.Right, dataType: 'use_case_data' }
+          ],
           context: useCaseData
         }
       });
-      xPos += 250;
+      xPos += 300;
     }
     
-    // Add nodes from journey stages
+    // Add nodes from journey stages with enhanced data
     if (journeyStages && journeyStages.length > 0) {
       journeyStages.forEach((stage, idx) => {
         contextualNodes.push({
           id: `stage-${idx}`,
-          type: 'touchpoint',
+          type: 'enhanced',
           position: { x: xPos, y: 150 },
           data: {
             label: stage.title || `Stage ${idx + 1}`,
             description: stage.description || 'Journey stage',
+            type: 'touchpoint',
             channel: 'chat',
             automationLevel: 70,
+            dataFields: [
+              'stage_input',
+              'stage_output', 
+              'completion_status',
+              'duration',
+              'stakeholder_feedback'
+            ],
+            connectors: [
+              { id: 'input', label: 'Stage Input', type: 'input', position: Position.Left, dataType: 'stage_data' },
+              { id: 'output', label: 'Stage Output', type: 'output', position: Position.Right, dataType: 'stage_data' },
+              { id: 'escalation', label: 'Escalation', type: 'output', position: Position.Top, dataType: 'escalation_data' }
+            ],
             stage: stage
           }
         });
-        xPos += 220;
+        xPos += 280;
       });
     }
     
