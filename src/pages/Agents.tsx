@@ -49,6 +49,7 @@ import { NodePalette } from '@/components/workflow-builder/NodePalette';
 import { UniversalAccessManager } from '@/components/workflow-builder/UniversalAccessManager';
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
+import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Node } from '@xyflow/react';
@@ -429,7 +430,6 @@ const AgentsInner = () => {
             </div>
           </div>
         )}
-        </div>
       </div>
     );
   };
