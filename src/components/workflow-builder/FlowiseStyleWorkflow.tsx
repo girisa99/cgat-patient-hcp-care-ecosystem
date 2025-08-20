@@ -311,43 +311,43 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
     ...initialNodes
   ]);
   
-  const [edges, setEdges, onEdgesChange] = useEdgesState(
-    [
-      {
-        id: 'e1-2',
-        source: '1',
-        target: '2',
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: theme.colors.primary, strokeWidth: 2 }
-      },
-      {
-        id: 'e1-3',
-        source: '1',
-        target: '3',
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: theme.colors.primary, strokeWidth: 2 }
-      },
-      {
-        id: 'e2-4',
-        source: '2',
-        target: '4',
-        markerEnd: { type: MarkerType.ArrowClosed },
-        style: { stroke: theme.colors.success, strokeWidth: 2 }
-      },
-      ...initialEdges
-    ]
-  );
+  const [edges, setEdges, onEdgesChange] = useEdgesState([
+    {
+      id: 'e1-2',
+      source: '1',
+      target: '2',
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { stroke: theme.colors.primary, strokeWidth: 2 }
+    },
+    {
+      id: 'e1-3',
+      source: '1',
+      target: '3',
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { stroke: theme.colors.primary, strokeWidth: 2 }
+    },
+    {
+      id: 'e2-4',
+      source: '2',
+      target: '4',
+      markerEnd: { type: MarkerType.ArrowClosed },
+      style: { stroke: theme.colors.success, strokeWidth: 2 }
+    },
+    ...initialEdges
+  ]);
 
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showConnectorPanel, setShowConnectorPanel] = useState(false);
   const [activeConnector, setActiveConnector] = useState<'agenttok' | 'attio' | null>(null);
 
   const onConnect = useCallback((params: Connection) => {
-    const newEdge = {
+    const newEdge: Edge = {
       ...params,
       id: `e${params.source}-${params.target}`,
       markerEnd: { type: MarkerType.ArrowClosed },
-      style: { stroke: theme.colors.success, strokeWidth: 2 }
+      style: { stroke: theme.colors.success, strokeWidth: 2 },
+      sourceHandle: params.sourceHandle || null,
+      targetHandle: params.targetHandle || null
     };
     setEdges((eds) => addEdge(newEdge, eds));
   }, [theme.colors.success, setEdges]);
