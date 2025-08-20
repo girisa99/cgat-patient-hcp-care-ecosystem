@@ -33,6 +33,7 @@ import { EnhancedWorkflowNode, EnhancedNodeData } from './EnhancedWorkflowNode';
 import { AutoSuggestConnector } from './AutoSuggestConnector';
 import { autoConnectEngine } from './AutoConnectEngine';
 import { WorkflowAssetPanel } from './WorkflowAssetPanel';
+import { UniversalAccessManager } from './UniversalAccessManager';
 
 // Custom Node Components
 const CustomerNode = ({ data }: { data: any }) => (
@@ -409,6 +410,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
   const [showNodeConfig, setShowNodeConfig] = useState(false);
   const [showTemplateLibrary, setShowTemplateLibrary] = useState(false);
   const [showAssetPanel, setShowAssetPanel] = useState(false);
+  const [showUniversalManager, setShowUniversalManager] = useState(false);
   const { showSuccess, showError } = useMasterToast();
   const { setViewport, getViewport } = useReactFlow();
 
@@ -669,11 +671,11 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
           <Button 
             variant="outline" 
             size="sm"
-            onClick={() => setShowAssetPanel(!showAssetPanel)}
+            onClick={() => setShowUniversalManager(!showUniversalManager)}
             className="flex items-center gap-2"
           >
             <Settings className="w-4 h-4" />
-            Assets & Tools
+            Universal Manager
           </Button>
           
           <Button variant="outline" size="sm" onClick={handleSave}>
@@ -830,27 +832,37 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         onClose={() => setShowTemplateLibrary(false)}
       />
 
-      {/* Workflow Asset Panel - Universal for all models/connectors */}
+      {/* Universal Access Manager - Enhanced with full CRUD and context awareness */}
+      <UniversalAccessManager
+        isOpen={showUniversalManager}
+        onClose={() => setShowUniversalManager(false)}
+        selectedNode={selectedNode}
+        nodes={nodes}
+        edges={edges}
+        workflowContext={{
+          type: 'visual',
+          stage: 'canvas',
+          useCaseData,
+          capturedRequirements,
+          journeyStages
+        }}
+        onAssetSelect={(assets) => showSuccess('Assets integrated')}
+        onDataLibrarySelect={(libraries) => showSuccess('Data libraries connected')}
+        onVariablesChange={(variables) => showSuccess('Variables updated')}
+        onConnectorAction={(action, data) => showSuccess(`Connector ${action} completed`)}
+        onSuggestionAccepted={handleAISuggestion}
+        onNextStepSuggestion={(steps) => console.log('Next steps:', steps)}
+      />
+
+      {/* Legacy Asset Panel - Keep for backward compatibility */}
       <WorkflowAssetPanel
         isOpen={showAssetPanel}
         onClose={() => setShowAssetPanel(false)}
         selectedNode={selectedNode}
-        onAssetSelect={(assets) => {
-          console.log('Assets selected:', assets);
-          showSuccess('Assets integrated into workflow');
-        }}
-        onDataLibrarySelect={(libraries) => {
-          console.log('Data libraries selected:', libraries);
-          showSuccess('Data libraries connected');
-        }}
-        onVariablesChange={(variables) => {
-          console.log('Variables updated:', variables);
-          showSuccess('Workflow variables updated');
-        }}
-        onSuggestionAccepted={(suggestion) => {
-          console.log('AI suggestion accepted:', suggestion);
-          handleAISuggestion(suggestion);
-        }}
+        onAssetSelect={(assets) => showSuccess('Assets integrated')}
+        onDataLibrarySelect={(libraries) => showSuccess('Data libraries connected')}
+        onVariablesChange={(variables) => showSuccess('Variables updated')}
+        onSuggestionAccepted={handleAISuggestion}
       />
     </div>
   );

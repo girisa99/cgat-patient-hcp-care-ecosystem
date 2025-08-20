@@ -34,6 +34,11 @@ interface AssetLibraryManagerProps {
   onAssetSelect?: (assets: AssetItem[]) => void;
   selectedAssets?: AssetItem[];
   mode?: 'select' | 'manage';
+  contextFilter?: {
+    domain?: string;
+    nodeType?: string;
+    relevantAssets?: any[];
+  };
 }
 
 export const AssetLibraryManager: React.FC<AssetLibraryManagerProps> = ({

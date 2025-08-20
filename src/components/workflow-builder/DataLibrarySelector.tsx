@@ -37,6 +37,10 @@ interface DataLibrarySelectorProps {
   onLibrariesSelect?: (libraries: DataLibrary[]) => void;
   selectedLibraries?: DataLibrary[];
   mode?: 'select' | 'manage';
+  contextFilter?: {
+    domain?: string;
+    relevantLibraries?: any[];
+  };
 }
 
 export const DataLibrarySelector: React.FC<DataLibrarySelectorProps> = ({

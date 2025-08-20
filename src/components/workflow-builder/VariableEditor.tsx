@@ -44,6 +44,7 @@ interface VariableEditorProps {
   onVariablesChange?: (variables: WorkflowVariable[]) => void;
   availableObjects?: string[];
   mode?: 'edit' | 'view';
+  contextSuggestions?: any[];
 }
 
 export const VariableEditor: React.FC<VariableEditorProps> = ({
