@@ -49,17 +49,57 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
     }
   ]);
 
-  // Analyze workflow and generate suggestions
+    // Analyze workflow and generate suggestions
   const analyzeWorkflow = async () => {
     if (!currentWorkflow?.nodes?.length) {
       setSuggestions([
         {
           id: '1',
           type: 'next_step',
-          title: 'Start Building Your Workflow',
-          description: 'Add your first node to begin creating your customer journey',
-          action: 'Add Customer Touchpoint',
-          priority: 'high'
+          title: 'Complete Start Configuration',
+          description: 'Add a detailed description to improve workflow clarity',
+          action: 'Configure Start',
+          priority: 'medium'
+        },
+        {
+          id: '2',
+          type: 'next_step',
+          title: 'Complete Process Request Configuration',
+          description: 'Add a detailed description to improve workflow clarity',
+          action: 'Configure Process Request',
+          priority: 'medium'
+        },
+        {
+          id: '3',
+          type: 'next_step',
+          title: 'Complete End Configuration',
+          description: 'Finalize your workflow with proper end conditions',
+          action: 'Configure End',
+          priority: 'medium'
+        },
+        {
+          id: '4',
+          type: 'suggestion',
+          title: 'Add Decision Points',
+          description: 'Consider adding decision nodes to handle different customer scenarios',
+          action: 'Add Decision Node',
+          priority: 'medium'
+        },
+        {
+          id: '5',
+          type: 'suggestion', 
+          title: 'Add AI Agent',
+          description: 'Integrate AI agents to automate parts of your workflow',
+          action: 'Add AI Agent',
+          priority: 'low'
+        },
+        {
+          id: '6',
+          type: 'improvement',
+          title: 'Optimize Performance',
+          description: 'Review and optimize your workflow for better performance',
+          action: 'Optimize',
+          priority: 'low'
         }
       ]);
       return;
@@ -250,7 +290,7 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
       dragMomentum={false}
       dragElastic={0.1}
     >
-      <Card className="w-[24rem] h-[calc(100vh-6rem)] max-h-[calc(100vh-6rem)] shadow-xl flex flex-col overflow-hidden pointer-events-auto">
+      <Card className="w-[24rem] h-[calc(100vh-6rem)] max-h-[calc(100vh-6rem)] shadow-xl flex flex-col pointer-events-auto">
         <CardHeader className="pb-3 flex-shrink-0 cursor-move select-none">
           <CardTitle className="text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -264,7 +304,7 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="flex-1 flex flex-col p-3 space-y-3 overflow-hidden">
+        <CardContent className="flex-1 flex flex-col p-3 space-y-3 min-h-0">
           {/* Conversation Area */}
           <div className="flex-1 flex flex-col min-h-0">
             <div className="flex items-center justify-between mb-2">
@@ -280,8 +320,8 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
               </Button>
             </div>
             
-            <ScrollArea className="flex-1 border rounded-md p-2">
-              <div className="space-y-2">
+            <ScrollArea className="flex-1 border rounded-md min-h-0">
+              <div className="p-2 space-y-2">
                 {conversationHistory.map((msg, idx) => (
                   <div
                     key={idx}
@@ -302,7 +342,7 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
             </ScrollArea>
 
             {/* Input Area */}
-            <div className="flex gap-2 mt-2">
+            <div className="flex gap-2 mt-2 flex-shrink-0">
               <Textarea
                 value={userPrompt}
                 onChange={(e) => setUserPrompt(e.target.value)}
@@ -328,15 +368,15 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
           </div>
 
           {/* Suggestions Section */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 max-h-80 flex flex-col">
             <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
               <Sparkles className="h-3 w-3" />
               Smart Suggestions
               {isAnalyzing && <RefreshCw className="h-3 w-3 animate-spin" />}
             </h4>
             
-            <ScrollArea className="max-h-64">
-              <div className="space-y-2">
+            <ScrollArea className="flex-1">
+              <div className="space-y-2 pr-2">
                 {suggestions.map((suggestion) => (
                   <Card
                     key={suggestion.id}
