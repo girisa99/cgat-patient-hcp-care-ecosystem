@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { Node, Edge, useReactFlow } from '@xyflow/react';
+import { Node } from '@xyflow/react';
 import { Lightbulb, Plus, ArrowRight, Zap, Bot, MessageSquare, Settings, Phone, Calendar } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
@@ -26,6 +26,7 @@ interface AutoSuggestConnectorProps {
     journeyStages?: any[];
   };
   contextualSuggestions?: any[];
+  nodes?: Node[];
 }
 
 interface NodeSuggestion {
@@ -45,23 +46,24 @@ export const AutoSuggestConnector: React.FC<AutoSuggestConnectorProps> = ({
   manualSteps = [],
   capturedRequirements,
   workflowContext,
-  contextualSuggestions = []
+  contextualSuggestions = [],
+  nodes = []
 }) => {
   const [promptInput, setPromptInput] = useState('');
   const [suggestions, setSuggestions] = useState<NodeSuggestion[]>([]);
   const [isGenerating, setIsGenerating] = useState(false);
   const { showSuccess, showError } = useMasterToast();
-  const { getNodes } = useReactFlow();
+  // no reactflow provider needed here
 
   const generateSuggestions = useCallback(async () => {
     if (!selectedNode && !promptInput.trim()) return;
 
     setIsGenerating(true);
     try {
-      const currentNodes = getNodes();
+      const currentNodes = nodes;
       const context = {
         selectedNode: selectedNode?.data,
-        currentWorkflow: currentNodes.map(n => ({ type: n.type, label: n.data.label })),
+        currentWorkflow: currentNodes.map(n => ({ type: n.type as string, label: (n.data as any).label })),
         manualSteps,
         capturedRequirements,
         prompt: promptInput
@@ -77,7 +79,7 @@ export const AutoSuggestConnector: React.FC<AutoSuggestConnectorProps> = ({
     } finally {
       setIsGenerating(false);
     }
-  }, [selectedNode, promptInput, manualSteps, capturedRequirements, getNodes, showSuccess, showError]);
+  }, [selectedNode, promptInput, manualSteps, capturedRequirements, nodes, showSuccess, showError]);
 
   const generateIntelligentSuggestions = (context: any): NodeSuggestion[] => {
     const suggestions: NodeSuggestion[] = [];

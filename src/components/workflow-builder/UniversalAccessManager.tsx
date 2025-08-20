@@ -354,33 +354,29 @@ export const UniversalAccessManager: React.FC<UniversalAccessManagerProps> = ({
         
         <CardContent className="p-0 h-[calc(100%-6rem)]">
           <Tabs value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
-            <div className="px-4 pb-2 border-b">
-              <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5">
-                <TabsTrigger value="guidance" className="text-xs px-1 h-7">
+            <div className="px-2 pb-2 border-b overflow-x-auto">
+              <TabsList className="flex w-max gap-1 h-8">
+                <TabsTrigger value="guidance" className="text-xs px-2 h-7 whitespace-nowrap">
                   <Lightbulb className="h-3 w-3" />
                   <span className="hidden sm:inline ml-1">Guide</span>
                 </TabsTrigger>
-                <TabsTrigger value="assets" className="text-xs px-1 h-7">
+                <TabsTrigger value="assets" className="text-xs px-2 h-7 whitespace-nowrap">
                   <FileText className="h-3 w-3" />
                   <span className="hidden sm:inline ml-1">Assets</span>
                 </TabsTrigger>
-                <TabsTrigger value="data" className="text-xs px-1 h-7">
+                <TabsTrigger value="data" className="text-xs px-2 h-7 whitespace-nowrap">
                   <Database className="h-3 w-3" />
                   <span className="hidden sm:inline ml-1">Data</span>
                 </TabsTrigger>
-              </TabsList>
-              
-              {/* Second row of tabs */}
-              <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5 mt-1">
-                <TabsTrigger value="variables" className="text-xs px-1 h-7">
+                <TabsTrigger value="variables" className="text-xs px-2 h-7 whitespace-nowrap">
                   <Settings2 className="h-3 w-3" />
                   <span className="hidden sm:inline ml-1">Vars</span>
                 </TabsTrigger>
-                <TabsTrigger value="connectors" className="text-xs px-1 h-7">
+                <TabsTrigger value="connectors" className="text-xs px-2 h-7 whitespace-nowrap">
                   <Link className="h-3 w-3" />
                   <span className="hidden sm:inline ml-1">Connect</span>
                 </TabsTrigger>
-                <TabsTrigger value="suggest" className="text-xs px-1 h-7">
+                <TabsTrigger value="suggest" className="text-xs px-2 h-7 whitespace-nowrap">
                   <Brain className="h-3 w-3" />
                   <span className="hidden sm:inline ml-1">AI</span>
                 </TabsTrigger>
@@ -512,6 +508,7 @@ export const UniversalAccessManager: React.FC<UniversalAccessManagerProps> = ({
                     capturedRequirements={workflowContext?.capturedRequirements}
                     workflowContext={workflowContext}
                     contextualSuggestions={contextualSuggestions}
+                    nodes={nodes}
                   />
                 </ScrollArea>
               </TabsContent>
