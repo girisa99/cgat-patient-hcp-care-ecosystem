@@ -738,19 +738,19 @@ export const LibrariesAndActions: React.FC = () => {
       
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-          <TabsList className="grid w-full grid-cols-3 h-8 mx-4 mb-2">
-            <TabsTrigger value="libraries" className="text-xs">
+          <TabsList className="grid w-full grid-cols-3 h-8 mx-4 mb-2 sticky top-0 bg-background z-10">
+            <TabsTrigger value="libraries" className="text-xs truncate">
               Libraries ({libraries.length})
             </TabsTrigger>
-            <TabsTrigger value="actions" className="text-xs">
+            <TabsTrigger value="actions" className="text-xs truncate">
               Actions ({actions.length})
             </TabsTrigger>
-            <TabsTrigger value="operators" className="text-xs">
+            <TabsTrigger value="operators" className="text-xs truncate">
               Operators ({operators.length})
             </TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[calc(100vh-220px)]">
+          <ScrollArea className="h-[calc(100vh-220px)] pr-2">
             <div className="p-4">
               <TabsContent value="libraries" className="mt-0 space-y-3">
                 <div className="flex items-center justify-between mb-4">

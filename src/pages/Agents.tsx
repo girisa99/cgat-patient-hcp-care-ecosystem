@@ -236,8 +236,12 @@ const AgentsInner = () => {
                 </Button>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden">
-              {leftPanelTab === 'palette' ? <NodePalette /> : <div className="p-4"><p className="text-sm text-muted-foreground">Universal Access Manager - Coming Soon</p></div>}
+            <div className="flex-1 overflow-auto min-h-0">
+              {leftPanelTab === 'palette' ? (
+                <NodePalette />
+              ) : (
+                <UniversalAccessManager isOpen={true} onClose={() => {}} />
+              )}
             </div>
           </div>
 
@@ -313,7 +317,7 @@ const AgentsInner = () => {
                 </Button>
               </div>
             </div>
-            <div className="flex-1 overflow-hidden">
+            <div className="flex-1 overflow-auto min-h-0">
               {rightPanelTab === 'config' && selectedNode && (
                 <NodeConfigurationPanel
                   node={selectedNode}
@@ -369,6 +373,7 @@ const AgentsInner = () => {
             <div className="p-4 border-b flex items-center justify-between">
               <h3 className="font-semibold text-sm">AI Workflow Assistant</h3>
               <Button 
+                type="button"
                 variant="ghost" 
                 size="sm" 
                 onClick={() => setShowPromptAssistant(false)}
