@@ -50,6 +50,7 @@ import { UniversalAccessManager } from '@/components/workflow-builder/UniversalA
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
+import { ContextualAccessOverlay } from '@/components/workflow-builder/ContextualAccessOverlay';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Node } from '@xyflow/react';
@@ -70,6 +71,8 @@ const AgentsInner = () => {
   const [showAssistant, setShowAssistant] = useState(false);
   const [leftPanelTab, setLeftPanelTab] = useState<'palette' | 'access'>('palette');
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'libraries' | 'assistant'>('config');
+  const [showContextualAccess, setShowContextualAccess] = useState(false);
+  const [accessNodePosition, setAccessNodePosition] = useState({ x: 0, y: 0 });
 
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
   const { createSession, updateSession } = useAgentSession();
@@ -240,7 +243,29 @@ const AgentsInner = () => {
               {leftPanelTab === 'palette' ? (
                 <NodePalette />
               ) : (
-                <UniversalAccessManager isOpen={true} onClose={() => {}} />
+                <div className="p-4 text-center">
+                  <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
+                    <Database className="h-8 w-8 mx-auto mb-3 text-primary" />
+                    <h3 className="font-medium mb-2">Contextual Access Manager</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Access insights and recommendations now appear directly on nodes in the flow builder.
+                    </p>
+                    <div className="space-y-2 text-xs text-left">
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-green-500 rounded-full" />
+                        Select any node to view contextual insights
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                        Get recommendations specific to each node type
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-2 h-2 bg-purple-500 rounded-full" />
+                        Apply suggested connectors and security measures
+                      </div>
+                    </div>
+                  </div>
+                </div>
               )}
             </div>
           </div>
@@ -263,7 +288,7 @@ const AgentsInner = () => {
               </div>
             </div>
             {/* ReactFlow Builder */}
-            <div className="flex-1 min-h-0">
+            <div className="flex-1 min-h-0 relative">
               <AdvancedReactFlowWrapper 
                 fitParent={true}
                 workflowType="visual"
@@ -273,9 +298,38 @@ const AgentsInner = () => {
                 onNodeSelect={(node) => {
                   setSelectedNode(node);
                   setRightPanelTab('config');
+                  
+                  // Show contextual access overlay for selected node
+                  if (node) {
+                    setTimeout(() => {
+                      const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
+                      if (nodeElement) {
+                        const rect = nodeElement.getBoundingClientRect();
+                        const containerRect = nodeElement.closest('.react-flow')?.getBoundingClientRect();
+                        if (containerRect) {
+                          setAccessNodePosition({
+                            x: rect.left - containerRect.left + rect.width,
+                            y: rect.top - containerRect.top
+                          });
+                          setShowContextualAccess(true);
+                        }
+                      }
+                    }, 100);
+                  } else {
+                    setShowContextualAccess(false);
+                  }
                 }}
                 onSave={handleFlowSave}
               />
+              
+              {/* Contextual Access Overlay */}
+              {showContextualAccess && selectedNode && (
+                <ContextualAccessOverlay
+                  node={selectedNode}
+                  position={accessNodePosition}
+                  onClose={() => setShowContextualAccess(false)}
+                />
+              )}
             </div>
           </div>
 

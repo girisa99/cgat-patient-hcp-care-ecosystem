@@ -194,9 +194,25 @@ export const NodePalette: React.FC = () => {
           <Workflow className="h-4 w-4" />
           Node Palette
         </CardTitle>
-        <p className="text-xs text-muted-foreground">
-          Drag <strong>Workflow Nodes</strong> (Customer, Agent, etc.) to canvas. Drag <strong>Config Nodes</strong> to open configuration panels.
-        </p>
+        <div className="space-y-2">
+          <p className="text-xs text-muted-foreground">
+            <strong>How Node Palette Works:</strong>
+          </p>
+          <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+              <span><strong>Workflow Nodes</strong> (Customer, Agent, Decision) → Drag to canvas to create executable nodes</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />
+              <span><strong>Config Nodes</strong> (Use Case, AI Models) → Drag to open configuration panels</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+              <span>Canvas nodes connect to each other to build your workflow</span>
+            </div>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-140px)]">
