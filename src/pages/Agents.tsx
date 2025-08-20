@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Bot, 
   Settings, 
@@ -43,6 +44,8 @@ import { toast } from 'sonner';
 import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDesigner';
 import { AIModelSelector } from '@/components/agentic/AIModelSelector';
 import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
+import { NodeConfigurationPanel } from '@/components/workflow-builder/NodeConfigurationPanel';
+import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 
 const AgentsInner = () => {
@@ -55,10 +58,13 @@ const AgentsInner = () => {
   const [selectedUseCase, setSelectedUseCase] = useState('');
   const [journeyStages, setJourneyStages] = useState<any[]>([]);
   const [wizardData, setWizardData] = useState<any>({});
-  const [agentBuilderTab, setAgentBuilderTab] = useState('agent-config');
+  const [agentBuilderTab, setAgentBuilderTab] = useState('agent-config');  
   const [showPromptAssistant, setShowPromptAssistant] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<any | null>(null);
+  const [showAssistant, setShowAssistant] = useState(false);
 
-const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
+  const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
+  const { createSession, updateSession } = useAgentSession();
   const { user } = useMasterAuth();
 
   const handleFlowSave = async (flowData: any) => {
@@ -348,73 +354,96 @@ const { userSessions, currentSessionId, currentSession, actions, setActions } = 
               </div>
             </div>
             {/* ReactFlow Builder */}
-<div className="flex-1 min-h-0">
-              <AdvancedReactFlowWrapper fitParent onSave={handleFlowSave} />
+            <div className="flex-1 min-h-0">
+              <AdvancedReactFlowWrapper 
+                fitParent={true}
+                workflowType="visual"
+                sessionId={currentSession?.id}
+                initialNodes={[]}
+                initialEdges={[]}
+                onNodeSelect={setSelectedNode}
+                onSave={(data) => {
+                  console.log('Canvas data saved:', data);
+                }}
+              />
             </div>
           </div>
 
-          {/* Right Panel - AI Models & Config */}
-          <div className="w-80 border-l bg-card flex flex-col">
-            <div className="p-4 border-b">
-              <h3 className="font-medium text-sm">AI Models & Config</h3>
-              <p className="text-xs text-muted-foreground mt-1">Configure AI models and settings</p>
-            </div>
-            
-            <div className="flex-1 overflow-auto p-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-medium text-sm">AI Models</h4>
-                  <Button size="sm" className="h-6 px-2 text-xs">
-                    <Plus className="w-3 h-3 mr-1" />
-                    Add Model
-                  </Button>
-                </div>
-                
-                {/* AI Model Cards */}
-                <div className="space-y-3">
-                  <Card className="p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-primary/10 rounded flex items-center justify-center">
-                        <Bot className="w-3 h-3 text-primary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-xs">GPT-4 Turbo</p>
-                        <p className="text-xs text-muted-foreground">OpenAI Language Model</p>
-                      </div>
-                      <Badge variant="secondary" className="text-xs">Active</Badge>
-                    </div>
-                  </Card>
-                  
-                  <Card className="p-3">
-                    <div className="flex items-center gap-3">
-                      <div className="w-6 h-6 bg-secondary/10 rounded flex items-center justify-center">
-                        <Sparkles className="w-3 h-3 text-secondary" />
-                      </div>
-                      <div className="flex-1">
-                        <p className="font-medium text-xs">Claude 3.5 Sonnet</p>
-                        <p className="text-xs text-muted-foreground">Anthropic Reasoning Model</p>  
-                      </div>
-                      <Badge variant="outline" className="text-xs">Available</Badge>
-                    </div>
-                  </Card>
-                </div>
-                
-                {/* Configuration Section */}
-                <div className="pt-4 border-t">
-                  <h4 className="font-medium text-sm mb-3">Configuration</h4>
-                  <div className="space-y-3">
+          {/* Right Panel - AI Model Selection & Node Configuration */}
+          <div className="w-80 border-l bg-background flex flex-col">
+            {selectedNode ? (
+              <NodeConfigurationPanel
+                node={selectedNode}
+                onUpdate={(nodeId, updates) => {
+                  console.log('Node configuration updated:', nodeId, updates);
+                }}
+                onDelete={(nodeId) => {
+                  console.log('Node deleted from config panel:', nodeId);
+                  setSelectedNode(null);
+                }}
+                onClose={() => setSelectedNode(null)}
+                availableConnectors={[
+                  'REST API', 'GraphQL', 'WebSocket', 'Database', 
+                  'Email', 'SMS', 'Slack', 'Teams', 'Webhook'
+                ]}
+                aiModels={[
+                  'gpt-4o-mini', 'gpt-4o', 'claude-3-sonnet', 
+                  'claude-3-haiku', 'gemini-pro', 'llama-3'
+                ]}
+              />
+            ) : (
+              <div className="p-6 space-y-6">
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">AI Model & Prompts</h3>
+                  <div className="space-y-4">
                     <div>
-                      <Label className="text-xs">Temperature</Label>
-                      <Input type="number" min="0" max="1" step="0.1" defaultValue="0.7" className="h-7 text-xs" />
+                      <Label htmlFor="model-select">Select AI Model</Label>
+                      <Select defaultValue="gpt-4o-mini">
+                        <SelectTrigger id="model-select">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="gpt-4o-mini">GPT-4O Mini</SelectItem>
+                          <SelectItem value="gpt-4o">GPT-4O</SelectItem>
+                          <SelectItem value="claude-3">Claude 3</SelectItem>
+                          <SelectItem value="gemini-pro">Gemini Pro</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+                    
                     <div>
-                      <Label className="text-xs">Max Tokens</Label>
-                      <Input type="number" defaultValue="2048" className="h-7 text-xs" />
+                      <Label htmlFor="system-prompt">System Prompt</Label>
+                      <Textarea 
+                        id="system-prompt"
+                        placeholder="Enter system prompt..."
+                        className="min-h-[100px]"
+                      />
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="user-prompt">User Prompt Template</Label>
+                      <Textarea 
+                        id="user-prompt"
+                        placeholder="Enter user prompt template..."
+                        className="min-h-[100px]"
+                      />
                     </div>
                   </div>
                 </div>
+                
+                {/* AI Assistant Toggle */}
+                <div className="border-t pt-6">
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => setShowAssistant(!showAssistant)}
+                  >
+                    <Bot className="w-4 h-4 mr-2" />
+                    {showAssistant ? 'Hide' : 'Show'} AI Assistant
+                  </Button>
+                </div>
               </div>
-            </div>
+            )}
           </div>
         </div>
 

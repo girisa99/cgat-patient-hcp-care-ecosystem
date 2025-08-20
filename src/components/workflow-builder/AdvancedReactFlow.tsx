@@ -56,6 +56,8 @@ import {
 } from 'lucide-react';
 
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useAgentSession } from '@/hooks/useAgentSession';
+import { NodeUpdateHandler } from './NodeUpdateHandler';
 
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -413,6 +415,8 @@ interface AdvancedReactFlowProps {
   onLoad?: (flowData: any) => void;
   workflowType?: 'visual' | 'manual';
   fitParent?: boolean; // when true, use h-full instead of h-screen
+  sessionId?: string; // for backend persistence
+  onNodeSelect?: (node: Node | null) => void; // for configuration panel
 }
 
 export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
@@ -422,6 +426,8 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   onLoad,
   workflowType = 'visual',
   fitParent = false,
+  sessionId,
+  onNodeSelect,
 }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
@@ -437,6 +443,8 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { showSuccess, showError } = useMasterToast();
   const reactFlowInstance = useReactFlow();
+  const { autoSave } = useAgentSession();
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
 
   // Auto-layout when algorithm changes
 useEffect(() => {
@@ -483,17 +491,55 @@ useEffect(() => {
     setValidationIssues(issues);
   }, [nodes, edges]);
 
-  // Enhanced connection handler with cycle detection and validation
+  // Enhanced connection handler with cycle detection and edge semantics
   const onConnect: OnConnect = useCallback((connection) => {
+    // Determine edge semantics based on source and target node types
+    const sourceNode = nodes.find(n => n.id === connection.source);
+    const targetNode = nodes.find(n => n.id === connection.target);
+    
+    let edgeLabel = 'Connection';
+    let edgeColor = '#8b5cf6';
+    
+    if (sourceNode && targetNode) {
+      const sourceType = sourceNode.data?.type;
+      const targetType = targetNode.data?.type;
+      
+      // Define edge semantics based on node types
+      if (sourceType === 'customer' && targetType === 'agent') {
+        edgeLabel = 'Initiates Conversation';
+        edgeColor = '#10b981';
+      } else if (sourceType === 'agent' && targetType === 'decision') {
+        edgeLabel = 'Process Decision';
+        edgeColor = '#f59e0b';
+      } else if (sourceType === 'decision' && targetType === 'agent') {
+        edgeLabel = 'Route to Agent';
+        edgeColor = '#8b5cf6';
+      } else if (sourceType === 'agent' && targetType === 'database') {
+        edgeLabel = 'Query Data';
+        edgeColor = '#3b82f6';
+      } else if (sourceType === 'database' && targetType === 'agent') {
+        edgeLabel = 'Return Results';
+        edgeColor = '#06b6d4';
+      } else if (targetType === 'customer') {
+        edgeLabel = 'Send Response';
+        edgeColor = '#10b981';
+      }
+    }
+
     const newEdge: Edge = {
       ...connection,
       id: `edge-${Date.now()}`,
       type: 'animated',
       markerEnd: { type: MarkerType.ArrowClosed },
       data: { 
-        label: 'Connection',
+        label: edgeLabel,
         animated: true,
-        color: '#8b5cf6' 
+        color: edgeColor,
+        semantics: {
+          sourceType: sourceNode?.data?.type,
+          targetType: targetNode?.data?.type,
+          relationship: edgeLabel
+        }
       }
     } as Edge;
 
@@ -503,9 +549,23 @@ useEffect(() => {
       return;
     }
 
-    setEdges((eds) => addEdge(newEdge, eds));
-    showSuccess('Connection created successfully');
-  }, [nodes, edges, showError, showSuccess]);
+    setEdges((eds) => {
+      const updatedEdges = addEdge(newEdge, eds);
+      // Auto-save to backend if sessionId exists
+      if (sessionId) {
+        autoSave(sessionId, { 
+          canvas: { 
+            nodes, 
+            edges: updatedEdges,
+            viewport: reactFlowInstance.getViewport(),
+            metadata: { layout: selectedLayout, connectionMode, snapToGrid }
+          } 
+        });
+      }
+      return updatedEdges;
+    });
+    showSuccess(`${edgeLabel} created successfully`);
+  }, [nodes, edges, showError, showSuccess, sessionId, autoSave, reactFlowInstance, selectedLayout, connectionMode, snapToGrid]);
 
   // Enhanced node operations
   const addNode = (type: string, position?: { x: number; y: number }) => {
@@ -525,7 +585,21 @@ useEffect(() => {
       }
     };
     
-    setNodes((nds) => [...nds, newNode]);
+    setNodes((nds) => {
+      const updatedNodes = [...nds, newNode];
+      // Auto-save to backend if sessionId exists
+      if (sessionId) {
+        autoSave(sessionId, { 
+          canvas: { 
+            nodes: updatedNodes, 
+            edges,
+            viewport: reactFlowInstance.getViewport(),
+            metadata: { layout: selectedLayout, connectionMode, snapToGrid }
+          } 
+        });
+      }
+      return updatedNodes;
+    });
     showSuccess(`${type} node added`);
   };
 
@@ -545,8 +619,8 @@ useEffect(() => {
     showSuccess('Group node added');
   };
 
-  // Save/Load functionality
-  const handleSave = () => {
+  // Save/Load functionality with backend persistence
+  const handleSave = async () => {
     const flowData = {
       nodes,
       edges,
@@ -560,13 +634,21 @@ useEffect(() => {
       }
     };
     
-    if (onSave) {
+    if (sessionId && updateCanvas) {
+      try {
+        await updateCanvas(sessionId, flowData);
+        showSuccess('Workflow saved to backend');
+      } catch (error) {
+        showError('Failed to save to backend, using local storage');
+        localStorage.setItem('workflow-data', JSON.stringify(flowData));
+      }
+    } else if (onSave) {
       onSave(flowData);
     } else {
       // Save to localStorage as fallback
       localStorage.setItem('workflow-data', JSON.stringify(flowData));
+      showSuccess('Workflow saved locally');
     }
-    showSuccess('Workflow saved successfully');
   };
 
   const handleLoad = () => {
@@ -821,6 +903,16 @@ useEffect(() => {
 
       {/* Main Flow Area */}
       <div className="flex-1" ref={reactFlowWrapper}>
+        {/* Node Update Handler for keyboard shortcuts and backend persistence */}
+        <NodeUpdateHandler 
+          sessionId={sessionId}
+          onNodeUpdate={(nodeId, updates) => {
+            console.log('Node updated:', nodeId, updates);
+          }}
+          onNodeDelete={(nodeId) => {
+            console.log('Node deleted:', nodeId);
+          }}
+        />
         <ContextMenu>
           <ContextMenuTrigger asChild>
             <ReactFlow
@@ -833,6 +925,14 @@ useEffect(() => {
               onDragOver={onDragOver}
               onNodeContextMenu={handleNodeContextMenu}
               onPaneContextMenu={handlePaneContextMenu}
+              onNodeClick={(event, node) => {
+                setSelectedNode(node);
+                onNodeSelect?.(node);
+              }}
+              onPaneClick={() => {
+                setSelectedNode(null);
+                onNodeSelect?.(null);
+              }}
               nodeTypes={nodeTypes}
               edgeTypes={edgeTypes}
               connectionLineComponent={ConnectionLine}
