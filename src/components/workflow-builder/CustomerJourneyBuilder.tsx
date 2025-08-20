@@ -220,8 +220,11 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         ...node,
         type: 'enhanced',
         data: {
-          ...node.data,
-          type: node.type as any,
+          label: (node.data as any).label || 'Node',
+          description: (node.data as any).description || 'Workflow node',
+          type: (node.type === 'input' ? 'customer' : 
+                node.type === 'output' ? 'action' : 
+                'touchpoint') as EnhancedNodeData['type'],
           dataFields: ['input_data', 'output_data', 'status'],
           connectors: [
             { id: 'input', label: 'Input', type: 'input', position: Position.Left },
@@ -293,14 +296,22 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
       capturedRequirements.steps.forEach((step, idx) => {
         contextualNodes.push({
           id: `step-${idx}`,
-          type: 'agent',
+          type: 'enhanced',
           position: { x: 50 + (idx * 280), y: 300 },
           data: {
             label: step,
             description: `AI agent for ${step}`,
+            type: 'agent',
             capabilities: ['Processing', 'Analysis'],
-            aiModel: 'gpt-4o-mini',
-            step: step
+            dataFields: ['step_input', 'step_output', 'processing_status'],
+            connectors: [
+              { id: 'input', label: 'Step Input', type: 'input', position: Position.Left },
+              { id: 'output', label: 'Step Output', type: 'output', position: Position.Right }
+            ],
+            config: {
+              aiModel: 'gpt-4o-mini',
+              step: step
+            }
           }
         });
       });
@@ -310,17 +321,24 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
     if (capturedRequirements?.integrations && capturedRequirements.integrations.length > 1) {
       contextualNodes.push({
         id: 'routing-decision',
-        type: 'decision',
+        type: 'enhanced',
         position: { x: 300, y: 450 },
         data: {
           label: 'Route to Integration',
           description: 'Determine which integration to use',
-          conditions: capturedRequirements.integrations.slice(0, 3)
+          type: 'decision',
+          conditions: capturedRequirements.integrations.slice(0, 3),
+          dataFields: ['integration_input', 'routing_decision', 'selected_integration'],
+          connectors: [
+            { id: 'input', label: 'Decision Input', type: 'input', position: Position.Left },
+            { id: 'output-1', label: 'Route 1', type: 'output', position: Position.Right },
+            { id: 'output-2', label: 'Route 2', type: 'output', position: Position.Bottom }
+          ]
         }
       });
     }
     
-    return contextualNodes.length > 0 ? contextualNodes : initialNodes;
+    return contextualNodes;
   };
 
   // Generate contextual edges

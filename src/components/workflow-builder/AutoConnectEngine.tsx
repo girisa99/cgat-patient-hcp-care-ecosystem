@@ -133,8 +133,8 @@ export class AutoConnectEngine {
 
           // Add connector-specific connections if available
           const additionalEdges = this.generateConnectorSpecificEdges(
-            sourceNode!, 
-            targetNode!, 
+            sourceNode! as Node<EnhancedNodeData>, 
+            targetNode! as Node<EnhancedNodeData>, 
             rule
           );
 
