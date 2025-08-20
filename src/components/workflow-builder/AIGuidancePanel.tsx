@@ -346,7 +346,7 @@ export const AIGuidancePanel: React.FC<AIGuidancePanelProps> = ({
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-1 mb-1">
                           {getTypeIcon(suggestion.type)}
-                          <span className="text-xs font-medium truncate">
+                          <span className="text-xs font-medium break-words">
                             {suggestion.title}
                           </span>
                           <Badge

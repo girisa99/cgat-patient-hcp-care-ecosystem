@@ -12,7 +12,9 @@ import {
   Node,
   NodeTypes,
   useReactFlow,
-  MarkerType
+  MarkerType,
+  Handle,
+  Position
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,20 +32,23 @@ import { NodeTemplateLibrary } from './NodeTemplateLibrary';
 
 // Custom Node Components
 const CustomerNode = ({ data }: { data: any }) => (
-  <div className="px-4 py-3 shadow-md rounded-md bg-background border-2 border-primary min-w-[180px]">
+  <div className="px-4 py-3 shadow-md rounded-md bg-background border-2 border-primary min-w-[180px] relative">
+    <Handle type="target" position={Position.Left} className="custom-handle" />
     <div className="flex items-center gap-2 mb-2">
       <Users className="h-4 w-4 text-primary" />
       <div className="font-bold text-sm">{data.label}</div>
     </div>
-    <div className="text-xs text-muted-foreground">{data.description}</div>
+    <div className="text-xs text-muted-foreground whitespace-normal break-words leading-snug">{data.description}</div>
     {data.persona && (
       <Badge variant="outline" className="mt-1 text-xs">{data.persona}</Badge>
     )}
+    <Handle type="source" position={Position.Right} className="custom-handle" />
   </div>
 );
 
 const TouchpointNode = ({ data }: { data: any }) => (
-  <div className="px-4 py-3 shadow-md rounded-md bg-accent border-2 border-accent-foreground min-w-[160px]">
+  <div className="px-4 py-3 shadow-md rounded-md bg-accent border-2 border-accent-foreground min-w-[160px] relative">
+    <Handle type="target" position={Position.Left} className="custom-handle" />
     <div className="flex items-center gap-2 mb-2">
       {data.channel === 'chat' && <MessageCircle className="h-4 w-4" />}
       {data.channel === 'phone' && <Phone className="h-4 w-4" />}
@@ -51,22 +56,24 @@ const TouchpointNode = ({ data }: { data: any }) => (
       {data.channel === 'appointment' && <Calendar className="h-4 w-4" />}
       <div className="font-bold text-sm">{data.label}</div>
     </div>
-    <div className="text-xs text-muted-foreground">{data.description}</div>
+    <div className="text-xs text-muted-foreground whitespace-normal break-words leading-snug">{data.description}</div>
     {data.automationLevel && (
       <Badge variant="secondary" className="mt-1 text-xs">
         {data.automationLevel}% Automated
       </Badge>
     )}
+    <Handle type="source" position={Position.Right} className="custom-handle" />
   </div>
 );
 
 const DecisionNode = ({ data }: { data: any }) => (
-  <div className="px-4 py-3 shadow-md rounded-md bg-yellow-100 border-2 border-yellow-400 min-w-[140px] dark:bg-yellow-900 dark:border-yellow-600">
+  <div className="px-4 py-3 shadow-md rounded-md bg-yellow-100 border-2 border-yellow-400 min-w-[140px] dark:bg-yellow-900 dark:border-yellow-600 relative">
+    <Handle type="target" position={Position.Left} className="custom-handle" />
     <div className="flex items-center gap-2 mb-2">
       <AlertTriangle className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
       <div className="font-bold text-sm">{data.label}</div>
     </div>
-    <div className="text-xs text-muted-foreground">{data.description}</div>
+    <div className="text-xs text-muted-foreground whitespace-normal break-words leading-snug">{data.description}</div>
     {data.conditions && (
       <div className="mt-1 text-xs">
         {data.conditions.map((condition: string, idx: number) => (
@@ -74,6 +81,7 @@ const DecisionNode = ({ data }: { data: any }) => (
         ))}
       </div>
     )}
+    <Handle type="source" position={Position.Right} className="custom-handle" />
   </div>
 );
 
