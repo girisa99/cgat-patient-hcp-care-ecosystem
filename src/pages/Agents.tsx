@@ -159,11 +159,12 @@ const AgentsInner = () => {
       // Clear URL params to clean up the URL
       window.history.replaceState({}, document.title, window.location.pathname);
       
+      setShowPromptAssistant(true);
       toast.success('Visual workflow loaded. Start from Use Case.');
     } else if (tabParam === 'configuration' && urlContext) {
       console.log('🎯 Loading manual configuration with context:', urlContext);
       setActiveTab('ecosystem');
-      setSelectedMode('expert' as any);
+      setSelectedMode('manual' as any);
       setShowModeSelector(false);
       setAgentBuilderTab('models');
       
@@ -259,12 +260,8 @@ const AgentsInner = () => {
     };
   }, [setCurrentSessionId]);
 
-  // Hide global PromptAssistant when on Canvas to avoid overlap with AI Workflow Assistant
-  useEffect(() => {
-    if (selectedMode === 'visual' && agentBuilderTab === 'canvas-designer' && visualWorkflowSubTab === 'canvas') {
-      setShowPromptAssistant(false);
-    }
-  }, [selectedMode, agentBuilderTab, visualWorkflowSubTab]);
+  // Keep PromptAssistant available across all steps and modes (no auto-hide)
+  // Removed auto-hide to honor user request.
 
   // Persist builder state (mode, tabs, wizard data) to avoid resets on refresh
   useEffect(() => {
@@ -347,6 +344,7 @@ const AgentsInner = () => {
     setSelectedUseCase(useCase);
     setVisualWorkflowSubTab('journey');
     toast.success('Use case selected! Now define your journey stages.');
+    setShowPromptAssistant(true);
   };
 
   // Handle journey completion - proceed to wizard
@@ -421,7 +419,7 @@ const AgentsInner = () => {
       toast.success('Configuration generated! Review the settings.');
     }
     
-    setShowPromptAssistant(false);
+    // keep assistant open
   };
 
   // Show questionnaire if needed
@@ -1104,7 +1102,7 @@ const AgentsInner = () => {
         </AgentTabs>
 
         {/* Prompt Assistant */}
-        {selectedMode && !(selectedMode === 'visual' && agentBuilderTab === 'canvas-designer' && visualWorkflowSubTab === 'canvas') && (
+        {selectedMode && (
           <PromptAssistant
             mode={selectedMode}
             isVisible={showPromptAssistant}
