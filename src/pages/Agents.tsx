@@ -46,7 +46,7 @@ import { AIModelSelector } from '@/components/agentic/AIModelSelector';
 import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
 import { NodeConfigurationPanel } from '@/components/workflow-builder/NodeConfigurationPanel';
 import { NodePalette } from '@/components/workflow-builder/NodePalette';
-import { UniversalAccessManager } from '@/components/workflow-builder/UniversalAccessManager';
+import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetPanel';
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { AIAssistant } from '@/components/workflow-builder/AIAssistant';

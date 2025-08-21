@@ -33,7 +33,6 @@ import { EnhancedWorkflowNode, EnhancedNodeData } from './EnhancedWorkflowNode';
 import { AutoSuggestConnector } from './AutoSuggestConnector';
 import { autoConnectEngine } from './AutoConnectEngine';
 import { WorkflowAssetPanel } from './WorkflowAssetPanel';
-import { UniversalAccessManager } from './UniversalAccessManager';
 import { AdvancedReactFlow } from './AdvancedReactFlow';
 import { FlowiseStyleWorkflow } from './FlowiseStyleWorkflow';
 
@@ -843,20 +842,15 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         onClose={() => setShowTemplateLibrary(false)}
       />
 
-      {/* Universal Access Manager - Enhanced with full CRUD and context awareness */}
-      <UniversalAccessManager
+      {/* Universal Workflow Asset Panel - Comprehensive management */}
+      <WorkflowAssetPanel
         isOpen={showUniversalManager}
         onClose={() => setShowUniversalManager(false)}
         selectedNode={selectedNode}
-        nodes={nodes}
-        edges={edges}
-        workflowContext={workflowContext}
         onAssetSelect={(assets) => showSuccess('Assets integrated')}
         onDataLibrarySelect={(libraries) => showSuccess('Data libraries connected')}
         onVariablesChange={(variables) => showSuccess('Variables updated')}
-        onConnectorAction={(action, data) => showSuccess(`Connector ${action} completed`)}
         onSuggestionAccepted={handleAISuggestion}
-        onNextStepSuggestion={(steps) => console.log('Next steps:', steps)}
       />
 
       {/* Advanced ReactFlow - All features enabled */}
