@@ -58,6 +58,9 @@ import {
 
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useAgentSession } from '@/hooks/useAgentSession';
+import { useWorkflowManager } from '@/hooks/useWorkflowManager';
+import { useWorkflowAgents } from '@/hooks/useWorkflowAgents';
+import { useAIModelManager } from '@/hooks/useAIModelManager';
 import { NodeUpdateHandler } from './NodeUpdateHandler';
 import { NodePalette } from './NodePalette';
 
@@ -451,6 +454,27 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const reactFlowInstance = useReactFlow();
   const { autoSave } = useAgentSession();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  
+  // Backend integration hooks
+  const { 
+    workflows, 
+    createWorkflow, 
+    updateWorkflow, 
+    autoSaveWorkflow,
+    isAutoSaving 
+  } = useWorkflowManager(sessionId);
+  const { 
+    agents, 
+    createAgent, 
+    updateAgent, 
+    createAgentAction,
+    executeAction,
+    isCreatingAgent 
+  } = useWorkflowAgents();
+  const { 
+    aiModels, 
+    getRecommendedModels 
+  } = useAIModelManager();
 
   // Apply suggestions from contextual access overlay
   useEffect(() => {
@@ -639,10 +663,11 @@ useEffect(() => {
     showSuccess(`${edgeLabel} created successfully`);
   }, [nodes, edges, showError, showSuccess, sessionId, autoSave, reactFlowInstance, selectedLayout, connectionMode, snapToGrid]);
 
-  // Enhanced node operations
-  const addNode = (type: string, position?: { x: number; y: number }) => {
+  // Enhanced node operations with backend persistence
+  const addNode = async (type: string, position?: { x: number; y: number }) => {
+    const nodeId = `node-${Date.now()}`;
     const newNode: Node = {
-      id: `node-${Date.now()}`,
+      id: nodeId,
       type: 'custom',
       position: position || { x: Math.random() * 500, y: Math.random() * 300 },
       data: {
@@ -650,40 +675,52 @@ useEffect(() => {
         description: `This is a ${type} node`,
         type,
         status: 'active',
-        icon: type === 'agent' ? Bot : type === 'decision' ? AlertTriangle : Users,
-        connectionLimit: type === 'decision' ? 3 : undefined,
-        connections: 0,
-        progress: Math.floor(Math.random() * 100)
+        progress: Math.floor(Math.random() * 100),
+        icon: type === 'agent' ? Bot : 
+              type === 'decision' ? AlertTriangle :
+              type === 'customer' ? Users :
+              type === 'database' ? Database : Settings,
+        // Backend metadata
+        backendId: null,
+        isBackendSynced: false
       }
     };
     
-    setNodes((nds) => {
-      const updatedNodes = [...nds, newNode];
-      // Auto-save to backend if sessionId exists
-      if (sessionId && autoSave) {
-        try {
-          autoSave.mutate({ 
-            sessionId, 
-            updates: { 
-              canvas: { 
-                workflow_steps: updatedNodes, 
-                connections: edges,
-                layout: {
-                  viewport: reactFlowInstance.getViewport(),
-                  selectedLayout, 
-                  connectionMode, 
-                  snapToGrid
-                }
-              } 
-            }
-          });
-        } catch (error) {
-          console.warn('Auto-save failed:', error);
-        }
+    setNodes(prev => [...prev, newNode]);
+    
+    // Create backend entity for agent nodes
+    if (type === 'agent') {
+      try {
+        createAgent({
+          name: `New ${type}`,
+          description: `AI agent created from workflow node`,
+          agent_type: 'single',
+          use_case: 'workflow-generated',
+          status: 'draft',
+          configuration: {
+            nodeId: nodeId,
+            position: newNode.position,
+            createdFromWorkflow: true
+          }
+        });
+      } catch (error) {
+        console.warn('Failed to create backend agent:', error);
       }
-      return updatedNodes;
-    });
-    showSuccess(`${type} node added`);
+    }
+    
+    // Auto-save workflow state
+    if (sessionId) {
+      setTimeout(() => {
+        autoSaveWorkflow({
+          id: sessionId,
+          nodes: [...nodes, newNode],
+          edges,
+          metadata: { lastNodeAdded: type }
+        });
+      }, 1000);
+    }
+    
+    showSuccess(`${type} node added successfully`);
   };
 
   const addGroupNode = () => {
@@ -704,7 +741,7 @@ useEffect(() => {
 
   // Save/Load functionality with backend persistence
   const handleSave = async () => {
-    const flowData = {
+    const workflowData = {
       nodes,
       edges,
       viewport: reactFlowInstance.getViewport(),
@@ -713,36 +750,39 @@ useEffect(() => {
         connectionMode,
         snapToGrid,
         backgroundVariant,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
+        nodeCount: nodes.length,
+        edgeCount: edges.length
       }
     };
     
-    if (sessionId && autoSave) {
-      try {
-        autoSave.mutate({ 
-          sessionId, 
-          updates: { 
-            canvas: {
-              workflow_steps: flowData.nodes,
-              connections: flowData.edges,
-              layout: {
-                viewport: flowData.viewport,
-                ...flowData.metadata
-              }
-            }
-          } 
+    try {
+      if (sessionId && workflows?.find(w => w.id === sessionId)) {
+        // Update existing workflow
+        updateWorkflow({
+          id: sessionId,
+          workflow_data: workflowData,
+          status: 'active'
         });
-        showSuccess('Workflow saved to backend');
-      } catch (error) {
-        showError('Failed to save to backend, using local storage');
-        localStorage.setItem('workflow-data', JSON.stringify(flowData));
+      } else {
+        // Create new workflow
+        createWorkflow({
+          name: `Workflow ${new Date().toLocaleDateString()}`,
+          description: 'Visual workflow created in builder',
+          workflow_data: workflowData,
+          status: 'draft',
+          agent_session_id: sessionId
+        });
       }
-    } else if (onSave) {
-      onSave(flowData);
-    } else {
-      // Save to localStorage as fallback
-      localStorage.setItem('workflow-data', JSON.stringify(flowData));
-      showSuccess('Workflow saved locally');
+    } catch (error) {
+      showError('Failed to save workflow: ' + error);
+      // Fallback to localStorage
+      localStorage.setItem('workflow-data', JSON.stringify(workflowData));
+      showSuccess('Workflow saved locally as fallback');
+    }
+    
+    if (onSave) {
+      onSave(workflowData);
     }
   };
 
@@ -1078,18 +1118,33 @@ useEffect(() => {
                 )}
               </Panel>
               
-              {/* Status Panel */}
-              <Panel position="top-right" className="bg-white p-4 rounded-lg shadow-lg border">
+              {/* Enhanced Status Panel */}
+              <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-4 rounded-lg shadow-lg border">
                 <div className="space-y-2 text-sm">
+                  <div className="font-medium text-primary">Workflow Status</div>
                   <div>Nodes: {nodes.length}</div>
                   <div>Edges: {edges.length}</div>
                   <div>Layout: {selectedLayout}</div>
+                  <div>Agents: {agents?.length || 0}</div>
+                  <div>AI Models: {aiModels?.length || 0}</div>
                   <div className="flex items-center gap-2">
-                    Status: 
+                    Validation: 
                     <Badge variant={validationIssues.length === 0 ? "default" : "destructive"}>
-                      {validationIssues.length === 0 ? "Valid" : "Issues"}
+                      {validationIssues.length === 0 ? "Valid" : `${validationIssues.length} Issues`}
                     </Badge>
                   </div>
+                  <div className="flex items-center gap-2">
+                    Backend: 
+                    <Badge variant={sessionId ? "default" : "secondary"}>
+                      {sessionId ? "Connected" : "Local Only"}
+                    </Badge>
+                  </div>
+                  {isAutoSaving && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                      Auto-saving...
+                    </div>
+                  )}
                 </div>
               </Panel>
             </ReactFlow>
