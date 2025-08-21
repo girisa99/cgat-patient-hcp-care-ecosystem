@@ -14,6 +14,7 @@ import { PromptBasedModelSelector } from './PromptBasedModelSelector';
 import { WorkflowTypeSelector, DATA_TYPES, OPERATION_TYPES, CONDITION_OPERATIONS } from './WorkflowTypeSelector';
 import { UniversalAccessManager } from './UniversalAccessManager';
 import { AgentConfigurationManager } from './AgentConfigurationManager';
+import { SequentialFlowGuide } from './SequentialFlowGuide';
 
 interface ExpandedWorkflowAssetPanelProps {
   isCollapsed: boolean;
@@ -78,11 +79,15 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
         </CardHeader>
 
         <CardContent className="p-0 h-[calc(100%-56px)] flex flex-col min-h-0">
-          <Tabs defaultValue="agents" className="flex h-full flex-col min-h-0">
+          <Tabs defaultValue="guide" className="flex h-full flex-col min-h-0">
             <TabsList className="flex w-full gap-1 rounded-none h-10 p-1 overflow-x-auto whitespace-nowrap bg-muted/30">
+              <TabsTrigger value="guide" className="text-xs px-3 h-7 min-w-fit font-medium">
+                <Layers className="h-3 w-3 mr-1" />
+                Workflow Guide
+              </TabsTrigger>
               <TabsTrigger value="agents" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Bot className="h-3 w-3 mr-1" />
-                Agents
+                Agents Setup
               </TabsTrigger>
               <TabsTrigger value="models" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Database className="h-3 w-3 mr-1" />
@@ -90,15 +95,19 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </TabsTrigger>
               <TabsTrigger value="access" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Shield className="h-3 w-3 mr-1" />
-                Access
+                Access Control
               </TabsTrigger>
             </TabsList>
+
+            <TabsContent value="guide" className="mt-0 flex-1 min-h-0">
+              <SequentialFlowGuide />
+            </TabsContent>
 
             <TabsContent value="agents" className="mt-0 flex-1 min-h-0">
               <ScrollArea className="h-full">
                 <div className="p-3">
-                  <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
-                    <strong>Note:</strong> Workflow nodes have been moved to the Node Palette on the right for better organization.
+                  <div className="text-xs text-primary/80 mb-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <strong>Phase 1:</strong> Configure your AI agents for different workflow tasks. These agents will be available as building blocks in the Node Palette.
                   </div>
                   <AgentConfigurationManager onConfigSelect={() => {}} />
                 </div>
@@ -108,8 +117,8 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
             <TabsContent value="models" className="mt-0 flex-1 min-h-0">
               <ScrollArea className="h-full">
                 <div className="p-3">
-                  <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
-                    <strong>AI Models:</strong> Select and configure AI models for your workflow
+                  <div className="text-xs text-primary/80 mb-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <strong>Phase 1:</strong> Select and configure AI models that your agents will use. These models power the intelligence in your workflow nodes.
                   </div>
                   <PromptBasedModelSelector
                     onModelSelect={handleModelSelect}
@@ -122,8 +131,8 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
             <TabsContent value="access" className="mt-0 flex-1 min-h-0">
               <ScrollArea className="h-full">
                 <div className="p-3">
-                  <div className="text-xs text-muted-foreground mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
-                    <strong>Under Development:</strong> Universal Access Manager is currently UI-only. Backend integration and full functionality coming soon.
+                  <div className="text-xs text-primary/80 mb-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <strong>Phase 1:</strong> Configure security, permissions, and access control. These settings will be applied to your workflow nodes automatically.
                   </div>
                   <UniversalAccessManager />
                 </div>

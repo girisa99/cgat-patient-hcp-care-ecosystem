@@ -113,29 +113,28 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
 
   return (
     <div 
-      className="absolute z-50 w-80 max-h-96 pointer-events-none"
+      className="fixed z-50 w-96 max-h-[80vh] pointer-events-none"
       style={{
-        left: position.x + 20,
-        top: position.y - 10,
-        transform: position.x > 600 ? 'translateX(-100%)' : 'none'
+        left: Math.min(position.x + 20, window.innerWidth - 400),
+        top: Math.max(Math.min(position.y - 10, window.innerHeight - 600), 20),
       }}
     >
-      <Card className="shadow-lg border-2 border-primary/20 bg-background/95 backdrop-blur-sm pointer-events-auto">
-        <CardHeader className="pb-2">
+      <Card className="shadow-xl border-2 border-primary/20 bg-background/98 backdrop-blur-md pointer-events-auto">
+        <CardHeader className="pb-3 border-b">
           <CardTitle className="text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
-              Access Insights - {node.data?.label || node.type}
+              Node Insights - {node.data?.label || node.type}
             </div>
-            <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0">
+            <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0 hover:bg-destructive/10">
               <X className="h-3 w-3" />
             </Button>
           </CardTitle>
         </CardHeader>
         
-        <CardContent className="space-y-3">
-          <ScrollArea className="max-h-64">
-            <div className="space-y-3">
+        <CardContent className="p-0">
+          <ScrollArea className="max-h-[60vh] p-4">
+            <div className="space-y-4">
               {/* Live Insights */}
               <div>
                 <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
@@ -239,28 +238,39 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
             </div>
           </ScrollArea>
 
-          <div className="flex gap-2 pt-2 border-t">
+          <div className="flex gap-2 p-4 pt-3 border-t bg-muted/30">
             <Button 
               size="sm" 
               className="flex-1 text-xs"
               onClick={() => {
-                const detail = { nodeId: node.id, connectors: data.connectors } as any;
+                const detail = { 
+                  nodeId: node.id, 
+                  recommendations: data.recommendations,
+                  connectors: data.connectors,
+                  security: data.security 
+                } as any;
                 window.dispatchEvent(new CustomEvent('apply-access-suggestions', { detail }));
                 onClose();
               }}
             >
-              Apply Suggestions
+              <CheckCircle className="h-3 w-3 mr-1" />
+              Apply All
             </Button>
             <Button 
               variant="outline" 
               size="sm" 
               className="text-xs"
               onClick={() => {
-                const detail = { nodeId: node.id } as any;
+                const detail = { 
+                  nodeId: node.id,
+                  nodeType: node.type,
+                  currentData: node.data 
+                } as any;
                 window.dispatchEvent(new CustomEvent('open-node-config', { detail }));
                 onClose();
               }}
             >
+              <Settings2 className="h-3 w-3 mr-1" />
               Configure
             </Button>
           </div>
