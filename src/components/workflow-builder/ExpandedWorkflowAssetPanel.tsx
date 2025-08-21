@@ -12,7 +12,7 @@ import {
 import { NodePalette } from './NodePalette';
 import { PromptBasedModelSelector } from './PromptBasedModelSelector';
 import { WorkflowTypeSelector, DATA_TYPES, OPERATION_TYPES, CONDITION_OPERATIONS } from './WorkflowTypeSelector';
-import { SecurityAccessManager } from './SecurityAccessManager';
+import { UniversalAccessManager } from './UniversalAccessManager';
 import { AgentConfigurationManager } from './AgentConfigurationManager';
 
 interface ExpandedWorkflowAssetPanelProps {
@@ -123,14 +123,14 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
 
         <CardContent className="p-0 h-[calc(100%-56px)]">
           <Tabs defaultValue="nodes" className="h-full">
-            <TabsList className="grid w-full grid-cols-4 rounded-none h-9">
-              <TabsTrigger value="nodes" className="text-xs px-1">Nodes</TabsTrigger>
-              <TabsTrigger value="agents" className="text-xs px-1">Agents</TabsTrigger>
-              <TabsTrigger value="models" className="text-xs px-1">AI</TabsTrigger>
-              <TabsTrigger value="access" className="text-xs px-1">Access</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 rounded-none h-8 p-0.5">
+              <TabsTrigger value="nodes" className="text-[10px] px-0.5 h-6 min-w-0">Nodes</TabsTrigger>
+              <TabsTrigger value="agents" className="text-[10px] px-0.5 h-6 min-w-0">Agents</TabsTrigger>
+              <TabsTrigger value="models" className="text-[10px] px-0.5 h-6 min-w-0">AI</TabsTrigger>
+              <TabsTrigger value="access" className="text-[10px] px-0.5 h-6 min-w-0">Access</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="nodes" className="mt-0 h-[calc(100%-36px)]">
+            <TabsContent value="nodes" className="mt-0 h-[calc(100%-32px)]">
               <ScrollArea className="h-full">
                 <div className="p-3 space-y-3">
                   <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
@@ -187,7 +187,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="agents" className="mt-0 h-[calc(100%-36px)]">
+            <TabsContent value="agents" className="mt-0 h-[calc(100%-32px)]">
               <ScrollArea className="h-full">
                 <div className="p-3">
                   <AgentConfigurationManager onConfigSelect={() => {}} />
@@ -195,7 +195,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="models" className="mt-0 h-[calc(100%-36px)]">
+            <TabsContent value="models" className="mt-0 h-[calc(100%-32px)]">
               <div className="p-3">
                 <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
                   <strong>AI Models:</strong> Select and configure AI models for your workflow
@@ -207,10 +207,10 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </div>
             </TabsContent>
 
-            <TabsContent value="access" className="mt-0 h-[calc(100%-36px)]">
+            <TabsContent value="access" className="mt-0 h-[calc(100%-32px)]">
               <ScrollArea className="h-full">
                 <div className="p-3">
-                  <SecurityAccessManager />
+                  <UniversalAccessManager />
                 </div>
               </ScrollArea>
             </TabsContent>
