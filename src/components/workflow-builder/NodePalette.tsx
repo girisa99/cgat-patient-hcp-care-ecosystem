@@ -19,7 +19,150 @@ interface NodePaletteItem {
 }
 
 const nodeTypes: NodePaletteItem[] = [
-  // Workflow Execution Nodes (Draggable to Canvas)
+  // Core Workflow Execution Nodes
+  {
+    id: 'start',
+    type: 'start',
+    title: 'Start Node',
+    icon: Target,
+    description: 'Starting point of workflow execution',
+    category: 'core',
+    color: 'bg-green-50 border-green-200'
+  },
+  {
+    id: 'condition',
+    type: 'condition',
+    title: 'Condition',
+    icon: Target,
+    description: 'If-else logic branching',
+    category: 'core',
+    color: 'bg-yellow-50 border-yellow-200'
+  },
+  {
+    id: 'agent',
+    type: 'agent',
+    title: 'AI Agent',
+    icon: Bot,
+    description: 'AI agent with multi-step reasoning',
+    category: 'ai',
+    color: 'bg-indigo-50 border-indigo-200'
+  },
+  {
+    id: 'llm',
+    type: 'llm',
+    title: 'LLM Node',
+    icon: Bot,
+    description: 'Large language model processing',
+    category: 'ai',
+    color: 'bg-purple-50 border-purple-200'
+  },
+  {
+    id: 'human_input',
+    type: 'human_input',
+    title: 'Human Input',
+    icon: Users,
+    description: 'Request human approval/input',
+    category: 'core',
+    color: 'bg-orange-50 border-orange-200'
+  },
+  
+  // Flow Control Nodes
+  {
+    id: 'conditional_agent',
+    type: 'conditional_agent',
+    title: 'Conditional Agent',
+    icon: Bot,
+    description: 'Dynamic condition evaluation',
+    category: 'ai',
+    color: 'bg-cyan-50 border-cyan-200'
+  },
+  {
+    id: 'iteration',
+    type: 'iteration',
+    title: 'Iteration',
+    icon: Workflow,
+    description: 'Loop through N iterations',
+    category: 'core',
+    color: 'bg-indigo-50 border-indigo-200'
+  },
+  {
+    id: 'loop',
+    type: 'loop',
+    title: 'Loop',
+    icon: Workflow,
+    description: 'Loop back to previous node',
+    category: 'core',
+    color: 'bg-pink-50 border-pink-200'
+  },
+  {
+    id: 'execute_flow',
+    type: 'execute_flow',
+    title: 'Execute Flow',
+    icon: Zap,
+    description: 'Run another workflow',
+    category: 'core',
+    color: 'bg-emerald-50 border-emerald-200'
+  },
+  
+  // Communication Nodes
+  {
+    id: 'direct_reply',
+    type: 'direct_reply',
+    title: 'Direct Reply',
+    icon: MessageCircle,
+    description: 'Send message to user',
+    category: 'integrations',
+    color: 'bg-blue-50 border-blue-200'
+  },
+  {
+    id: 'http',
+    type: 'http',
+    title: 'HTTP Request',
+    icon: Plug,
+    description: 'Make API calls',
+    category: 'integrations',
+    color: 'bg-gray-50 border-gray-200'
+  },
+  {
+    id: 'tools',
+    type: 'tools',
+    title: 'Tools',
+    icon: Settings,
+    description: 'External tool integration',
+    category: 'integrations',
+    color: 'bg-amber-50 border-amber-200'
+  },
+  
+  // Data & Storage Nodes
+  {
+    id: 'retriever',
+    type: 'retriever',
+    title: 'Retriever',
+    icon: Database,
+    description: 'Vector database search',
+    category: 'integrations',
+    color: 'bg-green-50 border-green-200'
+  },
+  {
+    id: 'custom_function',
+    type: 'custom_function',
+    title: 'Custom Function',
+    icon: Settings,
+    description: 'Execute custom code',
+    category: 'integrations',
+    color: 'bg-red-50 border-red-200'
+  },
+  {
+    id: 'stick_note',
+    type: 'stick_note',
+    title: 'Stick Note',
+    icon: Lightbulb,
+    description: 'Add documentation',
+    category: 'core',
+    color: 'bg-yellow-50 border-yellow-200'
+  },
+  
+  // Legacy workflow nodes for compatibility
   {
     id: 'customer',
     type: 'customer',
@@ -37,15 +180,6 @@ const nodeTypes: NodePaletteItem[] = [
     description: 'Decision point for routing and logic',
     category: 'core',
     color: 'bg-yellow-50 border-yellow-200'
-  },
-  {
-    id: 'agent',
-    type: 'agent',
-    title: 'AI Agent',
-    icon: Bot,
-    description: 'Intelligent agent for processing and responses',
-    category: 'ai',
-    color: 'bg-indigo-50 border-indigo-200'
   },
   {
     id: 'database',

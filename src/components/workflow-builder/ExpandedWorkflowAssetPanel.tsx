@@ -20,42 +20,12 @@ interface ExpandedWorkflowAssetPanelProps {
   onToggle: () => void;
 }
 
-// Workflow Node Categories for the palette
-const WORKFLOW_NODE_CATEGORIES = {
-  'Core Nodes': [
-    { id: 'start', label: 'Start', desc: 'Starting point of workflow', icon: '🏁', color: 'bg-green-100' },
-    { id: 'condition', label: 'Condition', desc: 'If-else logic branching', icon: '❓', color: 'bg-yellow-100' },
-    { id: 'agent', label: 'Agent', desc: 'AI agent with multi-step reasoning', icon: '🤖', color: 'bg-blue-100' },
-    { id: 'llm', label: 'LLM', desc: 'Large language model processing', icon: '🧠', color: 'bg-purple-100' },
-    { id: 'human_input', label: 'Human Input', desc: 'Request human approval/input', icon: '👤', color: 'bg-orange-100' },
-  ],
-  'Flow Control': [
-    { id: 'conditional_agent', label: 'Conditional Agent', desc: 'Dynamic condition evaluation', icon: '🔀', color: 'bg-cyan-100' },
-    { id: 'iteration', label: 'Iteration', desc: 'Loop through N iterations', icon: '🔄', color: 'bg-indigo-100' },
-    { id: 'loop', label: 'Loop', desc: 'Loop back to previous node', icon: '↩️', color: 'bg-pink-100' },
-    { id: 'execute_flow', label: 'Execute Flow', desc: 'Run another workflow', icon: '⚡', color: 'bg-emerald-100' },
-  ],
-  'Communication': [
-    { id: 'direct_reply', label: 'Direct Reply', desc: 'Send message to user', icon: '💬', color: 'bg-blue-100' },
-    { id: 'http', label: 'HTTP Request', desc: 'Make API calls', icon: '🌐', color: 'bg-gray-100' },
-    { id: 'tools', label: 'Tools', desc: 'External tool integration', icon: '🛠️', color: 'bg-amber-100' },
-  ],
-  'Data & Storage': [
-    { id: 'retriever', label: 'Retriever', desc: 'Vector database search', icon: '🔍', color: 'bg-green-100' },
-    { id: 'custom_function', label: 'Custom Function', desc: 'Execute custom code', icon: '⚙️', color: 'bg-red-100' },
-    { id: 'stick_note', label: 'Stick Note', desc: 'Add documentation', icon: '📝', color: 'bg-yellow-100' },
-  ],
-};
 
 export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProps> = ({
   isCollapsed,
   onToggle
 }) => {
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
-  const [expandedNodeCategories, setExpandedNodeCategories] = useState<Record<string, boolean>>({
-    'Core Nodes': true,
-    'Flow Control': true
-  });
 
   const handleModelSelect = (model: any) => {
     setSelectedModels(prev => 
@@ -65,23 +35,6 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
     );
   };
 
-  const toggleNodeCategory = (category: string) => {
-    setExpandedNodeCategories(prev => ({
-      ...prev,
-      [category]: !prev[category]
-    }));
-  };
-
-  const handleDragStart = (event: React.DragEvent, nodeType: string, label: string) => {
-    // Standardized drag payload: primary type and secondary JSON meta
-    event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.setData(
-      'application/json',
-      JSON.stringify({ type: nodeType, label, source: 'assets-panel', category: 'node' })
-    );
-    event.dataTransfer.setData('text/plain', nodeType);
-    event.dataTransfer.effectAllowed = 'move';
-  };
 
   if (isCollapsed) {
     return (
@@ -125,80 +78,34 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
         </CardHeader>
 
         <CardContent className="p-0 h-[calc(100%-56px)]">
-          <Tabs defaultValue="nodes" className="h-full">
-            <TabsList className="flex w-full gap-1 rounded-none h-8 p-0.5 overflow-x-auto whitespace-nowrap no-scrollbar">
-              <TabsTrigger value="nodes" className="text-[10px] px-2 h-6 min-w-fit">Nodes</TabsTrigger>
-              <TabsTrigger value="agents" className="text-[10px] px-2 h-6 min-w-fit">Agents</TabsTrigger>
-              <TabsTrigger value="models" className="text-[10px] px-2 h-6 min-w-fit">AI</TabsTrigger>
-              <TabsTrigger value="access" className="text-[10px] px-2 h-6 min-w-fit">Access</TabsTrigger>
+          <Tabs defaultValue="agents" className="h-full">
+            <TabsList className="flex w-full gap-1 rounded-none h-10 p-1 overflow-x-auto whitespace-nowrap no-scrollbar bg-muted/30">
+              <TabsTrigger value="agents" className="text-xs px-3 h-7 min-w-fit font-medium">
+                <Bot className="h-3 w-3 mr-1" />
+                Agents
+              </TabsTrigger>
+              <TabsTrigger value="models" className="text-xs px-3 h-7 min-w-fit font-medium">
+                <Database className="h-3 w-3 mr-1" />
+                AI Models
+              </TabsTrigger>
+              <TabsTrigger value="access" className="text-xs px-3 h-7 min-w-fit font-medium">
+                <Shield className="h-3 w-3 mr-1" />
+                Access
+              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="nodes" className="mt-0 h-[calc(100%-32px)]">
-              <ScrollArea className="h-full">
-                <div className="p-3 space-y-3">
-                  <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
-                    <strong>Drag & Drop:</strong> Add nodes to your workflow canvas
-                  </div>
-                  
-                  {Object.entries(WORKFLOW_NODE_CATEGORIES).map(([category, nodes]) => (
-                    <Collapsible 
-                      key={category}
-                      open={expandedNodeCategories[category]}
-                      onOpenChange={() => toggleNodeCategory(category)}
-                    >
-                      <CollapsibleTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          className="flex items-center justify-between w-full p-2 h-auto text-left hover:bg-accent/50 rounded-lg border border-border"
-                        >
-                          <div className="flex items-center gap-2">
-                            <ChevronDown 
-                              className={`h-3 w-3 transition-transform ${
-                                expandedNodeCategories[category] ? 'rotate-0' : '-rotate-90'
-                              }`} 
-                            />
-                            <span className="font-medium text-xs">{category}</span>
-                            <Badge variant="secondary" className="text-xs h-4">
-                              {nodes.length}
-                            </Badge>
-                          </div>
-                        </Button>
-                      </CollapsibleTrigger>
-                      
-                      <CollapsibleContent className="space-y-1 mt-2">
-                        {nodes.map((node) => (
-                          <div
-                            key={node.id}
-                            draggable
-                            onDragStart={(e) => handleDragStart(e, node.id, node.label)}
-                            className="flex items-center gap-2 p-2 ml-3 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-accent/30 cursor-grab active:cursor-grabbing transition-colors"
-                          >
-                            <div className={`w-6 h-6 rounded-md ${node.color} flex items-center justify-center text-xs`}>
-                              {node.icon}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium text-xs truncate">{node.label}</div>
-                              <div className="text-xs text-muted-foreground truncate">{node.desc}</div>
-                            </div>
-                            <PlusCircle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
-                          </div>
-                        ))}
-                      </CollapsibleContent>
-                    </Collapsible>
-                  ))}
-                </div>
-              </ScrollArea>
-            </TabsContent>
-
-            <TabsContent value="agents" className="mt-0 h-[calc(100%-32px)]">
+            <TabsContent value="agents" className="mt-0 h-[calc(100%-40px)]">
               <ScrollArea className="h-full">
                 <div className="p-3">
+                  <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
+                    <strong>Note:</strong> Workflow nodes have been moved to the Node Palette on the right for better organization.
+                  </div>
                   <AgentConfigurationManager onConfigSelect={() => {}} />
                 </div>
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="models" className="mt-0 h-[calc(100%-32px)]">
+            <TabsContent value="models" className="mt-0 h-[calc(100%-40px)]">
               <ScrollArea className="h-full">
                 <div className="p-3">
                   <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
@@ -212,9 +119,12 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="access" className="mt-0 h-[calc(100%-32px)]">
+            <TabsContent value="access" className="mt-0 h-[calc(100%-40px)]">
               <ScrollArea className="h-full">
                 <div className="p-3">
+                  <div className="text-xs text-muted-foreground mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
+                    <strong>Under Development:</strong> Universal Access Manager is currently UI-only. Backend integration and full functionality coming soon.
+                  </div>
                   <UniversalAccessManager />
                 </div>
               </ScrollArea>
