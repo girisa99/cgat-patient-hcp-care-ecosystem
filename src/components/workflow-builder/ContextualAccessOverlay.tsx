@@ -113,14 +113,14 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
 
   return (
     <div 
-      className="absolute z-50 w-80 max-h-96"
+      className="absolute z-50 w-80 max-h-96 pointer-events-none"
       style={{
         left: position.x + 20,
         top: position.y - 10,
         transform: position.x > 600 ? 'translateX(-100%)' : 'none'
       }}
     >
-      <Card className="shadow-lg border-2 border-primary/20 bg-background/95 backdrop-blur-sm">
+      <Card className="shadow-lg border-2 border-primary/20 bg-background/95 backdrop-blur-sm pointer-events-auto">
         <CardHeader className="pb-2">
           <CardTitle className="text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">

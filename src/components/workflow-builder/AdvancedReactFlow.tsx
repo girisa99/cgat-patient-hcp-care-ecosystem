@@ -29,7 +29,8 @@ import {
   OnConnect,
   OnEdgesChange,
   OnNodesChange,
-  BackgroundVariant
+  BackgroundVariant,
+  PanOnScrollMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -1034,6 +1035,9 @@ useEffect(() => {
               fitView
               attributionPosition="bottom-left"
               panOnDrag={dragMode === 'pan'}
+              panOnScroll
+              panOnScrollMode="free"
+              zoomOnScroll={false}
               selectionOnDrag={dragMode === 'select'}
               multiSelectionKeyCode="Shift"
               deleteKeyCode="Delete"

@@ -182,8 +182,13 @@ const categories = [
 
 export const NodePalette: React.FC = () => {
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
+    // Standardized drag payload: primary type + JSON meta for config
     event.dataTransfer.setData('application/reactflow', nodeType);
-    event.dataTransfer.setData('application/json', JSON.stringify(data));
+    event.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({ ...data, source: 'node-palette' })
+    );
+    event.dataTransfer.setData('text/plain', nodeType);
     event.dataTransfer.effectAllowed = 'move';
   };
 

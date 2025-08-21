@@ -73,11 +73,14 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
   };
 
   const handleDragStart = (event: React.DragEvent, nodeType: string, label: string) => {
-    event.dataTransfer.setData('application/reactflow', JSON.stringify({
-      type: nodeType,
-      label: label,
-      isNewNode: true
-    }));
+    // Standardized drag payload: primary type and secondary JSON meta
+    event.dataTransfer.setData('application/reactflow', nodeType);
+    event.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({ type: nodeType, label, source: 'assets-panel', category: 'node' })
+    );
+    event.dataTransfer.setData('text/plain', nodeType);
+    event.dataTransfer.effectAllowed = 'move';
   };
 
   if (isCollapsed) {
@@ -123,11 +126,11 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
 
         <CardContent className="p-0 h-[calc(100%-56px)]">
           <Tabs defaultValue="nodes" className="h-full">
-            <TabsList className="grid w-full grid-cols-4 rounded-none h-8 p-0.5">
-              <TabsTrigger value="nodes" className="text-[10px] px-0.5 h-6 min-w-0">Nodes</TabsTrigger>
-              <TabsTrigger value="agents" className="text-[10px] px-0.5 h-6 min-w-0">Agents</TabsTrigger>
-              <TabsTrigger value="models" className="text-[10px] px-0.5 h-6 min-w-0">AI</TabsTrigger>
-              <TabsTrigger value="access" className="text-[10px] px-0.5 h-6 min-w-0">Access</TabsTrigger>
+            <TabsList className="flex w-full gap-1 rounded-none h-8 p-0.5 overflow-x-auto whitespace-nowrap no-scrollbar">
+              <TabsTrigger value="nodes" className="text-[10px] px-2 h-6 min-w-fit">Nodes</TabsTrigger>
+              <TabsTrigger value="agents" className="text-[10px] px-2 h-6 min-w-fit">Agents</TabsTrigger>
+              <TabsTrigger value="models" className="text-[10px] px-2 h-6 min-w-fit">AI</TabsTrigger>
+              <TabsTrigger value="access" className="text-[10px] px-2 h-6 min-w-fit">Access</TabsTrigger>
             </TabsList>
 
             <TabsContent value="nodes" className="mt-0 h-[calc(100%-32px)]">
@@ -196,15 +199,17 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
             </TabsContent>
 
             <TabsContent value="models" className="mt-0 h-[calc(100%-32px)]">
-              <div className="p-3">
-                <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
-                  <strong>AI Models:</strong> Select and configure AI models for your workflow
+              <ScrollArea className="h-full">
+                <div className="p-3">
+                  <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
+                    <strong>AI Models:</strong> Select and configure AI models for your workflow
+                  </div>
+                  <PromptBasedModelSelector
+                    onModelSelect={handleModelSelect}
+                    selectedModels={selectedModels}
+                  />
                 </div>
-                <PromptBasedModelSelector
-                  onModelSelect={handleModelSelect}
-                  selectedModels={selectedModels}
-                />
-              </div>
+              </ScrollArea>
             </TabsContent>
 
             <TabsContent value="access" className="mt-0 h-[calc(100%-32px)]">

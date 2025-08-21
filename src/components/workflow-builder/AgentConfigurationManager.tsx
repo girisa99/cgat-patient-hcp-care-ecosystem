@@ -202,12 +202,20 @@ export const AgentConfigurationManager: React.FC<AgentConfigurationManagerProps>
   };
 
   const handleDragStart = (event: React.DragEvent, config: any) => {
-    event.dataTransfer.setData('application/reactflow', JSON.stringify({
-      type: config.id,
-      label: config.name,
-      isAgentConfig: true,
-      config: config
-    }));
+    // Standardized drag payload: create an Agent node and pass config via JSON
+    event.dataTransfer.setData('application/reactflow', 'agent');
+    event.dataTransfer.setData(
+      'application/json',
+      JSON.stringify({
+        source: 'agent-config',
+        category: 'agent',
+        type: 'agent',
+        label: config.name,
+        config,
+      })
+    );
+    event.dataTransfer.setData('text/plain', 'agent');
+    event.dataTransfer.effectAllowed = 'move';
   };
 
   return (
