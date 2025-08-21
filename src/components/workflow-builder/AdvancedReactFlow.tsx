@@ -61,6 +61,9 @@ import { useAgentSession } from '@/hooks/useAgentSession';
 import { useWorkflowManager } from '@/hooks/useWorkflowManager';
 import { useWorkflowAgents } from '@/hooks/useWorkflowAgents';
 import { useAIModelManager } from '@/hooks/useAIModelManager';
+import { useInfrastructureManager } from '@/hooks/useInfrastructureManager';
+import { useAccessManager } from '@/hooks/useAccessManager';
+import { useTestingManager } from '@/hooks/useTestingManager';
 import { NodeUpdateHandler } from './NodeUpdateHandler';
 import { NodePalette } from './NodePalette';
 
@@ -455,26 +458,13 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const { autoSave } = useAgentSession();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   
-  // Backend integration hooks
-  const { 
-    workflows, 
-    createWorkflow, 
-    updateWorkflow, 
-    autoSaveWorkflow,
-    isAutoSaving 
-  } = useWorkflowManager(sessionId);
-  const { 
-    agents, 
-    createAgent, 
-    updateAgent, 
-    createAgentAction,
-    executeAction,
-    isCreatingAgent 
-  } = useWorkflowAgents();
-  const { 
-    aiModels, 
-    getRecommendedModels 
-  } = useAIModelManager();
+  // Import all backend managers
+  const { workflows, createWorkflow, updateWorkflow, autoSaveWorkflow, isAutoSaving } = useWorkflowManager(sessionId);
+  const { agents, createAgent, updateAgent } = useWorkflowAgents();
+  const { aiModels, createModelConfig, updateModelConfig } = useAIModelManager();
+  const { deployments, voiceProviders, apiIntegrations, createDeployment, createApiIntegration } = useInfrastructureManager();
+  const { roles, permissions, userRoles, assignRole, createRole } = useAccessManager();
+  const { testRuns, testCases, createTestRun, executeTestRun } = useTestingManager();
 
   // Apply suggestions from contextual access overlay
   useEffect(() => {
@@ -1076,17 +1066,43 @@ useEffect(() => {
               snapGrid={[15, 15]}
               fitView
               attributionPosition="bottom-left"
-              panOnDrag={dragMode === 'pan'}
-              panOnScroll
+              zoomOnScroll={true}
+              zoomOnDoubleClick={true}
+              zoomOnPinch={true}
+              panOnScroll={true}
               panOnScrollMode={PanOnScrollMode.Free}
-              zoomOnScroll={false}
+              minZoom={0.1}
+              maxZoom={2}
+              defaultViewport={{ x: 0, y: 0, zoom: 1 }}
               selectionOnDrag={dragMode === 'select'}
               multiSelectionKeyCode="Shift"
               deleteKeyCode="Delete"
               className="bg-gray-50"
             >
               <Background variant={backgroundVariant} gap={12} size={1} />
-              <Controls />
+              <Controls 
+                showZoom={true}
+                showFitView={true}
+                showInteractive={true}
+              />
+              
+              {/* Fullscreen Toggle */}
+              <Panel position="top-center" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    if (document.fullscreenElement) {
+                      document.exitFullscreen();
+                    } else {
+                      reactFlowWrapper.current?.requestFullscreen();
+                    }
+                  }}
+                >
+                  <Maximize2 className="h-4 w-4 mr-2" />
+                  Fullscreen
+                </Button>
+              </Panel>
               {showMiniMap && (
                 <MiniMap 
                   zoomable 
