@@ -26,7 +26,7 @@ export interface ExtendedProfile {
   is_active?: boolean;
   isActive?: boolean; // Dual compatibility
   user_roles: Array<{
-    role: {  // Fixed: Use 'role' not 'roles' to match Phase 1B alignment
+    role: {
       name: Database['public']['Enums']['user_role'];
       description: string | null;
     };
