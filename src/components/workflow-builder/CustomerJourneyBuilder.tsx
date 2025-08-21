@@ -33,7 +33,7 @@ import { EnhancedWorkflowNode, EnhancedNodeData } from './EnhancedWorkflowNode';
 import { AutoSuggestConnector } from './AutoSuggestConnector';
 import { autoConnectEngine } from './AutoConnectEngine';
 import { WorkflowAssetPanel } from './WorkflowAssetPanel';
-import { WorkflowAssetPanel as UniversalAccessManager } from './WorkflowAssetPanel';
+import { UniversalAccessManager } from './UniversalAccessManager';
 import { AdvancedReactFlow } from './AdvancedReactFlow';
 import { FlowiseStyleWorkflow } from './FlowiseStyleWorkflow';
 
