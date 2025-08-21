@@ -1036,7 +1036,7 @@ useEffect(() => {
               attributionPosition="bottom-left"
               panOnDrag={dragMode === 'pan'}
               panOnScroll
-              panOnScrollMode="free"
+              panOnScrollMode={PanOnScrollMode.Free}
               zoomOnScroll={false}
               selectionOnDrag={dragMode === 'select'}
               multiSelectionKeyCode="Shift"
