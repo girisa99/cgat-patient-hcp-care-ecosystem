@@ -1112,8 +1112,8 @@ useEffect(() => {
                   </Button>
                 </div>
                 {showPalette && (
-                  <div className="w-72 max-h-[70vh] overflow-auto">
-                    <NodePalette />
+                  <div className="w-72 h-[calc(100vh-220px)] overflow-y-auto">
+                    <NodePalette heightClass="h-full" />
                   </div>
                 )}
               </Panel>

@@ -58,7 +58,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
   }
 
   return (
-    <div className="w-80 xl:w-96 h-full bg-background border-r border-border">
+    <div className="w-96 xl:w-[26rem] h-full bg-background border-r border-border">
       <Card className="h-full rounded-none border-0">
         <CardHeader className="px-3 py-2 border-b">
           <CardTitle className="flex items-center justify-between text-sm">

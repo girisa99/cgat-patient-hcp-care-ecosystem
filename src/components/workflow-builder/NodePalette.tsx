@@ -314,7 +314,7 @@ const categories = [
   { id: 'deployment', name: 'Deployment & Testing', color: 'bg-green-100' }
 ];
 
-export const NodePalette: React.FC = () => {
+export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass }) => {
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
     // Standardized drag payload: primary type + JSON meta for config
     event.dataTransfer.setData('application/reactflow', nodeType);
@@ -354,7 +354,7 @@ export const NodePalette: React.FC = () => {
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <ScrollArea className="h-[calc(100vh-140px)]">
+        <ScrollArea className={heightClass ? heightClass : "h-[calc(100vh-140px)]"}>
           <div className="p-4 space-y-4">
             {categories.map((category) => {
               const categoryNodes = nodeTypes.filter(node => node.category === category.id);
