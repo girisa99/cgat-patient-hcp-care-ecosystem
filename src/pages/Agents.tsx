@@ -51,6 +51,7 @@ import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndA
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
 import { ContextualAccessOverlay } from '@/components/workflow-builder/ContextualAccessOverlay';
+import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Node } from '@xyflow/react';
@@ -224,60 +225,11 @@ const AgentsInner = () => {
 
         {/* Main Content - Enhanced Four Panel Layout */}
         <div className="flex-1 flex overflow-hidden">
-          {/* Left Panel - Split: Node Palette & Universal Access Manager */}
-          <div className="w-80 border-r bg-card flex flex-col">
-            <div className="border-b">
-              <div className="flex">
-                <Button
-                  variant={leftPanelTab === 'palette' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="flex-1 rounded-none"
-                  onClick={() => setLeftPanelTab('palette')}
-                >
-                  <Workflow className="w-4 h-4 mr-1" />
-                  Palette
-                </Button>
-                <Button
-                  variant={leftPanelTab === 'access' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="flex-1 rounded-none"
-                  onClick={() => setLeftPanelTab('access')}
-                >
-                  <Database className="w-4 h-4 mr-1" />
-                  Access
-                </Button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-auto min-h-0">
-              {leftPanelTab === 'palette' ? (
-                <NodePalette />
-              ) : (
-                <div className="p-4 text-center">
-                  <div className="p-6 bg-primary/5 rounded-lg border border-primary/20">
-                    <Database className="h-8 w-8 mx-auto mb-3 text-primary" />
-                    <h3 className="font-medium mb-2">Contextual Access Manager</h3>
-                    <p className="text-sm text-muted-foreground mb-4">
-                      Access insights and recommendations now appear directly on nodes in the flow builder.
-                    </p>
-                    <div className="space-y-2 text-xs text-left">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-green-500 rounded-full" />
-                        Select any node to view contextual insights
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                        Get recommendations specific to each node type
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-purple-500 rounded-full" />
-                        Apply suggested connectors and security measures
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
+          {/* Left Panel - Expanded Workflow Asset Panel */}
+          <ExpandedWorkflowAssetPanel 
+            isCollapsed={false}
+            onToggle={() => {}}
+          />
 
           {/* Center Canvas Area */}
           <div className="flex-1 flex flex-col bg-gray-50/50 min-h-0">
