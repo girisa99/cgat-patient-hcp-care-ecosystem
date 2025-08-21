@@ -307,9 +307,9 @@ const nodeTypes: NodePaletteItem[] = [
 ];
 
 const categories = [
-  { id: 'core', name: 'Workflow Nodes', color: 'bg-slate-100' },
+  { id: 'actions', name: 'Configuration (Start Here)', color: 'bg-orange-100' },
   { id: 'ai', name: 'AI & Intelligence', color: 'bg-indigo-100' },
-  { id: 'actions', name: 'Configuration', color: 'bg-orange-100' },
+  { id: 'core', name: 'Workflow Nodes', color: 'bg-slate-100' },
   { id: 'integrations', name: 'Integrations & Data', color: 'bg-cyan-100' },
   { id: 'deployment', name: 'Deployment & Testing', color: 'bg-green-100' }
 ];
@@ -355,7 +355,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className={heightClass ? heightClass : "h-[calc(100vh-140px)]"}>
-          <div className="p-4 space-y-4">
+          <div className="p-4 pr-3 pb-6 space-y-4">
             {categories.map((category) => {
               const categoryNodes = nodeTypes.filter(node => node.category === category.id);
               

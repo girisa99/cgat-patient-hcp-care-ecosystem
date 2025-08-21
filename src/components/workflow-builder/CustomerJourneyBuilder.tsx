@@ -14,7 +14,8 @@ import {
   useReactFlow,
   MarkerType,
   Handle,
-  Position
+  Position,
+  PanOnScrollMode
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -798,7 +799,9 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
             }}
             fitView
             panOnScroll
+            panOnScrollMode={PanOnScrollMode.Free}
             zoomOnScroll
+            zoomOnPinch
             panOnDrag
             attributionPosition="bottom-right"
           >

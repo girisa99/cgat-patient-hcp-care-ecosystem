@@ -77,8 +77,8 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="p-0 h-[calc(100%-56px)]">
-          <Tabs defaultValue="agents" className="h-full">
+        <CardContent className="p-0 h-[calc(100%-56px)] flex flex-col min-h-0">
+          <Tabs defaultValue="agents" className="flex h-full flex-col min-h-0">
             <TabsList className="flex w-full gap-1 rounded-none h-10 p-1 overflow-x-auto whitespace-nowrap bg-muted/30">
               <TabsTrigger value="agents" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Bot className="h-3 w-3 mr-1" />
@@ -94,7 +94,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="agents" className="mt-0 h-[calc(100%-40px)]">
+            <TabsContent value="agents" className="mt-0 flex-1 min-h-0">
               <ScrollArea className="h-full">
                 <div className="p-3">
                   <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
@@ -105,7 +105,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="models" className="mt-0 h-[calc(100%-40px)]">
+            <TabsContent value="models" className="mt-0 flex-1 min-h-0">
               <ScrollArea className="h-full">
                 <div className="p-3">
                   <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
@@ -119,7 +119,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="access" className="mt-0 h-[calc(100%-40px)]">
+            <TabsContent value="access" className="mt-0 flex-1 min-h-0">
               <ScrollArea className="h-full">
                 <div className="p-3">
                   <div className="text-xs text-muted-foreground mb-3 p-2 bg-amber-50 border border-amber-200 rounded-lg">
