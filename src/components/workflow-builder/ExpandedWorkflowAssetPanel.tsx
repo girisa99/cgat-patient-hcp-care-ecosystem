@@ -4,14 +4,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-// Collapsible component will be inline
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   ChevronDown, Palette, Bot, Database, Link, Settings, 
-  PlusCircle, Layers, Network, ChevronLeft
+  PlusCircle, Layers, Network, ChevronLeft, Shield
 } from 'lucide-react';
 import { NodePalette } from './NodePalette';
 import { PromptBasedModelSelector } from './PromptBasedModelSelector';
 import { WorkflowTypeSelector, DATA_TYPES, OPERATION_TYPES, CONDITION_OPERATIONS } from './WorkflowTypeSelector';
+import { SecurityAccessManager } from './SecurityAccessManager';
+import { AgentConfigurationManager } from './AgentConfigurationManager';
 
 interface ExpandedWorkflowAssetPanelProps {
   isCollapsed: boolean;
@@ -80,37 +82,38 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
 
   if (isCollapsed) {
     return (
-      <div className="w-12 h-full bg-background border-r border-border flex flex-col items-center py-4 gap-2">
+      <div className="w-12 h-full bg-background border-r border-border flex flex-col items-center py-3 gap-3">
         <Button
           variant="ghost"
           size="sm"
-          className="w-8 h-8 p-0"
+          className="w-8 h-8 p-0 hover:bg-accent"
           onClick={onToggle}
         >
           <Palette className="h-4 w-4" />
         </Button>
-        <div className="flex flex-col gap-1">
-          <Bot className="h-4 w-4 text-muted-foreground" />
-          <Database className="h-4 w-4 text-muted-foreground" />
-          <Link className="h-4 w-4 text-muted-foreground" />
+        <div className="flex flex-col gap-2 opacity-60">
+          <Bot className="h-3 w-3 text-muted-foreground" />
+          <Database className="h-3 w-3 text-muted-foreground" />
+          <Link className="h-3 w-3 text-muted-foreground" />
+          <Shield className="h-3 w-3 text-muted-foreground" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-80 h-full bg-background border-r border-border">
+    <div className="w-72 lg:w-80 h-full bg-background border-r border-border">
       <Card className="h-full rounded-none border-0">
-        <CardHeader className="px-4 py-3 border-b">
-          <CardTitle className="flex items-center justify-between text-base">
+        <CardHeader className="px-3 py-2 border-b">
+          <CardTitle className="flex items-center justify-between text-sm">
             <div className="flex items-center gap-2">
               <Layers className="h-4 w-4" />
-              Workflow Assets
+              <span className="truncate">Workflow Assets</span>
             </div>
             <Button
               variant="ghost"
               size="sm"
-              className="h-6 w-6 p-0"
+              className="h-6 w-6 p-0 hover:bg-accent"
               onClick={onToggle}
             >
               <ChevronLeft className="h-3 w-3" />
@@ -118,115 +121,96 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
           </CardTitle>
         </CardHeader>
 
-        <CardContent className="p-0 h-[calc(100%-60px)]">
+        <CardContent className="p-0 h-[calc(100%-56px)]">
           <Tabs defaultValue="nodes" className="h-full">
-            <TabsList className="grid w-full grid-cols-3 rounded-none">
-              <TabsTrigger value="nodes" className="text-xs">Nodes</TabsTrigger>
-              <TabsTrigger value="models" className="text-xs">AI Models</TabsTrigger>
-              <TabsTrigger value="config" className="text-xs">Config</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4 rounded-none h-9">
+              <TabsTrigger value="nodes" className="text-xs px-1">Nodes</TabsTrigger>
+              <TabsTrigger value="agents" className="text-xs px-1">Agents</TabsTrigger>
+              <TabsTrigger value="models" className="text-xs px-1">AI</TabsTrigger>
+              <TabsTrigger value="access" className="text-xs px-1">Access</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="nodes" className="mt-0 h-[calc(100%-40px)]">
+            <TabsContent value="nodes" className="mt-0 h-[calc(100%-36px)]">
               <ScrollArea className="h-full">
-                <div className="p-4 space-y-3">
-                  <div className="text-xs text-muted-foreground mb-3">
-                    Drag and drop nodes onto the canvas to build your workflow
+                <div className="p-3 space-y-3">
+                  <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
+                    <strong>Drag & Drop:</strong> Add nodes to your workflow canvas
                   </div>
                   
                   {Object.entries(WORKFLOW_NODE_CATEGORIES).map(([category, nodes]) => (
-                    <div key={category}>
-                      <Button
-                        variant="ghost"
-                        className="flex items-center justify-between w-full p-2 h-auto text-left hover:bg-accent/50"
-                        onClick={() => toggleNodeCategory(category)}
-                      >
-                        <div className="flex items-center gap-2">
-                          <ChevronDown 
-                            className={`h-4 w-4 transition-transform ${
-                              expandedNodeCategories[category] ? 'rotate-0' : '-rotate-90'
-                            }`} 
-                          />
-                          <span className="font-medium text-sm">{category}</span>
-                          <Badge variant="secondary" className="text-xs">
-                            {nodes.length}
-                          </Badge>
-                        </div>
-                      </Button>
+                    <Collapsible 
+                      key={category}
+                      open={expandedNodeCategories[category]}
+                      onOpenChange={() => toggleNodeCategory(category)}
+                    >
+                      <CollapsibleTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          className="flex items-center justify-between w-full p-2 h-auto text-left hover:bg-accent/50 rounded-lg border border-border"
+                        >
+                          <div className="flex items-center gap-2">
+                            <ChevronDown 
+                              className={`h-3 w-3 transition-transform ${
+                                expandedNodeCategories[category] ? 'rotate-0' : '-rotate-90'
+                              }`} 
+                            />
+                            <span className="font-medium text-xs">{category}</span>
+                            <Badge variant="secondary" className="text-xs h-4">
+                              {nodes.length}
+                            </Badge>
+                          </div>
+                        </Button>
+                      </CollapsibleTrigger>
                       
-                      {expandedNodeCategories[category] && (
-                        <div className="space-y-1 ml-6">
-                          {nodes.map((node) => (
-                            <div
-                              key={node.id}
-                              draggable
-                              onDragStart={(e) => handleDragStart(e, node.id, node.label)}
-                              className="flex items-center gap-3 p-3 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-accent/30 cursor-grab active:cursor-grabbing transition-colors"
-                            >
-                              <div className={`w-8 h-8 rounded-md ${node.color} flex items-center justify-center text-sm`}>
-                                {node.icon}
-                              </div>
-                              <div className="flex-1 min-w-0">
-                                <div className="font-medium text-sm truncate">{node.label}</div>
-                                <div className="text-xs text-muted-foreground">{node.desc}</div>
-                              </div>
-                              <PlusCircle className="h-4 w-4 text-muted-foreground" />
+                      <CollapsibleContent className="space-y-1 mt-2">
+                        {nodes.map((node) => (
+                          <div
+                            key={node.id}
+                            draggable
+                            onDragStart={(e) => handleDragStart(e, node.id, node.label)}
+                            className="flex items-center gap-2 p-2 ml-3 rounded-lg border border-dashed border-border hover:border-primary/50 hover:bg-accent/30 cursor-grab active:cursor-grabbing transition-colors"
+                          >
+                            <div className={`w-6 h-6 rounded-md ${node.color} flex items-center justify-center text-xs`}>
+                              {node.icon}
                             </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
+                            <div className="flex-1 min-w-0">
+                              <div className="font-medium text-xs truncate">{node.label}</div>
+                              <div className="text-xs text-muted-foreground truncate">{node.desc}</div>
+                            </div>
+                            <PlusCircle className="h-3 w-3 text-muted-foreground flex-shrink-0" />
+                          </div>
+                        ))}
+                      </CollapsibleContent>
+                    </Collapsible>
                   ))}
                 </div>
               </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="models" className="mt-0 h-[calc(100%-40px)]">
-              <PromptBasedModelSelector
-                onModelSelect={handleModelSelect}
-                selectedModels={selectedModels}
-              />
+            <TabsContent value="agents" className="mt-0 h-[calc(100%-36px)]">
+              <ScrollArea className="h-full">
+                <div className="p-3">
+                  <AgentConfigurationManager onConfigSelect={() => {}} />
+                </div>
+              </ScrollArea>
             </TabsContent>
 
-            <TabsContent value="config" className="mt-0 h-[calc(100%-40px)]">
+            <TabsContent value="models" className="mt-0 h-[calc(100%-36px)]">
+              <div className="p-3">
+                <div className="text-xs text-muted-foreground mb-3 p-2 bg-muted/30 rounded-lg">
+                  <strong>AI Models:</strong> Select and configure AI models for your workflow
+                </div>
+                <PromptBasedModelSelector
+                  onModelSelect={handleModelSelect}
+                  selectedModels={selectedModels}
+                />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="access" className="mt-0 h-[calc(100%-36px)]">
               <ScrollArea className="h-full">
-                <div className="p-4 space-y-6">
-                  <div>
-                    <h3 className="font-medium text-sm mb-3">Data Types</h3>
-                    <WorkflowTypeSelector
-                      label="Variable Type"
-                      value=""
-                      onValueChange={() => {}}
-                      options={DATA_TYPES}
-                      placeholder="Select data type..."
-                    />
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-sm mb-3">Operations</h3>
-                    <WorkflowTypeSelector
-                      label="Operation Type"
-                      value=""
-                      onValueChange={() => {}}
-                      options={OPERATION_TYPES}
-                      placeholder="Select operation..."
-                    />
-                  </div>
-
-                  <div>
-                    <h3 className="font-medium text-sm mb-3">Conditions</h3>
-                    <WorkflowTypeSelector
-                      label="Condition Type"
-                      value=""
-                      onValueChange={() => {}}
-                      options={CONDITION_OPERATIONS}
-                      placeholder="Select condition..."
-                    />
-                  </div>
-
-                  <div className="text-xs text-muted-foreground p-3 bg-muted/30 rounded-lg">
-                    <strong>Usage:</strong> These configuration options are available when configuring individual nodes. 
-                    Select a node on the canvas to access its specific configuration panel.
-                  </div>
+                <div className="p-3">
+                  <SecurityAccessManager />
                 </div>
               </ScrollArea>
             </TabsContent>
