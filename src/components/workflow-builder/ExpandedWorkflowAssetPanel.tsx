@@ -58,7 +58,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
   }
 
   return (
-    <div className="w-72 lg:w-80 h-full bg-background border-r border-border">
+    <div className="w-80 xl:w-96 h-full bg-background border-r border-border">
       <Card className="h-full rounded-none border-0">
         <CardHeader className="px-3 py-2 border-b">
           <CardTitle className="flex items-center justify-between text-sm">
@@ -79,7 +79,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
 
         <CardContent className="p-0 h-[calc(100%-56px)]">
           <Tabs defaultValue="agents" className="h-full">
-            <TabsList className="flex w-full gap-1 rounded-none h-10 p-1 overflow-x-auto whitespace-nowrap no-scrollbar bg-muted/30">
+            <TabsList className="flex w-full gap-1 rounded-none h-10 p-1 overflow-x-auto whitespace-nowrap bg-muted/30">
               <TabsTrigger value="agents" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Bot className="h-3 w-3 mr-1" />
                 Agents

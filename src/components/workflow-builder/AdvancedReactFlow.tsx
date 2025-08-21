@@ -59,6 +59,7 @@ import {
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { NodeUpdateHandler } from './NodeUpdateHandler';
+import { NodePalette } from './NodePalette';
 
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -443,6 +444,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dragMode, setDragMode] = useState<'select' | 'pan'>('select');
+  const [showPalette, setShowPalette] = useState(true);
   
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { showSuccess, showError } = useMasterToast();
@@ -1060,6 +1062,21 @@ useEffect(() => {
                   }}
                 />
               )}
+
+              {/* Docked Node Palette */}
+              <Panel position="top-left" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
+                <div className="flex items-center gap-2 mb-2">
+                  <Button size="sm" variant="outline" onClick={() => setShowPalette(!showPalette)}>
+                    <Workflow className="h-4 w-4 mr-1" />
+                    {showPalette ? 'Hide Nodes' : 'Show Nodes'}
+                  </Button>
+                </div>
+                {showPalette && (
+                  <div className="w-72 max-h-[70vh] overflow-auto">
+                    <NodePalette />
+                  </div>
+                )}
+              </Panel>
               
               {/* Status Panel */}
               <Panel position="top-right" className="bg-white p-4 rounded-lg shadow-lg border">
