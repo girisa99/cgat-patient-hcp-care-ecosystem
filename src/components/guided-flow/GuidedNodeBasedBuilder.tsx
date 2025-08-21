@@ -16,7 +16,8 @@ import {
   MarkerType,
   useReactFlow,
   NodeProps,
-  useKeyPress
+  useKeyPress,
+  BackgroundVariant
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -47,13 +48,21 @@ interface BaseNodeData {
   stepType: 'useCase' | 'journey' | 'decision' | 'agent' | 'template' | 'aiModel' | 'assets' | 'deployment' | 'channels' | 'testing' | 'deploy';
   status: 'pending' | 'configuring' | 'complete' | 'error';
   data?: any;
-  config?: any;
+  config?: {
+    onJourneyGenerated?: (suggestions: JourneyStep[]) => void;
+  };
+  journeySteps?: JourneyStep[];
+}
+
+// Typed NodeProps
+interface TypedNodeProps extends Omit<NodeProps, 'data'> {
+  data: BaseNodeData;
 }
 
 // Step 1: Use Case Node
-const UseCaseNode: React.FC<NodeProps> = ({ data, selected, id }) => {
+const UseCaseNode: React.FC<TypedNodeProps> = ({ data, selected, id }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const [useCase, setUseCase] = useState((data as any)?.data?.useCase || '');
+  const [useCase, setUseCase] = useState(data?.data?.useCase || '');
   const { generateSuggestions, isLoading } = useJourneyAISuggestions();
 
   const handleGenerateJourney = async () => {
@@ -124,9 +133,9 @@ const UseCaseNode: React.FC<NodeProps> = ({ data, selected, id }) => {
 };
 
 // Step 2: Journey Steps Node
-const JourneyStepsNode: React.FC<NodeProps> = ({ data, selected }) => {
+const JourneyStepsNode: React.FC<TypedNodeProps> = ({ data, selected }) => {
   const [selectedSteps, setSelectedSteps] = useState<string[]>([]);
-  const [customSteps, setCustomSteps] = useState<JourneyStep[]>((data as any).journeySteps || []);
+  const [customSteps, setCustomSteps] = useState<JourneyStep[]>(data.journeySteps || []);
 
   return (
     <div className={`px-4 py-3 shadow-lg rounded-lg bg-gradient-to-r from-green-50 to-green-100 border-2 ${selected ? 'border-green-500' : 'border-green-300'} min-w-[320px] max-w-[450px]`}>
@@ -179,7 +188,7 @@ const JourneyStepsNode: React.FC<NodeProps> = ({ data, selected }) => {
 };
 
 // Step 3: Decision Flow Node
-const DecisionFlowNode: React.FC<NodeProps> = ({ data, selected }) => {
+const DecisionFlowNode: React.FC<TypedNodeProps> = ({ data, selected }) => {
   const [decisionType, setDecisionType] = useState<'single' | 'multiple' | 'loop'>('single');
   const [conditions, setConditions] = useState<string[]>(['Condition 1']);
 
@@ -235,7 +244,7 @@ const DecisionFlowNode: React.FC<NodeProps> = ({ data, selected }) => {
 };
 
 // Additional node types for steps 4-11...
-const AgentConfigNode: React.FC<NodeProps> = ({ data, selected }) => (
+const AgentConfigNode: React.FC<TypedNodeProps> = ({ data, selected }) => (
   <div className={`px-4 py-3 shadow-lg rounded-lg bg-gradient-to-r from-purple-50 to-purple-100 border-2 ${selected ? 'border-purple-500' : 'border-purple-300'} min-w-[250px]`}>
     <Handle type="target" position={Position.Left} className="w-3 h-3 bg-purple-500" />
     <Handle type="source" position={Position.Right} className="w-3 h-3 bg-purple-500" />
@@ -250,7 +259,7 @@ const AgentConfigNode: React.FC<NodeProps> = ({ data, selected }) => (
   </div>
 );
 
-const TemplateNode: React.FC<NodeProps> = ({ data, selected }) => (
+const TemplateNode: React.FC<TypedNodeProps> = ({ data, selected }) => (
   <div className={`px-4 py-3 shadow-lg rounded-lg bg-gradient-to-r from-indigo-50 to-indigo-100 border-2 ${selected ? 'border-indigo-500' : 'border-indigo-300'} min-w-[250px]`}>
     <Handle type="target" position={Position.Left} className="w-3 h-3 bg-indigo-500" />
     <Handle type="source" position={Position.Right} className="w-3 h-3 bg-indigo-500" />
@@ -265,7 +274,7 @@ const TemplateNode: React.FC<NodeProps> = ({ data, selected }) => (
   </div>
 );
 
-const AIModelNode: React.FC<NodeProps> = ({ data, selected }) => (
+const AIModelNode: React.FC<TypedNodeProps> = ({ data, selected }) => (
   <div className={`px-4 py-3 shadow-lg rounded-lg bg-gradient-to-r from-cyan-50 to-cyan-100 border-2 ${selected ? 'border-cyan-500' : 'border-cyan-300'} min-w-[250px]`}>
     <Handle type="target" position={Position.Left} className="w-3 h-3 bg-cyan-500" />
     <Handle type="source" position={Position.Right} className="w-3 h-3 bg-cyan-500" />
@@ -280,7 +289,7 @@ const AIModelNode: React.FC<NodeProps> = ({ data, selected }) => (
   </div>
 );
 
-const AssetsNode: React.FC<NodeProps> = ({ data, selected }) => (
+const AssetsNode: React.FC<TypedNodeProps> = ({ data, selected }) => (
   <div className={`px-4 py-3 shadow-lg rounded-lg bg-gradient-to-r from-orange-50 to-orange-100 border-2 ${selected ? 'border-orange-500' : 'border-orange-300'} min-w-[250px]`}>
     <Handle type="target" position={Position.Left} className="w-3 h-3 bg-orange-500" />
     <Handle type="source" position={Position.Right} className="w-3 h-3 bg-orange-500" />
@@ -295,7 +304,7 @@ const AssetsNode: React.FC<NodeProps> = ({ data, selected }) => (
   </div>
 );
 
-const DeploymentNode: React.FC<NodeProps> = ({ data, selected }) => (
+const DeploymentNode: React.FC<TypedNodeProps> = ({ data, selected }) => (
   <div className={`px-4 py-3 shadow-lg rounded-lg bg-gradient-to-r from-teal-50 to-teal-100 border-2 ${selected ? 'border-teal-500' : 'border-teal-300'} min-w-[250px]`}>
     <Handle type="target" position={Position.Left} className="w-3 h-3 bg-teal-500" />
     <Handle type="source" position={Position.Right} className="w-3 h-3 bg-teal-500" />
@@ -310,7 +319,7 @@ const DeploymentNode: React.FC<NodeProps> = ({ data, selected }) => (
   </div>
 );
 
-const ChannelsNode: React.FC<NodeProps> = ({ data, selected }) => (
+const ChannelsNode: React.FC<TypedNodeProps> = ({ data, selected }) => (
   <div className={`px-4 py-3 shadow-lg rounded-lg bg-gradient-to-r from-pink-50 to-pink-100 border-2 ${selected ? 'border-pink-500' : 'border-pink-300'} min-w-[250px]`}>
     <Handle type="target" position={Position.Left} className="w-3 h-3 bg-pink-500" />
     <Handle type="source" position={Position.Right} className="w-3 h-3 bg-pink-500" />
@@ -325,7 +334,7 @@ const ChannelsNode: React.FC<NodeProps> = ({ data, selected }) => (
   </div>
 );
 
-const TestingNode: React.FC<NodeProps> = ({ data, selected }) => (
+const TestingNode: React.FC<TypedNodeProps> = ({ data, selected }) => (
   <div className={`px-4 py-3 shadow-lg rounded-lg bg-gradient-to-r from-red-50 to-red-100 border-2 ${selected ? 'border-red-500' : 'border-red-300'} min-w-[250px]`}>
     <Handle type="target" position={Position.Left} className="w-3 h-3 bg-red-500" />
     <Handle type="source" position={Position.Right} className="w-3 h-3 bg-red-500" />
@@ -523,7 +532,7 @@ export const GuidedNodeBasedBuilder: React.FC<GuidedNodeBasedBuilderProps> = ({
 
   const onNodeClick = useCallback((event: React.MouseEvent, node: Node) => {
     setSelectedNode(node);
-    setCurrentStep(node.data.step);
+    setCurrentStep((node.data as unknown as BaseNodeData).step);
   }, []);
 
   const onNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
@@ -690,7 +699,7 @@ export const GuidedNodeBasedBuilder: React.FC<GuidedNodeBasedBuilderProps> = ({
               }
             }}
           />
-          <Background variant="dots" gap={20} size={1} />
+          <Background variant={BackgroundVariant.Dots} gap={20} size={1} />
         </ReactFlow>
 
         {/* Context Menu */}
@@ -726,7 +735,7 @@ export const GuidedNodeBasedBuilder: React.FC<GuidedNodeBasedBuilderProps> = ({
             </Badge>
             {selectedNode && (
               <Badge variant="secondary" className="text-xs">
-                Selected: {selectedNode.data.label}
+                Selected: {selectedNode.data.label as string}
               </Badge>
             )}
           </div>
