@@ -37,8 +37,10 @@ import {
 import { useJourneyAISuggestions, JourneyStep } from '@/hooks/useJourneyAISuggestions';
 import { useWorkflowManager } from '@/hooks/useWorkflowManager';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useNodeSuggestions } from '@/hooks/useNodeSuggestions';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AIInsightsPanel } from './AIInsightsPanel';
 
 // Node Data Types
 interface BaseNodeData {
@@ -520,10 +522,17 @@ export const GuidedNodeBasedBuilder: React.FC<GuidedNodeBasedBuilderProps> = ({
   const [currentStep, setCurrentStep] = useState(1);
   const [contextMenuNode, setContextMenuNode] = useState<Node | null>(null);
   const [showProgress, setShowProgress] = useState(true);
+  const [showAIInsights, setShowAIInsights] = useState(true);
+  const [suggestedNodes, setSuggestedNodes] = useState<any[]>([]);
   
   const { showSuccess, showError } = useMasterToast();
   const { createWorkflow, autoSaveWorkflow } = useWorkflowManager(sessionId);
   const { generateSuggestions, isLoading, suggestions } = useJourneyAISuggestions();
+  const { 
+    getNodeConfigTemplate,
+    validateNodeConfig,
+    trackNodeUsage 
+  } = useNodeSuggestions();
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),
@@ -648,6 +657,45 @@ export const GuidedNodeBasedBuilder: React.FC<GuidedNodeBasedBuilderProps> = ({
   const completedSteps = nodes.filter(node => node.data.status === 'complete').length;
   const progress = (completedSteps / nodes.length) * 100;
 
+  // Handle AI suggested node addition
+  const handleAddSuggestedNode = useCallback(async (suggestedNode: any) => {
+    const template = await getNodeConfigTemplate(suggestedNode.type);
+    const validation = validateNodeConfig(suggestedNode.type, suggestedNode.config);
+    
+    if (!validation.isValid) {
+      showError(`Invalid node configuration: ${validation.errors.join(', ')}`);
+      return;
+    }
+
+    const newNode: Node = {
+      id: `${suggestedNode.type}-${Date.now()}`,
+      type: suggestedNode.type,
+      position: { 
+        x: Math.random() * 400 + 100, 
+        y: Math.random() * 400 + 100 
+      },
+      data: {
+        label: suggestedNode.label,
+        description: suggestedNode.description,
+        step: nodes.length + 1,
+        stepType: suggestedNode.type as any,
+        status: 'pending',
+        config: { ...template, ...suggestedNode.config }
+      }
+    };
+
+    setNodes((nds) => [...nds, newNode]);
+    
+    // Track usage for analytics
+    trackNodeUsage({
+      nodeType: suggestedNode.type,
+      nodeId: newNode.id,
+      action: 'created'
+    });
+    
+    showSuccess(`${suggestedNode.label} node added successfully`);
+  }, [nodes.length, setNodes, getNodeConfigTemplate, validateNodeConfig, trackNodeUsage, showSuccess, showError]);
+
   return (
     <div className="h-screen w-full flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
       {/* Progress Header */}
@@ -760,6 +808,24 @@ export const GuidedNodeBasedBuilder: React.FC<GuidedNodeBasedBuilderProps> = ({
           </div>
         </div>
       </div>
+
+      {/* AI Insights Panel */}
+      <AIInsightsPanel
+        isVisible={showAIInsights}
+        onClose={() => setShowAIInsights(false)}
+        onAddNode={handleAddSuggestedNode}
+        currentNodes={nodes}
+        onNodeSuggestion={setSuggestedNodes}
+      />
+
+      {/* AI Insights Toggle Button */}
+      <Button
+        className="fixed bottom-4 left-4 z-40 bg-gradient-to-r from-purple-500 to-blue-600 shadow-lg"
+        onClick={() => setShowAIInsights(!showAIInsights)}
+      >
+        <Brain className="h-4 w-4 mr-2" />
+        {showAIInsights ? 'Hide' : 'Show'} AI Insights
+      </Button>
     </div>
   );
 };
