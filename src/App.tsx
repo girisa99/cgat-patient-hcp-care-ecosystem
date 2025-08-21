@@ -46,6 +46,7 @@ import AgentCreationWizard from '@/components/agentic/AgentCreationWizard';
 import AgentWorkflowStudio from '@/pages/AgentWorkflowStudio';
 import MCPDemo from '@/pages/MCPDemo';
 import { AgentBuilderProvider } from '@/components/agent-builder/AgentBuilderProvider';
+import { GuidedNodeBasedBuilder } from '@/components/guided-flow/GuidedNodeBasedBuilder';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -135,6 +136,13 @@ const AppContent = () => {
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
                       <AgentBuilderProvider>
                         <AgentWorkflowStudio />
+                      </AgentBuilderProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/guided" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
+                      <AgentBuilderProvider>
+                        <GuidedNodeBasedBuilder />
                       </AgentBuilderProvider>
                     </ProtectedRoute>
                   } />
