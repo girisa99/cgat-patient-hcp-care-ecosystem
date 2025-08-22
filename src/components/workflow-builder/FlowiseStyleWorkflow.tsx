@@ -29,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Bot, Database, Zap, MessageCircle, Mail, Phone, Calendar,
   Play, Pause, Save, Download, Upload, Settings, Eye, Plus,
-  Trash2, Copy, Edit, RotateCcw, Maximize2, Sun, Moon, X
+  Trash2, Copy, Edit, RotateCcw, Maximize2, Sun, Moon, X, Rocket
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
@@ -492,20 +492,36 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
                 {theme.dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
               <Button
-                onClick={() => addNode('Agent')}
+                onClick={() => console.log('Simulate workflow')}
                 variant="outline"
                 size="sm"
               >
-                <Bot className="h-4 w-4 mr-2" />
-                Quick Agent
+                <Play className="h-4 w-4 mr-2" />
+                Simulate
               </Button>
               <Button
                 onClick={handleSave}
-                variant="default"
+                variant="outline"
                 size="sm"
               >
                 <Save className="h-4 w-4 mr-2" />
-                Save Workflow
+                Save
+              </Button>
+              <Button
+                onClick={() => console.log('Load workflow')}
+                variant="outline"
+                size="sm"
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Load
+              </Button>
+              <Button
+                onClick={() => console.log('Deploy workflow')}
+                variant="default"
+                size="sm"
+              >
+                <Rocket className="h-4 w-4 mr-2" />
+                Deploy
               </Button>
             </div>
           </Panel>

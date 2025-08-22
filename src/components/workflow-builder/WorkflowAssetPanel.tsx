@@ -20,12 +20,18 @@ import {
   Unlock,
   UserCheck,
   UserX,
-  Settings
+  Settings,
+  Bot,
+  TestTube
 } from 'lucide-react';
 import { AssetLibraryManager } from './AssetLibraryManager';
 import { DataLibrarySelector } from './DataLibrarySelector';
 import { VariableEditor } from './VariableEditor';
 import { AutoSuggestConnector } from './AutoSuggestConnector';
+import { AgentManagerPanel } from './panels/AgentManagerPanel';
+import { AIModelsPanel } from './panels/AIModelsPanel';
+import { TestingDeploymentPanel } from './panels/TestingDeploymentPanel';
+import { SequentialFlowGuide } from './SequentialFlowGuide';
 
 interface WorkflowAssetPanelProps {
   isOpen: boolean;
@@ -46,7 +52,7 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
   onVariablesChange,
   onSuggestionAccepted
 }) => {
-  const [activeTab, setActiveTab] = useState('assets');
+  const [activeTab, setActiveTab] = useState('setup');
 
   if (!isOpen) return null;
 
@@ -67,154 +73,106 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
         
         <CardContent className="p-0 h-[calc(100%-4rem)]">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <div className="px-4 pb-2">
-              <TabsList className="grid w-full grid-cols-6 text-xs">
-                <TabsTrigger value="assets" className="text-xs">
-                  <FileText className="h-3 w-3 mr-1" />
-                  Assets
-                </TabsTrigger>
-                <TabsTrigger value="data" className="text-xs">
-                  <Database className="h-3 w-3 mr-1" />
-                  Data
-                </TabsTrigger>
-                <TabsTrigger value="variables" className="text-xs">
+            <div className="px-4 pb-2 flex-shrink-0">
+              <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5">
+                <TabsTrigger value="setup" className="text-xs px-2 h-7">
                   <Settings2 className="h-3 w-3 mr-1" />
-                  Variables
+                  Setup
                 </TabsTrigger>
-                <TabsTrigger value="connectors" className="text-xs">
-                  <Link className="h-3 w-3 mr-1" />
-                  Connect
+                <TabsTrigger value="models" className="text-xs px-2 h-7">
+                  <Brain className="h-3 w-3 mr-1" />
+                  AI Models
                 </TabsTrigger>
-                <TabsTrigger value="access" className="text-xs">
+                <TabsTrigger value="access" className="text-xs px-2 h-7">
                   <Puzzle className="h-3 w-3 mr-1" />
                   Access
                 </TabsTrigger>
-                <TabsTrigger value="suggest" className="text-xs">
-                  <Brain className="h-3 w-3 mr-1" />
-                  AI
+              </TabsList>
+              
+              {/* Second row of tabs */}
+              <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5 mt-1">
+                <TabsTrigger value="agents" className="text-xs px-2 h-7">
+                  <Bot className="h-3 w-3 mr-1" />
+                  Agents
+                </TabsTrigger>
+                <TabsTrigger value="testing" className="text-xs px-2 h-7">
+                  <TestTube className="h-3 w-3 mr-1" />
+                  Testing
+                </TabsTrigger>
+                <TabsTrigger value="guide" className="text-xs px-2 h-7">
+                  <FileText className="h-3 w-3 mr-1" />
+                  Guide
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="flex-1 min-h-0">
-              <TabsContent value="assets" className="h-full m-0">
-                <div className="px-4 pb-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <FileText className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Asset Library</span>
-                    <Badge variant="secondary" className="text-xs">Universal</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Browse and select assets for your workflow. Works with all models and connectors.
-                  </p>
-                </div>
-                <ScrollArea className="h-[calc(100%-5rem)] px-4">
-                  <AssetLibraryManager
-                    onAssetSelect={onAssetSelect}
-                    selectedAssets={[]}
-                    mode="select"
-                  />
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="data" className="h-full m-0">
-                <div className="px-4 pb-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Database className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Data Libraries</span>
-                    <Badge variant="secondary" className="text-xs">Universal</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Connect to knowledge bases, databases, and data sources. Compatible with all providers.
-                  </p>
-                </div>
-                <ScrollArea className="h-[calc(100%-5rem)] px-4">
-                  <DataLibrarySelector
-                    onLibrariesSelect={onDataLibrarySelect}
-                    selectedLibraries={[]}
-                    mode="select"
-                  />
-                </ScrollArea>
-              </TabsContent>
-
-              <TabsContent value="variables" className="h-full m-0">
+            <div className="flex-1 overflow-hidden">
+              <TabsContent value="setup" className="h-full m-0">
                 <div className="px-4 pb-2">
                   <div className="flex items-center gap-2 mb-3">
                     <Settings2 className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Variable Editor</span>
-                    <Badge variant="secondary" className="text-xs">Universal</Badge>
+                    <span className="font-medium text-sm">Workflow Setup</span>
+                    <Badge variant="secondary" className="text-xs">Configuration</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Define and manage workflow variables. Available for all models and configurations.
+                    Configure your workflow foundation: assets, data sources, and variables.
                   </p>
                 </div>
                 <ScrollArea className="h-[calc(100%-5rem)] px-4">
-                  <VariableEditor
-                    variables={[]}
-                    onVariablesChange={onVariablesChange}
-                  />
+                  <div className="space-y-4">
+                    {/* Asset Library Section */}
+                    <Card className="p-3">
+                      <div className="flex items-center gap-2 mb-3">
+                        <FileText className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-sm">Asset Library</span>
+                      </div>
+                      <AssetLibraryManager
+                        onAssetSelect={onAssetSelect}
+                        selectedAssets={[]}
+                        mode="select"
+                      />
+                    </Card>
+
+                    {/* Data Library Section */}
+                    <Card className="p-3">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Database className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-sm">Data Libraries</span>
+                      </div>
+                      <DataLibrarySelector
+                        onLibrariesSelect={onDataLibrarySelect}
+                        selectedLibraries={[]}
+                        mode="select"
+                      />
+                    </Card>
+
+                    {/* Variable Editor Section */}
+                    <Card className="p-3">
+                      <div className="flex items-center gap-2 mb-3">
+                        <Settings2 className="h-4 w-4 text-primary" />
+                        <span className="font-medium text-sm">Variable Editor</span>
+                      </div>
+                      <VariableEditor
+                        variables={[]}
+                        onVariablesChange={onVariablesChange}
+                      />
+                    </Card>
+                  </div>
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="connectors" className="h-full m-0">
-                <div className="px-4 pb-2">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Link className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Smart Connectors</span>
-                    <Badge variant="secondary" className="text-xs">Universal</Badge>
-                  </div>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Available connectors for all providers: OpenAI, Anthropic, Supabase, Salesforce, and more.
-                  </p>
-                </div>
-                <ScrollArea className="h-[calc(100%-5rem)] px-4">
-                  <div className="space-y-3">
-                    {/* Universal Connectors */}
-                    {[
-                      { name: 'OpenAI GPT', type: 'AI Model', status: 'available', icon: Brain },
-                      { name: 'Anthropic Claude', type: 'AI Model', status: 'available', icon: Brain },
-                      { name: 'Supabase', type: 'Database', status: 'connected', icon: Database },
-                      { name: 'Salesforce', type: 'CRM', status: 'available', icon: FileText },
-                      { name: 'Stripe', type: 'Payment', status: 'available', icon: Zap },
-                      { name: 'Twilio', type: 'Communication', status: 'available', icon: Link },
-                      { name: 'SendGrid', type: 'Email', status: 'available', icon: FileText },
-                      { name: 'Zoom', type: 'Video', status: 'available', icon: Link }
-                    ].map((connector, idx) => (
-                      <Card key={idx} className="p-3">
-                        <div className="flex items-center justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${
-                              connector.status === 'connected' ? 'bg-green-100 dark:bg-green-900' : 'bg-blue-100 dark:bg-blue-900'
-                            }`}>
-                              <connector.icon className={`h-4 w-4 ${
-                                connector.status === 'connected' ? 'text-green-600 dark:text-green-400' : 'text-blue-600 dark:text-blue-400'
-                              }`} />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{connector.name}</p>
-                              <p className="text-xs text-muted-foreground">{connector.type}</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge variant={connector.status === 'connected' ? 'default' : 'outline'} className="text-xs">
-                              {connector.status}
-                            </Badge>
-                            <Button size="sm" variant="ghost">
-                              <ChevronRight className="h-3 w-3" />
-                            </Button>
-                          </div>
-                        </div>
-                      </Card>
-                    ))}
-                  </div>
-                </ScrollArea>
+              <TabsContent value="models" className="h-full m-0">
+                <AIModelsPanel 
+                  onModelCreate={(model) => console.log('Create model:', model)}
+                  onModelUpdate={(model) => console.log('Update model:', model)}
+                />
               </TabsContent>
 
               <TabsContent value="access" className="h-full m-0">
                 <div className="px-4 pb-2">
                   <div className="flex items-center gap-2 mb-3">
                     <Puzzle className="h-4 w-4 text-primary" />
-                    <span className="font-medium">Access Manager</span>
+                    <span className="font-medium text-sm">Access Manager</span>
                     <Badge variant="secondary" className="text-xs">Security</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mb-4">
@@ -304,26 +262,41 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
                 </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="suggest" className="h-full m-0">
+              <TabsContent value="agents" className="h-full m-0">
+                <AgentManagerPanel 
+                  onAgentCreate={(agent) => console.log('Create agent:', agent)}
+                  onAgentUpdate={(agent) => console.log('Update agent:', agent)}
+                />
+              </TabsContent>
+
+              <TabsContent value="testing" className="h-full m-0">
+                <TestingDeploymentPanel 
+                  onTestRun={(test) => console.log('Run test:', test)}
+                  onDeploy={(env) => console.log('Deploy to:', env)}
+                />
+              </TabsContent>
+
+              <TabsContent value="guide" className="h-full m-0">
                 <div className="px-4 pb-2">
                   <div className="flex items-center gap-2 mb-3">
-                    <Brain className="h-4 w-4 text-primary" />
-                    <span className="font-medium">AI Auto-Suggest</span>
-                    <Badge variant="secondary" className="text-xs">Universal</Badge>
+                    <FileText className="h-4 w-4 text-primary" />
+                    <span className="font-medium text-sm">Workflow Guide</span>
+                    <Badge variant="secondary" className="text-xs">Step-by-Step</Badge>
                   </div>
                   <p className="text-xs text-muted-foreground mb-4">
-                    Get intelligent suggestions for next steps and connections. Works with all workflow types.
+                    Follow the sequential workflow guide from planning to deployment.
                   </p>
                 </div>
                 <ScrollArea className="h-[calc(100%-5rem)] px-4">
-                  <AutoSuggestConnector
-                    selectedNode={selectedNode}
-                    onSuggestionAccepted={onSuggestionAccepted || (() => {})}
-                    capturedRequirements={{
-                      connectors: ['OpenAI', 'Supabase', 'Salesforce'],
-                      actions: ['Process', 'Analyze', 'Route'],
-                      steps: ['Intake', 'Assessment', 'Action'],
-                      integrations: ['CRM', 'Database', 'API']
+                  <SequentialFlowGuide 
+                    currentStep={1}
+                    onStepSelect={(step) => {
+                      console.log('Selected step:', step);
+                      // Navigate to the appropriate tab/section based on step
+                      if (step === 1) setActiveTab('setup');
+                      else if (step === 2) setActiveTab('models');
+                      else if (step === 3) setActiveTab('agents');
+                      else if (step === 4) setActiveTab('testing');
                     }}
                   />
                 </ScrollArea>
