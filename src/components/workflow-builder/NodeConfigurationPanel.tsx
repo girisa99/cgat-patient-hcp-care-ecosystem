@@ -281,30 +281,27 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <div className="px-4 pb-2 border-b bg-background/50 flex-shrink-0">
             <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap">
-              <TabsTrigger value="basic" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+              <TabsTrigger value="basic" level="child" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Bot className="h-3 w-3" />
                 <span className="ml-1 truncate">Basic</span>
               </TabsTrigger>
-              <TabsTrigger value="variables" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+              <TabsTrigger value="variables" level="child" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Variable className="h-3 w-3" />
                 <span className="ml-1 truncate">Vars</span>
               </TabsTrigger>
-              <TabsTrigger value="apis" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+              <TabsTrigger value="apis" level="child" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Code className="h-3 w-3" />
                 <span className="ml-1 truncate">APIs</span>
               </TabsTrigger>
-            </TabsList>
-            
-            <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap mt-1">
-              <TabsTrigger value="storage" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+              <TabsTrigger value="storage" level="child" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Database className="h-3 w-3" />
                 <span className="ml-1 truncate">Storage</span>
               </TabsTrigger>
-              <TabsTrigger value="actions" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+              <TabsTrigger value="actions" level="child" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Archive className="h-3 w-3" />
                 <span className="ml-1 truncate">Actions</span>
               </TabsTrigger>
-              <TabsTrigger value="ai" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+              <TabsTrigger value="ai" level="child" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Bot className="h-3 w-3" />
                 <span className="ml-1 truncate">AI</span>
               </TabsTrigger>

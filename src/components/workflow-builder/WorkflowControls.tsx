@@ -20,27 +20,27 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
   className = ''
 }) => {
   return (
-    <div className={`flex items-center gap-2 ${className}`}>
-      <Button variant="outline" size="sm" className="h-8" onClick={onSimulate}>
-        <Play className="h-4 w-4 mr-2" />
-        Simulate
-      </Button>
-      <Button variant="outline" size="sm" className="h-8" onClick={onSave}>
-        <Save className="h-4 w-4 mr-2" />
-        Save
-      </Button>
-      <Button variant="outline" size="sm" className="h-8" onClick={onLoad}>
-        <Upload className="h-4 w-4 mr-2" />
-        Load
-      </Button>
-      <Button variant="outline" size="sm" className="h-8" onClick={onFitView}>
-        <Maximize2 className="h-4 w-4 mr-2" />
-        Fit View
-      </Button>
-      <Button variant="default" size="sm" className="h-8" onClick={onDeploy}>
-        <Rocket className="h-4 w-4 mr-2" />
-        Deploy
-      </Button>
-    </div>
+      <div className={`flex items-center gap-2 overflow-x-auto whitespace-nowrap ${className}`}>
+        <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={onSimulate}>
+          <Play className="h-4 w-4 mr-2" />
+          Simulate
+        </Button>
+        <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={onSave}>
+          <Save className="h-4 w-4 mr-2" />
+          Save
+        </Button>
+        <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={onLoad}>
+          <Upload className="h-4 w-4 mr-2" />
+          Load
+        </Button>
+        <Button variant="outline" size="sm" className="h-8 shrink-0" onClick={onFitView}>
+          <Maximize2 className="h-4 w-4 mr-2" />
+          Fit View
+        </Button>
+        <Button variant="default" size="sm" className="h-8 shrink-0" onClick={onDeploy}>
+          <Rocket className="h-4 w-4 mr-2" />
+          Deploy
+        </Button>
+      </div>
   );
 };
