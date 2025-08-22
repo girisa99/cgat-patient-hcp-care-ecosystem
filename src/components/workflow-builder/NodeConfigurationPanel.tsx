@@ -16,7 +16,7 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 import { useDatabaseSchema } from '@/hooks/useDatabaseSchema';
 import { useWorkflowResources } from '@/hooks/useWorkflowResources';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { WorkflowControls } from './WorkflowControls';
+
 
 interface NodeVariable {
   id: string;

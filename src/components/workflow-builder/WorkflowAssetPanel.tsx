@@ -32,7 +32,7 @@ import { AgentManagerPanel } from './panels/AgentManagerPanel';
 import { AIModelsPanel } from './panels/AIModelsPanel';
 import { TestingDeploymentPanel } from './panels/TestingDeploymentPanel';
 import { SequentialFlowGuide } from './SequentialFlowGuide';
-import { WorkflowControls } from './WorkflowControls';
+
 
 interface WorkflowAssetPanelProps {
   isOpen: boolean;
@@ -73,15 +73,7 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
         </CardHeader>
         
         <CardContent className="p-0 h-[calc(100%-4rem)] overflow-hidden">
-          <div className="px-4 pb-2 border-b bg-background/50 flex-shrink-0">
-            <WorkflowControls
-              onSimulate={() => window.dispatchEvent(new CustomEvent('workflow:simulate'))}
-              onSave={() => window.dispatchEvent(new CustomEvent('workflow:save'))}
-              onLoad={() => window.dispatchEvent(new CustomEvent('workflow:load'))}
-              onFitView={() => window.dispatchEvent(new CustomEvent('workflow:fitView'))}
-              onDeploy={() => window.dispatchEvent(new CustomEvent('workflow:deploy'))}
-            />
-          </div>
+          {/* Controls removed to avoid duplication; global controls live in builder header */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col min-h-0">
             <div className="px-4 pb-2 flex-shrink-0">
               <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap">
@@ -97,10 +89,6 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
                   <Puzzle className="h-3 w-3 mr-1" />
                   Access
                 </TabsTrigger>
-              </TabsList>
-              
-              {/* Second row of tabs */}
-              <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap mt-1">
                 <TabsTrigger value="agents" level="child" className="text-xs px-2 h-7 min-w-fit font-medium shrink-0">
                   <Bot className="h-3 w-3 mr-1" />
                   Agents
