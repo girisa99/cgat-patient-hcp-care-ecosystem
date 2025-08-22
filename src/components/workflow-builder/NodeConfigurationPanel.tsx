@@ -14,6 +14,8 @@ import {
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useDatabaseSchema } from '@/hooks/useDatabaseSchema';
+import { useWorkflowResources } from '@/hooks/useWorkflowResources';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface NodeVariable {
   id: string;
@@ -90,6 +92,16 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
     }
   );
   const { showSuccess, showError } = useMasterToast();
+  const { libraries, actions, operators, isLoading: isLoadingResources } = useWorkflowResources({});
+  const [selectedLibrary, setSelectedLibrary] = useState<string>('');
+  const [selectedAction, setSelectedAction] = useState<string>('');
+  const [selectedOperator, setSelectedOperator] = useState<string>('');
+  const [aiConfig, setAiConfig] = useState({
+    prompt: node.data?.aiPrompt || '',
+    temperature: node.data?.aiTemperature || 0.7,
+    maxTokens: node.data?.aiMaxTokens || 1000,
+    model: node.data?.aiModel || 'gpt-4o-mini'
+  });
 
   const handleBasicUpdate = (field: string, value: any) => {
     onUpdate(node.id, {
@@ -241,7 +253,7 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
   };
 
   return (
-    <Card className="w-full min-w-[20rem] max-w-[28rem] max-h-[90vh] overflow-hidden flex flex-col">
+    <Card className="w-full min-w-[22rem] max-w-[32rem] h-[85vh] flex flex-col">
       <CardHeader className="pb-3 flex-shrink-0">
         <CardTitle className="text-sm flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -267,7 +279,7 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
       <CardContent className="flex-1 overflow-hidden p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <div className="px-4 pb-2 border-b bg-background/50 flex-shrink-0">
-            <TabsList className="grid w-full grid-cols-2 h-8 gap-0.5">
+            <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5">
               <TabsTrigger value="basic" className="text-xs px-2 h-7">
                 <Bot className="h-3 w-3" />
                 <span className="ml-1 truncate">Basic</span>
@@ -276,24 +288,33 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
                 <Variable className="h-3 w-3" />
                 <span className="ml-1 truncate">Vars</span>
               </TabsTrigger>
-            </TabsList>
-            
-            {/* Second row of tabs */}
-            <TabsList className="grid w-full grid-cols-2 h-8 gap-0.5 mt-1">
               <TabsTrigger value="apis" className="text-xs px-2 h-7">
                 <Code className="h-3 w-3" />
                 <span className="ml-1 truncate">APIs</span>
               </TabsTrigger>
+            </TabsList>
+            
+            {/* Second row of tabs */}
+            <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5 mt-1">
               <TabsTrigger value="storage" className="text-xs px-2 h-7">
                 <Database className="h-3 w-3" />
                 <span className="ml-1 truncate">Storage</span>
               </TabsTrigger>
+              <TabsTrigger value="actions" className="text-xs px-2 h-7">
+                <Archive className="h-3 w-3" />
+                <span className="ml-1 truncate">Actions</span>
+              </TabsTrigger>
+              <TabsTrigger value="ai" className="text-xs px-2 h-7">
+                <Bot className="h-3 w-3" />
+                <span className="ml-1 truncate">AI</span>
+              </TabsTrigger>
             </TabsList>
           </div>
           
-          <div className="flex-1 overflow-y-auto px-4 py-2">
+          <ScrollArea className="flex-1">
+            <div className="px-4 py-3">
 
-          <TabsContent value="basic" className="space-y-4">
+          <TabsContent value="basic" className="space-y-6">
             <div>
               <Label htmlFor="node-type">Type</Label>
               <Select
@@ -380,7 +401,7 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="variables" className="space-y-4">
+          <TabsContent value="variables" className="space-y-6">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium">Variables</h4>
               <Button size="sm" onClick={addVariable}>
@@ -389,10 +410,10 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
               </Button>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {variables.map((variable) => (
-                <Card key={variable.id} className="p-3">
-                  <div className="space-y-2">
+                <Card key={variable.id} className="p-4">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Input
                         value={variable.name}
@@ -455,7 +476,7 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="apis" className="space-y-4">
+          <TabsContent value="apis" className="space-y-6">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium">API Configurations</h4>
               <div className="flex gap-2">
@@ -531,10 +552,10 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               {apis.map((api) => (
-                <Card key={api.id} className="p-3">
-                  <div className="space-y-2">
+                <Card key={api.id} className="p-4">
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Input
                         value={api.name}
@@ -637,7 +658,7 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
             </div>
           </TabsContent>
 
-          <TabsContent value="storage" className="space-y-4">
+          <TabsContent value="storage" className="space-y-6">
             <div className="flex items-center justify-between">
               <Label htmlFor="storage-enabled">Enable Data Storage</Label>
               <Switch
@@ -741,12 +762,12 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
                 </div>
 
                 {/* Storage Fields Configuration */}
-                <div className="space-y-3">
+                <div className="space-y-4">
                   <Label className="text-sm font-medium">Storage Fields</Label>
                   
                   {dataStorage.fields.map((field) => (
-                    <Card key={field.id} className="p-3">
-                      <div className="space-y-2">
+                    <Card key={field.id} className="p-4">
+                      <div className="space-y-3">
                         <div className="grid grid-cols-2 gap-2">
                           <Input
                             value={field.name}
@@ -859,7 +880,230 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
               </div>
             )}
           </TabsContent>
-          </div>
+
+          <TabsContent value="actions" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium">Workflow Actions</h4>
+              <Badge variant="outline" className="text-xs">
+                {isLoadingResources ? 'Loading...' : `${libraries?.length || 0} Libraries`}
+              </Badge>
+            </div>
+
+            {/* Libraries Section */}
+            <div className="space-y-4">
+              <Label className="text-sm font-medium">Available Libraries</Label>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {libraries?.map((library) => (
+                  <Card key={library.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h5 className="text-xs font-medium">{library.name}</h5>
+                        <p className="text-xs text-muted-foreground truncate">{library.description}</p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={selectedLibrary === library.id ? "default" : "outline"}
+                        onClick={() => setSelectedLibrary(library.id)}
+                      >
+                        {selectedLibrary === library.id ? 'Selected' : 'Select'}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+                
+                {(!libraries || libraries.length === 0) && (
+                  <div className="text-center py-4 text-muted-foreground text-xs">
+                    No libraries available. Create libraries in the workflow resources panel.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Actions Section */}
+            <div className="space-y-4">
+              <Label className="text-sm font-medium">Available Actions</Label>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {actions?.map((action) => (
+                  <Card key={action.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h5 className="text-xs font-medium">{action.name}</h5>
+                        <p className="text-xs text-muted-foreground truncate">{action.description}</p>
+                        <Badge variant="secondary" className="text-xs">{action.category}</Badge>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={selectedAction === action.id ? "default" : "outline"}
+                        onClick={() => setSelectedAction(action.id)}
+                      >
+                        {selectedAction === action.id ? 'Selected' : 'Select'}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+                
+                {(!actions || actions.length === 0) && (
+                  <div className="text-center py-4 text-muted-foreground text-xs">
+                    No actions available. Create actions in the workflow resources panel.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Operators Section */}
+            <div className="space-y-4">
+              <Label className="text-sm font-medium">Available Operators</Label>
+              <div className="space-y-2 max-h-32 overflow-y-auto">
+                {operators?.map((operator) => (
+                  <Card key={operator.id} className="p-3">
+                    <div className="flex items-center justify-between">
+                      <div className="space-y-1">
+                        <h5 className="text-xs font-medium">{operator.name}</h5>
+                        <p className="text-xs text-muted-foreground truncate">{operator.description}</p>
+                        <Badge variant="secondary" className="text-xs">{operator.category || 'Operator'}</Badge>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={selectedOperator === operator.id ? "default" : "outline"}
+                        onClick={() => setSelectedOperator(operator.id)}
+                      >
+                        {selectedOperator === operator.id ? 'Selected' : 'Select'}
+                      </Button>
+                    </div>
+                  </Card>
+                ))}
+                
+                {(!operators || operators.length === 0) && (
+                  <div className="text-center py-4 text-muted-foreground text-xs">
+                    No operators available. Create operators in the workflow resources panel.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Apply Selected Resources */}
+            {(selectedLibrary || selectedAction || selectedOperator) && (
+              <div className="space-y-2">
+                <Label className="text-sm font-medium">Apply to Node</Label>
+                <Button
+                  onClick={() => {
+                    const updates: any = {};
+                    if (selectedLibrary) updates.selectedLibrary = selectedLibrary;
+                    if (selectedAction) updates.selectedAction = selectedAction;
+                    if (selectedOperator) updates.selectedOperator = selectedOperator;
+                    
+                    onUpdate(node.id, {
+                      data: { ...node.data, ...updates }
+                    });
+                    showSuccess('Workflow resources applied to node');
+                  }}
+                  className="w-full"
+                >
+                  Apply Selected Resources
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="ai" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h4 className="text-sm font-medium">AI Configuration</h4>
+              <Badge variant="outline" className="text-xs">
+                Model: {aiConfig.model}
+              </Badge>
+            </div>
+
+            <div className="space-y-4">
+              <div>
+                <Label htmlFor="ai-prompt">AI Prompt</Label>
+                <Textarea
+                  id="ai-prompt"
+                  value={aiConfig.prompt}
+                  onChange={(e) => setAiConfig({ ...aiConfig, prompt: e.target.value })}
+                  placeholder="Enter AI system prompt or instructions..."
+                  rows={4}
+                  className="text-xs"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="ai-model-select">AI Model</Label>
+                <Select
+                  value={aiConfig.model}
+                  onValueChange={(value) => setAiConfig({ ...aiConfig, model: value })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {aiModels.map(model => (
+                      <SelectItem key={model} value={model}>{model}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="temperature">Temperature</Label>
+                  <Input
+                    id="temperature"
+                    type="number"
+                    step="0.1"
+                    min="0"
+                    max="2"
+                    value={aiConfig.temperature}
+                    onChange={(e) => setAiConfig({ ...aiConfig, temperature: parseFloat(e.target.value) })}
+                    className="text-xs"
+                  />
+                  <div className="text-xs text-muted-foreground mt-1">0.0 = Focused, 2.0 = Creative</div>
+                </div>
+
+                <div>
+                  <Label htmlFor="max-tokens">Max Tokens</Label>
+                  <Input
+                    id="max-tokens"
+                    type="number"
+                    min="1"
+                    max="4000"
+                    value={aiConfig.maxTokens}
+                    onChange={(e) => setAiConfig({ ...aiConfig, maxTokens: parseInt(e.target.value) })}
+                    className="text-xs"
+                  />
+                  <div className="text-xs text-muted-foreground mt-1">Max response length</div>
+                </div>
+              </div>
+
+              <Button
+                onClick={() => {
+                  onUpdate(node.id, {
+                    data: { 
+                      ...node.data, 
+                      aiPrompt: aiConfig.prompt,
+                      aiModel: aiConfig.model,
+                      aiTemperature: aiConfig.temperature,
+                      aiMaxTokens: aiConfig.maxTokens
+                    }
+                  });
+                  showSuccess('AI configuration updated');
+                }}
+                className="w-full"
+              >
+                Apply AI Configuration
+              </Button>
+
+              <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                <strong>AI Configuration:</strong>
+                <br />• Prompt: System instructions for the AI model
+                <br />• Temperature: Controls randomness (0.0-2.0)
+                <br />• Max Tokens: Maximum response length
+                <br />• Model: AI model to use for processing
+              </div>
+            </div>
+          </TabsContent>
+
+            </div>
+          </ScrollArea>
         </Tabs>
       </CardContent>
     </Card>
