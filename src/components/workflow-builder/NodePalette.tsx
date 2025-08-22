@@ -343,7 +343,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
   };
 
   return (
-    <Card className="h-full">
+    <Card className="h-full flex flex-col">
       <CardHeader className="flex-shrink-0 pb-3">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Workflow className="h-4 w-4" />
@@ -365,8 +365,8 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 p-0 overflow-hidden">
-        <ScrollArea className="h-full">
+      <CardContent className="flex-1 min-h-0 p-0">
+        <div className="h-full max-h-full overflow-y-auto">
           <div className="p-4 pr-3 pb-6 space-y-3">
             {categories.map((category) => {
               const categoryNodes = nodeTypes.filter(node => node.category === category.id);
@@ -400,50 +400,52 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="space-y-2 pt-2">
-                    {categoryNodes.map((node) => (
-                      <div
-                        key={node.id}
-                        draggable
-                        onDragStart={(e) => onDragStart(e, node.type, {
-                          label: node.title,
-                          type: node.type.includes('Node') ? node.id : node.type,
-                          category: node.category,
-                          isWorkflowNode: !node.type.includes('Node'),
-                          configType: node.type.includes('Node') ? node.type : undefined
-                        })}
-                        className={`
-                          p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing
-                          hover:shadow-sm transition-all duration-200 hover:scale-[1.01]
-                          ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
-                        `}
-                      >
-                        <div className="flex items-start gap-3">
-                          <div className="p-1.5 bg-white rounded-md shadow-sm flex-shrink-0">
-                            <node.icon className="h-4 w-4 text-primary" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm text-foreground flex items-center gap-1 flex-wrap">
-                              {node.title}
-                              {!node.type.includes('Node') && (
-                                <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
-                              )}
-                              {node.type.includes('Node') && (
-                                <Badge variant="secondary" className="text-xs px-1 py-0">Config</Badge>
-                              )}
-                            </h4>
-                            <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
-                              {node.description}
-                            </p>
+                    <div className="max-h-96 overflow-y-auto space-y-2">
+                      {categoryNodes.map((node) => (
+                        <div
+                          key={node.id}
+                          draggable
+                          onDragStart={(e) => onDragStart(e, node.type, {
+                            label: node.title,
+                            type: node.type.includes('Node') ? node.id : node.type,
+                            category: node.category,
+                            isWorkflowNode: !node.type.includes('Node'),
+                            configType: node.type.includes('Node') ? node.type : undefined
+                          })}
+                          className={`
+                            p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing
+                            hover:shadow-sm transition-all duration-200 hover:scale-[1.01]
+                            ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
+                          `}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="p-1.5 bg-white rounded-md shadow-sm flex-shrink-0">
+                              <node.icon className="h-4 w-4 text-primary" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-medium text-sm text-foreground flex items-center gap-1 flex-wrap">
+                                {node.title}
+                                {!node.type.includes('Node') && (
+                                  <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
+                                )}
+                                {node.type.includes('Node') && (
+                                  <Badge variant="secondary" className="text-xs px-1 py-0">Config</Badge>
+                                )}
+                              </h4>
+                              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                                {node.description}
+                              </p>
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    ))}
+                      ))}
+                    </div>
                   </CollapsibleContent>
                 </Collapsible>
               );
             })}
           </div>
-        </ScrollArea>
+        </div>
       </CardContent>
     </Card>
   );
