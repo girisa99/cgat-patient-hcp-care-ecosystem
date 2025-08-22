@@ -38,6 +38,14 @@ export const EnhancedAgentStudio: React.FC<AgentStudioProps> = ({ initialAgent }
       <div className="border-b bg-background px-6 py-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => window.history.back()}
+              className="mr-2"
+            >
+              ← Back
+            </Button>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
                 <Bot className="h-6 w-6 text-blue-600 dark:text-blue-400" />

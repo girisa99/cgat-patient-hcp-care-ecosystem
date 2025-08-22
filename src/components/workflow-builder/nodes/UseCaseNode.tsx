@@ -50,14 +50,40 @@ export const UseCaseNode: React.FC<{ id: string; data: any; selected: boolean }>
           <Badge variant="secondary" className="text-xs">
             Use Case
           </Badge>
-          <Button
-            size="sm"
-            variant="ghost"
-            onClick={() => setIsExpanded(!isExpanded)}
-            className="h-6 px-2 text-xs"
-          >
-            {isExpanded ? 'Collapse' : 'Configure'}
-          </Button>
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                const detail = { nodeId: id, action: 'ai_enhance', data: config };
+                window.dispatchEvent(new CustomEvent('node-action', { detail }));
+              }}
+              className="h-6 px-2 text-xs"
+              title="AI Enhance"
+            >
+              AI
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                const detail = { nodeId: id, action: 'execute', data: config };
+                window.dispatchEvent(new CustomEvent('node-action', { detail }));
+              }}
+              className="h-6 px-2 text-xs"
+              title="Execute Actions"
+            >
+              Actions
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setIsExpanded(!isExpanded)}
+              className="h-6 px-2 text-xs"
+            >
+              {isExpanded ? 'Collapse' : 'Configure'}
+            </Button>
+          </div>
         </div>
 
         {!isExpanded && (

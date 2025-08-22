@@ -458,10 +458,77 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
           <TabsContent value="apis" className="space-y-4">
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-medium">API Configurations</h4>
-              <Button size="sm" onClick={addAPI}>
-                <Plus className="h-3 w-3 mr-1" />
-                Add API
-              </Button>
+              <div className="flex gap-2">
+                <Select onValueChange={(value) => {
+                  if (value === 'patient') {
+                    const patientAPI: APIConfiguration = {
+                      id: `api_${Date.now()}`,
+                      name: 'Patient API',
+                      url: '/api/patients',
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      auth: { type: 'bearer', key: 'Authorization', value: 'Bearer {token}' },
+                      enabled: true
+                    };
+                    const updatedAPIs = [...apis, patientAPI];
+                    setApis(updatedAPIs);
+                    onUpdate(node.id, { data: { ...node.data, apis: updatedAPIs } });
+                  } else if (value === 'treatment') {
+                    const treatmentAPI: APIConfiguration = {
+                      id: `api_${Date.now()}`,
+                      name: 'Treatment Center API',
+                      url: '/api/treatment-centers',
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      auth: { type: 'bearer', key: 'Authorization', value: 'Bearer {token}' },
+                      enabled: true
+                    };
+                    const updatedAPIs = [...apis, treatmentAPI];
+                    setApis(updatedAPIs);
+                    onUpdate(node.id, { data: { ...node.data, apis: updatedAPIs } });
+                  } else if (value === 'onboarding') {
+                    const onboardingAPI: APIConfiguration = {
+                      id: `api_${Date.now()}`,
+                      name: 'Onboarding API',
+                      url: '/api/onboarding',
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      auth: { type: 'bearer', key: 'Authorization', value: 'Bearer {token}' },
+                      enabled: true
+                    };
+                    const updatedAPIs = [...apis, onboardingAPI];
+                    setApis(updatedAPIs);
+                    onUpdate(node.id, { data: { ...node.data, apis: updatedAPIs } });
+                  } else if (value === 'provider') {
+                    const providerAPI: APIConfiguration = {
+                      id: `api_${Date.now()}`,
+                      name: 'Provider API',
+                      url: '/api/providers',
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      auth: { type: 'bearer', key: 'Authorization', value: 'Bearer {token}' },
+                      enabled: true
+                    };
+                    const updatedAPIs = [...apis, providerAPI];
+                    setApis(updatedAPIs);
+                    onUpdate(node.id, { data: { ...node.data, apis: updatedAPIs } });
+                  }
+                }}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Quick Add API" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="patient">Patient API</SelectItem>
+                    <SelectItem value="treatment">Treatment Center API</SelectItem>
+                    <SelectItem value="onboarding">Onboarding API</SelectItem>
+                    <SelectItem value="provider">Provider API</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button size="sm" onClick={addAPI}>
+                  <Plus className="h-3 w-3 mr-1" />
+                  Custom API
+                </Button>
+              </div>
             </div>
 
             <div className="space-y-3">

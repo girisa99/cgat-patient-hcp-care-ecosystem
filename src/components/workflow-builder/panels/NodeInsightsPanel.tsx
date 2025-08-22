@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -6,23 +6,23 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Lightbulb, Shield, Database, Link, Settings2, 
   AlertTriangle, CheckCircle, TrendingUp, Users,
-  Bot, Target, MessageCircle, X
+  Bot, Target, MessageCircle, X, Move
 } from 'lucide-react';
 
-interface ContextualAccessOverlayProps {
+interface NodeInsightsPanelProps {
   node: any;
   position: { x: number; y: number };
   onClose: () => void;
 }
 
-export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = ({
+export const NodeInsightsPanel: React.FC<NodeInsightsPanelProps> = ({
   node,
   position,
   onClose
 }) => {
-  const [isDragging, setIsDragging] = React.useState(false);
-  const [dragPosition, setDragPosition] = React.useState(position);
-  const [dragOffset, setDragOffset] = React.useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragPosition, setDragPosition] = useState(position);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
 
   const handleMouseDown = (e: React.MouseEvent) => {
     if ((e.target as HTMLElement).closest('button, input, select')) return;
@@ -55,96 +55,59 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
       document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [isDragging, dragOffset]);
-  const getNodeRecommendations = (nodeType: string) => {
-    switch (nodeType) {
-      case 'customer':
-        return {
-          insights: [
-            { type: 'success', title: 'High Engagement', desc: 'This touchpoint shows 85% engagement rate' },
-            { type: 'warning', title: 'Data Privacy', desc: 'Ensure GDPR compliance for customer data' }
-          ],
-          recommendations: [
-            'Add personalization layer to improve experience',
-            'Implement feedback collection mechanism',
-            'Set up A/B testing for this touchpoint'
-          ],
-          connectors: ['CRM Integration', 'Analytics Tracker', 'Feedback System'],
-          security: ['Data Encryption', 'Access Control', 'Audit Logging'],
-          suggestedNodes: [
-            { type: 'agent', label: 'Support Agent', desc: 'Add AI assistant for customer queries' },
-            { type: 'decision', label: 'Route Decision', desc: 'Intelligently route customer requests' },
-            { type: 'data', label: 'Customer Data', desc: 'Store customer interaction history' }
-          ]
-        };
-      case 'agent':
-        return {
-          insights: [
-            { type: 'success', title: 'Response Time', desc: 'Average response: 1.2s (excellent)' },
-            { type: 'info', title: 'Model Usage', desc: 'Currently using GPT-4o-mini' }
-          ],
-          recommendations: [
-            'Consider upgrading to GPT-4o for complex queries',
-            'Add context memory for conversation continuity',
-            'Implement fallback to human agent'
-          ],
-          connectors: ['Knowledge Base', 'Sentiment Analysis', 'Live Chat'],
-          security: ['API Rate Limiting', 'Content Filtering', 'User Authentication'],
-          suggestedNodes: [
-            { type: 'data', label: 'Knowledge Base', desc: 'Add external knowledge source' },
-            { type: 'decision', label: 'Escalation Rule', desc: 'Route complex queries to humans' },
-            { type: 'action', label: 'Follow-up Action', desc: 'Automated follow-up sequences' }
-          ]
-        };
-      case 'decision':
-        return {
-          insights: [
-            { type: 'warning', title: 'Logic Complexity', desc: '12 decision paths - consider simplification' },
-            { type: 'success', title: 'Accuracy', desc: '94% correct routing' }
-          ],
-          recommendations: [
-            'Simplify decision tree for better maintainability',
-            'Add confidence scoring for decisions',
-            'Implement decision logging for analysis'
-          ],
-          connectors: ['Rule Engine', 'Analytics', 'Workflow Logger'],
-          security: ['Decision Audit', 'Access Validation', 'Data Protection'],
-          suggestedNodes: [
-            { type: 'agent', label: 'Specialist Agent', desc: 'Add specialized AI for complex cases' },
-            { type: 'action', label: 'Notification Action', desc: 'Send alerts based on decisions' },
-            { type: 'data', label: 'Analytics Store', desc: 'Track decision outcomes' }
-          ]
-        };
-      default:
-        return {
-          insights: [
-            { type: 'info', title: 'Configuration', desc: 'Node ready for configuration' }
-          ],
-          recommendations: [
-            'Configure node properties',
-            'Set up connections to other nodes',
-            'Add validation rules'
-          ],
-          connectors: ['Generic API', 'Data Store', 'Notification'],
-          security: ['Basic Security', 'Data Validation', 'Error Handling'],
-          suggestedNodes: [
-            { type: 'agent', label: 'AI Agent', desc: 'Add intelligent assistant' },
-            { type: 'decision', label: 'Logic Node', desc: 'Add conditional routing' },
-            { type: 'data', label: 'Data Source', desc: 'Connect external data' }
-          ]
-        };
-    }
-  };
 
-  const getInsightIcon = (type: string) => {
-    switch (type) {
-      case 'success': return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'warning': return <AlertTriangle className="h-4 w-4 text-yellow-500" />;
-      case 'info': return <TrendingUp className="h-4 w-4 text-blue-500" />;
-      default: return <Lightbulb className="h-4 w-4 text-purple-500" />;
-    }
+  const getNodeRecommendations = (nodeType: string) => {
+    return {
+      insights: [
+        { type: 'success', title: 'Configuration Ready', desc: 'Node is properly configured' },
+        { type: 'info', title: 'API Integration', desc: 'Connected to existing APIs' }
+      ],
+      recommendations: [
+        'Connect to patient database',
+        'Add validation rules', 
+        'Configure error handling'
+      ],
+      connectors: ['Patient API', 'Treatment API', 'Onboarding API', 'Provider API'],
+      security: ['Data Encryption', 'Access Control', 'Audit Logging'],
+      suggestedNodes: [
+        { type: 'agent', label: 'AI Agent', desc: 'Add intelligent processing' },
+        { type: 'data', label: 'Data Store', desc: 'Connect external data source' }
+      ]
+    };
   };
 
   const data = getNodeRecommendations(node.type);
+
+  const handleApplyAll = () => {
+    const detail = { 
+      nodeId: node.id, 
+      recommendations: data.recommendations,
+      connectors: data.connectors,
+      security: data.security 
+    };
+    window.dispatchEvent(new CustomEvent('apply-access-suggestions', { detail }));
+    onClose();
+  };
+
+  const handleConfigure = () => {
+    const detail = { 
+      nodeId: node.id,
+      nodeType: node.type,
+      currentData: node.data 
+    };
+    window.dispatchEvent(new CustomEvent('open-node-config', { detail }));
+    onClose();
+  };
+
+  const handleAddSuggestedNode = (suggestedNode: any) => {
+    const detail = {
+      currentNodeId: node.id,
+      nodeType: suggestedNode.type,
+      nodeLabel: suggestedNode.label,
+      nodeDesc: suggestedNode.desc
+    };
+    window.dispatchEvent(new CustomEvent('add-suggested-node', { detail }));
+  };
 
   return (
     <div 
@@ -163,6 +126,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
           <CardTitle className="text-sm flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Shield className="h-4 w-4 text-primary" />
+              <Move className="h-3 w-3 text-muted-foreground" />
               Node Insights - {node.data?.label || node.type}
             </div>
             <Button variant="ghost" size="sm" onClick={onClose} className="h-6 w-6 p-0 hover:bg-destructive/10">
@@ -183,7 +147,9 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
                 <div className="space-y-1">
                   {data.insights.map((insight, i) => (
                     <div key={i} className="flex items-start gap-2 p-2 bg-muted/30 rounded text-xs">
-                      {getInsightIcon(insight.type)}
+                      {insight.type === 'success' && <CheckCircle className="h-4 w-4 text-green-500" />}
+                      {insight.type === 'warning' && <AlertTriangle className="h-4 w-4 text-yellow-500" />}
+                      {insight.type === 'info' && <TrendingUp className="h-4 w-4 text-blue-500" />}
                       <div>
                         <div className="font-medium">{insight.title}</div>
                         <div className="text-muted-foreground">{insight.desc}</div>
@@ -193,7 +159,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
                 </div>
               </div>
 
-              {/* Recommendations */}
+              {/* Smart Recommendations */}
               <div>
                 <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
                   <Lightbulb className="h-3 w-3" />
@@ -209,7 +175,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
                 </div>
               </div>
 
-              {/* Quick Actions */}
+              {/* Suggested Connectors */}
               <div>
                 <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
                   <Settings2 className="h-3 w-3" />
@@ -217,7 +183,15 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
                 </h4>
                 <div className="flex flex-wrap gap-1">
                   {data.connectors.map((connector, i) => (
-                    <Badge key={i} variant="outline" className="text-xs cursor-pointer hover:bg-primary/10">
+                    <Badge 
+                      key={i} 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => {
+                        const detail = { nodeId: node.id, connector };
+                        window.dispatchEvent(new CustomEvent('add-connector', { detail }));
+                      }}
+                    >
                       <Link className="h-2 w-2 mr-1" />
                       {connector}
                     </Badge>
@@ -242,15 +216,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
                         size="sm"
                         variant="outline"
                         className="h-6 text-xs px-2"
-                        onClick={() => {
-                          const detail = {
-                            currentNodeId: node.id,
-                            nodeType: suggestedNode.type,
-                            nodeLabel: suggestedNode.label,
-                            nodeDesc: suggestedNode.desc
-                          };
-                          window.dispatchEvent(new CustomEvent('add-suggested-node', { detail }));
-                        }}
+                        onClick={() => handleAddSuggestedNode(suggestedNode)}
                       >
                         Add
                       </Button>
@@ -259,7 +225,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
                 </div>
               </div>
 
-              {/* Security Check */}
+              {/* Security Requirements */}
               <div>
                 <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
                   <Shield className="h-3 w-3" />
@@ -281,16 +247,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
             <Button 
               size="sm" 
               className="flex-1 text-xs"
-              onClick={() => {
-                const detail = { 
-                  nodeId: node.id, 
-                  recommendations: data.recommendations,
-                  connectors: data.connectors,
-                  security: data.security 
-                } as any;
-                window.dispatchEvent(new CustomEvent('apply-access-suggestions', { detail }));
-                onClose();
-              }}
+              onClick={handleApplyAll}
             >
               <CheckCircle className="h-3 w-3 mr-1" />
               Apply All
@@ -299,15 +256,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
               variant="outline" 
               size="sm" 
               className="text-xs"
-              onClick={() => {
-                const detail = { 
-                  nodeId: node.id,
-                  nodeType: node.type,
-                  currentData: node.data 
-                } as any;
-                window.dispatchEvent(new CustomEvent('open-node-config', { detail }));
-                onClose();
-              }}
+              onClick={handleConfigure}
             >
               <Settings2 className="h-3 w-3 mr-1" />
               Configure
