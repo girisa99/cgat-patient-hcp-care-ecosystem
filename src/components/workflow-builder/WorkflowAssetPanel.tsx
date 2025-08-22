@@ -32,6 +32,7 @@ import { AgentManagerPanel } from './panels/AgentManagerPanel';
 import { AIModelsPanel } from './panels/AIModelsPanel';
 import { TestingDeploymentPanel } from './panels/TestingDeploymentPanel';
 import { SequentialFlowGuide } from './SequentialFlowGuide';
+import { WorkflowControls } from './WorkflowControls';
 
 interface WorkflowAssetPanelProps {
   isOpen: boolean;
@@ -72,6 +73,15 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
         </CardHeader>
         
         <CardContent className="p-0 h-[calc(100%-4rem)]">
+          <div className="px-4 pb-2 border-b bg-background/50 flex-shrink-0">
+            <WorkflowControls
+              onSimulate={() => window.dispatchEvent(new CustomEvent('workflow:simulate'))}
+              onSave={() => window.dispatchEvent(new CustomEvent('workflow:save'))}
+              onLoad={() => window.dispatchEvent(new CustomEvent('workflow:load'))}
+              onFitView={() => window.dispatchEvent(new CustomEvent('workflow:fitView'))}
+              onDeploy={() => window.dispatchEvent(new CustomEvent('workflow:deploy'))}
+            />
+          </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <div className="px-4 pb-2 flex-shrink-0">
               <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5">

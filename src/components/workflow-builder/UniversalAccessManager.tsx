@@ -123,7 +123,7 @@ export const UniversalAccessManager: React.FC<UniversalAccessManagerProps> = ({
         />
       </div>
 
-      <ScrollArea className="h-[400px]">
+      <div className="max-h-full overflow-y-auto">
         <div className="space-y-3">
           {Object.entries(filteredSections).map(([sectionName, items]) => (
             <Collapsible 
@@ -193,7 +193,7 @@ export const UniversalAccessManager: React.FC<UniversalAccessManagerProps> = ({
             </Collapsible>
           ))}
         </div>
-      </ScrollArea>
+      </div>
 
       <Card>
         <CardContent className="p-3">

@@ -27,6 +27,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
   onToggle
 }) => {
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
+  const [activeTab, setActiveTab] = useState('guide');
 
   const handleModelSelect = (model: any) => {
     setSelectedModels(prev => 
@@ -79,7 +80,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
         </CardHeader>
 
         <CardContent className="p-0 h-[calc(100%-56px)] flex flex-col min-h-0">
-          <Tabs defaultValue="guide" className="flex h-full flex-col min-h-0">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col min-h-0">
             <TabsList className="flex w-full gap-1 rounded-none h-10 p-1 overflow-x-auto whitespace-nowrap bg-muted/30">
               <TabsTrigger value="guide" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Layers className="h-3 w-3 mr-1" />
@@ -100,7 +101,14 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
             </TabsList>
 
             <TabsContent value="guide" className="mt-0 flex-1 min-h-0">
-              <SequentialFlowGuide />
+              <SequentialFlowGuide 
+                onStepSelect={(step) => {
+                  if (step === 1) setActiveTab('agents');
+                  else if (step === 2) setActiveTab('models');
+                  else if (step === 3) setActiveTab('access');
+                  else setActiveTab('guide');
+                }}
+              />
             </TabsContent>
 
             <TabsContent value="agents" className="mt-0 flex-1 min-h-0">

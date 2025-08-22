@@ -31,12 +31,12 @@ import {
   Play, Pause, Save, Download, Upload, Settings, Eye, Plus,
   Trash2, Copy, Edit, RotateCcw, Maximize2, Sun, Moon, X, Rocket
 } from 'lucide-react';
+import { WorkflowControls } from './WorkflowControls';
+
 import { useMasterToast } from '@/hooks/useMasterToast';
 
 // Enhanced Panels
 import { EnhancedNodeLibraryPanel } from './panels/EnhancedNodeLibraryPanel';
-
-// Connectors
 import { AgentTokConnector } from './connectors/AgentTokConnector';
 import { AttioConnector } from './connectors/AttioConnector';
 
@@ -272,6 +272,7 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
   const { theme, toggleTheme } = useFlowiseTheme();
   const { showSuccess, showError } = useMasterToast();
   const styles = getFlowiseStyles(theme);
+  const { fitView } = useReactFlow();
   
   const [nodes, setNodes, onNodesChange] = useNodesState([
     {
@@ -403,6 +404,29 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
     showSuccess('Workflow saved successfully');
   };
 
+  // Cross-panel controls: listen to global workflow events
+  useEffect(() => {
+    const onSimulate = () => showSuccess('Simulation started');
+    const onSaveEvt = () => handleSave();
+    const onLoad = () => showSuccess('Load workflow');
+    const onFit = () => fitView({ padding: 0.2 });
+    const onDeployEvt = () => showSuccess('Deploy started');
+
+    window.addEventListener('workflow:simulate', onSimulate);
+    window.addEventListener('workflow:save', onSaveEvt);
+    window.addEventListener('workflow:load', onLoad);
+    window.addEventListener('workflow:fitView', onFit);
+    window.addEventListener('workflow:deploy', onDeployEvt);
+
+    return () => {
+      window.removeEventListener('workflow:simulate', onSimulate);
+      window.removeEventListener('workflow:save', onSaveEvt);
+      window.removeEventListener('workflow:load', onLoad);
+      window.removeEventListener('workflow:fitView', onFit);
+      window.removeEventListener('workflow:deploy', onDeployEvt);
+    };
+  }, [fitView, showSuccess]);
+
   return (
     <div className="h-screen w-full flex" style={{ backgroundColor: theme.colors.background }}>
       {/* Enhanced Node Library Panel */}
@@ -491,38 +515,13 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
               >
                 {theme.dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
-              <Button
-                onClick={() => console.log('Simulate workflow')}
-                variant="outline"
-                size="sm"
-              >
-                <Play className="h-4 w-4 mr-2" />
-                Simulate
-              </Button>
-              <Button
-                onClick={handleSave}
-                variant="outline"
-                size="sm"
-              >
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-              <Button
-                onClick={() => console.log('Load workflow')}
-                variant="outline"
-                size="sm"
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Load
-              </Button>
-              <Button
-                onClick={() => console.log('Deploy workflow')}
-                variant="default"
-                size="sm"
-              >
-                <Rocket className="h-4 w-4 mr-2" />
-                Deploy
-              </Button>
+              <WorkflowControls
+                onSimulate={() => showSuccess('Simulation started')}
+                onSave={handleSave}
+                onLoad={() => showSuccess('Load workflow')}
+                onFitView={() => fitView({ padding: 0.2 })}
+                onDeploy={() => showSuccess('Deploy started')}
+              />
             </div>
           </Panel>
 
