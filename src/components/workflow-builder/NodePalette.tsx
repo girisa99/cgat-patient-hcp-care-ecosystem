@@ -204,6 +204,33 @@ const nodeTypes: NodePaletteItem[] = [
 
   // Configuration Nodes (Opens Config Panels)
   {
+    id: 'ai-intelligence',
+    type: 'aiIntelligence',
+    title: 'AI Intelligence',
+    icon: Bot,
+    description: 'Complete AI setup with all models, variables, APIs & actions',
+    category: 'ai',
+    color: 'bg-indigo-50 border-indigo-200'
+  },
+  {
+    id: 'smart-agent',
+    type: 'agentNode',
+    title: 'Smart Agent',
+    icon: Users,
+    description: 'Configurable AI agent with capabilities & channels',
+    category: 'ai',
+    color: 'bg-blue-50 border-blue-200'
+  },
+  {
+    id: 'smart-data-source',
+    type: 'dataSource',
+    title: 'Smart Data Source',
+    icon: Database,
+    description: 'All-in-one database, API & storage connection',
+    category: 'integrations',
+    color: 'bg-purple-50 border-purple-200'
+  },
+  {
     id: 'use-case',
     type: 'useCaseNode',
     title: 'Use Case Config',
@@ -309,19 +336,19 @@ const nodeTypes: NodePaletteItem[] = [
 ];
 
 const categories = [
+  { id: 'ai', name: 'AI & Intelligence (Enhanced)', color: 'bg-indigo-100' },
+  { id: 'integrations', name: 'Data Sources (Enhanced)', color: 'bg-purple-100' },
   { id: 'actions', name: 'Configuration (Start Here)', color: 'bg-orange-100' },
-  { id: 'ai', name: 'AI & Intelligence', color: 'bg-indigo-100' },
   { id: 'core', name: 'Workflow Nodes', color: 'bg-slate-100' },
-  { id: 'integrations', name: 'Integrations & Data', color: 'bg-cyan-100' },
   { id: 'deployment', name: 'Deployment & Testing', color: 'bg-green-100' }
 ];
 
 export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass }) => {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    'actions': true,  // Start with configuration open
-    'ai': false,
+    'ai': true,  // Start with enhanced AI nodes open
+    'integrations': true,  // Start with enhanced data sources open
+    'actions': false,
     'core': false,
-    'integrations': false,
     'deployment': false
   });
   const toggleCategory = (categoryId: string) => {
@@ -354,6 +381,10 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
             <strong>Drag & Drop Workflow Nodes:</strong>
           </p>
           <div className="space-y-1 text-xs text-muted-foreground">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0" />
+              <span><strong>Enhanced Nodes</strong> → All-in-one configuration within nodes</span>
+            </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
               <span><strong>Workflow Nodes</strong> → Create executable workflow elements</span>
@@ -412,26 +443,30 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                             isWorkflowNode: !node.type.includes('Node'),
                             configType: node.type.includes('Node') ? node.type : undefined
                           })}
-                          className={`
-                            p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing
-                            hover:shadow-sm transition-all duration-200 hover:scale-[1.01]
-                            ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
-                          `}
+                           className={`
+                             p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing
+                             hover:shadow-sm transition-all duration-200 hover:scale-[1.01]
+                             ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
+                             ${['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) ? 'ring-2 ring-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50' : ''}
+                           `}
                         >
                           <div className="flex items-start gap-3">
                             <div className="p-1.5 bg-white rounded-md shadow-sm flex-shrink-0">
                               <node.icon className="h-4 w-4 text-primary" />
                             </div>
                             <div className="flex-1 min-w-0">
-                              <h4 className="font-medium text-sm text-foreground flex items-center gap-1 flex-wrap">
-                                {node.title}
-                                {!node.type.includes('Node') && (
-                                  <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
-                                )}
-                                {node.type.includes('Node') && (
-                                  <Badge variant="secondary" className="text-xs px-1 py-0">Config</Badge>
-                                )}
-                              </h4>
+                               <h4 className="font-medium text-sm text-foreground flex items-center gap-1 flex-wrap">
+                                 {node.title}
+                                 {['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && (
+                                   <Badge variant="default" className="text-xs px-1 py-0 bg-indigo-500">Enhanced</Badge>
+                                 )}
+                                 {!node.type.includes('Node') && !['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && (
+                                   <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
+                                 )}
+                                 {node.type.includes('Node') && (
+                                   <Badge variant="secondary" className="text-xs px-1 py-0">Config</Badge>
+                                 )}
+                               </h4>
                               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                                 {node.description}
                               </p>

@@ -68,6 +68,9 @@ import { NodeUpdateHandler } from './NodeUpdateHandler';
 import { NodePalette } from './NodePalette';
 import { InlineNodeConfig } from './InlineNodeConfig';
 import { ProcessFlowTracker } from './ProcessFlowTracker';
+import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
+import { AgentNode } from './nodes/AgentNode';
+import { DataSourceNode } from './nodes/DataSourceNode';
 
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
