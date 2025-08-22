@@ -66,6 +66,8 @@ import { useAccessManager } from '@/hooks/useAccessManager';
 import { useTestingManager } from '@/hooks/useTestingManager';
 import { NodeUpdateHandler } from './NodeUpdateHandler';
 import { NodePalette } from './NodePalette';
+import { InlineNodeConfig } from './InlineNodeConfig';
+import { ProcessFlowTracker } from './ProcessFlowTracker';
 
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -457,6 +459,16 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const reactFlowInstance = useReactFlow();
   const { autoSave } = useAgentSession();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [inlineConfigNode, setInlineConfigNode] = useState<Node | null>(null);
+  const [showProcessTracker, setShowProcessTracker] = useState(false);
+  
+  // Mock process steps for demo
+  const [processSteps, setProcessSteps] = useState([
+    { id: '1', name: 'Start', type: 'start' as const, status: 'completed' as const, duration: '0.1s' },
+    { id: '2', name: 'Detect User Intention', type: 'agent' as const, status: 'completed' as const, model: 'gpt-4.1', duration: '1.2s', details: 'Analyzed user input for intent classification' },
+    { id: '3', name: 'Technical Agent', type: 'agent' as const, status: 'running' as const, model: 'gemini-2.0-flash', details: 'Processing technical query...' },
+    { id: '4', name: 'Sales Agent', type: 'agent' as const, status: 'pending' as const, model: 'claude-3-7-sonnet-latest' }
+  ]);
   
   // Import all backend managers
   const { workflows, createWorkflow, updateWorkflow, autoSaveWorkflow, isAutoSaving } = useWorkflowManager(sessionId);
@@ -490,6 +502,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
       const node = nodes.find(n => n.id === nodeId);
       if (node) {
         setSelectedNode(node);
+        setInlineConfigNode(node);
         onNodeSelect?.(node);
       }
     };
@@ -1145,10 +1158,14 @@ useEffect(() => {
               {/* Docked Node Palette */}
               <Panel position="top-left" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
                 <div className="flex items-center gap-2 mb-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowPalette(!showPalette)}>
-                    <Workflow className="h-4 w-4 mr-1" />
-                    {showPalette ? 'Hide Nodes' : 'Show Nodes'}
-                  </Button>
+          <Button size="sm" variant="outline" onClick={() => setShowPalette(!showPalette)}>
+            <Workflow className="h-4 w-4 mr-1" />
+            {showPalette ? 'Hide Nodes' : 'Show Nodes'}
+          </Button>
+          <Button size="sm" variant="outline" onClick={() => setShowProcessTracker(!showProcessTracker)}>
+            <Activity className="h-4 w-4 mr-1" />
+            Process Flow
+          </Button>
                 </div>
                 {showPalette && (
                   <div className="w-72 h-[calc(100vh-220px)] overflow-y-auto">
@@ -1186,6 +1203,50 @@ useEffect(() => {
                   )}
                 </div>
               </Panel>
+              
+              {/* Process Flow Tracker */}
+              <ProcessFlowTracker
+                isOpen={showProcessTracker}
+                onToggle={() => setShowProcessTracker(!showProcessTracker)}
+                steps={processSteps}
+                onStepClick={(step) => {
+                  console.log('Step clicked:', step);
+                  // Find and highlight the corresponding node
+                  const node = nodes.find(n => 
+                    typeof n.data?.label === 'string' && 
+                    n.data.label.toLowerCase().includes(step.name.toLowerCase())
+                  );
+                  if (node) {
+                    setSelectedNode(node);
+                  }
+                }}
+              />
+              
+              {/* Inline Node Configuration */}
+              {inlineConfigNode && (
+                <div className="absolute inset-0 pointer-events-none z-50">
+                  <div className="relative h-full w-full pointer-events-none">
+                    <div 
+                      className="absolute pointer-events-auto"
+                      style={{
+                        left: `${(inlineConfigNode.position?.x || 0) + 50}px`,
+                        top: `${(inlineConfigNode.position?.y || 0) + 100}px`,
+                      }}
+                    >
+                      <InlineNodeConfig
+                        nodeId={inlineConfigNode.id}
+                        nodeType={inlineConfigNode.type || 'default'}
+                        data={inlineConfigNode.data || {}}
+                        onUpdate={(nodeId, updates) => {
+                          setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, ...updates } : n));
+                        }}
+                        onClose={() => setInlineConfigNode(null)}
+                        isVisible={true}
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
             </ReactFlow>
           </ContextMenuTrigger>
           

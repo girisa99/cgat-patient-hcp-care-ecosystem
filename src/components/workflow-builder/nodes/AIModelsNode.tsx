@@ -29,8 +29,20 @@ export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }
     { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' },
     { value: 'claude-3-opus', label: 'Claude 3 Opus' },
     { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet' },
-    { value: 'gemini-pro', label: 'Gemini Pro' }
+    { value: 'gemini-pro', label: 'Gemini Pro' },
+    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }
   ];
+
+  const handleInlineConfig = () => {
+    // Dispatch event to open inline configuration
+    window.dispatchEvent(new CustomEvent('open-node-config', {
+      detail: { 
+        nodeId: id, 
+        nodeType: 'aiModelsNode', 
+        currentData: { ...data, ...config } 
+      }
+    }));
+  };
 
   return (
     <BaseWorkflowNode
@@ -38,18 +50,30 @@ export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }
       data={data}
       selected={selected}
       icon={Bot}
-      title="AI Models"
-      className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200"
+      title={data.label || "AI Agent"}
+      className="bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200 min-w-[200px]"
     >
-      <div className="space-y-3">
+      <div className="space-y-2">
+        {/* Inline Model Display - Always Visible */}
+        <div className="flex items-center gap-2 bg-white/80 rounded px-2 py-1">
+          <div className="w-6 h-6 bg-blue-100 rounded flex items-center justify-center">
+            <Bot className="h-3 w-3 text-blue-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="text-xs font-medium truncate">{config.model}</div>
+            <div className="text-[10px] text-muted-foreground">T:{config.temperature[0]} | {config.max_tokens} tokens</div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
         <div className="flex items-center justify-between">
-          <Badge variant="secondary" className="text-xs">
-            {config.model}
+          <Badge variant="outline" className="text-[10px] px-1">
+            {data.status || 'Ready'}
           </Badge>
           <Button
             size="sm"
             variant="ghost"
-            onClick={() => setIsExpanded(!isExpanded)}
+            onClick={isExpanded ? () => setIsExpanded(false) : handleInlineConfig}
             className="h-6 px-2 text-xs"
           >
             <Settings className="h-3 w-3 mr-1" />
