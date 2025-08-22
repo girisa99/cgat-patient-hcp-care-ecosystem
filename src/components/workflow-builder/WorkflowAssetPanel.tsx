@@ -84,32 +84,32 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
           </div>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <div className="px-4 pb-2 flex-shrink-0">
-              <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5">
-                <TabsTrigger value="setup" className="text-xs px-2 h-7">
+              <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap">
+                <TabsTrigger value="setup" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                   <Settings2 className="h-3 w-3 mr-1" />
                   Setup
                 </TabsTrigger>
-                <TabsTrigger value="models" className="text-xs px-2 h-7">
+                <TabsTrigger value="models" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                   <Brain className="h-3 w-3 mr-1" />
                   AI Models
                 </TabsTrigger>
-                <TabsTrigger value="access" className="text-xs px-2 h-7">
+                <TabsTrigger value="access" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                   <Puzzle className="h-3 w-3 mr-1" />
-                  Access
+                  Access Manager
                 </TabsTrigger>
               </TabsList>
               
               {/* Second row of tabs */}
-              <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5 mt-1">
-                <TabsTrigger value="agents" className="text-xs px-2 h-7">
+              <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap mt-1">
+                <TabsTrigger value="agents" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                   <Bot className="h-3 w-3 mr-1" />
                   Agents
                 </TabsTrigger>
-                <TabsTrigger value="testing" className="text-xs px-2 h-7">
+                <TabsTrigger value="testing" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                   <TestTube className="h-3 w-3 mr-1" />
                   Testing
                 </TabsTrigger>
-                <TabsTrigger value="guide" className="text-xs px-2 h-7">
+                <TabsTrigger value="guide" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                   <FileText className="h-3 w-3 mr-1" />
                   Guide
                 </TabsTrigger>

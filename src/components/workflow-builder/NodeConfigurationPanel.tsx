@@ -289,32 +289,31 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
       <CardContent className="flex-1 overflow-hidden p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <div className="px-4 pb-2 border-b bg-background/50 flex-shrink-0">
-            <TabsList className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap">
-              <TabsTrigger value="basic" className="text-xs px-3 h-7 min-w-fit font-medium">
+            <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap">
+              <TabsTrigger value="basic" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                 <Bot className="h-3 w-3" />
                 <span className="ml-1 truncate">Basic</span>
               </TabsTrigger>
-              <TabsTrigger value="variables" className="text-xs px-3 h-7 min-w-fit font-medium">
+              <TabsTrigger value="variables" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                 <Variable className="h-3 w-3" />
                 <span className="ml-1 truncate">Vars</span>
               </TabsTrigger>
-              <TabsTrigger value="apis" className="text-xs px-3 h-7 min-w-fit font-medium">
+              <TabsTrigger value="apis" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                 <Code className="h-3 w-3" />
                 <span className="ml-1 truncate">APIs</span>
               </TabsTrigger>
             </TabsList>
             
-            {/* Second row of tabs */}
-            <TabsList className="grid w-full grid-cols-3 h-8 gap-0.5 mt-1">
-              <TabsTrigger value="storage" className="text-xs px-2 h-7">
+            <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap mt-1">
+              <TabsTrigger value="storage" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                 <Database className="h-3 w-3" />
                 <span className="ml-1 truncate">Storage</span>
               </TabsTrigger>
-              <TabsTrigger value="actions" className="text-xs px-2 h-7">
+              <TabsTrigger value="actions" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                 <Archive className="h-3 w-3" />
                 <span className="ml-1 truncate">Actions</span>
               </TabsTrigger>
-              <TabsTrigger value="ai" className="text-xs px-2 h-7">
+              <TabsTrigger value="ai" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
                 <Bot className="h-3 w-3" />
                 <span className="ml-1 truncate">AI</span>
               </TabsTrigger>
