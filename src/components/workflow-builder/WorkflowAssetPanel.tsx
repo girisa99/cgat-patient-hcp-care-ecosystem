@@ -14,7 +14,13 @@ import {
   Link,
   Package,
   X,
-  ChevronRight
+  ChevronRight,
+  Users,
+  Lock,
+  Unlock,
+  UserCheck,
+  UserX,
+  Settings
 } from 'lucide-react';
 import { AssetLibraryManager } from './AssetLibraryManager';
 import { DataLibrarySelector } from './DataLibrarySelector';
@@ -62,7 +68,7 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
         <CardContent className="p-0 h-[calc(100%-4rem)]">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
             <div className="px-4 pb-2">
-              <TabsList className="grid w-full grid-cols-5 text-xs">
+              <TabsList className="grid w-full grid-cols-6 text-xs">
                 <TabsTrigger value="assets" className="text-xs">
                   <FileText className="h-3 w-3 mr-1" />
                   Assets
@@ -78,6 +84,10 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
                 <TabsTrigger value="connectors" className="text-xs">
                   <Link className="h-3 w-3 mr-1" />
                   Connect
+                </TabsTrigger>
+                <TabsTrigger value="access" className="text-xs">
+                  <Puzzle className="h-3 w-3 mr-1" />
+                  Access
                 </TabsTrigger>
                 <TabsTrigger value="suggest" className="text-xs">
                   <Brain className="h-3 w-3 mr-1" />
@@ -196,6 +206,100 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
                         </div>
                       </Card>
                     ))}
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="access" className="h-full m-0">
+                <div className="px-4 pb-2">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Puzzle className="h-4 w-4 text-primary" />
+                    <span className="font-medium">Access Manager</span>
+                    <Badge variant="secondary" className="text-xs">Security</Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-4">
+                    Configure workflow elements, permissions, and security access controls.
+                  </p>
+                </div>
+                <ScrollArea className="h-[calc(100%-5rem)] px-4">
+                  <div className="space-y-4">
+                    {/* Workflow Elements Access */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Zap className="h-4 w-4" />
+                        Workflow Elements
+                      </h4>
+                      
+                      {[
+                        { name: 'Nodes', description: 'Access to create and modify workflow nodes', enabled: true },
+                        { name: 'Edges', description: 'Connect and disconnect workflow elements', enabled: true },
+                        { name: 'Canvas', description: 'Canvas editing and layout permissions', enabled: true },
+                        { name: 'MiniMap', description: 'Navigation and overview controls', enabled: true }
+                      ].map((element, idx) => (
+                        <Card key={idx} className="p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-sm">{element.name}</p>
+                              <p className="text-xs text-muted-foreground">{element.description}</p>
+                            </div>
+                            <Button 
+                              size="sm" 
+                              variant={element.enabled ? "default" : "outline"}
+                              onClick={() => {/* Toggle access */}}
+                            >
+                              {element.enabled ? <Unlock className="h-3 w-3" /> : <Lock className="h-3 w-3" />}
+                            </Button>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {/* User Permissions */}
+                    <div className="space-y-3">
+                      <h4 className="text-sm font-medium flex items-center gap-2">
+                        <Users className="h-4 w-4" />
+                        User Permissions
+                      </h4>
+                      
+                      {[
+                        { role: 'Admin', users: 2, permissions: ['Full Access', 'User Management'] },
+                        { role: 'Editor', users: 5, permissions: ['Edit Workflows', 'View Analytics'] },
+                        { role: 'Viewer', users: 12, permissions: ['View Only'] }
+                      ].map((role, idx) => (
+                        <Card key={idx} className="p-3">
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Badge variant="outline">{role.role}</Badge>
+                                <span className="text-xs text-muted-foreground">{role.users} users</span>
+                              </div>
+                              <Button size="sm" variant="ghost">
+                                <Settings className="h-3 w-3" />
+                              </Button>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {role.permissions.map((perm, permIdx) => (
+                                <Badge key={permIdx} variant="secondary" className="text-xs">
+                                  {perm}
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+
+                    {/* Access Control Actions */}
+                    <div className="space-y-2">
+                      <Button className="w-full" size="sm">
+                        <UserCheck className="h-3 w-3 mr-2" />
+                        Grant Access
+                      </Button>
+                      <Button variant="outline" className="w-full" size="sm">
+                        <UserX className="h-3 w-3 mr-2" />
+                        Revoke Access
+                      </Button>
+                    </div>
                   </div>
                 </ScrollArea>
               </TabsContent>

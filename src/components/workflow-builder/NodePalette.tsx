@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Button } from '@/components/ui/button';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Lightbulb, MapPin, Wand2, Bot, Zap, Plug, Database, 
   MessageCircle, Mic, Users, Rocket, TestTube, Settings,
-  CheckSquare, Workflow, Target
+  CheckSquare, Workflow, Target, ChevronDown, ChevronRight
 } from 'lucide-react';
 
 interface NodePaletteItem {
@@ -315,6 +317,20 @@ const categories = [
 ];
 
 export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass }) => {
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
+    'actions': true,  // Start with configuration open
+    'ai': false,
+    'core': false,
+    'integrations': false,
+    'deployment': false
+  });
+  const toggleCategory = (categoryId: string) => {
+    setOpenCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+  };
+
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
     // Standardized drag payload: primary type + JSON meta for config
     event.dataTransfer.setData('application/reactflow', nodeType);
@@ -328,70 +344,85 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
 
   return (
     <Card className="h-full">
-      <CardHeader className="pb-3">
+      <CardHeader className="flex-shrink-0 pb-3">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
           <Workflow className="h-4 w-4" />
           Node Palette
         </CardTitle>
         <div className="space-y-2">
           <p className="text-xs text-muted-foreground">
-            <strong>How Node Palette Works:</strong>
+            <strong>Drag & Drop Workflow Nodes:</strong>
           </p>
           <div className="space-y-1 text-xs text-muted-foreground">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-              <span><strong>Workflow Nodes</strong> (Customer, Agent, Decision) → Drag to canvas to create executable nodes</span>
+              <span><strong>Workflow Nodes</strong> → Create executable workflow elements</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />
-              <span><strong>Config Nodes</strong> (Use Case, AI Models) → Drag to open configuration panels</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
-              <span>Canvas nodes connect to each other to build your workflow</span>
+              <span><strong>Config Nodes</strong> → Open configuration panels</span>
             </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent className="p-0">
-        <ScrollArea className={heightClass ? heightClass : "h-[calc(100vh-140px)]"}>
-          <div className="p-4 pr-3 pb-6 space-y-4">
+      <CardContent className="flex-1 p-0 overflow-hidden">
+        <ScrollArea className="h-full">
+          <div className="p-4 pr-3 pb-6 space-y-3">
             {categories.map((category) => {
               const categoryNodes = nodeTypes.filter(node => node.category === category.id);
+              const isOpen = openCategories[category.id];
               
               return (
-                <div key={category.id} className="space-y-2">
-                  <div className="flex items-center gap-2 px-2">
-                    <Badge variant="secondary" className={`text-xs ${category.color}`}>
-                      {category.name}
-                    </Badge>
-                    <div className="h-px bg-border flex-1" />
-                  </div>
+                <Collapsible 
+                  key={category.id} 
+                  open={isOpen}
+                  onOpenChange={() => toggleCategory(category.id)}
+                >
+                  <CollapsibleTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between p-2 h-auto hover:bg-muted/50"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className={`text-xs ${category.color}`}>
+                          {category.name}
+                        </Badge>
+                        <span className="text-xs text-muted-foreground">
+                          ({categoryNodes.length})
+                        </span>
+                      </div>
+                      {isOpen ? (
+                        <ChevronDown className="h-3 w-3" />
+                      ) : (
+                        <ChevronRight className="h-3 w-3" />
+                      )}
+                    </Button>
+                  </CollapsibleTrigger>
                   
-                  <div className="space-y-2">
+                  <CollapsibleContent className="space-y-2 pt-2">
                     {categoryNodes.map((node) => (
                       <div
                         key={node.id}
                         draggable
                         onDragStart={(e) => onDragStart(e, node.type, {
                           label: node.title,
-                          type: node.type.includes('Node') ? node.id : node.type, // Use simple type for workflow nodes
+                          type: node.type.includes('Node') ? node.id : node.type,
                           category: node.category,
-                          isWorkflowNode: !node.type.includes('Node'), // Distinguish workflow vs config nodes
+                          isWorkflowNode: !node.type.includes('Node'),
                           configType: node.type.includes('Node') ? node.type : undefined
                         })}
                         className={`
                           p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing
-                          hover:shadow-sm transition-all duration-200 hover:scale-[1.02]
+                          hover:shadow-sm transition-all duration-200 hover:scale-[1.01]
                           ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
                         `}
                       >
                         <div className="flex items-start gap-3">
-                          <div className="p-1.5 bg-white rounded-md shadow-sm">
+                          <div className="p-1.5 bg-white rounded-md shadow-sm flex-shrink-0">
                             <node.icon className="h-4 w-4 text-primary" />
                           </div>
                           <div className="flex-1 min-w-0">
-                            <h4 className="font-medium text-sm text-foreground flex items-center gap-1">
+                            <h4 className="font-medium text-sm text-foreground flex items-center gap-1 flex-wrap">
                               {node.title}
                               {!node.type.includes('Node') && (
                                 <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
@@ -407,8 +438,8 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                         </div>
                       </div>
                     ))}
-                  </div>
-                </div>
+                  </CollapsibleContent>
+                </Collapsible>
               );
             })}
           </div>

@@ -29,7 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import { 
   Bot, Database, Zap, MessageCircle, Mail, Phone, Calendar,
   Play, Pause, Save, Download, Upload, Settings, Eye, Plus,
-  Trash2, Copy, Edit, RotateCcw, Maximize2, Sun, Moon
+  Trash2, Copy, Edit, RotateCcw, Maximize2, Sun, Moon, X
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
@@ -406,12 +406,33 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
   return (
     <div className="h-screen w-full flex" style={{ backgroundColor: theme.colors.background }}>
       {/* Enhanced Node Library Panel */}
-      <div className={`transition-all duration-300 ${showNodeLibrary ? 'w-80' : 'w-0'} overflow-hidden`}>
-        <EnhancedNodeLibraryPanel
-          isOpen={showNodeLibrary}
-          onToggle={() => setShowNodeLibrary(!showNodeLibrary)}
-          onNodeSelect={handleNodeSelect}
-        />
+      <div className={`transition-all duration-300 border-r bg-background ${showNodeLibrary ? 'w-80' : 'w-0'} overflow-hidden flex flex-col`}>
+        {showNodeLibrary && (
+          <>
+            <div className="p-4 border-b bg-muted/30 flex-shrink-0">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm" style={{ color: theme.colors.text.primary }}>
+                  Enhanced Node Library
+                </h3>
+                <Button
+                  onClick={() => setShowNodeLibrary(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex-1 overflow-hidden">
+              <EnhancedNodeLibraryPanel
+                isOpen={true}
+                onToggle={() => setShowNodeLibrary(!showNodeLibrary)}
+                onNodeSelect={handleNodeSelect}
+              />
+            </div>
+          </>
+        )}
       </div>
 
       {/* Main ReactFlow Canvas */}

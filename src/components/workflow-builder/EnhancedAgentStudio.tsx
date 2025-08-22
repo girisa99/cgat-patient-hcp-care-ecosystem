@@ -34,17 +34,21 @@ export const EnhancedAgentStudio: React.FC<AgentStudioProps> = ({ initialAgent }
 
   return (
     <div className="h-screen flex flex-col bg-background">
-      {/* Top Header */}
-      <div className="border-b bg-background px-6 py-4">
+      {/* Top Header - Always Visible */}
+      <div className="border-b bg-background px-6 py-4 flex-shrink-0">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
             <Button
               variant="ghost"
               size="sm"
-              onClick={() => window.history.back()}
+              onClick={() => {
+                // Navigate back to agents landing page
+                window.history.pushState({}, '', '/agents');
+                window.location.reload();
+              }}
               className="mr-2"
             >
-              ← Back
+              ← Back to Agents
             </Button>
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
