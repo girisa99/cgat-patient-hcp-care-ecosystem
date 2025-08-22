@@ -365,8 +365,8 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
           </div>
         </div>
       </CardHeader>
-      <CardContent className="flex-1 min-h-0 p-0">
-        <div className="h-full max-h-full overflow-y-auto">
+      <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
+        <ScrollArea className="h-full">
           <div className="p-4 pr-3 pb-6 space-y-3">
             {categories.map((category) => {
               const categoryNodes = nodeTypes.filter(node => node.category === category.id);
@@ -400,7 +400,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                   </CollapsibleTrigger>
                   
                   <CollapsibleContent className="space-y-2 pt-2">
-                    <div className="max-h-96 overflow-y-auto space-y-2">
+                    <div className="space-y-2">
                       {categoryNodes.map((node) => (
                         <div
                           key={node.id}
@@ -445,7 +445,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
               );
             })}
           </div>
-        </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );

@@ -72,7 +72,7 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
           </div>
         </CardHeader>
         
-        <CardContent className="p-0 h-[calc(100%-4rem)]">
+        <CardContent className="p-0 h-[calc(100%-4rem)] overflow-hidden">
           <div className="px-4 pb-2 border-b bg-background/50 flex-shrink-0">
             <WorkflowControls
               onSimulate={() => window.dispatchEvent(new CustomEvent('workflow:simulate'))}
@@ -82,57 +82,57 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
               onDeploy={() => window.dispatchEvent(new CustomEvent('workflow:deploy'))}
             />
           </div>
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col min-h-0">
             <div className="px-4 pb-2 flex-shrink-0">
               <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap">
-                <TabsTrigger value="setup" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+                <TabsTrigger value="setup" level="child" className="text-xs px-2 h-7 min-w-fit font-medium shrink-0">
                   <Settings2 className="h-3 w-3 mr-1" />
                   Setup
                 </TabsTrigger>
-                <TabsTrigger value="models" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+                <TabsTrigger value="models" level="child" className="text-xs px-2 h-7 min-w-fit font-medium shrink-0">
                   <Brain className="h-3 w-3 mr-1" />
-                  AI Models
+                  Models
                 </TabsTrigger>
-                <TabsTrigger value="access" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+                <TabsTrigger value="access" level="child" className="text-xs px-2 h-7 min-w-fit font-medium shrink-0">
                   <Puzzle className="h-3 w-3 mr-1" />
-                  Access Manager
+                  Access
                 </TabsTrigger>
               </TabsList>
               
               {/* Second row of tabs */}
               <TabsList level="child" className="flex w-full gap-1 rounded-none h-8 p-1 overflow-x-auto whitespace-nowrap mt-1">
-                <TabsTrigger value="agents" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+                <TabsTrigger value="agents" level="child" className="text-xs px-2 h-7 min-w-fit font-medium shrink-0">
                   <Bot className="h-3 w-3 mr-1" />
                   Agents
                 </TabsTrigger>
-                <TabsTrigger value="testing" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+                <TabsTrigger value="testing" level="child" className="text-xs px-2 h-7 min-w-fit font-medium shrink-0">
                   <TestTube className="h-3 w-3 mr-1" />
                   Testing
                 </TabsTrigger>
-                <TabsTrigger value="guide" level="child" className="text-xs px-3 h-7 min-w-fit font-medium hover:scale-100 data-[state=active]:scale-100">
+                <TabsTrigger value="guide" level="child" className="text-xs px-2 h-7 min-w-fit font-medium shrink-0">
                   <FileText className="h-3 w-3 mr-1" />
                   Guide
                 </TabsTrigger>
               </TabsList>
             </div>
 
-            <div className="flex-1 overflow-hidden">
-              <TabsContent value="setup" className="h-full m-0">
-                <div className="px-4 pb-2">
-                  <div className="flex items-center gap-2 mb-3">
+            <div className="flex-1 min-h-0 overflow-hidden">
+              <TabsContent value="setup" className="h-full m-0 flex flex-col min-h-0">
+                <div className="px-4 pb-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-2">
                     <Settings2 className="h-4 w-4 text-primary" />
                     <span className="font-medium text-sm">Workflow Setup</span>
-                    <Badge variant="secondary" className="text-xs">Configuration</Badge>
+                    <Badge variant="secondary" className="text-xs">Config</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Configure your workflow foundation: assets, data sources, and variables.
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Configure workflow assets, data, and variables.
                   </p>
                 </div>
-                <ScrollArea className="h-[calc(100%-5rem)] px-4">
-                  <div className="space-y-4">
+                <ScrollArea className="flex-1 min-h-0">
+                  <div className="px-4 pb-4 space-y-3">
                     {/* Asset Library Section */}
                     <Card className="p-3">
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-2">
                         <FileText className="h-4 w-4 text-primary" />
                         <span className="font-medium text-sm">Asset Library</span>
                       </div>
@@ -145,7 +145,7 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
 
                     {/* Data Library Section */}
                     <Card className="p-3">
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-2">
                         <Database className="h-4 w-4 text-primary" />
                         <span className="font-medium text-sm">Data Libraries</span>
                       </div>
@@ -158,7 +158,7 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
 
                     {/* Variable Editor Section */}
                     <Card className="p-3">
-                      <div className="flex items-center gap-2 mb-3">
+                      <div className="flex items-center gap-2 mb-2">
                         <Settings2 className="h-4 w-4 text-primary" />
                         <span className="font-medium text-sm">Variable Editor</span>
                       </div>
@@ -178,18 +178,19 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
                 />
               </TabsContent>
 
-              <TabsContent value="access" className="h-full m-0">
-                <div className="px-4 pb-2">
-                  <div className="flex items-center gap-2 mb-3">
+              <TabsContent value="access" className="h-full m-0 flex flex-col min-h-0">
+                <div className="px-4 pb-2 flex-shrink-0">
+                  <div className="flex items-center gap-2 mb-2">
                     <Puzzle className="h-4 w-4 text-primary" />
                     <span className="font-medium text-sm">Access Manager</span>
                     <Badge variant="secondary" className="text-xs">Security</Badge>
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">
-                    Configure workflow elements, permissions, and security access controls.
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Configure workflow elements, permissions, and security.
                   </p>
                 </div>
-                <ScrollArea className="h-[calc(100%-5rem)] px-4">
+                <ScrollArea className="flex-1 min-h-0">
+                  <div className="px-4 pb-4">
                   <div className="space-y-4">
                     {/* Workflow Elements Access */}
                     <div className="space-y-3">
@@ -267,6 +268,7 @@ export const WorkflowAssetPanel: React.FC<WorkflowAssetPanelProps> = ({
                         <UserX className="h-3 w-3 mr-2" />
                         Revoke Access
                       </Button>
+                    </div>
                     </div>
                   </div>
                 </ScrollArea>

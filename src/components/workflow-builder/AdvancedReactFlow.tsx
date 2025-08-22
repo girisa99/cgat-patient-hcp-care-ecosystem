@@ -483,6 +483,20 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
     return () => window.removeEventListener('apply-access-suggestions', handler as EventListener);
   }, [setNodes, showSuccess]);
 
+  // Handle node configuration events
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { nodeId, nodeType, currentData } = e.detail;
+      const node = nodes.find(n => n.id === nodeId);
+      if (node) {
+        setSelectedNode(node);
+        onNodeSelect?.(node);
+      }
+    };
+    window.addEventListener('open-node-config', handler as EventListener);
+    return () => window.removeEventListener('open-node-config', handler as EventListener);
+  }, [nodes, onNodeSelect]);
+
   // Add suggested nodes from contextual access overlay
   useEffect(() => {
     const handler = (e: any) => {
@@ -900,26 +914,12 @@ useEffect(() => {
           </div>
           
           <div className="flex items-center gap-2">
-            <Button
-              size="sm"
-              variant={isPlaying ? "default" : "outline"}
-              onClick={toggleSimulation}
-            >
-              {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-              {isPlaying ? 'Stop' : 'Simulate'}
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleSave}>
-              <Save className="h-4 w-4 mr-2" />
-              Save
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleLoad}>
-              <Upload className="h-4 w-4 mr-2" />
-              Load
-            </Button>
-            <Button size="sm" variant="outline" onClick={handleFitView}>
-              <Maximize2 className="h-4 w-4 mr-2" />
-              Fit View
-            </Button>
+            <Badge variant="secondary" className="text-xs">
+              {isPlaying ? 'Running' : 'Ready'}
+            </Badge>
+            <span className="text-xs text-muted-foreground">
+              Nodes: {nodes.length} | Edges: {edges.length}
+            </span>
           </div>
         </div>
 

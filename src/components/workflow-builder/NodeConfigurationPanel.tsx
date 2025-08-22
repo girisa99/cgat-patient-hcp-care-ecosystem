@@ -277,15 +277,6 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
           </div>
         </CardTitle>
       </CardHeader>
-      <div className="px-4 pb-2 border-b bg-background/50">
-        <WorkflowControls
-          onSimulate={() => window.dispatchEvent(new CustomEvent('workflow:simulate'))}
-          onSave={() => window.dispatchEvent(new CustomEvent('workflow:save'))}
-          onLoad={() => window.dispatchEvent(new CustomEvent('workflow:load'))}
-          onFitView={() => window.dispatchEvent(new CustomEvent('workflow:fitView'))}
-          onDeploy={() => window.dispatchEvent(new CustomEvent('workflow:deploy'))}
-        />
-      </div>
       <CardContent className="flex-1 overflow-hidden p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <div className="px-4 pb-2 border-b bg-background/50 flex-shrink-0">
