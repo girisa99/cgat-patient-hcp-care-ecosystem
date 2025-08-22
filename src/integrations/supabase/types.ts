@@ -4552,6 +4552,108 @@ export type Database = {
         }
         Relationships: []
       }
+      node_analytics: {
+        Row: {
+          average_execution_time_ms: number | null
+          common_connections: Json | null
+          created_at: string | null
+          failure_count: number | null
+          id: string
+          node_id: string | null
+          node_type: string
+          performance_metrics: Json | null
+          success_count: number | null
+          total_execution_time_ms: number | null
+          updated_at: string | null
+          usage_count: number | null
+          user_rating: number | null
+          workflow_id: string | null
+        }
+        Insert: {
+          average_execution_time_ms?: number | null
+          common_connections?: Json | null
+          created_at?: string | null
+          failure_count?: number | null
+          id?: string
+          node_id?: string | null
+          node_type: string
+          performance_metrics?: Json | null
+          success_count?: number | null
+          total_execution_time_ms?: number | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_rating?: number | null
+          workflow_id?: string | null
+        }
+        Update: {
+          average_execution_time_ms?: number | null
+          common_connections?: Json | null
+          created_at?: string | null
+          failure_count?: number | null
+          id?: string
+          node_id?: string | null
+          node_type?: string
+          performance_metrics?: Json | null
+          success_count?: number | null
+          total_execution_time_ms?: number | null
+          updated_at?: string | null
+          usage_count?: number | null
+          user_rating?: number | null
+          workflow_id?: string | null
+        }
+        Relationships: []
+      }
+      node_config_templates: {
+        Row: {
+          category: string | null
+          config_schema: Json
+          created_at: string | null
+          created_by: string | null
+          default_config: Json
+          description: string | null
+          id: string
+          is_active: boolean | null
+          is_system_template: boolean | null
+          node_type: string
+          template_name: string
+          updated_at: string | null
+          usage_count: number | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          category?: string | null
+          config_schema?: Json
+          created_at?: string | null
+          created_by?: string | null
+          default_config?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_template?: boolean | null
+          node_type: string
+          template_name: string
+          updated_at?: string | null
+          usage_count?: number | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          category?: string | null
+          config_schema?: Json
+          created_at?: string | null
+          created_by?: string | null
+          default_config?: Json
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          is_system_template?: boolean | null
+          node_type?: string
+          template_name?: string
+          updated_at?: string | null
+          usage_count?: number | null
+          validation_rules?: Json | null
+        }
+        Relationships: []
+      }
       node_configurations: {
         Row: {
           ai_model_config: Json | null
@@ -4601,6 +4703,105 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      node_suggestions: {
+        Row: {
+          applied_at: string | null
+          confidence_score: number | null
+          config_template: Json | null
+          created_at: string | null
+          dependencies: Json | null
+          description: string | null
+          expires_at: string | null
+          id: string
+          implementation_notes: string | null
+          is_applied: boolean | null
+          node_type: string
+          priority: string | null
+          suggestion_type: string
+          title: string
+          user_id: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          applied_at?: string | null
+          confidence_score?: number | null
+          config_template?: Json | null
+          created_at?: string | null
+          dependencies?: Json | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          implementation_notes?: string | null
+          is_applied?: boolean | null
+          node_type: string
+          priority?: string | null
+          suggestion_type: string
+          title: string
+          user_id?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          applied_at?: string | null
+          confidence_score?: number | null
+          config_template?: Json | null
+          created_at?: string | null
+          dependencies?: Json | null
+          description?: string | null
+          expires_at?: string | null
+          id?: string
+          implementation_notes?: string | null
+          is_applied?: boolean | null
+          node_type?: string
+          priority?: string | null
+          suggestion_type?: string
+          title?: string
+          user_id?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: []
+      }
+      node_usage_events: {
+        Row: {
+          action: string
+          created_at: string | null
+          error_details: Json | null
+          execution_time_ms: number | null
+          id: string
+          metadata: Json | null
+          node_id: string
+          node_type: string
+          success: boolean | null
+          user_id: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string | null
+          error_details?: Json | null
+          execution_time_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          node_id: string
+          node_type: string
+          success?: boolean | null
+          user_id?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string | null
+          error_details?: Json | null
+          execution_time_ms?: number | null
+          id?: string
+          metadata?: Json | null
+          node_id?: string
+          node_type?: string
+          success?: boolean | null
+          user_id?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: []
       }
       notification_preferences: {
         Row: {
@@ -8024,6 +8225,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      workflow_analysis: {
+        Row: {
+          analysis_results: Json
+          analysis_type: string
+          complexity_score: number | null
+          created_at: string | null
+          current_nodes: Json
+          id: string
+          optimization_opportunities: Json | null
+          performance_score: number | null
+          suggestions_generated: number | null
+          user_id: string | null
+          workflow_id: string
+        }
+        Insert: {
+          analysis_results?: Json
+          analysis_type: string
+          complexity_score?: number | null
+          created_at?: string | null
+          current_nodes?: Json
+          id?: string
+          optimization_opportunities?: Json | null
+          performance_score?: number | null
+          suggestions_generated?: number | null
+          user_id?: string | null
+          workflow_id: string
+        }
+        Update: {
+          analysis_results?: Json
+          analysis_type?: string
+          complexity_score?: number | null
+          created_at?: string | null
+          current_nodes?: Json
+          id?: string
+          optimization_opportunities?: Json | null
+          performance_score?: number | null
+          suggestions_generated?: number | null
+          user_id?: string | null
+          workflow_id?: string
+        }
+        Relationships: []
       }
       workflow_collaborations: {
         Row: {

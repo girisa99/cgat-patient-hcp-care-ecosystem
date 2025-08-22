@@ -31,43 +31,46 @@ export const useNodeSuggestions = () => {
   const { data: nodeAnalytics, isLoading: analyticsLoading } = useQuery({
     queryKey: ['node-analytics'],
     queryFn: async () => {
-      // Mock data since tables don't exist yet
-      return [
-        {
-          nodeType: 'agent',
-          usageCount: 150,
-          successRate: 0.95,
-          averageExecutionTime: 2.3,
-          commonConnections: ['decision', 'api'],
-          userRating: 4.8
-        },
-        {
-          nodeType: 'decision',
-          usageCount: 89,
-          successRate: 0.92,
-          averageExecutionTime: 1.1,
-          commonConnections: ['agent', 'escalation'],
-          userRating: 4.6
-        },
-        {
-          nodeType: 'escalation',
-          usageCount: 45,
-          successRate: 0.88,
-          averageExecutionTime: 1.5,
-          commonConnections: ['notification', 'assignment'],
-          userRating: 4.3
-        }
-      ] as NodeAnalytics[];
+      const { data, error } = await supabase
+        .from('node_analytics')
+        .select('*')
+        .order('usage_count', { ascending: false })
+        .limit(20);
+
+      if (error) throw error;
+
+      return (data || []).map(item => ({
+        nodeType: item.node_type,
+        usageCount: item.usage_count,
+        successRate: item.success_count > 0 ? item.success_count / (item.success_count + item.failure_count) : 0,
+        averageExecutionTime: item.average_execution_time_ms / 1000, // Convert to seconds
+        commonConnections: item.common_connections || [],
+        userRating: item.user_rating || 0,
+        performanceMetrics: item.performance_metrics || {}
+      })) as NodeAnalytics[];
     },
   });
 
   // Save node configuration
   const saveNodeConfig = useMutation({
     mutationFn: async (config: NodeSuggestionConfig) => {
-      // Mock save since table doesn't exist yet
-      console.log('Saving node config:', config);
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      return { success: true };
+      const { data, error } = await supabase
+        .from('node_configurations')
+        .upsert({
+          node_id: config.id,
+          configuration_type: config.type,
+          variables: config.config?.variables || [],
+          apis: config.config?.apis || [],
+          data_storage: config.config?.dataStorage || {},
+          connectors: config.config?.connectors || [],
+          ai_model_config: config.config?.aiModel || {},
+          workflow_id: config.config?.workflowId || null
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     },
     onSuccess: () => {
       showSuccess('Node configuration saved successfully');
@@ -111,23 +114,49 @@ export const useNodeSuggestions = () => {
     mutationFn: async (nodeData: {
       nodeType: string;
       nodeId: string;
-      action: 'created' | 'configured' | 'executed' | 'removed';
+      action: 'created' | 'configured' | 'executed' | 'removed' | 'modified';
       workflowId?: string;
       executionTime?: number;
       success?: boolean;
     }) => {
-      // Mock tracking since table doesn't exist yet
-      console.log('Tracking node usage:', nodeData);
-      await new Promise(resolve => setTimeout(resolve, 500));
-      return { success: true };
+      const { data, error } = await supabase
+        .from('node_usage_events')
+        .insert({
+          node_type: nodeData.nodeType,
+          node_id: nodeData.nodeId,
+          workflow_id: nodeData.workflowId || null,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          action: nodeData.action,
+          execution_time_ms: nodeData.executionTime,
+          success: nodeData.success,
+          metadata: { timestamp: new Date().toISOString() }
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
     }
   });
 
   // Get node-specific configuration templates
   const getNodeConfigTemplate = useCallback(async (nodeType: string) => {
-    // Mock template fetch since table doesn't exist yet
-    console.log('Fetching template for:', nodeType);
-    await new Promise(resolve => setTimeout(resolve, 300));
+    const { data, error } = await supabase
+      .from('node_config_templates')
+      .select('*')
+      .eq('node_type', nodeType)
+      .eq('is_active', true)
+      .order('usage_count', { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    
+    if (data) {
+      return data.default_config;
+    }
+    
+    // Fallback to built-in template
     return getDefaultConfigTemplate(nodeType);
   }, []);
 
