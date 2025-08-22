@@ -811,6 +811,29 @@ useEffect(() => {
     reactFlowInstance.fitView({ padding: 0.2 });
   };
 
+  // Listen for global workflow control events (for consistency with side panels)
+  useEffect(() => {
+    const onSimulate = () => toggleSimulation();
+    const onSaveEvt = () => handleSave();
+    const onLoadEvt = () => handleLoad();
+    const onFitEvt = () => handleFitView();
+    const onDeployEvt = () => showSuccess('Deploy started');
+
+    window.addEventListener('workflow:simulate', onSimulate);
+    window.addEventListener('workflow:save', onSaveEvt);
+    window.addEventListener('workflow:load', onLoadEvt);
+    window.addEventListener('workflow:fitView', onFitEvt);
+    window.addEventListener('workflow:deploy', onDeployEvt);
+
+    return () => {
+      window.removeEventListener('workflow:simulate', onSimulate);
+      window.removeEventListener('workflow:save', onSaveEvt);
+      window.removeEventListener('workflow:load', onLoadEvt);
+      window.removeEventListener('workflow:fitView', onFitEvt);
+      window.removeEventListener('workflow:deploy', onDeployEvt);
+    };
+  }, [isPlaying, nodes, edges]);
+
   // Context menu handlers
   const handleNodeContextMenu = (event: React.MouseEvent, node: Node) => {
     event.preventDefault();
