@@ -13,6 +13,7 @@ import {
   Bot, Code, Variable, Link, Archive, ChevronUp, ChevronDown
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useDatabaseSchema } from '@/hooks/useDatabaseSchema';
 
 interface NodeVariable {
   id: string;
@@ -200,11 +201,11 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
     updateDataStorage({ fields: updatedFields });
   };
 
-  // Available tables for mapping
-  const availableTables = [
-    'profiles', 'facilities', 'treatment_center_onboarding', 
-    'agents', 'agent_conversations', 'api_keys', 'services'
-  ];
+  // Available tables via schema hook
+  const { tables, columnsByTable } = useDatabaseSchema();
+  const availableTables = tables && tables.length > 0 
+    ? tables
+    : ['profiles', 'facilities', 'treatment_center_onboarding', 'agents', 'agent_conversations', 'api_keys', 'services'];
 
   // Common field templates
   const addFieldTemplate = (template: string) => {
@@ -718,7 +719,7 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
                           <div className="grid grid-cols-2 gap-2">
                             <Select
                               value={field.mappedTable || ''}
-                              onValueChange={(value) => updateStorageField(field.id, { mappedTable: value })}
+                              onValueChange={(value) => updateStorageField(field.id, { mappedTable: value, mappedColumn: '' })}
                             >
                               <SelectTrigger className="text-xs">
                                 <SelectValue placeholder="Map to table" />
@@ -729,12 +730,28 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
                                 ))}
                               </SelectContent>
                             </Select>
-                            <Input
-                              value={field.mappedColumn || ''}
-                              onChange={(e) => updateStorageField(field.id, { mappedColumn: e.target.value })}
-                              placeholder="Column name"
-                              className="text-xs"
-                            />
+                            {field.mappedTable && columnsByTable?.[field.mappedTable]?.length ? (
+                              <Select
+                                value={field.mappedColumn || ''}
+                                onValueChange={(value) => updateStorageField(field.id, { mappedColumn: value })}
+                              >
+                                <SelectTrigger className="text-xs">
+                                  <SelectValue placeholder="Column name" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {columnsByTable[field.mappedTable].map((col) => (
+                                    <SelectItem key={col} value={col}>{col}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            ) : (
+                              <Input
+                                value={field.mappedColumn || ''}
+                                onChange={(e) => updateStorageField(field.id, { mappedColumn: e.target.value })}
+                                placeholder="Column name"
+                                className="text-xs"
+                              />
+                            )}
                           </div>
                         )}
 

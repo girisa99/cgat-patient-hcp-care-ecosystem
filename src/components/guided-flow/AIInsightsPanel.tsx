@@ -275,7 +275,7 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({
 
   return (
     <Card 
-      className="fixed bg-white/95 backdrop-blur border shadow-2xl z-50 w-96"
+      className="fixed bg-white/95 backdrop-blur border shadow-2xl z-[9999] w-96"
       style={{ 
         left: position.x, 
         top: position.y,
@@ -317,9 +317,16 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({
           {/* Smart Suggestions */}
           {smartSuggestions.length > 0 && (
             <div className="p-4 bg-gradient-to-r from-blue-50 to-purple-50 border-b">
-              <div className="flex items-center gap-2 mb-3">
-                <Zap className="h-4 w-4 text-orange-500" />
-                <h3 className="text-sm font-medium">Smart Suggestions</h3>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-orange-500" />
+                  <h3 className="text-sm font-medium">Smart Suggestions</h3>
+                </div>
+                <Button size="sm" variant="outline" className="h-7 text-xs"
+                  onClick={() => smartSuggestions.forEach((n) => onAddNode(n))}
+                >
+                  Apply All
+                </Button>
               </div>
               <div className="space-y-2">
                 {smartSuggestions.slice(0, 3).map((node) => {
@@ -337,8 +344,10 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({
                           <div className="text-xs text-muted-foreground">{node.description.slice(0, 40)}...</div>
                         </div>
                       </div>
-                      <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                        <Plus className="h-3 w-3" />
+                      <Button size="sm" variant="secondary" className="h-7 px-2 text-xs"
+                        onClick={(e) => { e.stopPropagation(); onAddNode(node); }}
+                      >
+                        Configure
                       </Button>
                     </div>
                   );
@@ -424,8 +433,10 @@ export const AIInsightsPanel: React.FC<AIInsightsPanelProps> = ({
                           {node.priority}
                         </Badge>
                         {!isAlreadyAdded && (
-                          <Button size="sm" variant="ghost" className="h-6 w-6 p-0">
-                            <Plus className="h-3 w-3" />
+                          <Button size="sm" variant="secondary" className="h-7 px-2 text-xs"
+                            onClick={(e) => { e.stopPropagation(); onAddNode(node); }}
+                          >
+                            Configure
                           </Button>
                         )}
                         {isAlreadyAdded && (
