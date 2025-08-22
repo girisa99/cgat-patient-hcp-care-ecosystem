@@ -37,12 +37,24 @@ interface APIConfiguration {
   enabled: boolean;
 }
 
+interface StorageField {
+  id: string;
+  name: string;
+  type: 'string' | 'number' | 'boolean' | 'date' | 'email' | 'phone';
+  required: boolean;
+  defaultValue?: string;
+  mappedTable?: string;
+  mappedColumn?: string;
+}
+
 interface DataStorageConfig {
   enabled: boolean;
   storageType: 'memory' | 'database' | 'cache';
   retentionDays: number;
   maxRecords: number;
-  fields: string[];
+  fields: StorageField[];
+  targetTable?: string;
+  apiEndpoint?: string;
 }
 
 interface NodeConfigurationPanelProps {
@@ -71,7 +83,9 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
       storageType: 'memory',
       retentionDays: 30,
       maxRecords: 1000,
-      fields: []
+      fields: [],
+      targetTable: '',
+      apiEndpoint: ''
     }
   );
   const { showSuccess, showError } = useMasterToast();
@@ -160,6 +174,60 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
     onUpdate(node.id, {
       data: { ...node.data, dataStorage: updatedStorage }
     });
+  };
+
+  const addStorageField = () => {
+    const newField: StorageField = {
+      id: `field_${Date.now()}`,
+      name: '',
+      type: 'string',
+      required: false,
+      defaultValue: ''
+    };
+    const updatedFields = [...dataStorage.fields, newField];
+    updateDataStorage({ fields: updatedFields });
+  };
+
+  const updateStorageField = (id: string, updates: Partial<StorageField>) => {
+    const updatedFields = dataStorage.fields.map(field => 
+      field.id === id ? { ...field, ...updates } : field
+    );
+    updateDataStorage({ fields: updatedFields });
+  };
+
+  const removeStorageField = (id: string) => {
+    const updatedFields = dataStorage.fields.filter(field => field.id !== id);
+    updateDataStorage({ fields: updatedFields });
+  };
+
+  // Available tables for mapping
+  const availableTables = [
+    'profiles', 'facilities', 'treatment_center_onboarding', 
+    'agents', 'agent_conversations', 'api_keys', 'services'
+  ];
+
+  // Common field templates
+  const addFieldTemplate = (template: string) => {
+    const templates: Record<string, Partial<StorageField>> = {
+      'patient_info': { name: 'first_name', type: 'string', required: true, mappedTable: 'profiles', mappedColumn: 'first_name' },
+      'contact_info': { name: 'email', type: 'email', required: true, mappedTable: 'profiles', mappedColumn: 'email' },
+      'address_info': { name: 'address', type: 'string', required: false }
+    };
+    
+    const templateFields = template === 'patient_info' ? [
+      { ...templates.patient_info, id: `field_${Date.now()}_1`, name: 'first_name' },
+      { ...templates.patient_info, id: `field_${Date.now()}_2`, name: 'last_name', mappedColumn: 'last_name' },
+      { ...templates.contact_info, id: `field_${Date.now()}_3`, name: 'email' },
+      { ...templates.address_info, id: `field_${Date.now()}_4`, name: 'phone', type: 'phone' as const }
+    ] : template === 'address_info' ? [
+      { ...templates.address_info, id: `field_${Date.now()}_5`, name: 'address' },
+      { ...templates.address_info, id: `field_${Date.now()}_6`, name: 'city' },
+      { ...templates.address_info, id: `field_${Date.now()}_7`, name: 'state' },
+      { ...templates.address_info, id: `field_${Date.now()}_8`, name: 'zip' }
+    ] : [];
+
+    const updatedFields = [...dataStorage.fields, ...templateFields as StorageField[]];
+    updateDataStorage({ fields: updatedFields });
   };
 
   const moveNode = (direction: 'up' | 'down') => {
@@ -530,6 +598,25 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
                   </Select>
                 </div>
 
+                {dataStorage.storageType === 'database' && (
+                  <div>
+                    <Label htmlFor="target-table">Target Database Table</Label>
+                    <Select
+                      value={dataStorage.targetTable || ''}
+                      onValueChange={(value) => updateDataStorage({ targetTable: value })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select existing table" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableTables.map(table => (
+                          <SelectItem key={table} value={table}>{table}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label htmlFor="retention">Retention (Days)</Label>
@@ -557,23 +644,133 @@ export const NodeConfigurationPanel: React.FC<NodeConfigurationPanelProps> = ({
                   </div>
                 </div>
 
-                <div>
-                  <Label htmlFor="storage-fields">Storage Fields (comma-separated)</Label>
-                  <Input
-                    id="storage-fields"
-                    value={dataStorage.fields.join(', ')}
-                    onChange={(e) => updateDataStorage({ 
-                      fields: e.target.value.split(',').map(f => f.trim()).filter(f => f) 
-                    })}
-                    placeholder="field1, field2, field3"
-                  />
+                {/* Field Templates */}
+                <div className="flex gap-2 flex-wrap">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => addFieldTemplate('patient_info')}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Patient Info
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => addFieldTemplate('address_info')}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Address Fields
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={addStorageField}
+                  >
+                    <Plus className="h-3 w-3 mr-1" />
+                    Custom Field
+                  </Button>
+                </div>
+
+                {/* Storage Fields Configuration */}
+                <div className="space-y-3">
+                  <Label className="text-sm font-medium">Storage Fields</Label>
+                  
+                  {dataStorage.fields.map((field) => (
+                    <Card key={field.id} className="p-3">
+                      <div className="space-y-2">
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            value={field.name}
+                            onChange={(e) => updateStorageField(field.id, { name: e.target.value })}
+                            placeholder="Field name (e.g., first_name)"
+                            className="text-xs"
+                          />
+                          <div className="flex items-center gap-1">
+                            <Select
+                              value={field.type}
+                              onValueChange={(value: any) => updateStorageField(field.id, { type: value })}
+                            >
+                              <SelectTrigger className="text-xs">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="string">Text</SelectItem>
+                                <SelectItem value="email">Email</SelectItem>
+                                <SelectItem value="phone">Phone</SelectItem>
+                                <SelectItem value="number">Number</SelectItem>
+                                <SelectItem value="date">Date</SelectItem>
+                                <SelectItem value="boolean">Boolean</SelectItem>
+                              </SelectContent>
+                            </Select>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => removeStorageField(field.id)}
+                              className="text-destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        {dataStorage.storageType === 'database' && (
+                          <div className="grid grid-cols-2 gap-2">
+                            <Select
+                              value={field.mappedTable || ''}
+                              onValueChange={(value) => updateStorageField(field.id, { mappedTable: value })}
+                            >
+                              <SelectTrigger className="text-xs">
+                                <SelectValue placeholder="Map to table" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {availableTables.map(table => (
+                                  <SelectItem key={table} value={table}>{table}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <Input
+                              value={field.mappedColumn || ''}
+                              onChange={(e) => updateStorageField(field.id, { mappedColumn: e.target.value })}
+                              placeholder="Column name"
+                              className="text-xs"
+                            />
+                          </div>
+                        )}
+
+                        <div className="grid grid-cols-2 gap-2">
+                          <Input
+                            value={field.defaultValue || ''}
+                            onChange={(e) => updateStorageField(field.id, { defaultValue: e.target.value })}
+                            placeholder="Default value"
+                            className="text-xs"
+                          />
+                          <div className="flex items-center gap-2">
+                            <Switch
+                              checked={field.required}
+                              onCheckedChange={(checked) => updateStorageField(field.id, { required: checked })}
+                            />
+                            <Label className="text-xs">Required</Label>
+                          </div>
+                        </div>
+                      </div>
+                    </Card>
+                  ))}
+
+                  {dataStorage.fields.length === 0 && (
+                    <div className="text-center py-4 text-muted-foreground text-xs">
+                      No fields configured. Use the buttons above to add patient info, address fields, or custom fields.
+                    </div>
+                  )}
                 </div>
 
                 <div className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
-                  <strong>Storage Info:</strong>
-                  <br />• Memory: Fast but temporary (session-based)
-                  <br />• Database: Persistent with CRUD operations
-                  <br />• Cache: Fast with TTL expiration
+                  <strong>Storage Options:</strong>
+                  <br />• Memory: Fast, session-based (variables only)
+                  <br />• Database: Persistent with table mapping (profiles, facilities, etc.)
+                  <br />• Cache: Fast with TTL expiration (Redis-based)
+                  <br />
+                  <br /><strong>Field Mapping:</strong> When using database storage, fields can be mapped to existing table columns for direct data insertion.
                 </div>
               </div>
             )}
