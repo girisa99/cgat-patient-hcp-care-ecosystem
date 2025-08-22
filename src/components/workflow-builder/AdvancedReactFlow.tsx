@@ -504,6 +504,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         // Open inline config overlay without triggering right panel
         setSelectedNode(node);
         setInlineConfigNode(node);
+        window.dispatchEvent(new CustomEvent('inline-config-opened', { detail: { nodeId } }));
       }
     };
     window.addEventListener('open-node-config', handler as EventListener);
@@ -1240,7 +1241,10 @@ useEffect(() => {
                         onUpdate={(nodeId, updates) => {
                           setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, ...updates } : n));
                         }}
-                        onClose={() => setInlineConfigNode(null)}
+                        onClose={() => {
+                          setInlineConfigNode(null);
+                          window.dispatchEvent(new CustomEvent('inline-config-closed', { detail: { nodeId: inlineConfigNode.id } }));
+                        }}
                         isVisible={true}
                       />
                     </div>

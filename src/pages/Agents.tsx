@@ -73,6 +73,7 @@ const AgentsInner = () => {
   const [leftPanelTab, setLeftPanelTab] = useState<'palette' | 'access'>('palette');
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'libraries' | 'assistant'>('config');
   const [showContextualAccess, setShowContextualAccess] = useState(false);
+  const [isInlineConfigOpen, setInlineConfigOpen] = useState(false);
   const [accessNodePosition, setAccessNodePosition] = useState({ x: 0, y: 0 });
 
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
@@ -125,13 +126,19 @@ const AgentsInner = () => {
     }
 }, [userSessions]);
 
-  // Avoid opening the right panel when inline node config is requested
+  // Avoid opening the right panel when inline node config is requested and track inline state
   useEffect(() => {
-    const handler = () => {
-      // no-op: inline configuration manages its own UI on canvas
+    const openHandler = () => {};
+    const inlineOpen = () => setInlineConfigOpen(true);
+    const inlineClose = () => setInlineConfigOpen(false);
+    window.addEventListener('open-node-config', openHandler as EventListener);
+    window.addEventListener('inline-config-opened', inlineOpen as EventListener);
+    window.addEventListener('inline-config-closed', inlineClose as EventListener);
+    return () => {
+      window.removeEventListener('open-node-config', openHandler as EventListener);
+      window.removeEventListener('inline-config-opened', inlineOpen as EventListener);
+      window.removeEventListener('inline-config-closed', inlineClose as EventListener);
     };
-    window.addEventListener('open-node-config', handler as EventListener);
-    return () => window.removeEventListener('open-node-config', handler as EventListener);
   }, []);
 
   // Event handlers
@@ -295,91 +302,93 @@ const AgentsInner = () => {
           </div>
 
           {/* Right Panel - Resizable Configuration, Libraries & AI Assistant */}
-          <ResizablePanel 
-            initialWidth={380}
-            minWidth={320}
-            maxWidth={800}
-            className="border-l bg-background flex flex-col"
-          >
-            <div className="border-b">
-              <div className="flex">
-                <Button
-                  variant={rightPanelTab === 'config' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="flex-1 rounded-none text-xs"
-                  onClick={() => setRightPanelTab('config')}
-                >
-                  <Settings className="w-3 h-3 mr-1" />
-                  Config
-                </Button>
-                <Button
-                  variant={rightPanelTab === 'libraries' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="flex-1 rounded-none text-xs"
-                  onClick={() => setRightPanelTab('libraries')}
-                >
-                  <Zap className="w-3 h-3 mr-1" />
-                  Actions
-                </Button>
-                <Button
-                  variant={rightPanelTab === 'assistant' ? 'default' : 'ghost'}
-                  size="sm"
-                  className="flex-1 rounded-none text-xs"
-                  onClick={() => setRightPanelTab('assistant')}
-                >
-                  <Bot className="w-3 h-3 mr-1" />
-                  AI
-                </Button>
-              </div>
-            </div>
-            <div className="flex-1 overflow-auto min-h-0">
-              {rightPanelTab === 'config' && selectedNode && (
-                <NodeConfigurationPanel
-                  node={selectedNode}
-                  onUpdate={(nodeId, updates) => {
-                    console.log('Node configuration updated:', nodeId, updates);
-                  }}
-                  onDelete={(nodeId) => {
-                    console.log('Node deleted:', nodeId);
-                    setSelectedNode(null);
-                  }}
-                  onClose={() => setSelectedNode(null)}
-                  availableConnectors={[
-                    'REST API', 'GraphQL', 'WebSocket', 'Database', 
-                    'Email', 'SMS', 'Slack', 'Teams', 'Webhook'
-                  ]}
-                  aiModels={[
-                    'gpt-4o-mini', 'gpt-4o', 'claude-3-sonnet', 
-                    'claude-3-haiku', 'gemini-pro', 'llama-3'
-                  ]}
-                />
-              )}
-              {rightPanelTab === 'libraries' && <LibrariesAndActions />}
-              {rightPanelTab === 'config' && !selectedNode && (
-                <div className="p-4 text-center text-sm text-muted-foreground">
-                  <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Select a node to configure its properties</p>
+          {!isInlineConfigOpen && (
+            <ResizablePanel 
+              initialWidth={380}
+              minWidth={320}
+              maxWidth={800}
+              className="border-l bg-background flex flex-col"
+            >
+              <div className="border-b">
+                <div className="flex">
+                  <Button
+                    variant={rightPanelTab === 'config' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="flex-1 rounded-none text-xs"
+                    onClick={() => setRightPanelTab('config')}
+                  >
+                    <Settings className="w-3 h-3 mr-1" />
+                    Config
+                  </Button>
+                  <Button
+                    variant={rightPanelTab === 'libraries' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="flex-1 rounded-none text-xs"
+                    onClick={() => setRightPanelTab('libraries')}
+                  >
+                    <Zap className="w-3 h-3 mr-1" />
+                    Actions
+                  </Button>
+                  <Button
+                    variant={rightPanelTab === 'assistant' ? 'default' : 'ghost'}
+                    size="sm"
+                    className="flex-1 rounded-none text-xs"
+                    onClick={() => setRightPanelTab('assistant')}
+                  >
+                    <Bot className="w-3 h-3 mr-1" />
+                    AI
+                  </Button>
                 </div>
-              )}
-              {rightPanelTab === 'assistant' && (
-                <AIAssistant
-                  selectedNode={selectedNode}
-                  onWorkflowGenerate={(suggestion) => {
-                    console.log('Generating workflow:', suggestion);
-                  }}
-                  onNodeConnect={() => {
-                    console.log('Auto-connecting nodes');
-                  }}
-                  onBackendGenerate={() => {
-                    console.log('Generating backend');
-                  }}
-                  onOptimizeFlow={() => {
-                    console.log('Optimizing flow');
-                  }}
-                />
-              )}
-            </div>
-          </ResizablePanel>
+              </div>
+              <div className="flex-1 overflow-auto min-h-0">
+                {rightPanelTab === 'config' && selectedNode && (
+                  <NodeConfigurationPanel
+                    node={selectedNode}
+                    onUpdate={(nodeId, updates) => {
+                      console.log('Node configuration updated:', nodeId, updates);
+                    }}
+                    onDelete={(nodeId) => {
+                      console.log('Node deleted:', nodeId);
+                      setSelectedNode(null);
+                    }}
+                    onClose={() => setSelectedNode(null)}
+                    availableConnectors={[
+                      'REST API', 'GraphQL', 'WebSocket', 'Database', 
+                      'Email', 'SMS', 'Slack', 'Teams', 'Webhook'
+                    ]}
+                    aiModels={[
+                      'gpt-4o-mini', 'gpt-4o', 'claude-3-sonnet', 
+                      'claude-3-haiku', 'gemini-pro', 'llama-3'
+                    ]}
+                  />
+                )}
+                {rightPanelTab === 'libraries' && <LibrariesAndActions />}
+                {rightPanelTab === 'config' && !selectedNode && (
+                  <div className="p-4 text-center text-sm text-muted-foreground">
+                    <Settings className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                    <p>Select a node to configure its properties</p>
+                  </div>
+                )}
+                {rightPanelTab === 'assistant' && (
+                  <AIAssistant
+                    selectedNode={selectedNode}
+                    onWorkflowGenerate={(suggestion) => {
+                      console.log('Generating workflow:', suggestion);
+                    }}
+                    onNodeConnect={() => {
+                      console.log('Auto-connecting nodes');
+                    }}
+                    onBackendGenerate={() => {
+                      console.log('Generating backend');
+                    }}
+                    onOptimizeFlow={() => {
+                      console.log('Optimizing flow');
+                    }}
+                  />
+                )}
+              </div>
+            </ResizablePanel>
+          )}
         </div>
 
         {/* AI Assistant Panel (fixed positioning) */}

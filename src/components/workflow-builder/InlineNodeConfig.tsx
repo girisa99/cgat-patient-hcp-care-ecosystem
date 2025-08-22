@@ -195,7 +195,7 @@ export const InlineNodeConfig: React.FC<InlineNodeConfigProps> = ({
   );
 
   return (
-    <Card className="absolute top-full left-0 mt-2 w-80 shadow-xl border-2 z-50 bg-background">
+    <Card className="absolute top-full left-0 mt-2 w-96 shadow-xl border-2 z-50 bg-background">
       <div className="flex items-center justify-between p-3 border-b">
         <div className="flex items-center gap-2">
           <Settings className="h-4 w-4" />
