@@ -498,12 +498,12 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   // Handle node configuration events
   useEffect(() => {
     const handler = (e: any) => {
-      const { nodeId, nodeType, currentData } = e.detail;
+      const { nodeId } = e.detail || {};
       const node = nodes.find(n => n.id === nodeId);
       if (node) {
+        // Open inline config overlay without triggering right panel
         setSelectedNode(node);
         setInlineConfigNode(node);
-        onNodeSelect?.(node);
       }
     };
     window.addEventListener('open-node-config', handler as EventListener);

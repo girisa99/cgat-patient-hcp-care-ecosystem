@@ -125,10 +125,10 @@ const AgentsInner = () => {
     }
 }, [userSessions]);
 
-  // Open config panel when requested by overlays
+  // Avoid opening the right panel when inline node config is requested
   useEffect(() => {
-    const handler = (e: any) => {
-      setRightPanelTab('config');
+    const handler = () => {
+      // no-op: inline configuration manages its own UI on canvas
     };
     window.addEventListener('open-node-config', handler as EventListener);
     return () => window.removeEventListener('open-node-config', handler as EventListener);
