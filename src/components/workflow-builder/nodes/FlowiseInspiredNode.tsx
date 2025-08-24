@@ -304,6 +304,7 @@ export const FlowiseInspiredNode: React.FC<FlowiseNodeProps> = ({ id, data, sele
                   </Button>
                 </div>
               </div>
+            </div>
             </ScrollArea>
           </CardContent>
         </CollapsibleContent>
