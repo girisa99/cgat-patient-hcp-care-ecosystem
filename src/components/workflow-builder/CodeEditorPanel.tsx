@@ -75,6 +75,18 @@ module.exports = { processNode };`);
   const editorRef = useRef<HTMLTextAreaElement>(null);
   const { showSuccess, showError } = useMasterToast();
 
+  // ESC key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isVisible) {
+        onToggle();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isVisible, onToggle]);
+
   // Auto-validate code when it changes
   useEffect(() => {
     const timeoutId = setTimeout(() => {
@@ -498,6 +510,10 @@ module.exports = { processNode };`;
             <Button size="sm" variant="outline" onClick={exportCode} className="h-7 text-xs">
               <Download className="h-3 w-3 mr-1" />
               Export
+            </Button>
+            
+            <Button size="sm" variant="ghost" onClick={onToggle} className="h-7 text-xs" title="Close Editor (ESC)">
+              ✕
             </Button>
           </div>
         </div>

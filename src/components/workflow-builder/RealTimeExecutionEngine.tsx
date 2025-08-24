@@ -453,7 +453,7 @@ export const RealTimeExecutionEngine: React.FC<RealTimeExecutionEngineProps> = (
   if (!isVisible) return null;
 
   return (
-    <Card className="w-full">
+    <Card className="w-full h-full">
       <CardHeader className="p-3 border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm">

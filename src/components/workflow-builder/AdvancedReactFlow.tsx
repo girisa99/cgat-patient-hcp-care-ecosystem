@@ -484,12 +484,68 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showExecutionEngine, setShowExecutionEngine] = useState(false);
   const [showToolbar, setShowToolbar] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
+  const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
   
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
   }, []);
+
+  // Auto-save workflow state with debouncing
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      if (nodes.length > 0 || edges.length > 0) {
+        const workflowData = { nodes, edges };
+        
+        // Save to session storage
+        if (typeof window !== 'undefined') {
+          sessionStorage.setItem('workflow-state', JSON.stringify(workflowData));
+        }
+        
+        // Save to session API if available
+        if (sessionId && (window as any).sessionAPI) {
+          (window as any).sessionAPI.saveSession(sessionId, workflowData);
+        }
+      }
+    }, 1000);
+
+    return () => clearTimeout(timeoutId);
+  }, [nodes, edges, sessionId]);
+
+  // Restore workflow state on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined' && nodes.length === 0 && edges.length === 0) {
+      const savedState = sessionStorage.getItem('workflow-state');
+      if (savedState) {
+        try {
+          const { nodes: savedNodes, edges: savedEdges } = JSON.parse(savedState);
+          if (savedNodes?.length > 0) {
+            setNodes(savedNodes);
+          }
+          if (savedEdges?.length > 0) {
+            setEdges(savedEdges);
+          }
+        } catch (error) {
+          console.warn('Failed to restore workflow state:', error);
+        }
+      }
+    }
+  }, []);
+
+  // Track selected nodes
+  const handleNodesChange = useCallback(
+    (changes: any[]) => {
+      onNodesChange(changes);
+      const selectedNodeChanges = changes.filter(change => change.type === 'select');
+      if (selectedNodeChanges.length > 0) {
+        const newSelectedNodes = nodes.filter(node => node.selected);
+        setSelectedNodes(newSelectedNodes);
+      }
+    },
+    [onNodesChange, nodes, setSelectedNodes]
+  );
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { showSuccess, showError } = useMasterToast();
   const reactFlowInstance = useReactFlow();
@@ -530,6 +586,73 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
     window.addEventListener('apply-access-suggestions', handler as EventListener);
     return () => window.removeEventListener('apply-access-suggestions', handler as EventListener);
   }, [setNodes, showSuccess]);
+
+  // Handle code changes from editor
+  const handleCodeChange = useCallback((code: string, language: string) => {
+    if (selectedNodes.length === 1) {
+      const selectedNode = selectedNodes[0];
+      setNodes(nodes => nodes.map(node => 
+        node.id === selectedNode.id 
+          ? { ...node, data: { ...node.data, code, language } }
+          : node
+      ));
+    }
+  }, [selectedNodes, setNodes]);
+
+  // Dynamic node sizing based on panel visibility
+  const getNodeStyles = useCallback(() => {
+    const openPanels = [showTestConsole, showCodeEditor, showExecutionEngine, showInsights].filter(Boolean).length;
+    
+    if (openPanels >= 3) {
+      // Very compact when 3+ panels open
+      return {
+        nodeScale: 0.6,
+        nodeSpacing: { x: 120, y: 80 },
+        fontSize: '10px'
+      };
+    } else if (openPanels >= 2) {
+      // Compact when 2+ panels open
+      return {
+        nodeScale: 0.75,
+        nodeSpacing: { x: 140, y: 100 },
+        fontSize: '11px'
+      };
+    } else if (openPanels >= 1) {
+      // Slightly smaller when 1 panel open
+      return {
+        nodeScale: 0.85,
+        nodeSpacing: { x: 160, y: 120 },
+        fontSize: '12px'
+      };
+    }
+    
+    // Normal size when no panels open
+    return {
+      nodeScale: 1,
+      nodeSpacing: { x: 200, y: 150 },
+      fontSize: '14px'
+    };
+  }, [showTestConsole, showCodeEditor, showExecutionEngine, showInsights]);
+
+  // Apply dynamic styles to nodes
+  useEffect(() => {
+    const styles = getNodeStyles();
+    const style = document.createElement('style');
+    style.textContent = `
+      .react-flow__node {
+        transform: scale(${styles.nodeScale});
+        font-size: ${styles.fontSize} !important;
+      }
+      .react-flow__node * {
+        font-size: ${styles.fontSize} !important;
+      }
+    `;
+    document.head.appendChild(style);
+    
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, [getNodeStyles]);
 
   // Handle node configuration events - expand config within the node (no popup)
   useEffect(() => {
@@ -1157,11 +1280,11 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         />
         <ContextMenu>
           <ContextMenuTrigger asChild>
-            <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={onNodesChange}
-              onEdgesChange={onEdgesChange}
+        <ReactFlow
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={handleNodesChange}
+          onEdgesChange={onEdgesChange}
               onConnect={onConnect}
               onDrop={onDrop}
               onDragOver={onDragOver}
@@ -1369,6 +1492,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
             isVisible={showTestConsole}
             onToggle={() => setShowTestConsole(false)}
             sessionId={sessionId}
+            selectedNode={selectedNodes[0]}
             workflowNodes={nodes}
             workflowEdges={edges}
           />
@@ -1377,10 +1501,12 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
       
       {/* Code Editor Panel */}
       {showCodeEditor && (
-        <div className="fixed top-20 right-4 w-96 h-[calc(100vh-120px)] border bg-background rounded-lg shadow-lg z-40">
+        <div className="fixed top-0 right-0 w-96 h-full border-l bg-background z-40">
           <CodeEditorPanel 
             isVisible={showCodeEditor}
             onToggle={() => setShowCodeEditor(false)}
+            selectedNode={selectedNodes[0]}
+            onCodeChange={handleCodeChange}
             sessionId={sessionId}
           />
         </div>
@@ -1395,6 +1521,54 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
             sessionId={sessionId}
             isVisible={showExecutionEngine}
           />
+        </div>
+      )}
+
+      {/* Analytics & Insights Panel */}
+      {showInsights && (
+        <div className="fixed top-20 right-4 w-80 h-[calc(100vh-120px)] border bg-background rounded-lg shadow-lg z-40">
+          <Card className="h-full">
+            <CardHeader className="p-3 border-b">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <Activity className="h-4 w-4" />
+                  Analytics & Insights
+                </CardTitle>
+                <Button size="sm" variant="ghost" onClick={() => setShowInsights(false)}>
+                  ✕
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="p-3">
+              <div className="space-y-4">
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Workflow Stats</h4>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
+                    <div className="bg-muted p-2 rounded">
+                      <div className="font-medium">{nodes.length}</div>
+                      <div className="text-muted-foreground">Nodes</div>
+                    </div>
+                    <div className="bg-muted p-2 rounded">
+                      <div className="font-medium">{edges.length}</div>
+                      <div className="text-muted-foreground">Connections</div>
+                    </div>
+                  </div>
+                </div>
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Selected Node</h4>
+                  {selectedNodes.length > 0 ? (
+                    <div className="text-xs space-y-1">
+                      <div><strong>ID:</strong> {selectedNodes[0].id}</div>
+                      <div><strong>Type:</strong> {selectedNodes[0].type || 'default'}</div>
+                      <div><strong>Label:</strong> {String(selectedNodes[0].data?.label || 'No label')}</div>
+                    </div>
+                  ) : (
+                    <div className="text-xs text-muted-foreground">No node selected</div>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       )}
 
@@ -1424,6 +1598,14 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
             title="Real-Time Execution Engine"
           >
             ⚡ Execute
+          </Button>
+          <Button 
+            size="sm" 
+            variant={showInsights ? "default" : "outline"}
+            onClick={() => setShowInsights(!showInsights)}
+            title="Toggle Analytics & Insights Panel"
+          >
+            📊 Insights
           </Button>
           <Button 
             size="sm" 

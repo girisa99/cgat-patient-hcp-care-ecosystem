@@ -51,6 +51,18 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
   const { showSuccess, showError } = useMasterToast();
   const { startTestRun, testRuns, loading } = useAIModelTesting();
 
+  // ESC key to close
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && isVisible) {
+        onToggle();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+    return () => document.removeEventListener('keydown', handleKeyDown);
+  }, [isVisible, onToggle]);
+
   // Auto-scroll to bottom when new results come in
   useEffect(() => {
     if (scrollRef.current) {
@@ -290,7 +302,7 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
   if (!isVisible) return null;
 
   return (
-    <Card className="w-full h-80 border-t-2 border-primary/20 bg-background/95 backdrop-blur">
+    <Card className="w-full h-80 border-t-2 border-primary/20 bg-background/95 backdrop-blur resize-y overflow-auto">
       <CardHeader className="p-3 border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm">
@@ -358,6 +370,16 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
             >
               <Download className="h-3 w-3 mr-1" />
               Export
+            </Button>
+            
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={onToggle}
+              className="h-7 text-xs"
+              title="Close Console (ESC)"
+            >
+              ✕
             </Button>
           </div>
         </div>
