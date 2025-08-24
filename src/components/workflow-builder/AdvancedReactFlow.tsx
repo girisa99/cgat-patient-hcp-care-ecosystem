@@ -470,7 +470,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const { autoSave } = useAgentSession();
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [inlineConfigNode, setInlineConfigNode] = useState<Node | null>(null);
-  const [showProcessTracker, setShowProcessTracker] = useState(false);
+  
   
   // Mock process steps for demo
   const [processSteps, setProcessSteps] = useState([
@@ -693,19 +693,18 @@ useEffect(() => {
     const nodeId = `node-${Date.now()}`;
     const newNode: Node = {
       id: nodeId,
-      type: 'custom',
+      type: type, // use dropped node type so Flowise-inspired node renders
       position: position || { x: Math.random() * 500, y: Math.random() * 300 },
       data: {
         label: `New ${type}`,
         description: `This is a ${type} node`,
-        type,
+        type, // store type in data for styling/logic
         status: 'active',
         progress: Math.floor(Math.random() * 100),
         icon: type === 'agent' ? Bot : 
               type === 'decision' ? AlertTriangle :
               type === 'customer' ? Users :
               type === 'database' ? Database : Settings,
-        // Backend metadata
         backendId: null,
         isBackendSynced: false
       }
@@ -1184,10 +1183,6 @@ useEffect(() => {
             <Workflow className="h-4 w-4 mr-1" />
             {showPalette ? 'Hide Nodes' : 'Show Nodes'}
           </Button>
-          <Button size="sm" variant="outline" onClick={() => setShowProcessTracker(!showProcessTracker)}>
-            <Activity className="h-4 w-4 mr-1" />
-            Process Flow
-          </Button>
                 </div>
                 {showPalette && (
                   <div className="w-72 h-[calc(100vh-220px)] overflow-y-auto">
@@ -1226,23 +1221,7 @@ useEffect(() => {
                 </div>
               </Panel>
               
-              {/* Process Flow Tracker */}
-              <ProcessFlowTracker
-                isOpen={showProcessTracker}
-                onToggle={() => setShowProcessTracker(!showProcessTracker)}
-                steps={processSteps}
-                onStepClick={(step) => {
-                  console.log('Step clicked:', step);
-                  // Find and highlight the corresponding node
-                  const node = nodes.find(n => 
-                    typeof n.data?.label === 'string' && 
-                    n.data.label.toLowerCase().includes(step.name.toLowerCase())
-                  );
-                  if (node) {
-                    setSelectedNode(node);
-                  }
-                }}
-              />
+              {/* Process tracker removed per UX request */}
               
             </ReactFlow>
           </ContextMenuTrigger>

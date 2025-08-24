@@ -39,6 +39,9 @@ export const FlowiseInspiredNode: React.FC<FlowiseNodeProps> = ({ id, data, sele
     output: null
   });
 
+  useEffect(() => {
+    if (selected) setIsConfigExpanded(true);
+  }, [selected]);
   // Handle config changes
   const updateConfig = (key: string, value: any) => {
     setConfig(prev => ({ ...prev, [key]: value }));
