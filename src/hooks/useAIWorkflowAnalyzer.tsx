@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
@@ -52,7 +52,8 @@ export const useAIWorkflowAnalyzer = () => {
   const [currentStep, setCurrentStep] = useState<string | null>(null);
   
   const { showSuccess, showError, showInfo } = useMasterToast();
-
+  const lastErrorAtRef = useRef(0);
+  const errorCooldownMs = 10000;
   const analyzeWorkflow = useCallback(async (nodes: any[], edges: any[]) => {
     setIsAnalyzing(true);
     
@@ -100,7 +101,11 @@ export const useAIWorkflowAnalyzer = () => {
 
     } catch (error: any) {
       console.error('Workflow analysis failed:', error);
-      showError(`Analysis failed: ${error.message}`);
+      const now = Date.now();
+      if (now - lastErrorAtRef.current > errorCooldownMs) {
+        showError(`Analysis failed: ${error.message}`);
+        lastErrorAtRef.current = now;
+      }
     } finally {
       setIsAnalyzing(false);
     }
@@ -187,7 +192,11 @@ export const useAIWorkflowAnalyzer = () => {
           step.error = nodeError.message;
           step.logs.push(`❌ Error: ${nodeError.message}`);
           
-          showError(`Node ${step.nodeName} failed: ${nodeError.message}`);
+          const now = Date.now();
+          if (now - lastErrorAtRef.current > errorCooldownMs) {
+            showError(`Node ${step.nodeName} failed: ${nodeError.message}`);
+            lastErrorAtRef.current = now;
+          }
           break;
         }
         
@@ -209,7 +218,11 @@ export const useAIWorkflowAnalyzer = () => {
 
     } catch (error: any) {
       console.error('Workflow execution failed:', error);
-      showError(`Execution failed: ${error.message}`);
+      const now = Date.now();
+      if (now - lastErrorAtRef.current > errorCooldownMs) {
+        showError(`Execution failed: ${error.message}`);
+        lastErrorAtRef.current = now;
+      }
     } finally {
       setIsExecuting(false);
       setCurrentStep(null);

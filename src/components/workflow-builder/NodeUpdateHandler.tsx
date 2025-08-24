@@ -41,7 +41,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
       }
       
       onNodeUpdate?.(nodeId, updates);
-      showSuccess('Node updated successfully');
+      // console.info('Node updated successfully');
     } catch (error) {
       showError('Failed to update node');
     }
@@ -76,7 +76,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
       }
       
       onNodeDelete?.(nodeId);
-      showSuccess('Node deleted successfully');
+      // console.info('Node deleted successfully');
     } catch (error) {
       showError('Failed to delete node');
     }
@@ -84,7 +84,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
 
   // Keyboard shortcuts handler
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Delete' || event.key === 'Backspace') {
+    if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault();
       const selectedNodes = getNodes().filter(node => node.selected);
       const selectedEdges = getEdges().filter(edge => edge.selected);
       

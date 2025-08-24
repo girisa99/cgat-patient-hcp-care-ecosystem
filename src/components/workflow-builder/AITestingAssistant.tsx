@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -28,9 +28,9 @@ export const AITestingAssistant: React.FC<AITestingAssistantProps> = ({
   isVisible
 }) => {
   const [activeTab, setActiveTab] = useState('analysis');
-  const [autoAnalyze, setAutoAnalyze] = useState(true);
+  const [autoAnalyze, setAutoAnalyze] = useState(false);
   const [executionProgress, setExecutionProgress] = useState(0);
-  
+  const lastSigRef = useRef<string | null>(null);
   const {
     isAnalyzing,
     isExecuting,
@@ -45,16 +45,27 @@ export const AITestingAssistant: React.FC<AITestingAssistantProps> = ({
   
   const { showSuccess, showError } = useMasterToast();
 
-  // Auto-analyze when workflow changes
+  // Auto-analyze when workflow changes (signature-based, throttled)
   useEffect(() => {
-    if (autoAnalyze && nodes.length > 0 && isVisible) {
-      const debounceTimer = setTimeout(() => {
-        analyzeWorkflow(nodes, edges);
-      }, 1000);
-      
-      return () => clearTimeout(debounceTimer);
-    }
-  }, [nodes, edges, autoAnalyze, isVisible, analyzeWorkflow]);
+    if (!autoAnalyze || !isVisible || nodes.length === 0 || isAnalyzing) return;
+
+    const nodesSig = [...nodes]
+      .map((n) => ({ id: n.id, type: n.type, x: n.position?.x, y: n.position?.y }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const edgesSig = [...edges]
+      .map((e) => ({ id: e.id, s: e.source, t: e.target }))
+      .sort((a, b) => a.id.localeCompare(b.id));
+    const sig = JSON.stringify({ n: nodesSig, e: edgesSig });
+
+    if (sig === lastSigRef.current) return;
+
+    const timer = setTimeout(() => {
+      analyzeWorkflow(nodes, edges);
+      lastSigRef.current = sig;
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [nodes, edges, autoAnalyze, isVisible, isAnalyzing, analyzeWorkflow]);
 
   // Update execution progress
   useEffect(() => {
