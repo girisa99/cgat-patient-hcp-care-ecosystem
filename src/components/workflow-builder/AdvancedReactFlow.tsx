@@ -58,6 +58,7 @@ import {
   Target, Link, Workflow, Activity, MousePointer, Hand
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { SidebarProvider } from '@/components/ui/sidebar';
 
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -349,20 +350,22 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     <div className="flex h-full w-full bg-background">
       {/* Unified Sidebar */}
       {!canvasOnly && (
-        <UnifiedSidebar 
-          nodes={nodes}
-          edges={edges}
-          selectedNode={selectedNodes[0]}
-          sessionId={sessionId}
-          testInput={{}}
-          onWorkflowUpdate={() => {}}
-          showTestConsole={showTestConsole}
-          showCodeEditor={showCodeEditor}
-          setShowTestConsole={setShowTestConsole}
-          setShowCodeEditor={setShowCodeEditor}
-          onAddNode={addNode}
-          onLayoutChange={onLayoutChange}
-        />
+        <SidebarProvider className="w-full">
+          <UnifiedSidebar 
+            nodes={nodes}
+            edges={edges}
+            selectedNode={selectedNodes[0]}
+            sessionId={sessionId}
+            testInput={{}}
+            onWorkflowUpdate={() => {}}
+            showTestConsole={showTestConsole}
+            showCodeEditor={showCodeEditor}
+            setShowTestConsole={setShowTestConsole}
+            setShowCodeEditor={setShowCodeEditor}
+            onAddNode={addNode}
+            onLayoutChange={onLayoutChange}
+          />
+        </SidebarProvider>
       )}
 
       {/* Main Canvas Area */}
