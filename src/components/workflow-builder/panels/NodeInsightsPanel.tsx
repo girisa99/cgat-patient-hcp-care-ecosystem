@@ -71,7 +71,7 @@ export const NodeInsightsPanel: React.FC<NodeInsightsPanelProps> = ({
       security: ['Data Encryption', 'Access Control', 'Audit Logging'],
       suggestedNodes: [
         { type: 'agent', label: 'AI Agent', desc: 'Add intelligent processing' },
-        { type: 'data', label: 'Data Store', desc: 'Connect external data source' }
+        { type: 'dataSource', label: 'Data Store', desc: 'Connect external data source' }
       ]
     };
   };
@@ -136,7 +136,7 @@ export const NodeInsightsPanel: React.FC<NodeInsightsPanelProps> = ({
         </CardHeader>
         
         <CardContent className="p-0">
-          <ScrollArea className="max-h-[60vh] p-4">
+          <ScrollArea className="h-[60vh] p-4">
             <div className="space-y-4">
               {/* Live Insights */}
               <div>

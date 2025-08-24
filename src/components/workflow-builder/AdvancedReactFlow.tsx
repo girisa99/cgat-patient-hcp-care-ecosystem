@@ -556,44 +556,72 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
     return () => window.removeEventListener('add-suggested-node', handler as EventListener);
   }, [nodes, setNodes, setEdges, showSuccess]);
 
-  // Auto-layout when algorithm changes
-useEffect(() => {
-    if (nodes.length === 0) return;
-    if (selectedLayout === 'manual') return;
-
-    const runLayout = async () => {
-      if (selectedLayout === 'dagre') {
-        const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, 'dagre');
-        setNodes(layoutedNodes);
-        setEdges(layoutedEdges);
-      } else if (selectedLayout === 'elk') {
-        try {
-          const elk = new ELK();
-          const graph: any = {
-            id: 'root',
-            layoutOptions: {
-              algorithm: 'layered',
-              'elk.direction': 'DOWN',
-              'elk.layered.spacing.nodeNodeBetweenLayers': '80',
-              'elk.spacing.nodeNode': '60'
-            },
-            children: nodes.map((n) => ({ id: n.id, width: 150, height: 100 })),
-            edges: edges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
-          };
-          const res: any = await elk.layout(graph);
-          const layoutedNodes = nodes.map((n) => {
-            const l = res.children?.find((c: any) => c.id === n.id);
-            return { ...n, position: { x: l?.x || 0, y: l?.y || 0 } };
-          });
-          setNodes(layoutedNodes);
-        } catch (e) {
-          // fall back to manual if ELK fails
-        }
-      }
+  // Handle single connector add from overlays/panels
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { nodeId, connector } = e.detail || {};
+      if (!nodeId || !connector) return;
+      setNodes((nds) => nds.map(n => {
+        if (n.id !== nodeId) return n;
+        const existing = Array.isArray(n.data?.connectors) ? n.data.connectors : [];
+        if (existing.includes(connector)) return n;
+        return { ...n, data: { ...n.data, connectors: [...existing, connector] } };
+      }));
+      showSuccess('Connector added', connector);
     };
+    window.addEventListener('add-connector', handler as EventListener);
+    return () => window.removeEventListener('add-connector', handler as EventListener);
+  }, [setNodes, showSuccess]);
 
-    runLayout();
-  }, [selectedLayout]);
+  // Persist inline node configuration updates
+  useEffect(() => {
+    const handler = (e: any) => {
+      const { nodeId, config } = e.detail || {};
+      if (!nodeId) return;
+      setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, config } } : n));
+    };
+    window.addEventListener('node-config-updated', handler as EventListener);
+    return () => window.removeEventListener('node-config-updated', handler as EventListener);
+  }, [setNodes]);
+
+  // Auto-layout when algorithm changes
+ useEffect(() => {
+     if (nodes.length === 0) return;
+     if (selectedLayout === 'manual') return;
+ 
+     const runLayout = async () => {
+       if (selectedLayout === 'dagre') {
+         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, 'dagre');
+         setNodes(layoutedNodes);
+         setEdges(layoutedEdges);
+       } else if (selectedLayout === 'elk') {
+         try {
+           const elk = new ELK();
+           const graph: any = {
+             id: 'root',
+             layoutOptions: {
+               algorithm: 'layered',
+               'elk.direction': 'DOWN',
+               'elk.layered.spacing.nodeNodeBetweenLayers': '80',
+               'elk.spacing.nodeNode': '60'
+             },
+             children: nodes.map((n) => ({ id: n.id, width: 150, height: 100 })),
+             edges: edges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
+           };
+           const res: any = await elk.layout(graph);
+           const layoutedNodes = nodes.map((n) => {
+             const l = res.children?.find((c: any) => c.id === n.id);
+             return { ...n, position: { x: l?.x || 0, y: l?.y || 0 } };
+           });
+           setNodes(layoutedNodes);
+         } catch (e) {
+           // fall back to manual if ELK fails
+         }
+       }
+     };
+ 
+     runLayout();
+   }, [selectedLayout]);
 
   // Validation
   useEffect(() => {
@@ -659,6 +687,13 @@ useEffect(() => {
       return;
     }
 
+    // Select target node and open its inline configuration like Flowise
+    if (targetNode) {
+      setSelectedNode(targetNode);
+      onNodeSelect?.(targetNode);
+      window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: targetNode.id } }));
+    }
+
     setEdges((eds) => {
       const updatedEdges = addEdge(newEdge, eds);
       // Auto-save to backend if sessionId exists  
@@ -711,6 +746,10 @@ useEffect(() => {
     };
     
     setNodes(prev => [...prev, newNode]);
+    // Auto-open inline configuration like Flowise
+    setSelectedNode(newNode);
+    onNodeSelect?.(newNode);
+    window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId } }));
     
     // Create backend entity for agent nodes
     if (type === 'agent') {

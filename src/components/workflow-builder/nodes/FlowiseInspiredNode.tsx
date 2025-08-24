@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Settings, 
   ChevronDown, 
@@ -158,7 +159,8 @@ export const FlowiseInspiredNode: React.FC<FlowiseNodeProps> = ({ id, data, sele
       <Collapsible open={isConfigExpanded} onOpenChange={setIsConfigExpanded}>
         <CollapsibleContent>
           <CardContent className="pt-0">
-            <div className="space-y-3 border-t pt-3">
+            <ScrollArea className="max-h-72 pr-2">
+              <div className="space-y-3 border-t pt-3">
               {/* AI Intelligence Configuration */}
               {(data.type === 'aiIntelligence' || data.type === 'agentNode') && (
                 <div className="space-y-3">
@@ -302,7 +304,7 @@ export const FlowiseInspiredNode: React.FC<FlowiseNodeProps> = ({ id, data, sele
                   </Button>
                 </div>
               </div>
-            </div>
+            </ScrollArea>
           </CardContent>
         </CollapsibleContent>
       </Collapsible>

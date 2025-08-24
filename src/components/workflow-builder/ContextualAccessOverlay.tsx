@@ -73,7 +73,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
           suggestedNodes: [
             { type: 'agent', label: 'Support Agent', desc: 'Add AI assistant for customer queries' },
             { type: 'decision', label: 'Route Decision', desc: 'Intelligently route customer requests' },
-            { type: 'data', label: 'Customer Data', desc: 'Store customer interaction history' }
+            { type: 'dataSource', label: 'Customer Data', desc: 'Store customer interaction history' }
           ]
         };
       case 'agent':
@@ -90,9 +90,9 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
           connectors: ['Knowledge Base', 'Sentiment Analysis', 'Live Chat'],
           security: ['API Rate Limiting', 'Content Filtering', 'User Authentication'],
           suggestedNodes: [
-            { type: 'data', label: 'Knowledge Base', desc: 'Add external knowledge source' },
+            { type: 'dataSource', label: 'Knowledge Base', desc: 'Add external knowledge source' },
             { type: 'decision', label: 'Escalation Rule', desc: 'Route complex queries to humans' },
-            { type: 'action', label: 'Follow-up Action', desc: 'Automated follow-up sequences' }
+            { type: 'custom_function', label: 'Follow-up Action', desc: 'Automated follow-up sequences' }
           ]
         };
       case 'decision':
@@ -110,8 +110,8 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
           security: ['Decision Audit', 'Access Validation', 'Data Protection'],
           suggestedNodes: [
             { type: 'agent', label: 'Specialist Agent', desc: 'Add specialized AI for complex cases' },
-            { type: 'action', label: 'Notification Action', desc: 'Send alerts based on decisions' },
-            { type: 'data', label: 'Analytics Store', desc: 'Track decision outcomes' }
+            { type: 'http', label: 'Notification Action', desc: 'Send alerts based on decisions' },
+            { type: 'dataSource', label: 'Analytics Store', desc: 'Track decision outcomes' }
           ]
         };
       default:
@@ -129,7 +129,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
           suggestedNodes: [
             { type: 'agent', label: 'AI Agent', desc: 'Add intelligent assistant' },
             { type: 'decision', label: 'Logic Node', desc: 'Add conditional routing' },
-            { type: 'data', label: 'Data Source', desc: 'Connect external data' }
+            { type: 'dataSource', label: 'Data Source', desc: 'Connect external data' }
           ]
         };
     }
@@ -172,7 +172,7 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
         </CardHeader>
         
         <CardContent className="p-0">
-          <ScrollArea className="max-h-[60vh] p-4">
+          <ScrollArea className="h-[60vh] p-4">
             <div className="space-y-4">
               {/* Live Insights */}
               <div>
@@ -217,7 +217,15 @@ export const ContextualAccessOverlay: React.FC<ContextualAccessOverlayProps> = (
                 </h4>
                 <div className="flex flex-wrap gap-1">
                   {data.connectors.map((connector, i) => (
-                    <Badge key={i} variant="outline" className="text-xs cursor-pointer hover:bg-primary/10">
+                    <Badge 
+                      key={i} 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-primary/10"
+                      onClick={() => {
+                        const detail = { nodeId: node.id, connector } as any;
+                        window.dispatchEvent(new CustomEvent('add-connector', { detail }));
+                      }}
+                    >
                       <Link className="h-2 w-2 mr-1" />
                       {connector}
                     </Badge>
