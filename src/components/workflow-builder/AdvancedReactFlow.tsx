@@ -478,12 +478,12 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [showPalette, setShowPalette] = useState(false); // Hidden by default
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasOnly, setCanvasOnly] = useState(false);
-  const [isAutoSaving, setIsAutoSaving] = useState(false);
   
   // 5 Critical Features State
   const [showTestConsole, setShowTestConsole] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showExecutionEngine, setShowExecutionEngine] = useState(false);
+  const [showToolbar, setShowToolbar] = useState(false);
   
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -997,7 +997,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   return (
     <div className={`w-full ${fitParent ? 'h-full' : 'h-screen'} flex flex-col`}>
       {/* Advanced Toolbar */}
-      {!(canvasOnly || isFullscreen) && (
+      {!(canvasOnly || isFullscreen) && showToolbar && (
         <div className="border-b bg-background p-4">
           <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
@@ -1283,7 +1283,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                       {sessionId ? "Connected" : "Local Only"}
                     </Badge>
                   </div>
-                  {(isAutoSaving || workflowAutoSaving) && (
+                  {workflowAutoSaving && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                       Auto-saving...
@@ -1424,6 +1424,14 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
             title="Real-Time Execution Engine"
           >
             ⚡ Execute
+          </Button>
+          <Button 
+            size="sm" 
+            variant={showToolbar ? "default" : "outline"}
+            onClick={() => setShowToolbar(!showToolbar)}
+            title="Toggle Advanced Toolbar (Layout/Nodes/Edges/Settings)"
+          >
+            🧩 UI
           </Button>
         </div>
       </Panel>
