@@ -456,7 +456,14 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [isPlaying, setIsPlaying] = useState(false);
   const [dragMode, setDragMode] = useState<'select' | 'pan'>('select');
   const [showPalette, setShowPalette] = useState(false);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [canvasOnly, setCanvasOnly] = useState(false);
   
+  useEffect(() => {
+    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
+    document.addEventListener('fullscreenchange', onFsChange);
+    return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
   const { showSuccess, showError } = useMasterToast();
   const reactFlowInstance = useReactFlow();
@@ -920,148 +927,151 @@ useEffect(() => {
   return (
     <div className={`w-full ${fitParent ? 'h-full' : 'h-screen'} flex flex-col`}>
       {/* Advanced Toolbar */}
-      <div className="border-b bg-background p-4">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-4">
-            <h2 className="text-lg font-semibold">Advanced ReactFlow Builder</h2>
-            <Badge variant="outline">{workflowType} mode</Badge>
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <Badge variant="secondary" className="text-xs">
-              {isPlaying ? 'Running' : 'Ready'}
-            </Badge>
-            <span className="text-xs text-muted-foreground">
-              Nodes: {nodes.length} | Edges: {edges.length}
-            </span>
-          </div>
-        </div>
-
-        <Tabs defaultValue="layout" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="layout">Layout</TabsTrigger>
-            <TabsTrigger value="nodes">Nodes</TabsTrigger>
-            <TabsTrigger value="edges">Edges</TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="layout" className="space-y-4">
+      {!(canvasOnly || isFullscreen) && (
+        <div className="border-b bg-background p-4">
+          <div className="flex items-center justify-between mb-4">
             <div className="flex items-center gap-4">
-              <Select value={selectedLayout} onValueChange={(value) => setSelectedLayout(value as any)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Layout" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manual">Manual</SelectItem>
-                  <SelectItem value="dagre">Dagre (Hierarchical)</SelectItem>
-                  <SelectItem value="elk">ELK (Advanced)</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Select value={backgroundVariant} onValueChange={(value) => setBackgroundVariant(value as BackgroundVariant)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Background" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={BackgroundVariant.Dots}>Dots</SelectItem>
-                  <SelectItem value={BackgroundVariant.Lines}>Lines</SelectItem>
-                  <SelectItem value={BackgroundVariant.Cross}>Cross</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button
-                size="sm"
-                variant={snapToGrid ? "default" : "outline"}
-                onClick={() => setSnapToGrid(!snapToGrid)}
-              >
-                <Grid className="h-4 w-4 mr-2" />
-                Snap to Grid
-              </Button>
+              <h2 className="text-lg font-semibold">Advanced ReactFlow Builder</h2>
+              <Badge variant="outline">{workflowType} mode</Badge>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="nodes" className="space-y-4">
+            
             <div className="flex items-center gap-2">
-              <Button size="sm" onClick={() => addNode('customer')}>
-                <Users className="h-4 w-4 mr-2" />
-                Customer
-              </Button>
-              <Button size="sm" onClick={() => addNode('decision')}>
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Decision
-              </Button>
-              <Button size="sm" onClick={() => addNode('agent')}>
-                <Bot className="h-4 w-4 mr-2" />
-                Agent
-              </Button>
-              <Button size="sm" onClick={() => addNode('database')}>
-                <Database className="h-4 w-4 mr-2" />
-                Database
-              </Button>
-              <Button size="sm" onClick={addGroupNode}>
-                <Layers className="h-4 w-4 mr-2" />
-                Group
-              </Button>
+              <Badge variant="secondary" className="text-xs">
+                {isPlaying ? 'Running' : 'Ready'}
+              </Badge>
+              <span className="text-xs text-muted-foreground">
+                Nodes: {nodes.length} | Edges: {edges.length}
+              </span>
             </div>
-          </TabsContent>
-          
-          <TabsContent value="edges" className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Select value={connectionMode} onValueChange={(value) => setConnectionMode(value as ConnectionMode)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue placeholder="Connection Mode" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value={ConnectionMode.Strict}>Strict</SelectItem>
-                  <SelectItem value={ConnectionMode.Loose}>Loose</SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <Button
-                size="sm"
-                variant={dragMode === 'pan' ? "default" : "outline"}
-                onClick={() => setDragMode(dragMode === 'select' ? 'pan' : 'select')}
-              >
-                {dragMode === 'select' ? <MousePointer className="h-4 w-4 mr-2" /> : <Hand className="h-4 w-4 mr-2" />}
-                {dragMode === 'select' ? 'Select Mode' : 'Pan Mode'}
-              </Button>
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="settings" className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Button
-                size="sm"
-                variant={showMiniMap ? "default" : "outline"}
-                onClick={() => setShowMiniMap(!showMiniMap)}
-              >
-                <Eye className="h-4 w-4 mr-2" />
-                Mini Map
-              </Button>
-              
-              <Button size="sm" variant="destructive" onClick={handleClear}>
-                <Trash2 className="h-4 w-4 mr-2" />
-                Clear All
-              </Button>
-            </div>
-          </TabsContent>
-        </Tabs>
+          </div>
 
-        {/* Validation Issues */}
-        {validationIssues.length > 0 && (
-          <Alert className="mt-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              <strong>Validation Issues:</strong>
-              <ul className="list-disc list-inside mt-1">
-                {validationIssues.map((issue, idx) => (
-                  <li key={idx} className="text-sm">{issue}</li>
-                ))}
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-      </div>
+          <Tabs defaultValue="layout" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="layout">Layout</TabsTrigger>
+              <TabsTrigger value="nodes">Nodes</TabsTrigger>
+              <TabsTrigger value="edges">Edges</TabsTrigger>
+              <TabsTrigger value="settings">Settings</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="layout" className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Select value={selectedLayout} onValueChange={(value) => setSelectedLayout(value as any)}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Layout" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="dagre">Dagre (Hierarchical)</SelectItem>
+                    <SelectItem value="elk">ELK (Advanced)</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Select value={backgroundVariant} onValueChange={(value) => setBackgroundVariant(value as BackgroundVariant)}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Background" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={BackgroundVariant.Dots}>Dots</SelectItem>
+                    <SelectItem value={BackgroundVariant.Lines}>Lines</SelectItem>
+                    <SelectItem value={BackgroundVariant.Cross}>Cross</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button
+                  size="sm"
+                  variant={snapToGrid ? "default" : "outline"}
+                  onClick={() => setSnapToGrid(!snapToGrid)}
+                >
+                  <Grid className="h-4 w-4 mr-2" />
+                  Snap to Grid
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="nodes" className="space-y-4">
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={() => addNode('customer')}>
+                  <Users className="h-4 w-4 mr-2" />
+                  Customer
+                </Button>
+                <Button size="sm" onClick={() => addNode('decision')}>
+                  <AlertTriangle className="h-4 w-4 mr-2" />
+                  Decision
+                </Button>
+                <Button size="sm" onClick={() => addNode('agent')}>
+                  <Bot className="h-4 w-4 mr-2" />
+                  Agent
+                </Button>
+                <Button size="sm" onClick={() => addNode('database')}>
+                  <Database className="h-4 w-4 mr-2" />
+                  Database
+                </Button>
+                <Button size="sm" onClick={addGroupNode}>
+                  <Layers className="h-4 w-4 mr-2" />
+                  Group
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="edges" className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Select value={connectionMode} onValueChange={(value) => setConnectionMode(value as ConnectionMode)}>
+                  <SelectTrigger className="w-40">
+                    <SelectValue placeholder="Connection Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value={ConnectionMode.Strict}>Strict</SelectItem>
+                    <SelectItem value={ConnectionMode.Loose}>Loose</SelectItem>
+                  </SelectContent>
+                </Select>
+                
+                <Button
+                  size="sm"
+                  variant={dragMode === 'pan' ? "default" : "outline"}
+                  onClick={() => setDragMode(dragMode === 'select' ? 'pan' : 'select')}
+                >
+                  {dragMode === 'select' ? <MousePointer className="h-4 w-4 mr-2" /> : <Hand className="h-4 w-4 mr-2" />}
+                  {dragMode === 'select' ? 'Select Mode' : 'Pan Mode'}
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="settings" className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Button
+                  size="sm"
+                  variant={showMiniMap ? "default" : "outline"}
+                  onClick={() => setShowMiniMap(!showMiniMap)}
+                >
+                  <Eye className="h-4 w-4 mr-2" />
+                  Mini Map
+                </Button>
+                
+                <Button size="sm" variant="destructive" onClick={handleClear}>
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Clear All
+                </Button>
+              </div>
+            </TabsContent>
+          </Tabs>
+
+          {/* Validation Issues */}
+          {validationIssues.length > 0 && (
+            <Alert className="mt-4">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                <strong>Validation Issues:</strong>
+                <ul className="list-disc list-inside mt-1">
+                  {validationIssues.map((issue, idx) => (
+                    <li key={idx} className="text-sm">{issue}</li>
+                  ))}
+                </ul>
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+      )}
+
 
       {/* Main Flow Area */}
       <div className="flex-1" ref={reactFlowWrapper}>
@@ -1123,22 +1133,33 @@ useEffect(() => {
                 showInteractive={true}
               />
               
-              {/* Fullscreen Toggle */}
-              <Panel position="top-center" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => {
-                    if (document.fullscreenElement) {
-                      document.exitFullscreen();
-                    } else {
-                      reactFlowWrapper.current?.requestFullscreen();
-                    }
-                  }}
-                >
-                  <Maximize2 className="h-4 w-4 mr-2" />
-                  Fullscreen
-                </Button>
+              {/* Fullscreen & Canvas-Only Toggle */}
+              <Panel position="top-center" className="z-50 bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                        setCanvasOnly(false);
+                      } else {
+                        reactFlowWrapper.current?.requestFullscreen();
+                        setCanvasOnly(true);
+                      }
+                    }}
+                  >
+                    <Maximize2 className="h-4 w-4 mr-2" />
+                    {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={canvasOnly && !isFullscreen ? 'default' : 'outline'}
+                    onClick={() => setCanvasOnly(!canvasOnly)}
+                  >
+                    Canvas Only
+                  </Button>
+                </div>
               </Panel>
               {showMiniMap && (
                 <MiniMap 
