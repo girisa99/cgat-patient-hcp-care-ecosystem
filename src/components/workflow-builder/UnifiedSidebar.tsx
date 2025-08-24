@@ -121,9 +121,11 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
       case 'code-editor':
         setShowCodeEditor(true);
         break;
+      case 'insights':
+        window.dispatchEvent(new Event('workflow:toggleInsights'));
+        break;
     }
   };
-
   const getTabContent = () => {
     switch (activeTab) {
       case 'nodes':

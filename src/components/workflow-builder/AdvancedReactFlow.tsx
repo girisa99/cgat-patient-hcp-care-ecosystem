@@ -1048,12 +1048,14 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
     const onLoadEvt = () => handleLoad();
     const onFitEvt = () => handleFitView();
     const onDeployEvt = () => showSuccess('Deploy started');
+    const onToggleInsights = () => setShowInsights((v) => !v);
 
     window.addEventListener('workflow:simulate', onSimulate);
     window.addEventListener('workflow:save', onSaveEvt);
     window.addEventListener('workflow:load', onLoadEvt);
     window.addEventListener('workflow:fitView', onFitEvt);
     window.addEventListener('workflow:deploy', onDeployEvt);
+    window.addEventListener('workflow:toggleInsights', onToggleInsights);
 
     return () => {
       window.removeEventListener('workflow:simulate', onSimulate);
@@ -1061,6 +1063,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
       window.removeEventListener('workflow:load', onLoadEvt);
       window.removeEventListener('workflow:fitView', onFitEvt);
       window.removeEventListener('workflow:deploy', onDeployEvt);
+      window.removeEventListener('workflow:toggleInsights', onToggleInsights);
     };
   }, [isPlaying, nodes, edges]);
 
