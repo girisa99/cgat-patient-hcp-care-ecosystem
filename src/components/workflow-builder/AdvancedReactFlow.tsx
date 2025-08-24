@@ -71,11 +71,9 @@ import { InlineNodeConfig } from './InlineNodeConfig';
 import { ProcessFlowTracker } from './ProcessFlowTracker';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { AgentNode } from './nodes/AgentNode';
-import { DataSourceNode } from './nodes/DataSourceNode';
-import { UnifiedSidebar } from './UnifiedSidebar';
+import { NodePalette } from './NodePalette';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
-import { SidebarProvider } from "@/components/ui/sidebar";
 
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -1123,23 +1121,10 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   };
 
   return (
-    <SidebarProvider className={`w-full ${fitParent ? 'h-full' : 'h-screen'} flex`}>
-      {/* Left Sidebar with Node Palette and tools */}
-      <UnifiedSidebar
-        nodes={nodes}
-        edges={edges}
-        selectedNode={selectedNode}
-        sessionId={sessionId}
-        testInput={testInput}
-        onWorkflowUpdate={(updatedNodes, updatedEdges) => {
-          setNodes(updatedNodes);
-          setEdges(updatedEdges);
-        }}
-        showTestConsole={showTestConsole}
-        showCodeEditor={showCodeEditor}
-        setShowTestConsole={setShowTestConsole}
-        setShowCodeEditor={setShowCodeEditor}
-      />
+    <div className={`w-full ${fitParent ? 'h-full' : 'h-screen'} flex`}>
+      <aside className="w-80 border-r bg-background">
+        <NodePalette heightClass="h-full" />
+      </aside>
       {/* Main Builder Area */}
       <div className="flex-1 flex flex-col">
       {/* Advanced Toolbar */}
@@ -1661,7 +1646,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         </div>
       </Panel>
       </div>
-    </SidebarProvider>
+    </div>
   );
 };
 
