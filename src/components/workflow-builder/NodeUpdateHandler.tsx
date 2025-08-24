@@ -84,7 +84,14 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
 
   // Keyboard shortcuts handler
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
-    if (event.key === 'Delete' || event.key === 'Backspace') { event.preventDefault();
+    // ignore when typing in inputs/textareas or contenteditable
+    const target = event.target as HTMLElement | null;
+    const tag = target?.tagName?.toLowerCase();
+    const isTyping = tag === 'input' || tag === 'textarea' || (target as any)?.isContentEditable;
+    if (isTyping) return;
+
+    if (event.key === 'Delete' || event.key === 'Backspace') {
+      event.preventDefault();
       const selectedNodes = getNodes().filter(node => node.selected);
       const selectedEdges = getEdges().filter(edge => edge.selected);
       

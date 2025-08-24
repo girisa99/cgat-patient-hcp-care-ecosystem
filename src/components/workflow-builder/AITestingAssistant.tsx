@@ -169,11 +169,11 @@ export const AITestingAssistant: React.FC<AITestingAssistantProps> = ({
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-        <TabsList className="w-full grid grid-cols-4 m-4">
-          <TabsTrigger value="analysis">Analysis</TabsTrigger>
-          <TabsTrigger value="execution">Execution</TabsTrigger>
-          <TabsTrigger value="issues">Issues</TabsTrigger>
-          <TabsTrigger value="optimize">Optimize</TabsTrigger>
+        <TabsList className="w-full m-4 overflow-x-auto whitespace-nowrap flex flex-row gap-2">
+          <TabsTrigger value="analysis" className="whitespace-nowrap">Analysis</TabsTrigger>
+          <TabsTrigger value="execution" className="whitespace-nowrap">Execution</TabsTrigger>
+          <TabsTrigger value="issues" className="whitespace-nowrap">Issues</TabsTrigger>
+          <TabsTrigger value="optimize" className="whitespace-nowrap">Optimize</TabsTrigger>
         </TabsList>
 
         <div className="px-4 pb-4 h-[calc(100%-8rem)]">

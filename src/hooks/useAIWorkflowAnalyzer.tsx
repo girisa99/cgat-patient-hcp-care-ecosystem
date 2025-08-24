@@ -54,7 +54,13 @@ export const useAIWorkflowAnalyzer = () => {
   const { showSuccess, showError, showInfo } = useMasterToast();
   const lastErrorAtRef = useRef(0);
   const errorCooldownMs = 10000;
+  // Concurrency guards to prevent re-entrancy / feedback loops
+  const analyzeLockRef = useRef(false);
+  const execLockRef = useRef(false);
   const analyzeWorkflow = useCallback(async (nodes: any[], edges: any[]) => {
+    // prevent re-entrancy and storms
+    if (isAnalyzing || analyzeLockRef.current) return;
+    analyzeLockRef.current = true;
     setIsAnalyzing(true);
     
     try {
@@ -80,12 +86,12 @@ export const useAIWorkflowAnalyzer = () => {
       if (error) throw error;
 
       const analysisResult: WorkflowAnalysis = {
-        issues: data.issues || [],
-        suggestions: data.suggestions || [],
-        complexity: data.complexity || 'simple',
-        estimatedRunTime: data.estimatedRunTime || 0,
-        estimatedCost: data.estimatedCost || 0,
-        riskAssessment: data.riskAssessment || 'low'
+        issues: data?.issues || [],
+        suggestions: data?.suggestions || [],
+        complexity: data?.complexity || 'simple',
+        estimatedRunTime: data?.estimatedRunTime || 0,
+        estimatedCost: data?.estimatedCost || 0,
+        riskAssessment: data?.riskAssessment || 'low'
       };
 
       setAnalysis(analysisResult);
@@ -95,8 +101,6 @@ export const useAIWorkflowAnalyzer = () => {
         showError(`Found ${criticalIssues.length} critical issues that need attention`);
       } else if (analysisResult.issues.length > 0) {
         showInfo(`Found ${analysisResult.issues.length} potential improvements`);
-      } else {
-        showSuccess('Workflow analysis complete - no issues found!');
       }
 
     } catch (error: any) {
@@ -108,8 +112,9 @@ export const useAIWorkflowAnalyzer = () => {
       }
     } finally {
       setIsAnalyzing(false);
+      analyzeLockRef.current = false;
     }
-  }, [showSuccess, showError, showInfo]);
+  }, [isAnalyzing, showError, showInfo]);
 
   const executeWorkflowWithAI = useCallback(async (
     nodes: any[], 
@@ -117,6 +122,9 @@ export const useAIWorkflowAnalyzer = () => {
     input: any,
     onStepUpdate?: (step: ExecutionStep) => void
   ) => {
+    // prevent re-entrancy
+    if (isExecuting || execLockRef.current) return;
+    execLockRef.current = true;
     setIsExecuting(true);
     setCurrentStep(null);
     
@@ -204,7 +212,7 @@ export const useAIWorkflowAnalyzer = () => {
         onStepUpdate?.(step);
         
         // Brief pause between steps for better UX
-        await new Promise(resolve => setTimeout(resolve, 300));
+        await new Promise(resolve => setTimeout(resolve, 200));
       }
 
       const failedSteps = steps.filter(s => s.status === 'failed');
@@ -213,7 +221,8 @@ export const useAIWorkflowAnalyzer = () => {
       if (failedSteps.length > 0) {
         showError(`Workflow failed at ${failedSteps.length} steps`);
       } else {
-        showSuccess(`Workflow completed successfully! ${completedSteps.length} steps executed.`);
+        // keep success toast minimal to avoid noise
+        // showSuccess(`Workflow completed: ${completedSteps.length} steps.`);
       }
 
     } catch (error: any) {
@@ -226,8 +235,9 @@ export const useAIWorkflowAnalyzer = () => {
     } finally {
       setIsExecuting(false);
       setCurrentStep(null);
+      execLockRef.current = false;
     }
-  }, [showSuccess, showError]);
+  }, [isExecuting, showError]);
 
   const fixIssue = useCallback(async (issue: WorkflowIssue, nodes: any[], edges: any[]) => {
     if (!issue.autoFixAvailable) {
