@@ -75,6 +75,7 @@ import { AgentNode } from './nodes/AgentNode';
 import { NodePalette } from './NodePalette';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
+import { UnifiedSidebar } from './UnifiedSidebar';
 
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -1149,196 +1150,80 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   };
 
   return (
-    <div className={`w-full ${fitParent ? 'h-full' : 'h-screen'} flex`}>
-      <aside className="w-80 border-r bg-background">
-        <NodePalette heightClass="h-full" />
-      </aside>
-      {/* Main Builder Area */}
-      <div className="flex-1 flex flex-col">
-      {/* Advanced Toolbar */}
-      {!(canvasOnly || isFullscreen) && showToolbar && (
-        <div className="border-b bg-background p-4">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-4">
-              <h2 className="text-lg font-semibold">Advanced ReactFlow Builder</h2>
-              <Badge variant="outline">{workflowType} mode</Badge>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <Badge variant="secondary" className="text-xs">
-                {isPlaying ? 'Running' : 'Ready'}
-              </Badge>
-              <span className="text-xs text-muted-foreground">
-                Nodes: {nodes.length} | Edges: {edges.length}
-              </span>
-            </div>
-          </div>
+    <div className={`flex ${fitParent ? 'h-full' : 'h-screen'} bg-gray-50`}>
+      {/* Unified Sidebar */}
+      <UnifiedSidebar
+        nodes={nodes}
+        edges={edges}
+        selectedNode={selectedNode}
+        sessionId={sessionId}
+        testInput={testInput}
+        onWorkflowUpdate={onWorkflowUpdate}
+        showTestConsole={showTestConsole}
+        showCodeEditor={showCodeEditor}
+        setShowTestConsole={setShowTestConsole}
+        setShowCodeEditor={setShowCodeEditor}
+        onAddNode={addNode}
+        onLayoutChange={(layout) => {
+          setSelectedLayout(layout as 'dagre' | 'elk' | 'manual');
+          handleLayoutChange(layout as 'dagre' | 'elk' | 'manual');
+        }}
+        onSnapToGrid={setSnapToGrid}
+        onBackgroundChange={(variant) => setBackgroundVariant(variant as BackgroundVariant)}
+        onConnectionModeChange={(mode) => setConnectionMode(mode as ConnectionMode)}
+        onDragModeChange={(mode) => setDragMode(mode as 'select' | 'pan')}
+        onShowMiniMap={setShowMiniMap}
+        onClearAll={handleClear}
+        selectedLayout={selectedLayout}
+        snapToGrid={snapToGrid}
+        backgroundVariant={backgroundVariant}
+        connectionMode={connectionMode}
+        dragMode={dragMode}
+        showMiniMap={showMiniMap}
+      />
 
-          <Tabs defaultValue="layout" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="layout">Layout</TabsTrigger>
-              <TabsTrigger value="nodes">Nodes</TabsTrigger>
-              <TabsTrigger value="edges">Edges</TabsTrigger>
-              <TabsTrigger value="settings">Settings</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="layout" className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Select value={selectedLayout} onValueChange={(value) => setSelectedLayout(value as any)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Layout" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="manual">Manual</SelectItem>
-                    <SelectItem value="dagre">Dagre (Hierarchical)</SelectItem>
-                    <SelectItem value="elk">ELK (Advanced)</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Select value={backgroundVariant} onValueChange={(value) => setBackgroundVariant(value as BackgroundVariant)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Background" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={BackgroundVariant.Dots}>Dots</SelectItem>
-                    <SelectItem value={BackgroundVariant.Lines}>Lines</SelectItem>
-                    <SelectItem value={BackgroundVariant.Cross}>Cross</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Button
-                  size="sm"
-                  variant={snapToGrid ? "default" : "outline"}
-                  onClick={() => setSnapToGrid(!snapToGrid)}
+      {/* Main Canvas Area */}
+      <div className="flex-1">
+        <div className="h-full" ref={reactFlowWrapper}>
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
+              <ErrorBoundary fallbackComponent={({ error, retry }) => (
+                <div className="p-4 text-center">
+                  <div>Canvas failed to load</div>
+                  <div className="text-sm text-muted-foreground">{error?.message}</div>
+                  <Button onClick={retry} className="mt-2">Retry</Button>
+                </div>
+              )}>
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={handleNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  nodeTypes={safeNodeTypes}
+                  edgeTypes={safeEdgeTypes}
+                  connectionMode={connectionMode}
+                  snapToGrid={snapToGrid}
+                  snapGrid={[15, 15]}
+                  fitView
+                  className="h-full bg-gray-50"
                 >
-                  <Grid className="h-4 w-4 mr-2" />
-                  Snap to Grid
-                </Button>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="nodes" className="space-y-4">
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => addNode('customer')}>
-                  <Users className="h-4 w-4 mr-2" />
-                  Customer
-                </Button>
-                <Button size="sm" onClick={() => addNode('decision')}>
-                  <AlertTriangle className="h-4 w-4 mr-2" />
-                  Decision
-                </Button>
-                <Button size="sm" onClick={() => addNode('agent')}>
-                  <Bot className="h-4 w-4 mr-2" />
-                  Agent
-                </Button>
-                <Button size="sm" onClick={() => addNode('database')}>
-                  <Database className="h-4 w-4 mr-2" />
-                  Database
-                </Button>
-                <Button size="sm" onClick={addGroupNode}>
-                  <Layers className="h-4 w-4 mr-2" />
-                  Group
-                </Button>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="edges" className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Select value={connectionMode} onValueChange={(value) => setConnectionMode(value as ConnectionMode)}>
-                  <SelectTrigger className="w-40">
-                    <SelectValue placeholder="Connection Mode" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value={ConnectionMode.Strict}>Strict</SelectItem>
-                    <SelectItem value={ConnectionMode.Loose}>Loose</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                <Button
-                  size="sm"
-                  variant={dragMode === 'pan' ? "default" : "outline"}
-                  onClick={() => setDragMode(dragMode === 'select' ? 'pan' : 'select')}
-                >
-                  {dragMode === 'select' ? <MousePointer className="h-4 w-4 mr-2" /> : <Hand className="h-4 w-4 mr-2" />}
-                  {dragMode === 'select' ? 'Select Mode' : 'Pan Mode'}
-                </Button>
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="settings" className="space-y-4">
-              <div className="flex items-center gap-4">
-                <Button
-                  size="sm"
-                  variant={showMiniMap ? "default" : "outline"}
-                  onClick={() => setShowMiniMap(!showMiniMap)}
-                >
-                  <Eye className="h-4 w-4 mr-2" />
-                  Mini Map
-                </Button>
-                
-                <Button size="sm" variant="destructive" onClick={handleClear}>
-                  <Trash2 className="h-4 w-4 mr-2" />
-                  Clear All
-                </Button>
-              </div>
-            </TabsContent>
-          </Tabs>
-
-          {/* Validation Issues */}
-          {validationIssues.length > 0 && (
-            <Alert className="mt-4">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertDescription>
-                <strong>Validation Issues:</strong>
-                <ul className="list-disc list-inside mt-1">
-                  {validationIssues.map((issue, idx) => (
-                    <li key={idx} className="text-sm">{issue}</li>
-                  ))}
-                </ul>
-              </AlertDescription>
-            </Alert>
-          )}
+                  <Background variant={backgroundVariant} />
+                  <Controls />
+                  {showMiniMap && <MiniMap />}
+                </ReactFlow>
+              </ErrorBoundary>
+            </ContextMenuTrigger>
+            <ContextMenuContent>
+              <ContextMenuItem onClick={() => addNode('customer')}>Add Customer Node</ContextMenuItem>
+              <ContextMenuItem onClick={() => addNode('agent')}>Add Agent Node</ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         </div>
-      )}
-
-
-        {/* Main Flow Area */}
-        <div className="flex-1 flex flex-col" ref={reactFlowWrapper}>
-          {/* Mini Toolbar for Canvas Controls */}
-          {!canvasOnly && (
-            <div className="bg-white border-b border-gray-200 shadow-sm p-2 flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <Button size="sm" onClick={() => addNode('custom')}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  Node
-                </Button>
-                <Button
-                  size="sm"
-                  variant={dragMode === 'pan' ? "default" : "outline"}
-                  onClick={() => setDragMode(dragMode === 'select' ? 'pan' : 'select')}
-                >
-                  {dragMode === 'select' ? <MousePointer className="h-4 w-4 mr-1" /> : <Hand className="h-4 w-4 mr-1" />}
-                  {dragMode === 'select' ? 'Select' : 'Pan'}
-                </Button>
-                <Button
-                  size="sm"
-                  variant={showMiniMap ? "default" : "outline"}
-                  onClick={() => setShowMiniMap(!showMiniMap)}
-                >
-                  <Eye className="h-4 w-4 mr-1" />
-                  Mini Map
-                </Button>
-              </div>
-              
-              <div className="flex items-center gap-2">
-                <Button size="sm" variant="destructive" onClick={handleClear}>
-                  <Trash2 className="h-4 w-4 mr-1" />
-                  Clear
-                </Button>
-              </div>
-            </div>
-          )}
-
+      </div>
+    </div>
+  );
+};
           {/* Node Update Handler for keyboard shortcuts and backend persistence */}
           <NodeUpdateHandler 
             sessionId={sessionId}
@@ -1373,6 +1258,129 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                     onNodeSelect?.(node);
                   }}
                   onPaneClick={() => {
+                    setSelectedNode(null);
+                    onNodeSelect?.(null);
+                  }}
+              nodeTypes={safeNodeTypes}
+              edgeTypes={safeEdgeTypes}
+              connectionLineComponent={ConnectionLine}
+              connectionMode={connectionMode}
+              snapToGrid={snapToGrid}
+              snapGrid={[15, 15]}
+              fitView
+                  attributionPosition="bottom-left"
+                  zoomOnScroll={true}
+                  zoomOnDoubleClick={true}
+                  zoomOnPinch={true}
+                  panOnScroll={true}
+                  panOnScrollMode={PanOnScrollMode.Free}
+                  panOnDrag={dragMode === 'pan'}
+                  minZoom={0.1}
+                  maxZoom={2}
+                  defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+                  selectionOnDrag={dragMode === 'select'}
+                  multiSelectionKeyCode="Shift"
+                  deleteKeyCode={["Delete", "Backspace"]}
+                  className="bg-gray-50"
+                >
+                  <Background variant={backgroundVariant} gap={12} size={1} />
+                  <Controls 
+                    showZoom={true}
+                    showFitView={true}
+                    showInteractive={true}
+                  />
+                  {showMiniMap && (
+                    <MiniMap 
+                      zoomable 
+                      pannable 
+                      className="!bg-gray-100 !border-gray-300"
+                      nodeColor={(node) => {
+                        switch (node.data?.type) {
+                          case 'agent': return '#8b5cf6';
+                          case 'decision': return '#f59e0b';
+                          case 'customer': return '#10b981';
+                          default: return '#6b7280';
+                        }
+                      }}
+                    />
+                  )}
+
+                  {/* Canvas Controls Panel */}
+                  <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                            setCanvasOnly(false);
+                          } else {
+                            reactFlowWrapper.current?.requestFullscreen();
+                            setCanvasOnly(true);
+                          }
+                        }}
+                      >
+                        <Maximize2 className="h-4 w-4 mr-1" />
+                        {isFullscreen ? 'Exit' : 'Fullscreen'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={canvasOnly && !isFullscreen ? 'default' : 'outline'}
+                        onClick={() => setCanvasOnly(!canvasOnly)}
+                      >
+                        Canvas Only
+                      </Button>
+                    </div>
+                  </Panel>
+                  {/* Status Panel - Bottom Right */}
+                  <Panel position="bottom-right" className="bg-white/90 backdrop-blur-md p-3 rounded-lg shadow border">
+                    <div className="space-y-1 text-xs">
+                      <div className="font-medium">Status</div>
+                      <div>Nodes: {nodes.length}</div>
+                      <div>Edges: {edges.length}</div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant={validationIssues.length === 0 ? "default" : "destructive"} className="text-xs">
+                          {validationIssues.length === 0 ? "Valid" : `${validationIssues.length} Issues`}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant={sessionId ? "default" : "secondary"} className="text-xs">
+                          {sessionId ? "Connected" : "Local"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Panel>
+                </ReactFlow>
+              </ErrorBoundary>
+            </ContextMenuTrigger>
+          
+          <ContextMenuContent>
+            <ContextMenuItem onClick={() => addNode('customer')}>
+              Add Customer Node
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => addNode('agent')}>
+              Add Agent Node  
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => addNode('decision')}>
+              Add Decision Node
+            </ContextMenuItem>
+            <ContextMenuItem onClick={addGroupNode}>
+              Add Group
+            </ContextMenuItem>
+            <Separator />
+            <ContextMenuItem onClick={handleFitView}>
+              Fit View
+            </ContextMenuItem>
+            <ContextMenuItem onClick={handleClear}>
+              Clear All
+            </ContextMenuItem>
+          </ContextMenuContent>
+        </ContextMenu>
+        </div>
+      </div>
+    </div>
+  );
                     setSelectedNode(null);
                     onNodeSelect?.(null);
                   }}
@@ -1623,66 +1631,36 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         </div>
       )}
 
-      {/* Critical Features Toggle Buttons */}
-      <Panel position="bottom-left" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
-        <div className="flex items-center gap-2">
-          <Button 
-            size="sm" 
-            variant={showTestConsole ? "default" : "outline"}
-            onClick={() => setShowTestConsole(!showTestConsole)}
-            title="Classic Testing Console"
-          >
-            🧪 Classic Test
-          </Button>
-          <Button 
-            size="sm" 
-            variant={isAIAssistantVisible ? "default" : "outline"}
-            onClick={() => setIsAIAssistantVisible(!isAIAssistantVisible)}
-            title="AI-Powered Testing & Analysis"
-          >
-            🤖 AI Test
-          </Button>
-          <Button 
-            size="sm" 
-            variant={showCodeEditor ? "default" : "outline"}
-            onClick={() => setShowCodeEditor(!showCodeEditor)}
-            title="Code Editor Panel"
-          >
-            💾 Code
-          </Button>
-          <Button 
-            size="sm" 
-            variant={showExecutionEngine ? "default" : "outline"}
-            onClick={() => setShowExecutionEngine(!showExecutionEngine)}
-            title="Real-Time Execution Engine"
-          >
-            ⚡ Execute
-          </Button>
-          <Button 
-            size="sm" 
-            variant={showInsights ? "default" : "outline"}
-            onClick={() => setShowInsights(!showInsights)}
-            title="Toggle Analytics & Insights Panel"
-          >
-            📊 Insights
-          </Button>
-          <Button 
-            size="sm" 
-            variant={showToolbar ? "default" : "outline"}
-            onClick={() => setShowToolbar(!showToolbar)}
-            title="Toggle Advanced Toolbar (Layout/Nodes/Edges/Settings)"
-          >
-            🧩 UI
-          </Button>
-        </div>
-      </Panel>
       </div>
+    </div>
+  );
+      {/* Session Persistence Manager */}
+      <SessionPersistenceManager 
+        sessionId={sessionId}
+        onSessionRestore={(sessionData) => {
+          if (sessionData?.canvas?.nodes) {
+            setNodes(sessionData.canvas.nodes);
+          }
+          if (sessionData?.canvas?.edges) {
+            setEdges(sessionData.canvas.edges);
+          }
+        }}
+        onSessionSync={(sessionData) => {
+          console.log('Session synced:', sessionData);
+        }}
+      />
     </div>
   );
 };
 
 // Wrapper with ReactFlowProvider
 export const AdvancedReactFlowWrapper: React.FC<AdvancedReactFlowProps> = (props) => {
+  return (
+    <ReactFlowProvider>
+      <AdvancedReactFlow {...props} />
+    </ReactFlowProvider>
+  );
+};
   return (
     <ReactFlowProvider>
       <AdvancedReactFlow {...props} />

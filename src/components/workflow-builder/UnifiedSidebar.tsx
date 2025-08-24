@@ -16,8 +16,12 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Workflow, Bot, Database, Settings, Rocket, 
   TestTube, Palette, Play, Code, Zap, Eye,
-  Layers, Brain, Link
+  Layers, Brain, Link, Users, AlertTriangle, 
+  Grid, MousePointer, Hand, Trash2, Plus, Layout
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ConnectionMode, BackgroundVariant } from '@xyflow/react';
 
 // Tab Components
 import { NodePalette } from './NodePalette';
@@ -36,6 +40,22 @@ interface UnifiedSidebarProps {
   showCodeEditor: boolean;
   setShowTestConsole: (show: boolean) => void;
   setShowCodeEditor: (show: boolean) => void;
+  // New props for canvas controls
+  onAddNode?: (type: string) => void;
+  onLayoutChange?: (layout: string) => void;
+  onSnapToGrid?: (snap: boolean) => void;
+  onBackgroundChange?: (variant: string) => void;
+  onConnectionModeChange?: (mode: string) => void;
+  onDragModeChange?: (mode: string) => void;
+  onShowMiniMap?: (show: boolean) => void;
+  onClearAll?: () => void;
+  // Current states
+  selectedLayout?: string;
+  snapToGrid?: boolean;
+  backgroundVariant?: string;
+  connectionMode?: string;
+  dragMode?: string;
+  showMiniMap?: boolean;
 }
 
 interface TabItem {
@@ -46,13 +66,15 @@ interface TabItem {
 }
 
 const tabItems: TabItem[] = [
-  // Workflow Group
-  { id: 'nodes', title: 'Workflow Nodes', icon: Workflow, group: 'workflow' },
-  { id: 'layers', title: 'Canvas Layers', icon: Layers, group: 'workflow' },
+  // Workflow Group - Canvas Controls
+  { id: 'layout', title: 'Layout', icon: Layers, group: 'workflow' },
+  { id: 'nodes', title: 'Nodes', icon: Workflow, group: 'workflow' },
+  { id: 'edges', title: 'Edges', icon: Link, group: 'workflow' },
+  { id: 'settings', title: 'Settings', icon: Settings, group: 'workflow' },
   
   // AI Group  
   { id: 'ai-agents', title: 'AI Agents', icon: Bot, group: 'ai' },
-  { id: 'ai-intelligence', title: 'AI Intelligence', icon: Brain, group: 'ai' },
+  { id: 'ai-test', title: 'AI Test', icon: Brain, group: 'ai' },
   { id: 'ai-assistant', title: 'AI Assistant', icon: Zap, group: 'ai' },
   
   // Data Group
@@ -60,12 +82,11 @@ const tabItems: TabItem[] = [
   { id: 'integrations', title: 'Integrations', icon: Link, group: 'data' },
   
   // Testing Group
-  { id: 'testing', title: 'Testing Console', icon: TestTube, group: 'testing' },
-  { id: 'classic-test', title: 'Classic Test', icon: Play, group: 'testing' },
-  { id: 'code-editor', title: 'Code Editor', icon: Code, group: 'testing' },
-  { id: 'execute', title: 'Execute Flow', icon: Zap, group: 'testing' },
+  { id: 'classic-test', title: 'Classic Test', icon: TestTube, group: 'testing' },
+  { id: 'code-editor', title: 'Code', icon: Code, group: 'testing' },
+  { id: 'execute', title: 'Execute', icon: Zap, group: 'testing' },
   { id: 'insights', title: 'Insights', icon: Eye, group: 'testing' },
-  { id: 'ui-preview', title: 'UI Preview', icon: Palette, group: 'testing' },
+  { id: 'ui-preview', title: 'UI', icon: Palette, group: 'testing' },
   
   // Deployment Group
   { id: 'configuration', title: 'Configuration', icon: Settings, group: 'deployment' },
@@ -90,7 +111,21 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   showTestConsole,
   showCodeEditor,
   setShowTestConsole,
-  setShowCodeEditor
+  setShowCodeEditor,
+  onAddNode,
+  onLayoutChange,
+  onSnapToGrid,
+  onBackgroundChange,
+  onConnectionModeChange,
+  onDragModeChange,
+  onShowMiniMap,
+  onClearAll,
+  selectedLayout = 'manual',
+  snapToGrid = false,
+  backgroundVariant = 'dots',
+  connectionMode = 'strict',
+  dragMode = 'select',
+  showMiniMap = true
 }) => {
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
@@ -128,9 +163,143 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   };
   const getTabContent = () => {
     switch (activeTab) {
-      case 'nodes':
-        return <NodePalette heightClass="h-full" />;
+      case 'layout':
+        return (
+          <div className="p-4 space-y-4">
+            <h3 className="font-semibold mb-4">Layout Controls</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Auto Layout</label>
+                <Select value={selectedLayout} onValueChange={onLayoutChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Layout Algorithm" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual</SelectItem>
+                    <SelectItem value="dagre">Dagre (Top-Bottom)</SelectItem>
+                    <SelectItem value="elk">ELK (Advanced)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div>
+                <label className="text-sm font-medium mb-2 block">Background</label>
+                <Select value={backgroundVariant} onValueChange={onBackgroundChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Background" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="dots">Dots</SelectItem>
+                    <SelectItem value="lines">Lines</SelectItem>
+                    <SelectItem value="cross">Cross</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button
+                size="sm"
+                variant={snapToGrid ? "default" : "outline"}
+                onClick={() => onSnapToGrid?.(!snapToGrid)}
+                className="w-full"
+              >
+                <Grid className="h-4 w-4 mr-2" />
+                Snap to Grid
+              </Button>
+            </div>
+          </div>
+        );
         
+      case 'nodes':
+        return (
+          <div className="p-4 space-y-4">
+            <h3 className="font-semibold mb-4">Add Nodes</h3>
+            <div className="space-y-2">
+              <Button size="sm" onClick={() => onAddNode?.('customer')} className="w-full justify-start">
+                <Users className="h-4 w-4 mr-2" />
+                Customer
+              </Button>
+              <Button size="sm" onClick={() => onAddNode?.('decision')} className="w-full justify-start">
+                <AlertTriangle className="h-4 w-4 mr-2" />
+                Decision
+              </Button>
+              <Button size="sm" onClick={() => onAddNode?.('agent')} className="w-full justify-start">
+                <Bot className="h-4 w-4 mr-2" />
+                Agent
+              </Button>
+              <Button size="sm" onClick={() => onAddNode?.('database')} className="w-full justify-start">
+                <Database className="h-4 w-4 mr-2" />
+                Database
+              </Button>
+              <Button size="sm" onClick={() => onAddNode?.('group')} className="w-full justify-start">
+                <Layers className="h-4 w-4 mr-2" />
+                Group
+              </Button>
+            </div>
+            
+            <div className="mt-6">
+              <NodePalette heightClass="h-64" />
+            </div>
+          </div>
+        );
+        
+      case 'edges':
+        return (
+          <div className="p-4 space-y-4">
+            <h3 className="font-semibold mb-4">Edge Settings</h3>
+            
+            <div className="space-y-3">
+              <div>
+                <label className="text-sm font-medium mb-2 block">Connection Mode</label>
+                <Select value={connectionMode} onValueChange={onConnectionModeChange}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Connection Mode" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="strict">Strict</SelectItem>
+                    <SelectItem value="loose">Loose</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <Button
+                size="sm"
+                variant={dragMode === 'pan' ? "default" : "outline"}
+                onClick={() => onDragModeChange?.(dragMode === 'select' ? 'pan' : 'select')}
+                className="w-full"
+              >
+                {dragMode === 'select' ? <MousePointer className="h-4 w-4 mr-2" /> : <Hand className="h-4 w-4 mr-2" />}
+                {dragMode === 'select' ? 'Select Mode' : 'Pan Mode'}
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case 'settings':
+        return (
+          <div className="p-4 space-y-4">
+            <h3 className="font-semibold mb-4">Canvas Settings</h3>
+            
+            <div className="space-y-2">
+              <Button
+                size="sm"
+                variant={showMiniMap ? "default" : "outline"}
+                onClick={() => onShowMiniMap?.(!showMiniMap)}
+                className="w-full"
+              >
+                <Eye className="h-4 w-4 mr-2" />
+                Mini Map
+              </Button>
+              
+              <Button size="sm" variant="destructive" onClick={onClearAll} className="w-full">
+                <Trash2 className="h-4 w-4 mr-2" />
+                Clear All
+              </Button>
+            </div>
+          </div>
+        );
+        
+      case 'ai-test':
       case 'ai-assistant':
         return (
           <AITestingAssistant
@@ -142,7 +311,6 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           />
         );
         
-      case 'testing':
       case 'classic-test':
         return (
           <TestingConsolePanel
@@ -156,14 +324,70 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
           />
         );
         
-        case 'code-editor':
-          return (
-            <CodeEditorPanel
-              isVisible={true}
-              onToggle={() => setShowCodeEditor(!showCodeEditor)}
-              sessionId={sessionId}
-            />
-          );
+      case 'code-editor':
+        return (
+          <CodeEditorPanel
+            isVisible={true}
+            onToggle={() => setShowCodeEditor(!showCodeEditor)}
+            sessionId={sessionId}
+          />
+        );
+        
+      case 'execute':
+        return (
+          <div className="p-4">
+            <h3 className="font-semibold mb-4">Execute Flow</h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              Run and test your workflow in real-time.
+            </p>
+            <Button className="w-full">
+              <Play className="h-4 w-4 mr-2" />
+              Start Execution
+            </Button>
+          </div>
+        );
+        
+      case 'insights':
+        return (
+          <div className="p-4">
+            <h3 className="font-semibold mb-4">Analytics & Insights</h3>
+            <div className="space-y-4">
+              <div>
+                <h4 className="text-sm font-medium mb-2">Workflow Stats</h4>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="bg-muted p-2 rounded">
+                    <div className="font-medium">{nodes.length}</div>
+                    <div className="text-muted-foreground">Nodes</div>
+                  </div>
+                  <div className="bg-muted p-2 rounded">
+                    <div className="font-medium">{edges.length}</div>
+                    <div className="text-muted-foreground">Connections</div>
+                  </div>
+                </div>
+              </div>
+              {selectedNode && (
+                <div>
+                  <h4 className="text-sm font-medium mb-2">Selected Node</h4>
+                  <div className="text-xs space-y-1">
+                    <div><strong>ID:</strong> {selectedNode.id}</div>
+                    <div><strong>Type:</strong> {selectedNode.type || 'default'}</div>
+                    <div><strong>Label:</strong> {String(selectedNode.data?.label || 'No label')}</div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        );
+        
+      case 'ui-preview':
+        return (
+          <div className="p-4">
+            <h3 className="font-semibold mb-4">UI Preview</h3>
+            <p className="text-sm text-muted-foreground">
+              Preview how your workflow will appear to end users.
+            </p>
+          </div>
+        );
         
       case 'ai-agents':
         return (
@@ -171,16 +395,6 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
             <h3 className="font-semibold mb-4">AI Agents</h3>
             <p className="text-sm text-muted-foreground">
               Manage and configure AI agents for your workflow.
-            </p>
-          </div>
-        );
-        
-      case 'ai-intelligence':
-        return (
-          <div className="p-4">
-            <h3 className="font-semibold mb-4">AI Intelligence</h3>
-            <p className="text-sm text-muted-foreground">
-              Advanced AI capabilities and model management.
             </p>
           </div>
         );
