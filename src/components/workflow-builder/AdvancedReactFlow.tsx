@@ -498,21 +498,18 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
     return () => window.removeEventListener('apply-access-suggestions', handler as EventListener);
   }, [setNodes, showSuccess]);
 
-  // Handle node configuration events
+  // Handle node configuration events - expand config within the node (no popup)
   useEffect(() => {
     const handler = (e: any) => {
       const { nodeId } = e.detail || {};
-      const node = nodes.find(n => n.id === nodeId);
-      if (node) {
-        // Open inline config overlay without triggering right panel
-        setSelectedNode(node);
-        setInlineConfigNode(node);
-        window.dispatchEvent(new CustomEvent('inline-config-opened', { detail: { nodeId } }));
-      }
+      if (!nodeId) return;
+      setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, configOpen: true } } : n));
+      // Notify outer panels to hide if needed
+      window.dispatchEvent(new CustomEvent('inline-config-opened', { detail: { nodeId } }));
     };
     window.addEventListener('open-node-config', handler as EventListener);
     return () => window.removeEventListener('open-node-config', handler as EventListener);
-  }, [nodes, onNodeSelect]);
+  }, [setNodes]);
 
   // Add suggested nodes from contextual access overlay
   useEffect(() => {
@@ -1226,34 +1223,6 @@ useEffect(() => {
                 }}
               />
               
-              {/* Inline Node Configuration */}
-              {inlineConfigNode && (
-                <div className="absolute inset-0 pointer-events-none z-50">
-                  <div className="relative h-full w-full pointer-events-none">
-                    <div 
-                      className="absolute pointer-events-auto"
-                      style={{
-                        left: `${(inlineConfigNode.position?.x || 0) + 50}px`,
-                        top: `${(inlineConfigNode.position?.y || 0) + 100}px`,
-                      }}
-                    >
-                      <InlineNodeConfig
-                        nodeId={inlineConfigNode.id}
-                        nodeType={inlineConfigNode.type || 'default'}
-                        data={inlineConfigNode.data || {}}
-                        onUpdate={(nodeId, updates) => {
-                          setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, ...updates } : n));
-                        }}
-                        onClose={() => {
-                          setInlineConfigNode(null);
-                          window.dispatchEvent(new CustomEvent('inline-config-closed', { detail: { nodeId: inlineConfigNode.id } }));
-                        }}
-                        isVisible={true}
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
             </ReactFlow>
           </ContextMenuTrigger>
           

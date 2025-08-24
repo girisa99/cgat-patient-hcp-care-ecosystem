@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BaseWorkflowNode } from './BaseWorkflowNode';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
@@ -19,6 +19,12 @@ export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }
   });
   const [isExpanded, setIsExpanded] = useState(false);
 
+  useEffect(() => {
+    if (typeof data?.configOpen !== 'undefined') {
+      setIsExpanded(!!data.configOpen);
+    }
+  }, [data?.configOpen]);
+
   const updateConfig = (updates: Partial<typeof config>) => {
     setConfig({ ...config, ...updates });
   };
@@ -33,15 +39,8 @@ export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }
     { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash' }
   ];
 
-  const handleInlineConfig = () => {
-    // Dispatch event to open inline configuration
-    window.dispatchEvent(new CustomEvent('open-node-config', {
-      detail: { 
-        nodeId: id, 
-        nodeType: 'aiModelsNode', 
-        currentData: { ...data, ...config } 
-      }
-    }));
+  const handleToggleConfig = () => {
+    setIsExpanded(prev => !prev);
   };
 
   return (
@@ -73,7 +72,7 @@ export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }
           <Button
             size="sm"
             variant="ghost"
-            onClick={isExpanded ? () => setIsExpanded(false) : handleInlineConfig}
+            onClick={handleToggleConfig}
             className="h-6 px-2 text-xs"
           >
             <Settings className="h-3 w-3 mr-1" />

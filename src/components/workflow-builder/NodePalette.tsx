@@ -336,19 +336,19 @@ const nodeTypes: NodePaletteItem[] = [
 ];
 
 const categories = [
-  { id: 'ai', name: 'AI & Intelligence (Enhanced)', color: 'bg-indigo-100' },
-  { id: 'integrations', name: 'Data Sources (Enhanced)', color: 'bg-purple-100' },
-  { id: 'actions', name: 'Configuration (Start Here)', color: 'bg-orange-100' },
   { id: 'core', name: 'Workflow Nodes', color: 'bg-slate-100' },
+  { id: 'ai', name: 'AI & Intelligence (Enhanced)', color: 'bg-indigo-100' },
+  { id: 'integrations', name: 'Data & Connectors', color: 'bg-purple-100' },
+  { id: 'actions', name: 'Configuration (Assets, APIs, Variables)', color: 'bg-orange-100' },
   { id: 'deployment', name: 'Deployment & Testing', color: 'bg-green-100' }
 ];
 
 export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass }) => {
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    'ai': true,  // Start with enhanced AI nodes open
-    'integrations': true,  // Start with enhanced data sources open
+    'core': true,
+    'ai': true,
+    'integrations': false,
     'actions': false,
-    'core': false,
     'deployment': false
   });
   const toggleCategory = (categoryId: string) => {
