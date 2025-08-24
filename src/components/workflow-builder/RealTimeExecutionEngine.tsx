@@ -301,7 +301,7 @@ export const RealTimeExecutionEngine: React.FC<RealTimeExecutionEngineProps> = (
       }
 
       // Simulate potential failures based on node configuration
-      const failureRate = node.data?.failureRate || 0.05; // 5% default failure rate
+      const failureRate = (typeof node.data?.failureRate === 'number' ? node.data.failureRate : 0.05); // 5% default failure rate
       const shouldFail = Math.random() < failureRate;
 
       if (shouldFail) {
@@ -564,7 +564,7 @@ export const RealTimeExecutionEngine: React.FC<RealTimeExecutionEngineProps> = (
                       <div className={getStatusColor(nodeExec.status)}>
                         {getStatusIcon(nodeExec.status)}
                       </div>
-                      <span className="font-medium">{node?.data?.label || nodeId}</span>
+                      <span className="font-medium">{(node?.data?.label as string) || nodeId}</span>
                     </div>
                     <div className="flex items-center gap-2">
                       <Progress value={nodeExec.progress} className="w-16 h-1" />
