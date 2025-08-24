@@ -222,6 +222,7 @@ const AgentsInner = () => {
 
   // Genie AI Layout - Matching screenshot structure exactly
   const renderFlowiseLayout = () => {
+    console.log('[Agents] renderFlowiseLayout start');
     return (
       <div className="h-screen flex flex-col bg-background">
         {/* Compact Top Header */}
