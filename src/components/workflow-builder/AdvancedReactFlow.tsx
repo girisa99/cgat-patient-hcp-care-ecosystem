@@ -1487,7 +1487,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
       
       {/* Bottom Test Console Panel */}
       {showTestConsole && (
-        <div className="fixed bottom-0 left-0 right-0 h-64 border-t bg-background z-40">
+        <div className="fixed bottom-0 left-0 right-0 z-40">
           <TestingConsolePanel 
             isVisible={showTestConsole}
             onToggle={() => setShowTestConsole(false)}
@@ -1495,6 +1495,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
             selectedNode={selectedNodes[0]}
             workflowNodes={nodes}
             workflowEdges={edges}
+            heightClass="h-[40vh]"
           />
         </div>
       )}

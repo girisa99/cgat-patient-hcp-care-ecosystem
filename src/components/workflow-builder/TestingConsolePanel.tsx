@@ -21,6 +21,7 @@ interface TestingConsolePanelProps {
   selectedNode?: any;
   workflowNodes?: any[];
   workflowEdges?: any[];
+  heightClass?: string;
 }
 
 interface TestResult {
@@ -39,7 +40,8 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
   sessionId,
   selectedNode,
   workflowNodes = [],
-  workflowEdges = []
+  workflowEdges = [],
+  heightClass
 }) => {
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
@@ -302,7 +304,7 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
   if (!isVisible) return null;
 
   return (
-    <Card className="w-full h-80 border-t-2 border-primary/20 bg-background/95 backdrop-blur resize-y overflow-auto">
+    <Card className={`w-full ${heightClass || 'h-80'} border-t-2 border-primary/20 bg-background/95 backdrop-blur resize-y overflow-auto`}>
       <CardHeader className="p-3 border-b">
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2 text-sm">
