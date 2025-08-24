@@ -73,6 +73,7 @@ import { AgentNode } from './nodes/AgentNode';
 import { DataSourceNode } from './nodes/DataSourceNode';
 import { TestingConsolePanel } from './TestingConsolePanel';
 import { CodeEditorPanel } from './CodeEditorPanel';
+import { AITestingAssistant } from './AITestingAssistant';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 
@@ -479,7 +480,10 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasOnly, setCanvasOnly] = useState(false);
   
-  // 5 Critical Features State
+  const [isTestingVisible, setIsTestingVisible] = useState(false);
+  const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(true);
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const [testInput, setTestInput] = useState({ message: "Hello, test the workflow" });
   const [showTestConsole, setShowTestConsole] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showExecutionEngine, setShowExecutionEngine] = useState(false);
@@ -1371,17 +1375,47 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                 />
               )}
 
-              {/* Docked Node Palette */}
+              {/* Docked Node Palette - Modified to split with AI Assistant */}
               <Panel position="top-left" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
-                <div className="flex items-center gap-2 mb-2">
-          <Button size="sm" variant="outline" onClick={() => setShowPalette(!showPalette)}>
-            <Workflow className="h-4 w-4 mr-1" />
-            {showPalette ? 'Hide Nodes' : 'Show Nodes'}
-          </Button>
+                <div className="flex items-center justify-between mb-2">
+                  <Button size="sm" variant="outline" onClick={() => setShowPalette(!showPalette)}>
+                    <Workflow className="h-4 w-4 mr-1" />
+                    {showPalette ? 'Hide Palette' : 'Show Palette'}
+                  </Button>
+                  <Button 
+                    size="sm" 
+                    variant={isAIAssistantVisible ? "default" : "outline"}
+                    onClick={() => setIsAIAssistantVisible(!isAIAssistantVisible)}
+                  >
+                    <Bot className="h-4 w-4 mr-1" />
+                    AI Assistant
+                  </Button>
                 </div>
-                {showPalette && (
-                  <div className="w-72 h-[calc(100vh-220px)] overflow-y-auto">
-                    <NodePalette heightClass="h-full" />
+                
+                {(showPalette || isAIAssistantVisible) && (
+                  <div className="w-96 h-[calc(100vh-220px)] flex">
+                    {/* Node Palette - Left Half */}
+                    {showPalette && (
+                      <div className="flex-1 min-w-0 border-r pr-2">
+                        <NodePalette heightClass="h-full" />
+                      </div>
+                    )}
+                    
+                    {/* AI Assistant - Right Half */}
+                    {isAIAssistantVisible && (
+                      <div className="flex-1 min-w-0 pl-2">
+                        <AITestingAssistant
+                          nodes={nodes}
+                          edges={edges}
+                          testInput={testInput}
+                          onWorkflowUpdate={(updatedNodes, updatedEdges) => {
+                            setNodes(updatedNodes);
+                            setEdges(updatedEdges);
+                          }}
+                          isVisible={isAIAssistantVisible}
+                        />
+                      </div>
+                    )}
                   </div>
                 )}
               </Panel>
@@ -1581,9 +1615,17 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
             size="sm" 
             variant={showTestConsole ? "default" : "outline"}
             onClick={() => setShowTestConsole(!showTestConsole)}
-            title="Bottom Test Console"
+            title="Classic Testing Console"
           >
-            🧪 Test
+            🧪 Classic Test
+          </Button>
+          <Button 
+            size="sm" 
+            variant={isAIAssistantVisible ? "default" : "outline"}
+            onClick={() => setIsAIAssistantVisible(!isAIAssistantVisible)}
+            title="AI-Powered Testing & Analysis"
+          >
+            🤖 AI Test
           </Button>
           <Button 
             size="sm" 

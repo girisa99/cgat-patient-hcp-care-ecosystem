@@ -327,7 +327,7 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
               className="h-7 text-xs"
             >
               <Play className="h-3 w-3 mr-1" />
-              Test Workflow
+              Classic Test
             </Button>
             
             <Button
@@ -389,10 +389,11 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
       
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-          <TabsList className="w-full grid grid-cols-3 h-8">
+          <TabsList className="w-full grid grid-cols-4 h-8">
             <TabsTrigger value="console" className="text-xs">Console</TabsTrigger>
             <TabsTrigger value="input" className="text-xs">Test Input</TabsTrigger>
             <TabsTrigger value="results" className="text-xs">Results</TabsTrigger>
+            <TabsTrigger value="ai-assistant" className="text-xs">AI Assistant</TabsTrigger>
           </TabsList>
           
           <TabsContent value="console" className="h-60 m-0">
@@ -473,6 +474,19 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
                 )}
               </div>
             </ScrollArea>
+          </TabsContent>
+          
+          <TabsContent value="ai-assistant" className="h-60 m-0 p-0">
+            <div className="h-full">
+              {/* AI Assistant will be imported and used here */}
+              <div className="flex items-center justify-center h-full text-muted-foreground">
+                <div className="text-center">
+                  <Terminal className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                  <p className="text-sm">AI Testing Assistant</p>
+                  <p className="text-xs">Analyze workflow and get AI-powered testing insights</p>
+                </div>
+              </div>
+            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
