@@ -57,6 +57,7 @@ import {
   Layout, Grid, Layers, Move, RotateCw, Maximize2, Copy, Edit,
   Target, Link, Workflow, Activity, MousePointer, Hand
 } from 'lucide-react';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -153,7 +154,9 @@ const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: b
         />
         
 <div className="flex items-center gap-2 mb-2">
-          {data.icon && <data.icon className="h-4 w-4 text-primary" />}
+          {typeof data.icon === 'function' ? (
+            React.createElement(data.icon, { className: 'h-4 w-4 text-primary' })
+          ) : null}
           <div className="font-bold text-sm">{data.label}</div>
           {data.isStartNode && (
             <Badge variant="secondary" className="text-[10px]">Start</Badge>
@@ -487,11 +490,35 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [showToolbar, setShowToolbar] = useState(true);
   const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
+
+  // Sanitize node/edge types to avoid invalid element types
+  const safeNodeTypes = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(nodeTypes).filter(([, Comp]) => typeof Comp === 'function')
+    );
+  }, []);
+  const safeEdgeTypes = useMemo(() => {
+    return Object.fromEntries(
+      Object.entries(edgeTypes).filter(([, Comp]) => typeof Comp === 'function')
+    );
+  }, []);
   
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
     document.addEventListener('fullscreenchange', onFsChange);
     return () => document.removeEventListener('fullscreenchange', onFsChange);
+  }, []);
+
+  // Debug invalid element issues (React error #130)
+  useEffect(() => {
+    try {
+      // @ts-ignore - runtime introspection
+      console.log('[Debug][AdvancedReactFlow] typeof ReactFlow:', typeof ReactFlow);
+      console.log('[Debug] nodeTypes entries:', Object.entries(nodeTypes).map(([k, v]) => [k, typeof v]));
+      console.log('[Debug] edgeTypes entries:', Object.entries(edgeTypes).map(([k, v]) => [k, typeof v]));
+    } catch (e) {
+      console.warn('[Debug] inspection failed', e);
+    }
   }, []);
 
   // Auto-save workflow state with debouncing
@@ -1324,121 +1351,124 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
           />
           <ContextMenu>
             <ContextMenuTrigger asChild>
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={handleNodesChange}
-          onEdgesChange={onEdgesChange}
-              onConnect={onConnect}
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              onNodeContextMenu={handleNodeContextMenu}
-              onPaneContextMenu={handlePaneContextMenu}
-              onNodeClick={(event, node) => {
-                setSelectedNode(node);
-                onNodeSelect?.(node);
-              }}
-              onPaneClick={() => {
-                setSelectedNode(null);
-                onNodeSelect?.(null);
-              }}
-              nodeTypes={nodeTypes}
-              edgeTypes={edgeTypes}
+              <ErrorBoundary fallbackComponent={({ error, retry }) => (
+                <div className="p-4 text-center text-xs">
+                  <div className="font-medium">ReactFlow failed to mount</div>
+                  <div className="text-muted-foreground break-all max-w-md mx-auto">{error?.message}</div>
+                  <Button size="sm" variant="outline" onClick={retry} className="mt-2">Retry</Button>
+                </div>
+              )}>
+                <ReactFlow
+                  nodes={nodes}
+                  edges={edges}
+                  onNodesChange={handleNodesChange}
+                  onEdgesChange={onEdgesChange}
+                  onConnect={onConnect}
+                  onDrop={onDrop}
+                  onDragOver={onDragOver}
+                  onNodeContextMenu={handleNodeContextMenu}
+                  onPaneContextMenu={handlePaneContextMenu}
+                  onNodeClick={(event, node) => {
+                    setSelectedNode(node);
+                    onNodeSelect?.(node);
+                  }}
+                  onPaneClick={() => {
+                    setSelectedNode(null);
+                    onNodeSelect?.(null);
+                  }}
+              nodeTypes={safeNodeTypes}
+              edgeTypes={safeEdgeTypes}
               connectionLineComponent={ConnectionLine}
               connectionMode={connectionMode}
               snapToGrid={snapToGrid}
               snapGrid={[15, 15]}
               fitView
-              attributionPosition="bottom-left"
-              zoomOnScroll={true}
-              zoomOnDoubleClick={true}
-              zoomOnPinch={true}
-              panOnScroll={true}
-              panOnScrollMode={PanOnScrollMode.Free}
-              panOnDrag={dragMode === 'pan'}
-              minZoom={0.1}
-              maxZoom={2}
-              defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-              selectionOnDrag={dragMode === 'select'}
-              multiSelectionKeyCode="Shift"
-              deleteKeyCode={["Delete", "Backspace"]}
-              className="bg-gray-50"
-            >
-              <Background variant={backgroundVariant} gap={12} size={1} />
-              <Controls 
-                showZoom={true}
-                showFitView={true}
-                showInteractive={true}
-              />
-              
-              {showMiniMap && (
-                <MiniMap 
-                  zoomable 
-                  pannable 
-                  className="!bg-gray-100 !border-gray-300"
-                  nodeColor={(node) => {
-                    switch (node.data?.type) {
-                      case 'agent': return '#8b5cf6';
-                      case 'decision': return '#f59e0b';
-                      case 'customer': return '#10b981';
-                      default: return '#6b7280';
-                    }
-                  }}
-                />
-              )}
+                  attributionPosition="bottom-left"
+                  zoomOnScroll={true}
+                  zoomOnDoubleClick={true}
+                  zoomOnPinch={true}
+                  panOnScroll={true}
+                  panOnScrollMode={PanOnScrollMode.Free}
+                  panOnDrag={dragMode === 'pan'}
+                  minZoom={0.1}
+                  maxZoom={2}
+                  defaultViewport={{ x: 0, y: 0, zoom: 1 }}
+                  selectionOnDrag={dragMode === 'select'}
+                  multiSelectionKeyCode="Shift"
+                  deleteKeyCode={["Delete", "Backspace"]}
+                  className="bg-gray-50"
+                >
+                  <Background variant={backgroundVariant} gap={12} size={1} />
+                  <Controls 
+                    showZoom={true}
+                    showFitView={true}
+                    showInteractive={true}
+                  />
+                  {showMiniMap && (
+                    <MiniMap 
+                      zoomable 
+                      pannable 
+                      className="!bg-gray-100 !border-gray-300"
+                      nodeColor={(node) => {
+                        switch (node.data?.type) {
+                          case 'agent': return '#8b5cf6';
+                          case 'decision': return '#f59e0b';
+                          case 'customer': return '#10b981';
+                          default: return '#6b7280';
+                        }
+                      }}
+                    />
+                  )}
 
-              {/* Canvas Controls Panel */}
-              <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      if (document.fullscreenElement) {
-                        document.exitFullscreen();
-                        setCanvasOnly(false);
-                      } else {
-                        reactFlowWrapper.current?.requestFullscreen();
-                        setCanvasOnly(true);
-                      }
-                    }}
-                  >
-                    <Maximize2 className="h-4 w-4 mr-1" />
-                    {isFullscreen ? 'Exit' : 'Fullscreen'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={canvasOnly && !isFullscreen ? 'default' : 'outline'}
-                    onClick={() => setCanvasOnly(!canvasOnly)}
-                  >
-                    Canvas Only
-                  </Button>
-                </div>
-              </Panel>
-              
-              {/* Status Panel - Bottom Right */}
-              <Panel position="bottom-right" className="bg-white/90 backdrop-blur-md p-3 rounded-lg shadow border">
-                <div className="space-y-1 text-xs">
-                  <div className="font-medium">Status</div>
-                  <div>Nodes: {nodes.length}</div>
-                  <div>Edges: {edges.length}</div>
-                  <div className="flex items-center gap-1">
-                    <Badge variant={validationIssues.length === 0 ? "default" : "destructive"} className="text-xs">
-                      {validationIssues.length === 0 ? "Valid" : `${validationIssues.length} Issues`}
-                    </Badge>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Badge variant={sessionId ? "default" : "secondary"} className="text-xs">
-                      {sessionId ? "Connected" : "Local"}
-                    </Badge>
-                  </div>
-                </div>
-              </Panel>
-              
-              {/* Process tracker removed per UX request */}
-              
-            </ReactFlow>
-          </ContextMenuTrigger>
+                  {/* Canvas Controls Panel */}
+                  <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          if (document.fullscreenElement) {
+                            document.exitFullscreen();
+                            setCanvasOnly(false);
+                          } else {
+                            reactFlowWrapper.current?.requestFullscreen();
+                            setCanvasOnly(true);
+                          }
+                        }}
+                      >
+                        <Maximize2 className="h-4 w-4 mr-1" />
+                        {isFullscreen ? 'Exit' : 'Fullscreen'}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant={canvasOnly && !isFullscreen ? 'default' : 'outline'}
+                        onClick={() => setCanvasOnly(!canvasOnly)}
+                      >
+                        Canvas Only
+                      </Button>
+                    </div>
+                  </Panel>
+                  {/* Status Panel - Bottom Right */}
+                  <Panel position="bottom-right" className="bg-white/90 backdrop-blur-md p-3 rounded-lg shadow border">
+                    <div className="space-y-1 text-xs">
+                      <div className="font-medium">Status</div>
+                      <div>Nodes: {nodes.length}</div>
+                      <div>Edges: {edges.length}</div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant={validationIssues.length === 0 ? "default" : "destructive"} className="text-xs">
+                          {validationIssues.length === 0 ? "Valid" : `${validationIssues.length} Issues`}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Badge variant={sessionId ? "default" : "secondary"} className="text-xs">
+                          {sessionId ? "Connected" : "Local"}
+                        </Badge>
+                      </div>
+                    </div>
+                  </Panel>
+                </ReactFlow>
+              </ErrorBoundary>
+            </ContextMenuTrigger>
           
           <ContextMenuContent>
             <ContextMenuItem onClick={() => addNode('customer')}>
