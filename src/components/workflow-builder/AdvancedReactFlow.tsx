@@ -1123,7 +1123,25 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   };
 
   return (
-    <div className={`w-full ${fitParent ? 'h-full' : 'h-screen'} flex flex-col`}>
+    <SidebarProvider className={`w-full ${fitParent ? 'h-full' : 'h-screen'} flex`}>
+      {/* Left Sidebar with Node Palette and tools */}
+      <UnifiedSidebar
+        nodes={nodes}
+        edges={edges}
+        selectedNode={selectedNode}
+        sessionId={sessionId}
+        testInput={testInput}
+        onWorkflowUpdate={(updatedNodes, updatedEdges) => {
+          setNodes(updatedNodes);
+          setEdges(updatedEdges);
+        }}
+        showTestConsole={showTestConsole}
+        showCodeEditor={showCodeEditor}
+        setShowTestConsole={setShowTestConsole}
+        setShowCodeEditor={setShowCodeEditor}
+      />
+      {/* Main Builder Area */}
+      <div className="flex-1 flex flex-col">
       {/* Advanced Toolbar */}
       {!(canvasOnly || isFullscreen) && showToolbar && (
         <div className="border-b bg-background p-4">
@@ -1642,7 +1660,8 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
           </Button>
         </div>
       </Panel>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 
