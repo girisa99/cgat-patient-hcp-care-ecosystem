@@ -475,9 +475,15 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dragMode, setDragMode] = useState<'select' | 'pan'>('select');
-  const [showPalette, setShowPalette] = useState(true);
+  const [showPalette, setShowPalette] = useState(false); // Hidden by default
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasOnly, setCanvasOnly] = useState(false);
+  const [isAutoSaving, setIsAutoSaving] = useState(false);
+  
+  // 5 Critical Features State
+  const [showTestConsole, setShowTestConsole] = useState(false);
+  const [showCodeEditor, setShowCodeEditor] = useState(false);
+  const [showExecutionEngine, setShowExecutionEngine] = useState(false);
   
   useEffect(() => {
     const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
@@ -501,7 +507,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   ]);
   
   // Import all backend managers
-  const { workflows, createWorkflow, updateWorkflow, autoSaveWorkflow, isAutoSaving } = useWorkflowManager(sessionId);
+  const { workflows, createWorkflow, updateWorkflow, autoSaveWorkflow, isAutoSaving: workflowAutoSaving } = useWorkflowManager(sessionId);
   const { agents, createAgent, updateAgent } = useWorkflowAgents();
   const { aiModels, createModelConfig, updateModelConfig } = useAIModelManager();
   const { deployments, voiceProviders, apiIntegrations, createDeployment, createApiIntegration } = useInfrastructureManager();
@@ -1277,7 +1283,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                       {sessionId ? "Connected" : "Local Only"}
                     </Badge>
                   </div>
-                  {isAutoSaving && (
+                  {(isAutoSaving || workflowAutoSaving) && (
                     <div className="flex items-center gap-2 text-muted-foreground">
                       <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
                       Auto-saving...
@@ -1337,6 +1343,90 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         }
         `
       }} />
+      
+      {/* Session Persistence Manager */}
+      <SessionPersistenceManager 
+        sessionId={sessionId}
+        onSessionRestore={(sessionData) => {
+          if (sessionData?.canvas?.nodes) {
+            setNodes(sessionData.canvas.nodes);
+          }
+          if (sessionData?.canvas?.edges) {
+            setEdges(sessionData.canvas.edges);
+          }
+        }}
+        onSessionSync={(sessionData) => {
+          console.log('Session synced:', sessionData);
+        }}
+      />
+
+      {/* 5 Critical Features Integration */}
+      
+      {/* Bottom Test Console Panel */}
+      {showTestConsole && (
+        <div className="fixed bottom-0 left-0 right-0 h-64 border-t bg-background z-40">
+          <TestingConsolePanel 
+            isVisible={showTestConsole}
+            onToggle={() => setShowTestConsole(false)}
+            sessionId={sessionId}
+            workflowNodes={nodes}
+            workflowEdges={edges}
+          />
+        </div>
+      )}
+      
+      {/* Code Editor Panel */}
+      {showCodeEditor && (
+        <div className="fixed top-20 right-4 w-96 h-[calc(100vh-120px)] border bg-background rounded-lg shadow-lg z-40">
+          <CodeEditorPanel 
+            isVisible={showCodeEditor}
+            onToggle={() => setShowCodeEditor(false)}
+            sessionId={sessionId}
+          />
+        </div>
+      )}
+      
+      {/* Real-Time Execution Engine */}
+      {showExecutionEngine && (
+        <div className="fixed top-20 left-4 w-80 h-[calc(100vh-120px)] border bg-background rounded-lg shadow-lg z-40">
+          <RealTimeExecutionEngine 
+            nodes={nodes}
+            edges={edges}
+            sessionId={sessionId}
+            isVisible={showExecutionEngine}
+          />
+        </div>
+      )}
+
+      {/* Critical Features Toggle Buttons */}
+      <Panel position="bottom-left" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
+        <div className="flex items-center gap-2">
+          <Button 
+            size="sm" 
+            variant={showTestConsole ? "default" : "outline"}
+            onClick={() => setShowTestConsole(!showTestConsole)}
+            title="Bottom Test Console"
+          >
+            🧪 Test
+          </Button>
+          <Button 
+            size="sm" 
+            variant={showCodeEditor ? "default" : "outline"}
+            onClick={() => setShowCodeEditor(!showCodeEditor)}
+            title="Code Editor Panel"
+          >
+            💾 Code
+          </Button>
+          <Button 
+            size="sm" 
+            variant={showExecutionEngine ? "default" : "outline"}
+            onClick={() => setShowExecutionEngine(!showExecutionEngine)}
+            title="Real-Time Execution Engine"
+          >
+            ⚡ Execute
+          </Button>
+        </div>
+      </Panel>
     </div>
   );
 };

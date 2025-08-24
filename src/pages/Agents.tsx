@@ -217,26 +217,24 @@ const AgentsInner = () => {
   const renderFlowiseLayout = () => {
     return (
       <div className="h-screen flex flex-col bg-background">
-        {/* Top Header with Breadcrumb Navigation */}
-        <div className="h-14 border-b bg-card flex items-center justify-between px-6">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-semibold">Visual Workflow Builder</h1>
-              <Badge variant="secondary" className="text-xs">USE-CASE</Badge>
-            </div>
+        {/* Compact Top Header */}
+        <div className="h-10 border-b bg-card flex items-center justify-between px-4">
+          <div className="flex items-center gap-3">
+            <h1 className="text-sm font-semibold">Visual Workflow Builder</h1>
+            <Badge variant="secondary" className="text-xs">ADVANCED</Badge>
           </div>
           
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm">
-              <Save className="w-4 h-4 mr-1" />
+          <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
+              <Save className="w-3 h-3 mr-1" />
               Save
             </Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90">
-              <Play className="w-4 h-4 mr-1" />
+            <Button size="sm" className="h-7 px-2 text-xs bg-primary hover:bg-primary/90">
+              <Play className="w-3 h-3 mr-1" />
               Deploy
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowPromptAssistant(!showPromptAssistant)}>
-              <Bot className="w-4 h-4 mr-1" />
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowPromptAssistant(!showPromptAssistant)}>
+              <Bot className="w-3 h-3 mr-1" />
               AI Assistant
             </Button>
           </div>
