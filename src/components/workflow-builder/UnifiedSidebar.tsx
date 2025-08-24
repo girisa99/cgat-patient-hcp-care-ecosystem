@@ -239,12 +239,11 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         {/* Navigation Menu */}
         <div className="flex-shrink-0 border-b">
           {Object.entries(groupedTabs).map(([group, tabs]) => (
-            <SidebarGroup 
-              key={group}
-              open={expandedGroups[group]}
-              onOpenChange={() => toggleGroup(group)}
-            >
-              <SidebarGroupLabel className="cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1">
+            <SidebarGroup key={group}>
+              <SidebarGroupLabel 
+                className="cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1"
+                onClick={() => toggleGroup(group)}
+              >
                 {!collapsed && groupLabels[group as keyof typeof groupLabels]}
               </SidebarGroupLabel>
               

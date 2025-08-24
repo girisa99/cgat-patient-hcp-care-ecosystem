@@ -41,6 +41,8 @@ import ELK from 'elkjs/lib/elk.bundled.js';
 // UI Components
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { TestingConsolePanel } from './TestingConsolePanel';
+import { CodeEditorPanel } from './CodeEditorPanel';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Separator } from '@/components/ui/separator';
@@ -482,6 +484,9 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [showTestConsole, setShowTestConsole] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showExecutionEngine, setShowExecutionEngine] = useState(false);
+  const [showInsights, setShowInsights] = useState(false);
+  const [showToolbar, setShowToolbar] = useState(true);
+  const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
   
   useEffect(() => {
@@ -598,7 +603,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
 
   // Dynamic node sizing based on panel visibility
   const getNodeStyles = useCallback(() => {
-    const openPanels = [showTestConsole, showCodeEditor, showExecutionEngine, showInsights].filter(Boolean).length;
+    const openPanels = [showTestConsole, showCodeEditor, showExecutionEngine].filter(Boolean).length;
     
     if (openPanels >= 3) {
       // Very compact when 3+ panels open
@@ -629,7 +634,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
       nodeSpacing: { x: 200, y: 150 },
       fontSize: '14px'
     };
-  }, [showTestConsole, showCodeEditor, showExecutionEngine, showInsights]);
+  }, [showTestConsole, showCodeEditor, showExecutionEngine]);
 
   // Apply dynamic styles to nodes
   useEffect(() => {
@@ -1493,7 +1498,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
 
       {/* 5 Critical Features Integration */}
       
-      {/* Bottom Test Console Panel */}
+      {/* Testing Console Panel */}
       {showTestConsole && (
         <div className="fixed bottom-0 left-0 right-0 z-40">
           <TestingConsolePanel 
