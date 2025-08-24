@@ -43,12 +43,24 @@ export const FlowiseInspiredNode: React.FC<FlowiseNodeProps> = ({ id, data, sele
   useEffect(() => {
     if (selected) setIsConfigExpanded(true);
   }, [selected]);
+
+  // Open when external flag set (e.g., 'open-node-config')
+  useEffect(() => {
+    if (data?.configOpen) setIsConfigExpanded(true);
+  }, [data?.configOpen]);
+
+  // Keep local config in sync with node data
+  useEffect(() => {
+    if (data?.config) setConfig(data.config);
+  }, [data?.config]);
+
   // Handle config changes
   const updateConfig = (key: string, value: any) => {
-    setConfig(prev => ({ ...prev, [key]: value }));
+    const newConfig = { ...config, [key]: value };
+    setConfig(newConfig);
     // Emit event to update node data
     window.dispatchEvent(new CustomEvent('node-config-updated', {
-      detail: { nodeId: id, config: { ...config, [key]: value } }
+      detail: { nodeId: id, config: newConfig }
     }));
   };
 

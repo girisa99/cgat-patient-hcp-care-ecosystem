@@ -510,7 +510,11 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
     const handler = (e: any) => {
       const { nodeId } = e.detail || {};
       if (!nodeId) return;
-      setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, configOpen: true } } : n));
+      setNodes((nds) => nds.map(n =>
+        n.id === nodeId
+          ? { ...n, selected: true, data: { ...n.data, configOpen: true } }
+          : { ...n, selected: false }
+      ));
       // Notify outer panels to hide if needed
       window.dispatchEvent(new CustomEvent('inline-config-opened', { detail: { nodeId } }));
     };
@@ -689,9 +693,11 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
 
     // Select target node and open its inline configuration like Flowise
     if (targetNode) {
-      setSelectedNode(targetNode);
+    setSelectedNode(targetNode);
       onNodeSelect?.(targetNode);
       window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: targetNode.id } }));
+      // Programmatically select in ReactFlow
+      setNodes((nds) => nds.map(n => ({ ...n, selected: n.id === targetNode.id })));
     }
 
     setEdges((eds) => {
