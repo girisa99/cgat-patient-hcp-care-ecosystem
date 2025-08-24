@@ -344,6 +344,7 @@ const categories = [
 ];
 
 export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass }) => {
+  console.log('[NodePalette] render start');
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     'core': true,
     'ai': true,

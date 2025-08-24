@@ -76,6 +76,13 @@ const AgentsInner = () => {
   const [isInlineConfigOpen, setInlineConfigOpen] = useState(false);
   const [accessNodePosition, setAccessNodePosition] = useState({ x: 0, y: 0 });
 
+  console.log('[Agents] state init', {
+    selectedMode,
+    showModeSelector,
+    showQuestionnaire
+  });
+
+
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
   const { createSession, updateSession } = useAgentSession();
   const { user } = useMasterAuth();

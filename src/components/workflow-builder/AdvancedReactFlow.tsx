@@ -464,6 +464,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   sessionId,
   onNodeSelect,
 }) => {
+  console.log('[AdvancedReactFlow] render start', { fitParent, workflowType });
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedLayout, setSelectedLayout] = useState<'dagre' | 'elk' | 'manual'>('manual');
