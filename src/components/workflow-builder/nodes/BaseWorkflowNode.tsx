@@ -41,16 +41,24 @@ export const BaseWorkflowNode: React.FC<BaseWorkflowNodeProps> = ({
       
       <NodeToolbar isVisible={selected} position={Position.Top}>
         <div className="flex items-center gap-1 bg-white rounded shadow-lg border p-1">
-          <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+          <Button size="sm" variant="outline" className="h-6 w-6 p-0" onClick={() => {
+            window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }));
+          }} aria-label="Edit node">
             <Edit className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+          <Button size="sm" variant="outline" className="h-6 w-6 p-0" onClick={() => {
+            window.dispatchEvent(new CustomEvent('duplicate-node', { detail: { nodeId: id } }));
+          }} aria-label="Duplicate node">
             <Copy className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="outline" className="h-6 w-6 p-0" title="Mark as Start">
+          <Button size="sm" variant="outline" className="h-6 w-6 p-0" title="Mark as Start" onClick={() => {
+            window.dispatchEvent(new CustomEvent('mark-start-node', { detail: { nodeId: id } }));
+          }} aria-label="Mark as start">
             <Target className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="destructive" className="h-6 w-6 p-0">
+          <Button size="sm" variant="destructive" className="h-6 w-6 p-0" onClick={() => {
+            window.dispatchEvent(new CustomEvent('delete-node', { detail: { nodeId: id } }));
+          }} aria-label="Delete node">
             <Trash2 className="h-3 w-3" />
           </Button>
         </div>

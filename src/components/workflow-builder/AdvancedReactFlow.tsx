@@ -1311,6 +1311,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
               zoomOnPinch={true}
               panOnScroll={true}
               panOnScrollMode={PanOnScrollMode.Free}
+              panOnDrag={dragMode === 'pan'}
               minZoom={0.1}
               maxZoom={2}
               defaultViewport={{ x: 0, y: 0, zoom: 1 }}

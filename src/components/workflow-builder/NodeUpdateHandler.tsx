@@ -124,6 +124,98 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
+  // Listen for node toolbar actions (edit, copy, delete, target)
+  React.useEffect(() => {
+    const onDelete = (e: any) => {
+      const { nodeId } = e.detail || {};
+      if (nodeId) deleteNode(nodeId);
+    };
+    const onDuplicate = (e: any) => {
+      const { nodeId } = e.detail || {};
+      if (!nodeId) return;
+      const nodes = getNodes();
+      const original = nodes.find(n => n.id === nodeId);
+      if (!original) return;
+      const newId = `${nodeId}-copy-${Date.now()}`;
+      const newNode = {
+        ...original,
+        id: newId,
+        selected: false,
+        position: {
+          x: (original.position?.x || 0) + 40,
+          y: (original.position?.y || 0) + 40,
+        },
+        data: {
+          ...original.data,
+          label: `${original.data?.label || original.id} (copy)`,
+        },
+      } as any;
+      setNodes([...nodes, newNode]);
+      // Persist
+      if (sessionId && autoSave) {
+        try {
+          autoSave.mutate({
+            sessionId,
+            updates: {
+              canvas: {
+                workflow_steps: [...nodes, newNode],
+                connections: getEdges(),
+                layout: { timestamp: new Date().toISOString() }
+              }
+            }
+          });
+        } catch (error) {
+          console.warn('Auto-save failed:', error);
+        }
+      }
+      showSuccess('Node duplicated');
+    };
+    const onMarkStart = (e: any) => {
+      const { nodeId } = e.detail || {};
+      if (!nodeId) return;
+      const updatedNodes = getNodes().map(n => ({
+        ...n,
+        data: { ...n.data, isStartNode: n.id === nodeId }
+      }));
+      setNodes(updatedNodes);
+      // Persist
+      if (sessionId && autoSave) {
+        try {
+          autoSave.mutate({
+            sessionId,
+            updates: {
+              canvas: {
+                workflow_steps: updatedNodes,
+                connections: getEdges(),
+                layout: { timestamp: new Date().toISOString() }
+              }
+            }
+          });
+        } catch (error) {
+          console.warn('Auto-save failed:', error);
+        }
+      }
+      showSuccess('Marked as start node');
+    };
+    const onUpdate = (e: any) => {
+      const { nodeId, updates } = e.detail || {};
+      if (nodeId && updates) {
+        updateNode(nodeId, updates);
+      }
+    };
+
+    window.addEventListener('delete-node', onDelete as EventListener);
+    window.addEventListener('duplicate-node', onDuplicate as EventListener);
+    window.addEventListener('mark-start-node', onMarkStart as EventListener);
+    window.addEventListener('update-node', onUpdate as EventListener);
+    return () => {
+      window.removeEventListener('delete-node', onDelete as EventListener);
+      window.removeEventListener('duplicate-node', onDuplicate as EventListener);
+      window.removeEventListener('mark-start-node', onMarkStart as EventListener);
+      window.removeEventListener('update-node', onUpdate as EventListener);
+    };
+  }, [getNodes, setNodes, getEdges, sessionId, autoSave, showSuccess, updateNode, deleteNode]);
+
   return {
     updateNode,
     deleteNode
