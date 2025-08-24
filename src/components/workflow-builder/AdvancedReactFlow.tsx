@@ -191,7 +191,7 @@ export interface AdvancedReactFlowWrapperProps {
   journeyStages?: any[];
 }
 
-export const AdvancedReactFlowWrapper: React.FC<AdvancedReactFlowWrapperProps> = ({
+const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   initialNodes = [],
   initialEdges = [],
   workflowType = 'visual',
@@ -656,5 +656,14 @@ export const AdvancedReactFlowWrapper: React.FC<AdvancedReactFlowWrapperProps> =
   );
 };
 
-// Export AdvancedReactFlow for backward compatibility
+// Main export with ReactFlowProvider wrapper
+export const AdvancedReactFlowWrapper: React.FC<AdvancedReactFlowWrapperProps> = (props) => {
+  return (
+    <ReactFlowProvider>
+      <AdvancedReactFlowContent {...props} />
+    </ReactFlowProvider>
+  );
+};
+
+// Export AdvancedReactFlow for backward compatibility  
 export const AdvancedReactFlow = AdvancedReactFlowWrapper;
