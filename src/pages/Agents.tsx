@@ -55,6 +55,7 @@ import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/Expand
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Node } from '@xyflow/react';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const AgentsInner = () => {
   // State management
@@ -254,38 +255,48 @@ const AgentsInner = () => {
           <div className="flex-1 flex flex-col bg-gray-50/50 min-h-0">
             {/* ReactFlow Builder */}
             <div className="flex-1 min-h-0 relative">
-              <AdvancedReactFlowWrapper 
-                fitParent={true}
-                workflowType="visual"
-                sessionId={currentSession?.id}
-                initialNodes={[]}
-                initialEdges={[]}
-                onNodeSelect={(node) => {
-                  setSelectedNode(node);
-                  setRightPanelTab('config');
-                  
-                  // Show contextual access overlay for selected node
-                  if (node) {
-                    setTimeout(() => {
-                      const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
-                      if (nodeElement) {
-                        const rect = nodeElement.getBoundingClientRect();
-                        const containerRect = nodeElement.closest('.react-flow')?.getBoundingClientRect();
-                        if (containerRect) {
-                          setAccessNodePosition({
-                            x: rect.left - containerRect.left + rect.width,
-                            y: rect.top - containerRect.top
-                          });
-                          setShowContextualAccess(true);
+              <ErrorBoundary fallbackComponent={({ error, retry }) => (
+                <div className="absolute inset-0 flex items-center justify-center p-4">
+                  <div className="text-xs text-center space-y-2">
+                    <div className="font-medium">Canvas failed to load</div>
+                    <div className="text-muted-foreground break-all max-w-md mx-auto">{error?.message}</div>
+                    <Button size="sm" variant="outline" onClick={retry}>Retry</Button>
+                  </div>
+                </div>
+              )}>
+                <AdvancedReactFlowWrapper 
+                  fitParent={true}
+                  workflowType="visual"
+                  sessionId={currentSession?.id}
+                  initialNodes={[]}
+                  initialEdges={[]}
+                  onNodeSelect={(node) => {
+                    setSelectedNode(node);
+                    setRightPanelTab('config');
+                    
+                    // Show contextual access overlay for selected node
+                    if (node) {
+                      setTimeout(() => {
+                        const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
+                        if (nodeElement) {
+                          const rect = nodeElement.getBoundingClientRect();
+                          const containerRect = nodeElement.closest('.react-flow')?.getBoundingClientRect();
+                          if (containerRect) {
+                            setAccessNodePosition({
+                              x: rect.left - containerRect.left + rect.width,
+                              y: rect.top - containerRect.top
+                            });
+                            setShowContextualAccess(true);
+                          }
                         }
-                      }
-                    }, 100);
-                  } else {
-                    setShowContextualAccess(false);
-                  }
-                }}
-                onSave={handleFlowSave}
-              />
+                      }, 100);
+                    } else {
+                      setShowContextualAccess(false);
+                    }
+                  }}
+                  onSave={handleFlowSave}
+                />
+              </ErrorBoundary>
               
               {/* Contextual Access Overlay */}
               {showContextualAccess && selectedNode && (
