@@ -44,6 +44,7 @@ import { toast } from 'sonner';
 import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDesigner';
 import { AIModelSelector } from '@/components/agentic/AIModelSelector';
 import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
+import { SidebarProvider } from '@/components/ui/sidebar';
 import { NodeConfigurationPanel } from '@/components/workflow-builder/NodeConfigurationPanel';
 import { NodePalette } from '@/components/workflow-builder/NodePalette';
 import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetPanel';
@@ -264,40 +265,44 @@ const AgentsInner = () => {
                   </div>
                 </div>
               )}>
-                <ReactFlowProvider>
-                  <AdvancedReactFlowWrapper 
-                    fitParent={true}
-                    workflowType="visual"
-                    sessionId={currentSession?.id}
-                    initialNodes={[]}
-                    initialEdges={[]}
-                    onNodeSelect={(node) => {
-                      setSelectedNode(node);
-                      setRightPanelTab('config');
-                      
-                      // Show contextual access overlay for selected node
-                      if (node) {
-                        setTimeout(() => {
-                          const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
-                          if (nodeElement) {
-                            const rect = nodeElement.getBoundingClientRect();
-                            const containerRect = nodeElement.closest('.react-flow')?.getBoundingClientRect();
-                            if (containerRect) {
-                              setAccessNodePosition({
-                                x: rect.left - containerRect.left + rect.width,
-                                y: rect.top - containerRect.top
-                              });
-                              setShowContextualAccess(true);
-                            }
+                <SidebarProvider className="w-full">
+                  <div className="min-h-0 flex w-full">
+                    <ReactFlowProvider>
+                      <AdvancedReactFlowWrapper 
+                        fitParent={true}
+                        workflowType="visual"
+                        sessionId={currentSession?.id}
+                        initialNodes={[]}
+                        initialEdges={[]}
+                        onNodeSelect={(node) => {
+                          setSelectedNode(node);
+                          setRightPanelTab('config');
+                          
+                          // Show contextual access overlay for selected node
+                          if (node) {
+                            setTimeout(() => {
+                              const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
+                              if (nodeElement) {
+                                const rect = nodeElement.getBoundingClientRect();
+                                const containerRect = nodeElement.closest('.react-flow')?.getBoundingClientRect();
+                                if (containerRect) {
+                                  setAccessNodePosition({
+                                    x: rect.left - containerRect.left + rect.width,
+                                    y: rect.top - containerRect.top
+                                  });
+                                  setShowContextualAccess(true);
+                                }
+                              }
+                            }, 100);
+                          } else {
+                            setShowContextualAccess(false);
                           }
-                        }, 100);
-                      } else {
-                        setShowContextualAccess(false);
-                      }
-                    }}
-                    onSave={handleFlowSave}
-                  />
-                </ReactFlowProvider>
+                        }}
+                        onSave={handleFlowSave}
+                      />
+                    </ReactFlowProvider>
+                  </div>
+                </SidebarProvider>
               </ErrorBoundary>
               
               {/* Contextual Access Overlay */}
