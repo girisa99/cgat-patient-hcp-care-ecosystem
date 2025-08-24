@@ -77,10 +77,10 @@ import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { UnifiedSidebar } from './UnifiedSidebar';
 
-// Custom Node Types with Advanced Features
+// Custom Node Types
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const [isEditing, setIsEditing] = useState(false);
-  const { getNodes, setNodes, getEdges, setEdges } = useReactFlow();
+  const { getNodes, setNodes } = useReactFlow();
   const rfNode = useStore((s) => s.nodeLookup.get(id));
 
   const handleCopy = () => {
@@ -100,347 +100,80 @@ const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: b
     setNodes((nds) => [...nds, newNode]);
   };
 
-  const handleDelete = () => {
-    const edges = getEdges();
-    setEdges(edges.filter((e) => e.source !== id && e.target !== id));
+  const deleteNode = () => {
     setNodes((nds) => nds.filter((n) => n.id !== id));
   };
 
-  const setAsStart = () => {
-    setNodes((nds) =>
-      nds.map((n) =>
-        n.id === id
-          ? { ...n, data: { ...n.data, isStartNode: true } }
-          : { ...n, data: { ...n.data, isStartNode: false } }
-      )
-    );
-  };
-  
   return (
-    <>
-      <NodeResizer 
-        minWidth={100} 
-        minHeight={50} 
-        isVisible={selected}
-        lineClassName="border-blue-400"
-        handleClassName="w-3 h-3 bg-white border-2 border-blue-400"
-      />
-      <NodeToolbar isVisible={selected} position={Position.Top}>
-        <Button size="sm" variant="outline" onClick={() => setIsEditing(!isEditing)}>
-          <Edit className="h-3 w-3" />
-        </Button>
-        <Button size="sm" variant="outline" onClick={handleCopy}>
-          <Copy className="h-3 w-3" />
-        </Button>
-        <Button size="sm" variant="destructive" onClick={handleDelete}>
-          <Trash2 className="h-3 w-3" />
-        </Button>
-        <Button size="sm" variant="outline" onClick={setAsStart} title="Mark as Start">
-          <Target className="h-3 w-3" />
-        </Button>
-      </NodeToolbar>
+    <div className={`px-4 py-2 shadow-md rounded-md bg-white border-2 ${
+      selected ? 'border-blue-500' : 'border-stone-400'
+    }`}>
+      {selected && (
+        <NodeToolbar isVisible position={Position.Top}>
+          <button onClick={handleCopy} className="btn-primary">Copy</button>
+          <button onClick={() => setIsEditing(true)} className="btn-secondary">Edit</button>
+          <button onClick={deleteNode} className="btn-destructive">Delete</button>
+        </NodeToolbar>
+      )}
       
-      <div className="px-4 py-3 shadow-lg rounded-lg bg-white border-2 border-gray-200 min-w-[150px]">
-        <Handle 
-          type="target" 
-          position={Position.Left} 
-          className="w-3 h-3 !bg-blue-500 border-2 border-white"
-          isConnectable={data.connectionLimit ? data.connections < data.connectionLimit : true}
-        />
-        <Handle 
-          type="target" 
-          position={Position.Top} 
-          className="w-3 h-3 !bg-green-500 border-2 border-white"
-          id="top"
-        />
-        
-<div className="flex items-center gap-2 mb-2">
-          {typeof data.icon === 'function' ? (
-            React.createElement(data.icon, { className: 'h-4 w-4 text-primary' })
-          ) : null}
-          <div className="font-bold text-sm">{data.label}</div>
-          {data.isStartNode && (
-            <Badge variant="secondary" className="text-[10px]">Start</Badge>
-          )}
-          {data.status && (
-            <Badge variant={data.status === 'active' ? 'default' : 'secondary'} className="text-xs">
-              {data.status}
-            </Badge>
-          )}
-        </div>
-        
+      <Handle type="target" position={Position.Top} className="w-16 !bg-teal-500" />
+      <div>
         {isEditing ? (
-          <input 
-            className="text-xs border rounded px-1 py-0.5 w-full"
-            defaultValue={data.description}
-            onBlur={() => setIsEditing(false)}
+          <input
+            defaultValue={data?.label || 'Node'}
+            onBlur={(e) => {
+              setNodes((nds) =>
+                nds.map((n) =>
+                  n.id === id ? { ...n, data: { ...n.data, label: e.target.value } } : n
+                )
+              );
+              setIsEditing(false);
+            }}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.currentTarget.blur();
+              }
+            }}
             autoFocus
           />
         ) : (
-          <div className="text-xs text-gray-600 whitespace-normal break-words leading-snug">
-            {data.description}
-          </div>
+          <label>{data?.label || 'Node'}</label>
         )}
-        
-        {data.progress && (
-          <div className="mt-2">
-            <div className="w-full bg-gray-200 rounded-full h-1">
-              <div 
-                className="bg-blue-600 h-1 rounded-full transition-all duration-300" 
-                style={{ width: `${data.progress}%` }}
-              />
-            </div>
-          </div>
-        )}
-        
-        <Handle 
-          type="source" 
-          position={Position.Right} 
-          className="w-3 h-3 !bg-red-500 border-2 border-white"
-        />
-        <Handle 
-          type="source" 
-          position={Position.Bottom} 
-          className="w-3 h-3 !bg-yellow-500 border-2 border-white"
-          id="bottom"
-        />
       </div>
-    </>
+      <Handle type="source" position={Position.Bottom} className="w-16 !bg-teal-500" />
+    </div>
   );
 };
 
-// Group/Subflow Node
-const GroupNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
-  return (
-    <>
-      <NodeResizer minWidth={200} minHeight={150} isVisible={selected} />
-      <div className="w-full h-full bg-gray-100 border-2 border-gray-300 rounded-lg">
-        <div className="p-2 bg-gray-200 border-b border-gray-300 rounded-t-lg">
-          <div className="flex items-center gap-2">
-            <Layers className="h-4 w-4" />
-            <span className="font-medium text-sm">{data.label || 'Group'}</span>
-          </div>
-        </div>
-        <div className="p-2 h-full">
-          <div className="text-xs text-gray-500">{data.description}</div>
-        </div>
-      </div>
-    </>
-  );
-};
-
-// Custom Animated Edge
-const AnimatedEdge = ({
-  id,
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-  sourcePosition,
-  targetPosition,
-  style = {},
-  markerEnd,
-  data,
-  selected
-}: any) => {
-  const [edgePath, labelX, labelY] = getBezierPath({
-    sourceX,
-    sourceY,
-    sourcePosition,
-    targetX,
-    targetY,
-    targetPosition,
-  });
-
-  return (
-    <>
-      <BaseEdge 
-        path={edgePath} 
-        markerEnd={markerEnd} 
-        style={{
-          ...style,
-          strokeWidth: selected ? 3 : 2,
-          stroke: data?.color || style.stroke || '#b1b1b7',
-          strokeDasharray: data?.animated ? '5,5' : 'none',
-          animation: data?.animated ? 'dashdraw 0.5s linear infinite' : 'none'
-        }} 
-      />
-      {data?.label && (
-        <EdgeLabelRenderer>
-          <div
-            style={{
-              position: 'absolute',
-              transform: `translate(-50%, -50%) translate(${labelX}px,${labelY}px)`,
-              fontSize: 12,
-              pointerEvents: 'all',
-            }}
-            className="bg-white px-2 py-1 rounded shadow border text-xs"
-          >
-            {data.label}
-          </div>
-        </EdgeLabelRenderer>
-      )}
-    </>
-  );
-};
-
-// Smart Connection Line
-const ConnectionLine = ({ fromX, fromY, toX, toY, connectionLineStyle }: any) => {
+// Custom Connection Line
+const ConnectionLine = ({ fromX, fromY, toX, toY }: any) => {
   const [edgePath] = getBezierPath({
     sourceX: fromX,
     sourceY: fromY,
-    sourcePosition: Position.Right,
     targetX: toX,
     targetY: toY,
-    targetPosition: Position.Left,
   });
 
   return (
     <g>
-      <path
-        fill="none"
-        stroke="#222"
-        strokeWidth={2}
-        className="animated"
-        d={edgePath}
-        strokeDasharray="5,5"
-        style={{
-          animation: 'dashdraw 0.5s linear infinite'
-        }}
-      />
-      <circle cx={toX} cy={toY} fill="#ff0073" r={3} stroke="#222" strokeWidth={2} />
+      <path fill="none" stroke="#222" strokeWidth={1.5} className="animated" d={edgePath} />
+      <circle cx={toX} cy={toY} fill="#222" r={3} stroke="#222" strokeWidth={1.5} />
     </g>
   );
 };
 
-// Layout Algorithms
-const getLayoutedElements = (nodes: Node[], edges: Edge[], algorithm: 'dagre' | 'elk' = 'dagre') => {
-  if (algorithm === 'dagre') {
-    const dagreGraph = new dagre.graphlib.Graph();
-    dagreGraph.setDefaultEdgeLabel(() => ({}));
-    dagreGraph.setGraph({ rankdir: 'TB', align: 'UL', ranksep: 100, nodesep: 100 });
-
-    nodes.forEach((node) => {
-      dagreGraph.setNode(node.id, { width: 150, height: 100 });
-    });
-
-    edges.forEach((edge) => {
-      dagreGraph.setEdge(edge.source, edge.target);
-    });
-
-    dagre.layout(dagreGraph);
-
-    const layoutedNodes = nodes.map((node) => {
-      const nodeWithPosition = dagreGraph.node(node.id);
-      return {
-        ...node,
-        position: {
-          x: nodeWithPosition.x - 75,
-          y: nodeWithPosition.y - 50,
-        },
-      };
-    });
-
-    return { nodes: layoutedNodes, edges };
-  }
-  
-  // ELK.js layout would go here for more complex layouts
-  return { nodes, edges };
-};
-
-// Cycle Detection
-const hasCycle = (nodes: Node[], edges: Edge[], newEdge: Edge): boolean => {
-  const graph = new Map<string, string[]>();
-  
-  // Build adjacency list
-  [...edges, newEdge].forEach(edge => {
-    if (!graph.has(edge.source)) graph.set(edge.source, []);
-    graph.get(edge.source)!.push(edge.target);
-  });
-  
-  const visited = new Set<string>();
-  const recursionStack = new Set<string>();
-  
-  const dfs = (node: string): boolean => {
-    if (recursionStack.has(node)) return true;
-    if (visited.has(node)) return false;
-    
-    visited.add(node);
-    recursionStack.add(node);
-    
-    const neighbors = graph.get(node) || [];
-    for (const neighbor of neighbors) {
-      if (dfs(neighbor)) return true;
-    }
-    
-    recursionStack.delete(node);
-    return false;
-  };
-  
-  for (const node of nodes) {
-    if (!visited.has(node.id) && dfs(node.id)) {
-      return true;
-    }
-  }
-  
-  return false;
-};
-
-// Validation Rules
-const validateWorkflow = (nodes: Node[], edges: Edge[]) => {
-  const issues = [];
-  
-  // Check for isolated nodes
-  const connectedNodes = new Set();
-  edges.forEach(edge => {
-    connectedNodes.add(edge.source);
-    connectedNodes.add(edge.target);
-  });
-  
-  const isolatedNodes = nodes.filter(node => !connectedNodes.has(node.id));
-  if (isolatedNodes.length > 0) {
-    issues.push(`Isolated nodes found: ${isolatedNodes.map(n => n.data?.label || n.id).join(', ')}`);
-  }
-  
-  // Check for start node
-  const hasStartNode = nodes.some(node => node.data?.isStartNode);
-  if (!hasStartNode && nodes.length > 0) {
-    issues.push('No start node defined');
-  }
-  
-  // Check for end node
-  const hasEndNode = nodes.some(node => node.data?.isEndNode);
-  if (!hasEndNode && nodes.length > 0) {
-    issues.push('No end node defined');
-  }
-  
-  return issues;
-};
-
-// Node Types Configuration
-import { workflowNodeTypes } from './nodes';
-
-const nodeTypes: NodeTypes = {
-  custom: CustomNode,
-  group: GroupNode,
-  ...workflowNodeTypes,
-};
-
-// Edge Types Configuration
-const edgeTypes: EdgeTypes = {
-  animated: AnimatedEdge,
-};
-
-interface AdvancedReactFlowProps {
+export interface AdvancedReactFlowWrapperProps {
   initialNodes?: Node[];
   initialEdges?: Edge[];
-  onSave?: (flowData: any) => void;
-  onLoad?: (flowData: any) => void;
-  workflowType?: 'visual' | 'manual';
-  fitParent?: boolean; // when true, use h-full instead of h-screen
-  sessionId?: string; // for backend persistence
-  onNodeSelect?: (node: Node | null) => void; // for configuration panel
-  // Unified builder context
+  workflowType?: 'visual' | 'conversational' | 'process' | 'decision_tree' | 'flowchart' | 'bpmn';
+  onSave?: (workflowData: { nodes: Node[]; edges: Edge[]; metadata?: any }) => void;
+  onLayoutChange?: (layout: string) => void;
+  onNodeSelect?: (node: Node | null) => void;
+  sessionId?: string;
+  className?: string;
+  fitParent?: boolean;
+  
+  // Unified builder context props
   useCaseData?: {
     name: string;
     description: string;
@@ -458,782 +191,186 @@ interface AdvancedReactFlowProps {
   journeyStages?: any[];
 }
 
-export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
+export const AdvancedReactFlowWrapper: React.FC<AdvancedReactFlowWrapperProps> = ({
   initialNodes = [],
   initialEdges = [],
-  onSave,
-  onLoad,
   workflowType = 'visual',
-  fitParent = false,
-  sessionId,
+  onSave,
+  onLayoutChange,
   onNodeSelect,
+  sessionId,
+  className = '',
+  fitParent = false,
+  useCaseData,
+  capturedRequirements,
+  journeyStages,
 }) => {
-  console.log('[AdvancedReactFlow] render start', { fitParent, workflowType });
+  // Core ReactFlow State
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
-  const [selectedLayout, setSelectedLayout] = useState<'dagre' | 'elk' | 'manual'>('manual');
-  const [connectionMode, setConnectionMode] = useState<ConnectionMode>(ConnectionMode.Strict);
-  const [snapToGrid, setSnapToGrid] = useState(false);
-  const [showMiniMap, setShowMiniMap] = useState(true);
-  const [backgroundVariant, setBackgroundVariant] = useState<BackgroundVariant>(BackgroundVariant.Dots);
-  const [validationIssues, setValidationIssues] = useState<string[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [dragMode, setDragMode] = useState<'select' | 'pan'>('select');
-  const [isFullscreen, setIsFullscreen] = useState(false);
+  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const { fitView, getNodes, getEdges } = useReactFlow();
+
+  // UI State
+  const [activeTab, setActiveTab] = useState('layout');
   const [canvasOnly, setCanvasOnly] = useState(false);
-  
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
-  const [testInput, setTestInput] = useState({ message: "Hello, test the workflow" });
+  const [isFullscreen, setIsFullscreen] = useState(false);
   const [showTestConsole, setShowTestConsole] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showExecutionEngine, setShowExecutionEngine] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
-  const [showToolbar, setShowToolbar] = useState(true);
-  const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(false);
-  const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
+  const [showMiniMap, setShowMiniMap] = useState(true);
 
-  // Sanitize node/edge types to avoid invalid element types
-  const safeNodeTypes = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(nodeTypes).filter(([, Comp]) => typeof Comp === 'function')
-    );
-  }, []);
-  const safeEdgeTypes = useMemo(() => {
-    return Object.fromEntries(
-      Object.entries(edgeTypes).filter(([, Comp]) => typeof Comp === 'function')
-    );
-  }, []);
-  
-  useEffect(() => {
-    const onFsChange = () => setIsFullscreen(!!document.fullscreenElement);
-    document.addEventListener('fullscreenchange', onFsChange);
-    return () => document.removeEventListener('fullscreenchange', onFsChange);
-  }, []);
+  // Configuration State
+  const [connectionMode, setConnectionMode] = useState<ConnectionMode>(ConnectionMode.Loose);
+  const [backgroundVariant, setBackgroundVariant] = useState<BackgroundVariant>(BackgroundVariant.Dots);
+  const [snapToGrid, setSnapToGrid] = useState(false);
+  const [dragMode, setDragMode] = useState<'pan' | 'select'>('select');
 
-  // Debug invalid element issues (React error #130)
-  useEffect(() => {
-    try {
-      // @ts-ignore - runtime introspection
-      console.log('[Debug][AdvancedReactFlow] typeof ReactFlow:', typeof ReactFlow);
-      console.log('[Debug] nodeTypes entries:', Object.entries(nodeTypes).map(([k, v]) => [k, typeof v]));
-      console.log('[Debug] edgeTypes entries:', Object.entries(edgeTypes).map(([k, v]) => [k, typeof v]));
-    } catch (e) {
-      console.warn('[Debug] inspection failed', e);
-    }
-  }, []);
-
-  // Auto-save workflow state with debouncing
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      if (nodes.length > 0 || edges.length > 0) {
-        const workflowData = { nodes, edges };
-        
-        // Save to session storage
-        if (typeof window !== 'undefined') {
-          sessionStorage.setItem('workflow-state', JSON.stringify(workflowData));
-        }
-        
-        // Save to session API if available
-        if (sessionId && (window as any).sessionAPI) {
-          (window as any).sessionAPI.saveSession(sessionId, workflowData);
-        }
-      }
-    }, 1000);
-
-    return () => clearTimeout(timeoutId);
-  }, [nodes, edges, sessionId]);
-
-  // Restore workflow state on mount
-  useEffect(() => {
-    if (typeof window !== 'undefined' && nodes.length === 0 && edges.length === 0) {
-      const savedState = sessionStorage.getItem('workflow-state');
-      if (savedState) {
-        try {
-          const { nodes: savedNodes, edges: savedEdges } = JSON.parse(savedState);
-          if (savedNodes?.length > 0) {
-            setNodes(savedNodes);
-          }
-          if (savedEdges?.length > 0) {
-            setEdges(savedEdges);
-          }
-        } catch (error) {
-          console.warn('Failed to restore workflow state:', error);
-        }
-      }
-    }
-  }, []);
-
-  // Track selected nodes
-  const handleNodesChange = useCallback(
-    (changes: any[]) => {
-      onNodesChange(changes);
-      const selectedNodeChanges = changes.filter(change => change.type === 'select');
-      if (selectedNodeChanges.length > 0) {
-        const newSelectedNodes = nodes.filter(node => node.selected);
-        setSelectedNodes(newSelectedNodes);
-      }
-    },
-    [onNodesChange, nodes, setSelectedNodes]
-  );
+  // References
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
+
+  // Hooks
   const { showSuccess, showError } = useMasterToast();
-  const reactFlowInstance = useReactFlow();
-  const { autoSave } = useAgentSession();
-  const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const [inlineConfigNode, setInlineConfigNode] = useState<Node | null>(null);
-  
-  
-  // Mock process steps for demo
-  const [processSteps, setProcessSteps] = useState([
-    { id: '1', name: 'Start', type: 'start' as const, status: 'completed' as const, duration: '0.1s' },
-    { id: '2', name: 'Detect User Intention', type: 'agent' as const, status: 'completed' as const, model: 'gpt-4.1', duration: '1.2s', details: 'Analyzed user input for intent classification' },
-    { id: '3', name: 'Technical Agent', type: 'agent' as const, status: 'running' as const, model: 'gemini-2.0-flash', details: 'Processing technical query...' },
-    { id: '4', name: 'Sales Agent', type: 'agent' as const, status: 'pending' as const, model: 'claude-3-7-sonnet-latest' }
-  ]);
-  
-  // Import all backend managers
-  const { workflows, createWorkflow, updateWorkflow, autoSaveWorkflow, isAutoSaving: workflowAutoSaving } = useWorkflowManager(sessionId);
-  const { agents, createAgent, updateAgent } = useWorkflowAgents();
-  const { aiModels, createModelConfig, updateModelConfig } = useAIModelManager();
-  const { deployments, voiceProviders, apiIntegrations, createDeployment, createApiIntegration } = useInfrastructureManager();
-  const { roles, permissions, userRoles, assignRole, createRole } = useAccessManager();
-  const { testRuns, testCases, createTestRun, executeTestRun } = useTestingManager();
 
-  // Apply suggestions from contextual access overlay
-  useEffect(() => {
-    const handler = (e: any) => {
-      const { nodeId, connectors } = e.detail || {};
-      if (!nodeId || !Array.isArray(connectors)) return;
-      setNodes((nds) => nds.map(n => {
-        if (n.id !== nodeId) return n;
-        const existing = Array.isArray(n.data?.connectors) ? n.data.connectors : [];
-        const merged = Array.from(new Set([...existing, ...connectors]));
-        return { ...n, data: { ...n.data, connectors: merged } };
-      }));
-      showSuccess('Suggestions applied', 'Connectors added to the selected node');
-    };
-    window.addEventListener('apply-access-suggestions', handler as EventListener);
-    return () => window.removeEventListener('apply-access-suggestions', handler as EventListener);
-  }, [setNodes, showSuccess]);
+  // Derived State
+  const selectedNodes = useMemo(() => nodes.filter(n => n.selected), [nodes]);
+  const validationIssues: any[] = useMemo(() => [], [nodes, edges]);
 
-  // Handle code changes from editor
-  const handleCodeChange = useCallback((code: string, language: string) => {
-    if (selectedNodes.length === 1) {
-      const selectedNode = selectedNodes[0];
-      setNodes(nodes => nodes.map(node => 
-        node.id === selectedNode.id 
-          ? { ...node, data: { ...node.data, code, language } }
-          : node
-      ));
-    }
-  }, [selectedNodes, setNodes]);
+  // Safe Node and Edge Types
+  const safeNodeTypes: NodeTypes = useMemo(() => ({
+    custom: CustomNode,
+    agent: (props) => <AgentNode {...props} />,
+    ai: (props) => <AIIntelligenceNode {...props} />,
+  }), []);
 
-  // Dynamic node sizing based on panel visibility
-  const getNodeStyles = useCallback(() => {
-    const openPanels = [showTestConsole, showCodeEditor, showExecutionEngine].filter(Boolean).length;
+  const safeEdgeTypes: EdgeTypes = useMemo(() => ({}), []);
+
+  // Event Handlers
+  const onConnect: OnConnect = useCallback(
+    (params) => setEdges((eds) => addEdge(params, eds)),
+    [setEdges]
+  );
+
+  const handleNodeSelect = useCallback((node: Node | null) => {
+    setSelectedNode(node);
+    onNodeSelect?.(node);
+  }, [onNodeSelect]);
+
+  const handleNodesChange: OnNodesChange = useCallback(
+    (changes) => {
+      onNodesChange(changes);
+    },
+    [onNodesChange]
+  );
+
+  const onDrop = useCallback((event: React.DragEvent) => {
+    event.preventDefault();
     
-    if (openPanels >= 3) {
-      // Very compact when 3+ panels open
-      return {
-        nodeScale: 0.6,
-        nodeSpacing: { x: 120, y: 80 },
-        fontSize: '10px'
-      };
-    } else if (openPanels >= 2) {
-      // Compact when 2+ panels open
-      return {
-        nodeScale: 0.75,
-        nodeSpacing: { x: 140, y: 100 },
-        fontSize: '11px'
-      };
-    } else if (openPanels >= 1) {
-      // Slightly smaller when 1 panel open
-      return {
-        nodeScale: 0.85,
-        nodeSpacing: { x: 160, y: 120 },
-        fontSize: '12px'
-      };
-    }
-    
-    // Normal size when no panels open
-    return {
-      nodeScale: 1,
-      nodeSpacing: { x: 200, y: 150 },
-      fontSize: '14px'
-    };
-  }, [showTestConsole, showCodeEditor, showExecutionEngine]);
+    const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
+    if (!reactFlowBounds) return;
 
-  // Apply dynamic styles to nodes
-  useEffect(() => {
-    const styles = getNodeStyles();
-    const style = document.createElement('style');
-    style.textContent = `
-      .react-flow__node {
-        transform: scale(${styles.nodeScale});
-        font-size: ${styles.fontSize} !important;
-      }
-      .react-flow__node * {
-        font-size: ${styles.fontSize} !important;
-      }
-    `;
-    document.head.appendChild(style);
-    
-    return () => {
-      document.head.removeChild(style);
-    };
-  }, [getNodeStyles]);
+    const type = event.dataTransfer.getData('application/reactflow');
+    if (!type) return;
 
-  // Handle node configuration events - expand config within the node (no popup)
-  useEffect(() => {
-    const handler = (e: any) => {
-      const { nodeId } = e.detail || {};
-      if (!nodeId) return;
-      setNodes((nds) => nds.map(n =>
-        n.id === nodeId
-          ? { ...n, selected: true, data: { ...n.data, configOpen: true } }
-          : { ...n, selected: false }
-      ));
-      // Notify outer panels to hide if needed
-      window.dispatchEvent(new CustomEvent('inline-config-opened', { detail: { nodeId } }));
+    const position = {
+      x: event.clientX - reactFlowBounds.left,
+      y: event.clientY - reactFlowBounds.top,
     };
-    window.addEventListener('open-node-config', handler as EventListener);
-    return () => window.removeEventListener('open-node-config', handler as EventListener);
+
+    const newNode = {
+      id: `${type}_${Date.now()}`,
+      type,
+      position,
+      data: { label: `${type} node` },
+    };
+
+    setNodes((nds) => nds.concat(newNode));
   }, [setNodes]);
 
-  // Add suggested nodes from contextual access overlay
-  useEffect(() => {
-    const handler = (e: any) => {
-      const { currentNodeId, nodeType, nodeLabel, nodeDesc } = e.detail || {};
-      if (!currentNodeId || !nodeType || !nodeLabel) return;
-
-      const currentNode = nodes.find(n => n.id === currentNodeId);
-      if (!currentNode) return;
-
-      const newNodeId = `${nodeType}-${Date.now()}`;
-      const newNode = {
-        id: newNodeId,
-        type: nodeType,
-        position: {
-          x: currentNode.position.x + 200,
-          y: currentNode.position.y + 100
-        },
-        data: {
-          label: nodeLabel,
-          description: nodeDesc
-        }
-      };
-
-      const newEdge = {
-        id: `${currentNodeId}-${newNodeId}`,
-        source: currentNodeId,
-        target: newNodeId,
-        type: 'smoothstep'
-      };
-
-      setNodes((nds) => [...nds, newNode]);
-      setEdges((eds) => [...eds, newEdge]);
-      showSuccess('Node added', `${nodeLabel} connected to workflow`);
-    };
-    window.addEventListener('add-suggested-node', handler as EventListener);
-    return () => window.removeEventListener('add-suggested-node', handler as EventListener);
-  }, [nodes, setNodes, setEdges, showSuccess]);
-
-  // Handle single connector add from overlays/panels
-  useEffect(() => {
-    const handler = (e: any) => {
-      const { nodeId, connector } = e.detail || {};
-      if (!nodeId || !connector) return;
-      setNodes((nds) => nds.map(n => {
-        if (n.id !== nodeId) return n;
-        const existing = Array.isArray(n.data?.connectors) ? n.data.connectors : [];
-        if (existing.includes(connector)) return n;
-        return { ...n, data: { ...n.data, connectors: [...existing, connector] } };
-      }));
-      showSuccess('Connector added', connector);
-    };
-    window.addEventListener('add-connector', handler as EventListener);
-    return () => window.removeEventListener('add-connector', handler as EventListener);
-  }, [setNodes, showSuccess]);
-
-  // Persist inline node configuration updates
-  useEffect(() => {
-    const handler = (e: any) => {
-      const { nodeId, config } = e.detail || {};
-      if (!nodeId) return;
-      setNodes((nds) => nds.map(n => n.id === nodeId ? { ...n, data: { ...n.data, config } } : n));
-    };
-    window.addEventListener('node-config-updated', handler as EventListener);
-    return () => window.removeEventListener('node-config-updated', handler as EventListener);
-  }, [setNodes]);
-
-  // Auto-layout when algorithm changes
- useEffect(() => {
-     if (nodes.length === 0) return;
-     if (selectedLayout === 'manual') return;
- 
-     const runLayout = async () => {
-       if (selectedLayout === 'dagre') {
-         const { nodes: layoutedNodes, edges: layoutedEdges } = getLayoutedElements(nodes, edges, 'dagre');
-         setNodes(layoutedNodes);
-         setEdges(layoutedEdges);
-       } else if (selectedLayout === 'elk') {
-         try {
-           const elk = new ELK();
-           const graph: any = {
-             id: 'root',
-             layoutOptions: {
-               algorithm: 'layered',
-               'elk.direction': 'DOWN',
-               'elk.layered.spacing.nodeNodeBetweenLayers': '80',
-               'elk.spacing.nodeNode': '60'
-             },
-             children: nodes.map((n) => ({ id: n.id, width: 150, height: 100 })),
-             edges: edges.map((e) => ({ id: e.id, sources: [e.source], targets: [e.target] })),
-           };
-           const res: any = await elk.layout(graph);
-           const layoutedNodes = nodes.map((n) => {
-             const l = res.children?.find((c: any) => c.id === n.id);
-             return { ...n, position: { x: l?.x || 0, y: l?.y || 0 } };
-           });
-           setNodes(layoutedNodes);
-         } catch (e) {
-           // fall back to manual if ELK fails
-         }
-       }
-     };
- 
-     runLayout();
-   }, [selectedLayout]);
-
-  // Validation
-  useEffect(() => {
-    const issues = validateWorkflow(nodes, edges);
-    setValidationIssues(issues);
-  }, [nodes, edges]);
-
-  // Enhanced connection handler with cycle detection and edge semantics
-  const onConnect: OnConnect = useCallback((connection) => {
-    // Determine edge semantics based on source and target node types
-    const sourceNode = nodes.find(n => n.id === connection.source);
-    const targetNode = nodes.find(n => n.id === connection.target);
-    
-    let edgeLabel = 'Connection';
-    let edgeColor = '#8b5cf6';
-    
-    if (sourceNode && targetNode) {
-      const sourceType = sourceNode.data?.type;
-      const targetType = targetNode.data?.type;
-      
-      // Define edge semantics based on node types
-      if (sourceType === 'customer' && targetType === 'agent') {
-        edgeLabel = 'Initiates Conversation';
-        edgeColor = '#10b981';
-      } else if (sourceType === 'agent' && targetType === 'decision') {
-        edgeLabel = 'Process Decision';
-        edgeColor = '#f59e0b';
-      } else if (sourceType === 'decision' && targetType === 'agent') {
-        edgeLabel = 'Route to Agent';
-        edgeColor = '#8b5cf6';
-      } else if (sourceType === 'agent' && targetType === 'database') {
-        edgeLabel = 'Query Data';
-        edgeColor = '#3b82f6';
-      } else if (sourceType === 'database' && targetType === 'agent') {
-        edgeLabel = 'Return Results';
-        edgeColor = '#06b6d4';
-      } else if (targetType === 'customer') {
-        edgeLabel = 'Send Response';
-        edgeColor = '#10b981';
-      }
-    }
-
-    const newEdge: Edge = {
-      ...connection,
-      id: `edge-${Date.now()}`,
-      type: 'animated',
-      markerEnd: { type: MarkerType.ArrowClosed },
-      data: { 
-        label: edgeLabel,
-        animated: true,
-        color: edgeColor,
-        semantics: {
-          sourceType: sourceNode?.data?.type,
-          targetType: targetNode?.data?.type,
-          relationship: edgeLabel
-        }
-      }
-    } as Edge;
-
-    // Check for cycles
-    if (hasCycle(nodes, edges, newEdge)) {
-      showError('Connection would create a cycle!');
-      return;
-    }
-
-    // Select target node and open its inline configuration like Flowise
-    if (targetNode) {
-    setSelectedNode(targetNode);
-      onNodeSelect?.(targetNode);
-      window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: targetNode.id } }));
-      // Programmatically select in ReactFlow
-      setNodes((nds) => nds.map(n => ({ ...n, selected: n.id === targetNode.id })));
-    }
-
-    setEdges((eds) => {
-      const updatedEdges = addEdge(newEdge, eds);
-      // Auto-save to backend if sessionId exists  
-      if (sessionId && autoSave) {
-        try {
-          autoSave.mutate({ 
-            sessionId, 
-            updates: { 
-              canvas: { 
-                workflow_steps: nodes, 
-                connections: updatedEdges,
-                layout: {
-                  viewport: reactFlowInstance.getViewport(),
-                  selectedLayout, 
-                  connectionMode, 
-                  snapToGrid
-                }
-              } 
-            }
-          });
-        } catch (error) {
-          console.warn('Auto-save failed:', error);
-        }
-      }
-      return updatedEdges;
-    });
-    showSuccess(`${edgeLabel} created successfully`);
-  }, [nodes, edges, showError, showSuccess, sessionId, autoSave, reactFlowInstance, selectedLayout, connectionMode, snapToGrid]);
-
-  // Enhanced node operations with backend persistence
-  const addNode = async (type: string, position?: { x: number; y: number }) => {
-    const nodeId = `node-${Date.now()}`;
-    const newNode: Node = {
-      id: nodeId,
-      type: type, // use dropped node type so Flowise-inspired node renders
-      position: position || { x: Math.random() * 500, y: Math.random() * 300 },
-      data: {
-        label: `New ${type}`,
-        description: `This is a ${type} node`,
-        type, // store type in data for styling/logic
-        status: 'active',
-        progress: Math.floor(Math.random() * 100),
-        icon: type === 'agent' ? Bot : 
-              type === 'decision' ? AlertTriangle :
-              type === 'customer' ? Users :
-              type === 'database' ? Database : Settings,
-        backendId: null,
-        isBackendSynced: false
-      }
-    };
-    
-    setNodes(prev => [...prev, newNode]);
-    // Auto-open inline configuration like Flowise
-    setSelectedNode(newNode);
-    onNodeSelect?.(newNode);
-    window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId } }));
-    
-    // Create backend entity for agent nodes
-    if (type === 'agent') {
-      try {
-        createAgent({
-          name: `New ${type}`,
-          description: `AI agent created from workflow node`,
-          agent_type: 'single',
-          use_case: 'workflow-generated',
-          status: 'draft',
-          configuration: {
-            nodeId: nodeId,
-            position: newNode.position,
-            createdFromWorkflow: true
-          }
-        });
-      } catch (error) {
-        console.warn('Failed to create backend agent:', error);
-      }
-    }
-    
-    // Auto-save workflow state
-    if (sessionId) {
-      setTimeout(() => {
-        autoSaveWorkflow({
-          id: sessionId,
-          nodes: [...nodes, newNode],
-          edges,
-          metadata: { lastNodeAdded: type }
-        });
-      }, 1000);
-    }
-    
-    showSuccess(`${type} node added successfully`);
-  };
-
-  const addGroupNode = () => {
-    const newNode: Node = {
-      id: `group-${Date.now()}`,
-      type: 'group',
-      position: { x: 100, y: 100 },
-      style: { width: 300, height: 200 },
-      data: {
-        label: 'New Group',
-        description: 'Drag nodes here to group them'
-      }
-    };
-    
-    setNodes((nds) => [...nds, newNode]);
-    showSuccess('Group node added');
-  };
-
-  // Save/Load functionality with backend persistence
-  const handleSave = async () => {
-    const workflowData = {
-      nodes,
-      edges,
-      viewport: reactFlowInstance.getViewport(),
-      metadata: {
-        layout: selectedLayout,
-        connectionMode,
-        snapToGrid,
-        backgroundVariant,
-        timestamp: new Date().toISOString(),
-        nodeCount: nodes.length,
-        edgeCount: edges.length
-      }
-    };
-    
-    try {
-      if (sessionId && workflows?.find(w => w.id === sessionId)) {
-        // Update existing workflow
-        updateWorkflow({
-          id: sessionId,
-          workflow_data: workflowData,
-          status: 'active'
-        });
-      } else {
-        // Create new workflow
-        createWorkflow({
-          name: `Workflow ${new Date().toLocaleDateString()}`,
-          description: 'Visual workflow created in builder',
-          workflow_data: workflowData,
-          status: 'draft',
-          agent_session_id: sessionId
-        });
-      }
-    } catch (error) {
-      showError('Failed to save workflow: ' + error);
-      // Fallback to localStorage
-      localStorage.setItem('workflow-data', JSON.stringify(workflowData));
-      showSuccess('Workflow saved locally as fallback');
-    }
-    
-    if (onSave) {
-      onSave(workflowData);
-    }
-  };
-
-  const handleLoad = () => {
-    try {
-      const saved = localStorage.getItem('workflow-data');
-      if (saved) {
-        const flowData = JSON.parse(saved);
-        setNodes(flowData.nodes || []);
-        setEdges(flowData.edges || []);
-        if (flowData.viewport) {
-          reactFlowInstance.setViewport(flowData.viewport);
-        }
-        if (flowData.metadata) {
-          setSelectedLayout(flowData.metadata.layout || 'manual');
-          setConnectionMode(flowData.metadata.connectionMode || ConnectionMode.Strict);
-          setSnapToGrid(flowData.metadata.snapToGrid || false);
-          setBackgroundVariant(flowData.metadata.backgroundVariant || BackgroundVariant.Dots);
-        }
-        showSuccess('Workflow loaded successfully');
-      }
-    } catch (error) {
-      showError('Failed to load workflow');
-    }
-  };
-
-  // Clear workflow
-  const handleClear = () => {
-    setNodes([]);
-    setEdges([]);
-    showSuccess('Workflow cleared');
-  };
-
-  // Fit view
-  const handleFitView = () => {
-    reactFlowInstance.fitView({ padding: 0.2 });
-  };
-
-  // Listen for global workflow control events (for consistency with side panels)
-  useEffect(() => {
-    const onSimulate = () => toggleSimulation();
-    const onSaveEvt = () => handleSave();
-    const onLoadEvt = () => handleLoad();
-    const onFitEvt = () => handleFitView();
-    const onDeployEvt = () => showSuccess('Deploy started');
-    const onToggleInsights = () => setShowInsights((v) => !v);
-
-    window.addEventListener('workflow:simulate', onSimulate);
-    window.addEventListener('workflow:save', onSaveEvt);
-    window.addEventListener('workflow:load', onLoadEvt);
-    window.addEventListener('workflow:fitView', onFitEvt);
-    window.addEventListener('workflow:deploy', onDeployEvt);
-    window.addEventListener('workflow:toggleInsights', onToggleInsights);
-
-    return () => {
-      window.removeEventListener('workflow:simulate', onSimulate);
-      window.removeEventListener('workflow:save', onSaveEvt);
-      window.removeEventListener('workflow:load', onLoadEvt);
-      window.removeEventListener('workflow:fitView', onFitEvt);
-      window.removeEventListener('workflow:deploy', onDeployEvt);
-      window.removeEventListener('workflow:toggleInsights', onToggleInsights);
-    };
-  }, [isPlaying, nodes, edges]);
-
-  // Context menu handlers
-  const handleNodeContextMenu = (event: React.MouseEvent, node: Node) => {
-    event.preventDefault();
-  };
-
-  const handlePaneContextMenu = (event: React.MouseEvent) => {
-    event.preventDefault();
-  };
-
-  // Drag over handler for node drop
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.dataTransfer.dropEffect = 'move';
   }, []);
 
-  // Drop handler for adding nodes
-  const onDrop = useCallback((event: React.DragEvent) => {
+  const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
     event.preventDefault();
+    setSelectedNode(node);
+  }, []);
 
-    const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-    const type = event.dataTransfer.getData('application/reactflow');
+  const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+  }, []);
 
-    if (typeof type === 'undefined' || !type || !reactFlowBounds) {
-      return;
-    }
+  const handleFitView = useCallback(() => {
+    fitView({ padding: 0.1 });
+  }, [fitView]);
 
-    const position = reactFlowInstance.screenToFlowPosition({
-      x: event.clientX - reactFlowBounds.left,
-      y: event.clientY - reactFlowBounds.top,
-    });
+  const handleClear = useCallback(() => {
+    setNodes([]);
+    setEdges([]);
+  }, [setNodes, setEdges]);
 
-    addNode(type, position);
-  }, [reactFlowInstance]);
+  const addNode = useCallback((nodeType: string) => {
+    const newNode = {
+      id: `${nodeType}_${Date.now()}`,
+      type: nodeType,
+      position: { x: Math.random() * 400, y: Math.random() * 400 },
+      data: { label: `${nodeType} node` },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes]);
 
-  // Simulation/Animation
-  const toggleSimulation = () => {
-    setIsPlaying(!isPlaying);
-    
-    if (!isPlaying) {
-      // Start animation
-      setEdges(edges => edges.map(edge => ({
-        ...edge,
-        data: { ...edge.data, animated: true }
-      })));
-      showSuccess('Simulation started');
-    } else {
-      // Stop animation
-      setEdges(edges => edges.map(edge => ({
-        ...edge,
-        data: { ...edge.data, animated: false }
-      })));
-      showSuccess('Simulation stopped');
-    }
-  };
+  const addGroupNode = useCallback(() => {
+    const newNode: Node = {
+      id: `group_${Date.now()}`,
+      type: 'group',
+      position: { x: 100, y: 100 },
+      data: {},
+      style: { width: 200, height: 150, backgroundColor: 'rgba(255, 0, 0, 0.1)' },
+    };
+    setNodes((nds) => [...nds, newNode]);
+  }, [setNodes]);
+
+  const handleCodeChange = useCallback((code: string) => {
+    console.log('Code changed:', code);
+  }, []);
+
+  // Effects
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      setIsFullscreen(!!document.fullscreenElement);
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+  }, []);
 
   return (
-    <div className={`flex ${fitParent ? 'h-full' : 'h-screen'} bg-gray-50`}>
+    <div className="flex h-full w-full bg-background">
       {/* Unified Sidebar */}
-      <UnifiedSidebar
-        nodes={nodes}
-        edges={edges}
-        selectedNode={selectedNode}
-        sessionId={sessionId}
-        testInput={testInput}
-        onWorkflowUpdate={onWorkflowUpdate}
-        showTestConsole={showTestConsole}
-        showCodeEditor={showCodeEditor}
-        setShowTestConsole={setShowTestConsole}
-        setShowCodeEditor={setShowCodeEditor}
-        onAddNode={addNode}
-        onLayoutChange={(layout) => {
-          setSelectedLayout(layout as 'dagre' | 'elk' | 'manual');
-          handleLayoutChange(layout as 'dagre' | 'elk' | 'manual');
-        }}
-        onSnapToGrid={setSnapToGrid}
-        onBackgroundChange={(variant) => setBackgroundVariant(variant as BackgroundVariant)}
-        onConnectionModeChange={(mode) => setConnectionMode(mode as ConnectionMode)}
-        onDragModeChange={(mode) => setDragMode(mode as 'select' | 'pan')}
-        onShowMiniMap={setShowMiniMap}
-        onClearAll={handleClear}
-        selectedLayout={selectedLayout}
-        snapToGrid={snapToGrid}
-        backgroundVariant={backgroundVariant}
-        connectionMode={connectionMode}
-        dragMode={dragMode}
-        showMiniMap={showMiniMap}
-      />
+      {!canvasOnly && (
+        <UnifiedSidebar 
+          nodes={nodes}
+          edges={edges}
+          selectedNode={selectedNodes[0]}
+          sessionId={sessionId}
+          testInput={{}}
+          onWorkflowUpdate={() => {}}
+          showTestConsole={showTestConsole}
+          showCodeEditor={showCodeEditor}
+          setShowTestConsole={setShowTestConsole}
+          setShowCodeEditor={setShowCodeEditor}
+          onAddNode={addNode}
+          onLayoutChange={onLayoutChange}
+        />
+      )}
 
       {/* Main Canvas Area */}
-      <div className="flex-1">
-        <div className="h-full" ref={reactFlowWrapper}>
-          <ContextMenu>
-            <ContextMenuTrigger asChild>
-              <ErrorBoundary fallbackComponent={({ error, retry }) => (
-                <div className="p-4 text-center">
-                  <div>Canvas failed to load</div>
-                  <div className="text-sm text-muted-foreground">{error?.message}</div>
-                  <Button onClick={retry} className="mt-2">Retry</Button>
-                </div>
-              )}>
-                <ReactFlow
-                  nodes={nodes}
-                  edges={edges}
-                  onNodesChange={handleNodesChange}
-                  onEdgesChange={onEdgesChange}
-                  onConnect={onConnect}
-                  nodeTypes={safeNodeTypes}
-                  edgeTypes={safeEdgeTypes}
-                  connectionMode={connectionMode}
-                  snapToGrid={snapToGrid}
-                  snapGrid={[15, 15]}
-                  fitView
-                  className="h-full bg-gray-50"
-                >
-                  <Background variant={backgroundVariant} />
-                  <Controls />
-                  {showMiniMap && <MiniMap />}
-                </ReactFlow>
-              </ErrorBoundary>
-            </ContextMenuTrigger>
-            <ContextMenuContent>
-              <ContextMenuItem onClick={() => addNode('customer')}>Add Customer Node</ContextMenuItem>
-              <ContextMenuItem onClick={() => addNode('agent')}>Add Agent Node</ContextMenuItem>
-            </ContextMenuContent>
-          </ContextMenu>
-        </div>
-      </div>
-    </div>
-  );
-};
-          {/* Node Update Handler for keyboard shortcuts and backend persistence */}
-          <NodeUpdateHandler 
-            sessionId={sessionId}
-            onNodeUpdate={(nodeId, updates) => {
-              console.log('Node updated:', nodeId, updates);
-            }}
-            onNodeDelete={(nodeId) => {
-              console.log('Node deleted:', nodeId);
-            }}
-          />
+      <div className="flex-1 relative overflow-hidden">
+        <div 
+          ref={reactFlowWrapper} 
+          className="w-full h-full"
+        >
           <ContextMenu>
             <ContextMenuTrigger asChild>
               <ErrorBoundary fallbackComponent={({ error, retry }) => (
@@ -1255,19 +392,19 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                   onPaneContextMenu={handlePaneContextMenu}
                   onNodeClick={(event, node) => {
                     setSelectedNode(node);
-                    onNodeSelect?.(node);
+                    handleNodeSelect(node);
                   }}
                   onPaneClick={() => {
                     setSelectedNode(null);
-                    onNodeSelect?.(null);
+                    handleNodeSelect(null);
                   }}
-              nodeTypes={safeNodeTypes}
-              edgeTypes={safeEdgeTypes}
-              connectionLineComponent={ConnectionLine}
-              connectionMode={connectionMode}
-              snapToGrid={snapToGrid}
-              snapGrid={[15, 15]}
-              fitView
+                  nodeTypes={safeNodeTypes}
+                  edgeTypes={safeEdgeTypes}
+                  connectionLineComponent={ConnectionLine}
+                  connectionMode={connectionMode}
+                  snapToGrid={snapToGrid}
+                  snapGrid={[15, 15]}
+                  fitView
                   attributionPosition="bottom-left"
                   zoomOnScroll={true}
                   zoomOnDoubleClick={true}
@@ -1333,6 +470,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                       </Button>
                     </div>
                   </Panel>
+                  
                   {/* Status Panel - Bottom Right */}
                   <Panel position="bottom-right" className="bg-white/90 backdrop-blur-md p-3 rounded-lg shadow border">
                     <div className="space-y-1 text-xs">
@@ -1354,196 +492,33 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                 </ReactFlow>
               </ErrorBoundary>
             </ContextMenuTrigger>
-          
-          <ContextMenuContent>
-            <ContextMenuItem onClick={() => addNode('customer')}>
-              Add Customer Node
-            </ContextMenuItem>
-            <ContextMenuItem onClick={() => addNode('agent')}>
-              Add Agent Node  
-            </ContextMenuItem>
-            <ContextMenuItem onClick={() => addNode('decision')}>
-              Add Decision Node
-            </ContextMenuItem>
-            <ContextMenuItem onClick={addGroupNode}>
-              Add Group
-            </ContextMenuItem>
-            <Separator />
-            <ContextMenuItem onClick={handleFitView}>
-              Fit View
-            </ContextMenuItem>
-            <ContextMenuItem onClick={handleClear}>
-              Clear All
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
+            
+            <ContextMenuContent>
+              <ContextMenuItem onClick={() => addNode('customer')}>
+                Add Customer Node
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => addNode('agent')}>
+                Add Agent Node  
+              </ContextMenuItem>
+              <ContextMenuItem onClick={() => addNode('decision')}>
+                Add Decision Node
+              </ContextMenuItem>
+              <ContextMenuItem onClick={addGroupNode}>
+                Add Group
+              </ContextMenuItem>
+              <Separator />
+              <ContextMenuItem onClick={handleFitView}>
+                Fit View
+              </ContextMenuItem>
+              <ContextMenuItem onClick={handleClear}>
+                Clear All
+              </ContextMenuItem>
+            </ContextMenuContent>
+          </ContextMenu>
         </div>
       </div>
-    </div>
-  );
-                    setSelectedNode(null);
-                    onNodeSelect?.(null);
-                  }}
-              nodeTypes={safeNodeTypes}
-              edgeTypes={safeEdgeTypes}
-              connectionLineComponent={ConnectionLine}
-              connectionMode={connectionMode}
-              snapToGrid={snapToGrid}
-              snapGrid={[15, 15]}
-              fitView
-                  attributionPosition="bottom-left"
-                  zoomOnScroll={true}
-                  zoomOnDoubleClick={true}
-                  zoomOnPinch={true}
-                  panOnScroll={true}
-                  panOnScrollMode={PanOnScrollMode.Free}
-                  panOnDrag={dragMode === 'pan'}
-                  minZoom={0.1}
-                  maxZoom={2}
-                  defaultViewport={{ x: 0, y: 0, zoom: 1 }}
-                  selectionOnDrag={dragMode === 'select'}
-                  multiSelectionKeyCode="Shift"
-                  deleteKeyCode={["Delete", "Backspace"]}
-                  className="bg-gray-50"
-                >
-                  <Background variant={backgroundVariant} gap={12} size={1} />
-                  <Controls 
-                    showZoom={true}
-                    showFitView={true}
-                    showInteractive={true}
-                  />
-                  {showMiniMap && (
-                    <MiniMap 
-                      zoomable 
-                      pannable 
-                      className="!bg-gray-100 !border-gray-300"
-                      nodeColor={(node) => {
-                        switch (node.data?.type) {
-                          case 'agent': return '#8b5cf6';
-                          case 'decision': return '#f59e0b';
-                          case 'customer': return '#10b981';
-                          default: return '#6b7280';
-                        }
-                      }}
-                    />
-                  )}
 
-                  {/* Canvas Controls Panel */}
-                  <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          if (document.fullscreenElement) {
-                            document.exitFullscreen();
-                            setCanvasOnly(false);
-                          } else {
-                            reactFlowWrapper.current?.requestFullscreen();
-                            setCanvasOnly(true);
-                          }
-                        }}
-                      >
-                        <Maximize2 className="h-4 w-4 mr-1" />
-                        {isFullscreen ? 'Exit' : 'Fullscreen'}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant={canvasOnly && !isFullscreen ? 'default' : 'outline'}
-                        onClick={() => setCanvasOnly(!canvasOnly)}
-                      >
-                        Canvas Only
-                      </Button>
-                    </div>
-                  </Panel>
-                  {/* Status Panel - Bottom Right */}
-                  <Panel position="bottom-right" className="bg-white/90 backdrop-blur-md p-3 rounded-lg shadow border">
-                    <div className="space-y-1 text-xs">
-                      <div className="font-medium">Status</div>
-                      <div>Nodes: {nodes.length}</div>
-                      <div>Edges: {edges.length}</div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant={validationIssues.length === 0 ? "default" : "destructive"} className="text-xs">
-                          {validationIssues.length === 0 ? "Valid" : `${validationIssues.length} Issues`}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Badge variant={sessionId ? "default" : "secondary"} className="text-xs">
-                          {sessionId ? "Connected" : "Local"}
-                        </Badge>
-                      </div>
-                    </div>
-                  </Panel>
-                </ReactFlow>
-              </ErrorBoundary>
-            </ContextMenuTrigger>
-          
-          <ContextMenuContent>
-            <ContextMenuItem onClick={() => addNode('customer')}>
-              Add Customer Node
-            </ContextMenuItem>
-            <ContextMenuItem onClick={() => addNode('agent')}>
-              Add Agent Node  
-            </ContextMenuItem>
-            <ContextMenuItem onClick={() => addNode('decision')}>
-              Add Decision Node
-            </ContextMenuItem>
-            <ContextMenuItem onClick={addGroupNode}>
-              Add Group
-            </ContextMenuItem>
-            <Separator />
-            <ContextMenuItem onClick={handleFitView}>
-              Fit View
-            </ContextMenuItem>
-            <ContextMenuItem onClick={handleClear}>
-              Clear All
-            </ContextMenuItem>
-          </ContextMenuContent>
-        </ContextMenu>
-      </div>
-      
-      <style dangerouslySetInnerHTML={{
-        __html: `
-        @keyframes dashdraw {
-          to {
-            stroke-dashoffset: -10;
-          }
-        }
-        
-        .animated {
-          animation: dashdraw 0.5s linear infinite;
-        }
-        
-        .react-flow__edge.selected {
-          stroke: #ff0073 !important;
-        }
-        
-        .react-flow__node.selected {
-          border-color: #ff0073 !important;
-          box-shadow: 0 0 0 2px #ff0073 !important;
-        }
-        `
-      }} />
-      
-      {/* Session Persistence Manager */}
-      <SessionPersistenceManager 
-        sessionId={sessionId}
-        onSessionRestore={(sessionData) => {
-          if (sessionData?.canvas?.nodes) {
-            setNodes(sessionData.canvas.nodes);
-          }
-          if (sessionData?.canvas?.edges) {
-            setEdges(sessionData.canvas.edges);
-          }
-        }}
-        onSessionSync={(sessionData) => {
-          console.log('Session synced:', sessionData);
-        }}
-      />
-
-      {/* 5 Critical Features Integration */}
-      
-      {/* Testing Console Panel */}
+      {/* Overlay Panels */}
       {showTestConsole && (
         <div className="fixed bottom-0 left-0 right-0 z-40">
           <TestingConsolePanel 
@@ -1558,7 +533,6 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         </div>
       )}
       
-      {/* Code Editor Panel */}
       {showCodeEditor && (
         <div className="fixed top-0 right-0 w-96 h-full border-l bg-background z-40">
           <CodeEditorPanel 
@@ -1571,7 +545,6 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         </div>
       )}
       
-      {/* Real-Time Execution Engine */}
       {showExecutionEngine && (
         <div className="fixed top-20 left-4 w-80 h-[calc(100vh-120px)] border bg-background rounded-lg shadow-lg z-40">
           <RealTimeExecutionEngine 
@@ -1583,7 +556,6 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         </div>
       )}
 
-      {/* Analytics & Insights Panel */}
       {showInsights && (
         <div className="fixed top-20 right-4 w-80 h-[calc(100vh-120px)] border bg-background rounded-lg shadow-lg z-40">
           <Card className="h-full">
@@ -1631,9 +603,17 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
         </div>
       )}
 
-      </div>
-    </div>
-  );
+      {/* Node Update Handler */}
+      <NodeUpdateHandler 
+        sessionId={sessionId}
+        onNodeUpdate={(nodeId, updates) => {
+          console.log('Node updated:', nodeId, updates);
+        }}
+        onNodeDelete={(nodeId) => {
+          console.log('Node deleted:', nodeId);
+        }}
+      />
+
       {/* Session Persistence Manager */}
       <SessionPersistenceManager 
         sessionId={sessionId}
@@ -1649,21 +629,32 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
           console.log('Session synced:', sessionData);
         }}
       />
+
+      <style dangerouslySetInnerHTML={{
+        __html: `
+        @keyframes dashdraw {
+          to {
+            stroke-dashoffset: -10;
+          }
+        }
+        
+        .animated {
+          animation: dashdraw 0.5s linear infinite;
+        }
+        
+        .react-flow__edge.selected {
+          stroke: #ff0073 !important;
+        }
+        
+        .react-flow__node.selected {
+          border-color: #ff0073 !important;
+          box-shadow: 0 0 0 2px #ff0073 !important;
+        }
+        `
+      }} />
     </div>
   );
 };
 
-// Wrapper with ReactFlowProvider
-export const AdvancedReactFlowWrapper: React.FC<AdvancedReactFlowProps> = (props) => {
-  return (
-    <ReactFlowProvider>
-      <AdvancedReactFlow {...props} />
-    </ReactFlowProvider>
-  );
-};
-  return (
-    <ReactFlowProvider>
-      <AdvancedReactFlow {...props} />
-    </ReactFlowProvider>
-  );
-};
+// Export AdvancedReactFlow for backward compatibility
+export const AdvancedReactFlow = AdvancedReactFlowWrapper;
