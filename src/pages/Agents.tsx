@@ -112,19 +112,30 @@ const AgentsInner = () => {
     }
   };
 
-  // Initialize questionnaire for new users
+  // Initialize questionnaire/mode only once or when not chosen
   useEffect(() => {
     const completed = localStorage.getItem('agentBuilder_questionnaireCompleted') === 'true';
     setHasCompletedQuestionnaire(completed);
     
-    if (!completed && (userSessions?.length ?? 0) === 0) {
-      setShowQuestionnaire(true);
+    // Restore persisted mode once if available
+    const storedMode = localStorage.getItem('agentBuilder_selectedMode') as AgentMode | null;
+    if (!selectedMode && storedMode) {
+      setSelectedMode(storedMode as any);
       setShowModeSelector(false);
-    } else {
-      setShowQuestionnaire(false);
-      setShowModeSelector(true);
+      return;
     }
-}, [userSessions]);
+
+    // Only compute defaults when no mode chosen yet to avoid resets
+    if (!selectedMode) {
+      if (!completed && (userSessions?.length ?? 0) === 0) {
+        setShowQuestionnaire(true);
+        setShowModeSelector(false);
+      } else {
+        setShowQuestionnaire(false);
+        setShowModeSelector(true);
+      }
+    }
+  }, [userSessions, selectedMode]);
 
   // Avoid opening the right panel when inline node config is requested and track inline state
   useEffect(() => {
@@ -152,6 +163,7 @@ const AgentsInner = () => {
 
   const handleModeSelect = (mode: AgentMode) => {
     setSelectedMode(mode);
+    try { localStorage.setItem('agentBuilder_selectedMode', mode as any); } catch {}
     setShowModeSelector(false);
     
     if (mode === 'visual') {
