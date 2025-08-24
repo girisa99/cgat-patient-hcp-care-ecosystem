@@ -230,26 +230,10 @@ const AgentsInner = () => {
           </div>
         </div>
 
-        {/* Main Content - Enhanced Four Panel Layout */}
+        {/* Main Content - Flowise-Inspired Layout */}
         <div className="flex-1 flex overflow-hidden">
-
-          {/* Center Canvas Area */}
+          {/* Full Canvas Area with Integrated Palette */}
           <div className="flex-1 flex flex-col bg-gray-50/50 min-h-0">
-            <div className="p-4 border-b bg-card">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="font-medium text-sm">Advanced Workflow Builder</h2>
-                  <p className="text-xs text-muted-foreground">
-                    Drag nodes from palette, configure with AI assistance, connect to data sources and APIs
-                  </p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="text-xs">Auto-Code</Badge>
-                  <Badge variant="secondary" className="text-xs">AI-Powered</Badge>
-                  <Badge variant="outline" className="text-xs">Connected</Badge>
-                </div>
-              </div>
-            </div>
             {/* ReactFlow Builder */}
             <div className="flex-1 min-h-0 relative">
               <AdvancedReactFlowWrapper 
@@ -295,17 +279,6 @@ const AgentsInner = () => {
               )}
             </div>
           </div>
-
-          {false && (
-            <ResizablePanel 
-              initialWidth={380}
-              minWidth={320}
-              maxWidth={800}
-              className="border-l bg-background flex flex-col"
-            >
-              <div className="hidden" />
-            </ResizablePanel>
-          )}
         </div>
 
         {/* AI Assistant Panel (fixed positioning) */}

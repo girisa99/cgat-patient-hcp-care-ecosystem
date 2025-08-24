@@ -455,7 +455,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dragMode, setDragMode] = useState<'select' | 'pan'>('select');
-  const [showPalette, setShowPalette] = useState(false);
+  const [showPalette, setShowPalette] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasOnly, setCanvasOnly] = useState(false);
   

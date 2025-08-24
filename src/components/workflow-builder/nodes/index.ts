@@ -10,6 +10,7 @@ import { DeploymentNode } from './DeploymentNode';
 import { AIIntelligenceNode } from './AIIntelligenceNode';
 import { AgentNode } from './AgentNode';
 import { DataSourceNode } from './DataSourceNode';
+import { FlowiseInspiredNode } from './FlowiseInspiredNode';
 
 // Export all node types
 export { BaseWorkflowNode } from './BaseWorkflowNode';
@@ -25,6 +26,7 @@ export { DeploymentNode } from './DeploymentNode';
 export { AIIntelligenceNode } from './AIIntelligenceNode';
 export { AgentNode } from './AgentNode';
 export { DataSourceNode } from './DataSourceNode';
+export { FlowiseInspiredNode } from './FlowiseInspiredNode';
 
 // Node type registry for ReactFlow
 export const workflowNodeTypes = {
@@ -37,7 +39,25 @@ export const workflowNodeTypes = {
   knowledgeBaseNode: KnowledgeBaseNode,
   testingNode: TestingNode,
   deploymentNode: DeploymentNode,
-  aiIntelligence: AIIntelligenceNode,
-  agentNode: AgentNode,
-  dataSource: DataSourceNode,
+  aiIntelligence: FlowiseInspiredNode,
+  agentNode: FlowiseInspiredNode,
+  dataSource: FlowiseInspiredNode,
+  // Workflow execution nodes
+  start: FlowiseInspiredNode,
+  condition: FlowiseInspiredNode,
+  decision: FlowiseInspiredNode,
+  llm: FlowiseInspiredNode,
+  agent: FlowiseInspiredNode,
+  human_input: FlowiseInspiredNode,
+  loop: FlowiseInspiredNode,
+  iteration: FlowiseInspiredNode,
+  execute_flow: FlowiseInspiredNode,
+  direct_reply: FlowiseInspiredNode,
+  http: FlowiseInspiredNode,
+  tools: FlowiseInspiredNode,
+  retriever: FlowiseInspiredNode,
+  custom_function: FlowiseInspiredNode,
+  stick_note: FlowiseInspiredNode,
+  customer: FlowiseInspiredNode,
+  database: FlowiseInspiredNode,
 };
