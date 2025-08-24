@@ -23,6 +23,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
   onModeSelect, 
   selectedMode 
 }) => {
+  console.log('[ModeSelector] icon types', { Workflow: typeof Workflow, Settings: typeof Settings, Zap: typeof Zap, ArrowRight: typeof ArrowRight, Brain: typeof Brain, MousePointer: typeof MousePointer, Sliders: typeof Sliders });
   return (
     <div className="max-w-4xl mx-auto space-y-6">
       <div className="text-center space-y-4">

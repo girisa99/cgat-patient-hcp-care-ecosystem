@@ -373,6 +373,7 @@ const AgentsInner = () => {
 
   // Show questionnaire if needed
   if (showQuestionnaire) {
+    console.log('[Agents] rendering Questionnaire branch');
     return (
       <AppLayout>
         <div className="p-6">
@@ -386,6 +387,7 @@ const AgentsInner = () => {
 
   // Show mode selector if no mode selected
   if (showModeSelector || !selectedMode) {
+    console.log('[Agents] rendering ModeSelector branch', { selectedMode, showModeSelector });
     return (
       <AppLayout>
         <div className="p-6">
