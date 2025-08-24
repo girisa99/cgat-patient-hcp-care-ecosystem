@@ -65,17 +65,15 @@ import { useInfrastructureManager } from '@/hooks/useInfrastructureManager';
 import { useAccessManager } from '@/hooks/useAccessManager';
 import { useTestingManager } from '@/hooks/useTestingManager';
 import { NodeUpdateHandler } from './NodeUpdateHandler';
-import { NodePalette } from './NodePalette';
 import { InlineNodeConfig } from './InlineNodeConfig';
 import { ProcessFlowTracker } from './ProcessFlowTracker';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { AgentNode } from './nodes/AgentNode';
 import { DataSourceNode } from './nodes/DataSourceNode';
-import { TestingConsolePanel } from './TestingConsolePanel';
-import { CodeEditorPanel } from './CodeEditorPanel';
-import { AITestingAssistant } from './AITestingAssistant';
+import { UnifiedSidebar } from './UnifiedSidebar';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
+import { SidebarProvider } from "@/components/ui/sidebar";
 
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -476,19 +474,14 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
   const [validationIssues, setValidationIssues] = useState<string[]>([]);
   const [isPlaying, setIsPlaying] = useState(false);
   const [dragMode, setDragMode] = useState<'select' | 'pan'>('select');
-  const [showPalette, setShowPalette] = useState(false); // Hidden by default
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [canvasOnly, setCanvasOnly] = useState(false);
   
-  const [isTestingVisible, setIsTestingVisible] = useState(false);
-  const [isAIAssistantVisible, setIsAIAssistantVisible] = useState(true);
   const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
   const [testInput, setTestInput] = useState({ message: "Hello, test the workflow" });
   const [showTestConsole, setShowTestConsole] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showExecutionEngine, setShowExecutionEngine] = useState(false);
-  const [showToolbar, setShowToolbar] = useState(false);
-  const [showInsights, setShowInsights] = useState(false);
   const [selectedNodes, setSelectedNodes] = useState<Node[]>([]);
   
   useEffect(() => {
@@ -1270,20 +1263,55 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
       )}
 
 
-      {/* Main Flow Area */}
-      <div className="flex-1" ref={reactFlowWrapper}>
-        {/* Node Update Handler for keyboard shortcuts and backend persistence */}
-        <NodeUpdateHandler 
-          sessionId={sessionId}
-          onNodeUpdate={(nodeId, updates) => {
-            console.log('Node updated:', nodeId, updates);
-          }}
-          onNodeDelete={(nodeId) => {
-            console.log('Node deleted:', nodeId);
-          }}
-        />
-        <ContextMenu>
-          <ContextMenuTrigger asChild>
+        {/* Main Flow Area */}
+        <div className="flex-1 flex flex-col" ref={reactFlowWrapper}>
+          {/* Mini Toolbar for Canvas Controls */}
+          {!canvasOnly && (
+            <div className="bg-white border-b border-gray-200 shadow-sm p-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Button size="sm" onClick={() => addNode('custom')}>
+                  <Plus className="h-4 w-4 mr-1" />
+                  Node
+                </Button>
+                <Button
+                  size="sm"
+                  variant={dragMode === 'pan' ? "default" : "outline"}
+                  onClick={() => setDragMode(dragMode === 'select' ? 'pan' : 'select')}
+                >
+                  {dragMode === 'select' ? <MousePointer className="h-4 w-4 mr-1" /> : <Hand className="h-4 w-4 mr-1" />}
+                  {dragMode === 'select' ? 'Select' : 'Pan'}
+                </Button>
+                <Button
+                  size="sm"
+                  variant={showMiniMap ? "default" : "outline"}
+                  onClick={() => setShowMiniMap(!showMiniMap)}
+                >
+                  <Eye className="h-4 w-4 mr-1" />
+                  Mini Map
+                </Button>
+              </div>
+              
+              <div className="flex items-center gap-2">
+                <Button size="sm" variant="destructive" onClick={handleClear}>
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Clear
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Node Update Handler for keyboard shortcuts and backend persistence */}
+          <NodeUpdateHandler 
+            sessionId={sessionId}
+            onNodeUpdate={(nodeId, updates) => {
+              console.log('Node updated:', nodeId, updates);
+            }}
+            onNodeDelete={(nodeId) => {
+              console.log('Node deleted:', nodeId);
+            }}
+          />
+          <ContextMenu>
+            <ContextMenuTrigger asChild>
         <ReactFlow
           nodes={nodes}
           edges={edges}
@@ -1331,34 +1359,6 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                 showInteractive={true}
               />
               
-              {/* Fullscreen & Canvas-Only Toggle */}
-              <Panel position="top-center" className="z-50 bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => {
-                      if (document.fullscreenElement) {
-                        document.exitFullscreen();
-                        setCanvasOnly(false);
-                      } else {
-                        reactFlowWrapper.current?.requestFullscreen();
-                        setCanvasOnly(true);
-                      }
-                    }}
-                  >
-                    <Maximize2 className="h-4 w-4 mr-2" />
-                    {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={canvasOnly && !isFullscreen ? 'default' : 'outline'}
-                    onClick={() => setCanvasOnly(!canvasOnly)}
-                  >
-                    Canvas Only
-                  </Button>
-                </div>
-              </Panel>
               {showMiniMap && (
                 <MiniMap 
                   zoomable 
@@ -1375,78 +1375,51 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
                 />
               )}
 
-              {/* Docked Node Palette - Modified to split with AI Assistant */}
-              <Panel position="top-left" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
-                <div className="flex items-center justify-between mb-2">
-                  <Button size="sm" variant="outline" onClick={() => setShowPalette(!showPalette)}>
-                    <Workflow className="h-4 w-4 mr-1" />
-                    {showPalette ? 'Hide Palette' : 'Show Palette'}
-                  </Button>
-                  <Button 
-                    size="sm" 
-                    variant={isAIAssistantVisible ? "default" : "outline"}
-                    onClick={() => setIsAIAssistantVisible(!isAIAssistantVisible)}
+              {/* Canvas Controls Panel */}
+              <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      if (document.fullscreenElement) {
+                        document.exitFullscreen();
+                        setCanvasOnly(false);
+                      } else {
+                        reactFlowWrapper.current?.requestFullscreen();
+                        setCanvasOnly(true);
+                      }
+                    }}
                   >
-                    <Bot className="h-4 w-4 mr-1" />
-                    AI Assistant
+                    <Maximize2 className="h-4 w-4 mr-1" />
+                    {isFullscreen ? 'Exit' : 'Fullscreen'}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={canvasOnly && !isFullscreen ? 'default' : 'outline'}
+                    onClick={() => setCanvasOnly(!canvasOnly)}
+                  >
+                    Canvas Only
                   </Button>
                 </div>
-                
-                {(showPalette || isAIAssistantVisible) && (
-                  <div className="w-96 h-[calc(100vh-220px)] flex">
-                    {/* Node Palette - Left Half */}
-                    {showPalette && (
-                      <div className="flex-1 min-w-0 border-r pr-2">
-                        <NodePalette heightClass="h-full" />
-                      </div>
-                    )}
-                    
-                    {/* AI Assistant - Right Half */}
-                    {isAIAssistantVisible && (
-                      <div className="flex-1 min-w-0 pl-2">
-                        <AITestingAssistant
-                          nodes={nodes}
-                          edges={edges}
-                          testInput={testInput}
-                          onWorkflowUpdate={(updatedNodes, updatedEdges) => {
-                            setNodes(updatedNodes);
-                            setEdges(updatedEdges);
-                          }}
-                          isVisible={isAIAssistantVisible}
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
               </Panel>
               
-              {/* Enhanced Status Panel */}
-              <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-4 rounded-lg shadow-lg border">
-                <div className="space-y-2 text-sm">
-                  <div className="font-medium text-primary">Workflow Status</div>
+              {/* Status Panel - Bottom Right */}
+              <Panel position="bottom-right" className="bg-white/90 backdrop-blur-md p-3 rounded-lg shadow border">
+                <div className="space-y-1 text-xs">
+                  <div className="font-medium">Status</div>
                   <div>Nodes: {nodes.length}</div>
                   <div>Edges: {edges.length}</div>
-                  <div>Layout: {selectedLayout}</div>
-                  <div>Agents: {agents?.length || 0}</div>
-                  <div>AI Models: {aiModels?.length || 0}</div>
-                  <div className="flex items-center gap-2">
-                    Validation: 
-                    <Badge variant={validationIssues.length === 0 ? "default" : "destructive"}>
+                  <div className="flex items-center gap-1">
+                    <Badge variant={validationIssues.length === 0 ? "default" : "destructive"} className="text-xs">
                       {validationIssues.length === 0 ? "Valid" : `${validationIssues.length} Issues`}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-2">
-                    Backend: 
-                    <Badge variant={sessionId ? "default" : "secondary"}>
-                      {sessionId ? "Connected" : "Local Only"}
+                  <div className="flex items-center gap-1">
+                    <Badge variant={sessionId ? "default" : "secondary"} className="text-xs">
+                      {sessionId ? "Connected" : "Local"}
                     </Badge>
                   </div>
-                  {workflowAutoSaving && (
-                    <div className="flex items-center gap-2 text-muted-foreground">
-                      <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                      Auto-saving...
-                    </div>
-                  )}
                 </div>
               </Panel>
               
