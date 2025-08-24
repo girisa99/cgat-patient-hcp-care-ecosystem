@@ -1321,7 +1321,7 @@ export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
               defaultViewport={{ x: 0, y: 0, zoom: 1 }}
               selectionOnDrag={dragMode === 'select'}
               multiSelectionKeyCode="Shift"
-              deleteKeyCode="Delete"
+              deleteKeyCode={["Delete", "Backspace"]}
               className="bg-gray-50"
             >
               <Background variant={backgroundVariant} gap={12} size={1} />

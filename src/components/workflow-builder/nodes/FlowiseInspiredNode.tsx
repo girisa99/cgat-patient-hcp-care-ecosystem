@@ -109,16 +109,23 @@ export const FlowiseInspiredNode: React.FC<FlowiseNodeProps> = ({ id, data, sele
       {/* Node Toolbar */}
       <NodeToolbar isVisible={selected} position={Position.Top}>
         <div className="flex items-center gap-1 bg-white rounded-md shadow-lg border p-1">
-          <Button size="sm" variant="ghost" onClick={() => setIsConfigExpanded(!isConfigExpanded)}>
+          <Button size="sm" variant="ghost" onClick={() => {
+            setIsConfigExpanded(!isConfigExpanded);
+            window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }));
+          }}>
             <Settings className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="ghost">
+          <Button size="sm" variant="ghost" onClick={() => {
+            window.dispatchEvent(new CustomEvent('duplicate-node', { detail: { nodeId: id } }));
+          }}>
             <Copy className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="ghost">
+          <Button size="sm" variant="ghost" onClick={() => {
+            window.dispatchEvent(new CustomEvent('delete-node', { detail: { nodeId: id } }));
+          }}>
             <Trash2 className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="ghost">
+          <Button size="sm" variant="ghost" onClick={() => setNodeState(prev => ({ ...prev, isRunning: !prev.isRunning }))}>
             {nodeState.status === 'running' ? <EyeOff className="h-3 w-3" /> : <Eye className="h-3 w-3" />}
           </Button>
         </div>

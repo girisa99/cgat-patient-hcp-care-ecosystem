@@ -131,7 +131,6 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
     return () => document.removeEventListener('keydown', handleKeyDown);
   }, [handleKeyDown]);
 
-  // Listen for node toolbar actions (edit, copy, delete, target)
   React.useEffect(() => {
     const onDelete = (e: any) => {
       const { nodeId } = e.detail || {};
@@ -158,7 +157,6 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
         },
       } as any;
       setNodes([...nodes, newNode]);
-      // Persist
       if (sessionId && autoSave) {
         try {
           autoSave.mutate({
@@ -185,7 +183,6 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
         data: { ...n.data, isStartNode: n.id === nodeId }
       }));
       setNodes(updatedNodes);
-      // Persist
       if (sessionId && autoSave) {
         try {
           autoSave.mutate({
@@ -210,16 +207,26 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
         updateNode(nodeId, updates);
       }
     };
+    const onConfigUpdated = (e: any) => {
+      const { nodeId, config } = e.detail || {};
+      if (!nodeId) return;
+      const existing = getNodes().find(n => n.id === nodeId);
+      const newData = { ...(existing?.data || {}), config };
+      updateNode(nodeId, { data: newData });
+      showSuccess('Node configuration updated');
+    };
 
     window.addEventListener('delete-node', onDelete as EventListener);
     window.addEventListener('duplicate-node', onDuplicate as EventListener);
     window.addEventListener('mark-start-node', onMarkStart as EventListener);
     window.addEventListener('update-node', onUpdate as EventListener);
+    window.addEventListener('node-config-updated', onConfigUpdated as EventListener);
     return () => {
       window.removeEventListener('delete-node', onDelete as EventListener);
       window.removeEventListener('duplicate-node', onDuplicate as EventListener);
       window.removeEventListener('mark-start-node', onMarkStart as EventListener);
       window.removeEventListener('update-node', onUpdate as EventListener);
+      window.removeEventListener('node-config-updated', onConfigUpdated as EventListener);
     };
   }, [getNodes, setNodes, getEdges, sessionId, autoSave, showSuccess, updateNode, deleteNode]);
 
