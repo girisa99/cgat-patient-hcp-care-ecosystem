@@ -54,7 +54,7 @@ import { ContextualAccessOverlay } from '@/components/workflow-builder/Contextua
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
-import { Node } from '@xyflow/react';
+import { Node, ReactFlowProvider } from '@xyflow/react';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const AgentsInner = () => {
@@ -264,38 +264,40 @@ const AgentsInner = () => {
                   </div>
                 </div>
               )}>
-                <AdvancedReactFlowWrapper 
-                  fitParent={true}
-                  workflowType="visual"
-                  sessionId={currentSession?.id}
-                  initialNodes={[]}
-                  initialEdges={[]}
-                  onNodeSelect={(node) => {
-                    setSelectedNode(node);
-                    setRightPanelTab('config');
-                    
-                    // Show contextual access overlay for selected node
-                    if (node) {
-                      setTimeout(() => {
-                        const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
-                        if (nodeElement) {
-                          const rect = nodeElement.getBoundingClientRect();
-                          const containerRect = nodeElement.closest('.react-flow')?.getBoundingClientRect();
-                          if (containerRect) {
-                            setAccessNodePosition({
-                              x: rect.left - containerRect.left + rect.width,
-                              y: rect.top - containerRect.top
-                            });
-                            setShowContextualAccess(true);
+                <ReactFlowProvider>
+                  <AdvancedReactFlowWrapper 
+                    fitParent={true}
+                    workflowType="visual"
+                    sessionId={currentSession?.id}
+                    initialNodes={[]}
+                    initialEdges={[]}
+                    onNodeSelect={(node) => {
+                      setSelectedNode(node);
+                      setRightPanelTab('config');
+                      
+                      // Show contextual access overlay for selected node
+                      if (node) {
+                        setTimeout(() => {
+                          const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
+                          if (nodeElement) {
+                            const rect = nodeElement.getBoundingClientRect();
+                            const containerRect = nodeElement.closest('.react-flow')?.getBoundingClientRect();
+                            if (containerRect) {
+                              setAccessNodePosition({
+                                x: rect.left - containerRect.left + rect.width,
+                                y: rect.top - containerRect.top
+                              });
+                              setShowContextualAccess(true);
+                            }
                           }
-                        }
-                      }, 100);
-                    } else {
-                      setShowContextualAccess(false);
-                    }
-                  }}
-                  onSave={handleFlowSave}
-                />
+                        }, 100);
+                      } else {
+                        setShowContextualAccess(false);
+                      }
+                    }}
+                    onSave={handleFlowSave}
+                  />
+                </ReactFlowProvider>
               </ErrorBoundary>
               
               {/* Contextual Access Overlay */}
