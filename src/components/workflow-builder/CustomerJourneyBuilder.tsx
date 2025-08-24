@@ -706,79 +706,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
       </div>
 
       <div className="flex flex-1">
-        {/* Node Palette */}
-        <div className="w-64 border-r bg-muted/30 p-4 h-full overflow-y-auto">
-          <h3 className="font-medium mb-3">Add Components</h3>
-          <div className="space-y-2">
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full justify-start"
-              onClick={() => addNode('customer')}
-            >
-              <Users className="h-4 w-4 mr-2" />
-              Customer Touchpoint
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full justify-start"
-              onClick={() => addNode('touchpoint')}
-            >
-              <MessageCircle className="h-4 w-4 mr-2" />
-              Interaction Point
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full justify-start"
-              onClick={() => addNode('agent')}
-            >
-              <Bot className="h-4 w-4 mr-2" />
-              AI Agent
-            </Button>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="w-full justify-start"
-              onClick={() => addNode('decision')}
-            >
-              <AlertTriangle className="h-4 w-4 mr-2" />
-              Decision Point
-            </Button>
-          </div>
-
-          {/* Quick Templates */}
-          <div className="mt-6">
-            <h3 className="font-medium mb-3">Quick Templates</h3>
-            <div className="space-y-2">
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start text-xs"
-                onClick={() => generateAIWorkflow('Patient Onboarding')}
-              >
-                Patient Onboarding
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start text-xs"
-                onClick={() => generateAIWorkflow('Appointment Scheduling')}
-              >
-                Appointment Scheduling
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="w-full justify-start text-xs"
-                onClick={() => generateAIWorkflow('Insurance Verification')}
-              >
-                Insurance Verification
-              </Button>
-            </div>
-          </div>
-        </div>
+        {/* Integrated with AdvancedReactFlow - legacy palette removed */}
 
         {/* Flow Canvas */}
         <div className="flex-1 relative">
@@ -856,13 +784,18 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
         onSuggestionAccepted={handleAISuggestion}
       />
 
-      {/* Advanced ReactFlow - All features enabled */}
+      {/* Advanced ReactFlow - Enhanced with 5 critical features */}
       {workflowContext.type === 'visual' && (
         <AdvancedReactFlow
           initialNodes={nodes}
           initialEdges={edges}
           onSave={handleSave}
           workflowType="visual"
+          sessionId={sessionId}
+          useCaseData={useCaseData}
+          capturedRequirements={capturedRequirements}
+          journeyStages={journeyStages}
+          fitParent={true}
         />
       )}
 

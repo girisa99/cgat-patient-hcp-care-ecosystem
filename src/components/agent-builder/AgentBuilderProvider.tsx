@@ -91,7 +91,7 @@ export const AgentBuilderProvider: React.FC<AgentBuilderProviderProps> = ({
     isLoading,
   } = useAgentSession(stableSessionId || undefined);
 
-  // Client-side initialization effect
+  // Client-side initialization effect with cross-tab sync
   useEffect(() => {
     try {
       // Initialize from localStorage only on client side
@@ -105,6 +105,25 @@ export const AgentBuilderProvider: React.FC<AgentBuilderProviderProps> = ({
       if (savedStep && !initialStep) {
         setCurrentStep(savedStep);
       }
+
+      // Set up cross-tab synchronization
+      const handleStorageChange = (e: StorageEvent) => {
+        if (e.key === 'agentBuilder_currentSessionId' && e.newValue) {
+          setCurrentSessionId(e.newValue);
+        }
+        if (e.key === 'agentBuilder_currentStep' && e.newValue) {
+          setCurrentStep(e.newValue as AgentSession['current_step']);
+        }
+        if (e.key === 'agentBuilder_mode' && e.newValue) {
+          setMode(e.newValue as 'prompt' | 'visual' | 'manual');
+        }
+      };
+
+      window.addEventListener('storage', handleStorageChange);
+      
+      return () => {
+        window.removeEventListener('storage', handleStorageChange);
+      };
     } catch (error) {
       console.error('Error accessing localStorage:', error);
     }

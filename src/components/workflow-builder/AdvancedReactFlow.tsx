@@ -71,6 +71,10 @@ import { ProcessFlowTracker } from './ProcessFlowTracker';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { AgentNode } from './nodes/AgentNode';
 import { DataSourceNode } from './nodes/DataSourceNode';
+import { TestingConsolePanel } from './TestingConsolePanel';
+import { CodeEditorPanel } from './CodeEditorPanel';
+import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
+import { SessionPersistenceManager } from './SessionPersistenceManager';
 
 // Custom Node Types with Advanced Features
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -433,6 +437,22 @@ interface AdvancedReactFlowProps {
   fitParent?: boolean; // when true, use h-full instead of h-screen
   sessionId?: string; // for backend persistence
   onNodeSelect?: (node: Node | null) => void; // for configuration panel
+  // Unified builder context
+  useCaseData?: {
+    name: string;
+    description: string;
+    selectedUseCase?: any;
+    detailedUseCase?: string;
+    targetUsers?: string;
+    expectedOutcomes?: string;
+  };
+  capturedRequirements?: {
+    connectors: string[];
+    actions: string[];
+    steps: string[];
+    integrations: string[];
+  };
+  journeyStages?: any[];
 }
 
 export const AdvancedReactFlow: React.FC<AdvancedReactFlowProps> = ({
