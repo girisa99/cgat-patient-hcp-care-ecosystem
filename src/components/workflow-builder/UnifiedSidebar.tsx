@@ -109,7 +109,9 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   const collapsed = state === "collapsed";
   const [activeTab, setActiveTab] = useState('nodes');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    workflow: true
+    workflow: true,
+    testing: false,
+    deployment: false
   });
   const [nodeSearch, setNodeSearch] = useState('');
 
@@ -187,40 +189,8 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         
       case 'nodes':
         return (
-          <div className="p-0 h-full flex flex-col">
+          <div className="p-0 h-full">
             <EnhancedNodePalette heightClass="h-full" searchTermExternal={nodeSearch} hideSearch />
-            <div className="px-3 py-2 border-t border-border/50 mt-2 space-y-2">
-              {/* Testing & Debug - bottom section */}
-              <div>
-                <Button variant="ghost" className="w-full justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-3 w-3" />
-                    Testing & Debug
-                  </div>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </div>
-              {/* Config & Deploy - bottom section */}
-              <div>
-                <Button variant="ghost" className="w-full justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <Bot className="h-3 w-3" />
-                    Config & Deploy
-                  </div>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </div>
-              {/* Settings - bottom section */}
-              <div>
-                <Button variant="ghost" className="w-full justify-between text-xs">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-3 w-3" />
-                    Settings
-                  </div>
-                  <ChevronDown className="h-3 w-3" />
-                </Button>
-              </div>
-            </div>
           </div>
         );
         
@@ -382,59 +352,123 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
     <Sidebar className={collapsed ? "w-14" : "w-80"}>
       <SidebarTrigger className="m-2 self-end" />
       
-      <SidebarContent className="flex flex-col h-full">
-        {/* Navigation Menu */}
-        <div className="flex-shrink-0 border-b">
-          {Object.entries(groupedTabs).map(([group, tabs]) => (
-            <SidebarGroup key={group}>
-              <SidebarGroupLabel 
-                className="cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1"
-                onClick={() => toggleGroup(group)}
-              >
-                {!collapsed && groupLabels[group as keyof typeof groupLabels]}
-              </SidebarGroupLabel>
-              
-              {(expandedGroups[group] || collapsed) && (
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {tabs.map((tab) => (
-                      <SidebarMenuItem key={tab.id}>
-                        <SidebarMenuButton 
-                          onClick={() => handleTabClick(tab.id)}
-                          className={activeTab === tab.id ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
-                        >
-                          <tab.icon className="mr-2 h-4 w-4" />
-                          {!collapsed && <span>{tab.title}</span>}
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              )}
-            </SidebarGroup>
-          ))}
-        </div>
+      <ScrollArea className="h-full">
+        <SidebarContent className="flex flex-col">
+          {/* Workflow Design Section */}
+          <SidebarGroup>
+            <SidebarGroupLabel 
+              className="cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1"
+              onClick={() => toggleGroup('workflow')}
+            >
+              {!collapsed && groupLabels.workflow}
+            </SidebarGroupLabel>
+            
+            {(expandedGroups.workflow || collapsed) && (
+              <SidebarGroupContent>
+                {/* Search Bar at top of Workflow Design */}
+                <div className="px-2 pb-2">
+                  <div className="relative">
+                    <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      value={nodeSearch}
+                      onChange={(e) => setNodeSearch(e.target.value)}
+                      placeholder="Search nodes across library..."
+                      className="pl-9 h-9 text-xs placeholder:text-xs"
+                    />
+                  </div>
+                </div>
+                
+                <SidebarMenu>
+                  {tabItems.filter(tab => tab.group === 'workflow').map((tab) => (
+                    <SidebarMenuItem key={tab.id}>
+                      <SidebarMenuButton 
+                        onClick={() => handleTabClick(tab.id)}
+                        className={activeTab === tab.id ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                      >
+                        <tab.icon className="mr-2 h-4 w-4" />
+                        {!collapsed && <span>{tab.title}</span>}
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            )}
+          </SidebarGroup>
 
-        {/* Active Tab Content */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {activeTab === 'nodes' && (
-            <div className="flex-shrink-0 p-2 border-b bg-background">
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  value={nodeSearch}
-                  onChange={(e) => setNodeSearch(e.target.value)}
-                  placeholder="Search nodes across library..."
-                  className="pl-9 h-9 text-xs placeholder:text-xs"
-                />
-              </div>
-            </div>
-          )}
-          <ScrollArea className="h-full">
+          {/* Active Tab Content */}
+          <div className="flex-1 min-h-0">
             {getTabContent()}
-          </ScrollArea>
-        </div>
-      </SidebarContent>
+          </div>
+
+          {/* Testing & Debug Section - Bottom */}
+          <SidebarGroup>
+            <SidebarGroupLabel 
+              className="cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1"
+              onClick={() => toggleGroup('testing')}
+            >
+              {!collapsed && (
+                <div className="flex items-center gap-2">
+                  <TestTube className="h-4 w-4" />
+                  Testing & Debug
+                </div>
+              )}
+            </SidebarGroupLabel>
+            
+            {(expandedGroups.testing || collapsed) && (
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => handleTabClick('classic-test')}>
+                      <TestTube className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Test Runner</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => handleTabClick('code-editor')}>
+                      <Code className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Debug Console</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            )}
+          </SidebarGroup>
+
+          {/* Config & Deploy Section - Bottom */}
+          <SidebarGroup>
+            <SidebarGroupLabel 
+              className="cursor-pointer hover:bg-muted/50 rounded-md px-2 py-1"
+              onClick={() => toggleGroup('deployment')}
+            >
+              {!collapsed && (
+                <div className="flex items-center gap-2">
+                  <Rocket className="h-4 w-4" />
+                  Config & Deploy
+                </div>
+              )}
+            </SidebarGroupLabel>
+            
+            {(expandedGroups.deployment || collapsed) && (
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => handleTabClick('execute')}>
+                      <Play className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Deployment Config</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton onClick={() => handleTabClick('insights')}>
+                      <Zap className="mr-2 h-4 w-4" />
+                      {!collapsed && <span>Environment Setup</span>}
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            )}
+          </SidebarGroup>
+        </SidebarContent>
+      </ScrollArea>
     </Sidebar>
   );
 };
