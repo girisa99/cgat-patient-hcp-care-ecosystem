@@ -77,6 +77,7 @@ import { EnhancedNodePalette } from './EnhancedNodePalette';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
+import { NodeInsightsPanel } from './panels/NodeInsightsPanel';
 
 // Custom Node Types
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -372,11 +373,46 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
+  useEffect(() => {
+    const onOpenConfig = ((e: any) => {
+      setShowCodeEditor(true);
+    }) as EventListener;
+
+    const onAddSuggestedNode = ((e: any) => {
+      const detail = (e as CustomEvent).detail || {};
+      const base = selectedNode || getNodes()[0];
+      const pos = base ? { x: (base as any).position.x + 220, y: (base as any).position.y } : { x: 200, y: 200 };
+      const newNode: Node = {
+        id: `${detail.nodeType || 'suggested'}_${Date.now()}`,
+        type: 'enhanced',
+        position: pos,
+        data: {
+          label: detail.nodeLabel || 'Suggested Node',
+          description: detail.nodeDesc || '',
+          type_key: detail.nodeType || 'suggested',
+          icon: 'settings',
+          color: '#6366f1',
+          capabilities: [],
+          requirements: {},
+          isWorkflowNode: true,
+        },
+      } as any;
+      setNodes((nds) => nds.concat(newNode));
+    }) as EventListener;
+
+    window.addEventListener('open-node-config', onOpenConfig);
+    window.addEventListener('add-suggested-node', onAddSuggestedNode);
+    return () => {
+      window.removeEventListener('open-node-config', onOpenConfig);
+      window.removeEventListener('add-suggested-node', onAddSuggestedNode);
+    };
+  }, [setNodes, selectedNode, getNodes]);
+
   return (
     <div className="flex h-full w-full bg-background">
       {/* Unified Sidebar */}
       {!canvasOnly && (
-        <div className="w-64 border-r bg-background">
+        <div className="w-72 min-w-64 border-r bg-background flex flex-col min-h-0">
           <EnhancedNodePalette 
             onNodeSelect={(nodeType) => {
               addNode(nodeType.type_key || nodeType.name);
@@ -622,6 +658,14 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
             </CardContent>
           </Card>
         </div>
+      )}
+      
+      {selectedNode && (
+        <NodeInsightsPanel 
+          node={selectedNode} 
+          position={{ x: window.innerWidth - 420, y: 120 }} 
+          onClose={() => setSelectedNode(null)}
+        />
       )}
 
       {/* Node Update Handler */}

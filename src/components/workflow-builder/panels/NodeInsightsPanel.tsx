@@ -56,27 +56,27 @@ export const NodeInsightsPanel: React.FC<NodeInsightsPanelProps> = ({
     };
   }, [isDragging, dragOffset]);
 
-  const getNodeRecommendations = (nodeType: string) => {
+  const getNodeData = (n: any) => {
+    const caps = Array.isArray(n?.data?.capabilities) ? n.data.capabilities as string[] : [];
+    const reqs = (n?.data?.requirements || {}) as Record<string, any>;
+    const connectors: string[] = (n?.data?.connectors || n?.data?.default_config?.connectors || []) as string[];
+
+    const insights = [
+      caps.length > 0
+        ? { type: 'success', title: 'Features detected', desc: `${caps.length} feature(s) available` }
+        : { type: 'info', title: 'No features', desc: 'This node has no declared capabilities' },
+    ];
+
     return {
-      insights: [
-        { type: 'success', title: 'Configuration Ready', desc: 'Node is properly configured' },
-        { type: 'info', title: 'API Integration', desc: 'Connected to existing APIs' }
-      ],
-      recommendations: [
-        'Connect to patient database',
-        'Add validation rules', 
-        'Configure error handling'
-      ],
-      connectors: ['Patient API', 'Treatment API', 'Onboarding API', 'Provider API'],
-      security: ['Data Encryption', 'Access Control', 'Audit Logging'],
-      suggestedNodes: [
-        { type: 'agent', label: 'AI Agent', desc: 'Add intelligent processing' },
-        { type: 'dataSource', label: 'Data Store', desc: 'Connect external data source' }
-      ]
+      insights,
+      recommendations: [] as string[],
+      connectors,
+      security: Object.keys(reqs).map((k) => `${k}: ${String((reqs as any)[k])}`),
+      suggestedNodes: [] as Array<{ type: string; label: string; desc: string }>,
     };
   };
 
-  const data = getNodeRecommendations(node.type);
+  const data = getNodeData(node);
 
   const handleApplyAll = () => {
     const detail = { 
@@ -158,6 +158,41 @@ export const NodeInsightsPanel: React.FC<NodeInsightsPanelProps> = ({
                   ))}
                 </div>
               </div>
+
+              {/* Capabilities (from node data) */}
+              {Array.isArray(node?.data?.capabilities) && node.data.capabilities.length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                    <Target className="h-3 w-3" />
+                    Features
+                  </h4>
+                  <div className="flex flex-wrap gap-1">
+                    {node.data.capabilities.map((cap: string, i: number) => (
+                      <Badge key={i} variant="secondary" className="text-xs">
+                        {cap.replace(/_/g, ' ')}
+                      </Badge>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Requirements (from node data) */}
+              {node?.data?.requirements && Object.keys(node.data.requirements).length > 0 && (
+                <div>
+                  <h4 className="text-xs font-medium mb-2 flex items-center gap-1">
+                    <Shield className="h-3 w-3" />
+                    Requirements
+                  </h4>
+                  <div className="space-y-1">
+                    {Object.entries(node.data.requirements as Record<string, any>).map(([k, v]) => (
+                      <div key={k} className="text-xs p-2 bg-muted/30 rounded flex items-center justify-between">
+                        <span className="text-muted-foreground">{k.replace(/_/g, ' ')}</span>
+                        <Badge variant="outline" className="ml-2">{String(v)}</Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Smart Recommendations */}
               <div>

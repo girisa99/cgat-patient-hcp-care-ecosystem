@@ -116,13 +116,19 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
       {/* Node Toolbar */}
       {selected && (
         <NodeToolbar isVisible position={Position.Top} className="flex gap-1">
-          <Button size="sm" variant="outline" className="h-8 px-2">
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => {
+            window.dispatchEvent(new CustomEvent('duplicate-node', { detail: { nodeId: id } }));
+          }} aria-label="Duplicate node">
             <Copy className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="outline" className="h-8 px-2">
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => {
+            window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }));
+          }} aria-label="Open configuration">
             <Settings className="h-3 w-3" />
           </Button>
-          <Button size="sm" variant="outline" className="h-8 px-2">
+          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => {
+            window.dispatchEvent(new CustomEvent('delete-node', { detail: { nodeId: id } }));
+          }} aria-label="Delete node">
             <Trash2 className="h-3 w-3" />
           </Button>
         </NodeToolbar>
