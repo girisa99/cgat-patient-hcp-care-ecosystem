@@ -423,7 +423,12 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     <div className="flex h-full w-full bg-background">
       {/* Unified Sidebar */}
       {!canvasOnly && (
-        <div className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0 overflow-y-auto touch-pan-y">
+        <div 
+          className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0 overflow-y-auto overscroll-contain touch-pan-y"
+          onWheelCapture={(e) => e.stopPropagation()}
+          onTouchMoveCapture={(e) => e.stopPropagation()}
+          onScrollCapture={(e) => e.stopPropagation()}
+        >
           <EnhancedNodePalette 
             onNodeSelect={(nodeType) => {
               addEnhancedNode(nodeType);
