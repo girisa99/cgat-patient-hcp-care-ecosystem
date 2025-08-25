@@ -211,7 +211,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const { fitView, getNodes, getEdges } = useReactFlow();
+  const { fitView, getNodes, getEdges, screenToFlowPosition } = useReactFlow();
 
   // UI State
   const [activeTab, setActiveTab] = useState('layout');
@@ -270,9 +270,6 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   const onDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     
-    const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
-    if (!reactFlowBounds) return;
-
     // Try to get enhanced node data first
     let nodeData;
     try {
@@ -288,10 +285,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     const type = nodeData?.type_key || event.dataTransfer.getData('application/reactflow');
     if (!type) return;
 
-    const position = {
-      x: event.clientX - reactFlowBounds.left,
-      y: event.clientY - reactFlowBounds.top,
-    };
+    const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
     
     const newNode = {
       id: `${type}_${Date.now()}`,
@@ -412,7 +406,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     <div className="flex h-full w-full bg-background">
       {/* Unified Sidebar */}
       {!canvasOnly && (
-        <div className="w-72 min-w-64 border-r bg-background flex flex-col min-h-0">
+        <div className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0">
           <EnhancedNodePalette 
             onNodeSelect={(nodeType) => {
               addNode(nodeType.type_key || nodeType.name);
