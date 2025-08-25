@@ -275,6 +275,7 @@ const AgentsInner = () => {
                          onNodeSelect={(node) => {
                            setSelectedNode(node);
                            setRightPanelTab('config');
+                           setShowPromptAssistant(false);
                          }}
                         onSave={handleFlowSave}
                       />
