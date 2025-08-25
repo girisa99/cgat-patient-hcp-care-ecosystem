@@ -214,7 +214,7 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
       case 'nodes':
         return (
           <div className="p-4 space-y-4">
-            <h3 className="font-semibold mb-4">Basic Node Controls</h3>
+            <h3 className="font-semibold mb-4">Enhanced Node Library</h3>
             <div className="space-y-2">
               <Button size="sm" onClick={() => onAddNode?.('customer')} className="w-full justify-start">
                 <Users className="h-4 w-4 mr-2" />
@@ -238,8 +238,8 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
               </Button>
             </div>
             
-            <div className="mt-4 p-3 bg-muted/30 rounded-lg text-xs text-muted-foreground">
-              <strong>Note:</strong> Enhanced Node Palette with database-backed nodes is available in the left panel under "Node Palette" tab.
+            <div className="mt-6">
+              <EnhancedNodePalette heightClass="h-96" />
             </div>
           </div>
         );
@@ -464,21 +464,23 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
                 {!collapsed && groupLabels[group as keyof typeof groupLabels]}
               </SidebarGroupLabel>
               
-              <SidebarGroupContent>
-                <SidebarMenu>
-                  {tabs.map((tab) => (
-                    <SidebarMenuItem key={tab.id}>
-                      <SidebarMenuButton 
-                        onClick={() => handleTabClick(tab.id)}
-                        className={activeTab === tab.id ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
-                      >
-                        <tab.icon className="mr-2 h-4 w-4" />
-                        {!collapsed && <span>{tab.title}</span>}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
+              {(expandedGroups[group] || collapsed) && (
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {tabs.map((tab) => (
+                      <SidebarMenuItem key={tab.id}>
+                        <SidebarMenuButton 
+                          onClick={() => handleTabClick(tab.id)}
+                          className={activeTab === tab.id ? "bg-muted text-primary font-medium" : "hover:bg-muted/50"}
+                        >
+                          <tab.icon className="mr-2 h-4 w-4" />
+                          {!collapsed && <span>{tab.title}</span>}
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              )}
             </SidebarGroup>
           ))}
         </div>
