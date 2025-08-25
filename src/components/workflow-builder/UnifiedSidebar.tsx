@@ -25,6 +25,7 @@ import { ConnectionMode, BackgroundVariant } from '@xyflow/react';
 
 // Tab Components
 import { NodePalette } from './NodePalette';
+import { EnhancedNodePalette } from './EnhancedNodePalette';
 import { AITestingAssistant } from './AITestingAssistant';
 import { TestingConsolePanel } from './TestingConsolePanel';
 import { CodeEditorPanel } from './CodeEditorPanel';
@@ -213,7 +214,7 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
       case 'nodes':
         return (
           <div className="p-4 space-y-4">
-            <h3 className="font-semibold mb-4">Add Nodes</h3>
+            <h3 className="font-semibold mb-4">Enhanced Node Library</h3>
             <div className="space-y-2">
               <Button size="sm" onClick={() => onAddNode?.('customer')} className="w-full justify-start">
                 <Users className="h-4 w-4 mr-2" />
@@ -238,7 +239,7 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
             </div>
             
             <div className="mt-6">
-              <NodePalette heightClass="h-64" />
+              <EnhancedNodePalette heightClass="h-96" />
             </div>
           </div>
         );
