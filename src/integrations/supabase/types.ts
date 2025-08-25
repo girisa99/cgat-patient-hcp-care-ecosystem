@@ -8479,6 +8479,115 @@ export type Database = {
           },
         ]
       }
+      workflow_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_details: Json | null
+          execution_trace: Json | null
+          id: string
+          input_data: Json | null
+          output_data: Json | null
+          performance_metrics: Json | null
+          started_at: string | null
+          status: string | null
+          triggered_by: string | null
+          workflow_instance_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          execution_trace?: Json | null
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          performance_metrics?: Json | null
+          started_at?: string | null
+          status?: string | null
+          triggered_by?: string | null
+          workflow_instance_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          execution_trace?: Json | null
+          id?: string
+          input_data?: Json | null
+          output_data?: Json | null
+          performance_metrics?: Json | null
+          started_at?: string | null
+          status?: string | null
+          triggered_by?: string | null
+          workflow_instance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_executions_workflow_instance_id_fkey"
+            columns: ["workflow_instance_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_instances: {
+        Row: {
+          configuration: Json | null
+          created_at: string | null
+          created_by: string
+          description: string | null
+          execution_count: number | null
+          id: string
+          last_executed_at: string | null
+          metadata: Json | null
+          name: string
+          status: string | null
+          template_id: string | null
+          updated_at: string | null
+          workflow_data: Json
+        }
+        Insert: {
+          configuration?: Json | null
+          created_at?: string | null
+          created_by: string
+          description?: string | null
+          execution_count?: number | null
+          id?: string
+          last_executed_at?: string | null
+          metadata?: Json | null
+          name: string
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+          workflow_data?: Json
+        }
+        Update: {
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string
+          description?: string | null
+          execution_count?: number | null
+          id?: string
+          last_executed_at?: string | null
+          metadata?: Json | null
+          name?: string
+          status?: string | null
+          template_id?: string | null
+          updated_at?: string | null
+          workflow_data?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_instances_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_libraries: {
         Row: {
           author: string | null
@@ -8547,6 +8656,281 @@ export type Database = {
           version?: string
         }
         Relationships: []
+      }
+      workflow_node_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          display_name: string
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          order_index: number | null
+          parent_category_id: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          order_index?: number | null
+          parent_category_id?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          display_name?: string
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          order_index?: number | null
+          parent_category_id?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_node_categories_parent_category_id_fkey"
+            columns: ["parent_category_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_node_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_node_configs: {
+        Row: {
+          configuration: Json | null
+          created_at: string | null
+          id: string
+          metadata: Json | null
+          node_id: string
+          node_type_key: string
+          position: Json | null
+          size: Json | null
+          updated_at: string | null
+          workflow_instance_id: string
+        }
+        Insert: {
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          node_id: string
+          node_type_key: string
+          position?: Json | null
+          size?: Json | null
+          updated_at?: string | null
+          workflow_instance_id: string
+        }
+        Update: {
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          metadata?: Json | null
+          node_id?: string
+          node_type_key?: string
+          position?: Json | null
+          size?: Json | null
+          updated_at?: string | null
+          workflow_instance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_node_configs_node_type_key_fkey"
+            columns: ["node_type_key"]
+            isOneToOne: false
+            referencedRelation: "workflow_node_types"
+            referencedColumns: ["type_key"]
+          },
+          {
+            foreignKeyName: "workflow_node_configs_workflow_instance_id_fkey"
+            columns: ["workflow_instance_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_node_dependencies: {
+        Row: {
+          condition: Json | null
+          created_at: string | null
+          dependency_type: string | null
+          id: string
+          source_node_id: string
+          target_node_id: string
+          workflow_instance_id: string
+        }
+        Insert: {
+          condition?: Json | null
+          created_at?: string | null
+          dependency_type?: string | null
+          id?: string
+          source_node_id: string
+          target_node_id: string
+          workflow_instance_id: string
+        }
+        Update: {
+          condition?: Json | null
+          created_at?: string | null
+          dependency_type?: string | null
+          id?: string
+          source_node_id?: string
+          target_node_id?: string
+          workflow_instance_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_node_dependencies_workflow_instance_id_fkey"
+            columns: ["workflow_instance_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_node_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          id: string
+          input_data: Json | null
+          node_id: string
+          node_type_key: string
+          output_data: Json | null
+          retry_count: number | null
+          started_at: string | null
+          status: string | null
+          workflow_execution_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          id?: string
+          input_data?: Json | null
+          node_id: string
+          node_type_key: string
+          output_data?: Json | null
+          retry_count?: number | null
+          started_at?: string | null
+          status?: string | null
+          workflow_execution_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          id?: string
+          input_data?: Json | null
+          node_id?: string
+          node_type_key?: string
+          output_data?: Json | null
+          retry_count?: number | null
+          started_at?: string | null
+          status?: string | null
+          workflow_execution_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_node_executions_workflow_execution_id_fkey"
+            columns: ["workflow_execution_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_executions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_node_types: {
+        Row: {
+          capabilities: Json | null
+          category_id: string
+          color: string | null
+          created_at: string | null
+          created_by: string | null
+          default_config: Json | null
+          description: string | null
+          detailed_explanation: string | null
+          display_name: string
+          icon: string | null
+          id: string
+          input_schema: Json | null
+          is_active: boolean | null
+          is_configurable: boolean | null
+          is_draggable: boolean | null
+          order_index: number | null
+          output_schema: Json | null
+          requirements: Json | null
+          type_key: string
+          updated_at: string | null
+        }
+        Insert: {
+          capabilities?: Json | null
+          category_id: string
+          color?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          default_config?: Json | null
+          description?: string | null
+          detailed_explanation?: string | null
+          display_name: string
+          icon?: string | null
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean | null
+          is_configurable?: boolean | null
+          is_draggable?: boolean | null
+          order_index?: number | null
+          output_schema?: Json | null
+          requirements?: Json | null
+          type_key: string
+          updated_at?: string | null
+        }
+        Update: {
+          capabilities?: Json | null
+          category_id?: string
+          color?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          default_config?: Json | null
+          description?: string | null
+          detailed_explanation?: string | null
+          display_name?: string
+          icon?: string | null
+          id?: string
+          input_schema?: Json | null
+          is_active?: boolean | null
+          is_configurable?: boolean | null
+          is_draggable?: boolean | null
+          order_index?: number | null
+          output_schema?: Json | null
+          requirements?: Json | null
+          type_key?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_node_types_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_node_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workflow_nodes: {
         Row: {
@@ -8646,6 +9030,51 @@ export type Database = {
           syntax?: string
           updated_at?: string
           usage_count?: number | null
+        }
+        Relationships: []
+      }
+      workflow_templates: {
+        Row: {
+          category: string | null
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          id: string
+          is_public: boolean | null
+          is_system_template: boolean | null
+          name: string
+          tags: string[] | null
+          template_data: Json
+          updated_at: string | null
+          version: number | null
+        }
+        Insert: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_system_template?: boolean | null
+          name: string
+          tags?: string[] | null
+          template_data?: Json
+          updated_at?: string | null
+          version?: number | null
+        }
+        Update: {
+          category?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          is_public?: boolean | null
+          is_system_template?: boolean | null
+          name?: string
+          tags?: string[] | null
+          template_data?: Json
+          updated_at?: string | null
+          version?: number | null
         }
         Relationships: []
       }
