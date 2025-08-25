@@ -174,75 +174,65 @@ export const EnhancedNodePalette: React.FC<EnhancedNodePaletteProps> = ({
   }
 
   return (
-    <Card className={cn("flex flex-col", heightClass)}>
-      <CardHeader className="flex-shrink-0 pb-3">
-        <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Workflow className="h-4 w-4" />
-          Enhanced Node Palette
-        </CardTitle>
-        <div className="space-y-3">
-          <div className="relative">
-            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search nodes (e.g., 'OpenAI', 'agent', 'database')..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-8 h-9 text-xs placeholder:text-xs"
-            />
-          </div>
-          
-          {/* Quick Stats & Controls */}
-          <div className="flex items-center justify-between text-xs">
-            <div className="text-muted-foreground">
-              <strong>{nodeTypes.length}</strong> nodes • <strong>{categories.length}</strong> categories
-            </div>
-            <div className="flex gap-1">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 px-2 text-xs"
-                onClick={() => {
-                  const hasCollapsed = Object.values(expandedCategories).some(v => !v);
-                  const newState = categories.reduce((acc, cat) => ({
-                    ...acc,
-                    [cat.name]: hasCollapsed
-                  }), {});
-                  setExpandedCategories(newState);
-                }}
-              >
-                {Object.values(expandedCategories).every(v => v) ? 'Collapse All' : 'Expand All'}
-              </Button>
-            </div>
-          </div>
-          
-          {/* Category Summary */}
-          {!searchTerm && (
-            <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-3">
-              <div className="font-medium mb-1">Popular Categories:</div>
-              <div className="flex flex-wrap gap-1">
-                {categories
-                  .filter(cat => (nodeTypesByCategory[cat.name]?.length || 0) > 0)
-                  .slice(0, 4)
-                  .map(cat => (
-                    <Badge 
-                      key={cat.id} 
-                      variant="secondary" 
-                      className="text-xs cursor-pointer hover:bg-primary/20"
-                      onClick={() => setExpandedCategories(prev => ({ ...prev, [cat.name]: true }))}
-                    >
-                      {cat.display_name} ({nodeTypesByCategory[cat.name]?.length || 0})
-                    </Badge>
-                  ))
-                }
-              </div>
-            </div>
-          )}
+    <div className={cn("flex flex-col h-full", heightClass)}>
+      <div className="flex-shrink-0 px-3 pb-2 space-y-3">
+        <div className="relative">
+          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search nodes (e.g., 'OpenAI', 'agent', 'database')..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-8 h-9 text-xs placeholder:text-xs"
+          />
         </div>
-      </CardHeader>
+        
+        <div className="flex items-center justify-between text-xs">
+          <div className="text-muted-foreground">
+            <strong>{nodeTypes.length}</strong> nodes • <strong>{categories.length}</strong> categories
+          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-6 px-2 text-xs"
+            onClick={() => {
+              const hasCollapsed = Object.values(expandedCategories).some(v => !v);
+              const newState = categories.reduce((acc, cat) => ({
+                ...acc,
+                [cat.name]: hasCollapsed
+              }), {});
+              setExpandedCategories(newState);
+            }}
+          >
+            {Object.values(expandedCategories).every(v => v) ? 'Collapse All' : 'Expand All'}
+          </Button>
+        </div>
+        
+        {!searchTerm && (
+          <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-2">
+            <div className="font-medium mb-1">Popular Categories:</div>
+            <div className="flex flex-wrap gap-1">
+              {categories
+                .filter(cat => (nodeTypesByCategory[cat.name]?.length || 0) > 0)
+                .slice(0, 3)
+                .map(cat => (
+                  <Badge 
+                    key={cat.id} 
+                    variant="secondary" 
+                    className="text-xs cursor-pointer hover:bg-primary/20"
+                    onClick={() => setExpandedCategories(prev => ({ ...prev, [cat.name]: true }))}
+                  >
+                    {cat.display_name} ({nodeTypesByCategory[cat.name]?.length || 0})
+                  </Badge>
+                ))
+              }
+            </div>
+          </div>
+        )}
+      </div>
       
-      <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
+      <div className="flex-1 min-h-0 overflow-hidden">
         <ScrollArea className="h-full">
-          <div className="p-3 pr-2 pb-6 space-y-2">
+          <div className="px-3 pb-6 space-y-2">
             {/* Show categories with nodes first, then empty ones if showAllCategories is true */}
             {categories
               .filter(category => {
@@ -472,9 +462,28 @@ export const EnhancedNodePalette: React.FC<EnhancedNodePaletteProps> = ({
                 </div>
               </div>
             )}
+            {!showAllCategories && categories.some(cat => (filteredByCategory[cat.name]?.length || 0) === 0) && (
+              <div className="mt-4 p-3 bg-muted/20 rounded-lg border border-dashed">
+                <div className="text-center">
+                  <Info className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
+                  <p className="text-xs font-medium text-foreground mb-1">More Categories Available</p>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Some categories are being populated.
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowAllCategories(true)}
+                    className="text-xs h-6"
+                  >
+                    Show All
+                  </Button>
+                </div>
+              </div>
+            )}
           </div>
         </ScrollArea>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
