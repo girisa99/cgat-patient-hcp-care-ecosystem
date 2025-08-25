@@ -414,9 +414,14 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   }, []);
 
   useEffect(() => {
-    // Disabled auto-opening popups from global events to prevent unexpected panels
-    // Previously listened for 'open-node-config' (opened Code Editor) and 'add-suggested-node'
-    // We'll reintroduce targeted handlers later if needed via explicit UI actions
+    const navHandler = (e: any) => {
+      const tab = e?.detail?.tab as string;
+      if (tab && ['layout','nodes','edges'].includes(tab)) {
+        setActiveTab(tab);
+      }
+    };
+    window.addEventListener('workflow-design-nav', navHandler as EventListener);
+    return () => window.removeEventListener('workflow-design-nav', navHandler as EventListener);
   }, []);
 
   return (

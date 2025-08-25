@@ -84,6 +84,7 @@ const [internalSearch, setInternalSearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
   const [showAllCategories, setShowAllCategories] = useState(true);
+  const [designNav, setDesignNav] = useState<'layout' | 'nodes' | 'edges'>('layout');
 
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -111,6 +112,11 @@ const [internalSearch, setInternalSearch] = useState('');
       ...prev,
       [categoryName]: !prev[categoryName]
     }));
+  };
+
+  const handleDesignNav = (tab: 'layout' | 'nodes' | 'edges') => {
+    setDesignNav(tab);
+    window.dispatchEvent(new CustomEvent('workflow-design-nav', { detail: { tab } }));
   };
 
   const filteredNodeTypes = nodeTypes.filter(nodeType =>
@@ -146,7 +152,9 @@ const [internalSearch, setInternalSearch] = useState('');
     ),
     mcp: filteredNodeTypes.filter((nt) => match(nt, ['mcp','model context protocol'])),
     cache: filteredNodeTypes.filter((nt) => match(nt, ['cache','memory','buffer','history','scratchpad'])),
-    labeling: filteredNodeTypes.filter((nt) => match(nt, ['label','annotation','label studio']))
+    labeling: filteredNodeTypes.filter((nt) => match(nt, ['label','annotation','label studio'])),
+    parsers_processors: filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean'])),
+    prompts_templates: filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example']))
   };
 
   const dedupe = (arr: typeof nodeTypes) => {
@@ -183,6 +191,8 @@ const [internalSearch, setInternalSearch] = useState('');
     ensure('mcp','MCP (Model Context Protocol)','git-branch','#0ea5e9');
     ensure('cache','Cache & Memory','grid-3x3','#64748b');
     ensure('labeling','Labeling Studio','edit','#8b5cf6');
+    ensure('parsers_processors','Parsers & Processors','scissors','#10b981');
+    ensure('prompts_templates','Prompts & Templates','file-text','#f59e0b');
     return list;
   }, [categories]);
 
@@ -274,6 +284,22 @@ return (
           >
             {Object.values(expandedCategories).every(v => v) ? 'Collapse All' : 'Expand All'}
           </Button>
+        </div>
+
+        {/* Workflow Design quick nav */}
+        <div className="mt-1">
+          <div className="text-xs text-muted-foreground mb-1">Workflow Design</div>
+          <div className="flex flex-col gap-1">
+            <Button variant={designNav==='layout' ? 'secondary' : 'ghost'} size="sm" className="h-7 justify-start" onClick={() => handleDesignNav('layout')}>
+              <Workflow className="h-3 w-3 mr-2" /> Layout
+            </Button>
+            <Button variant={designNav==='nodes' ? 'secondary' : 'ghost'} size="sm" className="h-7 justify-start" onClick={() => handleDesignNav('nodes')}>
+              <Grid3X3 className="h-3 w-3 mr-2" /> Nodes
+            </Button>
+            <Button variant={designNav==='edges' ? 'secondary' : 'ghost'} size="sm" className="h-7 justify-start" onClick={() => handleDesignNav('edges')}>
+              <Link className="h-3 w-3 mr-2" /> Edges
+            </Button>
+          </div>
         </div>
         
         {!searchTerm && (
@@ -599,6 +625,45 @@ return (
                 </div>
               </div>
             )}
+
+            {/* Config & Testing sections at bottom */}
+            <div className="mt-4 space-y-3">
+              <div className="text-xs font-medium text-muted-foreground px-1">Config & Testing</div>
+
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                    <span>Testing & Debug</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 space-y-2">
+                  <Button variant="outline" size="sm" className="w-full justify-start h-8 text-xs">
+                    <Workflow className="w-3 h-3 mr-2" /> Test Runner
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-8 text-xs">
+                    <Settings className="w-3 h-3 mr-2" /> Debug Console
+                  </Button>
+                </CollapsibleContent>
+              </Collapsible>
+
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                    <span>Config & Deploy</span>
+                    <ChevronDown className="h-3 w-3" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 space-y-2">
+                  <Button variant="outline" size="sm" className="w-full justify-start h-8 text-xs">
+                    <Settings className="w-3 h-3 mr-2" /> Deployment Config
+                  </Button>
+                  <Button variant="outline" size="sm" className="w-full justify-start h-8 text-xs">
+                    <GitBranch className="w-3 h-3 mr-2" /> Environment Setup
+                  </Button>
+                </CollapsibleContent>
+              </Collapsible>
+            </div>
         </div>
       </div>
     </div>
