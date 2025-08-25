@@ -62,11 +62,15 @@ const getIconComponent = (iconName: string) => {
 interface EnhancedNodePaletteProps {
   heightClass?: string;
   onNodeSelect?: (nodeType: any) => void;
+  searchTermExternal?: string;
+  hideSearch?: boolean;
 }
 
 export const EnhancedNodePalette: React.FC<EnhancedNodePaletteProps> = ({ 
   heightClass = "h-full",
-  onNodeSelect 
+  onNodeSelect,
+  searchTermExternal,
+  hideSearch = false
 }) => {
   const { 
     categories, 
@@ -76,27 +80,22 @@ export const EnhancedNodePalette: React.FC<EnhancedNodePaletteProps> = ({
     error 
   } = useWorkflowNodes();
   
-  const [searchTerm, setSearchTerm] = useState('');
-  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({
-    'agents': true,
-    // Auto-expand categories that have nodes
-    'genai_llm': true,
-    'cache': true,
-    'vector_stores': true,
-    'tools': true,
-    'document_loaders': true,
-    'flows': true,
-    'chains': true,
-    // Collapse empty or less frequently used categories by default
-    'small_language_models': false,
-    'vision_models': false,
-    'mcp': false,
-    'prompts': false,
-    'parsers': false,
-    'utilities': false,
-  });
+const [internalSearch, setInternalSearch] = useState('');
+  const searchTerm = searchTermExternal ?? internalSearch;
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
-  const [showAllCategories, setShowAllCategories] = useState(false);
+  const [showAllCategories, setShowAllCategories] = useState(true);
+
+  React.useEffect(() => {
+    if (categories.length) {
+      setExpandedCategories((prev) => {
+        if (Object.keys(prev).length) return prev;
+        const initial: Record<string, boolean> = {};
+        categories.forEach((cat) => { initial[cat.name] = false; });
+        return initial;
+      });
+    }
+  }, [categories]);
 
   const toggleCategory = (categoryName: string) => {
     setExpandedCategories(prev => ({
@@ -173,18 +172,20 @@ export const EnhancedNodePalette: React.FC<EnhancedNodePaletteProps> = ({
     );
   }
 
-  return (
+return (
     <div className={cn("flex flex-col h-full", heightClass)}>
       <div className="flex-shrink-0 px-3 pb-2 space-y-3">
-        <div className="relative">
-          <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Search nodes (e.g., 'OpenAI', 'agent', 'database')..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="pl-8 h-9 text-xs placeholder:text-xs"
-          />
-        </div>
+        {!hideSearch && (
+          <div className="relative">
+            <Search className="absolute left-2 top-2.5 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search nodes (e.g., 'OpenAI', 'agent', 'database')..."
+              value={searchTerm}
+              onChange={(e) => setInternalSearch(e.target.value)}
+              className="pl-8 h-9 text-xs placeholder:text-xs"
+            />
+          </div>
+        )}
         
         <div className="flex items-center justify-between text-xs">
           <div className="text-muted-foreground">

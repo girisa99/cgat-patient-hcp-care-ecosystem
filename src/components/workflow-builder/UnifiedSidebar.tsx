@@ -17,10 +17,11 @@ import {
   Workflow, Bot, Database, Settings, Rocket, 
   TestTube, Palette, Play, Code, Zap, Eye,
   Layers, Brain, Link, Users, AlertTriangle, 
-  Grid, MousePointer, Hand, Trash2, Plus, Layout
+  Grid, MousePointer, Hand, Trash2, Plus, Layout, Search
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 import { ConnectionMode, BackgroundVariant } from '@xyflow/react';
 
 // Tab Components
@@ -110,6 +111,7 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
     workflow: true
   });
+  const [nodeSearch, setNodeSearch] = useState('');
 
   const toggleGroup = (group: string) => {
     setExpandedGroups(prev => ({
@@ -185,8 +187,40 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         
       case 'nodes':
         return (
-          <div className="p-0 h-full">
-            <EnhancedNodePalette heightClass="h-full" />
+          <div className="p-0 h-full flex flex-col">
+            <EnhancedNodePalette heightClass="h-full" searchTermExternal={nodeSearch} hideSearch />
+            <div className="px-3 py-2 border-t border-border/50 mt-2 space-y-2">
+              {/* Testing & Debug - bottom section */}
+              <div>
+                <Button variant="ghost" className="w-full justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-3 w-3" />
+                    Testing & Debug
+                  </div>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </div>
+              {/* Config & Deploy - bottom section */}
+              <div>
+                <Button variant="ghost" className="w-full justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-3 w-3" />
+                    Config & Deploy
+                  </div>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </div>
+              {/* Settings - bottom section */}
+              <div>
+                <Button variant="ghost" className="w-full justify-between text-xs">
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-3 w-3" />
+                    Settings
+                  </div>
+                  <ChevronDown className="h-3 w-3" />
+                </Button>
+              </div>
+            </div>
           </div>
         );
         
@@ -382,7 +416,20 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         </div>
 
         {/* Active Tab Content */}
-        <div className="flex-1 overflow-hidden">
+        <div className="flex-1 overflow-hidden flex flex-col">
+          {activeTab === 'nodes' && (
+            <div className="flex-shrink-0 p-2 border-b bg-background">
+              <div className="relative">
+                <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                <Input
+                  value={nodeSearch}
+                  onChange={(e) => setNodeSearch(e.target.value)}
+                  placeholder="Search nodes across library..."
+                  className="pl-9 h-9 text-xs placeholder:text-xs"
+                />
+              </div>
+            </div>
+          )}
           <ScrollArea className="h-full">
             {getTabContent()}
           </ScrollArea>
