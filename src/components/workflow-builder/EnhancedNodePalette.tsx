@@ -208,8 +208,8 @@ export const EnhancedNodePalette: React.FC<EnhancedNodePaletteProps> = ({
         </div>
         
         {!searchTerm && (
-          <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-2">
-            <div className="font-medium mb-1">Popular Categories:</div>
+          <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-2 mb-3">
+            <div className="font-medium mb-2 text-foreground">Popular Categories:</div>
             <div className="flex flex-wrap gap-1">
               {categories
                 .filter(cat => (nodeTypesByCategory[cat.name]?.length || 0) > 0)

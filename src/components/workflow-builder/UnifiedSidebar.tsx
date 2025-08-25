@@ -67,39 +67,15 @@ interface TabItem {
 }
 
 const tabItems: TabItem[] = [
-  // Workflow Group - Canvas Controls
+  // Workflow Group - Only essential workflow controls
+  { id: 'nodes', title: 'Node Library', icon: Workflow, group: 'workflow' },
   { id: 'layout', title: 'Layout', icon: Layers, group: 'workflow' },
-  { id: 'nodes', title: 'Nodes', icon: Workflow, group: 'workflow' },
   { id: 'edges', title: 'Edges', icon: Link, group: 'workflow' },
   { id: 'settings', title: 'Settings', icon: Settings, group: 'workflow' },
-  
-  // AI Group  
-  { id: 'ai-agents', title: 'AI Agents', icon: Bot, group: 'ai' },
-  { id: 'ai-test', title: 'AI Test', icon: Brain, group: 'ai' },
-  { id: 'ai-assistant', title: 'AI Assistant', icon: Zap, group: 'ai' },
-  
-  // Data Group
-  { id: 'data-connectors', title: 'Data & Connectors', icon: Database, group: 'data' },
-  { id: 'integrations', title: 'Integrations', icon: Link, group: 'data' },
-  
-  // Testing Group
-  { id: 'classic-test', title: 'Classic Test', icon: TestTube, group: 'testing' },
-  { id: 'code-editor', title: 'Code', icon: Code, group: 'testing' },
-  { id: 'execute', title: 'Execute', icon: Zap, group: 'testing' },
-  { id: 'insights', title: 'Insights', icon: Eye, group: 'testing' },
-  { id: 'ui-preview', title: 'UI', icon: Palette, group: 'testing' },
-  
-  // Deployment Group
-  { id: 'configuration', title: 'Configuration', icon: Settings, group: 'deployment' },
-  { id: 'deployment', title: 'Deployment', icon: Rocket, group: 'deployment' },
 ];
 
 const groupLabels = {
-  workflow: 'Workflow Design',
-  ai: 'AI & Intelligence', 
-  data: 'Data & Connections',
-  testing: 'Testing & Debug',
-  deployment: 'Config & Deploy'
+  workflow: 'Workflow Design'
 };
 
 export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
@@ -132,11 +108,7 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   const collapsed = state === "collapsed";
   const [activeTab, setActiveTab] = useState('nodes');
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({
-    workflow: true,
-    ai: false,
-    data: false,
-    testing: false,
-    deployment: false
+    workflow: true
   });
 
   const toggleGroup = (group: string) => {
@@ -213,34 +185,8 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
         
       case 'nodes':
         return (
-          <div className="p-4 space-y-4">
-            <h3 className="font-semibold mb-4">Enhanced Node Library</h3>
-            <div className="space-y-2">
-              <Button size="sm" onClick={() => onAddNode?.('customer')} className="w-full justify-start">
-                <Users className="h-4 w-4 mr-2" />
-                Customer
-              </Button>
-              <Button size="sm" onClick={() => onAddNode?.('decision')} className="w-full justify-start">
-                <AlertTriangle className="h-4 w-4 mr-2" />
-                Decision
-              </Button>
-              <Button size="sm" onClick={() => onAddNode?.('agent')} className="w-full justify-start">
-                <Bot className="h-4 w-4 mr-2" />
-                Agent
-              </Button>
-              <Button size="sm" onClick={() => onAddNode?.('database')} className="w-full justify-start">
-                <Database className="h-4 w-4 mr-2" />
-                Database
-              </Button>
-              <Button size="sm" onClick={() => onAddNode?.('group')} className="w-full justify-start">
-                <Layers className="h-4 w-4 mr-2" />
-                Group
-              </Button>
-            </div>
-            
-            <div className="mt-6">
-              <EnhancedNodePalette heightClass="h-96" />
-            </div>
+          <div className="p-0 h-full">
+            <EnhancedNodePalette heightClass="h-full" />
           </div>
         );
         
@@ -377,56 +323,6 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
                 </div>
               )}
             </div>
-          </div>
-        );
-        
-      case 'ui-preview':
-        return (
-          <div className="p-4">
-            <h3 className="font-semibold mb-4">UI Preview</h3>
-            <p className="text-sm text-muted-foreground">
-              Preview how your workflow will appear to end users.
-            </p>
-          </div>
-        );
-        
-      case 'ai-agents':
-        return (
-          <div className="p-4">
-            <h3 className="font-semibold mb-4">AI Agents</h3>
-            <p className="text-sm text-muted-foreground">
-              Manage and configure AI agents for your workflow.
-            </p>
-          </div>
-        );
-        
-      case 'data-connectors':
-        return (
-          <div className="p-4">
-            <h3 className="font-semibold mb-4">Data & Connectors</h3>
-            <p className="text-sm text-muted-foreground">
-              Connect to external data sources and APIs.
-            </p>
-          </div>
-        );
-        
-      case 'configuration':
-        return (
-          <div className="p-4">
-            <h3 className="font-semibold mb-4">Configuration</h3>
-            <p className="text-sm text-muted-foreground">
-              Workflow settings and environment configuration.
-            </p>
-          </div>
-        );
-        
-      case 'deployment':
-        return (
-          <div className="p-4">
-            <h3 className="font-semibold mb-4">Deployment</h3>
-            <p className="text-sm text-muted-foreground">
-              Deploy your workflow to production environments.
-            </p>
           </div>
         );
         
