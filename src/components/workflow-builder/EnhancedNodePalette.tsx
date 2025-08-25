@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
@@ -289,9 +288,8 @@ return (
         )}
       </div>
       
-      <div className="flex-1 min-h-0 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="px-3 pb-6 space-y-2">
+      <div className="flex-1 min-h-0 overflow-y-auto">
+        <div className="px-3 pb-6 space-y-2">
             {/* Show categories with nodes first, then empty ones if showAllCategories is true */}
             {allCategories
               .filter(category => {
@@ -585,8 +583,7 @@ return (
                 </div>
               </div>
             )}
-          </div>
-        </ScrollArea>
+        </div>
       </div>
     </div>
   );
