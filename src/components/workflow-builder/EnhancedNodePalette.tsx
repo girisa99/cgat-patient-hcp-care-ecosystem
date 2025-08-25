@@ -378,20 +378,29 @@ return (
                             const isSelected = selectedNodeType === nodeType.id;
                             
                             return (
-                              <div
-                                key={nodeType.id}
-                                draggable
-                                onDragStart={(e) => onDragStart(e, nodeType)}
-                                onClick={() => handleNodeClick(nodeType)}
-                                className={cn(
-                                  "group p-3 rounded-lg border transition-all duration-200",
-                                  "cursor-grab active:cursor-grabbing hover:shadow-md",
-                                  "bg-card hover:bg-accent/50",
-                                  isSelected 
-                                    ? "border-primary bg-primary/5 shadow-md transform scale-[1.02]" 
-                                    : "border-border hover:border-muted-foreground/30"
-                                )}
-                              >
+                                 <div
+                                   key={nodeType.id}
+                                   draggable
+                                   onDragStart={(e) => {
+                                     onDragStart(e, nodeType)
+                                     e.currentTarget.style.opacity = '0.5';
+                                   }}
+                                   onDragEnd={(e) => {
+                                     // Visual feedback on successful drag
+                                     e.currentTarget.style.opacity = '1';
+                                   }}
+                                   onClick={() => handleNodeClick(nodeType)}
+                                   className={cn(
+                                     "group p-3 rounded-lg border transition-all duration-200",
+                                     "cursor-grab active:cursor-grabbing hover:shadow-md",
+                                     "bg-card hover:bg-accent/50",
+                                     "relative", // Add positioning for drag indicator
+                                     isSelected 
+                                       ? "border-primary bg-primary/5 shadow-md transform scale-[1.02]" 
+                                       : "border-border hover:border-muted-foreground/30"
+                                   )}
+                                   title={`Drag to canvas: ${nodeType.display_name}`}
+                                 >
                                 <div className="flex items-start gap-3">
                                   <div 
                                     className={cn(
@@ -407,21 +416,57 @@ return (
                                     <NodeIcon className="h-4 w-4" />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <h4 className="font-semibold text-sm text-foreground flex items-center gap-2 flex-wrap mb-1">
-                                      {nodeType.display_name}
-                                      {nodeType.capabilities.length > 0 && (
-                                        <Badge 
-                                          variant="secondary" 
-                                          className="text-xs px-1.5 py-0.5"
-                                          style={{ backgroundColor: `${category.color}10`, color: category.color }}
-                                        >
-                                          {nodeType.capabilities.length} features
-                                        </Badge>
-                                      )}
-                                    </h4>
-                                    <p className="text-xs text-muted-foreground leading-relaxed">
-                                      {nodeType.description}
-                                    </p>
+                                     <h4 className="font-semibold text-sm text-foreground flex items-center gap-2 flex-wrap mb-1">
+                                       {nodeType.display_name}
+                                       {nodeType.capabilities.length > 0 && (
+                                         <Badge 
+                                           variant="secondary" 
+                                           className="text-xs px-1.5 py-0.5"
+                                           style={{ backgroundColor: `${category.color}10`, color: category.color }}
+                                         >
+                                           {nodeType.capabilities.length} features
+                                         </Badge>
+                                       )}
+                                     </h4>
+                                     <p className="text-xs text-muted-foreground leading-relaxed mb-2">
+                                       {nodeType.description}
+                                     </p>
+                                     
+                                     {/* Drag indicator */}
+                                     <div className="absolute top-2 right-2 opacity-30 group-hover:opacity-60 transition-opacity pointer-events-none">
+                                       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
+                                         <path d="M20,16V10H22V16H20M20,20V18H22V20H20M20,8V6H22V8H20M20,4V2H22V4H20M18,2H16V4H18V2M14,2H12V4H14V2M10,2H8V4H10V2M6,2H4V4H6V2M2,6V4H4V6H2M2,10V8H4V10H2M2,14V12H4V14H2M2,18V16H4V18H2M2,22V20H4V22H2M6,20H8V22H6V20M10,20H12V22H10V20M14,20H16V22H14V20M18,20H20V22H18V20Z"/>
+                                       </svg>
+                                     </div>
+                                     
+                                     {/* Always show top 3 capabilities for quick reference */}
+                                     {nodeType.capabilities.length > 0 && (
+                                       <div className="flex flex-wrap gap-1 mb-1">
+                                         {nodeType.capabilities.slice(0, 3).map((capability, index) => (
+                                           <Badge 
+                                             key={index} 
+                                             variant="outline" 
+                                             className="text-xs px-1.5 py-0.5 font-normal"
+                                             style={{ 
+                                               borderColor: `${category.color}30`, 
+                                               color: `${category.color}`,
+                                               backgroundColor: `${category.color}05`
+                                             }}
+                                           >
+                                             {capability.replace(/_/g, ' ')}
+                                           </Badge>
+                                         ))}
+                                         {nodeType.capabilities.length > 3 && (
+                                           <Badge 
+                                             variant="outline" 
+                                             className="text-xs px-1.5 py-0.5 font-normal"
+                                             style={{ borderColor: `${category.color}30`, color: category.color }}
+                                           >
+                                             +{nodeType.capabilities.length - 3} more
+                                           </Badge>
+                                         )}
+                                       </div>
+                                     )}
                                     
                                     {isSelected && (
                                       <div className="mt-3 space-y-3 animate-in slide-in-from-top-1">

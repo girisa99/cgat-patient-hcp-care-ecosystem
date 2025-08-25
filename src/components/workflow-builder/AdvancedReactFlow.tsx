@@ -73,10 +73,10 @@ import { InlineNodeConfig } from './InlineNodeConfig';
 import { ProcessFlowTracker } from './ProcessFlowTracker';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { AgentNode } from './nodes/AgentNode';
-import { NodePalette } from './NodePalette';
+import { EnhancedNodePalette } from './EnhancedNodePalette';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
-import { UnifiedSidebar } from './UnifiedSidebar';
+import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
 
 // Custom Node Types
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
@@ -241,6 +241,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   // Safe Node and Edge Types
   const safeNodeTypes: NodeTypes = useMemo(() => ({
     custom: CustomNode,
+    enhanced: (props) => <EnhancedWorkflowNode {...props} />,
     agent: (props) => <AgentNode {...props} />,
     ai: (props) => <AIIntelligenceNode {...props} />,
   }), []);
@@ -271,19 +272,44 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     const reactFlowBounds = reactFlowWrapper.current?.getBoundingClientRect();
     if (!reactFlowBounds) return;
 
-    const type = event.dataTransfer.getData('application/reactflow');
+    // Try to get enhanced node data first
+    let nodeData;
+    try {
+      const enhancedData = event.dataTransfer.getData('application/json');
+      if (enhancedData) {
+        nodeData = JSON.parse(enhancedData);
+      }
+    } catch (error) {
+      console.log('Could not parse enhanced node data, falling back to basic type');
+    }
+
+    // Fallback to basic type if enhanced data not available
+    const type = nodeData?.type_key || event.dataTransfer.getData('application/reactflow');
     if (!type) return;
 
     const position = {
       x: event.clientX - reactFlowBounds.left,
       y: event.clientY - reactFlowBounds.top,
     };
-
+    
     const newNode = {
       id: `${type}_${Date.now()}`,
-      type,
+      type: 'enhanced', // Use enhanced node type for better rendering
       position,
-      data: { label: `${type} node` },
+      data: {
+        label: nodeData?.display_name || `${type} node`,
+        type_key: type,
+        display_name: nodeData?.display_name || type,
+        description: nodeData?.description || '',
+        icon: nodeData?.icon || 'settings',
+        color: nodeData?.color || '#6366f1',
+        capabilities: nodeData?.capabilities || [],
+        requirements: nodeData?.requirements || {},
+        default_config: nodeData?.default_config || {},
+        category: nodeData?.category,
+        isWorkflowNode: true,
+        ...nodeData
+      },
     };
 
     setNodes((nds) => nds.concat(newNode));
@@ -350,22 +376,14 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     <div className="flex h-full w-full bg-background">
       {/* Unified Sidebar */}
       {!canvasOnly && (
-        <SidebarProvider className="w-full">
-          <UnifiedSidebar 
-            nodes={nodes}
-            edges={edges}
-            selectedNode={selectedNodes[0]}
-            sessionId={sessionId}
-            testInput={{}}
-            onWorkflowUpdate={() => {}}
-            showTestConsole={showTestConsole}
-            showCodeEditor={showCodeEditor}
-            setShowTestConsole={setShowTestConsole}
-            setShowCodeEditor={setShowCodeEditor}
-            onAddNode={addNode}
-            onLayoutChange={onLayoutChange}
+        <div className="w-64 border-r bg-background">
+          <EnhancedNodePalette 
+            onNodeSelect={(nodeType) => {
+              addNode(nodeType.type_key || nodeType.name);
+            }}
+            hideSearch={false}
           />
-        </SidebarProvider>
+        </div>
       )}
 
       {/* Main Canvas Area */}
