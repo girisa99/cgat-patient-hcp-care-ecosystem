@@ -247,18 +247,18 @@ return (
         
         <div className="flex items-center justify-between text-xs">
           <div className="text-muted-foreground">
-            <strong>{nodeTypes.length}</strong> nodes • <strong>{categories.length}</strong> categories
+            <strong>{nodeTypes.length}</strong> nodes • <strong>{allCategories.length}</strong> categories
           </div>
           <Button
             variant="ghost"
             size="sm"
             className="h-6 px-2 text-xs"
             onClick={() => {
-              const hasCollapsed = Object.values(expandedCategories).some(v => !v);
-              const newState = categories.reduce((acc, cat) => ({
-                ...acc,
-                [cat.name]: hasCollapsed
-              }), {});
+            const hasCollapsed = Object.values(expandedCategories).some(v => !v);
+            const newState = allCategories.reduce((acc, cat) => ({
+              ...acc,
+              [cat.name]: hasCollapsed
+            }), {});
               setExpandedCategories(newState);
             }}
           >
@@ -270,8 +270,8 @@ return (
           <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-2 mb-3">
             <div className="font-medium mb-2 text-foreground">Popular Categories:</div>
             <div className="flex flex-wrap gap-1">
-              {categories
-                .filter(cat => (nodeTypesByCategory[cat.name]?.length || 0) > 0)
+              {allCategories
+                .filter(cat => (allNodeTypesByCategory[cat.name]?.length || 0) > 0)
                 .slice(0, 3)
                 .map(cat => (
                   <Badge 
@@ -280,7 +280,7 @@ return (
                     className="text-xs cursor-pointer hover:bg-primary/20"
                     onClick={() => setExpandedCategories(prev => ({ ...prev, [cat.name]: true }))}
                   >
-                    {cat.display_name} ({nodeTypesByCategory[cat.name]?.length || 0})
+                    {cat.display_name} ({allNodeTypesByCategory[cat.name]?.length || 0})
                   </Badge>
                 ))
               }
@@ -293,21 +293,21 @@ return (
         <ScrollArea className="h-full">
           <div className="px-3 pb-6 space-y-2">
             {/* Show categories with nodes first, then empty ones if showAllCategories is true */}
-            {categories
+            {allCategories
               .filter(category => {
-                const hasNodes = (filteredByCategory[category.name]?.length || 0) > 0;
+                const hasNodes = (allNodeTypesByCategory[category.name]?.length || 0) > 0;
                 return hasNodes || (showAllCategories && !searchTerm);
               })
               .sort((a, b) => {
                 // Sort by: 1) has nodes, 2) order index
-                const aHasNodes = (filteredByCategory[a.name]?.length || 0) > 0;
-                const bHasNodes = (filteredByCategory[b.name]?.length || 0) > 0;
+                const aHasNodes = (allNodeTypesByCategory[a.name]?.length || 0) > 0;
+                const bHasNodes = (allNodeTypesByCategory[b.name]?.length || 0) > 0;
                 if (aHasNodes && !bHasNodes) return -1;
                 if (!aHasNodes && bHasNodes) return 1;
                 return a.order_index - b.order_index;
               })
               .map((category) => {
-                const categoryNodes = filteredByCategory[category.name] || [];
+                const categoryNodes = allNodeTypesByCategory[category.name] || [];
                 const isExpanded = expandedCategories[category.name];
                 const IconComponent = getIconComponent(category.icon);
                 const hasNodes = categoryNodes.length > 0;
@@ -504,8 +504,8 @@ return (
               </div>
             )}
             
-            {categories.filter(category => {
-              const hasNodes = (filteredByCategory[category.name]?.length || 0) > 0;
+            {allCategories.filter(category => {
+              const hasNodes = (allNodeTypesByCategory[category.name]?.length || 0) > 0;
               return hasNodes || (showAllCategories && !searchTerm);
             }).length === 0 && (
               <div className="text-center py-12">
@@ -521,7 +521,7 @@ return (
                 </div>
               </div>
             )}
-            {!showAllCategories && categories.some(cat => (filteredByCategory[cat.name]?.length || 0) === 0) && (
+            {!showAllCategories && allCategories.some(cat => (allNodeTypesByCategory[cat.name]?.length || 0) === 0) && (
               <div className="mt-4 p-3 bg-muted/20 rounded-lg border border-dashed">
                 <div className="text-center">
                   <Info className="h-6 w-6 mx-auto text-muted-foreground mb-2" />
