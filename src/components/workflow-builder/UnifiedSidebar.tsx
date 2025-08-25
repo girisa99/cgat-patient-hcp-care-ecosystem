@@ -349,7 +349,7 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
   }, {} as Record<string, TabItem[]>);
 
   return (
-    <Sidebar className={collapsed ? "w-14" : "w-80"}>
+    <Sidebar className={(collapsed ? "w-14" : "w-80") + " h-screen flex flex-col"}>
       <SidebarTrigger className="m-2 self-end" />
       
       <ScrollArea className="h-full">

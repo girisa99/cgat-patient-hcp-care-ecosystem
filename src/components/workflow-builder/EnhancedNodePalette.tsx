@@ -110,14 +110,72 @@ const [internalSearch, setInternalSearch] = useState('');
     nodeType.category?.display_name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredByCategory = filteredNodeTypes.reduce((acc, nodeType) => {
+  const baseByCategory = filteredNodeTypes.reduce((acc, nodeType) => {
     const categoryName = nodeType.category?.name || 'uncategorized';
     if (!acc[categoryName]) {
-      acc[categoryName] = [];
+      acc[categoryName] = [] as typeof nodeTypes;
     }
     acc[categoryName].push(nodeType);
     return acc;
   }, {} as Record<string, typeof nodeTypes>);
+
+  // Derive additional groupings so existing nodes appear under desired categories
+  const match = (nt: any, keywords: string[]) => {
+    const t = `${nt.type_key} ${nt.display_name} ${nt.description}`.toLowerCase();
+    return keywords.some(k => t.includes(k));
+  };
+
+  const computed: Record<string, typeof nodeTypes> = {
+    genai_llm: filteredNodeTypes.filter((nt) =>
+      match(nt, ['openai','anthropic','claude','gpt','mistral','cohere','gemini','groq','llm','bedrock','azure','deepseek'])
+    ),
+    small_language_models: filteredNodeTypes.filter((nt) =>
+      match(nt, ['ollama','llama','phi','qwen','nano','tiny','slm'])
+    ),
+    vision_models: filteredNodeTypes.filter((nt) =>
+      match(nt, ['vision','gpt-4o','gpt-4v','image','multimodal','vlm','gemini'])
+    ),
+    mcp: filteredNodeTypes.filter((nt) => match(nt, ['mcp','model context protocol'])),
+    cache: filteredNodeTypes.filter((nt) => match(nt, ['cache','memory','buffer','history','scratchpad'])),
+    labeling: filteredNodeTypes.filter((nt) => match(nt, ['label','annotation','label studio']))
+  };
+
+  const dedupe = (arr: typeof nodeTypes) => {
+    const m = new Map(arr.map((n) => [n.id, n]));
+    return Array.from(m.values());
+  };
+
+  const allNodeTypesByCategory = Object.entries(computed).reduce((acc, [key, list]) => {
+    acc[key] = dedupe([...(baseByCategory[key] || []), ...list]);
+    return acc;
+  }, { ...baseByCategory } as Record<string, typeof nodeTypes>);
+
+  const allCategories = React.useMemo(() => {
+    const list = [...categories];
+    const ensure = (name: string, display_name: string, icon: string, color: string) => {
+      if (!list.find((c) => c.name === name)) {
+        list.push({
+          id: `virtual-${name}`,
+          name,
+          display_name,
+          description: display_name,
+          icon,
+          color,
+          order_index: (list[list.length - 1]?.order_index || 0) + 1,
+          is_active: true,
+          created_at: '',
+          updated_at: ''
+        } as any);
+      }
+    };
+    ensure('genai_llm','GenAI & LLM','brain','#4f46e5');
+    ensure('small_language_models','Small Language Models','zap','#ea580c');
+    ensure('vision_models','Vision Language Models','eye','#16a34a');
+    ensure('mcp','MCP (Model Context Protocol)','git-branch','#0ea5e9');
+    ensure('cache','Cache & Memory','grid-3x3','#64748b');
+    ensure('labeling','Labeling Studio','edit','#8b5cf6');
+    return list;
+  }, [categories]);
 
   const onDragStart = (event: React.DragEvent, nodeType: any) => {
     // Enhanced drag payload with full node type information
