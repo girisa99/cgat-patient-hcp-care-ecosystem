@@ -263,8 +263,8 @@ const AgentsInner = () => {
                   </div>
                 </div>
               )}>
-                <SidebarProvider className="w-full">
-                  <div className="min-h-0 flex w-full">
+                <SidebarProvider className="w-full h-full min-h-0">
+                  <div className="min-h-0 h-full flex w-full">
                     <ReactFlowProvider>
                       <AdvancedReactFlowWrapper 
                         fitParent={true}
