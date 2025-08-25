@@ -9,9 +9,8 @@ import {
   ChevronDown, Palette, Bot, Database, Link, Settings, 
   PlusCircle, Layers, Network, ChevronLeft, Shield
 } from 'lucide-react';
-import { NodePalette } from './NodePalette';
+import { EnhancedNodePalette } from './EnhancedNodePalette';
 import { PromptBasedModelSelector } from './PromptBasedModelSelector';
-import { WorkflowTypeSelector, DATA_TYPES, OPERATION_TYPES, CONDITION_OPERATIONS } from './WorkflowTypeSelector';
 import { UniversalAccessManager } from './UniversalAccessManager';
 import { AgentConfigurationManager } from './AgentConfigurationManager';
 import { SequentialFlowGuide } from './SequentialFlowGuide';
@@ -27,7 +26,7 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
   onToggle
 }) => {
   const [selectedModels, setSelectedModels] = useState<string[]>([]);
-  const [activeTab, setActiveTab] = useState('guide');
+  const [activeTab, setActiveTab] = useState('nodes');
 
   const handleModelSelect = (model: any) => {
     setSelectedModels(prev => 
@@ -82,6 +81,10 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
         <CardContent className="p-0 h-[calc(100%-56px)] flex flex-col min-h-0">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="flex h-full flex-col min-h-0">
             <TabsList className="flex w-full gap-1 rounded-none h-10 p-1 overflow-x-auto whitespace-nowrap bg-muted/30">
+              <TabsTrigger value="nodes" className="text-xs px-3 h-7 min-w-fit font-medium">
+                <Palette className="h-3 w-3 mr-1" />
+                Node Palette
+              </TabsTrigger>
               <TabsTrigger value="guide" className="text-xs px-3 h-7 min-w-fit font-medium">
                 <Layers className="h-3 w-3 mr-1" />
                 Workflow Guide
@@ -100,10 +103,22 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
               </TabsTrigger>
             </TabsList>
 
+            <TabsContent value="nodes" className="mt-0 flex-1 min-h-0">
+              <ScrollArea className="h-full">
+                <div className="p-3">
+                  <div className="text-xs text-primary/80 mb-3 p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                    <strong>Enhanced Node Library:</strong> Drag and drop nodes from categories below to build your workflow. Each node is database-backed with detailed capabilities and configurations.
+                  </div>
+                  <EnhancedNodePalette heightClass="h-full" />
+                </div>
+              </ScrollArea>
+            </TabsContent>
+
             <TabsContent value="guide" className="mt-0 flex-1 min-h-0">
               <SequentialFlowGuide 
                 onStepSelect={(step) => {
-                  if (step === 1) setActiveTab('agents');
+                  if (step === 0) setActiveTab('nodes');
+                  else if (step === 1) setActiveTab('agents');
                   else if (step === 2) setActiveTab('models');
                   else if (step === 3) setActiveTab('access');
                   else setActiveTab('guide');
