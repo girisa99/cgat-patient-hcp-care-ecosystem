@@ -88,12 +88,58 @@ export const ExpandedWorkflowAssetPanel: React.FC<ExpandedWorkflowAssetPanelProp
           <div className="h-full flex flex-col">
             <div className="flex-shrink-0 p-3 pb-2">
               <div className="text-xs text-primary/80 p-2 bg-primary/5 border border-primary/20 rounded-lg">
-                <strong>Enhanced Node Library:</strong> Drag and drop nodes to build your workflow. Each node has detailed capabilities and configurations.
+                <strong>Unified Node Library:</strong> All workflow building blocks in one place - AI agents, tools, data connectors, and utilities. Database-backed with detailed capabilities.
               </div>
             </div>
             <div className="flex-1 min-h-0">
               <ScrollArea className="h-full">
                 <EnhancedNodePalette heightClass="min-h-full" />
+                
+                {/* Testing & Debug Section - Moved to bottom */}
+                <div className="px-3 py-2 border-t border-border/50 mt-4">
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Settings className="h-3 w-3" />
+                          Testing & Debug
+                        </div>
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-1">
+                      <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
+                        Test Runner
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
+                        Debug Console
+                      </Button>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
+
+                {/* Config & Deploy Section - Moved to bottom */}
+                <div className="px-3 py-2">
+                  <Collapsible>
+                    <CollapsibleTrigger asChild>
+                      <Button variant="ghost" className="w-full justify-between text-xs">
+                        <div className="flex items-center gap-2">
+                          <Bot className="h-3 w-3" />
+                          Config & Deploy
+                        </div>
+                        <ChevronDown className="h-3 w-3" />
+                      </Button>
+                    </CollapsibleTrigger>
+                    <CollapsibleContent className="pt-2 space-y-1">
+                      <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
+                        Deployment Config
+                      </Button>
+                      <Button variant="ghost" size="sm" className="w-full justify-start text-xs">
+                        Environment Setup
+                      </Button>
+                    </CollapsibleContent>
+                  </Collapsible>
+                </div>
               </ScrollArea>
             </div>
           </div>
