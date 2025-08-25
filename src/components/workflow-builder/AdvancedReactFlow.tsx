@@ -424,13 +424,14 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
       {/* Unified Sidebar */}
       {!canvasOnly && (
         <div 
-          className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0 overflow-hidden"
+          className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10"
           onWheelCapture={(e) => e.stopPropagation()}
           onTouchMoveCapture={(e) => e.stopPropagation()}
           onScrollCapture={(e) => e.stopPropagation()}
+          style={{ touchAction: 'pan-y' }}
         >
           <EnhancedNodePalette 
-            heightClass="h-full"
+            heightClass="min-h-full"
             onNodeSelect={(nodeType) => {
               addEnhancedNode(nodeType);
             }}
