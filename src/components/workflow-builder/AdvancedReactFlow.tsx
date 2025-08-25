@@ -72,6 +72,7 @@ import { ProcessFlowTracker } from './ProcessFlowTracker';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { AgentNode } from './nodes/AgentNode';
 import { EnhancedNodePalette } from './EnhancedNodePalette';
+import { ToolCreator } from './ToolCreator';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
@@ -574,6 +575,9 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
                 </ReactFlow>
               </ErrorBoundary>
             </ContextMenuTrigger>
+            
+            {/* Tool Creator Dialog */}
+            <ToolCreator />
             
             <ContextMenuContent>
               <ContextMenuItem onClick={() => addNode('customer')}>

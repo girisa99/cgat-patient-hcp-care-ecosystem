@@ -7,7 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { 
   Workflow, ChevronDown, ChevronRight, Search, Info, 
   Bot, Database, Brain, Zap, Eye, Link, Grid3X3, 
-  Wrench, FileText, MessageSquare, Filter, Settings, GitBranch
+  Wrench, FileText, MessageSquare, Filter, Settings, GitBranch, Plus
 } from 'lucide-react';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { cn } from '@/lib/utils';
@@ -145,7 +145,7 @@ const [internalSearch, setInternalSearch] = useState('');
       match(nt, ['openai','anthropic','claude','gpt','mistral','cohere','gemini','groq','llm','bedrock','azure','deepseek'])
     ),
     small_language_models: filteredNodeTypes.filter((nt) =>
-      match(nt, ['ollama','llama','phi','qwen','nano','tiny','slm'])
+      match(nt, ['ollama','llama','phi','qwen','nano','tiny','slm','biotech','pharma','healthcare','medical'])
     ),
     vision_models: filteredNodeTypes.filter((nt) =>
       match(nt, ['vision','gpt-4o','gpt-4v','image','multimodal','vlm','gemini'])
@@ -154,7 +154,15 @@ const [internalSearch, setInternalSearch] = useState('');
     cache: filteredNodeTypes.filter((nt) => match(nt, ['cache','memory','buffer','history','scratchpad'])),
     labeling: filteredNodeTypes.filter((nt) => match(nt, ['label','annotation','label studio'])),
     parsers_processors: filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean'])),
-    prompts_templates: filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example']))
+    prompts_templates: filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example'])),
+    
+    // Deployment Categories
+    deployment_environments: filteredNodeTypes.filter((nt) => match(nt, ['dev','test','uat','staging','production','environment','deploy'])),
+    channel_deployment: filteredNodeTypes.filter((nt) => match(nt, ['channel','voice call','web chat','email','messaging','instagram','deployment matrix'])),
+    voice_config: filteredNodeTypes.filter((nt) => match(nt, ['voice','speech','audio','tts','stt','whisper','eleven','recognition','synthesis'])),
+    human_loop: filteredNodeTypes.filter((nt) => match(nt, ['human','handoff','escalation','transfer','agent transfer','live agent'])),
+    testing_validation: filteredNodeTypes.filter((nt) => match(nt, ['test','testing','validation','debug','simulation','flow test'])),
+    code_deployment: filteredNodeTypes.filter((nt) => match(nt, ['snippet','code','docker','kubernetes','api endpoint','webhook']))
   };
 
   const dedupe = (arr: typeof nodeTypes) => {
@@ -193,6 +201,14 @@ const [internalSearch, setInternalSearch] = useState('');
     ensure('labeling','Labeling Studio','edit','#8b5cf6');
     ensure('parsers_processors','Parsers & Processors','scissors','#10b981');
     ensure('prompts_templates','Prompts & Templates','file-text','#f59e0b');
+    
+    // Deployment Categories
+    ensure('deployment_environments','Deployment Environments','settings','#7c3aed');
+    ensure('channel_deployment','Channel Deployment','message-square','#059669');
+    ensure('voice_config','Voice Configuration','message-circle','#dc2626');
+    ensure('human_loop','Human in the Loop','wrench','#c2410c');
+    ensure('testing_validation','Testing & Validation','search','#0f766e');
+    ensure('code_deployment','Code & Deployment','code','#4338ca');
     return list;
   }, [categories]);
 
@@ -628,7 +644,34 @@ return (
 
             {/* Config & Testing sections at bottom */}
             <div className="mt-4 space-y-3">
-              <div className="text-xs font-medium text-muted-foreground px-1">Config & Testing</div>
+              <div className="text-xs font-medium text-muted-foreground px-1">Tools & Actions</div>
+
+              <Collapsible>
+                <CollapsibleTrigger asChild>
+                  <Button variant="ghost" className="w-full justify-between p-2 h-auto">
+                    <span>Add New Tool</span>
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </CollapsibleTrigger>
+                <CollapsibleContent className="pt-2 space-y-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start h-8 text-xs"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-tool-creator'))}
+                  >
+                    <Plus className="w-3 h-3 mr-2" /> Create Custom Tool
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full justify-start h-8 text-xs"
+                    onClick={() => window.dispatchEvent(new CustomEvent('open-category-creator'))}
+                  >
+                    <Settings className="w-3 h-3 mr-2" /> Add Category
+                  </Button>
+                </CollapsibleContent>
+              </Collapsible>
 
               <Collapsible>
                 <CollapsibleTrigger asChild>
