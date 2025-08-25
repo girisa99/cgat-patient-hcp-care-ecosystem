@@ -43,6 +43,7 @@ import { TestingConsolePanel } from './TestingConsolePanel';
 import { CodeEditorPanel } from './CodeEditorPanel';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
@@ -524,6 +525,65 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
                       }}
                     />
                   )}
+
+                  {/* Workflow Design Panel - Top Left */}
+                  <Panel position="top-left" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border min-w-[240px]">
+                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                      <TabsList className="grid grid-cols-3 h-8">
+                        <TabsTrigger value="layout" className="h-8">Layout</TabsTrigger>
+                        <TabsTrigger value="nodes" className="h-8">Nodes</TabsTrigger>
+                        <TabsTrigger value="edges" className="h-8">Edges</TabsTrigger>
+                      </TabsList>
+
+                      <TabsContent value="layout" className="space-y-2 pt-2">
+                        <div className="text-xs text-muted-foreground">Background</div>
+                        <Select value={backgroundVariant} onValueChange={(v: any) => setBackgroundVariant(v)}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={BackgroundVariant.Dots}>Dots</SelectItem>
+                            <SelectItem value={BackgroundVariant.Lines}>Lines</SelectItem>
+                            <SelectItem value={BackgroundVariant.Cross}>Cross</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs">Snap to grid</span>
+                          <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="text-xs">Show minimap</span>
+                          <Switch checked={showMiniMap} onCheckedChange={setShowMiniMap} />
+                        </div>
+                        <div className="text-xs text-muted-foreground">Drag mode</div>
+                        <Select value={dragMode} onValueChange={(v: any) => setDragMode(v)}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="select">Select</SelectItem>
+                            <SelectItem value="pan">Pan</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TabsContent>
+
+                      <TabsContent value="nodes" className="space-y-2 pt-2">
+                        <div className="text-xs text-muted-foreground">Nodes: {nodes.length} • Selected: {selectedNodes.length}</div>
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="outline" className="h-8" onClick={addGroupNode}>Add Group</Button>
+                          <Button size="sm" variant="outline" className="h-8" onClick={handleFitView}>Fit View</Button>
+                        </div>
+                      </TabsContent>
+
+                      <TabsContent value="edges" className="space-y-2 pt-2">
+                        <div className="text-xs text-muted-foreground">Edges: {edges.length}</div>
+                        <div className="text-xs text-muted-foreground">Connection Mode</div>
+                        <Select value={connectionMode} onValueChange={(v: any) => setConnectionMode(v)}>
+                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value={ConnectionMode.Loose}>Loose</SelectItem>
+                            <SelectItem value={ConnectionMode.Strict}>Strict</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </TabsContent>
+                    </Tabs>
+                  </Panel>
 
                   {/* Canvas Controls Panel */}
                   <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
