@@ -406,7 +406,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     <div className="flex h-full w-full bg-background">
       {/* Unified Sidebar */}
       {!canvasOnly && (
-        <div className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0">
+        <div className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0 overflow-hidden touch-pan-y">
           <EnhancedNodePalette 
             onNodeSelect={(nodeType) => {
               addNode(nodeType.type_key || nodeType.name);
@@ -421,6 +421,8 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
         <div 
           ref={reactFlowWrapper} 
           className="w-full h-full"
+          onDrop={onDrop}
+          onDragOver={onDragOver}
         >
           <ContextMenu>
             <ContextMenuTrigger asChild>
