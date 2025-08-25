@@ -51,7 +51,7 @@ import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetP
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
-import { ContextualAccessOverlay } from '@/components/workflow-builder/ContextualAccessOverlay';
+
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
@@ -74,9 +74,7 @@ const AgentsInner = () => {
   const [showAssistant, setShowAssistant] = useState(false);
   const [leftPanelTab, setLeftPanelTab] = useState<'palette' | 'access'>('palette');
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'libraries' | 'assistant'>('config');
-  const [showContextualAccess, setShowContextualAccess] = useState(false);
   const [isInlineConfigOpen, setInlineConfigOpen] = useState(false);
-  const [accessNodePosition, setAccessNodePosition] = useState({ x: 0, y: 0 });
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -274,30 +272,10 @@ const AgentsInner = () => {
                         sessionId={currentSession?.id}
                         initialNodes={[]}
                         initialEdges={[]}
-                        onNodeSelect={(node) => {
-                          setSelectedNode(node);
-                          setRightPanelTab('config');
-                          
-                          // Show contextual access overlay for selected node
-                          if (node) {
-                            setTimeout(() => {
-                              const nodeElement = document.querySelector(`[data-id="${node.id}"]`);
-                              if (nodeElement) {
-                                const rect = nodeElement.getBoundingClientRect();
-                                const containerRect = nodeElement.closest('.react-flow')?.getBoundingClientRect();
-                                if (containerRect) {
-                                  setAccessNodePosition({
-                                    x: rect.left - containerRect.left + rect.width,
-                                    y: rect.top - containerRect.top
-                                  });
-                                  setShowContextualAccess(true);
-                                }
-                              }
-                            }, 100);
-                          } else {
-                            setShowContextualAccess(false);
-                          }
-                        }}
+                         onNodeSelect={(node) => {
+                           setSelectedNode(node);
+                           setRightPanelTab('config');
+                         }}
                         onSave={handleFlowSave}
                       />
                     </ReactFlowProvider>
@@ -305,14 +283,6 @@ const AgentsInner = () => {
                 </SidebarProvider>
               </ErrorBoundary>
               
-              {/* Contextual Access Overlay */}
-              {showContextualAccess && selectedNode && (
-                <ContextualAccessOverlay
-                  node={selectedNode}
-                  position={accessNodePosition}
-                  onClose={() => setShowContextualAccess(false)}
-                />
-              )}
             </div>
           </div>
         </div>
