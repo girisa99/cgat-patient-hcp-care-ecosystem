@@ -266,28 +266,38 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   );
 
   const onDrop = useCallback((event: React.DragEvent) => {
+    // Allow dropping
     event.preventDefault();
-    
+    event.stopPropagation();
+
     // Try to get enhanced node data first
-    let nodeData;
+    let nodeData: any | undefined;
     try {
       const enhancedData = event.dataTransfer.getData('application/json');
       if (enhancedData) {
         nodeData = JSON.parse(enhancedData);
       }
     } catch (error) {
-      console.log('Could not parse enhanced node data, falling back to basic type');
+      console.log('[RF] Could not parse enhanced node data, falling back', error);
     }
 
-    // Fallback to basic type if enhanced data not available
-    const type = nodeData?.type_key || event.dataTransfer.getData('application/reactflow');
-    if (!type) return;
+    // Determine type with multiple fallbacks
+    let type = nodeData?.type_key || event.dataTransfer.getData('application/reactflow');
+    if (!type) {
+      const plain = event.dataTransfer.getData('text/plain');
+      if (plain) type = plain;
+    }
+    if (!type) {
+      console.warn('[RF] Drop ignored: no node type in dataTransfer');
+      return;
+    }
 
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
-    
+    console.log('[RF] onDrop', { type, position, nodeData });
+
     const newNode = {
       id: `${type}_${Date.now()}`,
-      type: 'enhanced', // Use enhanced node type for better rendering
+      type: 'enhanced',
       position,
       data: {
         label: nodeData?.display_name || `${type} node`,
@@ -301,16 +311,24 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
         default_config: nodeData?.default_config || {},
         category: nodeData?.category,
         isWorkflowNode: true,
-        ...nodeData
+        ...nodeData,
       },
-    };
+    } as Node;
 
     setNodes((nds) => nds.concat(newNode));
-  }, [setNodes]);
+  }, [screenToFlowPosition, setNodes]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
+    event.stopPropagation();
+    // required to allow drop
     event.dataTransfer.dropEffect = 'move';
+    // debug
+    if ((event as any).debugOnce !== true) {
+      // lightweight log (won't spam due to flag)
+      (event as any).debugOnce = true;
+      console.log('[RF] onDragOver active');
+    }
   }, []);
 
   const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
@@ -340,6 +358,38 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     };
     setNodes((nds) => [...nds, newNode]);
   }, [setNodes]);
+
+  // Click-to-add (mobile/touch friendly) enhanced node creation
+  const addEnhancedNode = useCallback((nodeTypeObj: any) => {
+    const type = nodeTypeObj?.type_key || nodeTypeObj?.name || 'node';
+    // center of canvas
+    const rect = reactFlowWrapper.current?.getBoundingClientRect();
+    const center = rect
+      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+      : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+    const position = screenToFlowPosition(center);
+    console.log('[RF] click-add', { type, position });
+    const newNode: Node = {
+      id: `${type}_${Date.now()}`,
+      type: 'enhanced',
+      position,
+      data: {
+        label: nodeTypeObj?.display_name || `${type} node`,
+        type_key: type,
+        display_name: nodeTypeObj?.display_name || type,
+        description: nodeTypeObj?.description || '',
+        icon: nodeTypeObj?.icon || 'settings',
+        color: nodeTypeObj?.color || '#6366f1',
+        capabilities: nodeTypeObj?.capabilities || [],
+        requirements: nodeTypeObj?.requirements || {},
+        default_config: nodeTypeObj?.default_config || {},
+        category: nodeTypeObj?.category,
+        isWorkflowNode: true,
+        ...nodeTypeObj,
+      },
+    } as Node;
+    setNodes((nds) => nds.concat(newNode));
+  }, [screenToFlowPosition, setNodes]);
 
   const addGroupNode = useCallback(() => {
     const newNode: Node = {
@@ -407,7 +457,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
         <div className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0 overflow-hidden touch-pan-y">
           <EnhancedNodePalette 
             onNodeSelect={(nodeType) => {
-              addNode(nodeType.type_key || nodeType.name);
+              addEnhancedNode(nodeType);
             }}
             hideSearch={false}
           />

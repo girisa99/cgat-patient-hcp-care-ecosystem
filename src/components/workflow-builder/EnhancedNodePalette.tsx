@@ -185,11 +185,12 @@ const [internalSearch, setInternalSearch] = useState('');
         ...nodeType,
         source: 'enhanced-node-palette',
         isWorkflowNode: true,
-        label: nodeType.display_name
+        label: nodeType.display_name,
       })
     );
     event.dataTransfer.setData('text/plain', nodeType.type_key);
     event.dataTransfer.effectAllowed = 'move';
+    console.log('[RF] dragStart', { type: nodeType.type_key, nodeType });
   };
 
   const handleNodeClick = (nodeType: any) => {
