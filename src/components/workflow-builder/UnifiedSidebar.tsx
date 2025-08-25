@@ -17,7 +17,7 @@ import {
   Workflow, Bot, Database, Settings, Rocket, 
   TestTube, Palette, Play, Code, Zap, Eye,
   Layers, Brain, Link, Users, AlertTriangle, 
-  Grid, MousePointer, Hand, Trash2, Plus, Layout, Search
+  Grid, MousePointer, Hand, Trash2, Plus, Layout, Search, ChevronDown
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
