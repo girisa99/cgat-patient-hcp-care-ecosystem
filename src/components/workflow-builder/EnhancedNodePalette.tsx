@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -84,6 +84,16 @@ const [internalSearch, setInternalSearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
   const [showAllCategories, setShowAllCategories] = useState(true);
+
+  const rootRef = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    const el = rootRef.current;
+    console.log('[EnhancedNodePalette] mounted', { path: window.location.pathname });
+    if (el) {
+      const r = el.getBoundingClientRect();
+      console.log('[EnhancedNodePalette] container', { height: r.height });
+    }
+  }, []);
 
   React.useEffect(() => {
     if (categories.length) {
@@ -231,7 +241,7 @@ const [internalSearch, setInternalSearch] = useState('');
   }
 
 return (
-    <div className={cn("flex flex-col h-full", heightClass)}>
+    <div ref={rootRef} className={cn("flex flex-col h-full min-h-0", heightClass)}>
       <div className="flex-shrink-0 px-3 pb-2 space-y-3">
         {!hideSearch && (
           <div className="relative">
@@ -289,7 +299,12 @@ return (
         )}
       </div>
       
-      <div className="flex-1 min-h-0 overflow-y-auto">
+      <div className="flex-1 min-h-0 overflow-y-auto pointer-events-auto"
+           onWheelCapture={(e) => e.stopPropagation()}
+           onTouchMoveCapture={(e) => e.stopPropagation()}
+           onScrollCapture={(e) => e.stopPropagation()}
+           style={{ touchAction: 'pan-y', overscrollBehavior: 'contain' }}>
+
         <div className="px-3 pb-6 space-y-2">
             {/* Show categories with nodes first, then empty ones if showAllCategories is true */}
             {allCategories
