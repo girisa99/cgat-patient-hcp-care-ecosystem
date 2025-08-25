@@ -24,8 +24,6 @@ import {
   EdgeLabelRenderer,
   NodeResizer,
   useStore,
-  ReactFlowProvider,
-  ReactFlowInstance,
   OnConnect,
   OnEdgesChange,
   OnNodesChange,
@@ -717,13 +715,9 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   );
 };
 
-// Main export with ReactFlowProvider wrapper
+// Main export without internal Provider to avoid nested contexts
 export const AdvancedReactFlowWrapper: React.FC<AdvancedReactFlowWrapperProps> = (props) => {
-  return (
-    <ReactFlowProvider>
-      <AdvancedReactFlowContent {...props} />
-    </ReactFlowProvider>
-  );
+  return <AdvancedReactFlowContent {...props} />;
 };
 
 // Export AdvancedReactFlow for backward compatibility  
