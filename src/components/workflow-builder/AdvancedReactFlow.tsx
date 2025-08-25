@@ -226,12 +226,34 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   const [backgroundVariant, setBackgroundVariant] = useState<BackgroundVariant>(BackgroundVariant.Dots);
   const [snapToGrid, setSnapToGrid] = useState(false);
   const [dragMode, setDragMode] = useState<'pan' | 'select'>('select');
+  const [showMinimap, setShowMinimap] = useState(true);
+  const [nodesDraggable, setNodesDraggable] = useState(true);
+  const [connectOnClick, setConnectOnClick] = useState(false);
+  const [panOnScrollMode, setPanOnScrollMode] = useState<PanOnScrollMode>(PanOnScrollMode.Free);
+  
+  // Workflow Design Panel State
+  const [showLayoutControls, setShowLayoutControls] = useState(false);
+  const [showNodeControls, setShowNodeControls] = useState(false);
+  const [showEdgeControls, setShowEdgeControls] = useState(false);
 
   // References
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
   // Hooks
   const { showSuccess, showError } = useMasterToast();
+
+  // Workflow Design Controls Event Handler
+  useEffect(() => {
+    const handleDesignNav = (e: CustomEvent) => {
+      const { tab } = e.detail;
+      setShowLayoutControls(tab === 'layout');
+      setShowNodeControls(tab === 'nodes');
+      setShowEdgeControls(tab === 'edges');
+    };
+
+    window.addEventListener('workflow-design-nav', handleDesignNav as EventListener);
+    return () => window.removeEventListener('workflow-design-nav', handleDesignNav as EventListener);
+  }, []);
 
   // Derived State
   const selectedNodes = useMemo(() => nodes.filter(n => n.selected), [nodes]);
@@ -494,8 +516,10 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
                   zoomOnDoubleClick={true}
                   zoomOnPinch={true}
                   panOnScroll={true}
-                  panOnScrollMode={PanOnScrollMode.Free}
+                  panOnScrollMode={panOnScrollMode}
                   panOnDrag={dragMode === 'pan'}
+                  nodesDraggable={nodesDraggable}
+                  connectOnClick={connectOnClick}
                   minZoom={0.1}
                   maxZoom={2}
                   defaultViewport={{ x: 0, y: 0, zoom: 1 }}
@@ -526,64 +550,142 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
                     />
                   )}
 
-                  {/* Workflow Design Panel - Top Left */}
-                  <Panel position="top-left" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border min-w-[240px]">
-                    <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-                      <TabsList className="grid grid-cols-3 h-8">
-                        <TabsTrigger value="layout" className="h-8">Layout</TabsTrigger>
-                        <TabsTrigger value="nodes" className="h-8">Nodes</TabsTrigger>
-                        <TabsTrigger value="edges" className="h-8">Edges</TabsTrigger>
-                      </TabsList>
-
-                      <TabsContent value="layout" className="space-y-2 pt-2">
-                        <div className="text-xs text-muted-foreground">Background</div>
-                        <Select value={backgroundVariant} onValueChange={(v: any) => setBackgroundVariant(v)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={BackgroundVariant.Dots}>Dots</SelectItem>
-                            <SelectItem value={BackgroundVariant.Lines}>Lines</SelectItem>
-                            <SelectItem value={BackgroundVariant.Cross}>Cross</SelectItem>
-                          </SelectContent>
-                        </Select>
+                  {/* Workflow Design Panel - Enhanced to replace duplicate functionality */}
+                  {(showLayoutControls || showNodeControls || showEdgeControls) && (
+                    <Panel position="top-left" className="bg-white/95 backdrop-blur-md p-4 rounded-lg shadow-lg border min-w-80 max-w-96">
+                      <div className="space-y-4">
                         <div className="flex items-center justify-between">
-                          <span className="text-xs">Snap to grid</span>
-                          <Switch checked={snapToGrid} onCheckedChange={setSnapToGrid} />
+                          <h3 className="font-semibold text-sm flex items-center gap-2">
+                            <Settings className="h-4 w-4" />
+                            {showLayoutControls && 'Layout Controls'}
+                            {showNodeControls && 'Node Controls'}
+                            {showEdgeControls && 'Edge Controls'}
+                          </h3>
+                          <Button 
+                            size="sm" 
+                            variant="ghost" 
+                            onClick={() => {
+                              setShowLayoutControls(false);
+                              setShowNodeControls(false);
+                              setShowEdgeControls(false);
+                            }}
+                          >
+                            ✕
+                          </Button>
                         </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-xs">Show minimap</span>
-                          <Switch checked={showMiniMap} onCheckedChange={setShowMiniMap} />
-                        </div>
-                        <div className="text-xs text-muted-foreground">Drag mode</div>
-                        <Select value={dragMode} onValueChange={(v: any) => setDragMode(v)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="select">Select</SelectItem>
-                            <SelectItem value="pan">Pan</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TabsContent>
-
-                      <TabsContent value="nodes" className="space-y-2 pt-2">
-                        <div className="text-xs text-muted-foreground">Nodes: {nodes.length} • Selected: {selectedNodes.length}</div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="outline" className="h-8" onClick={addGroupNode}>Add Group</Button>
-                          <Button size="sm" variant="outline" className="h-8" onClick={handleFitView}>Fit View</Button>
-                        </div>
-                      </TabsContent>
-
-                      <TabsContent value="edges" className="space-y-2 pt-2">
-                        <div className="text-xs text-muted-foreground">Edges: {edges.length}</div>
-                        <div className="text-xs text-muted-foreground">Connection Mode</div>
-                        <Select value={connectionMode} onValueChange={(v: any) => setConnectionMode(v)}>
-                          <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value={ConnectionMode.Loose}>Loose</SelectItem>
-                            <SelectItem value={ConnectionMode.Strict}>Strict</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </TabsContent>
-                    </Tabs>
-                  </Panel>
+                        
+                        <Separator />
+                        
+                        {showLayoutControls && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-3">
+                              <div className="space-y-2">
+                                <label className="text-xs font-medium">Background Style</label>
+                                <Select value={backgroundVariant} onValueChange={(value: any) => setBackgroundVariant(value)}>
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="dots">Dots</SelectItem>
+                                    <SelectItem value="lines">Lines</SelectItem>
+                                    <SelectItem value="cross">Cross</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div className="space-y-2">
+                                <label className="text-xs font-medium">Pan Mode</label>
+                                <Select value={panOnScrollMode} onValueChange={(value: any) => setPanOnScrollMode(value)}>
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="free">Free</SelectItem>
+                                    <SelectItem value="vertical">Vertical</SelectItem>
+                                    <SelectItem value="horizontal">Horizontal</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            </div>
+                            
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-medium">Snap to Grid</label>
+                                <Switch 
+                                  checked={snapToGrid} 
+                                  onCheckedChange={setSnapToGrid}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-medium">Show Minimap</label>
+                                <Switch 
+                                  checked={showMinimap} 
+                                  onCheckedChange={setShowMinimap}
+                                />
+                              </div>
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-medium">Node Drag</label>
+                                <Switch 
+                                  checked={nodesDraggable} 
+                                  onCheckedChange={setNodesDraggable}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {showNodeControls && (
+                          <div className="space-y-4">
+                            <div className="grid grid-cols-2 gap-2">
+                              <Button size="sm" onClick={handleFitView} className="text-xs">
+                                <Eye className="h-3 w-3 mr-1" />
+                                Fit View
+                              </Button>
+                              <Button size="sm" onClick={addGroupNode} className="text-xs">
+                                <Plus className="h-3 w-3 mr-1" />
+                                Add Group
+                              </Button>
+                              <Button size="sm" onClick={() => setNodes([])} variant="outline" className="text-xs">
+                                <Trash2 className="h-3 w-3 mr-1" />
+                                Clear All
+                              </Button>
+                              <Button size="sm" onClick={handleFitView} variant="outline" className="text-xs">
+                                <Layout className="h-3 w-3 mr-1" />
+                                Auto Layout
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {showEdgeControls && (
+                          <div className="space-y-4">
+                            <div className="space-y-3">
+                              <div className="space-y-2">
+                                <label className="text-xs font-medium">Connection Mode</label>
+                                <Select value={connectionMode} onValueChange={(value: any) => setConnectionMode(value)}>
+                                  <SelectTrigger className="h-8">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="strict">Strict</SelectItem>
+                                    <SelectItem value="loose">Loose</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                              
+                              <div className="flex items-center justify-between">
+                                <label className="text-xs font-medium">Connect on Click</label>
+                                <Switch 
+                                  checked={connectOnClick} 
+                                  onCheckedChange={setConnectOnClick}
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </Panel>
+                  )}
 
                   {/* Canvas Controls Panel */}
                   <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">

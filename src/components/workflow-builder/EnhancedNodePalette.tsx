@@ -302,7 +302,7 @@ return (
           </Button>
         </div>
 
-        {/* Workflow Design quick nav */}
+        {/* Workflow Design quick nav - Remove duplicate, only keep palette navigation */}
         <div className="mt-1">
           <div className="text-xs text-muted-foreground mb-1">Workflow Design</div>
           <div className="flex flex-col gap-1">
@@ -315,6 +315,9 @@ return (
             <Button variant={designNav==='edges' ? 'secondary' : 'ghost'} size="sm" className="h-7 justify-start" onClick={() => handleDesignNav('edges')}>
               <Link className="h-3 w-3 mr-2" /> Edges
             </Button>
+          </div>
+          <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/20 rounded">
+            💡 Controls will appear in the main workflow area when selected
           </div>
         </div>
         
