@@ -333,6 +333,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
         default_config: nodeData?.default_config || {},
         category: nodeData?.category,
         isWorkflowNode: true,
+        shouldShowAssetSelector: true, // Show asset selector when dropped
         ...nodeData,
       },
     } as Node;

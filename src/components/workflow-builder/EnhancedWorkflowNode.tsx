@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { 
   Bot, MessageCircle, Phone, Mail, Calendar, CheckCircle, 
   AlertTriangle, Users, Settings, Zap, Database, ArrowRight,
-  MoreHorizontal, Plus, Edit, Trash2
+  MoreHorizontal, Plus, Edit, Trash2, Link
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -14,11 +14,32 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { NodeAssetSelector } from './NodeAssetSelector';
+
+interface ConnectedAsset {
+  id: string;
+  name: string;
+  type: string;
+  logo?: string;
+  provider?: string;
+  config?: any;
+}
 
 export interface EnhancedNodeData extends Record<string, unknown> {
   label: string;
   description: string;
   type: 'customer' | 'touchpoint' | 'decision' | 'agent' | 'action';
+  type_key?: string;
+  category?: string;
+  shouldShowAssetSelector?: boolean;
+  connectedAsset?: ConnectedAsset;
   
   // Enhanced data fields
   dataFields?: string[];
@@ -58,6 +79,8 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
   onConnect
 }) => {
   const [showDataFields, setShowDataFields] = useState(false);
+  const [showAssetSelector, setShowAssetSelector] = useState(Boolean(data.shouldShowAssetSelector));
+  const [connectedAsset, setConnectedAsset] = useState<ConnectedAsset | null>(data.connectedAsset || null);
   
   const getNodeIcon = () => {
     switch (data.type) {
@@ -136,7 +159,11 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end" className="bg-background border border-border shadow-lg">
+                <DropdownMenuItem onClick={() => setShowAssetSelector(true)}>
+                  <Link className="h-3 w-3 mr-2" />
+                  {connectedAsset ? 'Change Asset' : 'Connect Asset'}
+                </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit?.(id)}>
                   <Edit className="h-3 w-3 mr-2" />
                   Edit Node
@@ -155,6 +182,47 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
+
+          {/* Connected Asset Indicator */}
+          {connectedAsset && (
+            <div className="flex items-center gap-2 mb-2 p-2 bg-accent/50 rounded-md border">
+              <div className="flex items-center gap-2 flex-1">
+                {connectedAsset.logo ? (
+                  <img 
+                    src={connectedAsset.logo} 
+                    alt={connectedAsset.name}
+                    className="h-4 w-4 rounded object-contain"
+                  />
+                ) : (
+                  <Database className="h-4 w-4 text-primary" />
+                )}
+                <span className="text-xs font-medium truncate">{connectedAsset.name}</span>
+              </div>
+              <Badge variant="secondary" className="text-xs">
+                {connectedAsset.type}
+              </Badge>
+            </div>
+          )}
+
+          {/* Asset Connection Prompt */}
+          {!connectedAsset && (data.shouldShowAssetSelector || showAssetSelector) && (
+            <div className="mb-2 p-2 border border-dashed border-primary/50 rounded-md bg-primary/5">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Link className="h-3 w-3 text-primary" />
+                  <span className="text-xs text-primary">Connect Asset</span>
+                </div>
+                <Button 
+                  size="sm" 
+                  variant="outline" 
+                  className="h-6 text-xs"
+                  onClick={() => setShowAssetSelector(true)}
+                >
+                  Select
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Node-specific content */}
           <div className="space-y-2">
@@ -221,6 +289,39 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
           </div>
         </CardContent>
       </Card>
+
+      {/* Asset Selection Dialog */}
+      <Dialog open={showAssetSelector} onOpenChange={setShowAssetSelector}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configure Node Assets</DialogTitle>
+            <DialogDescription>
+              Select existing assets or create new ones for this {String(data.type_key || data.type || 'unknown')} node
+            </DialogDescription>
+          </DialogHeader>
+          
+          <NodeAssetSelector
+            nodeType={String(data.type_key || data.type || 'unknown')}
+            category={String(data.category || 'general')}
+            onAssetSelected={(asset) => {
+              setConnectedAsset(asset);
+              setShowAssetSelector(false);
+              // Update node data with connected asset
+              window.dispatchEvent(new CustomEvent('workflow-node-asset-connected', {
+                detail: { nodeId: id, asset }
+              }));
+            }}
+            onCreateNew={() => {
+              setShowAssetSelector(false);
+              // Open the tool creator for this specific node type
+              window.dispatchEvent(new CustomEvent('workflow-tool-creator-open', {
+                detail: { nodeType: data.type_key, category: data.category }
+              }));
+            }}
+            onClose={() => setShowAssetSelector(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
