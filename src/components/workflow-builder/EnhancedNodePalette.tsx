@@ -208,35 +208,107 @@ const [internalSearch, setInternalSearch] = useState('');
     return acc;
   }, { ...baseByCategory } as Record<string, typeof nodeTypes>);
 
+  // Only show the 8 consolidated categories - ignore database categories
   const allCategories = React.useMemo(() => {
-    const list = [...categories];
-    const ensure = (name: string, display_name: string, icon: string, color: string) => {
-      if (!list.find((c) => c.name === name)) {
-        list.push({
-          id: `virtual-${name}`,
-          name,
-          display_name,
-          description: display_name,
-          icon,
-          color,
-          order_index: (list[list.length - 1]?.order_index || 0) + 1,
-          is_active: true,
-          created_at: '',
-          updated_at: ''
-        } as any);
+    return [
+      {
+        id: 'ai-models-processing',
+        name: 'ai_models_processing',
+        display_name: 'AI Models & Processing',
+        description: 'AI Models & Processing',
+        icon: 'brain',
+        color: '#3b82f6',
+        order_index: 1,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
+      {
+        id: 'data-integration',
+        name: 'data_integration',
+        display_name: 'Data & Integration',
+        description: 'Data & Integration',
+        icon: 'database',
+        color: '#06b6d4',
+        order_index: 2,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
+      {
+        id: 'communication-channels',
+        name: 'communication_channels',
+        display_name: 'Communication Channels',
+        description: 'Communication Channels',
+        icon: 'message-square',
+        color: '#10b981',
+        order_index: 3,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
+      {
+        id: 'automation-workflow',
+        name: 'automation_workflow',
+        display_name: 'Automation & Workflow',
+        description: 'Automation & Workflow',
+        icon: 'zap',
+        color: '#f59e0b',
+        order_index: 4,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
+      {
+        id: 'development-testing',
+        name: 'development_testing',
+        display_name: 'Development & Testing',
+        description: 'Development & Testing',
+        icon: 'wrench',
+        color: '#8b5cf6',
+        order_index: 5,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
+      {
+        id: 'templates-configuration',
+        name: 'templates_configuration',
+        display_name: 'Templates & Configuration',
+        description: 'Templates & Configuration',
+        icon: 'file-text',
+        color: '#ef4444',
+        order_index: 6,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
+      {
+        id: 'storage-cache',
+        name: 'storage_cache',
+        display_name: 'Storage & Cache',
+        description: 'Storage & Cache',
+        icon: 'grid-3x3',
+        color: '#84cc16',
+        order_index: 7,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
+      {
+        id: 'human-oversight',
+        name: 'human_oversight',
+        display_name: 'Human Oversight',
+        description: 'Human Oversight',
+        icon: 'eye',
+        color: '#f97316',
+        order_index: 8,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
       }
-    };
-    // Create the 8 consolidated categories
-    ensure('ai_models_processing','AI Models & Processing','brain','#3b82f6');
-    ensure('data_integration','Data & Integration','database','#06b6d4');
-    ensure('communication_channels','Communication Channels','message-square','#10b981');
-    ensure('automation_workflow','Automation & Workflow','zap','#f59e0b');
-    ensure('development_testing','Development & Testing','wrench','#8b5cf6');
-    ensure('templates_configuration','Templates & Configuration','file-text','#ef4444');
-    ensure('storage_cache','Storage & Cache','grid-3x3','#84cc16');
-    ensure('human_oversight','Human Oversight','eye','#f97316');
-    return list;
-  }, [categories]);
+    ] as any[];
+  }, []);
 
   const onDragStart = (event: React.DragEvent, nodeType: any) => {
     // Enhanced drag payload with full node type information
@@ -309,7 +381,7 @@ return (
         
         <div className="flex items-center justify-between text-xs">
           <div className="text-muted-foreground">
-            <strong>{nodeTypes.length}</strong> nodes • <strong>{allCategories.length}</strong> categories
+            <strong>{Object.values(allNodeTypesByCategory).flat().length}</strong> nodes • <strong>{allCategories.length}</strong> categories
           </div>
           <Button
             variant="ghost"
