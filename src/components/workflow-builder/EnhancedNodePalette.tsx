@@ -194,21 +194,11 @@ const [internalSearch, setInternalSearch] = useState('');
         } as any);
       }
     };
-    ensure('genai_llm','GenAI & LLM','brain','#4f46e5');
-    ensure('small_language_models','Small Language Models','zap','#ea580c');
-    ensure('vision_models','Vision Language Models','eye','#16a34a');
-    ensure('mcp','MCP (Model Context Protocol)','git-branch','#0ea5e9');
-    ensure('cache','Cache & Memory','grid-3x3','#64748b');
+    // Only create virtual categories that don't exist in the database
     ensure('labeling','Labeling Studio','edit','#8b5cf6');
-    // Remove duplicate parsers_processors and prompts_templates since they exist in DB as 'parsers' and 'prompts'
-    
-    // Deployment Categories
-    ensure('deployment_environments','Deployment Environments','settings','#7c3aed');
-    ensure('channel_deployment','Channel Deployment','message-square','#059669');
-    ensure('voice_config','Voice Configuration','message-circle','#dc2626');
-    ensure('human_loop','Human in the Loop','wrench','#c2410c');
-    ensure('testing_validation','Testing & Validation','search','#0f766e');
-    ensure('code_deployment','Code & Deployment','code','#4338ca');
+    // All other categories (genai_llm, small_language_models, vision_models, mcp, cache, 
+    // deployment_environments, channel_deployment, voice_config, human_loop, 
+    // testing_validation, code_deployment) already exist in database
     return list;
   }, [categories]);
 
