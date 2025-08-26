@@ -147,55 +147,66 @@ const [internalSearch, setInternalSearch] = useState('');
   // Get populated nodes from backend data
   const populatedNodes = getPopulatedNodes();
 
-  // Consolidated 8 meaningful categories with provider-based grouping
+  // Consolidated 8 meaningful categories with optimized UX sequence and provider grouping
   const computed: Record<string, typeof nodeTypes> = {
-    // 1. AI Models & Processing - Group by provider with dropdowns
+    // 1. AI Models & Processing - Most important, group by provider
     ai_models_processing: [
       ...filteredNodeTypes.filter((nt) =>
-        match(nt, ['openai','anthropic','claude','gpt','mistral','cohere','gemini','groq','llm','bedrock','azure','deepseek','ollama','llama','phi','qwen','vision','multimodal','mcp','model context protocol'])
+        match(nt, ['openai','anthropic','claude','gpt','mistral','cohere','gemini','groq','llm','bedrock','azure','deepseek','ollama','llama','phi','qwen','vision','multimodal','mcp','model context protocol','ai','intelligence'])
       ),
-      ...populatedNodes.genai_llm.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Other' } as any)),
-      ...populatedNodes.small_language_models.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Other' } as any)),
-      ...populatedNodes.mcp.map(n => ({ ...n, id: n.type_key, provider_group: 'MCP' } as any))
-    ],
+      ...populatedNodes.genai_llm.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'LLM Providers' } as any)),
+      ...populatedNodes.small_language_models.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Small Models' } as any)),
+      ...populatedNodes.mcp.map(n => ({ ...n, id: n.type_key, provider_group: 'MCP Tools' } as any))
+    ].sort((a, b) => {
+      // Sort by provider group, then by name
+      const providerA = (a as any).provider_group || (a as any).provider || 'Other';
+      const providerB = (b as any).provider_group || (b as any).provider || 'Other';
+      if (providerA !== providerB) return providerA.localeCompare(providerB);
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    }),
     
-    // 2. Data & Integration
-    data_integration: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean','database','cache','memory','buffer','history','scratchpad','api','webhook','integration'])),
-    ],
-    
-    // 3. Communication Channels - Group by provider
-    communication_channels: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['channel','voice call','web chat','email','messaging','instagram','deployment matrix','voice','speech','audio','tts','stt','whisper','eleven','recognition','synthesis'])),
-      ...populatedNodes.channel_deployment.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Other' } as any)),
-      ...populatedNodes.voice_config.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Other' } as any))
-    ],
-    
-    // 4. Automation & Workflow
-    automation_workflow: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['workflow','automation','trigger','action','condition','loop','branch','decision','route']))
-    ],
-    
-    // 5. Development & Testing
-    development_testing: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['test','testing','validation','debug','simulation','flow test','dev','uat','staging','snippet','code','docker','kubernetes']))
-    ],
-    
-    // 6. Templates & Configuration
+    // 2. Templates & Configuration - Second most important for setup
     templates_configuration: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example','config','setting','parameter'])),
-      ...populatedNodes.prompts.map(n => ({ ...n, id: n.type_key, provider_group: 'Templates' } as any))
-    ],
+      ...filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example','config','setting','parameter','system','setup'])),
+      ...populatedNodes.prompts.map(n => ({ ...n, id: n.type_key, provider_group: 'Prompt Templates' } as any))
+    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
     
-    // 7. Storage & Cache
+    // 3. Communication Channels - Essential for deployment
+    communication_channels: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['channel','voice call','web chat','email','messaging','instagram','deployment matrix','voice','speech','audio','tts','stt','whisper','eleven','recognition','synthesis','phone','chat','message'])),
+      ...populatedNodes.channel_deployment.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Channel Providers' } as any)),
+      ...populatedNodes.voice_config.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Voice Providers' } as any))
+    ].sort((a, b) => {
+      const providerA = (a as any).provider_group || (a as any).provider || 'Other';
+      const providerB = (b as any).provider_group || (b as any).provider || 'Other';
+      if (providerA !== providerB) return providerA.localeCompare(providerB);
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    }),
+    
+    // 4. Automation & Workflow - Core workflow logic
+    automation_workflow: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['workflow','automation','trigger','action','condition','loop','branch','decision','route','flow','logic']))
+    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
+    
+    // 5. Data & Integration - Data handling
+    data_integration: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean','database','api','webhook','integration','data','json','xml']))
+    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
+    
+    // 6. Storage & Cache - Memory and storage
     storage_cache: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['storage','file','document','upload','download','backup','sync','s3','blob']))
-    ],
+      ...filteredNodeTypes.filter((nt) => match(nt, ['storage','file','document','upload','download','backup','sync','s3','blob','cache','memory','buffer','history','scratchpad','store']))
+    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
     
-    // 8. Human Oversight
+    // 7. Human Oversight - Human interaction
     human_oversight: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['human','handoff','escalation','transfer','agent transfer','live agent','approval','review','oversight','supervision','label','annotation','label studio']))
-    ]
+      ...filteredNodeTypes.filter((nt) => match(nt, ['human','handoff','escalation','transfer','agent transfer','live agent','approval','review','oversight','supervision','label','annotation','label studio','manual']))
+    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
+    
+    // 8. Development & Testing - Advanced tools
+    development_testing: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['test','testing','validation','debug','simulation','flow test','dev','uat','staging','snippet','code','docker','kubernetes','debug']))
+    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key))
   };
 
   const dedupe = (arr: typeof nodeTypes) => {
@@ -208,14 +219,14 @@ const [internalSearch, setInternalSearch] = useState('');
     return acc;
   }, { ...baseByCategory } as Record<string, typeof nodeTypes>);
 
-  // Only show the 8 consolidated categories - ignore database categories
+  // 8 consolidated categories with optimized UX sequence
   const allCategories = React.useMemo(() => {
     return [
       {
         id: 'ai-models-processing',
-        name: 'ai_models_processing',
+        name: 'ai_models_processing', 
         display_name: 'AI Models & Processing',
-        description: 'AI Models & Processing',
+        description: 'Core AI models, LLMs, and processing nodes',
         icon: 'brain',
         color: '#3b82f6',
         order_index: 1,
@@ -224,12 +235,12 @@ const [internalSearch, setInternalSearch] = useState('');
         updated_at: ''
       },
       {
-        id: 'data-integration',
-        name: 'data_integration',
-        display_name: 'Data & Integration',
-        description: 'Data & Integration',
-        icon: 'database',
-        color: '#06b6d4',
+        id: 'templates-configuration',
+        name: 'templates_configuration',
+        display_name: 'Templates & Configuration', 
+        description: 'Prompts, templates, and system configurations',
+        icon: 'file-text',
+        color: '#ef4444',
         order_index: 2,
         is_active: true,
         created_at: '',
@@ -239,7 +250,7 @@ const [internalSearch, setInternalSearch] = useState('');
         id: 'communication-channels',
         name: 'communication_channels',
         display_name: 'Communication Channels',
-        description: 'Communication Channels',
+        description: 'Voice, chat, email, and deployment channels',
         icon: 'message-square',
         color: '#10b981',
         order_index: 3,
@@ -249,9 +260,9 @@ const [internalSearch, setInternalSearch] = useState('');
       },
       {
         id: 'automation-workflow',
-        name: 'automation_workflow',
+        name: 'automation_workflow', 
         display_name: 'Automation & Workflow',
-        description: 'Automation & Workflow',
+        description: 'Workflow controls, conditions, and automation',
         icon: 'zap',
         color: '#f59e0b',
         order_index: 4,
@@ -260,25 +271,13 @@ const [internalSearch, setInternalSearch] = useState('');
         updated_at: ''
       },
       {
-        id: 'development-testing',
-        name: 'development_testing',
-        display_name: 'Development & Testing',
-        description: 'Development & Testing',
-        icon: 'wrench',
-        color: '#8b5cf6',
+        id: 'data-integration',
+        name: 'data_integration',
+        display_name: 'Data & Integration',
+        description: 'Data processing, APIs, and integrations',
+        icon: 'database',
+        color: '#06b6d4',
         order_index: 5,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'templates-configuration',
-        name: 'templates_configuration',
-        display_name: 'Templates & Configuration',
-        description: 'Templates & Configuration',
-        icon: 'file-text',
-        color: '#ef4444',
-        order_index: 6,
         is_active: true,
         created_at: '',
         updated_at: ''
@@ -287,10 +286,10 @@ const [internalSearch, setInternalSearch] = useState('');
         id: 'storage-cache',
         name: 'storage_cache',
         display_name: 'Storage & Cache',
-        description: 'Storage & Cache',
+        description: 'Data storage, memory, and caching systems',
         icon: 'grid-3x3',
         color: '#84cc16',
-        order_index: 7,
+        order_index: 6,
         is_active: true,
         created_at: '',
         updated_at: ''
@@ -299,9 +298,21 @@ const [internalSearch, setInternalSearch] = useState('');
         id: 'human-oversight',
         name: 'human_oversight',
         display_name: 'Human Oversight',
-        description: 'Human Oversight',
+        description: 'Human handoffs, approvals, and supervision',
         icon: 'eye',
         color: '#f97316',
+        order_index: 7,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
+      {
+        id: 'development-testing',
+        name: 'development_testing',
+        display_name: 'Development & Testing',
+        description: 'Testing, validation, and development tools',
+        icon: 'wrench',
+        color: '#8b5cf6',
         order_index: 8,
         is_active: true,
         created_at: '',
