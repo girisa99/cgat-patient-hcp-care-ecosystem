@@ -42,6 +42,7 @@ import { Button } from '@/components/ui/button';
 import { TestingConsolePanel } from './TestingConsolePanel';
 import { CodeEditorPanel } from './CodeEditorPanel';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
@@ -77,6 +78,7 @@ import { ToolCreator } from './ToolCreator';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
+import { UnifiedNodeConfigurator } from './UnifiedNodeConfigurator';
 // Custom Node Types
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -231,10 +233,14 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   const [connectOnClick, setConnectOnClick] = useState(false);
   const [panOnScrollMode, setPanOnScrollMode] = useState<PanOnScrollMode>(PanOnScrollMode.Free);
   
-  // Workflow Design Panel State
-  const [showLayoutControls, setShowLayoutControls] = useState(false);
-  const [showNodeControls, setShowNodeControls] = useState(false);
-  const [showEdgeControls, setShowEdgeControls] = useState(false);
+// Workflow Design Panel State
+const [showLayoutControls, setShowLayoutControls] = useState(false);
+const [showNodeControls, setShowNodeControls] = useState(false);
+const [showEdgeControls, setShowEdgeControls] = useState(false);
+
+// Unified Configurator state
+const [showConfigurator, setShowConfigurator] = useState(false);
+const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType: string; category: string; initialConfig?: any } | null>(null);
 
   // References
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -317,28 +323,36 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
     console.log('[RF] onDrop', { type, position, nodeData });
 
-    const newNode = {
-      id: `${type}_${Date.now()}`,
-      type: 'enhanced',
-      position,
-      data: {
-        label: nodeData?.display_name || `${type} node`,
-        type_key: type,
-        display_name: nodeData?.display_name || type,
-        description: nodeData?.description || '',
-        icon: nodeData?.icon || 'settings',
-        color: nodeData?.color || '#6366f1',
-        capabilities: nodeData?.capabilities || [],
-        requirements: nodeData?.requirements || {},
-        default_config: nodeData?.default_config || {},
-        category: nodeData?.category,
-        isWorkflowNode: true,
-        shouldShowAssetSelector: true, // Show asset selector when dropped
-        ...nodeData,
-      },
-    } as Node;
+const newNode = {
+  id: `${type}_${Date.now()}`,
+  type: 'enhanced',
+  position,
+  data: {
+    label: nodeData?.display_name || `${type} node`,
+    type_key: type,
+    display_name: nodeData?.display_name || type,
+    description: nodeData?.description || '',
+    icon: nodeData?.icon || 'settings',
+    color: nodeData?.color || '#6366f1',
+    capabilities: nodeData?.capabilities || [],
+    requirements: nodeData?.requirements || {},
+    default_config: nodeData?.default_config || {},
+    category: nodeData?.category,
+    isWorkflowNode: true,
+    shouldShowAssetSelector: true, // Show asset selector when dropped
+    ...nodeData,
+  },
+} as Node;
 
-    setNodes((nds) => nds.concat(newNode));
+setNodes((nds) => nds.concat(newNode));
+setSelectedNode(newNode as any);
+// Auto-open unified configurator on drop
+setConfigNodeInfo({
+  nodeId: newNode.id,
+  nodeType: String((newNode.data as any)?.type_key || 'unknown'),
+  category: String(((newNode.data as any)?.category && ((newNode.data as any).category.name || (newNode.data as any).category)) || 'general'),
+});
+setShowConfigurator(true);
   }, [screenToFlowPosition, setNodes]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
