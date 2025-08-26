@@ -22,6 +22,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { NodeAssetSelector } from './NodeAssetSelector';
+import { UnifiedNodeConfigurator } from './UnifiedNodeConfigurator';
 
 interface ConnectedAsset {
   id: string;
@@ -80,7 +81,9 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
 }) => {
   const [showDataFields, setShowDataFields] = useState(false);
   const [showAssetSelector, setShowAssetSelector] = useState(Boolean(data.shouldShowAssetSelector));
+  const [showNodeConfigurator, setShowNodeConfigurator] = useState(false);
   const [connectedAsset, setConnectedAsset] = useState<ConnectedAsset | null>(data.connectedAsset || null);
+  const [nodeConfig, setNodeConfig] = useState<any>(null);
   
   const getNodeIcon = () => {
     switch (data.type) {
@@ -159,10 +162,14 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
                   <MoreHorizontal className="h-3 w-3" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border border-border shadow-lg">
+               <DropdownMenuContent align="end" className="bg-background border border-border shadow-lg">
                 <DropdownMenuItem onClick={() => setShowAssetSelector(true)}>
                   <Link className="h-3 w-3 mr-2" />
                   {connectedAsset ? 'Change Asset' : 'Connect Asset'}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setShowNodeConfigurator(true)}>
+                  <Settings className="h-3 w-3 mr-2" />
+                  Full Configuration
                 </DropdownMenuItem>
                 <DropdownMenuItem onClick={() => onEdit?.(id)}>
                   <Edit className="h-3 w-3 mr-2" />
@@ -319,6 +326,34 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
               }));
             }}
             onClose={() => setShowAssetSelector(false)}
+          />
+        </DialogContent>
+      </Dialog>
+
+      {/* Unified Node Configurator Dialog */}
+      <Dialog open={showNodeConfigurator} onOpenChange={setShowNodeConfigurator}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configure Node</DialogTitle>
+            <DialogDescription>
+              Configure tools, credentials, and variables for this {String(data.type_key || data.type || 'unknown')} node
+            </DialogDescription>
+          </DialogHeader>
+          
+          <UnifiedNodeConfigurator
+            nodeId={id}
+            nodeType={String(data.type_key || data.type || 'unknown')}
+            category={String(data.category || 'general')}
+            initialConfig={nodeConfig}
+            onSave={(config) => {
+              setNodeConfig(config);
+              setShowNodeConfigurator(false);
+              // Update node data with full configuration
+              window.dispatchEvent(new CustomEvent('workflow-node-configured', {
+                detail: { nodeId: id, config }
+              }));
+            }}
+            onCancel={() => setShowNodeConfigurator(false)}
           />
         </DialogContent>
       </Dialog>
