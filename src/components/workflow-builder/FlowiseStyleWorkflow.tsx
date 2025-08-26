@@ -26,12 +26,14 @@ import { FlowiseThemeProvider, useFlowiseTheme, getFlowiseStyles } from './Flowi
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Bot, Database, Zap, MessageCircle, Mail, Phone, Calendar,
   Play, Pause, Save, Download, Upload, Settings, Eye, Plus,
   Trash2, Copy, Edit, RotateCcw, Maximize2, Sun, Moon, X, Rocket
 } from 'lucide-react';
 import { WorkflowControls } from './WorkflowControls';
+import { UnifiedNodeConfigurator } from './UnifiedNodeConfigurator';
 
 import { useMasterToast } from '@/hooks/useMasterToast';
 
@@ -44,11 +46,15 @@ import { AttioConnector } from './connectors/AttioConnector';
 const FlowiseAgentNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const { theme } = useFlowiseTheme();
   const styles = getFlowiseStyles(theme);
+  const [showConfigurator, setShowConfigurator] = useState(false);
   
   return (
     <>
       <NodeToolbar isVisible={selected} position={Position.Top}>
         <div className="flex gap-1">
+          <Button size="sm" variant="outline" className="h-6 w-6 p-0" onClick={() => setShowConfigurator(true)}>
+            <Settings className="h-3 w-3" />
+          </Button>
           <Button size="sm" variant="outline" className="h-6 w-6 p-0">
             <Edit className="h-3 w-3" />
           </Button>
@@ -112,22 +118,39 @@ const FlowiseAgentNode = ({ id, data, selected }: { id: string; data: any; selec
           className="!bg-white !border-2 !border-gray-300 !w-3 !h-3"
         />
       </div>
+
+      {/* Configuration Dialog */}
+      <Dialog open={showConfigurator} onOpenChange={setShowConfigurator}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configure Agent Node</DialogTitle>
+          </DialogHeader>
+          <UnifiedNodeConfigurator
+            nodeId={id}
+            nodeType="agent"
+            category="ai_models"
+            onSave={() => setShowConfigurator(false)}
+            onCancel={() => setShowConfigurator(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
 
 const FlowiseDataNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const { theme } = useFlowiseTheme();
+  const [showConfigurator, setShowConfigurator] = useState(false);
   
   return (
     <>
       <NodeToolbar isVisible={selected} position={Position.Top}>
         <div className="flex gap-1">
-          <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-            <Edit className="h-3 w-3" />
+          <Button size="sm" variant="outline" className="h-6 w-6 p-0" onClick={() => setShowConfigurator(true)}>
+            <Settings className="h-3 w-3" />
           </Button>
           <Button size="sm" variant="outline" className="h-6 w-6 p-0">
-            <Settings className="h-3 w-3" />
+            <Edit className="h-3 w-3" />
           </Button>
         </div>
       </NodeToolbar>
@@ -171,18 +194,35 @@ const FlowiseDataNode = ({ id, data, selected }: { id: string; data: any; select
           className="!bg-white !border-2 !border-gray-300 !w-3 !h-3"
         />
       </div>
+
+      {/* Configuration Dialog */}
+      <Dialog open={showConfigurator} onOpenChange={setShowConfigurator}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configure Data Node</DialogTitle>
+          </DialogHeader>
+          <UnifiedNodeConfigurator
+            nodeId={id}
+            nodeType="data"
+            category="data_integration"
+            onSave={() => setShowConfigurator(false)}
+            onCancel={() => setShowConfigurator(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
 
 const FlowiseIntegrationNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const { theme } = useFlowiseTheme();
+  const [showConfigurator, setShowConfigurator] = useState(false);
   
   return (
     <>
       <NodeToolbar isVisible={selected} position={Position.Top}>
         <div className="flex gap-1">
-          <Button size="sm" variant="outline" className="h-6 w-6 p-0">
+          <Button size="sm" variant="outline" className="h-6 w-6 p-0" onClick={() => setShowConfigurator(true)}>
             <Settings className="h-3 w-3" />
           </Button>
         </div>
@@ -221,6 +261,22 @@ const FlowiseIntegrationNode = ({ id, data, selected }: { id: string; data: any;
           className="!bg-white !border-2 !border-gray-300 !w-3 !h-3"
         />
       </div>
+
+      {/* Configuration Dialog */}
+      <Dialog open={showConfigurator} onOpenChange={setShowConfigurator}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Configure Integration Node</DialogTitle>
+          </DialogHeader>
+          <UnifiedNodeConfigurator
+            nodeId={id}
+            nodeType="integration"
+            category="channels_communication"
+            onSave={() => setShowConfigurator(false)}
+            onCancel={() => setShowConfigurator(false)}
+          />
+        </DialogContent>
+      </Dialog>
     </>
   );
 };
