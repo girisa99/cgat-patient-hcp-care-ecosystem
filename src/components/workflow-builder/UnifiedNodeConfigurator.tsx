@@ -13,7 +13,7 @@ import {
   Plus, Trash2, Settings, Key, Variable, 
   Bot, Database, MessageSquare, Phone, 
   Zap, Brain, Check, X, Eye, EyeOff,
-  FileCode, Code
+  FileCode, Code, Cog, FormInput
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAIModelManager } from '@/hooks/useAIModelManager';
@@ -83,7 +83,32 @@ export const UnifiedNodeConfigurator: React.FC<UnifiedNodeConfiguratorProps> = (
   const getAvailableTools = () => {
     const tools = [];
     
-    // Add Schema tools
+    // Add Input Schema tools
+    tools.push(
+      {
+        id: 'json-input-schema',
+        name: 'JSON Input Schema',
+        type: 'input_schema',
+        provider: 'Built-in',
+        config: { schemaType: 'json', required: true, validation: true }
+      },
+      {
+        id: 'xml-input-schema',
+        name: 'XML Input Schema',
+        type: 'input_schema',
+        provider: 'Built-in',
+        config: { schemaType: 'xml', required: true, validation: true }
+      },
+      {
+        id: 'form-input-schema',
+        name: 'Form Input Schema',
+        type: 'input_schema',
+        provider: 'Built-in',
+        config: { schemaType: 'form', required: true, validation: true }
+      }
+    );
+
+    // Add Schema Validation tools
     tools.push(
       {
         id: 'json-schema',
@@ -132,6 +157,31 @@ export const UnifiedNodeConfigurator: React.FC<UnifiedNodeConfiguratorProps> = (
         config: { functionType: 'processor', runtime: 'javascript' }
       }
     );
+
+    // Add Advanced Configuration tools
+    tools.push(
+      {
+        id: 'advanced-routing',
+        name: 'Advanced Routing Config',
+        type: 'advanced',
+        provider: 'Built-in',
+        config: { configType: 'routing', conditional: true }
+      },
+      {
+        id: 'error-handling',
+        name: 'Error Handling Config',
+        type: 'advanced',
+        provider: 'Built-in',
+        config: { configType: 'error_handling', retry: true }
+      },
+      {
+        id: 'performance-tuning',
+        name: 'Performance Tuning',
+        type: 'advanced',
+        provider: 'Built-in',
+        config: { configType: 'performance', optimization: true }
+      }
+    );
     
     if (aiModels) {
       tools.push(...aiModels.map(model => ({
@@ -164,6 +214,29 @@ export const UnifiedNodeConfigurator: React.FC<UnifiedNodeConfiguratorProps> = (
     }
     
     return tools;
+  };
+
+  // Group tools by category for better organization
+  const getToolsByCategory = () => {
+    const availableTools = getAvailableTools();
+    const categories = {
+      'Input Schema': availableTools.filter(tool => tool.type === 'input_schema'),
+      'AI Models': availableTools.filter(tool => tool.type === 'ai_model'),
+      'API Services': availableTools.filter(tool => tool.type === 'api_service'),
+      'API Configurations': availableTools.filter(tool => tool.type === 'api_config'),
+      'Schema Validation': availableTools.filter(tool => tool.type === 'schema'),
+      'Functions': availableTools.filter(tool => tool.type === 'function'),
+      'Advanced': availableTools.filter(tool => tool.type === 'advanced')
+    };
+    
+    // Remove empty categories
+    Object.keys(categories).forEach(key => {
+      if (categories[key].length === 0) {
+        delete categories[key];
+      }
+    });
+    
+    return categories;
   };
 
   const addTool = (toolData: any) => {
@@ -237,6 +310,7 @@ export const UnifiedNodeConfigurator: React.FC<UnifiedNodeConfiguratorProps> = (
   };
 
   const availableTools = getAvailableTools();
+  const toolsByCategory = getToolsByCategory();
 
   return (
     <Card className="w-full max-w-4xl max-h-[80vh]">
@@ -267,43 +341,61 @@ export const UnifiedNodeConfigurator: React.FC<UnifiedNodeConfiguratorProps> = (
           {/* Tools Tab */}
           <TabsContent value="tools" className="space-y-4">
             <div className="flex justify-between items-center">
-              <h3 className="text-lg font-medium">Available Tools</h3>
-              <Badge variant="outline">{availableTools.length} available</Badge>
+              <h3 className="text-lg font-medium">Available Tools by Category</h3>
+              <Badge variant="outline">{availableTools.length} total</Badge>
             </div>
             
             <ScrollArea className="h-64 border rounded-md p-4">
-              <div className="grid grid-cols-1 gap-3">
-                {availableTools.map((tool) => (
-                  <Card key={tool.id} className="p-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        {tool.type === 'ai_model' && <Bot className="h-4 w-4" />}
-                        {tool.type === 'api_service' && <Database className="h-4 w-4" />}
-                        {tool.type === 'api_config' && <Settings className="h-4 w-4" />}
-                        {tool.type === 'schema' && <FileCode className="h-4 w-4" />}
-                        {tool.type === 'function' && <Code className="h-4 w-4" />}
-                        <div>
-                          <p className="font-medium text-sm">{tool.name}</p>
-                          <p className="text-xs text-muted-foreground">{tool.provider} • {tool.type}</p>
-                        </div>
-                      </div>
-                      <Button
-                        size="sm"
-                        variant={tools.some(t => t.id === tool.id) ? "secondary" : "default"}
-                        onClick={() => tools.some(t => t.id === tool.id) ? removeTool(tool.id) : addTool(tool)}
-                      >
-                        {tools.some(t => t.id === tool.id) ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
-                      </Button>
-                    </div>
-                  </Card>
-                ))}
-                
-                {availableTools.length === 0 && (
-                  <div className="text-center text-muted-foreground py-8">
-                    No tools available for this node type
+              {Object.entries(toolsByCategory).map(([categoryName, categoryTools]) => (
+                <div key={categoryName} className="mb-6">
+                  <div className="flex items-center gap-2 mb-3">
+                    {categoryName === 'Input Schema' && <FormInput className="h-4 w-4" />}
+                    {categoryName === 'AI Models' && <Bot className="h-4 w-4" />}
+                    {categoryName === 'API Services' && <Database className="h-4 w-4" />}
+                    {categoryName === 'API Configurations' && <Settings className="h-4 w-4" />}
+                    {categoryName === 'Schema Validation' && <FileCode className="h-4 w-4" />}
+                    {categoryName === 'Functions' && <Code className="h-4 w-4" />}
+                    {categoryName === 'Advanced' && <Cog className="h-4 w-4" />}
+                    <h4 className="font-medium text-sm">{categoryName}</h4>
+                    <Badge variant="secondary" className="text-xs">{categoryTools.length}</Badge>
                   </div>
-                )}
-              </div>
+                  
+                  <div className="grid grid-cols-1 gap-2 ml-6">
+                    {categoryTools.map((tool) => (
+                      <Card key={tool.id} className="p-3">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            {tool.type === 'input_schema' && <FormInput className="h-4 w-4 text-blue-500" />}
+                            {tool.type === 'ai_model' && <Bot className="h-4 w-4 text-green-500" />}
+                            {tool.type === 'api_service' && <Database className="h-4 w-4 text-orange-500" />}
+                            {tool.type === 'api_config' && <Settings className="h-4 w-4 text-purple-500" />}
+                            {tool.type === 'schema' && <FileCode className="h-4 w-4 text-indigo-500" />}
+                            {tool.type === 'function' && <Code className="h-4 w-4 text-red-500" />}
+                            {tool.type === 'advanced' && <Cog className="h-4 w-4 text-gray-500" />}
+                            <div>
+                              <p className="font-medium text-sm">{tool.name}</p>
+                              <p className="text-xs text-muted-foreground">{tool.provider} • {tool.type}</p>
+                            </div>
+                          </div>
+                          <Button
+                            size="sm"
+                            variant={tools.some(t => t.id === tool.id) ? "secondary" : "default"}
+                            onClick={() => tools.some(t => t.id === tool.id) ? removeTool(tool.id) : addTool(tool)}
+                          >
+                            {tools.some(t => t.id === tool.id) ? <Check className="h-4 w-4" /> : <Plus className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </Card>
+                    ))}
+                  </div>
+                </div>
+              ))}
+              
+              {Object.keys(toolsByCategory).length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  No tools available for this node type
+                </div>
+              )}
             </ScrollArea>
 
             {tools.length > 0 && (
@@ -314,7 +406,17 @@ export const UnifiedNodeConfigurator: React.FC<UnifiedNodeConfiguratorProps> = (
                   <div className="space-y-2">
                     {tools.map((tool) => (
                       <div key={tool.id} className="flex items-center justify-between p-2 border rounded">
-                        <span className="text-sm">{tool.name}</span>
+                        <div className="flex items-center gap-2">
+                          {tool.type === 'input_schema' && <FormInput className="h-4 w-4 text-blue-500" />}
+                          {tool.type === 'ai_model' && <Bot className="h-4 w-4 text-green-500" />}
+                          {tool.type === 'api_service' && <Database className="h-4 w-4 text-orange-500" />}
+                          {tool.type === 'api_config' && <Settings className="h-4 w-4 text-purple-500" />}
+                          {tool.type === 'schema' && <FileCode className="h-4 w-4 text-indigo-500" />}
+                          {tool.type === 'function' && <Code className="h-4 w-4 text-red-500" />}
+                          {tool.type === 'advanced' && <Cog className="h-4 w-4 text-gray-500" />}
+                          <span className="text-sm font-medium">{tool.name}</span>
+                          <Badge variant="outline" className="text-xs">{tool.type}</Badge>
+                        </div>
                         <Button
                           size="sm"
                           variant="ghost"
