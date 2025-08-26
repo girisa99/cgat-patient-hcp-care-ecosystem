@@ -275,6 +275,24 @@ const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType:
 
   const safeEdgeTypes: EdgeTypes = useMemo(() => ({}), []);
 
+  // Helpers
+  const getCleanNodeDisplay = (nodeData: any, typeKey: string) => {
+    const raw = nodeData?.display_name || nodeData?.name || nodeData?.title || typeKey || 'Node';
+    let clean = String(raw)
+      // remove appended UUIDs like _37cb609d-c602-4cfe-a246-d808a857329b
+      .replace(/[_-][0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}/g, '')
+      // remove trailing 'node' token and extra separators
+      .replace(/\b(node)\b$/i, '')
+      .replace(/[_-]+/g, ' ')
+      .replace(/\s{2,}/g, ' ')
+      .trim();
+    // remove numeric timestamp suffixes like _1724681234567
+    clean = clean.replace(/[_-](\d{10,})$/, '');
+    // Title-case first letter
+    if (clean.length) clean = clean.charAt(0).toUpperCase() + clean.slice(1);
+    return clean;
+  };
+
   // Event Handlers
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -323,14 +341,15 @@ const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType:
     const position = screenToFlowPosition({ x: event.clientX, y: event.clientY });
     console.log('[RF] onDrop', { type, position, nodeData });
 
+const cleanLabel = getCleanNodeDisplay(nodeData, type);
 const newNode = {
   id: `${type}_${Date.now()}`,
   type: 'enhanced',
   position,
   data: {
-    label: nodeData?.display_name || `${type} node`,
+    label: cleanLabel,
     type_key: type,
-    display_name: nodeData?.display_name || type,
+    display_name: cleanLabel,
     description: nodeData?.description || '',
     icon: nodeData?.icon || 'settings',
     color: nodeData?.color || '#6366f1',
@@ -406,25 +425,26 @@ setShowConfigurator(true);
       : { x: window.innerWidth / 2, y: window.innerHeight / 2 };
     const position = screenToFlowPosition(center);
     console.log('[RF] click-add', { type, position });
-    const newNode: Node = {
-      id: `${type}_${Date.now()}`,
-      type: 'enhanced',
-      position,
-      data: {
-        label: nodeTypeObj?.display_name || `${type} node`,
-        type_key: type,
-        display_name: nodeTypeObj?.display_name || type,
-        description: nodeTypeObj?.description || '',
-        icon: nodeTypeObj?.icon || 'settings',
-        color: nodeTypeObj?.color || '#6366f1',
-        capabilities: nodeTypeObj?.capabilities || [],
-        requirements: nodeTypeObj?.requirements || {},
-        default_config: nodeTypeObj?.default_config || {},
-        category: nodeTypeObj?.category,
-        isWorkflowNode: true,
-        ...nodeTypeObj,
-      },
-    } as Node;
+const cleanLabel = getCleanNodeDisplay(nodeTypeObj, type);
+const newNode: Node = {
+  id: `${type}_${Date.now()}`,
+  type: 'enhanced',
+  position,
+  data: {
+    label: cleanLabel,
+    type_key: type,
+    display_name: cleanLabel,
+    description: nodeTypeObj?.description || '',
+    icon: nodeTypeObj?.icon || 'settings',
+    color: nodeTypeObj?.color || '#6366f1',
+    capabilities: nodeTypeObj?.capabilities || [],
+    requirements: nodeTypeObj?.requirements || {},
+    default_config: nodeTypeObj?.default_config || {},
+    category: nodeTypeObj?.category,
+    isWorkflowNode: true,
+    ...nodeTypeObj,
+  },
+} as Node;
     setNodes((nds) => nds.concat(newNode));
   }, [screenToFlowPosition, setNodes]);
 
