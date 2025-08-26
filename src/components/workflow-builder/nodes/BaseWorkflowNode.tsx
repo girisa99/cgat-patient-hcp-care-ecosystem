@@ -31,11 +31,13 @@ export const BaseWorkflowNode: React.FC<BaseWorkflowNodeProps> = ({
     <>
       {resizable && (
         <NodeResizer 
-          minWidth={200} 
-          minHeight={120} 
+          minWidth={160} 
+          minHeight={90}
+          maxWidth={400}
+          maxHeight={300}
           isVisible={selected}
-          lineClassName="border-primary"
-          handleClassName="w-2 h-2 bg-white border-2 border-primary"
+          lineClassName="border-primary opacity-60"
+          handleClassName="w-3 h-3 bg-white border-2 border-primary rounded-sm"
         />
       )}
       
@@ -65,8 +67,9 @@ export const BaseWorkflowNode: React.FC<BaseWorkflowNodeProps> = ({
       </NodeToolbar>
       
       <div className={cn(
-        "bg-white border-2 rounded-lg shadow-sm min-w-[200px] min-h-[120px]",
-        selected && "ring-2 ring-primary ring-offset-2",
+        "bg-white border-2 rounded-lg shadow-sm min-w-[160px] min-h-[90px] max-w-[280px]",
+        "transition-all duration-200 hover:shadow-md",
+        selected && "ring-2 ring-primary ring-offset-2 shadow-lg",
         className
       )}>
         {showHandles && (
@@ -97,13 +100,13 @@ export const BaseWorkflowNode: React.FC<BaseWorkflowNodeProps> = ({
         )}
         
         {/* Header */}
-        <div className="p-3 border-b bg-muted/30 rounded-t-lg">
+        <div className="p-2 border-b bg-muted/20 rounded-t-lg">
           <div className="flex items-center gap-2">
-            <Icon className="h-4 w-4 text-primary" />
-            <h3 className="font-medium text-sm">{title}</h3>
+            <Icon className="h-3 w-3 text-primary flex-shrink-0" />
+            <h3 className="font-medium text-xs truncate flex-1">{title}</h3>
             {data?.status && (
               <div className={cn(
-                "w-2 h-2 rounded-full",
+                "w-1.5 h-1.5 rounded-full flex-shrink-0",
                 data.status === 'active' ? 'bg-green-500' : 
                 data.status === 'error' ? 'bg-red-500' : 'bg-gray-300'
               )} />
@@ -112,7 +115,7 @@ export const BaseWorkflowNode: React.FC<BaseWorkflowNodeProps> = ({
         </div>
         
         {/* Content */}
-        <div className="p-3">
+        <div className="p-2 text-xs">
           {children}
         </div>
       </div>

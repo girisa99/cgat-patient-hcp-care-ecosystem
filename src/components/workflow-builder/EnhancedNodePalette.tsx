@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { useWorkflowNodePopulation } from '@/hooks/useWorkflowNodePopulation';
+import { ProviderDropdown } from './ProviderDropdown';
 import { cn } from '@/lib/utils';
 
 const getIconComponent = (iconName: string) => {
@@ -146,48 +147,55 @@ const [internalSearch, setInternalSearch] = useState('');
   // Get populated nodes from backend data
   const populatedNodes = getPopulatedNodes();
 
+  // Consolidated 8 meaningful categories with provider-based grouping
   const computed: Record<string, typeof nodeTypes> = {
-    genai_llm: [
+    // 1. AI Models & Processing - Group by provider with dropdowns
+    ai_models_processing: [
       ...filteredNodeTypes.filter((nt) =>
-        match(nt, ['openai','anthropic','claude','gpt','mistral','cohere','gemini','groq','llm','bedrock','azure','deepseek'])
+        match(nt, ['openai','anthropic','claude','gpt','mistral','cohere','gemini','groq','llm','bedrock','azure','deepseek','ollama','llama','phi','qwen','vision','multimodal','mcp','model context protocol'])
       ),
-      ...populatedNodes.genai_llm.map(n => ({ ...n, id: n.type_key } as any))
-    ],
-    small_language_models: [
-      ...filteredNodeTypes.filter((nt) =>
-        match(nt, ['ollama','llama','phi','qwen','nano','tiny','slm','biotech','pharma','healthcare','medical'])
-      ),
-      ...populatedNodes.small_language_models.map(n => ({ ...n, id: n.type_key } as any))
-    ],
-    vision_models: filteredNodeTypes.filter((nt) =>
-      match(nt, ['vision','gpt-4o','gpt-4v','image','multimodal','vlm','gemini'])
-    ),
-    mcp: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['mcp','model context protocol'])),
-      ...populatedNodes.mcp.map(n => ({ ...n, id: n.type_key } as any))
-    ],
-    cache: filteredNodeTypes.filter((nt) => match(nt, ['cache','memory','buffer','history','scratchpad'])),
-    labeling: filteredNodeTypes.filter((nt) => match(nt, ['label','annotation','label studio'])),
-    // Map nodes to existing DB categories using correct names
-    parsers: filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean'])),
-    prompts: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example'])),
-      ...populatedNodes.prompts.map(n => ({ ...n, id: n.type_key } as any))
+      ...populatedNodes.genai_llm.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Other' } as any)),
+      ...populatedNodes.small_language_models.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Other' } as any)),
+      ...populatedNodes.mcp.map(n => ({ ...n, id: n.type_key, provider_group: 'MCP' } as any))
     ],
     
-    // Deployment Categories with populated data
-    deployment_environments: filteredNodeTypes.filter((nt) => match(nt, ['dev','test','uat','staging','production','environment','deploy'])),
-    channel_deployment: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['channel','voice call','web chat','email','messaging','instagram','deployment matrix'])),
-      ...populatedNodes.channel_deployment.map(n => ({ ...n, id: n.type_key } as any))
+    // 2. Data & Integration
+    data_integration: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean','database','cache','memory','buffer','history','scratchpad','api','webhook','integration'])),
     ],
-    voice_config: [
-      ...filteredNodeTypes.filter((nt) => match(nt, ['voice','speech','audio','tts','stt','whisper','eleven','recognition','synthesis'])),
-      ...populatedNodes.voice_config.map(n => ({ ...n, id: n.type_key } as any))
+    
+    // 3. Communication Channels - Group by provider
+    communication_channels: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['channel','voice call','web chat','email','messaging','instagram','deployment matrix','voice','speech','audio','tts','stt','whisper','eleven','recognition','synthesis'])),
+      ...populatedNodes.channel_deployment.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Other' } as any)),
+      ...populatedNodes.voice_config.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Other' } as any))
     ],
-    human_loop: filteredNodeTypes.filter((nt) => match(nt, ['human','handoff','escalation','transfer','agent transfer','live agent'])),
-    testing_validation: filteredNodeTypes.filter((nt) => match(nt, ['test','testing','validation','debug','simulation','flow test'])),
-    code_deployment: filteredNodeTypes.filter((nt) => match(nt, ['snippet','code','docker','kubernetes','api endpoint','webhook']))
+    
+    // 4. Automation & Workflow
+    automation_workflow: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['workflow','automation','trigger','action','condition','loop','branch','decision','route']))
+    ],
+    
+    // 5. Development & Testing
+    development_testing: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['test','testing','validation','debug','simulation','flow test','dev','uat','staging','snippet','code','docker','kubernetes']))
+    ],
+    
+    // 6. Templates & Configuration
+    templates_configuration: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example','config','setting','parameter'])),
+      ...populatedNodes.prompts.map(n => ({ ...n, id: n.type_key, provider_group: 'Templates' } as any))
+    ],
+    
+    // 7. Storage & Cache
+    storage_cache: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['storage','file','document','upload','download','backup','sync','s3','blob']))
+    ],
+    
+    // 8. Human Oversight
+    human_oversight: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['human','handoff','escalation','transfer','agent transfer','live agent','approval','review','oversight','supervision','label','annotation','label studio']))
+    ]
   };
 
   const dedupe = (arr: typeof nodeTypes) => {
@@ -218,11 +226,15 @@ const [internalSearch, setInternalSearch] = useState('');
         } as any);
       }
     };
-    // Only create virtual categories that don't exist in the database
-    ensure('labeling','Labeling Studio','edit','#8b5cf6');
-    // All other categories (genai_llm, small_language_models, vision_models, mcp, cache, 
-    // deployment_environments, channel_deployment, voice_config, human_loop, 
-    // testing_validation, code_deployment) already exist in database
+    // Create the 8 consolidated categories
+    ensure('ai_models_processing','AI Models & Processing','brain','#3b82f6');
+    ensure('data_integration','Data & Integration','database','#06b6d4');
+    ensure('communication_channels','Communication Channels','message-square','#10b981');
+    ensure('automation_workflow','Automation & Workflow','zap','#f59e0b');
+    ensure('development_testing','Development & Testing','wrench','#8b5cf6');
+    ensure('templates_configuration','Templates & Configuration','file-text','#ef4444');
+    ensure('storage_cache','Storage & Cache','grid-3x3','#84cc16');
+    ensure('human_oversight','Human Oversight','eye','#f97316');
     return list;
   }, [categories]);
 
@@ -443,166 +455,80 @@ return (
                       </Button>
                     </CollapsibleTrigger>
                     
-                    <CollapsibleContent className="space-y-1 pt-1">
-                      {hasNodes ? (
-                        <div className="space-y-2 ml-2 pl-2 border-l-2 border-muted">
-                          {categoryNodes.map((nodeType) => {
-                            const NodeIcon = getIconComponent(nodeType.icon);
-                            const isSelected = selectedNodeType === nodeType.id;
-                            
-                            return (
-                                 <div
-                                   key={nodeType.id}
-                                   draggable
-                                   onDragStart={(e) => {
-                                     onDragStart(e, nodeType)
-                                     e.currentTarget.style.opacity = '0.5';
-                                   }}
-                                   onDragEnd={(e) => {
-                                     // Visual feedback on successful drag
-                                     e.currentTarget.style.opacity = '1';
-                                   }}
-                                   onClick={() => handleNodeClick(nodeType)}
-                                   className={cn(
-                                     "group p-3 rounded-lg border transition-all duration-200",
-                                     "cursor-grab active:cursor-grabbing hover:shadow-md",
-                                     "bg-card hover:bg-accent/50",
-                                     "relative", // Add positioning for drag indicator
-                                     isSelected 
-                                       ? "border-primary bg-primary/5 shadow-md transform scale-[1.02]" 
-                                       : "border-border hover:border-muted-foreground/30"
-                                   )}
-                                   title={`Drag to canvas: ${nodeType.display_name}`}
-                                 >
-                                <div className="flex items-start gap-3">
-                                  <div 
-                                    className={cn(
-                                      "p-2 rounded-md shadow-sm flex-shrink-0 transition-transform",
-                                      "group-hover:scale-110"
-                                    )}
-                                    style={{ 
-                                      backgroundColor: `${category.color}15`, 
-                                      color: category.color,
-                                      border: `1px solid ${category.color}30`
-                                    }}
-                                  >
-                                    <NodeIcon className="h-4 w-4" />
-                                  </div>
-                                  <div className="flex-1 min-w-0">
-                                     <h4 className="font-semibold text-sm text-foreground flex items-center gap-2 flex-wrap mb-1">
-                                       {nodeType.display_name}
-                                       {nodeType.capabilities.length > 0 && (
-                                         <Badge 
-                                           variant="secondary" 
-                                           className="text-xs px-1.5 py-0.5"
-                                           style={{ backgroundColor: `${category.color}10`, color: category.color }}
-                                         >
-                                           {nodeType.capabilities.length} features
-                                         </Badge>
-                                       )}
-                                     </h4>
-                                     <p className="text-xs text-muted-foreground leading-relaxed mb-2">
-                                       {nodeType.description}
-                                     </p>
-                                     
-                                     {/* Drag indicator */}
-                                     <div className="absolute top-2 right-2 opacity-30 group-hover:opacity-60 transition-opacity pointer-events-none">
-                                       <svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor">
-                                         <path d="M20,16V10H22V16H20M20,20V18H22V20H20M20,8V6H22V8H20M20,4V2H22V4H20M18,2H16V4H18V2M14,2H12V4H14V2M10,2H8V4H10V2M6,2H4V4H6V2M2,6V4H4V6H2M2,10V8H4V10H2M2,14V12H4V14H2M2,18V16H4V18H2M2,22V20H4V22H2M6,20H8V22H6V20M10,20H12V22H10V20M14,20H16V22H14V20M18,20H20V22H18V20Z"/>
-                                       </svg>
-                                     </div>
-                                     
-                                     {/* Always show top 3 capabilities for quick reference */}
-                                     {nodeType.capabilities.length > 0 && (
-                                       <div className="flex flex-wrap gap-1 mb-1">
-                                         {nodeType.capabilities.slice(0, 3).map((capability, index) => (
-                                           <Badge 
-                                             key={index} 
-                                             variant="outline" 
-                                             className="text-xs px-1.5 py-0.5 font-normal"
-                                             style={{ 
-                                               borderColor: `${category.color}30`, 
-                                               color: `${category.color}`,
-                                               backgroundColor: `${category.color}05`
-                                             }}
-                                           >
-                                             {capability.replace(/_/g, ' ')}
-                                           </Badge>
-                                         ))}
-                                         {nodeType.capabilities.length > 3 && (
-                                           <Badge 
-                                             variant="outline" 
-                                             className="text-xs px-1.5 py-0.5 font-normal"
-                                             style={{ borderColor: `${category.color}30`, color: category.color }}
-                                           >
-                                             +{nodeType.capabilities.length - 3} more
-                                           </Badge>
-                                         )}
-                                       </div>
-                                     )}
-                                    
-                                    {isSelected && (
-                                      <div className="mt-3 space-y-3 animate-in slide-in-from-top-1">
-                                        <div className="text-xs bg-muted/50 rounded-md p-2">
-                                          <div className="font-semibold mb-1 text-foreground">Detailed Information:</div>
-                                          <div className="text-muted-foreground leading-relaxed text-xs">
-                                            {nodeType.detailed_explanation}
-                                          </div>
+                     <CollapsibleContent className="space-y-1 pt-1">
+                       {hasNodes ? (
+                         <div className="space-y-2 ml-2 pl-2 border-l-2 border-muted">
+                          {/* Provider-based dropdowns for certain categories */}
+                          {(category.name === 'ai_models_processing' || 
+                            category.name === 'communication_channels' || 
+                            category.name === 'templates_configuration') && categoryNodes.length > 5 ? (
+                            <ProviderDropdown 
+                              nodes={categoryNodes}
+                              onNodeSelect={handleNodeClick}
+                              onDragStart={onDragStart}
+                            />
+                          ) : (
+                            <div className="grid grid-cols-1 gap-2">
+                              {categoryNodes
+                                .slice(0, searchTerm ? undefined : 8)
+                                .map((nodeType, index) => {
+                                  const isSelected = selectedNodeType === nodeType.id;
+                                  const IconComponent = getIconComponent(nodeType.icon);
+                                  
+                                  return (
+                                    <div
+                                      key={nodeType.id}
+                                      className={cn(
+                                        "group flex items-center gap-3 p-2 rounded-md cursor-pointer transition-all",
+                                        "border border-transparent text-xs",
+                                        isSelected 
+                                          ? "bg-primary/10 border-primary/20 text-primary" 
+                                          : "hover:bg-muted/50 hover:border-muted"
+                                      )}
+                                      draggable
+                                      onDragStart={(e) => onDragStart(e, nodeType)}
+                                      onClick={() => handleNodeClick(nodeType)}
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0 flex-1">
+                                        <div 
+                                          className={cn(
+                                            "p-1 rounded transition-transform",
+                                            isSelected && "scale-110"
+                                          )}
+                                          style={{ 
+                                            backgroundColor: `${nodeType.color || category.color}20`, 
+                                            color: nodeType.color || category.color 
+                                          }}
+                                        >
+                                          <IconComponent className="h-3 w-3" />
                                         </div>
-                                        
-                                        {nodeType.capabilities.length > 0 && (
-                                          <div className="text-xs">
-                                            <div className="font-semibold mb-2 text-foreground">Key Capabilities:</div>
-                                            <div className="flex flex-wrap gap-1">
-                                              {nodeType.capabilities.map((capability, index) => (
-                                                <Badge 
-                                                  key={index} 
-                                                  variant="outline" 
-                                                  className="text-xs px-2 py-0.5"
-                                                  style={{ borderColor: `${category.color}40`, color: category.color }}
-                                                >
-                                                  {capability.replace(/_/g, ' ')}
-                                                </Badge>
-                                              ))}
-                                            </div>
+                                        <div className="min-w-0 flex-1">
+                                          <div className="text-xs font-medium truncate">
+                                            {nodeType.display_name}
                                           </div>
-                                        )}
-                                        
-                                        {Object.keys(nodeType.requirements).length > 0 && (
-                                          <div className="text-xs">
-                                            <div className="font-semibold mb-1 text-foreground">Configuration Requirements:</div>
-                                            <div className="bg-amber-50 dark:bg-amber-950/20 rounded-md p-2 border border-amber-200 dark:border-amber-900/40">
-                                              {Object.entries(nodeType.requirements).map(([key, value]) => (
-                                                <div key={key} className="flex justify-between items-center py-0.5">
-                                                  <span className="font-medium text-amber-800 dark:text-amber-200">
-                                                    {key.replace(/_/g, ' ')}:
-                                                  </span>
-                                                  <Badge 
-                                                    variant={String(value) === 'required' ? 'destructive' : 'secondary'} 
-                                                    className="text-xs ml-2"
-                                                  >
-                                                    {String(value)}
-                                                  </Badge>
-                                                </div>
-                                              ))}
+                                          {nodeType.description && (
+                                            <div className="text-xs text-muted-foreground truncate">
+                                              {nodeType.description.substring(0, 50)}...
                                             </div>
-                                          </div>
-                                        )}
+                                          )}
+                                        </div>
                                       </div>
-                                    )}
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      ) : (
-                        <div className="ml-2 pl-4 py-2 text-xs text-muted-foreground border-l-2 border-dashed border-muted">
-                          <div className="italic">No nodes in this category yet.</div>
-                          <div className="text-xs mt-1">Will be available in future updates.</div>
-                        </div>
-                      )}
-                    </CollapsibleContent>
+                                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <Settings className="h-3 w-3 text-muted-foreground" />
+                                      </div>
+                                    </div>
+                                  );
+                                })}
+                            </div>
+                          )}
+                         </div>
+                       ) : (
+                         <div className="ml-2 pl-4 py-2 text-xs text-muted-foreground border-l-2 border-dashed border-muted">
+                           <div className="italic">No nodes in this category yet.</div>
+                           <div className="text-xs mt-1">Will be available in future updates.</div>
+                         </div>
+                       )}
+                     </CollapsibleContent>
                   </Collapsible>
                 );
               })}
