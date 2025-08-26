@@ -158,7 +158,23 @@ const [internalSearch, setInternalSearch] = useState('');
       ...populatedNodes.small_language_models.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Small Models' } as any)),
       ...populatedNodes.mcp.map(n => ({ ...n, id: n.type_key, provider_group: 'MCP Tools' } as any))
     ].sort((a, b) => {
-      // Sort by provider group, then by name
+      // Define priority order for agent creation workflow
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        const provider = (node.provider_group || node.provider || '').toLowerCase();
+        
+        // Core models first (most commonly used in agent creation)
+        if (name.includes('gpt') || name.includes('claude') || name.includes('openai')) return 1;
+        if (name.includes('gemini') || name.includes('anthropic')) return 2;
+        if (provider.includes('llm') || name.includes('llm')) return 3;
+        if (provider.includes('small') || name.includes('small')) return 4;
+        if (provider.includes('mcp') || name.includes('mcp')) return 5;
+        return 6;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
       const providerA = (a as any).provider_group || (a as any).provider || 'Other';
       const providerB = (b as any).provider_group || (b as any).provider || 'Other';
       if (providerA !== providerB) return providerA.localeCompare(providerB);
@@ -177,36 +193,150 @@ const [internalSearch, setInternalSearch] = useState('');
       ...populatedNodes.channel_deployment.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Channel Providers' } as any)),
       ...populatedNodes.voice_config.map(n => ({ ...n, id: n.type_key, provider_group: (n as any).provider || 'Voice Providers' } as any))
     ].sort((a, b) => {
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        
+        // Primary communication channels first
+        if (name.includes('web') && name.includes('chat')) return 1;
+        if (name.includes('voice') && name.includes('call')) return 2;
+        if (name.includes('phone') || name.includes('sms')) return 3;
+        if (name.includes('email')) return 4;
+        if (name.includes('voice') || name.includes('tts') || name.includes('stt')) return 5;
+        if (name.includes('messaging') || name.includes('chat')) return 6;
+        return 7;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
       const providerA = (a as any).provider_group || (a as any).provider || 'Other';
       const providerB = (b as any).provider_group || (b as any).provider || 'Other';
       if (providerA !== providerB) return providerA.localeCompare(providerB);
+      
       return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
     }),
     
     // 4. Automation & Workflow - Core workflow logic
     automation_workflow: [
       ...filteredNodeTypes.filter((nt) => match(nt, ['workflow','automation','trigger','action','condition','loop','branch','decision','route','flow','logic']))
-    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
+    ].sort((a, b) => {
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        
+        // Start nodes first, then logic, then actions
+        if (name.includes('start') || name.includes('trigger') || name.includes('begin')) return 1;
+        if (name.includes('condition') || name.includes('decision') || name.includes('if')) return 2;
+        if (name.includes('branch') || name.includes('route') || name.includes('switch')) return 3;
+        if (name.includes('loop') || name.includes('repeat') || name.includes('iterate')) return 4;
+        if (name.includes('action') || name.includes('execute') || name.includes('run')) return 5;
+        if (name.includes('end') || name.includes('finish') || name.includes('complete')) return 6;
+        return 7;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    }),
     
     // 5. Data & Integration - Data handling
     data_integration: [
       ...filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean','database','api','webhook','integration','data','json','xml']))
-    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
+    ].sort((a, b) => {
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        
+        // Input -> Process -> Transform -> Output order
+        if (name.includes('input') || name.includes('receive') || name.includes('webhook')) return 1;
+        if (name.includes('parse') || name.includes('extract')) return 2;
+        if (name.includes('process') || name.includes('transform')) return 3;
+        if (name.includes('normalize') || name.includes('clean') || name.includes('validate')) return 4;
+        if (name.includes('api') || name.includes('database') || name.includes('integration')) return 5;
+        if (name.includes('output') || name.includes('send') || name.includes('export')) return 6;
+        return 7;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    }),
     
     // 6. Storage & Cache - Memory and storage
     storage_cache: [
       ...filteredNodeTypes.filter((nt) => match(nt, ['storage','file','document','upload','download','backup','sync','s3','blob','cache','memory','buffer','history','scratchpad','store']))
-    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
+    ].sort((a, b) => {
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        
+        // Memory -> Session -> Persistent -> Backup order
+        if (name.includes('memory') || name.includes('buffer') || name.includes('scratchpad')) return 1;
+        if (name.includes('cache') || name.includes('session')) return 2;
+        if (name.includes('history') || name.includes('log')) return 3;
+        if (name.includes('storage') || name.includes('database') || name.includes('file')) return 4;
+        if (name.includes('backup') || name.includes('archive')) return 5;
+        if (name.includes('sync') || name.includes('upload') || name.includes('download')) return 6;
+        return 7;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    }),
     
     // 7. Human Oversight - Human interaction
     human_oversight: [
       ...filteredNodeTypes.filter((nt) => match(nt, ['human','handoff','escalation','transfer','agent transfer','live agent','approval','review','oversight','supervision','label','annotation','label studio','manual']))
-    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
+    ].sort((a, b) => {
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        
+        // Review -> Approval -> Escalation -> Manual order
+        if (name.includes('review') || name.includes('check') || name.includes('oversight')) return 1;
+        if (name.includes('approval') || name.includes('authorize')) return 2;
+        if (name.includes('escalation') || name.includes('escalate')) return 3;
+        if (name.includes('handoff') || name.includes('transfer')) return 4;
+        if (name.includes('live') || name.includes('agent')) return 5;
+        if (name.includes('manual') || name.includes('human') || name.includes('label')) return 6;
+        return 7;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    }),
     
     // 8. Development & Testing - Advanced tools
     development_testing: [
       ...filteredNodeTypes.filter((nt) => match(nt, ['test','testing','validation','debug','simulation','flow test','dev','uat','staging','snippet','code','docker','kubernetes','debug']))
-    ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key))
+    ].sort((a, b) => {
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        
+        // Unit Tests -> Integration -> Debug -> Deploy order
+        if (name.includes('unit') || (name.includes('test') && !name.includes('flow'))) return 1;
+        if (name.includes('validation') || name.includes('validate')) return 2;
+        if (name.includes('flow') && name.includes('test')) return 3;
+        if (name.includes('integration') || name.includes('uat')) return 4;
+        if (name.includes('debug') || name.includes('simulation')) return 5;
+        if (name.includes('staging') || name.includes('deploy')) return 6;
+        if (name.includes('docker') || name.includes('kubernetes')) return 7;
+        return 8;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    })
   };
 
   const dedupe = (arr: typeof nodeTypes) => {
