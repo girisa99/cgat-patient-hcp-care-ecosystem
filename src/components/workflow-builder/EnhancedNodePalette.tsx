@@ -153,8 +153,9 @@ const [internalSearch, setInternalSearch] = useState('');
     mcp: filteredNodeTypes.filter((nt) => match(nt, ['mcp','model context protocol'])),
     cache: filteredNodeTypes.filter((nt) => match(nt, ['cache','memory','buffer','history','scratchpad'])),
     labeling: filteredNodeTypes.filter((nt) => match(nt, ['label','annotation','label studio'])),
-    parsers_processors: filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean'])),
-    prompts_templates: filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example'])),
+    // Map nodes to existing DB categories using correct names
+    parsers: filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean'])),
+    prompts: filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example'])),
     
     // Deployment Categories
     deployment_environments: filteredNodeTypes.filter((nt) => match(nt, ['dev','test','uat','staging','production','environment','deploy'])),
@@ -199,8 +200,7 @@ const [internalSearch, setInternalSearch] = useState('');
     ensure('mcp','MCP (Model Context Protocol)','git-branch','#0ea5e9');
     ensure('cache','Cache & Memory','grid-3x3','#64748b');
     ensure('labeling','Labeling Studio','edit','#8b5cf6');
-    ensure('parsers_processors','Parsers & Processors','scissors','#10b981');
-    ensure('prompts_templates','Prompts & Templates','file-text','#f59e0b');
+    // Remove duplicate parsers_processors and prompts_templates since they exist in DB as 'parsers' and 'prompts'
     
     // Deployment Categories
     ensure('deployment_environments','Deployment Environments','settings','#7c3aed');
