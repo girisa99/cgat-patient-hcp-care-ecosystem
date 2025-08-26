@@ -399,6 +399,9 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const [showNodeLibrary, setShowNodeLibrary] = useState(true);
   const [activeConnector, setActiveConnector] = useState<'agenttok' | 'attio' | null>(null);
+  // Unified configurator (global) for auto-open on add
+  const [showConfigurator, setShowConfigurator] = useState(false);
+  const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType: string; category: string } | null>(null);
 
   const onConnect = useCallback((params: Connection) => {
     const newEdge: Edge = {
@@ -427,10 +430,15 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
   };
 
   const handleNodeSelect = (nodeItem: any) => {
+    const computedNodeType = (nodeItem.type === 'llm' || nodeItem.type === 'vlm')
+      ? 'agent'
+      : (nodeItem.type === 'api' || nodeItem.type === 'mcp')
+        ? 'data'
+        : 'integration';
+
     const newNode: Node = {
       id: `${Date.now()}`,
-      type: `flowise${nodeItem.type === 'llm' || nodeItem.type === 'vlm' ? 'Agent' : 
-                  nodeItem.type === 'api' || nodeItem.type === 'mcp' ? 'Data' : 'Integration'}`,
+      type: `flowise${computedNodeType.charAt(0).toUpperCase()}${computedNodeType.slice(1)}`,
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: { 
         label: nodeItem.name,
@@ -442,6 +450,16 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
       }
     };
     setNodes((nds) => [...nds, newNode]);
+
+    // Auto-open unified configurator after adding the node
+    const category = computedNodeType === 'agent'
+      ? 'ai_models'
+      : computedNodeType === 'data'
+        ? 'data_integration'
+        : 'channels_communication';
+    setConfigNodeInfo({ nodeId: newNode.id, nodeType: computedNodeType, category });
+    setShowConfigurator(true);
+
     showSuccess(`${nodeItem.name} node added to canvas`);
   };
 
@@ -701,6 +719,24 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
             </div>
           </Panel>
         </ReactFlow>
+
+        {/* Global Unified Configurator Dialog (auto-opens on add) */}
+        {configNodeInfo && (
+          <Dialog open={showConfigurator} onOpenChange={setShowConfigurator}>
+            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>Configure {configNodeInfo.nodeType} Node</DialogTitle>
+              </DialogHeader>
+              <UnifiedNodeConfigurator
+                nodeId={configNodeInfo.nodeId}
+                nodeType={configNodeInfo.nodeType}
+                category={configNodeInfo.category}
+                onSave={() => setShowConfigurator(false)}
+                onCancel={() => setShowConfigurator(false)}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </div>
   );
