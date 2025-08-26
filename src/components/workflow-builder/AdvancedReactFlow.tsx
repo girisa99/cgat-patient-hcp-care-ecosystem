@@ -78,7 +78,7 @@ import { ToolCreator } from './ToolCreator';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
-import { UnifiedNodeConfigurator } from './UnifiedNodeConfigurator';
+import { SmartNodeConfigurator } from './SmartNodeConfigurator';
 // Custom Node Types
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -955,21 +955,14 @@ return (
             <DialogHeader>
               <DialogTitle>Configure {configNodeInfo.nodeType} Node</DialogTitle>
             </DialogHeader>
-            <UnifiedNodeConfigurator
-              nodeId={configNodeInfo.nodeId}
-              nodeType={configNodeInfo.nodeType}
-              category={configNodeInfo.category}
-              initialConfig={configNodeInfo.initialConfig}
-              onSave={(cfg) => {
+            <SmartNodeConfigurator
+              node={getNodes().find(n => n.id === configNodeInfo.nodeId) || null}
+              onNodeUpdate={(nodeId, updates) => {
                 setNodes((nds) => nds.map((n) =>
-                  n.id === configNodeInfo.nodeId
-                    ? { ...n, data: { ...n.data, tools: cfg.tools, credentials: cfg.credentials, variables: cfg.variables } }
-                    : n
+                  n.id === nodeId ? { ...n, data: { ...n.data, ...updates } } : n
                 ));
-                setShowConfigurator(false);
-                try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
               }}
-              onCancel={() => {
+              onClose={() => {
                 setShowConfigurator(false);
                 try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
               }}
