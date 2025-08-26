@@ -471,14 +471,19 @@ useEffect(() => {
     const node = getNodes().find((n) => n.id === nodeId);
     if (!node) return;
 
+    // Extract clean node name from node data
+    const nodeData = node.data as any;
+    const nodeName = nodeData?.name || nodeData?.label || nodeData?.title || node.type || 'Node';
+    const cleanNodeName = String(nodeName).replace(/[^a-zA-Z0-9\s]/g, '').trim() || 'Node';
+
     setConfigNodeInfo({
       nodeId: node.id,
-      nodeType: String((node.data as any)?.type_key || node.type || 'unknown'),
-      category: String(((node.data as any)?.category && ((((node.data as any).category as any).name) || (node.data as any).category)) || 'general'),
+      nodeType: cleanNodeName,
+      category: String(((nodeData?.category && (((nodeData.category as any).name) || nodeData.category)) || 'general')),
       initialConfig: {
-        tools: (node.data as any)?.tools || [],
-        credentials: (node.data as any)?.credentials || [],
-        variables: (node.data as any)?.variables || [],
+        tools: nodeData?.tools || [],
+        credentials: nodeData?.credentials || [],
+        variables: nodeData?.variables || [],
       },
     });
     setShowConfigurator(true);

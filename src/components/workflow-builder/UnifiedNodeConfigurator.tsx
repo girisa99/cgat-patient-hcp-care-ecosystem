@@ -12,7 +12,8 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Plus, Trash2, Settings, Key, Variable, 
   Bot, Database, MessageSquare, Phone, 
-  Zap, Brain, Check, X, Eye, EyeOff
+  Zap, Brain, Check, X, Eye, EyeOff,
+  FileCode, Code
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useAIModelManager } from '@/hooks/useAIModelManager';
@@ -81,6 +82,56 @@ export const UnifiedNodeConfigurator: React.FC<UnifiedNodeConfiguratorProps> = (
   // Get available tools based on node type and category
   const getAvailableTools = () => {
     const tools = [];
+    
+    // Add Schema tools
+    tools.push(
+      {
+        id: 'json-schema',
+        name: 'JSON Schema Validator',
+        type: 'schema',
+        provider: 'Built-in',
+        config: { schemaType: 'json', validation: true }
+      },
+      {
+        id: 'xml-schema',
+        name: 'XML Schema Validator',
+        type: 'schema',
+        provider: 'Built-in',
+        config: { schemaType: 'xml', validation: true }
+      },
+      {
+        id: 'yaml-schema',
+        name: 'YAML Schema Validator',
+        type: 'schema',
+        provider: 'Built-in',
+        config: { schemaType: 'yaml', validation: true }
+      }
+    );
+
+    // Add Function tools
+    tools.push(
+      {
+        id: 'data-transformer',
+        name: 'Data Transformer Function',
+        type: 'function',
+        provider: 'Built-in',
+        config: { functionType: 'transformer', runtime: 'javascript' }
+      },
+      {
+        id: 'validator-function',
+        name: 'Custom Validator Function',
+        type: 'function',
+        provider: 'Built-in',
+        config: { functionType: 'validator', runtime: 'javascript' }
+      },
+      {
+        id: 'processor-function',
+        name: 'Data Processor Function',
+        type: 'function',
+        provider: 'Built-in',
+        config: { functionType: 'processor', runtime: 'javascript' }
+      }
+    );
     
     if (aiModels) {
       tools.push(...aiModels.map(model => ({
@@ -229,6 +280,8 @@ export const UnifiedNodeConfigurator: React.FC<UnifiedNodeConfiguratorProps> = (
                         {tool.type === 'ai_model' && <Bot className="h-4 w-4" />}
                         {tool.type === 'api_service' && <Database className="h-4 w-4" />}
                         {tool.type === 'api_config' && <Settings className="h-4 w-4" />}
+                        {tool.type === 'schema' && <FileCode className="h-4 w-4" />}
+                        {tool.type === 'function' && <Code className="h-4 w-4" />}
                         <div>
                           <p className="font-medium text-sm">{tool.name}</p>
                           <p className="text-xs text-muted-foreground">{tool.provider} • {tool.type}</p>
