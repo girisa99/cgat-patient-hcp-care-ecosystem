@@ -101,15 +101,15 @@ const [internalSearch, setInternalSearch] = useState('');
   }, []);
 
   React.useEffect(() => {
-    if (categories.length) {
-      setExpandedCategories((prev) => {
-        if (Object.keys(prev).length) return prev;
-        const initial: Record<string, boolean> = {};
-        categories.forEach((cat) => { initial[cat.name] = false; });
-        return initial;
-      });
-    }
-  }, [categories]);
+    // Initialize expanded state for the 8 consolidated categories only
+    setExpandedCategories((prev) => {
+      if (Object.keys(prev).length) return prev;
+      const initial: Record<string, boolean> = {};
+      ['ai_models_processing','data_integration','communication_channels','automation_workflow','development_testing','templates_configuration','storage_cache','human_oversight']
+        .forEach((name) => { initial[name] = false; });
+      return initial;
+    });
+  }, []);
 
   const toggleCategory = (categoryName: string) => {
     setExpandedCategories(prev => ({
