@@ -452,18 +452,44 @@ setShowConfigurator(true);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
 
-  useEffect(() => {
-    const navHandler = (e: any) => {
-      const tab = e?.detail?.tab as string;
-      if (tab && ['layout','nodes','edges'].includes(tab)) {
-        setActiveTab(tab);
-      }
-    };
-    window.addEventListener('workflow-design-nav', navHandler as EventListener);
-    return () => window.removeEventListener('workflow-design-nav', navHandler as EventListener);
-  }, []);
+useEffect(() => {
+  const navHandler = (e: any) => {
+    const tab = e?.detail?.tab as string;
+    if (tab && ['layout','nodes','edges'].includes(tab)) {
+      setActiveTab(tab);
+    }
+  };
+  window.addEventListener('workflow-design-nav', navHandler as EventListener);
+  return () => window.removeEventListener('workflow-design-nav', navHandler as EventListener);
+}, []);
 
-  return (
+// Listen for global "open-node-config" to open the unified configurator
+useEffect(() => {
+  const openHandler = (e: any) => {
+    const nodeId = e?.detail?.nodeId as string | undefined;
+    if (!nodeId) return;
+    const node = getNodes().find((n) => n.id === nodeId);
+    if (!node) return;
+
+    setConfigNodeInfo({
+      nodeId: node.id,
+      nodeType: String((node.data as any)?.type_key || node.type || 'unknown'),
+      category: String(((node.data as any)?.category && ((((node.data as any).category as any).name) || (node.data as any).category)) || 'general'),
+      initialConfig: {
+        tools: (node.data as any)?.tools || [],
+        credentials: (node.data as any)?.credentials || [],
+        variables: (node.data as any)?.variables || [],
+      },
+    });
+    setShowConfigurator(true);
+    try { window.dispatchEvent(new CustomEvent('inline-config-opened')); } catch {}
+  };
+
+  window.addEventListener('open-node-config', openHandler as EventListener);
+  return () => window.removeEventListener('open-node-config', openHandler as EventListener);
+}, [getNodes]);
+
+return (
     <div className="flex h-full w-full bg-background min-h-0">
       {/* Unified Sidebar */}
       {!canvasOnly && (
@@ -893,6 +919,39 @@ setShowConfigurator(true);
           console.log('Session synced:', sessionData);
         }}
       />
+
+      {/* Global Unified Configurator Dialog */}
+      {configNodeInfo && (
+        <Dialog open={showConfigurator} onOpenChange={(open) => {
+          setShowConfigurator(open);
+          try { window.dispatchEvent(new CustomEvent(open ? 'inline-config-opened' : 'inline-config-closed')); } catch {}
+        }}>
+          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Configure {configNodeInfo.nodeType} Node</DialogTitle>
+            </DialogHeader>
+            <UnifiedNodeConfigurator
+              nodeId={configNodeInfo.nodeId}
+              nodeType={configNodeInfo.nodeType}
+              category={configNodeInfo.category}
+              initialConfig={configNodeInfo.initialConfig}
+              onSave={(cfg) => {
+                setNodes((nds) => nds.map((n) =>
+                  n.id === configNodeInfo.nodeId
+                    ? { ...n, data: { ...n.data, tools: cfg.tools, credentials: cfg.credentials, variables: cfg.variables } }
+                    : n
+                ));
+                setShowConfigurator(false);
+                try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
+              }}
+              onCancel={() => {
+                setShowConfigurator(false);
+                try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+      )}
 
       <style dangerouslySetInnerHTML={{
         __html: `
