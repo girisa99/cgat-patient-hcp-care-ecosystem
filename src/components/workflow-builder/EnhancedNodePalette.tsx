@@ -10,6 +10,7 @@ import {
   Wrench, FileText, MessageSquare, Filter, Settings, GitBranch, Plus
 } from 'lucide-react';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
+import { useWorkflowNodePopulation } from '@/hooks/useWorkflowNodePopulation';
 import { cn } from '@/lib/utils';
 
 const getIconComponent = (iconName: string) => {
@@ -71,13 +72,15 @@ export const EnhancedNodePalette: React.FC<EnhancedNodePaletteProps> = ({
   searchTermExternal,
   hideSearch = false
 }) => {
-  const { 
+  const {
     categories, 
     nodeTypes, 
     nodeTypesByCategory, 
     isLoading, 
-    error 
+    error
   } = useWorkflowNodes();
+
+  const { getPopulatedNodes } = useWorkflowNodePopulation();
   
 const [internalSearch, setInternalSearch] = useState('');
   const searchTerm = searchTermExternal ?? internalSearch;
@@ -140,27 +143,48 @@ const [internalSearch, setInternalSearch] = useState('');
     return keywords.some(k => t.includes(k));
   };
 
+  // Get populated nodes from backend data
+  const populatedNodes = getPopulatedNodes();
+
   const computed: Record<string, typeof nodeTypes> = {
-    genai_llm: filteredNodeTypes.filter((nt) =>
-      match(nt, ['openai','anthropic','claude','gpt','mistral','cohere','gemini','groq','llm','bedrock','azure','deepseek'])
-    ),
-    small_language_models: filteredNodeTypes.filter((nt) =>
-      match(nt, ['ollama','llama','phi','qwen','nano','tiny','slm','biotech','pharma','healthcare','medical'])
-    ),
+    genai_llm: [
+      ...filteredNodeTypes.filter((nt) =>
+        match(nt, ['openai','anthropic','claude','gpt','mistral','cohere','gemini','groq','llm','bedrock','azure','deepseek'])
+      ),
+      ...populatedNodes.genai_llm.map(n => ({ ...n, id: n.type_key } as any))
+    ],
+    small_language_models: [
+      ...filteredNodeTypes.filter((nt) =>
+        match(nt, ['ollama','llama','phi','qwen','nano','tiny','slm','biotech','pharma','healthcare','medical'])
+      ),
+      ...populatedNodes.small_language_models.map(n => ({ ...n, id: n.type_key } as any))
+    ],
     vision_models: filteredNodeTypes.filter((nt) =>
       match(nt, ['vision','gpt-4o','gpt-4v','image','multimodal','vlm','gemini'])
     ),
-    mcp: filteredNodeTypes.filter((nt) => match(nt, ['mcp','model context protocol'])),
+    mcp: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['mcp','model context protocol'])),
+      ...populatedNodes.mcp.map(n => ({ ...n, id: n.type_key } as any))
+    ],
     cache: filteredNodeTypes.filter((nt) => match(nt, ['cache','memory','buffer','history','scratchpad'])),
     labeling: filteredNodeTypes.filter((nt) => match(nt, ['label','annotation','label studio'])),
     // Map nodes to existing DB categories using correct names
     parsers: filteredNodeTypes.filter((nt) => match(nt, ['parser','parse','processor','process','transform','normalize','extract','clean'])),
-    prompts: filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example'])),
+    prompts: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example'])),
+      ...populatedNodes.prompts.map(n => ({ ...n, id: n.type_key } as any))
+    ],
     
-    // Deployment Categories
+    // Deployment Categories with populated data
     deployment_environments: filteredNodeTypes.filter((nt) => match(nt, ['dev','test','uat','staging','production','environment','deploy'])),
-    channel_deployment: filteredNodeTypes.filter((nt) => match(nt, ['channel','voice call','web chat','email','messaging','instagram','deployment matrix'])),
-    voice_config: filteredNodeTypes.filter((nt) => match(nt, ['voice','speech','audio','tts','stt','whisper','eleven','recognition','synthesis'])),
+    channel_deployment: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['channel','voice call','web chat','email','messaging','instagram','deployment matrix'])),
+      ...populatedNodes.channel_deployment.map(n => ({ ...n, id: n.type_key } as any))
+    ],
+    voice_config: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['voice','speech','audio','tts','stt','whisper','eleven','recognition','synthesis'])),
+      ...populatedNodes.voice_config.map(n => ({ ...n, id: n.type_key } as any))
+    ],
     human_loop: filteredNodeTypes.filter((nt) => match(nt, ['human','handoff','escalation','transfer','agent transfer','live agent'])),
     testing_validation: filteredNodeTypes.filter((nt) => match(nt, ['test','testing','validation','debug','simulation','flow test'])),
     code_deployment: filteredNodeTypes.filter((nt) => match(nt, ['snippet','code','docker','kubernetes','api endpoint','webhook']))
