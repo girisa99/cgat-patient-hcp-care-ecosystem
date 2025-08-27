@@ -590,6 +590,10 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
                 {theme.dark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
               <WorkflowControls
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={setNodes}
+                onEdgesChange={setEdges}
                 onSimulate={() => showSuccess('Simulation started')}
                 onSave={handleSave}
                 onLoad={() => showSuccess('Load workflow')}

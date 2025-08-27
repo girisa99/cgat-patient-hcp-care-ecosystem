@@ -6,7 +6,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { 
   Target, Map, Bot, Settings, Phone, TestTube, Rocket, 
-  ArrowRight, CheckCircle, RotateCcw, Eye, X, Workflow
+  ArrowRight, CheckCircle, RotateCcw, Eye, X, Workflow,
+  AlertTriangle, Database
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -674,40 +675,196 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
         <div className="space-y-6">
           <div className="text-center py-8">
             <TestTube className="h-16 w-16 text-primary mx-auto mb-4" />
-            <h2 className="text-2xl font-bold mb-2">Testing Phase</h2>
+            <h2 className="text-2xl font-bold mb-2">Workflow Testing & Validation</h2>
             <p className="text-muted-foreground mb-6">
-              Validate your agent before deployment
+              Validate your agent workflow before deployment with comprehensive testing
             </p>
             
-            <div className="max-w-4xl mx-auto space-y-4">
-              <Card>
-                <CardContent className="p-6">
-                  <h3 className="font-semibold mb-4">Test Scenarios</h3>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between p-3 border rounded">
-                      <div>
-                        <div className="font-medium">New Patient Registration</div>
-                        <div className="text-sm text-muted-foreground">Complete onboarding flow</div>
+            <div className="max-w-6xl mx-auto">
+              <Tabs defaultValue="workflow-test" className="w-full">
+                <TabsList className="grid w-full grid-cols-3" level="child">
+                  <TabsTrigger value="workflow-test" level="child">Workflow Testing</TabsTrigger>
+                  <TabsTrigger value="agent-test" level="child">Agent Testing</TabsTrigger>
+                  <TabsTrigger value="integration-test" level="child">Integration Testing</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="workflow-test" level="child" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Workflow Validation</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Test your complete workflow structure, connections, and logic
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="p-4 border rounded-lg bg-muted/30">
+                          <h4 className="font-semibold mb-2">Quick Validation</h4>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Run a quick check on your workflow structure and identify potential issues
+                          </p>
+                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                            <div className="text-center p-3 border rounded">
+                              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                              <div className="font-medium">Structure</div>
+                              <div className="text-xs text-muted-foreground">Valid workflow structure</div>
+                            </div>
+                            <div className="text-center p-3 border rounded">
+                              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
+                              <div className="font-medium">Connections</div>
+                              <div className="text-xs text-muted-foreground">All nodes connected</div>
+                            </div>
+                            <div className="text-center p-3 border rounded">
+                              <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
+                              <div className="font-medium">Configuration</div>
+                              <div className="text-xs text-muted-foreground">Some config missing</div>
+                            </div>
+                          </div>
+                          <Button onClick={() => handleStepComplete('testing')} className="w-full">
+                            Run Comprehensive Workflow Test
+                          </Button>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Target className="h-5 w-5 text-primary" />
+                                <div className="font-medium">Validation Checks</div>
+                              </div>
+                              <ul className="text-sm text-muted-foreground space-y-1">
+                                <li>• Structure analysis</li>
+                                <li>• Node connections</li>
+                                <li>• Configuration validation</li>
+                                <li>• Data flow analysis</li>
+                                <li>• Security & compliance</li>
+                                <li>• Performance optimization</li>
+                              </ul>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Settings className="h-5 w-5 text-primary" />
+                                <div className="font-medium">Auto-Fix Options</div>
+                              </div>
+                              <ul className="text-sm text-muted-foreground space-y-1">
+                                <li>• Connect isolated nodes</li>
+                                <li>• Add missing start/end nodes</li>
+                                <li>• Fix invalid connections</li>
+                                <li>• Configure missing settings</li>
+                                <li>• Optimize performance</li>
+                                <li>• Apply security fixes</li>
+                              </ul>
+                            </CardContent>
+                          </Card>
+                        </div>
                       </div>
-                      <Button variant="outline" size="sm">Run Test</Button>
-                    </div>
-                    <div className="flex items-center justify-between p-3 border rounded">
-                      <div>
-                        <div className="font-medium">Appointment Scheduling</div>
-                        <div className="text-sm text-muted-foreground">Book and manage appointments</div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="agent-test" level="child" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Agent Performance Testing</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Test individual agent responses and performance
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="p-4 border rounded-lg bg-muted/30">
+                          <h4 className="font-semibold mb-2">Agent Simulation</h4>
+                          <p className="text-sm text-muted-foreground mb-4">
+                            Test your agents with sample scenarios from your customer journey
+                          </p>
+                          <div className="space-y-2">
+                            {journeySteps.map((step, index) => (
+                              <div key={step.id} className="flex items-center justify-between p-2 border rounded">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline">{index + 1}</Badge>
+                                  <span className="text-sm">{step.title}</span>
+                                </div>
+                                <Button variant="outline" size="sm">
+                                  Test Agent
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
                       </div>
-                      <Button variant="outline" size="sm">Run Test</Button>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-6 flex gap-2">
-                    <Button variant="outline">Run All Tests</Button>
-                    <Button onClick={() => handleStepComplete('testing')}>
-                      Proceed to Deployment
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+                
+                <TabsContent value="integration-test" level="child" className="mt-6">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Integration & API Testing</CardTitle>
+                      <p className="text-sm text-muted-foreground">
+                        Test external integrations and API connections
+                      </p>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-4">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Phone className="h-5 w-5 text-primary" />
+                                <div className="font-medium">Communication Channels</div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>Voice Integration</span>
+                                  <Badge variant="outline" className="bg-green-50 text-green-700">Connected</Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>SMS/Text</span>
+                                  <Badge variant="outline" className="bg-yellow-50 text-yellow-700">Testing</Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>Web Chat</span>
+                                  <Badge variant="outline" className="bg-green-50 text-green-700">Connected</Badge>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                          
+                          <Card>
+                            <CardContent className="p-4">
+                              <div className="flex items-center gap-2 mb-2">
+                                <Database className="h-5 w-5 text-primary" />
+                                <div className="font-medium">Data Connections</div>
+                              </div>
+                              <div className="space-y-2">
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>Healthcare APIs</span>
+                                  <Badge variant="outline" className="bg-green-50 text-green-700">Connected</Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>Patient Database</span>
+                                  <Badge variant="outline" className="bg-green-50 text-green-700">Connected</Badge>
+                                </div>
+                                <div className="flex items-center justify-between text-sm">
+                                  <span>External Systems</span>
+                                  <Badge variant="outline" className="bg-red-50 text-red-700">Error</Badge>
+                                </div>
+                              </div>
+                            </CardContent>
+                          </Card>
+                        </div>
+                        
+                        <Button className="w-full">
+                          Run Integration Test Suite
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
             </div>
           </div>
         </div>

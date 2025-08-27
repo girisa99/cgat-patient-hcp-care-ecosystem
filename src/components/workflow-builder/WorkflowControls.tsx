@@ -1,6 +1,7 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Play, Save, Upload, Maximize2, Rocket } from 'lucide-react';
+import { WorkflowTestingPanel } from './WorkflowTestingPanel';
 
 interface WorkflowControlsProps {
   onSimulate?: () => void;
@@ -8,6 +9,10 @@ interface WorkflowControlsProps {
   onLoad?: () => void;
   onFitView?: () => void;
   onDeploy?: () => void;
+  nodes?: any[];
+  edges?: any[];
+  onNodesChange?: (nodes: any[]) => void;
+  onEdgesChange?: (edges: any[]) => void;
   className?: string;
 }
 
@@ -17,6 +22,10 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
   onLoad,
   onFitView,
   onDeploy,
+  nodes = [],
+  edges = [],
+  onNodesChange,
+  onEdgesChange,
   className = ''
 }) => {
   return (
@@ -37,6 +46,12 @@ export const WorkflowControls: React.FC<WorkflowControlsProps> = ({
           <Maximize2 className="h-4 w-4 mr-2" />
           Fit View
         </Button>
+        <WorkflowTestingPanel
+          nodes={nodes}
+          edges={edges}
+          onNodesChange={onNodesChange}
+          onEdgesChange={onEdgesChange}
+        />
         <Button variant="default" size="sm" className="h-8 shrink-0" onClick={onDeploy}>
           <Rocket className="h-4 w-4 mr-2" />
           Deploy
