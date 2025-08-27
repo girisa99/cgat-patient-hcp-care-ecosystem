@@ -25,9 +25,11 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
   onNodeUpdate,
   onClose
 }) => {
+  // All hooks must be declared before any conditional returns
   const [nodeEvaluation, setNodeEvaluation] = useState<NodeEvaluation | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [config, setConfig] = useState<Record<string, any>>({});
+  const { aiModels } = useAIModelManager();
 
   useEffect(() => {
     if (node) {
@@ -189,7 +191,6 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
     }
   };
 
-  const { aiModels } = useAIModelManager();
 
   const getModelOptions = (provider: string) => {
     const p = String(provider || '').toLowerCase();
