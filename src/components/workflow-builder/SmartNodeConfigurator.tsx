@@ -29,7 +29,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
   const [nodeEvaluation, setNodeEvaluation] = useState<NodeEvaluation | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [config, setConfig] = useState<Record<string, any>>({});
-  const { aiModels } = useAIModelManager();
+  const { aiModels, modelIntegrations } = useAIModelManager();
 
   useEffect(() => {
     if (node) {
@@ -234,11 +234,23 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
       cohere: ['cohere'],
       mistral: ['mistral'],
     };
-    const candidates = new Set([p, ...(aliasMap[p] || [])]);
+
     const norm = (s?: string) => String(s || '').toLowerCase();
 
+    // If no models, show a helpful message
+    if (!aiModels || aiModels.length === 0) {
+      return [{ value: '__none__', label: 'No active AI models found' }];
+    }
+
+    // If provider unknown, show all models to avoid an empty list
+    if (!p || p === 'unknown') {
+      return aiModels.map(m => ({ value: m.model_id, label: m.name || m.model_id }));
+    }
+
+    const candidates = new Set([p, ...(aliasMap[p] || [])]);
+
     // Primary: match by provider aliases
-    let options = (aiModels || [])
+    let options = aiModels
       .filter(m => {
         const prov = norm(m.provider);
         return prov && Array.from(candidates).some(c => prov.includes(c));
@@ -247,7 +259,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
 
     // Fallback: fuzzy match by model_id
     if (!options.length) {
-      options = (aiModels || [])
+      options = aiModels
         .filter(m => {
           const id = norm(m.model_id);
           return Array.from(candidates).some(c => c && id.includes(c));
@@ -255,12 +267,13 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
         .map(m => ({ value: m.model_id, label: m.name || m.model_id }));
     }
 
+    // Final fallback: return all models
     if (!options.length) {
-      return [{ value: '__none__', label: 'No active models found for this provider' }];
+      return aiModels.map(m => ({ value: m.model_id, label: m.name || m.model_id }));
     }
+
     return options;
   };
-
   const categories = ['credentials', 'input_schema', 'functions', 'variables', 'advanced'];
   const availableCategories = categories.filter(cat => 
     nodeEvaluation.requirements.some(req => req.category === cat)
@@ -299,7 +312,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
 
       <CardContent className="p-0">
         <Tabs value={resolvedActiveTab} onValueChange={setActiveTab}>
-          <TabsList className="sticky top-0 z-50 grid w-full grid-cols-5 h-auto p-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b relative">
+          <TabsList level="child" className="sticky top-0 z-50 grid w-full grid-cols-5 h-auto p-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b relative">
           {availableCategories.map(category => {
             const Icon = getTabIcon(category);
             const categoryReqs = nodeEvaluation.requirements.filter(req => req.category === category);
@@ -311,7 +324,8 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
                 <TabsTrigger 
                   key={category} 
                   value={category}
-                  className="flex items-center gap-1 text-xs"
+                  level="child"
+                  className="flex items-center gap-1 text-xs hover:scale-100 data-[state=active]:scale-100"
                 >
                   <Icon className="h-3 w-3" />
                   {category.replace('_', ' ')}

@@ -954,7 +954,7 @@ return (
         }}>
           <DialogContent className="z-[100] max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>Configure {configNodeInfo.nodeType} Node</DialogTitle>
+              <DialogTitle>Configure {(() => { const n = getNodes().find(n => n.id === configNodeInfo.nodeId); const d = (n?.data as any) || {}; return d.display_name || d.name || d.label || (n?.type ? String(n.type).replace(/_/g, ' ') : '') || 'Node'; })()} Node</DialogTitle>
             </DialogHeader>
             <Suspense fallback={<div className="p-4 text-sm">Loading configurator…</div>}>
               <LazySmartNodeConfigurator
