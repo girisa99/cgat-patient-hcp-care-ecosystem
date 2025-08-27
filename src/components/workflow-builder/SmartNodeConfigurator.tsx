@@ -207,9 +207,21 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
         { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' }
       ],
       'Meta': [
-        { value: 'llama-3.2-3b', label: 'Llama 3.2 3B' },
-        { value: 'llama-3.2-1b', label: 'Llama 3.2 1B' },
-        { value: 'llama-3.1-8b', label: 'Llama 3.1 8B' }
+        { value: 'llama-3.1-70b-instruct', label: 'Llama 3.1 70B Instruct' },
+        { value: 'llama-3.1-8b-instruct', label: 'Llama 3.1 8B Instruct' },
+        { value: 'llama-3.2-3b-instruct', label: 'Llama 3.2 3B Instruct' },
+        { value: 'llama-3.2-1b-instruct', label: 'Llama 3.2 1B Instruct' },
+        { value: 'llama-2-70b-chat', label: 'Llama 2 70B Chat' }
+      ],
+      'Cohere': [
+        { value: 'command-r-plus', label: 'Command R+' },
+        { value: 'command-r', label: 'Command R' },
+        { value: 'command-light', label: 'Command Light' }
+      ],
+      'Mistral': [
+        { value: 'mistral-large-latest', label: 'Mistral Large Latest' },
+        { value: 'mistral-medium-latest', label: 'Mistral Medium Latest' },
+        { value: 'mistral-small-latest', label: 'Mistral Small Latest' }
       ]
     };
     return modelOptions[provider] || [{ value: 'default', label: 'Default Model' }];

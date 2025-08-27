@@ -106,6 +106,183 @@ export const NodeRequirementEvaluator = {
         }
       ],
 
+      // Meta AI Models
+      'llama_chat': [
+        {
+          id: 'api_key',
+          type: 'required',
+          category: 'credentials',
+          field: 'api_key',
+          label: 'Meta API Key',
+          description: 'Your Meta API key for Llama models'
+        },
+        {
+          id: 'model',
+          type: 'required',
+          category: 'input_schema',
+          field: 'model',
+          label: 'Llama Model',
+          description: 'Choose the Llama model version',
+          defaultValue: 'llama-3.1-8b-instruct'
+        },
+        {
+          id: 'temperature',
+          type: 'optional',
+          category: 'advanced',
+          field: 'temperature',
+          label: 'Temperature',
+          description: 'Controls randomness (0-2)',
+          defaultValue: 0.7
+        },
+        {
+          id: 'max_tokens',
+          type: 'optional',
+          category: 'advanced',
+          field: 'max_tokens',
+          label: 'Max Tokens',
+          description: 'Maximum response length',
+          defaultValue: 1000
+        }
+      ],
+
+      // Google AI Models
+      'google_gemini': [
+        {
+          id: 'api_key',
+          type: 'required',
+          category: 'credentials',
+          field: 'api_key',
+          label: 'Google AI API Key',
+          description: 'Your Google AI API key for Gemini models'
+        },
+        {
+          id: 'model',
+          type: 'required',
+          category: 'input_schema',
+          field: 'model',
+          label: 'Gemini Model',
+          description: 'Choose the Gemini model version',
+          defaultValue: 'gemini-1.5-pro'
+        },
+        {
+          id: 'temperature',
+          type: 'optional',
+          category: 'advanced',
+          field: 'temperature',
+          label: 'Temperature',
+          description: 'Controls creativity (0-2)',
+          defaultValue: 0.9
+        }
+      ],
+
+      // Microsoft AI Models
+      'azure_openai': [
+        {
+          id: 'api_key',
+          type: 'required',
+          category: 'credentials',
+          field: 'api_key',
+          label: 'Azure OpenAI API Key',
+          description: 'Your Azure OpenAI API key'
+        },
+        {
+          id: 'endpoint',
+          type: 'required',
+          category: 'credentials',
+          field: 'endpoint',
+          label: 'Azure Endpoint',
+          description: 'Your Azure OpenAI endpoint URL'
+        },
+        {
+          id: 'deployment_name',
+          type: 'required',
+          category: 'input_schema',
+          field: 'deployment_name',
+          label: 'Deployment Name',
+          description: 'Azure deployment name for your model'
+        }
+      ],
+
+      // Cohere AI Models
+      'cohere_chat': [
+        {
+          id: 'api_key',
+          type: 'required',
+          category: 'credentials',
+          field: 'api_key',
+          label: 'Cohere API Key',
+          description: 'Your Cohere API key'
+        },
+        {
+          id: 'model',
+          type: 'required',
+          category: 'input_schema',
+          field: 'model',
+          label: 'Cohere Model',
+          description: 'Choose the Cohere model',
+          defaultValue: 'command-r-plus'
+        }
+      ],
+
+      // Mistral AI Models
+      'mistral_chat': [
+        {
+          id: 'api_key',
+          type: 'required',
+          category: 'credentials',
+          field: 'api_key',
+          label: 'Mistral API Key',
+          description: 'Your Mistral API key'
+        },
+        {
+          id: 'model',
+          type: 'required',
+          category: 'input_schema',
+          field: 'model',
+          label: 'Mistral Model',
+          description: 'Choose the Mistral model',
+          defaultValue: 'mistral-large-latest'
+        }
+      ],
+
+      // Generic AI Model (catches any AI model node)
+      'ai_model': [
+        {
+          id: 'api_key',
+          type: 'required',
+          category: 'credentials',
+          field: 'api_key',
+          label: 'API Key',
+          description: 'API key for this AI service'
+        },
+        {
+          id: 'model',
+          type: 'required',
+          category: 'input_schema',
+          field: 'model',
+          label: 'Model Name',
+          description: 'Specific model to use'
+        },
+        {
+          id: 'temperature',
+          type: 'optional',
+          category: 'advanced',
+          field: 'temperature',
+          label: 'Temperature',
+          description: 'Controls randomness (0-2)',
+          defaultValue: 0.7
+        },
+        {
+          id: 'max_tokens',
+          type: 'optional',
+          category: 'advanced',
+          field: 'max_tokens',
+          label: 'Max Tokens',
+          description: 'Maximum response length',
+          defaultValue: 1000
+        }
+      ],
+
       // API Service Nodes
       'api_request': [
         {
@@ -219,10 +396,35 @@ export const NodeRequirementEvaluator = {
 
   // Evaluate a node's current state
   evaluateNode: (node: Node): NodeEvaluation => {
-    const requirements = NodeRequirementEvaluator.getNodeRequirements(
-      String(node.data?.type_key || node.type || 'unknown'), 
-      node.data
-    );
+    // Enhanced node type detection for AI models
+    let nodeType = String(node.data?.type_key || node.type || 'unknown');
+    
+    // Handle AI model nodes with intelligent fallback
+    if (nodeType === 'unknown' || nodeType === 'ai_model' || nodeType.includes('template_')) {
+      const provider = String(node.data?.provider || '').toLowerCase();
+      const modelName = String(node.data?.model || node.data?.display_name || '').toLowerCase();
+      
+      // Map based on provider or model name
+      if (provider.includes('openai') || modelName.includes('gpt')) {
+        nodeType = 'openai_chat';
+      } else if (provider.includes('anthropic') || modelName.includes('claude')) {
+        nodeType = 'anthropic_chat';
+      } else if (provider.includes('meta') || modelName.includes('llama')) {
+        nodeType = 'llama_chat';
+      } else if (provider.includes('google') || modelName.includes('gemini')) {
+        nodeType = 'google_gemini';
+      } else if (provider.includes('microsoft') || provider.includes('azure')) {
+        nodeType = 'azure_openai';
+      } else if (provider.includes('cohere')) {
+        nodeType = 'cohere_chat';
+      } else if (provider.includes('mistral')) {
+        nodeType = 'mistral_chat';
+      } else if (node.data?.category === 'ai_models' || nodeType.includes('ai_model')) {
+        nodeType = 'ai_model'; // Generic AI model fallback
+      }
+    }
+    
+    const requirements = NodeRequirementEvaluator.getNodeRequirements(nodeType, node.data);
     
     const missingRequired: string[] = [];
     const suggestions: string[] = [];
