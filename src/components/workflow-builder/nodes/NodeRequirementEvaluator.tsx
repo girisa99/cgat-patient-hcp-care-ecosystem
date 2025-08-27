@@ -104,6 +104,33 @@ export const NodeRequirementEvaluator = {
           label: 'Claude Model',
           description: 'Choose the Claude model version',
           defaultValue: 'claude-3-5-sonnet-20241022'
+        },
+        {
+          id: 'temperature',
+          type: 'optional',
+          category: 'advanced',
+          field: 'temperature',
+          label: 'Temperature',
+          description: 'Controls randomness (0-1 for Claude)',
+          defaultValue: 0.7
+        },
+        {
+          id: 'top_p',
+          type: 'optional',
+          category: 'advanced',
+          field: 'top_p',
+          label: 'Top P',
+          description: 'Controls nucleus sampling probability (0-1)',
+          defaultValue: 0.9
+        },
+        {
+          id: 'max_tokens',
+          type: 'optional',
+          category: 'advanced',
+          field: 'max_tokens',
+          label: 'Max Tokens',
+          description: 'Maximum response length',
+          defaultValue: 1000
         }
       ],
 
@@ -210,6 +237,24 @@ export const NodeRequirementEvaluator = {
           field: 'deployment_name',
           label: 'Deployment Name',
           description: 'Azure deployment name for your model'
+        },
+        {
+          id: 'temperature',
+          type: 'optional',
+          category: 'advanced',
+          field: 'temperature',
+          label: 'Temperature',
+          description: 'Controls randomness (0-2)',
+          defaultValue: 0.7
+        },
+        {
+          id: 'max_tokens',
+          type: 'optional',
+          category: 'advanced',
+          field: 'max_tokens',
+          label: 'Max Tokens',
+          description: 'Maximum response length',
+          defaultValue: 1000
         }
       ],
 
@@ -231,6 +276,24 @@ export const NodeRequirementEvaluator = {
           label: 'Cohere Model',
           description: 'Choose the Cohere model',
           defaultValue: 'command-r-plus'
+        },
+        {
+          id: 'temperature',
+          type: 'optional',
+          category: 'advanced',
+          field: 'temperature',
+          label: 'Temperature',
+          description: 'Controls randomness (0-2)',
+          defaultValue: 0.7
+        },
+        {
+          id: 'max_tokens',
+          type: 'optional',
+          category: 'advanced',
+          field: 'max_tokens',
+          label: 'Max Tokens',
+          description: 'Maximum response length',
+          defaultValue: 1000
         }
       ],
 
@@ -252,6 +315,33 @@ export const NodeRequirementEvaluator = {
           label: 'Mistral Model',
           description: 'Choose the Mistral model',
           defaultValue: 'mistral-large-latest'
+        },
+        {
+          id: 'temperature',
+          type: 'optional',
+          category: 'advanced',
+          field: 'temperature',
+          label: 'Temperature',
+          description: 'Controls randomness (0-2)',
+          defaultValue: 0.7
+        },
+        {
+          id: 'top_p',
+          type: 'optional',
+          category: 'advanced',
+          field: 'top_p',
+          label: 'Top P',
+          description: 'Controls nucleus sampling probability (0-1)',
+          defaultValue: 0.9
+        },
+        {
+          id: 'max_tokens',
+          type: 'optional',
+          category: 'advanced',
+          field: 'max_tokens',
+          label: 'Max Tokens',
+          description: 'Maximum response length',
+          defaultValue: 1000
         }
       ],
 

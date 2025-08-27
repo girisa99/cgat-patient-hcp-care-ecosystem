@@ -237,39 +237,50 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
 
     const norm = (s?: string) => String(s || '').toLowerCase();
 
-    // If no models, show a helpful message
-    if (!aiModels || aiModels.length === 0) {
+    const normalized = [
+      ...(aiModels || []).map((m: any) => ({
+        provider: norm(m.provider),
+        id: String(m.model_id || m.id || ''),
+        label: String(m.name || m.model_id || m.id || ''),
+      })),
+      ...((modelIntegrations as any[]) || []).map((mi: any) => {
+        const id = mi?.model_id || mi?.model || mi?.model_name || mi?.slug || mi?.key || '';
+        const label = mi?.name || mi?.display_name || mi?.label || id;
+        const prov = norm(mi?.provider || mi?.vendor || mi?.source || mi?.name || '');
+        return { provider: prov, id: String(id), label: String(label) };
+      }),
+    ].filter((x) => x.id);
+
+    // If no models anywhere, show message
+    if (!normalized.length) {
       return [{ value: '__none__', label: 'No active AI models found' }];
     }
 
-    // If provider unknown, show all models to avoid an empty list
+    // If provider unknown, show all models to avoid empty state
     if (!p || p === 'unknown') {
-      return aiModels.map(m => ({ value: m.model_id, label: m.name || m.model_id }));
+      return normalized.map((m) => ({ value: m.id, label: m.label }));
     }
 
     const candidates = new Set([p, ...(aliasMap[p] || [])]);
 
     // Primary: match by provider aliases
-    let options = aiModels
-      .filter(m => {
-        const prov = norm(m.provider);
-        return prov && Array.from(candidates).some(c => prov.includes(c));
+    let options = normalized
+      .filter((m) => {
+        const prov = m.provider;
+        return prov && Array.from(candidates).some((c) => prov.includes(c));
       })
-      .map(m => ({ value: m.model_id, label: m.name || m.model_id }));
+      .map((m) => ({ value: m.id, label: m.label }));
 
-    // Fallback: fuzzy match by model_id
+    // Fallback: fuzzy match by model_id/name
     if (!options.length) {
-      options = aiModels
-        .filter(m => {
-          const id = norm(m.model_id);
-          return Array.from(candidates).some(c => c && id.includes(c));
-        })
-        .map(m => ({ value: m.model_id, label: m.name || m.model_id }));
+      options = normalized
+        .filter((m) => Array.from(candidates).some((c) => c && (m.id.includes(c) || norm(m.label).includes(c))))
+        .map((m) => ({ value: m.id, label: m.label }));
     }
 
     // Final fallback: return all models
     if (!options.length) {
-      return aiModels.map(m => ({ value: m.model_id, label: m.name || m.model_id }));
+      return normalized.map((m) => ({ value: m.id, label: m.label }));
     }
 
     return options;
