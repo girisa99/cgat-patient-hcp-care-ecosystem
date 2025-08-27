@@ -18,6 +18,10 @@ import { FlowControlConfigurationNode } from './FlowControlConfigurationNode';
 import { HTTPConfigurationNode } from './HTTPConfigurationNode';
 import VoiceConfigurationNode from './VoiceConfigurationNode';
 import HealthcareComplianceConfigurationNode from './HealthcareComplianceConfigurationNode';
+import { VectorStoreConfigurationNode } from './VectorStoreConfigurationNode';
+import { TestingConfigurationNode } from './TestingConfigurationNode';
+import { DeploymentConfigurationNode } from './DeploymentConfigurationNode';
+import { DatabaseConfigurationNode } from './DatabaseConfigurationNode';
 
 // Export all node types
 export { BaseWorkflowNode } from './BaseWorkflowNode';
@@ -103,25 +107,29 @@ export const workflowNodeTypes = {
   retriever: FlowiseInspiredNode,
   custom_function: TemplateConfigurationNode,
   stick_note: TemplateConfigurationNode,
-  customer: FlowiseInspiredNode,
-  database: FlowiseInspiredNode,
   
   // Voice & Healthcare nodes - specialized configuration
   voice: VoiceConfigurationNode,
   healthcare_compliance: HealthcareComplianceConfigurationNode,
-  vector_store: FlowiseInspiredNode,
+  vector_store: VectorStoreConfigurationNode,
+  
+  // Testing nodes - specialized testing configuration
+  flow_tester: TestingConfigurationNode,
+  response_validator: TestingConfigurationNode,
+  load_tester: TestingConfigurationNode,
+  debug_console: TestingConfigurationNode,
+  
+  // Deployment nodes - specialized deployment configuration
+  docker_container: DeploymentConfigurationNode,
+  kubernetes_pod: DeploymentConfigurationNode,
+  deployment_pipeline: DeploymentConfigurationNode,
+  
+  // Database nodes - specialized database configuration
+  database: DatabaseConfigurationNode,
+  customer: DatabaseConfigurationNode,
   
   // Code & Deployment nodes
   code_snippet: TemplateConfigurationNode,
-  docker_container: FlowiseInspiredNode,
-  kubernetes_pod: FlowiseInspiredNode,
-  deployment_pipeline: FlowiseInspiredNode,
-  
-  // Testing & Validation nodes
-  flow_tester: FlowiseInspiredNode,
-  response_validator: FlowControlConfigurationNode,
-  load_tester: FlowiseInspiredNode,
-  debug_console: FlowiseInspiredNode,
   
   // Template node variants - each gets specific template configuration
   prompt_template_system_prompt: TemplateConfigurationNode,
