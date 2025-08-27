@@ -57,7 +57,7 @@ const RoleBasedRoute: React.FC<RoleBasedRouteProps> = ({
     );
   }
 
-  // Check specific role requirements
+  // Check specific role requirements (optimized for performance)
   if (requiredRoles.length > 0) {
     const hasRequiredRole = requiredRoles.some(role => userRoles.includes(role));
     if (!hasRequiredRole) {

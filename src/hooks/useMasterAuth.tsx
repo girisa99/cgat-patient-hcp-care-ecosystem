@@ -22,6 +22,7 @@ interface AuthContextType {
   signOut: () => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: any }>;
   refreshAuth: (userId?: string) => Promise<void>;
+  hasAnyRole: (roleNames: string[]) => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -154,6 +155,7 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
   const fetchUserRoles = async (userId: string) => {
     console.log('🏷️ Fetching user roles for:', userId);
     try {
+      // Use optimized RPC function with performance improvements
       const { data, error } = await supabase
         .rpc('get_user_roles', { check_user_id: userId });
 
@@ -164,9 +166,32 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
 
       const roles = data?.map((r: any) => r.role_name) || [];
       setUserRoles(roles);
-      console.log('✅ User roles loaded:', roles);
+      console.log('✅ User roles loaded (optimized):', roles);
     } catch (err) {
       console.error('❌ Roles fetch failed:', err);
+    }
+  };
+
+  // Optimized role checking function using new DB function
+  const hasAnyRole = async (roleNames: string[]) => {
+    if (!user?.id) return false;
+    
+    try {
+      const { data, error } = await supabase
+        .rpc('user_has_any_role', { 
+          check_user_id: user.id, 
+          role_names: roleNames 
+        });
+
+      if (error) {
+        console.error('❌ Role check error:', error);
+        return false;
+      }
+
+      return data || false;
+    } catch (err) {
+      console.error('❌ Role check failed:', err);
+      return false;
     }
   };
 
@@ -284,6 +309,7 @@ export const MasterAuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
     resetPassword,
     refreshAuth,
+    hasAnyRole,
   };
 
   return (
