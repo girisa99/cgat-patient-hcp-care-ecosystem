@@ -41,7 +41,8 @@ export const NodeRequirementEvaluator = {
       'Alibaba': '/logos/alibaba.svg',
       'Heartex': '/logos/heartex.svg'
     };
-    return logoMap[provider] || '/logos/default-ai.svg';
+    const key = Object.keys(logoMap).find(k => k.toLowerCase() === String(provider).toLowerCase());
+    return key ? logoMap[key] : '/logos/default-ai.svg';
   },
 
   // Define node-specific requirements
@@ -133,6 +134,15 @@ export const NodeRequirementEvaluator = {
           label: 'Temperature',
           description: 'Controls randomness (0-2)',
           defaultValue: 0.7
+        },
+        {
+          id: 'top_p',
+          type: 'optional',
+          category: 'advanced',
+          field: 'top_p',
+          label: 'Top P',
+          description: 'Controls nucleus sampling probability (0-1)',
+          defaultValue: 0.9
         },
         {
           id: 'max_tokens',
@@ -271,6 +281,15 @@ export const NodeRequirementEvaluator = {
           label: 'Temperature',
           description: 'Controls randomness (0-2)',
           defaultValue: 0.7
+        },
+        {
+          id: 'top_p',
+          type: 'optional',
+          category: 'advanced',
+          field: 'top_p',
+          label: 'Top P',
+          description: 'Controls nucleus sampling probability (0-1)',
+          defaultValue: 0.9
         },
         {
           id: 'max_tokens',

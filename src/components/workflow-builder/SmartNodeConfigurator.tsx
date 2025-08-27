@@ -12,6 +12,7 @@ import { Switch } from '@/components/ui/switch';
 import { Slider } from '@/components/ui/slider';
 import { AlertCircle, CheckCircle2, Settings, Key, Code, Zap, X } from 'lucide-react';
 import { NodeRequirementEvaluator, NodeEvaluation } from './nodes/NodeRequirementEvaluator';
+import { useAIModelManager } from '@/hooks/useAIModelManager';
 
 interface SmartNodeConfiguratorProps {
   node: Node | null;
@@ -92,9 +93,9 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
               <SelectTrigger className={isMissing ? 'border-red-500' : ''}>
                 <SelectValue placeholder={`Select ${req.label}`} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-popover text-popover-foreground">
                 {getModelOptions(String(provider)).map(option => (
-                  <SelectItem key={option.value} value={option.value}>
+                  <SelectItem key={option.value} value={option.value} disabled={option.value === '__none__'}>
                     {option.label}
                   </SelectItem>
                 ))}
@@ -188,43 +189,28 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
     }
   };
 
+  const { aiModels } = useAIModelManager();
+
   const getModelOptions = (provider: string) => {
-    const modelOptions: Record<string, Array<{value: string, label: string}>> = {
-      'OpenAI': [
-        { value: 'gpt-4o', label: 'GPT-4o' },
-        { value: 'gpt-4o-mini', label: 'GPT-4o Mini' },
-        { value: 'gpt-4-turbo', label: 'GPT-4 Turbo' },
-        { value: 'gpt-3.5-turbo', label: 'GPT-3.5 Turbo' }
-      ],
-      'Anthropic': [
-        { value: 'claude-3-5-sonnet-20241022', label: 'Claude 3.5 Sonnet' },
-        { value: 'claude-3-opus-20240229', label: 'Claude 3 Opus' },
-        { value: 'claude-3-haiku-20240307', label: 'Claude 3 Haiku' }
-      ],
-      'Google': [
-        { value: 'gemini-pro', label: 'Gemini Pro' },
-        { value: 'gemini-pro-vision', label: 'Gemini Pro Vision' },
-        { value: 'gemini-1.5-pro', label: 'Gemini 1.5 Pro' }
-      ],
-      'Meta': [
-        { value: 'llama-3.1-70b-instruct', label: 'Llama 3.1 70B Instruct' },
-        { value: 'llama-3.1-8b-instruct', label: 'Llama 3.1 8B Instruct' },
-        { value: 'llama-3.2-3b-instruct', label: 'Llama 3.2 3B Instruct' },
-        { value: 'llama-3.2-1b-instruct', label: 'Llama 3.2 1B Instruct' },
-        { value: 'llama-2-70b-chat', label: 'Llama 2 70B Chat' }
-      ],
-      'Cohere': [
-        { value: 'command-r-plus', label: 'Command R+' },
-        { value: 'command-r', label: 'Command R' },
-        { value: 'command-light', label: 'Command Light' }
-      ],
-      'Mistral': [
-        { value: 'mistral-large-latest', label: 'Mistral Large Latest' },
-        { value: 'mistral-medium-latest', label: 'Mistral Medium Latest' },
-        { value: 'mistral-small-latest', label: 'Mistral Small Latest' }
-      ]
-    };
-    return modelOptions[provider] || [{ value: 'default', label: 'Default Model' }];
+    const p = String(provider || '').toLowerCase();
+    const dbOptions = (aiModels || [])
+      .filter(m => m.provider && String(m.provider).toLowerCase() === p)
+      .map(m => ({ value: m.model_id, label: m.name || m.model_id }));
+
+    // Fallback: if provider-specific list is empty, try fuzzy match by model_id
+    let options = dbOptions;
+    if (!options.length) {
+      const fuzzy = (aiModels || [])
+        .filter(m => p && m.model_id && m.model_id.toLowerCase().includes(p))
+        .map(m => ({ value: m.model_id, label: m.name || m.model_id }));
+      options = fuzzy;
+    }
+
+    // If still empty, show an informative disabled item (no mock data)
+    if (!options.length) {
+      return [{ value: '__none__', label: 'No active models found for this provider' }];
+    }
+    return options;
   };
 
   const categories = ['credentials', 'input_schema', 'functions', 'variables', 'advanced'];
@@ -264,7 +250,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
 
       <CardContent className="p-0">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5 h-auto p-1">
+          <TabsList className="sticky top-0 z-40 grid w-full grid-cols-5 h-auto p-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
           {availableCategories.map(category => {
             const Icon = getTabIcon(category);
             const categoryReqs = nodeEvaluation.requirements.filter(req => req.category === category);
