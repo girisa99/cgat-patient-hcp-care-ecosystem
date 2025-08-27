@@ -334,7 +334,7 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
         label: String(m.name || m.model_id || m.id || ''),
       })),
       ...((modelIntegrations as any[]) || []).map((mi: any) => {
-        const id = mi?.model_id || mi?.model || mi?.model_name || mi?.slug || mi?.key || '';
+        const id = mi?.id || mi?.model_id || mi?.model || mi?.model_name || mi?.slug || mi?.key || mi?.name || '';
         const label = mi?.name || mi?.display_name || mi?.label || id;
         const prov = norm(mi?.provider || mi?.vendor || mi?.source || mi?.name || '');
         return { provider: prov, id: String(id), label: String(label) };
