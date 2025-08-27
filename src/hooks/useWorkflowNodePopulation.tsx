@@ -497,27 +497,315 @@ export const useWorkflowNodePopulation = () => {
     });
   };
 
-  // Generate template nodes
+  // Generate comprehensive prompt and template nodes
   const generateTemplateNodes = (): Partial<WorkflowNodeType>[] => {
-    return agentTemplates.map(template => ({
-      type_key: `template_${template.id}`,
-      display_name: template.name,
-      description: template.description || `${template.template_type} template`,
-      detailed_explanation: `Agent template: ${template.description}`,
-      icon: 'file-text',
-      color: template.is_default ? '#10B981' : '#8B5CF6',
-      is_draggable: true,
-      is_configurable: true,
-      default_config: {
-        template_id: template.id,
-        template_type: template.template_type,
-        is_default: template.is_default
+    // Define different template types with their specific functionality
+    const templateTypes = [
+      {
+        type: 'system_prompt',
+        name: 'System Prompt Template',
+        description: 'Core system instructions and behavior guidelines',
+        capabilities: ['behavior_definition', 'instruction_setting', 'context_establishment', 'role_assignment', 'constraint_definition'],
+        use_cases: ['Agent personality', 'Behavior constraints', 'Response guidelines', 'Context setting'],
+        category: 'core',
+        icon: 'settings',
+        color: '#0EA5E9'
       },
-      capabilities: ['templating', 'configuration'],
-      requirements: {
-        template_data: true
+      {
+        type: 'few_shot',
+        name: 'Few-Shot Learning Template',
+        description: 'Example-based learning patterns and demonstrations',
+        capabilities: ['example_provision', 'pattern_demonstration', 'learning_acceleration', 'format_specification', 'output_standardization'],
+        use_cases: ['Output formatting', 'Task demonstration', 'Quality improvement', 'Consistency training'],
+        category: 'learning',
+        icon: 'target',
+        color: '#8B5CF6'
+      },
+      {
+        type: 'instruction',
+        name: 'Instruction Template',
+        description: 'Step-by-step task instructions and procedures',
+        capabilities: ['task_breakdown', 'step_definition', 'procedure_clarification', 'workflow_guidance', 'error_prevention'],
+        use_cases: ['Complex tasks', 'Multi-step processes', 'Quality control', 'Standardization'],
+        category: 'guidance',
+        icon: 'list-checks',
+        color: '#10B981'
+      },
+      {
+        type: 'conversation',
+        name: 'Conversation Template',
+        description: 'Dialogue flow patterns and conversation structures',
+        capabilities: ['dialogue_management', 'turn_taking', 'context_maintenance', 'flow_control', 'engagement_optimization'],
+        use_cases: ['Customer service', 'Interactive sessions', 'Q&A flows', 'Support conversations'],
+        category: 'interaction',
+        icon: 'message-circle',
+        color: '#F59E0B'
+      },
+      {
+        type: 'analysis',
+        name: 'Analysis Template',
+        description: 'Analytical frameworks and evaluation structures',
+        capabilities: ['criteria_definition', 'evaluation_frameworks', 'scoring_systems', 'comparison_methods', 'insight_extraction'],
+        use_cases: ['Data analysis', 'Performance evaluation', 'Decision support', 'Report generation'],
+        category: 'analytical',
+        icon: 'bar-chart-3',
+        color: '#EF4444'
+      },
+      {
+        type: 'creative',
+        name: 'Creative Template',
+        description: 'Creative generation patterns and artistic guidelines',
+        capabilities: ['creative_constraints', 'style_specification', 'inspiration_provision', 'variation_generation', 'aesthetic_guidance'],
+        use_cases: ['Content creation', 'Marketing copy', 'Creative writing', 'Design briefs'],
+        category: 'creative',
+        icon: 'palette',
+        color: '#EC4899'
       }
-    }));
+    ];
+
+    const templateNodes = templateTypes.map(templateType => {
+      // Generate comprehensive input schema based on template type
+      const inputSchema = {
+        type: "object",
+        properties: {
+          template_content: {
+            type: "string",
+            description: `${templateType.description} content`
+          },
+          variables: {
+            type: "object",
+            description: "Template variables and placeholders",
+            properties: {
+              ...(templateType.type === 'system_prompt' && {
+                role: { type: "string", description: "Agent role definition" },
+                personality: { type: "string", description: "Personality traits" },
+                constraints: { type: "array", items: { type: "string" } }
+              }),
+              ...(templateType.type === 'few_shot' && {
+                examples: { 
+                  type: "array", 
+                  items: { 
+                    type: "object",
+                    properties: {
+                      input: { type: "string" },
+                      output: { type: "string" }
+                    }
+                  }
+                },
+                format_specification: { type: "string" }
+              }),
+              ...(templateType.type === 'instruction' && {
+                steps: { type: "array", items: { type: "string" } },
+                prerequisites: { type: "array", items: { type: "string" } },
+                expected_outcome: { type: "string" }
+              }),
+              ...(templateType.type === 'conversation' && {
+                greeting: { type: "string" },
+                escalation_paths: { type: "array", items: { type: "string" } },
+                closing_phrases: { type: "array", items: { type: "string" } }
+              }),
+              ...(templateType.type === 'analysis' && {
+                criteria: { type: "array", items: { type: "string" } },
+                scoring_scale: { type: "object" },
+                output_format: { type: "string" }
+              }),
+              ...(templateType.type === 'creative' && {
+                style_guidelines: { type: "string" },
+                tone: { type: "string" },
+                target_audience: { type: "string" }
+              })
+            }
+          },
+          context: {
+            type: "object",
+            description: "Contextual information for template application"
+          }
+        },
+        required: ["template_content"]
+      };
+
+      // Generate comprehensive output schema
+      const outputSchema = {
+        type: "object",
+        properties: {
+          processed_prompt: {
+            type: "string",
+            description: "Fully processed prompt with variables filled"
+          },
+          metadata: {
+            type: "object",
+            properties: {
+              template_type: { type: "string", enum: [templateType.type] },
+              variables_used: { type: "array", items: { type: "string" } },
+              complexity_score: { type: "number", minimum: 1, maximum: 10 },
+              estimated_tokens: { type: "number" }
+            }
+          },
+          validation: {
+            type: "object",
+            properties: {
+              is_valid: { type: "boolean" },
+              completeness_score: { type: "number", minimum: 0, maximum: 1 },
+              missing_variables: { type: "array", items: { type: "string" } },
+              warnings: { type: "array", items: { type: "string" } }
+            }
+          },
+          optimization_suggestions: {
+            type: "array",
+            items: {
+              type: "object",
+              properties: {
+                type: { type: "string", enum: ["clarity", "efficiency", "effectiveness"] },
+                suggestion: { type: "string" },
+                impact_level: { type: "string", enum: ["low", "medium", "high"] }
+              }
+            }
+          }
+        }
+      };
+
+      // Define comprehensive requirements based on template type
+      const requirements = {
+        template_validation: { 
+          required: true, 
+          description: "Template syntax and structure validation" 
+        },
+        variable_mapping: { 
+          required: true, 
+          description: "Variable placeholder resolution system" 
+        },
+        ...(templateType.type === 'system_prompt' && {
+          role_consistency: { 
+            required: true, 
+            description: "Consistency with defined agent role" 
+          }
+        }),
+        ...(templateType.type === 'few_shot' && {
+          example_quality: { 
+            required: true, 
+            description: "High-quality, relevant examples" 
+          }
+        }),
+        ...(templateType.type === 'instruction' && {
+          step_clarity: { 
+            required: true, 
+            description: "Clear, actionable step definitions" 
+          }
+        }),
+        ...(templateType.type === 'conversation' && {
+          flow_logic: { 
+            required: true, 
+            description: "Logical conversation flow design" 
+          }
+        }),
+        ...(templateType.type === 'analysis' && {
+          evaluation_framework: { 
+            required: true, 
+            description: "Structured evaluation criteria" 
+          }
+        }),
+        ...(templateType.type === 'creative' && {
+          creative_constraints: { 
+            required: false, 
+            description: "Optional creative guidelines and limitations" 
+          }
+        })
+      };
+
+      return {
+        type_key: `prompt_template_${templateType.type}`,
+        display_name: templateType.name,
+        description: `${templateType.description} | ${templateType.capabilities.length} capabilities`,
+        detailed_explanation: `
+          Template Type: ${templateType.name}
+          Category: ${templateType.category}
+          Capabilities: ${templateType.capabilities.join(', ')}
+          Use Cases: ${templateType.use_cases.join(', ')}
+          Purpose: ${templateType.description}
+          
+          This template type specializes in ${templateType.category} scenarios and provides 
+          structured approaches for ${templateType.use_cases.join(', ').toLowerCase()}.
+        `,
+        icon: templateType.icon,
+        color: templateType.color,
+        is_draggable: true,
+        is_configurable: true,
+        default_config: {
+          template_type: templateType.type,
+          category: templateType.category,
+          capabilities: templateType.capabilities,
+          use_cases: templateType.use_cases,
+          validation_enabled: true,
+          optimization_enabled: true,
+          variable_substitution: true
+        },
+        input_schema: inputSchema,
+        output_schema: outputSchema,
+        capabilities: templateType.capabilities,
+        requirements: requirements
+      };
+    });
+
+    // Add existing agent templates with enhanced functionality
+    const agentTemplateNodes = agentTemplates.map(template => {
+      const templateCategory = template.template_type || 'custom';
+      
+      return {
+        type_key: `agent_template_${template.id}`,
+        display_name: template.name,
+        description: template.description || `${templateCategory} agent template`,
+        detailed_explanation: `
+          Agent Template: ${template.name}
+          Type: ${templateCategory}
+          Description: ${template.description || 'Custom agent configuration'}
+          Default Status: ${template.is_default ? 'System Default' : 'Custom Template'}
+          
+          Pre-configured agent template with specialized settings for specific use cases.
+        `,
+        icon: template.is_default ? 'crown' : 'user-cog',
+        color: template.is_default ? '#10B981' : '#8B5CF6',
+        is_draggable: true,
+        is_configurable: true,
+        default_config: {
+          template_id: template.id,
+          template_type: templateCategory,
+          is_default: template.is_default,
+          agent_configuration: true
+        },
+        input_schema: {
+          type: "object",
+          properties: {
+            agent_name: { type: "string", description: "Name for the new agent" },
+            customizations: { 
+              type: "object", 
+              description: "Custom overrides for template settings" 
+            }
+          },
+          required: ["agent_name"]
+        },
+        output_schema: {
+          type: "object",
+          properties: {
+            configured_agent: {
+              type: "object",
+              description: "Fully configured agent based on template"
+            },
+            applied_settings: {
+              type: "array",
+              items: { type: "string" },
+              description: "List of settings applied from template"
+            }
+          }
+        },
+        capabilities: ['agent_creation', 'template_application', 'configuration_inheritance'],
+        requirements: {
+          template_data: { required: true, description: "Valid template configuration data" },
+          agent_validation: { required: true, description: "Agent configuration validation" }
+        }
+      };
+    });
+
+    return [...templateNodes, ...agentTemplateNodes];
   };
 
   // Get all populated nodes
