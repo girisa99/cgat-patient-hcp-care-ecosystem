@@ -176,7 +176,7 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
               <SelectTrigger className={isMissing ? 'border-red-500' : ''}>
                 <SelectValue placeholder={`Select ${req.label}`} />
               </SelectTrigger>
-              <SelectContent className="z-50 bg-popover text-popover-foreground">
+              <SelectContent position="popper" className="z-[9999] bg-background text-foreground shadow-xl border border-border">
                 {getModelOptions(String(inferredProvider)).map(option => (
                   <SelectItem key={option.value} value={option.value} disabled={option.value === '__none__'}>
                     {option.label}
