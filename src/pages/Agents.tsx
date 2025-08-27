@@ -53,6 +53,7 @@ import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
 
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
+import { WorkflowTestingPanel } from '@/components/workflow-builder/WorkflowTestingPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Node, ReactFlowProvider } from '@xyflow/react';
@@ -75,6 +76,9 @@ const AgentsInner = () => {
   const [leftPanelTab, setLeftPanelTab] = useState<'palette' | 'access'>('palette');
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'libraries' | 'assistant'>('config');
   const [isInlineConfigOpen, setInlineConfigOpen] = useState(false);
+  const [showWorkflowTesting, setShowWorkflowTesting] = useState(false);
+  const [workflowNodes, setWorkflowNodes] = useState<any[]>([]);
+  const [workflowEdges, setWorkflowEdges] = useState<any[]>([]);
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -245,6 +249,12 @@ const AgentsInner = () => {
               <Bot className="w-3 h-3 mr-1" />
               AI Assistant
             </Button>
+            <WorkflowTestingPanel
+              nodes={workflowNodes}
+              edges={workflowEdges}
+              onNodesChange={setWorkflowNodes}
+              onEdgesChange={setWorkflowEdges}
+            />
           </div>
         </div>
 
@@ -272,8 +282,8 @@ const AgentsInner = () => {
                       fitParent={true}
                       workflowType="visual"
                       sessionId={currentSession?.id}
-                      initialNodes={[]}
-                      initialEdges={[]}
+                      initialNodes={workflowNodes}
+                      initialEdges={workflowEdges}
                        onNodeSelect={(node) => {
                          setSelectedNode(node);
                          setRightPanelTab('config');
