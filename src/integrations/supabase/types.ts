@@ -9120,6 +9120,10 @@ export type Database = {
         Args: { p_confirm?: boolean; p_user_id?: string }
         Returns: Json
       }
+      cleanup_orphaned_role_assignments: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       cleanup_user_agent_work: {
         Args: { p_statuses?: string[]; p_user_id?: string }
         Returns: Json
@@ -9253,6 +9257,13 @@ export type Database = {
         Args: {
           role_name: Database["public"]["Enums"]["user_role"]
           user_id: string
+        }
+        Returns: boolean
+      }
+      has_role_optimized: {
+        Args: {
+          _role_name: Database["public"]["Enums"]["user_role"]
+          _user_id: string
         }
         Returns: boolean
       }
