@@ -952,7 +952,7 @@ return (
           setShowConfigurator(open);
           try { window.dispatchEvent(new CustomEvent(open ? 'inline-config-opened' : 'inline-config-closed')); } catch {}
         }}>
-          <DialogContent className="z-[100] max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="z-[2000] max-w-4xl max-h-[80vh] overflow-visible">
             <DialogHeader>
               <DialogTitle>Configure {(() => { const n = getNodes().find(n => n.id === configNodeInfo.nodeId); const d = (n?.data as any) || {}; return d.display_name || d.name || d.label || (n?.type ? String(n.type).replace(/_/g, ' ') : '') || 'Node'; })()} Node</DialogTitle>
             </DialogHeader>
