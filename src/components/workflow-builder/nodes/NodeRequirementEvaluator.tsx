@@ -400,7 +400,12 @@ export const NodeRequirementEvaluator = {
     let nodeType = String(node.data?.type_key || node.type || 'unknown');
     
     // Handle AI model nodes with intelligent fallback
-    if (nodeType === 'unknown' || nodeType === 'ai_model' || nodeType.includes('template_')) {
+    if (
+      nodeType === 'unknown' ||
+      nodeType === 'ai_model' ||
+      nodeType.startsWith('ai_model_') ||
+      nodeType.includes('template_')
+    ) {
       const provider = String(node.data?.provider || '').toLowerCase();
       const modelName = String(node.data?.model || node.data?.display_name || '').toLowerCase();
       
