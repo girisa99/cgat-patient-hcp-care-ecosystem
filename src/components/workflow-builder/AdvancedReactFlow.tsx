@@ -1,4 +1,4 @@
-import React, { useCallback, useState, useRef, useEffect, useMemo } from 'react';
+import React, { useCallback, useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react';
 import {
   ReactFlow,
   MiniMap,
@@ -78,7 +78,7 @@ import { ToolCreator } from './ToolCreator';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
-import { SmartNodeConfigurator } from './SmartNodeConfigurator';
+const LazySmartNodeConfigurator = lazy(() => import('./SmartNodeConfigurator').then(m => ({ default: m.SmartNodeConfigurator })));
 // Custom Node Types
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const [isEditing, setIsEditing] = useState(false);
@@ -955,18 +955,20 @@ return (
             <DialogHeader>
               <DialogTitle>Configure {configNodeInfo.nodeType} Node</DialogTitle>
             </DialogHeader>
-            <SmartNodeConfigurator
-              node={getNodes().find(n => n.id === configNodeInfo.nodeId) || null}
-              onNodeUpdate={(nodeId, updates) => {
-                setNodes((nds) => nds.map((n) =>
-                  n.id === nodeId ? { ...n, data: { ...n.data, ...updates } } : n
-                ));
-              }}
-              onClose={() => {
-                setShowConfigurator(false);
-                try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
-              }}
-            />
+            <Suspense fallback={<div className="p-4 text-sm">Loading configurator…</div>}>
+              <LazySmartNodeConfigurator
+                node={getNodes().find(n => n.id === configNodeInfo.nodeId) || null}
+                onNodeUpdate={(nodeId, updates) => {
+                  setNodes((nds) => nds.map((n) =>
+                    n.id === nodeId ? { ...n, data: { ...n.data, ...updates } } : n
+                  ));
+                }}
+                onClose={() => {
+                  setShowConfigurator(false);
+                  try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
+                }}
+              />
+            </Suspense>
           </DialogContent>
         </Dialog>
       )}

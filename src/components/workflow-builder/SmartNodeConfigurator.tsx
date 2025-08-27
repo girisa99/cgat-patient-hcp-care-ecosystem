@@ -217,6 +217,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
   const availableCategories = categories.filter(cat => 
     nodeEvaluation.requirements.some(req => req.category === cat)
   );
+  const resolvedActiveTab = availableCategories.includes(activeTab) ? activeTab : (availableCategories[0] || 'credentials');
 
   return (
     <Card className="w-full h-full border-0 shadow-lg">
@@ -249,7 +250,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
       </CardHeader>
 
       <CardContent className="p-0">
-        <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={resolvedActiveTab} onValueChange={setActiveTab}>
           <TabsList className="sticky top-0 z-40 grid w-full grid-cols-5 h-auto p-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
           {availableCategories.map(category => {
             const Icon = getTabIcon(category);
