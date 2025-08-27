@@ -11,6 +11,8 @@ import { AIIntelligenceNode } from './AIIntelligenceNode';
 import { AgentNode } from './AgentNode';
 import { DataSourceNode } from './DataSourceNode';
 import { FlowiseInspiredNode } from './FlowiseInspiredNode';
+import { TemplateConfigurationNode } from './TemplateConfigurationNode';
+import { HumanInputNode } from './HumanInputNode';
 
 // Export all node types
 export { BaseWorkflowNode } from './BaseWorkflowNode';
@@ -27,6 +29,8 @@ export { AIIntelligenceNode } from './AIIntelligenceNode';
 export { AgentNode } from './AgentNode';
 export { DataSourceNode } from './DataSourceNode';
 export { FlowiseInspiredNode } from './FlowiseInspiredNode';
+export { TemplateConfigurationNode } from './TemplateConfigurationNode';
+export { HumanInputNode } from './HumanInputNode';
 
 // Node type registry for ReactFlow
 export const workflowNodeTypes = {
@@ -42,22 +46,36 @@ export const workflowNodeTypes = {
   aiIntelligence: FlowiseInspiredNode,
   agentNode: FlowiseInspiredNode,
   dataSource: FlowiseInspiredNode,
+  
+  // Template and Configuration nodes
+  templateConfigurationNode: TemplateConfigurationNode,
+  humanInputNode: HumanInputNode,
+  
   // Workflow execution nodes
   start: FlowiseInspiredNode,
   condition: FlowiseInspiredNode,
   decision: FlowiseInspiredNode,
-  llm: FlowiseInspiredNode,
+  llm: TemplateConfigurationNode, // Use customized LLM configuration
   agent: FlowiseInspiredNode,
-  human_input: FlowiseInspiredNode,
+  human_input: HumanInputNode, // Use specialized human input node
   loop: FlowiseInspiredNode,
   iteration: FlowiseInspiredNode,
-  execute_flow: FlowiseInspiredNode,
+  execute_flow: TemplateConfigurationNode, // Use customized execute flow configuration
   direct_reply: FlowiseInspiredNode,
-  http: FlowiseInspiredNode,
+  http: TemplateConfigurationNode, // Use customized HTTP configuration
   tools: FlowiseInspiredNode,
   retriever: FlowiseInspiredNode,
   custom_function: FlowiseInspiredNode,
   stick_note: FlowiseInspiredNode,
   customer: FlowiseInspiredNode,
   database: FlowiseInspiredNode,
+  
+  // Template node variants
+  prompt_template_system_prompt: TemplateConfigurationNode,
+  prompt_template_few_shot: TemplateConfigurationNode,
+  prompt_template_instruction: TemplateConfigurationNode,
+  prompt_template_conversation: TemplateConfigurationNode,
+  prompt_template_analysis: TemplateConfigurationNode,
+  prompt_template_creative: TemplateConfigurationNode,
+  agent_template: TemplateConfigurationNode,
 };
