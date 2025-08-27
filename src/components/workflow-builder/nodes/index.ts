@@ -16,6 +16,8 @@ import { HumanInputNode } from './HumanInputNode';
 import { AIModelConfigurationNode } from './AIModelConfigurationNode';
 import { FlowControlConfigurationNode } from './FlowControlConfigurationNode';
 import { HTTPConfigurationNode } from './HTTPConfigurationNode';
+import VoiceConfigurationNode from './VoiceConfigurationNode';
+import HealthcareComplianceConfigurationNode from './HealthcareComplianceConfigurationNode';
 
 // Export all node types
 export { BaseWorkflowNode } from './BaseWorkflowNode';
@@ -103,6 +105,11 @@ export const workflowNodeTypes = {
   stick_note: TemplateConfigurationNode,
   customer: FlowiseInspiredNode,
   database: FlowiseInspiredNode,
+  
+  // Voice & Healthcare nodes - specialized configuration
+  voice: VoiceConfigurationNode,
+  healthcare_compliance: HealthcareComplianceConfigurationNode,
+  vector_store: FlowiseInspiredNode,
   
   // Code & Deployment nodes
   code_snippet: TemplateConfigurationNode,
