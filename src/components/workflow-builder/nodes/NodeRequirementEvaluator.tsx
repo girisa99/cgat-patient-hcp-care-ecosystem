@@ -507,8 +507,26 @@ export const NodeRequirementEvaluator = {
   evaluateNode: (node: Node): NodeEvaluation => {
     // Enhanced node type detection for AI models
     let nodeType = String(node.data?.type_key || node.type || 'unknown');
+    const lt = nodeType.toLowerCase();
+
+    // Normalize common aliases in the node type itself (e.g., "anthropic_agent" -> "anthropic_chat")
+    const normalizeFromType = (t: string) => {
+      if (t.includes('openai') || t.includes('gpt')) return 'openai_chat';
+      if (t.includes('anthropic') || t.includes('claude')) return 'anthropic_chat';
+      if (t.includes('llama') || t.includes('meta')) return 'llama_chat';
+      if (t.includes('gemini') || t.includes('google')) return 'google_gemini';
+      if (t.includes('azure') || t.includes('microsoft')) return 'azure_openai';
+      if (t.includes('cohere')) return 'cohere_chat';
+      if (t.includes('mistral')) return 'mistral_chat';
+      return '';
+    };
+
+    const aliasType = normalizeFromType(lt);
+    if (aliasType) {
+      nodeType = aliasType;
+    }
     
-    // Handle AI model nodes with intelligent fallback
+    // Handle AI model nodes with intelligent fallback based on fields
     if (
       nodeType === 'unknown' ||
       nodeType === 'ai_model' ||
@@ -518,29 +536,24 @@ export const NodeRequirementEvaluator = {
       const provider = String(node.data?.provider || '').toLowerCase();
       const modelName = String(node.data?.model || node.data?.display_name || '').toLowerCase();
       
-      // Map based on provider or model name
-      if (provider.includes('openai') || modelName.includes('gpt')) {
-        nodeType = 'openai_chat';
-      } else if (provider.includes('anthropic') || modelName.includes('claude')) {
-        nodeType = 'anthropic_chat';
-      } else if (provider.includes('meta') || modelName.includes('llama')) {
-        nodeType = 'llama_chat';
-      } else if (provider.includes('google') || modelName.includes('gemini')) {
-        nodeType = 'google_gemini';
-      } else if (provider.includes('microsoft') || provider.includes('azure')) {
-        nodeType = 'azure_openai';
-      } else if (provider.includes('cohere')) {
-        nodeType = 'cohere_chat';
-      } else if (provider.includes('mistral')) {
-        nodeType = 'mistral_chat';
-      } else if (
-        String(node.data?.category || '').toLowerCase() === 'ai_models' ||
-        String(node.data?.category || '').toLowerCase() === 'processing' ||
-        String(node.data?.category || '').toLowerCase() === 'ai_processing' ||
-        nodeType.includes('ai_model') ||
-        nodeType.toLowerCase().includes('processing')
-      ) {
-        nodeType = 'ai_model'; // Generic AI model fallback, ensures Advanced tab
+      const byFields = () => {
+        if (provider.includes('openai') || modelName.includes('gpt')) return 'openai_chat';
+        if (provider.includes('anthropic') || modelName.includes('claude')) return 'anthropic_chat';
+        if (provider.includes('meta') || modelName.includes('llama')) return 'llama_chat';
+        if (provider.includes('google') || modelName.includes('gemini')) return 'google_gemini';
+        if (provider.includes('microsoft') || provider.includes('azure')) return 'azure_openai';
+        if (provider.includes('cohere')) return 'cohere_chat';
+        if (provider.includes('mistral')) return 'mistral_chat';
+        return 'ai_model';
+      };
+      nodeType = byFields();
+    }
+
+    // If still not mapped but clearly an AI model/processing node, fall back to generic AI model
+    if (!['openai_chat','anthropic_chat','llama_chat','google_gemini','azure_openai','cohere_chat','mistral_chat','ai_model'].includes(nodeType)) {
+      const cat = String(node.data?.category || '').toLowerCase();
+      if (lt.includes('ai_model') || lt.includes('model') || cat.includes('ai_models') || cat.includes('processing') || lt.includes('processing')) {
+        nodeType = 'ai_model'; // Generic AI model fallback, ensures full tabs
       }
     }
     
