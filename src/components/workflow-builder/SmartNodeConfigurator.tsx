@@ -398,9 +398,20 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
                 {nodeEvaluation.completeness}% Complete
               </Badge>
             </div>
-          <Button variant="ghost" size="icon" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="secondary" size="sm" onClick={handleDeactivate} disabled={isSaving}>
+              Deactivate
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleEncryptAndSave} disabled={isSaving}>
+              Encrypt & Save
+            </Button>
+            <Button variant="default" size="sm" onClick={handleSave} disabled={isSaving}>
+              Save
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close configurator">
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
         
         {nodeEvaluation.missingRequired.length > 0 && (
