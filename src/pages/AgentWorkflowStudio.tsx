@@ -21,6 +21,7 @@ import { ModelManagementDashboard } from '@/components/ModelManagement/ModelMana
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedJourneyDesigner, type JourneyStep } from '@/components/journey/EnhancedJourneyDesigner';
 import MCPDemoComponent from '@/components/MCPDemoComponent';
+import { WorkflowTestingPanel } from '@/components/workflow-builder/WorkflowTestingPanel';
 interface AgentWorkflowStudioProps {
   embedded?: boolean;
 }
@@ -689,80 +690,12 @@ const AgentWorkflowStudio: React.FC<AgentWorkflowStudioProps> = ({ embedded = fa
                 </TabsList>
                 
                 <TabsContent value="workflow-test" level="child" className="mt-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Workflow Validation</CardTitle>
-                      <p className="text-sm text-muted-foreground">
-                        Test your complete workflow structure, connections, and logic
-                      </p>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-4">
-                        <div className="p-4 border rounded-lg bg-muted/30">
-                          <h4 className="font-semibold mb-2">Quick Validation</h4>
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Run a quick check on your workflow structure and identify potential issues
-                          </p>
-                          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                            <div className="text-center p-3 border rounded">
-                              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                              <div className="font-medium">Structure</div>
-                              <div className="text-xs text-muted-foreground">Valid workflow structure</div>
-                            </div>
-                            <div className="text-center p-3 border rounded">
-                              <CheckCircle className="h-8 w-8 mx-auto mb-2 text-green-500" />
-                              <div className="font-medium">Connections</div>
-                              <div className="text-xs text-muted-foreground">All nodes connected</div>
-                            </div>
-                            <div className="text-center p-3 border rounded">
-                              <AlertTriangle className="h-8 w-8 mx-auto mb-2 text-yellow-500" />
-                              <div className="font-medium">Configuration</div>
-                              <div className="text-xs text-muted-foreground">Some config missing</div>
-                            </div>
-                          </div>
-                          <Button onClick={() => handleStepComplete('testing')} className="w-full">
-                            Run Comprehensive Workflow Test
-                          </Button>
-                        </div>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <Card>
-                            <CardContent className="p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Target className="h-5 w-5 text-primary" />
-                                <div className="font-medium">Validation Checks</div>
-                              </div>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                <li>• Structure analysis</li>
-                                <li>• Node connections</li>
-                                <li>• Configuration validation</li>
-                                <li>• Data flow analysis</li>
-                                <li>• Security & compliance</li>
-                                <li>• Performance optimization</li>
-                              </ul>
-                            </CardContent>
-                          </Card>
-                          
-                          <Card>
-                            <CardContent className="p-4">
-                              <div className="flex items-center gap-2 mb-2">
-                                <Settings className="h-5 w-5 text-primary" />
-                                <div className="font-medium">Auto-Fix Options</div>
-                              </div>
-                              <ul className="text-sm text-muted-foreground space-y-1">
-                                <li>• Connect isolated nodes</li>
-                                <li>• Add missing start/end nodes</li>
-                                <li>• Fix invalid connections</li>
-                                <li>• Configure missing settings</li>
-                                <li>• Optimize performance</li>
-                                <li>• Apply security fixes</li>
-                              </ul>
-                            </CardContent>
-                          </Card>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
+                  <WorkflowTestingPanel 
+                    nodes={[]} 
+                    edges={[]}
+                    onNodesChange={() => {}}
+                    onEdgesChange={() => {}}
+                  />
                 </TabsContent>
                 
                 <TabsContent value="agent-test" level="child" className="mt-6">
