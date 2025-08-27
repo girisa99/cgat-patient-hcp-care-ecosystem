@@ -7799,22 +7799,22 @@ export type Database = {
           assigned_by: string | null
           created_at: string | null
           id: string
-          role_id: string | null
-          user_id: string | null
+          role_id: string
+          user_id: string
         }
         Insert: {
           assigned_by?: string | null
           created_at?: string | null
           id?: string
-          role_id?: string | null
-          user_id?: string | null
+          role_id: string
+          user_id: string
         }
         Update: {
           assigned_by?: string | null
           created_at?: string | null
           id?: string
-          role_id?: string | null
-          user_id?: string | null
+          role_id?: string
+          user_id?: string
         }
         Relationships: [
           {
@@ -9411,6 +9411,10 @@ export type Database = {
       update_api_key_usage: {
         Args: { key_hash: string }
         Returns: undefined
+      }
+      user_has_any_role: {
+        Args: { check_user_id: string; role_names: string[] }
+        Returns: boolean
       }
       user_has_permission: {
         Args: {
