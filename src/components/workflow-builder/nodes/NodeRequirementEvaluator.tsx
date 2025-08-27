@@ -488,6 +488,44 @@ export const NodeRequirementEvaluator = {
           label: 'Input Variables',
           description: 'Variables passed to the function'
         }
+      ],
+
+      // Prompt/Template Nodes (customized per type)
+      'prompt_template_system_prompt': [
+        { id: 'template_content', type: 'required', category: 'input_schema', field: 'template_content', label: 'System Prompt', description: 'Core system instructions and behavior guidelines' },
+        { id: 'role', type: 'optional', category: 'variables', field: 'role', label: 'Role', description: 'Agent role definition' },
+        { id: 'personality', type: 'optional', category: 'variables', field: 'personality', label: 'Personality', description: 'Personality traits' },
+        { id: 'constraints', type: 'optional', category: 'variables', field: 'constraints', label: 'Constraints', description: 'Behavior constraints list' },
+        { id: 'validation_enabled', type: 'optional', category: 'advanced', field: 'validation_enabled', label: 'Validation', description: 'Enable template validation', defaultValue: true }
+      ],
+      'prompt_template_few_shot': [
+        { id: 'examples', type: 'required', category: 'input_schema', field: 'examples', label: 'Examples', description: 'Few-shot examples with input/output pairs' },
+        { id: 'format_specification', type: 'optional', category: 'input_schema', field: 'format_specification', label: 'Format Spec', description: 'Desired output format' },
+        { id: 'optimization_enabled', type: 'optional', category: 'advanced', field: 'optimization_enabled', label: 'Optimization', description: 'Suggest prompt improvements', defaultValue: true }
+      ],
+      'prompt_template_instruction': [
+        { id: 'steps', type: 'required', category: 'input_schema', field: 'steps', label: 'Steps', description: 'Step-by-step task instructions' },
+        { id: 'prerequisites', type: 'optional', category: 'input_schema', field: 'prerequisites', label: 'Prerequisites', description: 'Required pre-conditions' },
+        { id: 'expected_outcome', type: 'optional', category: 'input_schema', field: 'expected_outcome', label: 'Expected Outcome', description: 'What the process should produce' }
+      ],
+      'prompt_template_conversation': [
+        { id: 'greeting', type: 'required', category: 'input_schema', field: 'greeting', label: 'Greeting', description: 'Opening message' },
+        { id: 'escalation_paths', type: 'optional', category: 'input_schema', field: 'escalation_paths', label: 'Escalation Paths', description: 'When/how to escalate' },
+        { id: 'closing_phrases', type: 'optional', category: 'input_schema', field: 'closing_phrases', label: 'Closing Phrases', description: 'End-of-conversation phrases' }
+      ],
+      'prompt_template_analysis': [
+        { id: 'criteria', type: 'required', category: 'input_schema', field: 'criteria', label: 'Criteria', description: 'Evaluation criteria list' },
+        { id: 'scoring_scale', type: 'optional', category: 'input_schema', field: 'scoring_scale', label: 'Scoring Scale', description: 'Scoring system' },
+        { id: 'output_format', type: 'optional', category: 'input_schema', field: 'output_format', label: 'Output Format', description: 'Desired analysis output format' }
+      ],
+      'prompt_template_creative': [
+        { id: 'style_guidelines', type: 'required', category: 'input_schema', field: 'style_guidelines', label: 'Style Guidelines', description: 'Creative style and constraints' },
+        { id: 'tone', type: 'optional', category: 'variables', field: 'tone', label: 'Tone', description: 'Tone of voice' },
+        { id: 'target_audience', type: 'optional', category: 'variables', field: 'target_audience', label: 'Target Audience', description: 'Intended audience' }
+      ],
+      'agent_template': [
+        { id: 'agent_name', type: 'required', category: 'input_schema', field: 'agent_name', label: 'Agent Name', description: 'Name for the new agent' },
+        { id: 'customizations', type: 'optional', category: 'variables', field: 'customizations', label: 'Customizations', description: 'Template override values' }
       ]
     };
 
@@ -526,27 +564,41 @@ export const NodeRequirementEvaluator = {
       nodeType = aliasType;
     }
     
-    // Handle AI model nodes with intelligent fallback based on fields
-    if (
-      nodeType === 'unknown' ||
-      nodeType === 'ai_model' ||
-      nodeType.startsWith('ai_model_') ||
-      nodeType.includes('template_')
-    ) {
-      const provider = String(node.data?.provider || '').toLowerCase();
-      const modelName = String(node.data?.model || node.data?.display_name || '').toLowerCase();
-      
-      const byFields = () => {
-        if (provider.includes('openai') || modelName.includes('gpt')) return 'openai_chat';
-        if (provider.includes('anthropic') || modelName.includes('claude')) return 'anthropic_chat';
-        if (provider.includes('meta') || modelName.includes('llama')) return 'llama_chat';
-        if (provider.includes('google') || modelName.includes('gemini')) return 'google_gemini';
-        if (provider.includes('microsoft') || provider.includes('azure')) return 'azure_openai';
-        if (provider.includes('cohere')) return 'cohere_chat';
-        if (provider.includes('mistral')) return 'mistral_chat';
-        return 'ai_model';
-      };
-      nodeType = byFields();
+    // Template nodes: map to specific template requirement sets
+    const tkey = String(node.data?.type_key || node.type || '').toLowerCase();
+    if (tkey.includes('prompt_template_')) {
+      const suffix = tkey.split('prompt_template_')[1] || '';
+      if (suffix.includes('system')) nodeType = 'prompt_template_system_prompt';
+      else if (suffix.includes('few') || suffix.includes('few-shot')) nodeType = 'prompt_template_few_shot';
+      else if (suffix.includes('instruction')) nodeType = 'prompt_template_instruction';
+      else if (suffix.includes('conversation')) nodeType = 'prompt_template_conversation';
+      else if (suffix.includes('analysis')) nodeType = 'prompt_template_analysis';
+      else if (suffix.includes('creative')) nodeType = 'prompt_template_creative';
+      else nodeType = 'prompt_template_system_prompt';
+    } else if (tkey.includes('agent_template_')) {
+      nodeType = 'agent_template';
+    } else {
+      // Handle AI model nodes with intelligent fallback based on fields
+      if (
+        nodeType === 'unknown' ||
+        nodeType === 'ai_model' ||
+        nodeType.startsWith('ai_model_')
+      ) {
+        const provider = String(node.data?.provider || '').toLowerCase();
+        const modelName = String(node.data?.model || node.data?.display_name || '').toLowerCase();
+        
+        const byFields = () => {
+          if (provider.includes('openai') || modelName.includes('gpt')) return 'openai_chat';
+          if (provider.includes('anthropic') || modelName.includes('claude')) return 'anthropic_chat';
+          if (provider.includes('meta') || modelName.includes('llama')) return 'llama_chat';
+          if (provider.includes('google') || modelName.includes('gemini')) return 'google_gemini';
+          if (provider.includes('microsoft') || provider.includes('azure')) return 'azure_openai';
+          if (provider.includes('cohere')) return 'cohere_chat';
+          if (provider.includes('mistral')) return 'mistral_chat';
+          return 'ai_model';
+        };
+        nodeType = byFields();
+      }
     }
 
     // If still not mapped but clearly an AI model/processing node, fall back to generic AI model
