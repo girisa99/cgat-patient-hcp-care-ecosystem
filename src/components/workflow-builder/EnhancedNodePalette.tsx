@@ -123,6 +123,17 @@ const [internalSearch, setInternalSearch] = useState('');
     window.dispatchEvent(new CustomEvent('workflow-design-nav', { detail: { tab } }));
   };
 
+  // Helper function to get provider group for templates
+  const getTemplateProviderGroup = (templateNode: any) => {
+    if (templateNode.type_key?.startsWith('prompt_template_')) {
+      return `${templateNode.default_config?.category || 'Template'} Templates`;
+    }
+    if (templateNode.type_key?.startsWith('agent_template_')) {
+      return templateNode.default_config?.is_default ? 'System Templates' : 'Custom Templates';
+    }
+    return 'Prompt Templates';
+  };
+
   const filteredNodeTypes = nodeTypes.filter(nodeType =>
     nodeType.display_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     nodeType.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -184,7 +195,18 @@ const [internalSearch, setInternalSearch] = useState('');
     // 2. Templates & Configuration - Second most important for setup
     templates_configuration: [
       ...filteredNodeTypes.filter((nt) => match(nt, ['prompt','template','few-shot','few shot','instruction','system prompt','example','config','setting','parameter','system','setup'])),
-      ...populatedNodes.prompts.map(n => ({ ...n, id: n.type_key, provider_group: 'Prompt Templates' } as any))
+      ...populatedNodes.prompts.map(n => ({ 
+        ...n, 
+        id: n.type_key, 
+        provider_group: getTemplateProviderGroup(n),
+        // Preserve all enhanced properties
+        detailed_explanation: n.detailed_explanation,
+        input_schema: n.input_schema,
+        output_schema: n.output_schema,
+        capabilities: n.capabilities,
+        requirements: n.requirements,
+        default_config: n.default_config
+      } as any))
     ].sort((a, b) => (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key)),
     
     // 3. Communication Channels - Essential for deployment
