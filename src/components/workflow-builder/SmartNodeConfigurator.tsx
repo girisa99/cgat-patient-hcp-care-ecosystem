@@ -79,13 +79,25 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
     switch (req.field) {
       case 'model':
         // Special handling for AI model selection with provider logos
-        const provider = String(node.data?.provider || 'Unknown');
-        const logoUrl = NodeRequirementEvaluator.getProviderLogo(provider);
+        const inferredProvider = (() => {
+          const explicit = String(node.data?.provider || '').trim();
+          if (explicit) return explicit;
+          const tk = String((node.data as any)?.type_key || node.type || '').toLowerCase();
+          if (tk.includes('openai') || tk.includes('gpt')) return 'OpenAI';
+          if (tk.includes('anthropic') || tk.includes('claude')) return 'Anthropic';
+          if (tk.includes('llama') || tk.includes('meta')) return 'Meta';
+          if (tk.includes('gemini') || tk.includes('google')) return 'Google';
+          if (tk.includes('azure')) return 'Azure';
+          if (tk.includes('cohere')) return 'Cohere';
+          if (tk.includes('mistral')) return 'Mistral';
+          return 'Unknown';
+        })();
+        const logoUrl = NodeRequirementEvaluator.getProviderLogo(inferredProvider);
         
         return (
           <div key={req.id} className="space-y-2">
             <div className="flex items-center gap-2">
-              <img src={logoUrl} alt={String(provider)} className="w-5 h-5" onError={(e) => {
+              <img src={logoUrl} alt={String(inferredProvider)} className="w-5 h-5" onError={(e) => {
                 (e.target as HTMLImageElement).src = '/logos/default-ai.svg';
               }} />
               <Label className={isMissing ? 'text-red-500' : ''}>{req.label}</Label>
@@ -96,7 +108,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
                 <SelectValue placeholder={`Select ${req.label}`} />
               </SelectTrigger>
               <SelectContent className="z-50 bg-popover text-popover-foreground">
-                {getModelOptions(String(provider)).map(option => (
+                {getModelOptions(String(inferredProvider)).map(option => (
                   <SelectItem key={option.value} value={option.value} disabled={option.value === '__none__'}>
                     {option.label}
                   </SelectItem>
@@ -126,6 +138,25 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
           </div>
         );
 
+      case 'top_p':
+        return (
+          <div key={req.id} className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label>{req.label}</Label>
+              <span className="text-sm text-muted-foreground">{currentValue ?? req.defaultValue ?? 0.9}</span>
+            </div>
+            <Slider
+              value={[currentValue ?? req.defaultValue ?? 0.9]}
+              onValueChange={(value) => updateConfig(req.field, value[0])}
+              max={1}
+              min={0}
+              step={0.05}
+              className="w-full"
+            />
+            <p className="text-sm text-muted-foreground">{req.description}</p>
+          </div>
+        );
+
       case 'function_code':
         return (
           <div key={req.id} className="space-y-2">
@@ -134,7 +165,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
             <Textarea
               value={currentValue || ''}
               onChange={(e) => updateConfig(req.field, e.target.value)}
-              placeholder="function(input) {\n  // Your code here\n  return output;\n}"
+              placeholder={`function(input) {\n  // Your code here\n  return output;\n}`}
               className={`font-mono text-sm ${isMissing ? 'border-red-500' : ''}`}
               rows={8}
             />
@@ -194,20 +225,36 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
 
   const getModelOptions = (provider: string) => {
     const p = String(provider || '').toLowerCase();
-    const dbOptions = (aiModels || [])
-      .filter(m => m.provider && String(m.provider).toLowerCase() === p)
+    const aliasMap: Record<string, string[]> = {
+      openai: ['openai', 'gpt'],
+      anthropic: ['anthropic', 'claude'],
+      meta: ['meta', 'llama', 'llama3', 'llama-3', 'llama 3', 'meta ai'],
+      google: ['google', 'gemini'],
+      azure: ['azure', 'microsoft', 'azure openai', 'azure-openai'],
+      cohere: ['cohere'],
+      mistral: ['mistral'],
+    };
+    const candidates = new Set([p, ...(aliasMap[p] || [])]);
+    const norm = (s?: string) => String(s || '').toLowerCase();
+
+    // Primary: match by provider aliases
+    let options = (aiModels || [])
+      .filter(m => {
+        const prov = norm(m.provider);
+        return prov && Array.from(candidates).some(c => prov.includes(c));
+      })
       .map(m => ({ value: m.model_id, label: m.name || m.model_id }));
 
-    // Fallback: if provider-specific list is empty, try fuzzy match by model_id
-    let options = dbOptions;
+    // Fallback: fuzzy match by model_id
     if (!options.length) {
-      const fuzzy = (aiModels || [])
-        .filter(m => p && m.model_id && m.model_id.toLowerCase().includes(p))
+      options = (aiModels || [])
+        .filter(m => {
+          const id = norm(m.model_id);
+          return Array.from(candidates).some(c => c && id.includes(c));
+        })
         .map(m => ({ value: m.model_id, label: m.name || m.model_id }));
-      options = fuzzy;
     }
 
-    // If still empty, show an informative disabled item (no mock data)
     if (!options.length) {
       return [{ value: '__none__', label: 'No active models found for this provider' }];
     }
@@ -252,7 +299,7 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
 
       <CardContent className="p-0">
         <Tabs value={resolvedActiveTab} onValueChange={setActiveTab}>
-          <TabsList className="sticky top-0 z-40 grid w-full grid-cols-5 h-auto p-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b">
+          <TabsList className="sticky top-0 z-50 grid w-full grid-cols-5 h-auto p-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b relative">
           {availableCategories.map(category => {
             const Icon = getTabIcon(category);
             const categoryReqs = nodeEvaluation.requirements.filter(req => req.category === category);

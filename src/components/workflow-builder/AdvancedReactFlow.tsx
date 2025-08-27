@@ -516,7 +516,7 @@ useEffect(() => {
 }, [getNodes]);
 
 return (
-    <div className="flex h-full w-full bg-background min-h-0">
+    <div className="flex h-full w-full bg-background min-h-0" data-config-open={showConfigurator ? 'true' : 'false'}>
       {/* Unified Sidebar */}
       {!canvasOnly && (
         <div 
@@ -952,7 +952,7 @@ return (
           setShowConfigurator(open);
           try { window.dispatchEvent(new CustomEvent(open ? 'inline-config-opened' : 'inline-config-closed')); } catch {}
         }}>
-          <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+          <DialogContent className="z-[100] max-w-4xl max-h-[80vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Configure {configNodeInfo.nodeType} Node</DialogTitle>
             </DialogHeader>
