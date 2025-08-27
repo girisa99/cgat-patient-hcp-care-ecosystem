@@ -1,6 +1,7 @@
 import React, { useCallback, useState, useRef, useEffect, useMemo, lazy, Suspense } from 'react';
 import {
   ReactFlow,
+  ReactFlowProvider,
   MiniMap,
   Controls,
   Background,
@@ -999,9 +1000,13 @@ return (
   );
 };
 
-// Main export without internal Provider to avoid nested contexts
+// Always provide a ReactFlowProvider to satisfy hooks used above
 export const AdvancedReactFlowWrapper: React.FC<AdvancedReactFlowWrapperProps> = (props) => {
-  return <AdvancedReactFlowContent {...props} />;
+  return (
+    <ReactFlowProvider>
+      <AdvancedReactFlowContent {...props} />
+    </ReactFlowProvider>
+  );
 };
 
 // Export AdvancedReactFlow for backward compatibility  

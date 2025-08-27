@@ -256,30 +256,31 @@ const AgentsInner = () => {
             <div className="flex-1 min-h-0 relative">
               <ErrorBoundary fallbackComponent={({ error, retry }) => (
                 <div className="absolute inset-0 flex items-center justify-center p-4">
-                  <div className="text-xs text-center space-y-2">
+                  <div className="text-xs text-center space-y-2 max-w-lg">
                     <div className="font-medium">Canvas failed to load</div>
-                    <div className="text-muted-foreground break-all max-w-md mx-auto">{error?.message}</div>
+                    <div className="text-muted-foreground break-all mx-auto">{error?.message}</div>
+                    {error?.stack && (
+                      <pre className="text-left bg-muted/30 p-2 rounded max-h-48 overflow-auto whitespace-pre-wrap">{error.stack}</pre>
+                    )}
                     <Button size="sm" variant="outline" onClick={retry}>Retry</Button>
                   </div>
                 </div>
               )}>
                 <SidebarProvider className="w-full h-full min-h-0">
                   <div className="min-h-0 h-full flex w-full">
-                    <ReactFlowProvider>
-                      <AdvancedReactFlowWrapper 
-                        fitParent={true}
-                        workflowType="visual"
-                        sessionId={currentSession?.id}
-                        initialNodes={[]}
-                        initialEdges={[]}
-                         onNodeSelect={(node) => {
-                           setSelectedNode(node);
-                           setRightPanelTab('config');
-                           setShowPromptAssistant(false);
-                         }}
-                        onSave={handleFlowSave}
-                      />
-                    </ReactFlowProvider>
+                    <AdvancedReactFlowWrapper 
+                      fitParent={true}
+                      workflowType="visual"
+                      sessionId={currentSession?.id}
+                      initialNodes={[]}
+                      initialEdges={[]}
+                       onNodeSelect={(node) => {
+                         setSelectedNode(node);
+                         setRightPanelTab('config');
+                         setShowPromptAssistant(false);
+                       }}
+                      onSave={handleFlowSave}
+                    />
                   </div>
                 </SidebarProvider>
               </ErrorBoundary>
