@@ -13,6 +13,9 @@ import { DataSourceNode } from './DataSourceNode';
 import { FlowiseInspiredNode } from './FlowiseInspiredNode';
 import { TemplateConfigurationNode } from './TemplateConfigurationNode';
 import { HumanInputNode } from './HumanInputNode';
+import { AIModelConfigurationNode } from './AIModelConfigurationNode';
+import { FlowControlConfigurationNode } from './FlowControlConfigurationNode';
+import { HTTPConfigurationNode } from './HTTPConfigurationNode';
 
 // Export all node types
 export { BaseWorkflowNode } from './BaseWorkflowNode';
@@ -31,8 +34,11 @@ export { DataSourceNode } from './DataSourceNode';
 export { FlowiseInspiredNode } from './FlowiseInspiredNode';
 export { TemplateConfigurationNode } from './TemplateConfigurationNode';
 export { HumanInputNode } from './HumanInputNode';
+export { AIModelConfigurationNode } from './AIModelConfigurationNode';
+export { FlowControlConfigurationNode } from './FlowControlConfigurationNode';
+export { HTTPConfigurationNode } from './HTTPConfigurationNode';
 
-// Node type registry for ReactFlow
+// Node type registry for ReactFlow - Each node type gets its specialized configuration component
 export const workflowNodeTypes = {
   useCaseNode: UseCaseNode,
   aiModelsNode: AIModelsNode,
@@ -47,30 +53,70 @@ export const workflowNodeTypes = {
   agentNode: FlowiseInspiredNode,
   dataSource: FlowiseInspiredNode,
   
+  // AI Model & Processing nodes - specialized AI configuration
+  openai_agent: AIModelConfigurationNode,
+  anthropic_agent: AIModelConfigurationNode,
+  deepseek_agent: AIModelConfigurationNode,
+  react_agent_llm: AIModelConfigurationNode,
+  xml_agent: AIModelConfigurationNode,
+  llm_chain: AIModelConfigurationNode,
+  ollama_llama3: AIModelConfigurationNode,
+  phi3_mini: AIModelConfigurationNode,
+  
+  // Flow Control nodes - specialized flow configuration
+  agent_flow: FlowControlConfigurationNode,
+  condition_flow: FlowControlConfigurationNode,
+  iteration_flow: FlowControlConfigurationNode,
+  start_flow: FlowControlConfigurationNode,
+  human_input_flow: FlowControlConfigurationNode,
+  
+  // HTTP & API nodes - specialized HTTP configuration
+  api_endpoint: HTTPConfigurationNode,
+  webhook_listener: HTTPConfigurationNode,
+  
   // Template and Configuration nodes
   templateConfigurationNode: TemplateConfigurationNode,
   humanInputNode: HumanInputNode,
   
+  // Human in the Loop nodes
+  human_handoff: HumanInputNode,
+  escalation_trigger: FlowControlConfigurationNode,
+  agent_transfer: FlowControlConfigurationNode,
+  supervision_mode: HumanInputNode,
+  approval_workflow: FlowControlConfigurationNode,
+  
   // Workflow execution nodes
-  start: FlowiseInspiredNode,
-  condition: FlowiseInspiredNode,
-  decision: FlowiseInspiredNode,
-  llm: TemplateConfigurationNode, // Use customized LLM configuration
-  agent: FlowiseInspiredNode,
+  start: FlowControlConfigurationNode,
+  condition: FlowControlConfigurationNode,
+  decision: FlowControlConfigurationNode,
+  llm: AIModelConfigurationNode, // Use specialized AI model configuration
+  agent: AIModelConfigurationNode,
   human_input: HumanInputNode, // Use specialized human input node
-  loop: FlowiseInspiredNode,
-  iteration: FlowiseInspiredNode,
-  execute_flow: TemplateConfigurationNode, // Use customized execute flow configuration
-  direct_reply: FlowiseInspiredNode,
-  http: TemplateConfigurationNode, // Use customized HTTP configuration
+  loop: FlowControlConfigurationNode,
+  iteration: FlowControlConfigurationNode,
+  execute_flow: FlowControlConfigurationNode,
+  direct_reply: TemplateConfigurationNode,
+  http: HTTPConfigurationNode, // Use specialized HTTP configuration
   tools: FlowiseInspiredNode,
   retriever: FlowiseInspiredNode,
-  custom_function: FlowiseInspiredNode,
-  stick_note: FlowiseInspiredNode,
+  custom_function: TemplateConfigurationNode,
+  stick_note: TemplateConfigurationNode,
   customer: FlowiseInspiredNode,
   database: FlowiseInspiredNode,
   
-  // Template node variants
+  // Code & Deployment nodes
+  code_snippet: TemplateConfigurationNode,
+  docker_container: FlowiseInspiredNode,
+  kubernetes_pod: FlowiseInspiredNode,
+  deployment_pipeline: FlowiseInspiredNode,
+  
+  // Testing & Validation nodes
+  flow_tester: FlowiseInspiredNode,
+  response_validator: FlowControlConfigurationNode,
+  load_tester: FlowiseInspiredNode,
+  debug_console: FlowiseInspiredNode,
+  
+  // Template node variants - each gets specific template configuration
   prompt_template_system_prompt: TemplateConfigurationNode,
   prompt_template_few_shot: TemplateConfigurationNode,
   prompt_template_instruction: TemplateConfigurationNode,
