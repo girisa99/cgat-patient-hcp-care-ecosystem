@@ -12,31 +12,35 @@ serve(async (req) => {
   }
 
   try {
-    const { nodes, edges, analysisType, userPrompt } = await req.json();
+    const { nodes, edges, analysisType, userPrompt, aiProvider = 'openai', generateCode = false } = await req.json();
     
-    // Handle different analysis types
-    let analysis;
-    
-    switch (analysisType) {
-      case 'structure':
-        analysis = await analyzeStructure(nodes, edges);
-        break;
-      case 'prompt_alignment':
-        analysis = await analyzePromptAlignment(nodes, edges, userPrompt);
-        break;
-      default:
-        analysis = await performComprehensiveAnalysis(nodes, edges);
-    }
-    
-    if (!analysis) {
-      analysis = await performComprehensiveAnalysis(nodes, edges);
-    }
-    
-    return new Response(JSON.stringify(analysis), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    console.log('Analyzing workflow with:', {
+      nodesCount: nodes?.length || 0,
+      edgesCount: edges?.length || 0,
+      analysisType: analysisType || 'comprehensive',
+      aiProvider,
+      generateCode
     });
 
+    let result;
+    
+    if (analysisType === 'structure') {
+      result = analyzeStructure(nodes || [], edges || []);
+    } else if (analysisType === 'prompt-alignment') {
+      result = analyzePromptAlignment(nodes || [], edges || [], userPrompt);
+    } else if (analysisType === 'ai-enhanced') {
+      result = await performAIEnhancedAnalysis(nodes || [], edges || [], aiProvider, generateCode);
+    } else {
+      result = await performComprehensiveAnalysis(nodes || [], edges || []);
+    }
+
+    console.log('Analysis completed:', result);
+    
+    return new Response(JSON.stringify(result), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
   } catch (error) {
+    console.error('Error in analyze-workflow-suggestions:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
       issues: [],
@@ -51,6 +55,211 @@ serve(async (req) => {
     });
   }
 });
+
+// AI-Enhanced Analysis using multiple providers
+async function performAIEnhancedAnalysis(nodes: any[], edges: any[], provider: string, generateCode: boolean) {
+  const analysis = await performComprehensiveAnalysis(nodes, edges);
+  
+  if (generateCode && analysis.issues.length > 0) {
+    const codeFixSuggestions = await generateCodeFixes(analysis.issues, provider);
+    analysis.codeFixSuggestions = codeFixSuggestions;
+  }
+  
+  const aiSuggestions = await getAISuggestions(nodes, edges, analysis, provider);
+  analysis.aiSuggestions = aiSuggestions;
+  
+  return analysis;
+}
+
+// Generate code fixes using AI providers
+async function generateCodeFixes(issues: any[], provider: string) {
+  const fixes = [];
+  
+  for (const issue of issues) {
+    try {
+      const fix = await generateFixForIssue(issue, provider);
+      if (fix) {
+        fixes.push({
+          issueType: issue.type,
+          description: issue.description,
+          generatedCode: fix.code,
+          explanation: fix.explanation,
+          confidence: fix.confidence,
+          provider
+        });
+      }
+    } catch (error) {
+      console.error(`Failed to generate fix for issue ${issue.type}:`, error);
+    }
+  }
+  
+  return fixes;
+}
+
+// Generate fix for specific issue using AI
+async function generateFixForIssue(issue: any, provider: string) {
+  const prompt = `Fix this workflow issue: ${issue.description}
+Issue Type: ${issue.type}
+Severity: ${issue.severity}
+
+Generate TypeScript/JavaScript code to fix this issue. Include:
+1. The fix code
+2. Explanation of the fix
+3. Confidence level (1-10)
+
+Respond in JSON format:
+{
+  "code": "// Your fix code here",
+  "explanation": "Explanation of the fix",
+  "confidence": 8
+}`;
+
+  try {
+    switch (provider) {
+      case 'openai':
+        return await callOpenAI(prompt);
+      case 'claude':
+        return await callClaude(prompt);
+      case 'gemini':
+        return await callGemini(prompt);
+      default:
+        return await callOpenAI(prompt);
+    }
+  } catch (error) {
+    console.error(`AI ${provider} call failed:`, error);
+    return null;
+  }
+}
+
+// OpenAI API call
+async function callOpenAI(prompt: string) {
+  const apiKey = Deno.env.get('OPENAI_API_KEY');
+  if (!apiKey) throw new Error('OPENAI_API_KEY not configured');
+
+  const response = await fetch('https://api.openai.com/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: [
+        { role: 'system', content: 'You are an expert workflow analyzer and code generator. Generate clean, efficient fixes for workflow issues.' },
+        { role: 'user', content: prompt }
+      ],
+      max_tokens: 2000,
+      temperature: 0.3
+    }),
+  });
+
+  const data = await response.json();
+  const content = data.choices[0].message.content;
+  
+  try {
+    return JSON.parse(content);
+  } catch {
+    return {
+      code: content,
+      explanation: "Generated fix code",
+      confidence: 7
+    };
+  }
+}
+
+// Claude API call
+async function callClaude(prompt: string) {
+  const apiKey = Deno.env.get('CLAUDE_API_KEY');
+  if (!apiKey) throw new Error('CLAUDE_API_KEY not configured');
+
+  const response = await fetch('https://api.anthropic.com/v1/messages', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${apiKey}`,
+      'Content-Type': 'application/json',
+      'anthropic-version': '2023-06-01',
+    },
+    body: JSON.stringify({
+      model: 'claude-3-haiku-20240307',
+      max_tokens: 2000,
+      messages: [
+        { role: 'user', content: prompt }
+      ]
+    }),
+  });
+
+  const data = await response.json();
+  const content = data.content[0].text;
+  
+  try {
+    return JSON.parse(content);
+  } catch {
+    return {
+      code: content,
+      explanation: "Generated fix code",
+      confidence: 8
+    };
+  }
+}
+
+// Gemini API call
+async function callGemini(prompt: string) {
+  const apiKey = Deno.env.get('GEMINI_API_KEY');
+  if (!apiKey) throw new Error('GEMINI_API_KEY not configured');
+
+  const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent?key=${apiKey}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({
+      contents: [{
+        parts: [{ text: prompt }]
+      }],
+      generationConfig: {
+        maxOutputTokens: 2000,
+        temperature: 0.3
+      }
+    }),
+  });
+
+  const data = await response.json();
+  const content = data.candidates[0].content.parts[0].text;
+  
+  try {
+    return JSON.parse(content);
+  } catch {
+    return {
+      code: content,
+      explanation: "Generated fix code",
+      confidence: 7
+    };
+  }
+}
+
+// Get AI suggestions for workflow optimization
+async function getAISuggestions(nodes: any[], edges: any[], analysis: any, provider: string) {
+  const prompt = `Analyze this workflow and provide optimization suggestions:
+Nodes: ${nodes.length}
+Edges: ${edges.length}
+Current Issues: ${analysis.issues.map((i: any) => i.description).join(', ')}
+Complexity: ${analysis.complexity}
+
+Provide 3-5 specific suggestions to improve the workflow.`;
+
+  try {
+    const response = await generateFixForIssue({ 
+      description: prompt, 
+      type: 'optimization',
+      severity: 'medium' 
+    }, provider);
+    
+    return response?.explanation || "No specific suggestions available";
+  } catch (error) {
+    console.error('Failed to get AI suggestions:', error);
+    return "AI suggestions temporarily unavailable";
+  }
+}
 
 async function performComprehensiveAnalysis(nodes: any[], edges: any[]) {
   const issues = [];

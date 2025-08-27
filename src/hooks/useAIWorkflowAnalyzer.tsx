@@ -57,13 +57,27 @@ export const useAIWorkflowAnalyzer = () => {
   // Concurrency guards to prevent re-entrancy / feedback loops
   const analyzeLockRef = useRef(false);
   const execLockRef = useRef(false);
-  const analyzeWorkflow = useCallback(async (nodes: any[], edges: any[]) => {
+  const analyzeWorkflow = useCallback(async (
+    nodes: any[], 
+    edges: any[], 
+    options: { 
+      aiProvider?: 'openai' | 'claude' | 'gemini', 
+      generateCode?: boolean,
+      analysisType?: 'comprehensive' | 'ai-enhanced' | 'structure' | 'prompt-alignment'
+    } = {}
+  ) => {
     // prevent re-entrancy and storms
     if (isAnalyzing || analyzeLockRef.current) return;
     analyzeLockRef.current = true;
     setIsAnalyzing(true);
     
     try {
+      const { 
+        aiProvider = 'openai', 
+        generateCode = true, 
+        analysisType = 'ai-enhanced' 
+      } = options;
+
       // Call AI analysis edge function
       const { data, error } = await supabase.functions.invoke('analyze-workflow-suggestions', {
         body: { 
@@ -79,7 +93,10 @@ export const useAIWorkflowAnalyzer = () => {
             target: e.target,
             sourceHandle: e.sourceHandle,
             targetHandle: e.targetHandle
-          }))
+          })),
+          analysisType,
+          aiProvider,
+          generateCode
         }
       });
 
@@ -94,10 +111,22 @@ export const useAIWorkflowAnalyzer = () => {
         riskAssessment: data?.riskAssessment || 'low'
       };
 
+      // Add AI-specific results
+      if (data?.codeFixSuggestions) {
+        (analysisResult as any).codeFixSuggestions = data.codeFixSuggestions;
+      }
+      if (data?.aiSuggestions) {
+        (analysisResult as any).aiSuggestions = data.aiSuggestions;
+      }
+
       setAnalysis(analysisResult);
       
+      const hasCodeFixes = data?.codeFixSuggestions?.length > 0;
       const criticalIssues = analysisResult.issues.filter(i => i.severity === 'high');
-      if (criticalIssues.length > 0) {
+      
+      if (hasCodeFixes) {
+        showInfo(`AI analysis complete! Found ${data.codeFixSuggestions.length} code fixes using ${aiProvider.toUpperCase()}`);
+      } else if (criticalIssues.length > 0) {
         showError(`Found ${criticalIssues.length} critical issues that need attention`);
       } else if (analysisResult.issues.length > 0) {
         showInfo(`Found ${analysisResult.issues.length} potential improvements`);
