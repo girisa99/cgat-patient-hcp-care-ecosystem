@@ -533,8 +533,14 @@ export const NodeRequirementEvaluator = {
         nodeType = 'cohere_chat';
       } else if (provider.includes('mistral')) {
         nodeType = 'mistral_chat';
-      } else if (node.data?.category === 'ai_models' || nodeType.includes('ai_model')) {
-        nodeType = 'ai_model'; // Generic AI model fallback
+      } else if (
+        String(node.data?.category || '').toLowerCase() === 'ai_models' ||
+        String(node.data?.category || '').toLowerCase() === 'processing' ||
+        String(node.data?.category || '').toLowerCase() === 'ai_processing' ||
+        nodeType.includes('ai_model') ||
+        nodeType.toLowerCase().includes('processing')
+      ) {
+        nodeType = 'ai_model'; // Generic AI model fallback, ensures Advanced tab
       }
     }
     

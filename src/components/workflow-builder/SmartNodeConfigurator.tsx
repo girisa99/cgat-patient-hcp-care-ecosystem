@@ -13,7 +13,8 @@ import { Slider } from '@/components/ui/slider';
 import { AlertCircle, CheckCircle2, Settings, Key, Code, Zap, X } from 'lucide-react';
 import { NodeRequirementEvaluator, NodeEvaluation } from './nodes/NodeRequirementEvaluator';
 import { useAIModelManager } from '@/hooks/useAIModelManager';
-
+import { supabase } from '@/integrations/supabase/client';
+import { useMasterToast } from '@/hooks/useMasterToast';
 interface SmartNodeConfiguratorProps {
   node: Node | null;
   onNodeUpdate: (nodeId: string, updates: any) => void;
@@ -29,8 +30,10 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
   const [nodeEvaluation, setNodeEvaluation] = useState<NodeEvaluation | null>(null);
   const [activeTab, setActiveTab] = useState('overview');
   const [config, setConfig] = useState<Record<string, any>>({});
-  const { aiModels, modelIntegrations } = useAIModelManager();
-
+const { aiModels, modelIntegrations } = useAIModelManager();
+const { showSuccess, showError } = useMasterToast();
+const [isSaving, setIsSaving] = useState(false);
+const [revealedKey, setRevealedKey] = useState<string | null>(null);
   useEffect(() => {
     if (node) {
       const evaluation = NodeRequirementEvaluator.evaluateNode(node);
@@ -49,6 +52,14 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
     }
   }, [node]);
 
+  // Re-evaluate requirements when config changes so tabs/fields update immediately
+  useEffect(() => {
+    if (node) {
+      const merged = { ...node, data: { ...(node.data || {}), ...config } } as Node;
+      const evaluation = NodeRequirementEvaluator.evaluateNode(merged);
+      setNodeEvaluation(evaluation);
+    }
+  }, [config, node]);
   if (!node || !nodeEvaluation) {
     return null;
   }
@@ -59,6 +70,64 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
     onNodeUpdate(node.id, newConfig);
   };
 
+  const handleSave = async () => {
+    try {
+      setIsSaving(true);
+      onNodeUpdate(node.id, { ...config, last_saved_at: new Date().toISOString() });
+      showSuccess('Configuration saved');
+    } catch (e: any) {
+      showError(e?.message || 'Failed to save');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleEncryptAndSave = async () => {
+    if (!config.api_key || String(config.api_key).trim() === '') {
+      showError('Enter an API key first');
+      return;
+    }
+    try {
+      setIsSaving(true);
+      const { data, error } = await supabase.functions.invoke('credit-encryption', {
+        body: { action: 'encrypt', data: String(config.api_key) }
+      });
+      if (error) throw error;
+      const encrypted_api_key = data?.result || '';
+      const newConfig = { ...config, encrypted_api_key, api_key: '' };
+      setConfig(newConfig);
+      onNodeUpdate(node.id, newConfig);
+      showSuccess('Credentials encrypted and saved');
+    } catch (e: any) {
+      showError(e?.message || 'Failed to encrypt & save');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleViewDecrypted = async () => {
+    if (!config.encrypted_api_key) return;
+    try {
+      const { data, error } = await supabase.functions.invoke('credit-encryption', {
+        body: { action: 'decrypt', data: String(config.encrypted_api_key) }
+      });
+      if (error) throw error;
+      setRevealedKey(data?.result || null);
+    } catch (e: any) {
+      showError(e?.message || 'Failed to view key');
+    }
+  };
+
+  const handleDeactivate = async () => {
+    try {
+      const newConfig = { ...config, is_active: false };
+      setConfig(newConfig);
+      onNodeUpdate(node.id, newConfig);
+      showSuccess('Node deactivated');
+    } catch (e: any) {
+      showError('Failed to deactivate');
+    }
+  };
   const getTabIcon = (category: string) => {
     const icons = {
       credentials: Key,
@@ -189,6 +258,27 @@ export const SmartNodeConfigurator: React.FC<SmartNodeConfiguratorProps> = ({
 
       default:
         // Generic field handling
+        if (req.field === 'api_key' && config.encrypted_api_key) {
+          return (
+            <div key={req.id} className="space-y-2">
+              <Label>{req.label}</Label>
+              <div className="text-sm text-muted-foreground">Encrypted key stored</div>
+              <div className="flex items-center gap-2">
+                <Button variant="secondary" size="sm" type="button" onClick={handleViewDecrypted}>
+                  View once
+                </Button>
+                {revealedKey && (
+                  <span className="text-xs truncate max-w-[240px]" title={revealedKey}>{revealedKey}</span>
+                )}
+                <Button variant="outline" size="sm" type="button" onClick={() => updateConfig('encrypted_api_key', '')}>
+                  Replace key
+                </Button>
+              </div>
+              <p className="text-sm text-muted-foreground">{req.description}</p>
+            </div>
+          );
+        }
+
         if (req.field.includes('key') || req.field.includes('token') || req.field.includes('secret')) {
           return (
             <div key={req.id} className="space-y-2">
