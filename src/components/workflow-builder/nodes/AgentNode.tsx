@@ -109,12 +109,16 @@ export const AgentNode: React.FC<AgentNodeProps> = ({ id, data, selected }) => {
                   <span>{config.workingHours}</span>
                 </div>
               </div>
-              <div className="flex items-center gap-1">
-                <Button size="sm" variant="outline" className="h-6 text-xs">
+               <div className="flex items-center gap-1">
+                <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => {
+                  window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }));
+                }}>
                   <Settings2 className="h-3 w-3 mr-1" />
                   Configure
                 </Button>
-                <Button size="sm" variant="outline" className="h-6 text-xs">
+                <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => {
+                  window.dispatchEvent(new CustomEvent('open-node-test', { detail: { nodeId: id, nodeType: 'agent' } }));
+                }}>
                   <MessageCircle className="h-3 w-3 mr-1" />
                   Test Chat
                 </Button>
@@ -298,18 +302,25 @@ export const AgentNode: React.FC<AgentNodeProps> = ({ id, data, selected }) => {
                   />
                   <Label className="text-xs">Agent Active</Label>
                 </div>
-                <div className="flex items-center gap-1">
-                  <Button size="sm" variant="outline" className="h-6 text-xs">
+                 <div className="flex items-center gap-1">
+                  <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => {
+                    // Save node configuration
+                    console.log('Saving agent config:', config);
+                  }}>
                     <Save className="h-3 w-3 mr-1" />
                     Save
                   </Button>
-                  <Button size="sm" variant="outline" className="h-6 text-xs">
+                  <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => {
+                    window.dispatchEvent(new CustomEvent('open-node-test', { detail: { nodeId: id, nodeType: 'agent' } }));
+                  }}>
                     <MessageCircle className="h-3 w-3 mr-1" />
                     Test
                   </Button>
-                  <Button size="sm" variant="outline" className="h-6 text-xs">
+                  <Button size="sm" variant="outline" className="h-6 text-xs" onClick={() => {
+                    window.dispatchEvent(new CustomEvent('deploy-agent', { detail: { nodeId: id, config } }));
+                  }}>
                     <Play className="h-3 w-3 mr-1" />
-                    Deploy
+                    Deploy  
                   </Button>
                 </div>
               </div>

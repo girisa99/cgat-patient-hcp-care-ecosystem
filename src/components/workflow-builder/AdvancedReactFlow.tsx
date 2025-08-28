@@ -524,6 +524,22 @@ useEffect(() => {
   return () => window.removeEventListener('open-node-config', openHandler as EventListener);
 }, [getNodes]);
 
+// Listen for node testing events
+useEffect(() => {
+  const testHandler = (e: any) => {
+    const { nodeId, nodeType } = e?.detail || {};
+    if (!nodeId) return;
+    
+    // Open the testing console for the specific node
+    setShowTestConsole(true);
+    setSelectedNode(getNodes().find(n => n.id === nodeId) || null);
+    console.log('Opening test interface for node:', nodeId, nodeType);
+  };
+
+  window.addEventListener('open-node-test', testHandler as EventListener);
+  return () => window.removeEventListener('open-node-test', testHandler as EventListener);
+}, [getNodes]);
+
 return (
     <div className="flex h-full w-full bg-background min-h-0" data-config-open={showConfigurator ? 'true' : 'false'}>
       {/* Unified Sidebar */}
