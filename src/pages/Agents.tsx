@@ -51,6 +51,7 @@ import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetP
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
+import ProgressiveAgentBuilder from '@/components/unified/ProgressiveAgentBuilder';
 
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { WorkflowTestingPanel } from '@/components/workflow-builder/WorkflowTestingPanel';
@@ -79,6 +80,7 @@ const AgentsInner = () => {
   const [showWorkflowTesting, setShowWorkflowTesting] = useState(false);
   const [workflowNodes, setWorkflowNodes] = useState<any[]>([]);
   const [workflowEdges, setWorkflowEdges] = useState<any[]>([]);
+  const [showProgressiveBuilder, setShowProgressiveBuilder] = useState(false);
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -249,6 +251,10 @@ const AgentsInner = () => {
               <Bot className="w-3 h-3 mr-1" />
               AI Assistant
             </Button>
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowProgressiveBuilder(true)}>
+              <Sparkles className="w-3 h-3 mr-1" />
+              Prompt Builder
+            </Button>
             <WorkflowTestingPanel
               nodes={workflowNodes}
               edges={workflowEdges}
@@ -363,6 +369,36 @@ const AgentsInner = () => {
                     Optimize Flow
                   </Button>
                 </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Prompt-based Progressive Agent Builder (overlay) */}
+        {showProgressiveBuilder && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
+            <div className="absolute inset-4 rounded-lg border bg-card shadow-lg flex flex-col">
+              <div className="p-3 border-b flex items-center justify-between">
+                <h3 className="text-sm font-semibold">Prompt-based Agent Builder</h3>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowProgressiveBuilder(false)}
+                  className="h-6 w-6 p-0"
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <div className="flex-1 overflow-hidden p-3">
+                <ProgressiveAgentBuilder
+                  onComplete={(finalAgent: any) => {
+                    setWorkflowNodes(finalAgent.nodes || []);
+                    setWorkflowEdges(finalAgent.edges || []);
+                    setShowProgressiveBuilder(false);
+                    toast.success('Agent created from prompt and added to canvas');
+                  }}
+                />
               </div>
             </div>
           </div>
