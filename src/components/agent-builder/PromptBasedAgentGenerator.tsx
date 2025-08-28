@@ -6,6 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Sparkles, Play, Users, FileText, MessageSquare, Search, Brain } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PromptBasedAgentGeneratorProps {
   onGenerate: (agentData: any) => void;
@@ -62,21 +63,17 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
 
     setIsGenerating(true);
     try {
-      // Call the enhanced edge function for agent generation
-      const response = await fetch('/api/generate-agent-from-prompt', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      // Call the Supabase edge function for agent generation
+      const { data: agentData, error } = await supabase.functions.invoke('generate-agent-from-prompt', {
+        body: {
           prompt: prompt.trim(),
           provider: selectedProvider,
           generateConnections: true,
           includeTemplates: true
-        })
+        }
       });
 
-      if (!response.ok) throw new Error('Failed to generate agent');
-
-      const agentData = await response.json();
+      if (error) throw error;
       
       showSuccess('Agent generated successfully!');
       onGenerate(agentData);
