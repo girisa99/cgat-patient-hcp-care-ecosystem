@@ -1080,22 +1080,43 @@ return (
         }}
       />
 
-      {/* Global Unified Configurator Dialog */}
+      {/* Global Right Panel Configurator */}
       {configNodeInfo && (
-        <Dialog open={showConfigurator} onOpenChange={(open) => {
-          setShowConfigurator(open);
-          try { window.dispatchEvent(new CustomEvent(open ? 'inline-config-opened' : 'inline-config-closed')); } catch {}
-        }}>
-          <DialogContent className="z-[2000] max-w-4xl max-h-[80vh] overflow-visible">
-            <DialogHeader>
-              <DialogTitle>Configure {(() => { const n = getNodes().find(n => n.id === configNodeInfo.nodeId); const d = (n?.data as any) || {}; return d.display_name || d.name || d.label || (n?.type ? String(n.type).replace(/_/g, ' ') : '') || 'Node'; })()} Node</DialogTitle>
-            </DialogHeader>
+        <div className="fixed top-0 right-0 h-full w-[min(520px,100vw)] z-40 border-l bg-background shadow-lg flex flex-col">
+          <div className="p-4 border-b flex items-center justify-between">
+            <div>
+              <h3 className="font-semibold text-sm">Configure Node</h3>
+              <p className="text-xs text-muted-foreground">
+                {(() => { 
+                  const n = getNodes().find(n => n.id === configNodeInfo.nodeId); 
+                  const d = (n?.data as any) || {}; 
+                  return d.display_name || d.name || d.label || (n?.type ? String(n.type).replace(/_/g, ' ') : '') || 'Node'; 
+                })()}
+              </p>
+            </div>
+            <Button size="sm" variant="ghost" onClick={() => {
+              setShowConfigurator(false);
+              try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
+            }}>
+              ✕
+            </Button>
+          </div>
+          <div className="flex-1 overflow-auto p-4">
             <Suspense fallback={<div className="p-4 text-sm">Loading configurator…</div>}>
               <LazySmartNodeConfigurator
                 node={getNodes().find(n => n.id === configNodeInfo.nodeId) || null}
                 onNodeUpdate={(nodeId, updates) => {
                   setNodes((nds) => nds.map((n) =>
-                    n.id === nodeId ? { ...n, data: { ...n.data, ...updates } } : n
+                    n.id === nodeId ? { 
+                      ...n, 
+                      data: { 
+                        ...n.data, 
+                        ...updates,
+                        isConfigured: true,
+                        configuration: { ...(n.data as any)?.configuration, ...updates },
+                        lastConfigured: new Date().toISOString()
+                      } 
+                    } : n
                   ));
                 }}
                 onClose={() => {
@@ -1104,8 +1125,8 @@ return (
                 }}
               />
             </Suspense>
-          </DialogContent>
-        </Dialog>
+          </div>
+        </div>
       )}
 
       <style dangerouslySetInnerHTML={{

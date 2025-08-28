@@ -142,12 +142,12 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
         style={{ backgroundColor: nodeColor }}
       />
 
-      {/* Main Content */}
+      {/* Enhanced Node Visual State Display */}
       <div className="p-3">
-        {/* Header */}
+        {/* Header with Configuration Status */}
         <div className="flex items-center gap-2 mb-2">
           <div 
-            className="p-1.5 rounded-md flex-shrink-0"
+            className="p-1.5 rounded-md flex-shrink-0 relative"
             style={{ 
               backgroundColor: `${nodeColor}15`, 
               color: nodeColor,
@@ -155,6 +155,10 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
             }}
           >
             <IconComponent className="h-4 w-4" />
+            {/* Configuration Status Indicator */}
+            {data.isConfigured && (
+              <div className="absolute -top-1 -right-1 w-2 h-2 bg-green-500 rounded-full border border-white" title="Configured" />
+            )}
           </div>
           
           <div className="flex-1 min-w-0">
@@ -236,6 +240,28 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
                 +{capabilities.length - 3}
               </Badge>
             )}
+          </div>
+        )}
+
+        {/* Configuration Summary */}
+        {data.configuration && Object.keys(data.configuration).length > 0 && (
+          <div className="mt-2 p-2 bg-muted/30 rounded border">
+            <div className="text-xs font-medium text-foreground mb-1">Configuration:</div>
+            <div className="space-y-1">
+              {Object.entries(data.configuration).slice(0, 2).map(([key, value]) => (
+                <div key={key} className="flex justify-between items-center text-xs">
+                  <span className="text-muted-foreground truncate">{key}:</span>
+                  <span className="font-mono text-xs truncate max-w-[100px]" title={String(value)}>
+                    {String(value).length > 15 ? `${String(value).slice(0, 15)}...` : String(value)}
+                  </span>
+                </div>
+              ))}
+              {Object.keys(data.configuration).length > 2 && (
+                <div className="text-xs text-muted-foreground">
+                  +{Object.keys(data.configuration).length - 2} more settings
+                </div>
+              )}
+            </div>
           </div>
         )}
 
