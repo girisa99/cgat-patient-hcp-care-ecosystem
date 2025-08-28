@@ -49,7 +49,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger } from '@/components/ui/context-menu';
+import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Icons
@@ -61,6 +61,7 @@ import {
 } from 'lucide-react';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -216,6 +217,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
+  const [contextEdge, setContextEdge] = useState<Edge | null>(null);
   const { fitView, getNodes, getEdges, screenToFlowPosition } = useReactFlow();
 
   // Sync incoming initialNodes/initialEdges when they change (e.g., after agent generation)
@@ -261,6 +263,7 @@ const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType:
 
   // Hooks
   const { showSuccess, showError } = useMasterToast();
+  const { categories, nodeTypesByCategory } = useWorkflowNodes();
 
   // Workflow Design Controls Event Handler
   useEffect(() => {
@@ -403,7 +406,14 @@ setShowConfigurator(true);
 
   const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
     event.preventDefault();
+    setContextEdge(null);
     setSelectedNode(node);
+  }, []);
+
+  const handleEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
+    event.preventDefault();
+    setSelectedNode(null);
+    setContextEdge(edge);
   }, []);
 
   const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
@@ -476,6 +486,65 @@ const newNode: Node = {
   const handleCodeChange = useCallback((code: string) => {
     console.log('Code changed:', code);
   }, []);
+
+  // Allow reconnecting edges by dragging endpoints
+  const onEdgeUpdate = useCallback((oldEdge: Edge, newConnection: Connection) => {
+    setEdges((eds) => eds.map((e) => (e.id === oldEdge.id ? { ...e, ...newConnection } : e)));
+  }, [setEdges]);
+
+  // Edge actions from context menu
+  const insertNodeBetween = useCallback(() => {
+    if (!contextEdge) return;
+    const nodesList = getNodes();
+    const sourceNode = nodesList.find((n) => n.id === contextEdge.source);
+    const targetNode = nodesList.find((n) => n.id === contextEdge.target);
+    const pos = sourceNode && targetNode
+      ? { x: (sourceNode.position.x + targetNode.position.x) / 2 + 20, y: (sourceNode.position.y + targetNode.position.y) / 2 + 20 }
+      : screenToFlowPosition({ x: window.innerWidth / 2, y: window.innerHeight / 2 });
+
+    const newNode: Node = {
+      id: `enhanced_${Date.now()}`,
+      type: 'enhanced',
+      position: pos,
+      data: {
+        label: 'New Node',
+        type_key: 'custom',
+        display_name: 'New Node',
+        icon: 'settings',
+        color: '#6366f1',
+        capabilities: [],
+        requirements: {},
+        default_config: {},
+        isWorkflowNode: true,
+      },
+    } as Node;
+
+    setNodes((nds) => nds.concat(newNode));
+    setEdges((eds) => [
+      ...eds.filter((e) => e.id !== contextEdge.id),
+      {
+        id: `${contextEdge.source}-${newNode.id}-${Date.now()}`,
+        source: contextEdge.source,
+        target: newNode.id,
+        type: contextEdge.type,
+        markerEnd: { type: MarkerType.ArrowClosed },
+      },
+      {
+        id: `${newNode.id}-${contextEdge.target}-${Date.now()}`,
+        source: newNode.id,
+        target: contextEdge.target,
+        type: contextEdge.type,
+        markerEnd: { type: MarkerType.ArrowClosed },
+      },
+    ]);
+    setContextEdge(null);
+  }, [contextEdge, getNodes, setNodes, setEdges, screenToFlowPosition]);
+
+  const deleteSelectedEdge = useCallback(() => {
+    if (!contextEdge) return;
+    setEdges((eds) => eds.filter((e) => e.id !== contextEdge.id));
+    setContextEdge(null);
+  }, [contextEdge, setEdges]);
 
   // Effects
   useEffect(() => {
@@ -591,13 +660,17 @@ return (
                   onDrop={onDrop}
                   onDragOver={onDragOver}
                   onNodeContextMenu={handleNodeContextMenu}
+                  onEdgeContextMenu={handleEdgeContextMenu}
                   onPaneContextMenu={handlePaneContextMenu}
+                  onEdgeUpdate={onEdgeUpdate}
+                  edgesUpdatable={true}
                   onNodeClick={(event, node) => {
                     setSelectedNode(node);
                     handleNodeSelect(node);
                   }}
                   onPaneClick={() => {
                     setSelectedNode(null);
+                    setContextEdge(null);
                     handleNodeSelect(null);
                   }}
                   nodeTypes={safeNodeTypes}
@@ -838,25 +911,64 @@ return (
             <ToolCreator />
             
             <ContextMenuContent>
-              <ContextMenuItem onClick={() => addNode('customer')}>
-                Add Customer Node
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => addNode('agent')}>
-                Add Agent Node  
-              </ContextMenuItem>
-              <ContextMenuItem onClick={() => addNode('decision')}>
-                Add Decision Node
-              </ContextMenuItem>
-              <ContextMenuItem onClick={addGroupNode}>
-                Add Group
-              </ContextMenuItem>
+              {contextEdge && (
+                <>
+                  <ContextMenuItem onClick={insertNodeBetween}>Insert Node Between</ContextMenuItem>
+                  <ContextMenuItem onClick={deleteSelectedEdge}>Delete Connection</ContextMenuItem>
+                  <Separator />
+                </>
+              )}
+
+              {selectedNode && (
+                <>
+                  <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: selectedNode.id } }))}>
+                    Configure Node
+                  </ContextMenuItem>
+                  <ContextMenuSub>
+                    <ContextMenuSubTrigger>Connector Positions</ContextMenuSubTrigger>
+                    <ContextMenuSubContent>
+                      <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { inputPosition: 'left' } } }))}>Input: Left</ContextMenuItem>
+                      <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { inputPosition: 'right' } } }))}>Input: Right</ContextMenuItem>
+                      <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { inputPosition: 'top' } } }))}>Input: Top</ContextMenuItem>
+                      <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { inputPosition: 'bottom' } } }))}>Input: Bottom</ContextMenuItem>
+                      <Separator />
+                      <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { outputPosition: 'left' } } }))}>Output: Left</ContextMenuItem>
+                      <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { outputPosition: 'right' } } }))}>Output: Right</ContextMenuItem>
+                      <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { outputPosition: 'top' } } }))}>Output: Top</ContextMenuItem>
+                      <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { outputPosition: 'bottom' } } }))}>Output: Bottom</ContextMenuItem>
+                    </ContextMenuSubContent>
+                  </ContextMenuSub>
+                  <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('duplicate-node', { detail: { nodeId: selectedNode.id } }))}>
+                    Duplicate Node
+                  </ContextMenuItem>
+                  <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('delete-node', { detail: { nodeId: selectedNode.id } }))}>
+                    Delete Node
+                  </ContextMenuItem>
+                  <Separator />
+                </>
+              )}
+
+              <ContextMenuSub>
+                <ContextMenuSubTrigger>Add Node</ContextMenuSubTrigger>
+                <ContextMenuSubContent>
+                  {(categories || []).map((cat) => (
+                    <ContextMenuSub key={cat.id}>
+                      <ContextMenuSubTrigger>{cat.display_name || cat.name}</ContextMenuSubTrigger>
+                      <ContextMenuSubContent>
+                        {((nodeTypesByCategory && nodeTypesByCategory[cat.name]) || []).map((nt) => (
+                          <ContextMenuItem key={nt.id} onClick={() => addEnhancedNode(nt)}>
+                            {nt.display_name || nt.type_key}
+                          </ContextMenuItem>
+                        ))}
+                      </ContextMenuSubContent>
+                    </ContextMenuSub>
+                  ))}
+                </ContextMenuSubContent>
+              </ContextMenuSub>
+
               <Separator />
-              <ContextMenuItem onClick={handleFitView}>
-                Fit View
-              </ContextMenuItem>
-              <ContextMenuItem onClick={handleClear}>
-                Clear All
-              </ContextMenuItem>
+              <ContextMenuItem onClick={handleFitView}>Fit View</ContextMenuItem>
+              <ContextMenuItem onClick={handleClear}>Clear All</ContextMenuItem>
             </ContextMenuContent>
           </ContextMenu>
         </div>
@@ -864,7 +976,7 @@ return (
 
       {/* Overlay Panels */}
       {showTestConsole && (
-        <div className="fixed bottom-0 left-0 right-0 z-40">
+        <div className="fixed top-0 right-0 h-full w-[min(480px,100vw)] z-40 border-l bg-background shadow-lg">
           <TestingConsolePanel 
             isVisible={showTestConsole}
             onToggle={() => setShowTestConsole(false)}
@@ -872,7 +984,7 @@ return (
             selectedNode={selectedNodes[0]}
             workflowNodes={nodes}
             workflowEdges={edges}
-            heightClass="h-[40vh]"
+            heightClass="h-full"
           />
         </div>
       )}
