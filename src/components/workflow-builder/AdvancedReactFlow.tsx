@@ -214,6 +214,15 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
   const { fitView, getNodes, getEdges, screenToFlowPosition } = useReactFlow();
 
+  // Sync incoming initialNodes/initialEdges when they change (e.g., after agent generation)
+  useEffect(() => {
+    setNodes(initialNodes || []);
+  }, [initialNodes, setNodes]);
+
+  useEffect(() => {
+    setEdges(initialEdges || []);
+  }, [initialEdges, setEdges]);
+
   // UI State
   const [activeTab, setActiveTab] = useState('layout');
   const [canvasOnly, setCanvasOnly] = useState(false);
