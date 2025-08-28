@@ -11,11 +11,13 @@ import { AutoConnectProcessor } from '../workflow-builder/AutoConnectProcessor';
 interface ProgressiveAgentBuilderProps {
   step?: string;
   onComplete?: (agentData: any) => void;
+  prefillPrompt?: string;
 }
 
 export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = ({ 
   step, 
-  onComplete 
+  onComplete,
+  prefillPrompt 
 }) => {
   const [currentStep, setCurrentStep] = useState(step || 'prompt');
   const [generatedAgent, setGeneratedAgent] = useState<any>(null);
@@ -119,8 +121,8 @@ export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = (
 
           <TabsContent value="prompt" className="h-full p-4">
             <PromptBasedAgentGenerator 
-              onGenerate={handleAgentGeneration}
-              className="max-w-4xl mx-auto"
+              onGenerate={handleAgentGeneration} 
+              prefillPrompt={prefillPrompt}
             />
           </TabsContent>
 

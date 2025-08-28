@@ -13,6 +13,8 @@ import {
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useAIModelTesting } from '@/hooks/useAIModelTesting';
 import { supabase } from '@/integrations/supabase/client';
+import { QuickAgentGeneratorButton } from '@/components/testing/QuickAgentGeneratorButton';
+import { useGlobalAgentGenerator } from '@/hooks/useGlobalAgentGenerator';
 
 interface TestingConsolePanelProps {
   isVisible: boolean;
@@ -52,6 +54,20 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
   
   const { showSuccess, showError } = useMasterToast();
   const { startTestRun, testRuns, loading } = useAIModelTesting();
+  const { onAgentGenerated } = useGlobalAgentGenerator();
+
+  // Listen for generated agents to use in testing
+  useEffect(() => {
+    const handleGeneratedAgent = (agent: any) => {
+      addTestResult({
+        status: 'success',
+        message: `🎉 New test agent "${agent.name}" is ready! Contains ${agent.nodes.length} nodes.`
+      });
+      showSuccess(`Agent "${agent.name}" loaded for testing!`);
+    };
+
+    onAgentGenerated(handleGeneratedAgent);
+  }, [onAgentGenerated, showSuccess]);
 
   // ESC key to close
   useEffect(() => {
@@ -319,6 +335,15 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
           </CardTitle>
           
           <div className="flex items-center gap-1">
+            <QuickAgentGeneratorButton 
+              purpose="Workflow Testing"
+              prefillPrompt="Create a comprehensive testing workflow that includes validation nodes, error handling, and reporting"
+              size="sm"
+              className="h-7 text-xs"
+            >
+              <span className="text-xs">Generate Test Agent</span>
+            </QuickAgentGeneratorButton>
+            
             <Button
               size="sm"
               variant="outline"

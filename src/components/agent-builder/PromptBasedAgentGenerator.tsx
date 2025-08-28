@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 interface PromptBasedAgentGeneratorProps {
   onGenerate: (agentData: any) => void;
   className?: string;
+  prefillPrompt?: string;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -48,9 +49,10 @@ const AI_PROVIDERS = [
 
 export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps> = ({
   onGenerate,
-  className = ""
+  className = "",
+  prefillPrompt = ""
 }) => {
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(prefillPrompt);
   const [isGenerating, setIsGenerating] = useState(false);
   const [selectedProvider, setSelectedProvider] = useState('openai');
   const { showSuccess, showError, showInfo } = useMasterToast();

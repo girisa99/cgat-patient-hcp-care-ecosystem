@@ -12,6 +12,8 @@ import { StabilityProvider } from '@/components/stability/StabilityProvider';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { TenantProvider } from '@/contexts/TenantContext';
 import { HelmetProvider } from 'react-helmet-async';
+import { GlobalAgentGeneratorProvider } from '@/hooks/useGlobalAgentGenerator';
+import { GlobalAgentGeneratorModal } from '@/components/global/GlobalAgentGeneratorModal';
 
 // Import pages that exist
 import Index from '@/pages/Index';
@@ -298,12 +300,15 @@ const App = () => {
       <MasterAuthProvider>
         <TenantProvider>
           <StabilityProvider>
-            <TooltipProvider>
-              <HelmetProvider>
-                <Toaster />
-                <AppContent />
-              </HelmetProvider>
-            </TooltipProvider>
+            <GlobalAgentGeneratorProvider>
+              <TooltipProvider>
+                <HelmetProvider>
+                  <Toaster />
+                  <AppContent />
+                  <GlobalAgentGeneratorModal />
+                </HelmetProvider>
+              </TooltipProvider>
+            </GlobalAgentGeneratorProvider>
           </StabilityProvider>
         </TenantProvider>
       </MasterAuthProvider>

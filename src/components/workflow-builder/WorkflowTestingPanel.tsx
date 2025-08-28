@@ -4,6 +4,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTr
 import { Badge } from '@/components/ui/badge';
 import { TestTube, CheckCircle2, XCircle, AlertTriangle } from 'lucide-react';
 import { WorkflowTesting } from './WorkflowTesting';
+import { QuickAgentGeneratorButton } from '@/components/testing/QuickAgentGeneratorButton';
 
 interface WorkflowTestingPanelProps {
   nodes: any[];
@@ -80,39 +81,47 @@ export const WorkflowTestingPanel: React.FC<WorkflowTestingPanelProps> = ({
   };
 
   return (
-    <Sheet open={isOpen} onOpenChange={setIsOpen}>
-      <SheetTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
-          <TestTube className="h-4 w-4" />
-          Test Workflow
-          {quickStatus.count > 0 && (
-            <Badge variant={getStatusVariant()} className="ml-1 px-1 min-w-[20px] h-5">
-              {quickStatus.count}
-            </Badge>
-          )}
-        </Button>
-      </SheetTrigger>
-      <SheetContent side="right" className="w-full sm:max-w-[800px] p-0">
-        <SheetHeader className="p-6 pb-0">
-          <div className="flex items-center gap-2">
-            {getStatusIcon()}
-            <SheetTitle>Workflow Testing & Validation</SheetTitle>
+    <div className="flex items-center gap-2">
+      <QuickAgentGeneratorButton 
+        purpose="Workflow Testing"
+        prefillPrompt="Create a test workflow with validation, error handling, and comprehensive testing scenarios"
+        size="sm"
+      />
+      
+      <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <SheetTrigger asChild>
+          <Button variant="outline" size="sm" className="gap-2">
+            <TestTube className="h-4 w-4" />
+            Test Workflow
+            {quickStatus.count > 0 && (
+              <Badge variant={getStatusVariant()} className="ml-1 px-1 min-w-[20px] h-5">
+                {quickStatus.count}
+              </Badge>
+            )}
+          </Button>
+        </SheetTrigger>
+        <SheetContent side="right" className="w-full sm:max-w-[800px] p-0">
+          <SheetHeader className="p-6 pb-0">
+            <div className="flex items-center gap-2">
+              {getStatusIcon()}
+              <SheetTitle>Workflow Testing & Validation</SheetTitle>
+            </div>
+            <SheetDescription>
+              Analyze your workflow for issues, get recommendations, and apply fixes automatically.
+              Current status: <span className="font-medium">{quickStatus.label}</span>
+            </SheetDescription>
+          </SheetHeader>
+          
+          <div className="flex-1 overflow-hidden">
+            <WorkflowTesting
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={onNodesChange}
+              onEdgesChange={onEdgesChange}
+            />
           </div>
-          <SheetDescription>
-            Analyze your workflow for issues, get recommendations, and apply fixes automatically.
-            Current status: <span className="font-medium">{quickStatus.label}</span>
-          </SheetDescription>
-        </SheetHeader>
-        
-        <div className="flex-1 overflow-hidden">
-          <WorkflowTesting
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={onNodesChange}
-            onEdgesChange={onEdgesChange}
-          />
-        </div>
-      </SheetContent>
-    </Sheet>
+        </SheetContent>
+      </Sheet>
+    </div>
   );
 };
