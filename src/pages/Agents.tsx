@@ -51,10 +51,9 @@ import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetP
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
-import ProgressiveAgentBuilder from '@/components/unified/ProgressiveAgentBuilder';
+import { UnifiedTestingInterface } from '@/components/testing/UnifiedTestingInterface';
 
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
-import { WorkflowTestingPanel } from '@/components/workflow-builder/WorkflowTestingPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
 import { Node, ReactFlowProvider } from '@xyflow/react';
@@ -77,10 +76,9 @@ const AgentsInner = () => {
   const [leftPanelTab, setLeftPanelTab] = useState<'palette' | 'access'>('palette');
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'libraries' | 'assistant'>('config');
   const [isInlineConfigOpen, setInlineConfigOpen] = useState(false);
-  const [showWorkflowTesting, setShowWorkflowTesting] = useState(false);
   const [workflowNodes, setWorkflowNodes] = useState<any[]>([]);
   const [workflowEdges, setWorkflowEdges] = useState<any[]>([]);
-  const [showProgressiveBuilder, setShowProgressiveBuilder] = useState(false);
+  const [showUnifiedTesting, setShowUnifiedTesting] = useState(false);
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -251,16 +249,10 @@ const AgentsInner = () => {
               <Bot className="w-3 h-3 mr-1" />
               AI Assistant
             </Button>
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowProgressiveBuilder(true)}>
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowUnifiedTesting(!showUnifiedTesting)}>
               <Sparkles className="w-3 h-3 mr-1" />
-              Prompt Builder
+              Unified Testing
             </Button>
-            <WorkflowTestingPanel
-              nodes={workflowNodes}
-              edges={workflowEdges}
-              onNodesChange={setWorkflowNodes}
-              onEdgesChange={setWorkflowEdges}
-            />
           </div>
         </div>
 
@@ -374,28 +366,31 @@ const AgentsInner = () => {
           </div>
         )}
 
-        {/* Prompt-based Progressive Agent Builder (overlay) */}
-        {showProgressiveBuilder && (
+        {/* Unified Testing Interface (overlay) */}
+        {showUnifiedTesting && (
           <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
             <div className="absolute inset-4 rounded-lg border bg-card shadow-lg flex flex-col">
               <div className="p-3 border-b flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Prompt-based Agent Builder</h3>
+                <h3 className="text-sm font-semibold">Unified Testing & Agent Generation</h3>
                 <Button
                   type="button"
                   variant="ghost"
                   size="sm"
-                  onClick={() => setShowProgressiveBuilder(false)}
+                  onClick={() => setShowUnifiedTesting(false)}
                   className="h-6 w-6 p-0"
                 >
                   <X className="w-4 h-4" />
                 </Button>
               </div>
               <div className="flex-1 overflow-hidden p-3">
-                <ProgressiveAgentBuilder
-                  onComplete={(finalAgent: any) => {
+                <UnifiedTestingInterface
+                  workflowNodes={workflowNodes}
+                  workflowEdges={workflowEdges}
+                  selectedNode={selectedNode}
+                  onAgentGenerated={(finalAgent: any) => {
                     setWorkflowNodes(finalAgent.nodes || []);
                     setWorkflowEdges(finalAgent.edges || []);
-                    setShowProgressiveBuilder(false);
+                    setShowUnifiedTesting(false);
                     toast.success('Agent created from prompt and added to canvas');
                   }}
                 />
