@@ -587,6 +587,135 @@ export const NodeRequirementEvaluator = {
       'agent_template': [
         { id: 'agent_name', type: 'required', category: 'input_schema', field: 'agent_name', label: 'Agent Name', description: 'Name for the new agent' },
         { id: 'customizations', type: 'optional', category: 'variables', field: 'customizations', label: 'Customizations', description: 'Template override values' }
+      ],
+
+      // Automation & Workflow nodes
+      'condition': [
+        { id: 'condition_expression', type: 'required', category: 'javascript', field: 'condition_expression', label: 'Condition (JS)', description: 'JavaScript expression that returns true/false' },
+        { id: 'on_true', type: 'optional', category: 'variables', field: 'on_true', label: 'On True Path', description: 'Optional label for the true path' }
+      ],
+      'decision': [
+        { id: 'rules', type: 'required', category: 'input_schema', field: 'rules', label: 'Decision Rules', description: 'Array of rules with conditions and outcomes' }
+      ],
+      'loop': [
+        { id: 'max_iterations', type: 'required', category: 'advanced', field: 'max_iterations', label: 'Max Iterations', description: 'Upper bound to prevent infinite loops', defaultValue: 10 },
+        { id: 'until_expression', type: 'optional', category: 'javascript', field: 'until_expression', label: 'Until (JS)', description: 'Stop when this JavaScript expression evaluates to true' }
+      ],
+      'iteration': [
+        { id: 'items_path', type: 'required', category: 'input_schema', field: 'items_path', label: 'Items Path', description: 'Path to array in flow state to iterate' }
+      ],
+      'approval_workflow': [
+        { id: 'approver_roles', type: 'required', category: 'input_schema', field: 'approver_roles', label: 'Approver Roles', description: 'Comma-separated list of roles that can approve' },
+        { id: 'instructions', type: 'optional', category: 'variables', field: 'instructions', label: 'Instructions', description: 'Guidance shown to approvers' },
+        { id: 'sla_minutes', type: 'optional', category: 'advanced', field: 'sla_minutes', label: 'SLA (minutes)', description: 'Escalate if not approved in time', defaultValue: 30 },
+        { id: 'escalation_policy', type: 'optional', category: 'advanced', field: 'escalation_policy', label: 'Escalation Policy', description: 'JSON policy for escalations' }
+      ],
+      'human_input': [
+        { id: 'instructions', type: 'required', category: 'input_schema', field: 'instructions', label: 'Instructions', description: 'What the human should do' },
+        { id: 'fields', type: 'optional', category: 'input_schema', field: 'fields', label: 'Fields Schema', description: 'Schema for inputs to collect' },
+        { id: 'deadline_minutes', type: 'optional', category: 'advanced', field: 'deadline_minutes', label: 'Deadline (minutes)', description: 'Optional timeout for manual step' }
+      ],
+      'start': [ ],
+
+      // Data & Integration nodes
+      'http': [
+        { id: 'url', type: 'required', category: 'input_schema', field: 'url', label: 'API Endpoint', description: 'The API endpoint URL' },
+        { id: 'method', type: 'required', category: 'input_schema', field: 'method', label: 'HTTP Method', description: 'GET, POST, PUT, DELETE, etc.', defaultValue: 'GET' },
+        { id: 'headers', type: 'optional', category: 'advanced', field: 'headers', label: 'Headers', description: 'Custom HTTP headers' },
+        { id: 'query_params', type: 'optional', category: 'input_schema', field: 'query_params', label: 'Query Params', description: 'Key-value query parameters' },
+        { id: 'body', type: 'optional', category: 'input_schema', field: 'body', label: 'Request Body', description: 'Body payload for POST/PUT/PATCH' },
+        { id: 'auth_token', type: 'conditional', category: 'credentials', field: 'auth_token', label: 'Authorization Token', description: 'Bearer token for authenticated requests', dependsOn: ['requires_auth'] }
+      ],
+      'database': [
+        { id: 'database_type', type: 'required', category: 'input_schema', field: 'database_type', label: 'Database Type', description: 'postgres, mysql, mssql, etc.' },
+        { id: 'connection_string', type: 'required', category: 'credentials', field: 'connection_string', label: 'Connection String', description: 'Database DSN or URL' },
+        { id: 'connection_pool_size', type: 'optional', category: 'advanced', field: 'connection_pool_size', label: 'Pool Size', description: 'Max connections in pool', defaultValue: 10 },
+        { id: 'timeout_seconds', type: 'optional', category: 'advanced', field: 'timeout_seconds', label: 'Timeout (s)', description: 'Query timeout in seconds', defaultValue: 30 },
+        { id: 'ssl_enabled', type: 'optional', category: 'advanced', field: 'ssl_enabled', label: 'SSL Enabled', description: 'Enable SSL/TLS for connection', defaultValue: true },
+        { id: 'encryption_at_rest', type: 'optional', category: 'advanced', field: 'encryption_at_rest', label: 'Encryption at Rest', description: 'Encrypt stored data', defaultValue: true }
+      ],
+      'vector_store': [
+        { id: 'store_type', type: 'required', category: 'input_schema', field: 'store_type', label: 'Store Type', description: 'pinecone, pgvector, chroma, etc.' },
+        { id: 'dimensions', type: 'required', category: 'input_schema', field: 'dimensions', label: 'Dimensions', description: 'Embedding vector dimensions' },
+        { id: 'distance_metric', type: 'optional', category: 'advanced', field: 'distance_metric', label: 'Distance Metric', description: 'cosine, euclidean, dot', defaultValue: 'cosine' },
+        { id: 'index_type', type: 'optional', category: 'advanced', field: 'index_type', label: 'Index Type', description: 'HNSW, IVF, Flat', defaultValue: 'HNSW' },
+        { id: 'embedding_model', type: 'required', category: 'input_schema', field: 'embedding_model', label: 'Embedding Model', description: 'Model used for embeddings' },
+        { id: 'collection_name', type: 'required', category: 'input_schema', field: 'collection_name', label: 'Collection Name', description: 'Namespace/collection to use' }
+      ],
+
+      // Human Oversight nodes
+      'healthcare_compliance': [
+        { id: 'compliance_level', type: 'required', category: 'input_schema', field: 'compliance_level', label: 'Compliance Level', description: 'low, medium, high' },
+        { id: 'hipaa_enabled', type: 'optional', category: 'advanced', field: 'hipaa_enabled', label: 'HIPAA Enabled', description: 'Enable HIPAA mode', defaultValue: true },
+        { id: 'phi_encryption', type: 'optional', category: 'advanced', field: 'phi_encryption', label: 'PHI Encryption', description: 'Encrypt protected health information', defaultValue: true },
+        { id: 'audit_logging', type: 'optional', category: 'advanced', field: 'audit_logging', label: 'Audit Logging', description: 'Enable audit trails', defaultValue: true },
+        { id: 'access_controls', type: 'optional', category: 'advanced', field: 'access_controls', label: 'Access Controls', description: 'Role-based controls', defaultValue: true },
+        { id: 'data_retention_days', type: 'optional', category: 'advanced', field: 'data_retention_days', label: 'Data Retention (days)', description: 'Retention policy in days', defaultValue: 30 }
+      ],
+      'human_oversight': [
+        { id: 'reviewer_group', type: 'required', category: 'input_schema', field: 'reviewer_group', label: 'Reviewer Group', description: 'Group or team handling reviews' },
+        { id: 'approval_required', type: 'optional', category: 'advanced', field: 'approval_required', label: 'Approval Required', description: 'Require explicit approval', defaultValue: true }
+      ],
+
+      // Development & Testing nodes
+      'flow_tester': [
+        { id: 'test_type', type: 'required', category: 'input_schema', field: 'test_type', label: 'Test Type', description: 'unit, integration, e2e' },
+        { id: 'test_scenarios', type: 'optional', category: 'scenarios', field: 'test_scenarios', label: 'Test Scenarios', description: 'Scenario list and expected outcomes' },
+        { id: 'assertions', type: 'optional', category: 'input_schema', field: 'assertions', label: 'Assertions', description: 'Assertions to validate results' },
+        { id: 'timeout_seconds', type: 'optional', category: 'advanced', field: 'timeout_seconds', label: 'Timeout (s)', description: 'Per test timeout', defaultValue: 60 },
+        { id: 'parallel_execution', type: 'optional', category: 'advanced', field: 'parallel_execution', label: 'Parallel Execution', description: 'Run tests in parallel', defaultValue: true },
+        { id: 'success_criteria', type: 'optional', category: 'input_schema', field: 'success_criteria', label: 'Success Criteria', description: 'Pass/fail thresholds' }
+      ],
+      'response_validator': [
+        { id: 'assertions', type: 'required', category: 'input_schema', field: 'assertions', label: 'Assertions', description: 'Rules to validate responses' },
+        { id: 'test_scenarios', type: 'optional', category: 'scenarios', field: 'test_scenarios', label: 'Test Scenarios', description: 'Scenario list and expected outcomes' }
+      ],
+      'load_tester': [
+        { id: 'concurrency', type: 'required', category: 'input_schema', field: 'concurrency', label: 'Concurrency', description: 'Number of parallel requests' },
+        { id: 'duration_seconds', type: 'required', category: 'input_schema', field: 'duration_seconds', label: 'Duration (s)', description: 'How long to run the test' },
+        { id: 'target_url', type: 'required', category: 'input_schema', field: 'target_url', label: 'Target URL', description: 'Target endpoint to test' }
+      ],
+      'debug_console': [
+        { id: 'log_level', type: 'optional', category: 'advanced', field: 'log_level', label: 'Log Level', description: 'debug, info, warn, error', defaultValue: 'info' },
+        { id: 'capture_variables', type: 'optional', category: 'variables', field: 'capture_variables', label: 'Capture Variables', description: 'Comma-separated variable keys' }
+      ],
+
+      // Voice nodes
+      'voice': [
+        { id: 'provider', type: 'required', category: 'input_schema', field: 'provider', label: 'Voice Provider', description: 'e.g., ElevenLabs, Azure TTS, Google TTS' },
+        { id: 'voice', type: 'required', category: 'input_schema', field: 'voice', label: 'Voice', description: 'Voice name or ID' },
+        { id: 'language', type: 'optional', category: 'input_schema', field: 'language', label: 'Language', description: 'Language code (e.g., en-US)', defaultValue: 'en-US' },
+        { id: 'speed', type: 'optional', category: 'advanced', field: 'speed', label: 'Speed', description: 'Speech speed', defaultValue: 1.0 },
+        { id: 'pitch', type: 'optional', category: 'advanced', field: 'pitch', label: 'Pitch', description: 'Speech pitch', defaultValue: 0 }
+      ],
+
+      // Deployment nodes
+      'docker_container': [
+        { id: 'environment', type: 'required', category: 'input_schema', field: 'environment', label: 'Environment', description: 'dev, test, staging, prod' },
+        { id: 'cloud_provider', type: 'optional', category: 'input_schema', field: 'cloud_provider', label: 'Cloud Provider', description: 'aws, gcp, azure' },
+        { id: 'region', type: 'optional', category: 'input_schema', field: 'region', label: 'Region', description: 'Deployment region' },
+        { id: 'deployment_strategy', type: 'optional', category: 'advanced', field: 'deployment_strategy', label: 'Strategy', description: 'rolling, blue-green, canary', defaultValue: 'rolling' },
+        { id: 'scaling_policy', type: 'optional', category: 'advanced', field: 'scaling_policy', label: 'Scaling Policy', description: 'Auto-scaling rules' },
+        { id: 'health_check_enabled', type: 'optional', category: 'advanced', field: 'health_check_enabled', label: 'Health Checks', description: 'Enable health checks', defaultValue: true },
+        { id: 'rollback_on_failure', type: 'optional', category: 'advanced', field: 'rollback_on_failure', label: 'Rollback on Failure', description: 'Auto-rollback', defaultValue: true }
+      ],
+      'kubernetes_pod': [
+        { id: 'environment', type: 'required', category: 'input_schema', field: 'environment', label: 'Environment', description: 'dev, test, staging, prod' },
+        { id: 'cloud_provider', type: 'optional', category: 'input_schema', field: 'cloud_provider', label: 'Cloud Provider', description: 'aws, gcp, azure' },
+        { id: 'region', type: 'optional', category: 'input_schema', field: 'region', label: 'Region', description: 'Deployment region' },
+        { id: 'deployment_strategy', type: 'optional', category: 'advanced', field: 'deployment_strategy', label: 'Strategy', description: 'rolling, blue-green, canary', defaultValue: 'rolling' },
+        { id: 'scaling_policy', type: 'optional', category: 'advanced', field: 'scaling_policy', label: 'Scaling Policy', description: 'Auto-scaling rules' },
+        { id: 'health_check_enabled', type: 'optional', category: 'advanced', field: 'health_check_enabled', label: 'Health Checks', description: 'Enable health checks', defaultValue: true },
+        { id: 'rollback_on_failure', type: 'optional', category: 'advanced', field: 'rollback_on_failure', label: 'Rollback on Failure', description: 'Auto-rollback', defaultValue: true }
+      ],
+      'deployment_pipeline': [
+        { id: 'environment', type: 'required', category: 'input_schema', field: 'environment', label: 'Environment', description: 'dev, test, staging, prod' },
+        { id: 'cloud_provider', type: 'optional', category: 'input_schema', field: 'cloud_provider', label: 'Cloud Provider', description: 'aws, gcp, azure' },
+        { id: 'region', type: 'optional', category: 'input_schema', field: 'region', label: 'Region', description: 'Deployment region' },
+        { id: 'deployment_strategy', type: 'optional', category: 'advanced', field: 'deployment_strategy', label: 'Strategy', description: 'rolling, blue-green, canary', defaultValue: 'rolling' },
+        { id: 'scaling_policy', type: 'optional', category: 'advanced', field: 'scaling_policy', label: 'Scaling Policy', description: 'Auto-scaling rules' },
+        { id: 'health_check_enabled', type: 'optional', category: 'advanced', field: 'health_check_enabled', label: 'Health Checks', description: 'Enable health checks', defaultValue: true },
+        { id: 'rollback_on_failure', type: 'optional', category: 'advanced', field: 'rollback_on_failure', label: 'Rollback on Failure', description: 'Auto-rollback', defaultValue: true }
       ]
     };
 
