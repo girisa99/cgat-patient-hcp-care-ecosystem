@@ -8,7 +8,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Sparkles, TestTube, Play, Brain, Zap, Settings2, 
-  CheckCircle, XCircle, Clock, Terminal, Download, RotateCcw 
+  CheckCircle, XCircle, X, Clock, Terminal, Download, RotateCcw 
 } from 'lucide-react';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -28,13 +28,15 @@ interface UnifiedTestingInterfaceProps {
   workflowEdges?: any[];
   selectedNode?: any;
   onAgentGenerated?: (agent: any) => void;
+  onClose?: () => void;
 }
 
 export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = ({
   workflowNodes = [],
   workflowEdges = [],
   selectedNode,
-  onAgentGenerated
+  onAgentGenerated,
+  onClose
 }) => {
   const [testingMode, setTestingMode] = useState<'generate' | 'test' | 'unified'>('unified');
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'claude' | 'gemini'>('openai');
@@ -59,6 +61,16 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
       scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
     }
   }, [testResults]);
+
+  // Close on ESC when onClose is provided
+  useEffect(() => {
+    if (!onClose) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [onClose]);
 
   const addTestResult = (result: Partial<TestResult>) => {
     const newResult: TestResult = {
@@ -294,6 +306,12 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
                 </SelectItem>
               </SelectContent>
             </Select>
+
+            {onClose && (
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose} aria-label="Close unified testing">
+                <X className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

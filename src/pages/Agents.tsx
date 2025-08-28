@@ -368,8 +368,8 @@ const AgentsInner = () => {
 
         {/* Unified Testing Interface (overlay) */}
         {showUnifiedTesting && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm">
-            <div className="absolute inset-4 rounded-lg border bg-card shadow-lg flex flex-col">
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => setShowUnifiedTesting(false)}>
+            <div className="absolute inset-4 rounded-lg border bg-card shadow-lg flex flex-col" onClick={(e) => e.stopPropagation()}>
               <div className="p-3 border-b flex items-center justify-between">
                 <h3 className="text-sm font-semibold">Unified Testing & Agent Generation</h3>
                 <Button
@@ -393,6 +393,7 @@ const AgentsInner = () => {
                     setShowUnifiedTesting(false);
                     toast.success('Agent created from prompt and added to canvas');
                   }}
+                  onClose={() => setShowUnifiedTesting(false)}
                 />
               </div>
             </div>
