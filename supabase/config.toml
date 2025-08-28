@@ -52,3 +52,12 @@ verify_jwt = true
 
 [functions.security-monitor]
 verify_jwt = true
+
+[functions.generate-agent-from-prompt]
+verify_jwt = false
+
+[functions.ai-universal-processor]
+verify_jwt = false
+
+[functions.check-ai-provider]
+verify_jwt = false

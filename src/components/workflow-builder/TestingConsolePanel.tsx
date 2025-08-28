@@ -6,12 +6,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Play, Pause, Square, RotateCcw, Download, Upload, 
-  Terminal, Bug, CheckCircle, XCircle, Clock, Zap 
+  Terminal, Bug, CheckCircle, XCircle, Clock, Zap, Brain 
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useAIModelTesting } from '@/hooks/useAIModelTesting';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { supabase } from '@/integrations/supabase/client';
 import { QuickAgentGeneratorButton } from '@/components/testing/QuickAgentGeneratorButton';
 import { useGlobalAgentGenerator } from '@/hooks/useGlobalAgentGenerator';
@@ -50,11 +52,20 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
   const [currentTest, setCurrentTest] = useState<string>('');
   const [testInput, setTestInput] = useState('{"message": "Hello, test the workflow"}');
   const [activeTab, setActiveTab] = useState('console');
+  const [selectedAIProvider, setSelectedAIProvider] = useState<'openai' | 'claude' | 'gemini'>('openai');
+  const [testMode, setTestMode] = useState<'simulation' | 'ai'>('ai');
   const scrollRef = useRef<HTMLDivElement>(null);
   
   const { showSuccess, showError } = useMasterToast();
   const { startTestRun, testRuns, loading } = useAIModelTesting();
   const { onAgentGenerated } = useGlobalAgentGenerator();
+  const { 
+    testNode, 
+    analyzeWorkflow, 
+    availableProviders, 
+    isLoading: aiLoading,
+    hasAvailableProviders 
+  } = useUniversalAI({ defaultProvider: selectedAIProvider });
 
   // Listen for generated agents to use in testing
   useEffect(() => {
@@ -140,9 +151,10 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
     setIsRunning(true);
     setCurrentTest('workflow-execution');
     
+    const testModeText = testMode === 'ai' ? `using ${selectedAIProvider.toUpperCase()} AI` : 'simulation mode';
     addTestResult({
       status: 'running',
-      message: `🚀 Starting workflow test with ${workflowNodes.length} nodes...`
+      message: `🚀 Starting workflow test with ${workflowNodes.length} nodes (${testModeText})...`
     });
 
     try {
@@ -154,46 +166,102 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
         throw new Error('Invalid JSON in test input');
       }
 
-      // Simulate workflow execution through nodes
-      for (const node of workflowNodes) {
+      if (testMode === 'ai' && hasAvailableProviders) {
+        // AI-powered workflow testing
+        for (const node of workflowNodes) {
+          addTestResult({
+            status: 'running',
+            message: `🧠 AI testing node: ${node.data?.label || node.id} with ${selectedAIProvider.toUpperCase()}`,
+            nodeId: node.id
+          });
+
+          try {
+            const nodeResult = await testNode(node, inputData, selectedAIProvider);
+            
+            if (nodeResult.success) {
+              addTestResult({
+                status: 'success',
+                message: `✅ ${nodeResult.message || `Node ${node.data?.label || node.id} completed`}`,
+                nodeId: node.id,
+                duration: nodeResult.executionTime,
+                data: { 
+                  input: inputData, 
+                  output: nodeResult.output,
+                  aiProvider: selectedAIProvider,
+                  aiAnalysis: nodeResult
+                }
+              });
+              // Use the output as input for the next node
+              inputData = nodeResult.output || inputData;
+            } else {
+              addTestResult({
+                status: 'error',
+                message: `❌ ${nodeResult.message || `Node ${node.data?.label || node.id} failed`}`,
+                nodeId: node.id,
+                duration: nodeResult.executionTime
+              });
+              break;
+            }
+          } catch (nodeError: any) {
+            addTestResult({
+              status: 'error',
+              message: `💥 AI testing failed for node ${node.data?.label || node.id}: ${nodeError.message}`,
+              nodeId: node.id,
+              duration: 500
+            });
+            break;
+          }
+        }
+
         addTestResult({
-          status: 'running',
-          message: `⚡ Executing node: ${node.data?.label || node.id}`,
-          nodeId: node.id
+          status: 'success',
+          message: `🎉 AI-powered workflow test completed using ${selectedAIProvider.toUpperCase()}!`,
+          duration: Math.round(2000 + Math.random() * 3000)
         });
 
-        // Simulate node processing time
-        await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+        showSuccess(`Workflow test completed successfully with ${selectedAIProvider.toUpperCase()}!`);
+      } else {
+        // Fallback to simulation mode
+        for (const node of workflowNodes) {
+          addTestResult({
+            status: 'running',
+            message: `⚡ Simulating node: ${node.data?.label || node.id}`,
+            nodeId: node.id
+          });
 
-        // Simulate different outcomes based on node type
-        const nodeSuccess = Math.random() > 0.1; // 90% success rate
-        
-        if (nodeSuccess) {
-          addTestResult({
-            status: 'success',
-            message: `✅ Node ${node.data?.label || node.id} completed successfully`,
-            nodeId: node.id,
-            duration: Math.round(500 + Math.random() * 1000),
-            data: { input: inputData, output: { processed: true, nodeId: node.id } }
-          });
-        } else {
-          addTestResult({
-            status: 'error',
-            message: `❌ Node ${node.data?.label || node.id} failed - simulated error`,
-            nodeId: node.id,
-            duration: Math.round(200 + Math.random() * 500)
-          });
-          break;
+          // Simulate node processing time
+          await new Promise(resolve => setTimeout(resolve, 500 + Math.random() * 1000));
+
+          // Simulate different outcomes based on node type
+          const nodeSuccess = Math.random() > 0.1; // 90% success rate
+          
+          if (nodeSuccess) {
+            addTestResult({
+              status: 'success',
+              message: `✅ Node ${node.data?.label || node.id} completed (simulated)`,
+              nodeId: node.id,
+              duration: Math.round(500 + Math.random() * 1000),
+              data: { input: inputData, output: { processed: true, nodeId: node.id, mode: 'simulation' } }
+            });
+          } else {
+            addTestResult({
+              status: 'error',
+              message: `❌ Node ${node.data?.label || node.id} failed - simulated error`,
+              nodeId: node.id,
+              duration: Math.round(200 + Math.random() * 500)
+            });
+            break;
+          }
         }
+
+        addTestResult({
+          status: 'success',
+          message: `🎉 Simulated workflow test completed!`,
+          duration: Math.round(2000 + Math.random() * 3000)
+        });
+
+        showSuccess('Workflow test completed successfully!');
       }
-
-      addTestResult({
-        status: 'success',
-        message: `🎉 Workflow test completed successfully!`,
-        duration: Math.round(2000 + Math.random() * 3000)
-      });
-
-      showSuccess('Workflow test completed successfully!');
 
     } catch (error: any) {
       addTestResult({
@@ -214,43 +282,76 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
     setIsRunning(true);
     setCurrentTest(`node-${selectedNode.id}`);
 
+    const testModeText = testMode === 'ai' ? `using ${selectedAIProvider.toUpperCase()} AI` : 'simulation mode';
     addTestResult({
       status: 'running',
-      message: `🎯 Testing single node: ${selectedNode.data?.label || selectedNode.id}`
+      message: `🎯 Testing single node: ${selectedNode.data?.label || selectedNode.id} (${testModeText})`
     });
 
     try {
       const inputData = JSON.parse(testInput);
-      
-      // Simulate node testing
-      await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
 
-      const success = Math.random() > 0.05; // 95% success for single nodes
-      
-      if (success) {
-        addTestResult({
-          status: 'success',
-          message: `✅ Node test passed for ${selectedNode.data?.label || selectedNode.id}`,
-          nodeId: selectedNode.id,
-          duration: Math.round(1000 + Math.random() * 2000),
-          data: { 
-            input: inputData, 
-            output: { 
-              processed: true, 
+      if (testMode === 'ai' && hasAvailableProviders) {
+        // AI-powered node testing
+        const nodeResult = await testNode(selectedNode, inputData, selectedAIProvider);
+        
+        if (nodeResult.success) {
+          addTestResult({
+            status: 'success',
+            message: `✅ ${nodeResult.message || `AI test passed for ${selectedNode.data?.label || selectedNode.id}`}`,
+            nodeId: selectedNode.id,
+            duration: nodeResult.executionTime,
+            data: { 
+              input: inputData, 
+              output: nodeResult.output,
+              aiProvider: selectedAIProvider,
+              aiAnalysis: nodeResult,
               nodeType: selectedNode.type,
-              nodeData: selectedNode.data 
-            } 
-          }
-        });
-        showSuccess('Node test passed!');
+              nodeData: selectedNode.data
+            }
+          });
+          showSuccess(`Node test passed using ${selectedAIProvider.toUpperCase()}!`);
+        } else {
+          addTestResult({
+            status: 'error',
+            message: `❌ ${nodeResult.message || `AI test failed for ${selectedNode.data?.label || selectedNode.id}`}`,
+            nodeId: selectedNode.id,
+            duration: nodeResult.executionTime
+          });
+          showError('AI node test failed!');
+        }
       } else {
-        addTestResult({
-          status: 'error',
-          message: `❌ Node test failed for ${selectedNode.data?.label || selectedNode.id}`,
-          nodeId: selectedNode.id,
-          duration: Math.round(500)
-        });
-        showError('Node test failed!');
+        // Fallback to simulation mode
+        await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 2000));
+
+        const success = Math.random() > 0.05; // 95% success for single nodes
+        
+        if (success) {
+          addTestResult({
+            status: 'success',
+            message: `✅ Node test passed for ${selectedNode.data?.label || selectedNode.id} (simulated)`,
+            nodeId: selectedNode.id,
+            duration: Math.round(1000 + Math.random() * 2000),
+            data: { 
+              input: inputData, 
+              output: { 
+                processed: true, 
+                nodeType: selectedNode.type,
+                nodeData: selectedNode.data,
+                mode: 'simulation'
+              } 
+            }
+          });
+          showSuccess('Node test passed!');
+        } else {
+          addTestResult({
+            status: 'error',
+            message: `❌ Node test failed for ${selectedNode.data?.label || selectedNode.id} (simulated)`,
+            nodeId: selectedNode.id,
+            duration: Math.round(500)
+          });
+          showError('Node test failed!');
+        }
       }
 
     } catch (error: any) {
@@ -343,26 +444,57 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
             >
               <span className="text-xs">Generate Test Agent</span>
             </QuickAgentGeneratorButton>
+
+            {/* AI Provider Selection */}
+            <Select value={selectedAIProvider} onValueChange={(value: 'openai' | 'claude' | 'gemini') => setSelectedAIProvider(value)}>
+              <SelectTrigger className="h-7 w-20 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {availableProviders.map(provider => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    {provider.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Test Mode Toggle */}
+            <Select value={testMode} onValueChange={(value: 'simulation' | 'ai') => setTestMode(value)}>
+              <SelectTrigger className="h-7 w-16 text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ai" disabled={!hasAvailableProviders}>
+                  <Brain className="h-3 w-3 mr-1" />
+                  AI
+                </SelectItem>
+                <SelectItem value="simulation">
+                  <Zap className="h-3 w-3 mr-1" />
+                  Sim
+                </SelectItem>
+              </SelectContent>
+            </Select>
             
             <Button
               size="sm"
               variant="outline"
               onClick={runWorkflowTest}
-              disabled={isRunning || workflowNodes.length === 0}
+              disabled={isRunning || aiLoading || workflowNodes.length === 0}
               className="h-7 text-xs"
             >
-              <Play className="h-3 w-3 mr-1" />
-              Classic Test
+              {testMode === 'ai' ? <Brain className="h-3 w-3 mr-1" /> : <Play className="h-3 w-3 mr-1" />}
+              Test Workflow
             </Button>
             
             <Button
               size="sm"
               variant="outline"
               onClick={runSingleNodeTest}
-              disabled={isRunning || !selectedNode}
+              disabled={isRunning || aiLoading || !selectedNode}
               className="h-7 text-xs"
             >
-              <Bug className="h-3 w-3 mr-1" />
+              {testMode === 'ai' ? <Brain className="h-3 w-3 mr-1" /> : <Bug className="h-3 w-3 mr-1" />}
               Test Node
             </Button>
             
@@ -418,7 +550,10 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
             <TabsTrigger value="console" className="text-xs">Console</TabsTrigger>
             <TabsTrigger value="input" className="text-xs">Test Input</TabsTrigger>
             <TabsTrigger value="results" className="text-xs">Results</TabsTrigger>
-            <TabsTrigger value="ai-assistant" className="text-xs">AI Assistant</TabsTrigger>
+            <TabsTrigger value="ai-assistant" className="text-xs">
+              <Brain className="h-3 w-3 mr-1" />
+              AI Assistant
+            </TabsTrigger>
           </TabsList>
           
           <TabsContent value="console" className="h-60 m-0">
@@ -452,20 +587,49 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
           </TabsContent>
           
           <TabsContent value="input" className="h-60 m-0 p-3">
-            <div className="space-y-3">
-              <div>
-                <label className="text-xs font-medium mb-1 block">Test Input (JSON)</label>
-                <Textarea
-                  value={testInput}
-                  onChange={(e) => setTestInput(e.target.value)}
-                  placeholder='{"message": "Hello world", "data": {...}}'
-                  className="h-32 text-xs font-mono"
-                />
+              <div className="space-y-3">
+                <div className="flex items-center gap-3 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-medium">Test Mode:</span>
+                    <Badge variant={testMode === 'ai' ? 'default' : 'secondary'} className="text-xs">
+                      {testMode === 'ai' ? (
+                        <>
+                          <Brain className="h-3 w-3 mr-1" />
+                          AI ({selectedAIProvider.toUpperCase()})
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-3 w-3 mr-1" />
+                          Simulation
+                        </>
+                      )}
+                    </Badge>
+                  </div>
+                  {!hasAvailableProviders && (
+                    <div className="text-xs text-yellow-600">
+                      ⚠️ No AI providers available - using simulation mode
+                    </div>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="text-xs font-medium mb-1 block">Test Input (JSON)</label>
+                  <Textarea
+                    value={testInput}
+                    onChange={(e) => setTestInput(e.target.value)}
+                    placeholder='{"message": "Hello world", "data": {...}}'
+                    className="h-32 text-xs font-mono"
+                  />
+                </div>
+                <div className="text-xs text-muted-foreground">
+                  This JSON will be sent as input to the workflow or selected node for testing.
+                  {testMode === 'ai' && (
+                    <span className="block mt-1 text-primary">
+                      🧠 AI mode will analyze each node intelligently using {selectedAIProvider.toUpperCase()}.
+                    </span>
+                  )}
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground">
-                This JSON will be sent as input to the workflow or selected node for testing.
-              </div>
-            </div>
           </TabsContent>
           
           <TabsContent value="results" className="h-60 m-0">
@@ -501,16 +665,48 @@ export const TestingConsolePanel: React.FC<TestingConsolePanelProps> = ({
             </ScrollArea>
           </TabsContent>
           
-          <TabsContent value="ai-assistant" className="h-60 m-0 p-0">
-            <div className="h-full">
-              {/* AI Assistant will be imported and used here */}
-              <div className="flex items-center justify-center h-full text-muted-foreground">
-                <div className="text-center">
-                  <Terminal className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                  <p className="text-sm">AI Testing Assistant</p>
-                  <p className="text-xs">Analyze workflow and get AI-powered testing insights</p>
-                </div>
+          <TabsContent value="ai-assistant" className="h-60 m-0 p-3">
+            <div className="space-y-3">
+              <div className="flex items-center gap-2 mb-2">
+                <Brain className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">AI Workflow Analysis</span>
+                <Badge variant="outline" className="text-xs">
+                  {selectedAIProvider.toUpperCase()}
+                </Badge>
               </div>
+              
+              {hasAvailableProviders ? (
+                <div className="space-y-2">
+                  <Button
+                    size="sm"
+                    onClick={() => analyzeWorkflow(workflowNodes, workflowEdges, selectedAIProvider)}
+                    disabled={aiLoading || workflowNodes.length === 0}
+                    className="w-full"
+                  >
+                    {aiLoading ? (
+                      <>
+                        <Clock className="h-3 w-3 mr-2 animate-spin" />
+                        Analyzing...
+                      </>
+                    ) : (
+                      <>
+                        <Brain className="h-3 w-3 mr-2" />
+                        Analyze Workflow with {selectedAIProvider.toUpperCase()}
+                      </>
+                    )}
+                  </Button>
+                  
+                  <div className="text-xs text-muted-foreground">
+                    Get AI-powered insights about your workflow structure, potential issues, and optimization suggestions using {selectedAIProvider.toUpperCase()}.
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center text-xs text-muted-foreground py-4">
+                  <Brain className="h-6 w-6 mx-auto mb-2 opacity-50" />
+                  <p>No AI providers available</p>
+                  <p>Configure API keys to enable AI analysis</p>
+                </div>
+              )}
             </div>
           </TabsContent>
         </Tabs>
