@@ -363,24 +363,21 @@ const AgentsInner = () => {
 
         {/* Unified AI Assist (overlay) */}
         {showUnifiedAssist && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => setShowUnifiedAssist(false)}>
-            <div className="absolute inset-4 rounded-lg border bg-card shadow-lg flex flex-col" onClick={(e) => e.stopPropagation()}>
-              <div className="flex-1 overflow-hidden p-3">
-                <UnifiedAgentAssist
-                  workflowNodes={workflowNodes}
-                  workflowEdges={workflowEdges}
-                  selectedNode={selectedNode}
-                  onAgentGenerated={(finalAgent: any) => {
-                    setWorkflowNodes(finalAgent.nodes || []);
-                    setWorkflowEdges(finalAgent.edges || []);
-                    setShowUnifiedAssist(false);
-                    toast.success('Agent created from prompt and added to canvas');
-                  }}
-                  onClose={() => setShowUnifiedAssist(false)}
-                />
-              </div>
+          <aside className="fixed inset-y-0 right-0 z-50 w-[min(560px,100vw)] border-l bg-card shadow-xl flex flex-col">
+            <div className="flex-1 overflow-auto p-3">
+              <UnifiedAgentAssist
+                workflowNodes={workflowNodes}
+                workflowEdges={workflowEdges}
+                selectedNode={selectedNode}
+                onAgentGenerated={(finalAgent: any) => {
+                  setWorkflowNodes(finalAgent.nodes || []);
+                  setWorkflowEdges(finalAgent.edges || []);
+                  toast.success('Applied to canvas');
+                }}
+                onClose={() => setShowUnifiedAssist(false)}
+              />
             </div>
-          </div>
+          </aside>
         )}
       </div>
     );
