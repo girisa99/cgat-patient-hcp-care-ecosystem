@@ -3306,6 +3306,69 @@ export type Database = {
         }
         Relationships: []
       }
+      deployment_environments: {
+        Row: {
+          cloud_provider: string | null
+          created_at: string | null
+          created_by: string
+          deployment_config: Json | null
+          environment_type: string
+          environment_variables: Json | null
+          id: string
+          infrastructure_config: Json | null
+          last_deployed_at: string | null
+          monitoring_config: Json | null
+          name: string
+          region: string | null
+          resource_allocation: Json | null
+          scaling_config: Json | null
+          secrets: Json | null
+          security_config: Json | null
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          cloud_provider?: string | null
+          created_at?: string | null
+          created_by: string
+          deployment_config?: Json | null
+          environment_type?: string
+          environment_variables?: Json | null
+          id?: string
+          infrastructure_config?: Json | null
+          last_deployed_at?: string | null
+          monitoring_config?: Json | null
+          name: string
+          region?: string | null
+          resource_allocation?: Json | null
+          scaling_config?: Json | null
+          secrets?: Json | null
+          security_config?: Json | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          cloud_provider?: string | null
+          created_at?: string | null
+          created_by?: string
+          deployment_config?: Json | null
+          environment_type?: string
+          environment_variables?: Json | null
+          id?: string
+          infrastructure_config?: Json | null
+          last_deployed_at?: string | null
+          monitoring_config?: Json | null
+          name?: string
+          region?: string | null
+          resource_allocation?: Json | null
+          scaling_config?: Json | null
+          secrets?: Json | null
+          security_config?: Json | null
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       developer_applications: {
         Row: {
           company_name: string
@@ -7154,6 +7217,54 @@ export type Database = {
         }
         Relationships: []
       }
+      test_configurations: {
+        Row: {
+          assertions: Json | null
+          created_at: string | null
+          created_by: string
+          id: string
+          is_active: boolean | null
+          name: string
+          notification_settings: Json | null
+          performance_thresholds: Json | null
+          reporting_config: Json | null
+          test_config: Json
+          test_scenarios: Json | null
+          test_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          assertions?: Json | null
+          created_at?: string | null
+          created_by: string
+          id?: string
+          is_active?: boolean | null
+          name: string
+          notification_settings?: Json | null
+          performance_thresholds?: Json | null
+          reporting_config?: Json | null
+          test_config?: Json
+          test_scenarios?: Json | null
+          test_type?: string
+          updated_at?: string | null
+        }
+        Update: {
+          assertions?: Json | null
+          created_at?: string | null
+          created_by?: string
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          notification_settings?: Json | null
+          performance_thresholds?: Json | null
+          reporting_config?: Json | null
+          test_config?: Json
+          test_scenarios?: Json | null
+          test_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       test_datasets: {
         Row: {
           created_at: string | null
@@ -7894,6 +8005,57 @@ export type Database = {
           },
         ]
       }
+      vector_store_configs: {
+        Row: {
+          connection_config: Json
+          created_at: string | null
+          created_by: string
+          distance_metric: string | null
+          embedding_config: Json | null
+          id: string
+          index_type: string | null
+          is_active: boolean | null
+          name: string
+          performance_config: Json | null
+          search_config: Json | null
+          store_type: string
+          updated_at: string | null
+          vector_dimension: number
+        }
+        Insert: {
+          connection_config?: Json
+          created_at?: string | null
+          created_by: string
+          distance_metric?: string | null
+          embedding_config?: Json | null
+          id?: string
+          index_type?: string | null
+          is_active?: boolean | null
+          name: string
+          performance_config?: Json | null
+          search_config?: Json | null
+          store_type?: string
+          updated_at?: string | null
+          vector_dimension?: number
+        }
+        Update: {
+          connection_config?: Json
+          created_at?: string | null
+          created_by?: string
+          distance_metric?: string | null
+          embedding_config?: Json | null
+          id?: string
+          index_type?: string | null
+          is_active?: boolean | null
+          name?: string
+          performance_config?: Json | null
+          search_config?: Json | null
+          store_type?: string
+          updated_at?: string | null
+          vector_dimension?: number
+        }
+        Relationships: []
+      }
       voice_analytics_events: {
         Row: {
           agent_id: string | null
@@ -8475,6 +8637,59 @@ export type Database = {
             columns: ["workflow_id"]
             isOneToOne: false
             referencedRelation: "agent_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_execution_logs: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          error_details: Json | null
+          execution_status: string
+          execution_time_ms: number | null
+          id: string
+          input_data: Json | null
+          node_id: string
+          node_type: string
+          output_data: Json | null
+          started_at: string | null
+          workflow_instance_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          execution_status?: string
+          execution_time_ms?: number | null
+          id?: string
+          input_data?: Json | null
+          node_id: string
+          node_type: string
+          output_data?: Json | null
+          started_at?: string | null
+          workflow_instance_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          execution_status?: string
+          execution_time_ms?: number | null
+          id?: string
+          input_data?: Json | null
+          node_id?: string
+          node_type?: string
+          output_data?: Json | null
+          started_at?: string | null
+          workflow_instance_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_execution_logs_workflow_instance_id_fkey"
+            columns: ["workflow_instance_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_instances"
             referencedColumns: ["id"]
           },
         ]
