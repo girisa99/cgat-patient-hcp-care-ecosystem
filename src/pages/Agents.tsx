@@ -51,7 +51,7 @@ import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetP
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
-import { UnifiedTestingInterface } from '@/components/testing/UnifiedTestingInterface';
+import { UnifiedAgentAssist } from '@/components/unified/UnifiedAgentAssist';
 
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -78,7 +78,7 @@ const AgentsInner = () => {
   const [isInlineConfigOpen, setInlineConfigOpen] = useState(false);
   const [workflowNodes, setWorkflowNodes] = useState<any[]>([]);
   const [workflowEdges, setWorkflowEdges] = useState<any[]>([]);
-  const [showUnifiedTesting, setShowUnifiedTesting] = useState(false);
+  const [showUnifiedAssist, setShowUnifiedAssist] = useState(false);
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -249,9 +249,9 @@ const AgentsInner = () => {
               <Bot className="w-3 h-3 mr-1" />
               AI Assistant
             </Button>
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowUnifiedTesting(!showUnifiedTesting)}>
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)}>
               <Sparkles className="w-3 h-3 mr-1" />
-              Unified Testing
+              Unified AI Assist
             </Button>
           </div>
         </div>
@@ -366,34 +366,22 @@ const AgentsInner = () => {
           </div>
         )}
 
-        {/* Unified Testing Interface (overlay) */}
-        {showUnifiedTesting && (
-          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => setShowUnifiedTesting(false)}>
+        {/* Unified AI Assist (overlay) */}
+        {showUnifiedAssist && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm" onClick={() => setShowUnifiedAssist(false)}>
             <div className="absolute inset-4 rounded-lg border bg-card shadow-lg flex flex-col" onClick={(e) => e.stopPropagation()}>
-              <div className="p-3 border-b flex items-center justify-between">
-                <h3 className="text-sm font-semibold">Unified Testing & Agent Generation</h3>
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowUnifiedTesting(false)}
-                  className="h-6 w-6 p-0"
-                >
-                  <X className="w-4 h-4" />
-                </Button>
-              </div>
               <div className="flex-1 overflow-hidden p-3">
-                <UnifiedTestingInterface
+                <UnifiedAgentAssist
                   workflowNodes={workflowNodes}
                   workflowEdges={workflowEdges}
                   selectedNode={selectedNode}
                   onAgentGenerated={(finalAgent: any) => {
                     setWorkflowNodes(finalAgent.nodes || []);
                     setWorkflowEdges(finalAgent.edges || []);
-                    setShowUnifiedTesting(false);
+                    setShowUnifiedAssist(false);
                     toast.success('Agent created from prompt and added to canvas');
                   }}
-                  onClose={() => setShowUnifiedTesting(false)}
+                  onClose={() => setShowUnifiedAssist(false)}
                 />
               </div>
             </div>
