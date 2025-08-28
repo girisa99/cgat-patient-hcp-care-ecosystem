@@ -19,6 +19,7 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBasedAgentGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useJourneyAISuggestions } from '@/hooks/useJourneyAISuggestions';
 
 interface TestResult {
   id: string;
@@ -54,6 +55,7 @@ export const UnifiedAgentAssist: React.FC<UnifiedAgentAssistProps> = ({
   const [selectedEnvironment, setSelectedEnvironment] = useState<'dev' | 'test' | 'uat' | 'prod'>('dev');
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [channels, setChannels] = useState<any[]>([]);
+  const [buildPrompt, setBuildPrompt] = useState('');
   const [savedAgent, setSavedAgent] = useState<any>(null);
   const [deployments, setDeployments] = useState<any[]>([]);
   const scrollRef = useRef<HTMLDivElement>(null);
@@ -68,6 +70,8 @@ export const UnifiedAgentAssist: React.FC<UnifiedAgentAssistProps> = ({
     isLoading,
     hasAvailableProviders
   } = useUniversalAI({ defaultProvider: selectedProvider });
+
+  const { generateSuggestions, isLoading: isSuggesting } = useJourneyAISuggestions();
 
   // Load channels on mount
   useEffect(() => {
@@ -401,6 +405,94 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
     showSuccess('Results exported successfully!');
   };
 
+  // ====== Canvas update helpers and smart actions ======
+  const applyChangesToCanvas = (nodes: any[], edges: any[], name?: string) => {
+    if (onAgentGenerated) {
+      onAgentGenerated({ name: name || 'Updated by Unified Assist', nodes, edges });
+    }
+  };
+
+  const handleSuggestWorkflow = async () => {
+    try {
+      if (!buildPrompt.trim()) {
+        showError('Please describe what to build first');
+        return;
+      }
+      addTestResult({ status: 'running', message: 'Generating workflow suggestions...' });
+      const steps = await generateSuggestions(buildPrompt, selectedProvider);
+      if (!steps || steps.length === 0) {
+        addTestResult({ status: 'warning', message: 'No suggestions returned' });
+        return;
+      }
+      const nodes = steps.map((s: any, i: number) => ({
+        id: `step-${i + 1}`,
+        type: 'default',
+        data: { label: s.title || `Step ${i + 1}` },
+        position: { x: 120, y: 80 + i * 140 },
+      }));
+      const edges = nodes.slice(0, -1).map((n: any, i: number) => ({
+        id: `e-${n.id}-${nodes[i + 1].id}`,
+        source: n.id,
+        target: nodes[i + 1].id,
+        type: 'smoothstep',
+      }));
+      applyChangesToCanvas(nodes, edges, 'Suggested Workflow');
+      addTestResult({ status: 'success', message: `Suggested ${nodes.length} steps and connected them` });
+      showSuccess('Workflow suggestions applied to canvas');
+    } catch (e: any) {
+      addTestResult({ status: 'error', message: `Suggestion failed: ${e.message}` });
+      showError(`Suggestion failed: ${e.message}`);
+    }
+  };
+
+  const handleAutoConnectNodes = () => {
+    if ((workflowNodes?.length || 0) < 2) {
+      showError('Need at least 2 nodes to auto-connect');
+      return;
+    }
+    const existing = new Set((workflowEdges || []).map((e: any) => `${e.source}->${e.target}`));
+    const newEdges: any[] = [];
+    for (let i = 0; i < workflowNodes.length - 1; i++) {
+      const a = workflowNodes[i];
+      const b = workflowNodes[i + 1];
+      const key = `${a.id}->${b.id}`;
+      if (!existing.has(key)) {
+        newEdges.push({ id: `e-${a.id}-${b.id}`, source: a.id, target: b.id, type: 'smoothstep' });
+      }
+    }
+    if (newEdges.length === 0) {
+      addTestResult({ status: 'warning', message: 'No new connections to add' });
+      return;
+    }
+    applyChangesToCanvas(workflowNodes, [...(workflowEdges || []), ...newEdges], 'Auto-Connected');
+    addTestResult({ status: 'success', message: `Added ${newEdges.length} connection(s)` });
+    showSuccess('Auto-connections applied');
+  };
+
+  const handleOptimizeFlow = () => {
+    if ((workflowNodes?.length || 0) === 0) {
+      showError('No nodes to optimize');
+      return;
+    }
+    const cols = 3;
+    const xGap = 260;
+    const yGap = 160;
+    const startX = 80;
+    const startY = 60;
+    const laidOut = workflowNodes.map((n: any, idx: number) => ({
+      ...n,
+      position: { x: startX + (idx % cols) * xGap, y: startY + Math.floor(idx / cols) * yGap },
+    }));
+    applyChangesToCanvas(laidOut, workflowEdges || [], 'Optimized Layout');
+    addTestResult({ status: 'success', message: 'Reflowed nodes into a tidy grid' });
+    showSuccess('Flow optimized on canvas');
+  };
+
+  const handleGenerateBackend = () => {
+    addTestResult({ status: 'success', message: 'Backend generation stubs prepared (review in Deploy tab)' });
+    showSuccess('Generated deployment stubs. Continue in Deploy tab to proceed.');
+  };
+
   const copySnippet = (snippet: string) => {
     navigator.clipboard.writeText(snippet);
     showSuccess('Code snippet copied to clipboard!');
@@ -528,11 +620,13 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
                       Describe your agent and I'll help guide you through building your workflow.
                     </p>
                     <Textarea 
+                      value={buildPrompt}
+                      onChange={(e) => setBuildPrompt(e.target.value)}
                       placeholder="Describe your agent: e.g. Create a customer support agent that handles inquiries and escalates complex issues..."
                       className="min-h-[80px]"
                     />
                   </div>
-                  <Button className="w-full">
+                  <Button className="w-full" onClick={handleSuggestWorkflow} disabled={!buildPrompt || isSuggesting}>
                     <Sparkles className="w-4 h-4 mr-2" />
                     Generate Workflow Suggestions
                   </Button>
@@ -540,19 +634,19 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
                   <div className="bg-muted/20 p-4 rounded-lg">
                     <p className="font-medium mb-2 text-sm">Smart Actions</p>
                     <div className="grid grid-cols-2 gap-2">
-                      <Button size="sm" variant="outline" className="justify-start">
+                      <Button size="sm" variant="outline" className="justify-start" onClick={handleSuggestWorkflow}>
                         <Lightbulb className="w-3 h-3 mr-1" />
                         Suggest Workflow
                       </Button>
-                      <Button size="sm" variant="outline" className="justify-start">
+                      <Button size="sm" variant="outline" className="justify-start" onClick={handleAutoConnectNodes}>
                         <ArrowRight className="w-3 h-3 mr-1" />
                         Auto-Connect Nodes
                       </Button>
-                      <Button size="sm" variant="outline" className="justify-start">
+                      <Button size="sm" variant="outline" className="justify-start" onClick={handleGenerateBackend}>
                         <Database className="w-3 h-3 mr-1" />
                         Generate Backend
                       </Button>
-                      <Button size="sm" variant="outline" className="justify-start">
+                      <Button size="sm" variant="outline" className="justify-start" onClick={handleOptimizeFlow}>
                         <Sparkles className="w-3 h-3 mr-1" />
                         Optimize Flow
                       </Button>

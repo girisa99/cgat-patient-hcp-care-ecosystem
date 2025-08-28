@@ -189,7 +189,7 @@ const AgentsInner = () => {
     setSelectedUseCase(useCase);
     setVisualWorkflowSubTab('journey');
     toast.success('Use case selected! Now define your journey stages.');
-    setShowPromptAssistant(true);
+    setShowUnifiedAssist(true);
   };
 
   const handleJourneyComplete = (stages: any[]) => {
@@ -244,10 +244,6 @@ const AgentsInner = () => {
               <Play className="w-3 h-3 mr-1" />
               Deploy
             </Button>
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowPromptAssistant(!showPromptAssistant)}>
-              <Bot className="w-3 h-3 mr-1" />
-              AI Assistant
-            </Button>
             <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)}>
               <Sparkles className="w-3 h-3 mr-1" />
               🚀 Unified AI Assist
@@ -297,7 +293,7 @@ const AgentsInner = () => {
         </div>
 
         {/* AI Assistant Panel (fixed positioning) */}
-        {showPromptAssistant && (
+        {false && (
           <div className="fixed top-4 right-4 w-96 max-h-[80vh] border bg-card rounded-lg shadow-lg flex flex-col z-50">
             <div className="p-4 border-b flex items-center justify-between">
               <h3 className="font-semibold text-sm">AI Workflow Assistant</h3>
