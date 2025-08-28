@@ -361,9 +361,9 @@ const AgentsInner = () => {
           </div>
         )}
 
-        {/* Unified AI Assist (overlay) */}
+        {/* Unified AI Assist (non-blocking right panel) */}
         {showUnifiedAssist && (
-          <aside className="fixed inset-y-0 right-0 z-50 w-[min(560px,100vw)] border-l bg-card shadow-xl flex flex-col">
+          <aside className="fixed inset-y-0 right-0 z-40 w-[min(560px,100vw)] border-l bg-card shadow-xl flex flex-col">
             <div className="flex-1 overflow-auto p-3">
               <UnifiedAgentAssist
                 workflowNodes={workflowNodes}
@@ -379,6 +379,21 @@ const AgentsInner = () => {
             </div>
           </aside>
         )}
+        
+        {/* Main content overlay adjustment when panel is open */}
+        <style>{`
+          ${showUnifiedAssist ? `
+            .react-flow__panel-topright {
+              right: 580px !important;
+              transition: right 0.2s ease;
+            }
+          ` : `
+            .react-flow__panel-topright {
+              right: 20px !important;
+              transition: right 0.2s ease;
+            }
+          `}
+        `}</style>
       </div>
     );
   };
