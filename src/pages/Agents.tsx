@@ -60,7 +60,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const AgentsInner = () => {
   // State management
-  const [selectedMode, setSelectedMode] = useState<AgentMode | null>(null);
+  const [selectedMode, setSelectedMode] = useState<AgentMode | null>('visual' as any);
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
