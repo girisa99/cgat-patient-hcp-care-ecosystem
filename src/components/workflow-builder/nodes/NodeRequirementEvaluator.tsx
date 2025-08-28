@@ -3,7 +3,7 @@ import { Node } from '@xyflow/react';
 export interface NodeRequirement {
   id: string;
   type: 'required' | 'optional' | 'conditional';
-  category: 'credentials' | 'input_schema' | 'functions' | 'variables' | 'advanced';
+  category: 'credentials' | 'input_schema' | 'functions' | 'variables' | 'advanced' | 'flow_state' | 'javascript' | 'scenarios';
   field: string;
   label: string;
   description: string;
@@ -45,8 +45,69 @@ export const NodeRequirementEvaluator = {
     return key ? logoMap[key] : '/logos/default-ai.svg';
   },
 
-  // Define node-specific requirements
+  // Dynamically generate requirements based on node capabilities and data
   getNodeRequirements: (nodeType: string, nodeData: any): NodeRequirement[] => {
+    // First check for dynamic capabilities from node data
+    const capabilities = nodeData?.capabilities || [];
+    const dynamicRequirements: NodeRequirement[] = [];
+    
+    // Generate requirements based on node capabilities
+    if (capabilities.includes('credentials') || nodeData?.api_key !== undefined || nodeData?.auth_token !== undefined) {
+      dynamicRequirements.push({
+        id: 'api_key',
+        type: 'required',
+        category: 'credentials',
+        field: 'api_key',
+        label: 'API Key',
+        description: 'Authentication key for this service'
+      });
+    }
+    
+    if (capabilities.includes('flow_state') || nodeData?.state_variables !== undefined) {
+      dynamicRequirements.push({
+        id: 'state_variables',
+        type: 'optional',
+        category: 'flow_state',
+        field: 'state_variables',
+        label: 'State Variables',
+        description: 'Variables to track across workflow execution'
+      });
+    }
+    
+    if (capabilities.includes('javascript') || nodeData?.custom_code !== undefined) {
+      dynamicRequirements.push({
+        id: 'custom_code',
+        type: 'optional',
+        category: 'javascript',
+        field: 'custom_code',
+        label: 'Custom JavaScript',
+        description: 'Custom JavaScript code for this node'
+      });
+    }
+    
+    if (capabilities.includes('scenarios') || nodeData?.test_scenarios !== undefined) {
+      dynamicRequirements.push({
+        id: 'test_scenarios',
+        type: 'optional',
+        category: 'scenarios',
+        field: 'test_scenarios',
+        label: 'Test Scenarios',
+        description: 'Test scenarios and expected outcomes'
+      });
+    }
+    
+    // If we have dynamic requirements, use them plus any from the base definitions
+    if (dynamicRequirements.length > 0) {
+      const baseReqs = NodeRequirementEvaluator.getBaseNodeRequirements(nodeType, nodeData);
+      return [...baseReqs, ...dynamicRequirements];
+    }
+    
+    // Fallback to base requirements
+    return NodeRequirementEvaluator.getBaseNodeRequirements(nodeType, nodeData);
+  },
+
+  // Define node-specific base requirements
+  getBaseNodeRequirements: (nodeType: string, nodeData: any): NodeRequirement[] => {
     const baseRequirements: Record<string, NodeRequirement[]> = {
       // AI Model Nodes
       'openai_chat': [

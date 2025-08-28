@@ -134,7 +134,10 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
       input_schema: Settings,
       functions: Code,
       variables: Zap,
-      advanced: Settings
+      advanced: Settings,
+      flow_state: Zap,
+      javascript: Code,
+      scenarios: AlertCircle
     };
     return icons[category as keyof typeof icons] || Settings;
   };
@@ -227,6 +230,7 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
         );
 
       case 'function_code':
+      case 'custom_code':
         return (
           <div key={req.id} className="space-y-2">
             <Label className={isMissing ? 'text-red-500' : ''}>{req.label}</Label>
@@ -234,9 +238,44 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
             <Textarea
               value={currentValue || ''}
               onChange={(e) => updateConfig(req.field, e.target.value)}
-              placeholder={`function(input) {\n  // Your code here\n  return output;\n}`}
+              placeholder={req.field === 'function_code' ? 
+                `function(input) {\n  // Your code here\n  return output;\n}` :
+                `// Custom JavaScript code\nconst result = processData(input);\nreturn result;`
+              }
               className={`font-mono text-sm ${isMissing ? 'border-red-500' : ''}`}
               rows={8}
+            />
+            <p className="text-sm text-muted-foreground">{req.description}</p>
+          </div>
+        );
+
+      case 'state_variables':
+        return (
+          <div key={req.id} className="space-y-2">
+            <Label className={isMissing ? 'text-red-500' : ''}>{req.label}</Label>
+            {isRequired && <Badge variant="secondary" className="text-xs">Required</Badge>}
+            <Textarea
+              value={currentValue || ''}
+              onChange={(e) => updateConfig(req.field, e.target.value)}
+              placeholder={`{\n  "user_context": "",\n  "conversation_state": "",\n  "session_data": {}\n}`}
+              className={`font-mono text-sm ${isMissing ? 'border-red-500' : ''}`}
+              rows={6}
+            />
+            <p className="text-sm text-muted-foreground">{req.description}</p>
+          </div>
+        );
+
+      case 'test_scenarios':
+        return (
+          <div key={req.id} className="space-y-2">
+            <Label className={isMissing ? 'text-red-500' : ''}>{req.label}</Label>
+            {isRequired && <Badge variant="secondary" className="text-xs">Required</Badge>}
+            <Textarea
+              value={currentValue || ''}
+              onChange={(e) => updateConfig(req.field, e.target.value)}
+              placeholder={`[\n  {\n    "name": "Basic Test",\n    "input": "sample input",\n    "expected_output": "expected result"\n  }\n]`}
+              className={`font-mono text-sm ${isMissing ? 'border-red-500' : ''}`}
+              rows={10}
             />
             <p className="text-sm text-muted-foreground">{req.description}</p>
           </div>
@@ -375,8 +414,9 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
 
     return options;
   };
-  const categories = ['credentials', 'input_schema', 'functions', 'variables', 'advanced'];
-  const availableCategories = categories.filter(cat => 
+  // Dynamically determine available categories based on node requirements
+  const allPossibleCategories = ['credentials', 'input_schema', 'functions', 'variables', 'advanced', 'flow_state', 'javascript', 'scenarios'];
+  const availableCategories = allPossibleCategories.filter(cat => 
     nodeEvaluation.requirements.some(req => req.category === cat)
   );
   const resolvedActiveTab = availableCategories.includes(activeTab) ? activeTab : (availableCategories[0] || 'credentials');
@@ -424,7 +464,11 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
 
       <CardContent className="p-0">
         <Tabs value={resolvedActiveTab} onValueChange={setActiveTab}>
-          <TabsList level="child" className="sticky top-0 z-50 grid w-full grid-cols-5 h-auto p-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b relative">
+          <TabsList 
+            level="child" 
+            className={`sticky top-0 z-50 grid w-full h-auto p-1 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-b relative`}
+            style={{ gridTemplateColumns: `repeat(${availableCategories.length}, 1fr)` }}
+          >
           {availableCategories.map(category => {
             const Icon = getTabIcon(category);
             const categoryReqs = nodeEvaluation.requirements.filter(req => req.category === category);
