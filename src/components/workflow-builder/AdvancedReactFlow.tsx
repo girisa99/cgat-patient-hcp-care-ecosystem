@@ -79,7 +79,10 @@ import { ToolCreator } from './ToolCreator';
 import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
+import { DynamicNodeConfigurator } from './nodes/DynamicNodeConfigurator';
+
 const LazySmartNodeConfigurator = lazy(() => import('./SmartNodeConfigurator').then(m => ({ default: m.SmartNodeConfigurator })));
+const LazyDynamicConfigurator = lazy(() => import('./nodes/DynamicNodeConfigurator').then(m => ({ default: m.DynamicNodeConfigurator })));
 // Custom Node Types
 const CustomNode = ({ id, data, selected }: { id: string; data: any; selected: boolean }) => {
   const [isEditing, setIsEditing] = useState(false);
