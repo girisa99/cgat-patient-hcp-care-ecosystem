@@ -379,21 +379,6 @@ const AgentsInner = () => {
             </div>
           </aside>
         )}
-        
-        {/* Main content overlay adjustment when panel is open */}
-        <style>{`
-          ${showUnifiedAssist ? `
-            .react-flow__panel-topright {
-              right: 580px !important;
-              transition: right 0.2s ease;
-            }
-          ` : `
-            .react-flow__panel-topright {
-              right: 20px !important;
-              transition: right 0.2s ease;
-            }
-          `}
-        `}</style>
       </div>
     );
   };

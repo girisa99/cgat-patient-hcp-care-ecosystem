@@ -146,15 +146,13 @@ export const UnifiedAgentAssist: React.FC<UnifiedAgentAssistProps> = ({
       return;
     }
 
-    if (!agentName.trim()) {
-      showError('Please provide an agent name');
-      return;
-    }
+    // Auto-generate agent name if not provided
+    const finalAgentName = agentName.trim() || `Agent ${new Date().toLocaleTimeString()}`;
 
     try {
       const agentData = {
-        name: agentName,
-        description: agentDescription,
+        name: finalAgentName,
+        description: agentDescription || 'AI Agent created with Unified Assist',
         nodes: workflowNodes,
         edges: workflowEdges,
         configuration: {
@@ -174,9 +172,10 @@ export const UnifiedAgentAssist: React.FC<UnifiedAgentAssistProps> = ({
       if (error) throw error;
 
       setSavedAgent(data);
+      setAgentName(finalAgentName); // Update the name in state
       addTestResult({
         status: 'success',
-        message: `💾 Agent "${agentName}" saved successfully! Ready for deployment.`
+        message: `💾 Agent "${finalAgentName}" saved successfully! Ready for deployment.`
       });
       showSuccess('Agent saved successfully!');
       setAssistMode('deploy');
@@ -523,12 +522,59 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
 
   return (
     <Card className="w-full h-[600px] flex flex-col">
-      <CardHeader className="p-4 border-b">
-        <div className="flex items-center justify-between">
+      <CardHeader className="p-3 border-b">
+        {/* Main Action Bar */}
+        <div className="flex items-center justify-between mb-3">
           <CardTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5" />
             Unified AI Assist
           </CardTitle>
+          
+          <div className="flex items-center gap-2">
+            {/* Save and Deploy Actions */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={handleSaveAgent}
+              disabled={workflowNodes.length === 0}
+            >
+              <Save className="h-4 w-4 mr-1" />
+              Save
+            </Button>
+            <Button
+              size="sm"
+              variant="default"
+              onClick={() => {
+                if (savedAgent) {
+                  handleDeploy();
+                } else {
+                  showError('Please save the agent first');
+                }
+              }}
+              disabled={!savedAgent}
+            >
+              <Rocket className="h-4 w-4 mr-1" />
+              Deploy
+            </Button>
+
+            {onClose && (
+              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose} aria-label="Close unified assist">
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+        
+        {/* Settings Row */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            {workflowNodes.length > 0 && (
+              <Badge variant="secondary">{workflowNodes.length} nodes</Badge>
+            )}
+            {savedAgent && (
+              <Badge variant="outline">{savedAgent.name}</Badge>
+            )}
+          </div>
           
           <div className="flex items-center gap-2">
             {/* AI Provider Selection */}
@@ -580,12 +626,6 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
                 </SelectItem>
               </SelectContent>
             </Select>
-
-            {onClose && (
-              <Button size="icon" variant="ghost" className="h-8 w-8" onClick={onClose} aria-label="Close unified assist">
-                <X className="h-4 w-4" />
-              </Button>
-            )}
           </div>
         </div>
       </CardHeader>
@@ -690,16 +730,6 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
                     >
                       <Play className="h-4 w-4 mr-2" />
                       Test Workflow ({workflowNodes.length} nodes)
-                    </Button>
-                    
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={handleSaveAgent}
-                      disabled={workflowNodes.length === 0}
-                    >
-                      <Save className="h-4 w-4 mr-2" />
-                      Save Agent
                     </Button>
                   </div>
                 </div>

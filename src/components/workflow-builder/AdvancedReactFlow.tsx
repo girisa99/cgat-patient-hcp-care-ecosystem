@@ -763,40 +763,9 @@ return (
                     </Panel>
                   )}
 
-                  {/* Main Controls Panel - Top Right */}
+                  {/* Canvas Controls Panel */}
                   <Panel position="top-right" className="bg-white/90 backdrop-blur-md p-2 rounded-lg shadow border">
                     <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          const workflowData = {
-                            nodes: getNodes(),
-                            edges: getEdges(),
-                            metadata: { type: workflowType, sessionId }
-                          };
-                          onSave?.(workflowData);
-                          showSuccess('Workflow saved!');
-                        }}
-                      >
-                        <Save className="h-4 w-4 mr-1" />
-                        Save
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="default"
-                        onClick={() => {
-                          const workflowData = {
-                            nodes: getNodes(),
-                            edges: getEdges(),
-                            metadata: { type: workflowType, sessionId }
-                          };
-                          showSuccess('Deployment initiated!');
-                        }}
-                      >
-                        <Upload className="h-4 w-4 mr-1" />
-                        Deploy
-                      </Button>
                       <Button
                         size="sm"
                         variant="outline"
