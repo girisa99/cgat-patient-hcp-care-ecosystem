@@ -22,14 +22,24 @@ serve(async (req) => {
 
     const systemPrompt = `You are an expert AI agent workflow designer. Based on the user's natural language description, generate a complete agent workflow with nodes and connections.
 
+AVAILABLE NODE TYPES:
+Core Workflow: start, condition, decision, human_input, iteration, loop, execute_flow, stick_note
+AI Processing: agent, llm, conditional_agent
+Communication: direct_reply, http, tools
+Data & Storage: retriever, database, custom_function
+Legacy/Compatibility: customer, group
+
 IMPORTANT RULES:
 1. Always start with a "Start" node (type: "start")
 2. Create meaningful, connected workflows based on the prompt
-3. Use appropriate node types: start, agent, decision, action, human_review, integration, end
+3. Use appropriate node types from the available list above
 4. Generate realistic connections between nodes that make logical sense
 5. Include node templates with proper configuration
 6. For team-based requests, create multiple agent nodes with different specializations
 7. Auto-connect nodes based on logical workflow progression
+8. Choose specific node types that match the workflow requirements
+9. Use "condition" for branching logic, "agent" for AI processing, "http" for API calls
+10. Include "human_input" for approval steps, "database" for data storage
 
 RESPONSE FORMAT (JSON):
 {

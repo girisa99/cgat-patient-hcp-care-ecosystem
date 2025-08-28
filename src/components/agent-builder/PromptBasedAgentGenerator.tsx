@@ -14,26 +14,26 @@ interface PromptBasedAgentGeneratorProps {
 
 const SUGGESTED_PROMPTS = [
   {
-    title: "Customer Support Team",
-    prompt: "A team of agents that can handle all customer queries",
+    title: "Multi-Agent Support Team",
+    prompt: "A comprehensive support team with routing agent, specialized technical support agents, human escalation, and knowledge base integration",
     icon: Users,
     category: "Support"
   },
   {
-    title: "Content Generator",
-    prompt: "A social media content generator, but let me review first before publishing",
+    title: "Content Publishing Workflow",
+    prompt: "Content generation agent → human review → approval workflow → multi-channel publishing with API integrations",
     icon: FileText,
     category: "Content"
   },
   {
-    title: "Research Assistant",
-    prompt: "An agent that can autonomously search the web and generate report",
+    title: "Data Processing Pipeline",
+    prompt: "HTTP API data retrieval → database storage → AI analysis agent → conditional routing → automated reporting",
     icon: Search,
     category: "Research"
   },
   {
-    title: "Document Summarizer",
-    prompt: "Summarize a document",
+    title: "Customer Journey Automation",
+    prompt: "Customer input → intent classification → decision routing → specialized agents → follow-up automation with human oversight",
     icon: Brain,
     category: "Analysis"
   }

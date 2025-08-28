@@ -131,7 +131,22 @@ export const AutoConnectProcessor: React.FC<AutoConnectProcessorProps> = ({
               ...node.data,
               template: template.templateType,
               configuration: template.configuration,
-              isConfigured: true
+              isConfigured: true,
+              // Apply node-type specific configurations
+              ...(node.type === 'agent' && {
+                aiProvider: template.configuration?.aiProvider || 'openai',
+                model: template.configuration?.model || 'gpt-4o-mini',
+                systemPrompt: template.configuration?.systemPrompt || ''
+              }),
+              ...(node.type === 'http' && {
+                endpoint: template.configuration?.endpoint || '',
+                method: template.configuration?.method || 'GET',
+                headers: template.configuration?.headers || {}
+              }),
+              ...(node.type === 'condition' && {
+                conditions: template.configuration?.conditions || [],
+                evaluationType: template.configuration?.evaluationType || 'rule-based'
+              })
             }
           }
         : node
@@ -139,7 +154,7 @@ export const AutoConnectProcessor: React.FC<AutoConnectProcessorProps> = ({
 
     onNodesUpdate(updatedNodes);
     setTemplates(prev => prev.filter(t => t.nodeId !== template.nodeId));
-    showSuccess('Template applied successfully');
+    showSuccess(`Template applied to ${nodes.find(n => n.id === template.nodeId)?.type || 'node'}`);
   };
 
   const getConnectionColor = (type: string) => {

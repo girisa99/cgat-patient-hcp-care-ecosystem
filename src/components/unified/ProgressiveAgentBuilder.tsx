@@ -24,8 +24,38 @@ export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = (
 
   const handleAgentGeneration = (agentData: any) => {
     console.log('Generated agent:', agentData);
-    setGeneratedAgent(agentData);
-    setNodes(agentData.nodes || []);
+    
+    // Enhance nodes with rich ecosystem data
+    const enhancedNodes = (agentData.nodes || []).map((node: any) => ({
+      ...node,
+      data: {
+        ...node.data,
+        // Add ecosystem-specific properties based on node type
+        ...(node.type === 'agent' && {
+          capabilities: ['conversation', 'reasoning', 'task-completion'],
+          aiProvider: node.data?.aiProvider || 'openai',
+          model: node.data?.model || 'gpt-4o-mini'
+        }),
+        ...(node.type === 'condition' && {
+          evaluationType: 'rule-based',
+          conditions: node.data?.conditions || []
+        }),
+        ...(node.type === 'http' && {
+          method: 'GET',
+          timeout: 30000
+        }),
+        ...(node.type === 'database' && {
+          connectionType: 'read-write',
+          queryType: 'select'
+        })
+      }
+    }));
+
+    setGeneratedAgent({
+      ...agentData,
+      nodes: enhancedNodes
+    });
+    setNodes(enhancedNodes);
     setEdges(agentData.edges || []);
     setCurrentStep('visual');
   };
