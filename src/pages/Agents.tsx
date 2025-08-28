@@ -248,9 +248,9 @@ const AgentsInner = () => {
               <Bot className="w-3 h-3 mr-1" />
               AI Assistant
             </Button>
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)}>
+            <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)}>
               <Sparkles className="w-3 h-3 mr-1" />
-              Unified AI Assist
+              🚀 Unified AI Assist
             </Button>
           </div>
         </div>
