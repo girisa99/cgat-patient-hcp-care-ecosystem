@@ -20,26 +20,52 @@ serve(async (req) => {
 
     console.log('Generating agent from prompt:', { prompt, provider });
 
-    const systemPrompt = `You are an expert AI agent workflow designer. Based on the user's natural language description, generate a complete agent workflow with nodes and connections.
+    // Get Supabase client
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    // Fetch real categories and node types from database
+    const categoriesResponse = await fetch(`${supabaseUrl}/rest/v1/workflow_node_categories?is_active=eq.true&order=order_index`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
+    
+    const nodeTypesResponse = await fetch(`${supabaseUrl}/rest/v1/workflow_node_types?is_active=eq.true&select=*,category:workflow_node_categories(*)&order=order_index`, {
+      headers: {
+        'apikey': supabaseKey,
+        'Authorization': `Bearer ${supabaseKey}`,
+        'Content-Type': 'application/json'
+      }
+    });
 
-AVAILABLE NODE TYPES:
-Core Workflow: start, condition, decision, human_input, iteration, loop, execute_flow, stick_note
-AI Processing: agent, llm, conditional_agent
-Communication: direct_reply, http, tools
-Data & Storage: retriever, database, custom_function
-Legacy/Compatibility: customer, group
+    const categories = await categoriesResponse.json();
+    const nodeTypes = await nodeTypesResponse.json();
+
+    // Build dynamic system prompt with real node types
+    const categorizedNodes = categories.map(cat => {
+      const categoryNodes = nodeTypes.filter(nt => nt.category_id === cat.id);
+      return `${cat.display_name}: ${categoryNodes.map(nt => `${nt.type_key} (${nt.display_name})`).join(', ')}`;
+    }).join('\n');
+
+    const systemPrompt = `You are an expert AI agent workflow designer. Based on the user's natural language description, generate a complete agent workflow with nodes and connections using the actual node types from our system.
+
+AVAILABLE NODE TYPES BY CATEGORY:
+${categorizedNodes}
 
 IMPORTANT RULES:
-1. Always start with a "Start" node (type: "start")
-2. Create meaningful, connected workflows based on the prompt
-3. Use appropriate node types from the available list above
+1. ONLY use node types from the available list above (use exact type_key values)
+2. Always start with a node that makes sense for the workflow
+3. Create meaningful, connected workflows based on the prompt
 4. Generate realistic connections between nodes that make logical sense
-5. Include node templates with proper configuration
+5. Include proper node data with category information
 6. For team-based requests, create multiple agent nodes with different specializations
 7. Auto-connect nodes based on logical workflow progression
 8. Choose specific node types that match the workflow requirements
-9. Use "condition" for branching logic, "agent" for AI processing, "http" for API calls
-10. Include "human_input" for approval steps, "database" for data storage
+9. Include personalized configuration based on node capabilities
+10. Use the display_name for labels and type_key for the actual node type
 
 RESPONSE FORMAT (JSON):
 {
@@ -48,15 +74,17 @@ RESPONSE FORMAT (JSON):
   "nodes": [
     {
       "id": "unique-id",
-      "type": "node-type",
+      "type": "type_key_from_database",
       "position": {"x": number, "y": number},
       "data": {
-        "label": "Node Label",
+        "label": "Display Name from Database",
         "description": "What this node does",
-        "aiProvider": "openai|claude|gemini",
-        "model": "specific-model",
-        "template": "pre-configured settings",
-        "configuration": {}
+        "type_key": "type_key_from_database",
+        "category": "category_name_from_database",
+        "personalized": true,
+        "configuration": {},
+        "capabilities": [],
+        "requirements": {}
       }
     }
   ],
@@ -70,13 +98,11 @@ RESPONSE FORMAT (JSON):
       "label": "connection description"
     }
   ],
-  "templates": [
-    {
-      "nodeId": "node-id",
-      "templateType": "agent|integration|decision",
-      "configuration": "pre-built settings"
-    }
-  ]
+  "metadata": {
+    "usesPersonalizedNodes": true,
+    "categories": ["category_names_used"],
+    "nodeTypes": ["type_keys_used"]
+  }
 }
 
 Generate a workflow for: "${prompt}"`;

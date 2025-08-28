@@ -27,14 +27,24 @@ export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = (
   const handleAgentGeneration = (agentData: any) => {
     console.log('Generated agent:', agentData);
     
-    // Enhance nodes with rich ecosystem data
+    // Enhance nodes with personalized functionality from category system
     const enhancedNodes = (agentData.nodes || []).map((node: any) => ({
       ...node,
       data: {
         ...node.data,
+        // Preserve category system integration
+        type_key: node.data?.type_key || node.type,
+        category: node.data?.category,
+        personalized: node.data?.personalized || true,
+        // Maintain existing personalized capabilities
+        capabilities: node.data?.capabilities || [],
+        requirements: node.data?.requirements || {},
+        configuration: node.data?.configuration || {},
+        // Connect to unified AI assist system
+        unified_ai_generated: true,
+        generation_source: 'unified_ai_assist',
         // Add ecosystem-specific properties based on node type
         ...(node.type === 'agent' && {
-          capabilities: ['conversation', 'reasoning', 'task-completion'],
           aiProvider: node.data?.aiProvider || 'openai',
           model: node.data?.model || 'gpt-4o-mini'
         }),
