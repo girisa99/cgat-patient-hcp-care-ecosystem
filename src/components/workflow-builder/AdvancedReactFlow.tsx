@@ -405,19 +405,17 @@ setShowConfigurator(true);
   }, []);
 
   const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
-    event.preventDefault();
     setContextEdge(null);
     setSelectedNode(node);
   }, []);
 
   const handleEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
-    event.preventDefault();
     setSelectedNode(null);
     setContextEdge(edge);
   }, []);
 
   const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
+    // allow ContextMenuTrigger to handle default context menu
   }, []);
 
   const handleFitView = useCallback(() => {
