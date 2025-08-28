@@ -444,28 +444,77 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
     }
   };
 
-  const handleAutoConnectNodes = () => {
+  const handleAutoConnectNodes = async () => {
     if ((workflowNodes?.length || 0) < 2) {
       showError('Need at least 2 nodes to auto-connect');
       return;
     }
-    const existing = new Set((workflowEdges || []).map((e: any) => `${e.source}->${e.target}`));
-    const newEdges: any[] = [];
-    for (let i = 0; i < workflowNodes.length - 1; i++) {
-      const a = workflowNodes[i];
-      const b = workflowNodes[i + 1];
-      const key = `${a.id}->${b.id}`;
-      if (!existing.has(key)) {
-        newEdges.push({ id: `e-${a.id}-${b.id}`, source: a.id, target: b.id, type: 'smoothstep' });
+    
+    addTestResult({ status: 'running', message: 'Analyzing workflow for smart connections...' });
+    
+    try {
+      // Try intelligent auto-connect first
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-auto-connections`, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
+        body: JSON.stringify({
+          nodes: workflowNodes,
+          edges: workflowEdges || [],
+          generateTemplates: true,
+          intelligentRouting: true
+        })
+      });
+
+      if (response.ok) {
+        const result = await response.json();
+        const suggestions = result.suggestions || [];
+        const autoApplied = suggestions.filter((s: any) => s.autoApply && s.confidence > 0.8);
+        
+        if (autoApplied.length > 0) {
+          const newEdges = autoApplied.map((s: any) => ({
+            id: s.id,
+            source: s.sourceId,
+            target: s.targetId,
+            type: 'smoothstep',
+            animated: s.type === 'ai-recommended',
+            label: s.reasoning
+          }));
+          
+          applyChangesToCanvas(workflowNodes, [...(workflowEdges || []), ...newEdges], 'AI Auto-Connected');
+          addTestResult({ status: 'success', message: `🤖 AI applied ${newEdges.length} intelligent connection(s)` });
+          showSuccess(`AI connected ${newEdges.length} nodes intelligently!`);
+          return;
+        }
       }
+      
+      // Fallback to simple sequential connections
+      const existing = new Set((workflowEdges || []).map((e: any) => `${e.source}->${e.target}`));
+      const newEdges: any[] = [];
+      for (let i = 0; i < workflowNodes.length - 1; i++) {
+        const a = workflowNodes[i];
+        const b = workflowNodes[i + 1];
+        const key = `${a.id}->${b.id}`;
+        if (!existing.has(key)) {
+          newEdges.push({ id: `e-${a.id}-${b.id}`, source: a.id, target: b.id, type: 'smoothstep' });
+        }
+      }
+      
+      if (newEdges.length === 0) {
+        addTestResult({ status: 'warning', message: 'All nodes are already connected' });
+        return;
+      }
+      
+      applyChangesToCanvas(workflowNodes, [...(workflowEdges || []), ...newEdges], 'Sequential Auto-Connected');
+      addTestResult({ status: 'success', message: `Added ${newEdges.length} sequential connection(s)` });
+      showSuccess('Auto-connections applied');
+      
+    } catch (error: any) {
+      addTestResult({ status: 'error', message: `Auto-connect failed: ${error.message}` });
+      showError(`Auto-connect failed: ${error.message}`);
     }
-    if (newEdges.length === 0) {
-      addTestResult({ status: 'warning', message: 'No new connections to add' });
-      return;
-    }
-    applyChangesToCanvas(workflowNodes, [...(workflowEdges || []), ...newEdges], 'Auto-Connected');
-    addTestResult({ status: 'success', message: `Added ${newEdges.length} connection(s)` });
-    showSuccess('Auto-connections applied');
   };
 
   const handleOptimizeFlow = () => {

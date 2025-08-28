@@ -62,9 +62,12 @@ export const AutoConnectProcessor: React.FC<AutoConnectProcessorProps> = ({
 
     setIsProcessing(true);
     try {
-      const response = await fetch('/api/process-auto-connections', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/process-auto-connections`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`
+        },
         body: JSON.stringify({
           nodes,
           edges,
