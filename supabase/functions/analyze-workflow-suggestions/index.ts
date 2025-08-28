@@ -413,7 +413,6 @@ async function performComprehensiveAnalysis(
     }
   };
 }
-}
 
 async function analyzeStructure(nodes: any[], edges: any[]) {
   const issues = [];
