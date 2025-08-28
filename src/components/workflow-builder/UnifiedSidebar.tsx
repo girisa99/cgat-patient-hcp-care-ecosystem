@@ -27,7 +27,7 @@ import { ConnectionMode, BackgroundVariant } from '@xyflow/react';
 // Tab Components
 import { NodePalette } from './NodePalette';
 import { EnhancedNodePalette } from './EnhancedNodePalette';
-import { AITestingAssistant } from './AITestingAssistant';
+import { UnifiedAgentAssist } from '@/components/unified/UnifiedAgentAssist';
 import { TestingConsolePanel } from './TestingConsolePanel';
 import { CodeEditorPanel } from './CodeEditorPanel';
 
@@ -253,13 +253,7 @@ export const UnifiedSidebar: React.FC<UnifiedSidebarProps> = ({
       case 'ai-test':
       case 'ai-assistant':
         return (
-          <AITestingAssistant
-            nodes={nodes}
-            edges={edges}
-            testInput={testInput}
-            onWorkflowUpdate={onWorkflowUpdate}
-            isVisible={true}
-          />
+          <UnifiedAgentAssist />
         );
         
       case 'classic-test':

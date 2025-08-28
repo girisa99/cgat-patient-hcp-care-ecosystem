@@ -50,7 +50,6 @@ import { NodePalette } from '@/components/workflow-builder/NodePalette';
 import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetPanel';
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
-import { AIAssistant } from '@/components/workflow-builder/AIAssistant';
 import { UnifiedAgentAssist } from '@/components/unified/UnifiedAgentAssist';
 
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
