@@ -19,6 +19,8 @@ import {
   ChevronRight
 } from 'lucide-react';
 import { useWorkflowValidator, ValidationStep, FixOption } from '@/hooks/useWorkflowValidator';
+import { useAIWorkflowAnalyzer } from '@/hooks/useAIWorkflowAnalyzer';
+import { ConnectionAwareValidator } from './ConnectionAwareValidator';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface WorkflowTestingProps {
@@ -37,6 +39,7 @@ export const WorkflowTesting: React.FC<WorkflowTestingProps> = ({
   const [userPrompt, setUserPrompt] = useState('');
   const [expandedSteps, setExpandedSteps] = useState<Set<string>>(new Set());
   const [applyingFix, setApplyingFix] = useState<string | null>(null);
+  const [selectedAiProvider, setSelectedAiProvider] = useState<'openai' | 'claude' | 'gemini'>('openai');
 
   const {
     isValidating,
@@ -47,8 +50,67 @@ export const WorkflowTesting: React.FC<WorkflowTestingProps> = ({
     performAutoFix
   } = useWorkflowValidator();
 
+  const {
+    isAnalyzing: isAiAnalyzing,
+    analysis: aiAnalysis,
+    analyzeWorkflow: analyzeWithAI
+  } = useAIWorkflowAnalyzer();
+
   const handleValidate = () => {
     validateWorkflow(nodes, edges, userPrompt);
+  };
+
+  const handleAIAnalysis = () => {
+    analyzeWithAI(nodes, edges, {
+      aiProvider: selectedAiProvider,
+      generateCode: true,
+      analysisType: 'ai-enhanced',
+      connectionAnalysis: true,
+      nodeSpecificAnalysis: true,
+      templateGeneration: true,
+      userPrompt
+    });
+  };
+
+  const handleApplyNodeFix = async (nodeId: string, fix: any) => {
+    if (!onNodesChange) return;
+    
+    const updatedNodes = nodes.map(node => {
+      if (node.id === nodeId) {
+        try {
+          // Execute the fix code in a safe context
+          const fixedNode = { ...node };
+          // This is a simplified approach - in production, you'd want more robust code execution
+          if (fix.code.includes('node.data.label')) {
+            fixedNode.data = { ...fixedNode.data, label: fix.code.match(/"([^"]+)"/)?.[1] || 'Fixed Node' };
+          }
+          if (fix.code.includes('node.data.model')) {
+            fixedNode.data = { ...fixedNode.data, model: fix.code.match(/"([^"]+)"/)?.[1] || 'gpt-4o-mini' };
+          }
+          return fixedNode;
+        } catch (error) {
+          console.error('Error applying fix:', error);
+          return node;
+        }
+      }
+      return node;
+    });
+    
+    onNodesChange(updatedNodes);
+  };
+
+  const handleAddTemplateNode = (template: any) => {
+    if (!onNodesChange) return;
+    
+    const newNode = {
+      id: `template-${Date.now()}`,
+      type: template.type,
+      data: template.data,
+      position: template.position,
+      style: { width: 180, height: 80 }
+    };
+    
+    onNodesChange([...nodes, newNode]);
   };
 
   const handleAutoFix = async (fixOption: FixOption) => {
@@ -110,42 +172,93 @@ export const WorkflowTesting: React.FC<WorkflowTestingProps> = ({
             Analyze your workflow, identify issues, and get recommendations
           </p>
         </div>
-        <Button 
-          onClick={handleValidate} 
-          disabled={isValidating || nodes.length === 0}
-          className="gap-2"
-        >
-          <Play className="h-4 w-4" />
-          {isValidating ? 'Validating...' : 'Run Validation'}
-        </Button>
+        <div className="flex gap-2">
+          <Button 
+            onClick={handleValidate} 
+            disabled={isValidating || nodes.length === 0}
+            className="gap-2"
+            variant="outline"
+          >
+            <Play className="h-4 w-4" />
+            {isValidating ? 'Validating...' : 'Basic Validation'}
+          </Button>
+          <Button 
+            onClick={handleAIAnalysis} 
+            disabled={isAiAnalyzing || nodes.length === 0}
+            className="gap-2"
+          >
+            <Zap className="h-4 w-4" />
+            {isAiAnalyzing ? 'AI Analyzing...' : 'AI Analysis'}
+          </Button>
+        </div>
       </div>
 
-      {/* User Prompt Input */}
+      {/* User Prompt Input & AI Provider Selection */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-sm">Original Prompt (Optional)</CardTitle>
+          <CardTitle className="text-sm">Analysis Configuration</CardTitle>
           <CardDescription>
-            Provide the original prompt to check if the workflow aligns with your intent
+            Configure your workflow analysis settings and provide context
           </CardDescription>
         </CardHeader>
-        <CardContent>
-          <Textarea
-            placeholder="Enter the original prompt that describes what this workflow should do..."
-            value={userPrompt}
-            onChange={(e) => setUserPrompt(e.target.value)}
-            className="min-h-[80px]"
-          />
+        <CardContent className="space-y-4">
+          <div>
+            <label className="text-sm font-medium mb-2 block">AI Provider for Analysis</label>
+            <div className="flex gap-2">
+              {(['openai', 'claude', 'gemini'] as const).map((provider) => (
+                <Button
+                  key={provider}
+                  variant={selectedAiProvider === provider ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setSelectedAiProvider(provider)}
+                >
+                  {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                </Button>
+              ))}
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-2 block">Original Prompt (Optional)</label>
+            <Textarea
+              placeholder="Enter the original prompt that describes what this workflow should do..."
+              value={userPrompt}
+              onChange={(e) => setUserPrompt(e.target.value)}
+              className="min-h-[80px]"
+            />
+          </div>
         </CardContent>
       </Card>
 
-      {/* Current Validation Step */}
-      {isValidating && currentStep && (
+      {/* Current Validation/Analysis Step */}
+      {(isValidating || isAiAnalyzing) && currentStep && (
         <Card>
           <CardContent className="pt-6">
             <div className="flex items-center gap-2">
               <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />
               <span className="text-sm">{currentStep}</span>
             </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* AI Analysis Results */}
+      {aiAnalysis && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              Connection-Aware AI Analysis
+            </CardTitle>
+            <CardDescription>
+              Analysis by {selectedAiProvider.toUpperCase()} with node-specific fixes and template suggestions
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ConnectionAwareValidator
+              analysisResult={aiAnalysis}
+              onApplyNodeFix={handleApplyNodeFix}
+              onAddTemplateNode={handleAddTemplateNode}
+            />
           </CardContent>
         </Card>
       )}

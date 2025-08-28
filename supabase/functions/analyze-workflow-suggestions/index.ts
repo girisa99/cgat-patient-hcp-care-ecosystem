@@ -12,7 +12,17 @@ serve(async (req) => {
   }
 
   try {
-    const { nodes, edges, analysisType, userPrompt, aiProvider = 'openai', generateCode = false } = await req.json();
+    const { 
+      nodes, 
+      edges, 
+      analysisType, 
+      userPrompt, 
+      aiProvider = 'openai', 
+      generateCode = false,
+      connectionAnalysis = false,
+      nodeSpecificAnalysis = false,
+      templateGeneration = false
+    } = await req.json();
     
     console.log('Analyzing workflow with:', {
       nodesCount: nodes?.length || 0,
@@ -31,7 +41,14 @@ serve(async (req) => {
     } else if (analysisType === 'ai-enhanced') {
       result = await performAIEnhancedAnalysis(nodes || [], edges || [], aiProvider, generateCode);
     } else {
-      result = await performComprehensiveAnalysis(nodes || [], edges || []);
+      result = await performComprehensiveAnalysis(
+        nodes || [], 
+        edges || [], 
+        connectionAnalysis, 
+        nodeSpecificAnalysis, 
+        templateGeneration, 
+        userPrompt
+      );
     }
 
     console.log('Analysis completed:', result);
@@ -261,7 +278,14 @@ Provide 3-5 specific suggestions to improve the workflow.`;
   }
 }
 
-async function performComprehensiveAnalysis(nodes: any[], edges: any[]) {
+async function performComprehensiveAnalysis(
+  nodes: any[], 
+  edges: any[], 
+  connectionAnalysis = false, 
+  nodeSpecificAnalysis = false, 
+  templateGeneration = false, 
+  userPrompt?: string
+) {
   const issues = [];
   
   // Basic structure checks
@@ -344,6 +368,23 @@ async function performComprehensiveAnalysis(nodes: any[], edges: any[]) {
     });
   }
 
+  // Enhanced analysis features
+  let connectionAnalysisResult = null;
+  let nodeSpecificFixes = [];
+  let templateNodes = [];
+
+  if (connectionAnalysis) {
+    connectionAnalysisResult = analyzeConnectionFlow(nodes, edges);
+  }
+
+  if (nodeSpecificAnalysis) {
+    nodeSpecificFixes = generateNodeSpecificFixes(nodes, edges);
+  }
+
+  if (templateGeneration) {
+    templateNodes = generateTemplateNodes(nodes, edges, userPrompt);
+  }
+
   return {
     issues,
     suggestions: [
@@ -355,8 +396,23 @@ async function performComprehensiveAnalysis(nodes: any[], edges: any[]) {
     estimatedRunTime: nodes.length * 250,
     estimatedCost: nodes.length * 0.001,
     riskAssessment: issues.filter(i => i.severity === 'high').length > 0 ? 'high' : 
-                   issues.length > 2 ? 'medium' : 'low'
+                   issues.length > 2 ? 'medium' : 'low',
+    connectionAnalysis: connectionAnalysisResult,
+    nodeSpecificFixes,
+    templateNodes,
+    workflowContext: {
+      totalNodes: nodes.length,
+      totalConnections: edges.length,
+      nodeTypes: [...new Set(nodes.map(n => n.type))],
+      agentConfigs: nodes.filter(n => n.type === 'agent').map(n => ({
+        id: n.id,
+        model: n.data?.model,
+        provider: n.data?.provider,
+        configuration: n.data?.config
+      }))
+    }
   };
+}
 }
 
 async function analyzeStructure(nodes: any[], edges: any[]) {
@@ -461,4 +517,252 @@ function detectCircularDependency(nodes: any[], edges: any[]): boolean {
   }
 
   return false;
+}
+
+// Connection analysis functions
+function analyzeConnectionFlow(nodes: any[], edges: any[]) {
+  const connectionMap = new Map();
+  const nodeConnections = new Map();
+  
+  // Build connection graph
+  edges.forEach(edge => {
+    if (!connectionMap.has(edge.source)) {
+      connectionMap.set(edge.source, []);
+    }
+    connectionMap.get(edge.source).push(edge.target);
+    
+    // Track node connection counts
+    nodeConnections.set(edge.source, (nodeConnections.get(edge.source) || 0) + 1);
+    nodeConnections.set(edge.target, (nodeConnections.get(edge.target) || 0) + 1);
+  });
+  
+  // Analyze flow paths
+  const flowPaths = [];
+  const startNodes = nodes.filter(n => !edges.some(e => e.target === n.id));
+  
+  startNodes.forEach(startNode => {
+    const path = traverseFlow(startNode.id, connectionMap, []);
+    flowPaths.push(path);
+  });
+  
+  return {
+    connectionMap: Object.fromEntries(connectionMap),
+    nodeConnections: Object.fromEntries(nodeConnections),
+    flowPaths,
+    bottlenecks: findBottlenecks(nodes, edges),
+    isolatedNodes: nodes.filter(n => !nodeConnections.has(n.id))
+  };
+}
+
+function traverseFlow(nodeId: string, connectionMap: Map<string, string[]>, visited: string[]): string[] {
+  if (visited.includes(nodeId)) return visited; // Circular dependency
+  
+  const newPath = [...visited, nodeId];
+  const connections = connectionMap.get(nodeId) || [];
+  
+  if (connections.length === 0) return newPath; // End node
+  
+  // Follow first connection for simplicity
+  return traverseFlow(connections[0], connectionMap, newPath);
+}
+
+function findBottlenecks(nodes: any[], edges: any[]) {
+  return nodes.filter(node => {
+    const incomingCount = edges.filter(e => e.target === node.id).length;
+    const outgoingCount = edges.filter(e => e.source === node.id).length;
+    return incomingCount > 3 || outgoingCount > 3;
+  }).map(node => ({
+    nodeId: node.id,
+    type: node.type,
+    incoming: edges.filter(e => e.target === node.id).length,
+    outgoing: edges.filter(e => e.source === node.id).length
+  }));
+}
+
+function generateNodeSpecificFixes(nodes: any[], edges: any[]) {
+  const fixes = [];
+  
+  for (const node of nodes) {
+    const connectedNodes = edges.filter(e => e.source === node.id || e.target === node.id);
+    const nodeIssues = analyzeNodeIssues(node, connectedNodes, nodes);
+    
+    if (nodeIssues.length > 0) {
+      fixes.push({
+        nodeId: node.id,
+        nodeType: node.type,
+        issues: nodeIssues,
+        suggestedFixes: generateNodeFixes(node, nodeIssues),
+        connections: connectedNodes.length,
+        confidence: calculateFixConfidence(node, nodeIssues)
+      });
+    }
+  }
+  
+  return fixes;
+}
+
+function analyzeNodeIssues(node: any, connections: any[], allNodes: any[]) {
+  const issues = [];
+  
+  // Check node configuration
+  if (!node.data?.label && !node.data?.name) {
+    issues.push('Missing node label or name');
+  }
+  
+  // Agent-specific checks
+  if (node.type === 'agent') {
+    if (!node.data?.model) issues.push('Missing AI model configuration');
+    if (!node.data?.provider) issues.push('Missing AI provider');
+    if (!node.data?.systemPrompt) issues.push('Missing system prompt');
+  }
+  
+  // Connection issues
+  if (connections.length === 0) {
+    issues.push('Node is isolated - no connections');
+  }
+  
+  // Type-specific validations
+  switch (node.type) {
+    case 'start':
+      if (connections.filter(c => c.source === node.id).length === 0) {
+        issues.push('Start node has no outgoing connections');
+      }
+      break;
+    case 'end':
+      if (connections.filter(c => c.target === node.id).length === 0) {
+        issues.push('End node has no incoming connections');
+      }
+      break;
+  }
+  
+  return issues;
+}
+
+function generateNodeFixes(node: any, issues: string[]) {
+  const fixes = [];
+  
+  issues.forEach(issue => {
+    switch (issue) {
+      case 'Missing node label or name':
+        fixes.push({
+          type: 'auto',
+          description: 'Add default label',
+          code: `node.data.label = "${node.type.charAt(0).toUpperCase() + node.type.slice(1)} Node";`,
+          confidence: 0.9
+        });
+        break;
+      case 'Missing AI model configuration':
+        fixes.push({
+          type: 'manual',
+          description: 'Configure AI model',
+          code: `node.data.model = "gpt-4o-mini"; // Recommended default model`,
+          confidence: 0.8
+        });
+        break;
+      case 'Node is isolated - no connections':
+        fixes.push({
+          type: 'manual',
+          description: 'Connect node to workflow',
+          code: `// Add edge: { source: "${node.id}", target: "target-node-id" }`,
+          confidence: 0.7
+        });
+        break;
+    }
+  });
+  
+  return fixes;
+}
+
+function calculateFixConfidence(node: any, issues: string[]) {
+  const baseConfidence = 1.0;
+  const issueImpact = issues.length * 0.1;
+  return Math.max(0.1, baseConfidence - issueImpact);
+}
+
+function generateTemplateNodes(nodes: any[], edges: any[], userPrompt?: string) {
+  const templates = [];
+  
+  // Analyze existing pattern
+  const nodeTypes = [...new Set(nodes.map(n => n.type))];
+  const hasAgents = nodes.some(n => n.type === 'agent');
+  const hasStart = nodes.some(n => n.type === 'start');
+  const hasEnd = nodes.some(n => n.type === 'end');
+  
+  // Suggest missing essential nodes
+  if (!hasStart) {
+    templates.push({
+      type: 'start',
+      label: 'Start Node',
+      data: { label: 'Start', isStart: true },
+      position: { x: 100, y: 100 },
+      suggested: true,
+      reason: 'Every workflow needs a start node'
+    });
+  }
+  
+  if (!hasEnd) {
+    templates.push({
+      type: 'end',
+      label: 'End Node', 
+      data: { label: 'End', isEnd: true },
+      position: { x: 500, y: 300 },
+      suggested: true,
+      reason: 'Every workflow needs an end node'
+    });
+  }
+  
+  // Suggest agents based on user prompt
+  if (userPrompt && !hasAgents) {
+    const agentSuggestions = analyzePromptForAgents(userPrompt);
+    agentSuggestions.forEach((agent, index) => {
+      templates.push({
+        type: 'agent',
+        label: agent.name,
+        data: {
+          label: agent.name,
+          model: agent.recommendedModel,
+          provider: 'openai',
+          systemPrompt: agent.systemPrompt
+        },
+        position: { x: 200 + (index * 150), y: 200 },
+        suggested: true,
+        reason: `Suggested based on prompt analysis: ${agent.reasoning}`
+      });
+    });
+  }
+  
+  return templates;
+}
+
+function analyzePromptForAgents(prompt: string) {
+  const suggestions = [];
+  
+  if (prompt.toLowerCase().includes('supervisor') || prompt.toLowerCase().includes('manage')) {
+    suggestions.push({
+      name: 'Supervisor Agent',
+      recommendedModel: 'gpt-4o-mini',
+      systemPrompt: 'You are a supervisor agent responsible for coordinating and managing workflow execution.',
+      reasoning: 'Prompt mentions supervision or management'
+    });
+  }
+  
+  if (prompt.toLowerCase().includes('review') || prompt.toLowerCase().includes('check')) {
+    suggestions.push({
+      name: 'Code Reviewer',
+      recommendedModel: 'claude-3-7-sonnet-20250219',
+      systemPrompt: 'You are a code reviewer agent that analyzes code quality and suggests improvements.',
+      reasoning: 'Prompt mentions review or checking tasks'
+    });
+  }
+  
+  if (prompt.toLowerCase().includes('generate') || prompt.toLowerCase().includes('create')) {
+    suggestions.push({
+      name: 'Content Generator',
+      recommendedModel: 'gpt-5-2025-08-07',
+      systemPrompt: 'You are a content generation agent that creates high-quality content based on requirements.',
+      reasoning: 'Prompt mentions generation or creation tasks'
+    });
+  }
+  
+  return suggestions;
 }

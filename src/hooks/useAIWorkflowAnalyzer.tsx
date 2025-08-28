@@ -63,7 +63,11 @@ export const useAIWorkflowAnalyzer = () => {
     options: { 
       aiProvider?: 'openai' | 'claude' | 'gemini', 
       generateCode?: boolean,
-      analysisType?: 'comprehensive' | 'ai-enhanced' | 'structure' | 'prompt-alignment'
+      analysisType?: 'comprehensive' | 'ai-enhanced' | 'structure' | 'prompt-alignment',
+      connectionAnalysis?: boolean,
+      nodeSpecificAnalysis?: boolean,
+      templateGeneration?: boolean,
+      userPrompt?: string
     } = {}
   ) => {
     // prevent re-entrancy and storms
@@ -75,10 +79,14 @@ export const useAIWorkflowAnalyzer = () => {
       const { 
         aiProvider = 'openai', 
         generateCode = true, 
-        analysisType = 'ai-enhanced' 
+        analysisType = 'ai-enhanced',
+        connectionAnalysis = true,
+        nodeSpecificAnalysis = true,
+        templateGeneration = true,
+        userPrompt
       } = options;
 
-      // Call AI analysis edge function
+      // Call AI analysis edge function with connection-aware analysis
       const { data, error } = await supabase.functions.invoke('analyze-workflow-suggestions', {
         body: { 
           nodes: nodes.map(n => ({
@@ -96,7 +104,11 @@ export const useAIWorkflowAnalyzer = () => {
           })),
           analysisType,
           aiProvider,
-          generateCode
+          generateCode,
+          connectionAnalysis,
+          nodeSpecificAnalysis,
+          templateGeneration,
+          userPrompt
         }
       });
 
@@ -111,21 +123,37 @@ export const useAIWorkflowAnalyzer = () => {
         riskAssessment: data?.riskAssessment || 'low'
       };
 
-      // Add AI-specific results
+      // Add AI-specific and connection-aware results
       if (data?.codeFixSuggestions) {
         (analysisResult as any).codeFixSuggestions = data.codeFixSuggestions;
       }
       if (data?.aiSuggestions) {
         (analysisResult as any).aiSuggestions = data.aiSuggestions;
       }
+      if (data?.connectionAnalysis) {
+        (analysisResult as any).connectionAnalysis = data.connectionAnalysis;
+      }
+      if (data?.nodeSpecificFixes) {
+        (analysisResult as any).nodeSpecificFixes = data.nodeSpecificFixes;
+      }
+      if (data?.templateNodes) {
+        (analysisResult as any).templateNodes = data.templateNodes;
+      }
+      if (data?.workflowContext) {
+        (analysisResult as any).workflowContext = data.workflowContext;
+      }
 
       setAnalysis(analysisResult);
       
       const hasCodeFixes = data?.codeFixSuggestions?.length > 0;
+      const hasNodeFixes = data?.nodeSpecificFixes?.length > 0;
+      const hasTemplates = data?.templateNodes?.length > 0;
       const criticalIssues = analysisResult.issues.filter(i => i.severity === 'high');
       
-      if (hasCodeFixes) {
-        showInfo(`AI analysis complete! Found ${data.codeFixSuggestions.length} code fixes using ${aiProvider.toUpperCase()}`);
+      if (hasCodeFixes || hasNodeFixes || hasTemplates) {
+        const fixCount = (data?.codeFixSuggestions?.length || 0) + (data?.nodeSpecificFixes?.length || 0);
+        const templateCount = data?.templateNodes?.length || 0;
+        showInfo(`Connection-aware analysis complete! Found ${fixCount} fixes and ${templateCount} template suggestions using ${aiProvider.toUpperCase()}`);
       } else if (criticalIssues.length > 0) {
         showError(`Found ${criticalIssues.length} critical issues that need attention`);
       } else if (analysisResult.issues.length > 0) {
