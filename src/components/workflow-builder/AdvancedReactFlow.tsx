@@ -487,11 +487,6 @@ const newNode: Node = {
     console.log('Code changed:', code);
   }, []);
 
-  // Allow reconnecting edges by dragging endpoints
-  const onEdgeUpdate = useCallback((oldEdge: Edge, newConnection: Connection) => {
-    setEdges((eds) => eds.map((e) => (e.id === oldEdge.id ? { ...e, ...newConnection } : e)));
-  }, [setEdges]);
-
   // Edge actions from context menu
   const insertNodeBetween = useCallback(() => {
     if (!contextEdge) return;
@@ -662,8 +657,6 @@ return (
                   onNodeContextMenu={handleNodeContextMenu}
                   onEdgeContextMenu={handleEdgeContextMenu}
                   onPaneContextMenu={handlePaneContextMenu}
-                  onEdgeUpdate={onEdgeUpdate}
-                  edgesUpdatable={true}
                   onNodeClick={(event, node) => {
                     setSelectedNode(node);
                     handleNodeSelect(node);
