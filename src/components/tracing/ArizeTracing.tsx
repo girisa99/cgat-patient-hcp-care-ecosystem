@@ -76,9 +76,26 @@ export const ArizeTracing: React.FC<ArizeTracingProps> = ({
 
   const initializeArize = async () => {
     try {
-      // Initialize Arize client (would use actual Arize SDK in production)
-      console.log('Initializing Arize tracing...', { spaceKey, modelId, modelVersion });
-      setIsConnected(true);
+      // Test Arize connection by calling our edge function
+      const response = await fetch('https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'initialize',
+          spaceKey,
+          modelId,
+          modelVersion
+        })
+      });
+
+      if (response.ok) {
+        console.log('Arize tracing initialized successfully');
+        setIsConnected(true);
+      } else {
+        throw new Error('Failed to initialize Arize connection');
+      }
     } catch (error) {
       console.error('Failed to initialize Arize:', error);
       setIsConnected(false);
@@ -126,6 +143,27 @@ export const ArizeTracing: React.FC<ArizeTracingProps> = ({
 
     setTraces(prev => [...prev, trace]);
     
+    // Send trace start to Arize via edge function
+    try {
+      await fetch('https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          action: 'start_trace',
+          traceId,
+          spanId,
+          nodeId,
+          operationName,
+          metadata: trace.metadata,
+          tags: trace.spans[0].tags
+        })
+      });
+    } catch (error) {
+      console.error('Failed to send trace to Arize:', error);
+    }
+    
     if (onTraceEvent) {
       onTraceEvent(trace);
     }
@@ -161,6 +199,23 @@ export const ArizeTracing: React.FC<ArizeTracingProps> = ({
             ]
           }))
         };
+
+        // Send trace end to Arize via edge function
+        fetch('https://ithspbabhmdntioslfqe.supabase.co/functions/v1/arize-tracing', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            action: 'end_trace',
+            traceId,
+            status,
+            duration,
+            result
+          })
+        }).catch(error => {
+          console.error('Failed to send trace completion to Arize:', error);
+        });
 
         if (onTraceEvent) {
           onTraceEvent(updatedTrace);
