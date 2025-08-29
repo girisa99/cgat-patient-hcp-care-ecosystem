@@ -149,53 +149,73 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
     // Create wrapped versions of default node types
     return {
       default: createWrappedNodeType(({ data }: any) => (
-        <div className="px-4 py-2 shadow-md rounded-md bg-white border-2 border-stone-400">
-          <div className="flex">
-            <div className="rounded-full w-12 h-12 flex justify-center items-center bg-gray-100">
+        <div className="px-4 py-3 rounded-xl bg-slate-800 border border-slate-600 min-w-[200px] shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-slate-700 flex items-center justify-center">
               {data.icon || '⚙️'}
             </div>
-            <div className="ml-2">
-              <div className="text-lg font-bold">{data.label}</div>
-              <div className="text-gray-500">{data.type || 'Node'}</div>
+            <div className="flex-1">
+              <div className="text-white font-semibold text-sm">{data.label}</div>
+              <div className="text-slate-400 text-xs">{data.type || 'Node'}</div>
             </div>
           </div>
         </div>
       )),
       agent: createWrappedNodeType(({ data }: any) => (
-        <div className="px-4 py-2 shadow-md rounded-md bg-blue-50 border-2 border-blue-400">
-          <div className="flex">
-            <div className="rounded-full w-12 h-12 flex justify-center items-center bg-blue-100">
+        <div className="px-4 py-3 rounded-xl bg-slate-800 border border-cyan-500 min-w-[280px] shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-cyan-500 flex items-center justify-center">
               🤖
             </div>
-            <div className="ml-2">
-              <div className="text-lg font-bold text-blue-800">{data.label || 'AI Agent'}</div>
-              <div className="text-blue-600">AI Agent</div>
+            <div className="flex-1">
+              <div className="text-white font-semibold text-sm">{data.label || 'Technical Agent'}</div>
+              <div className="flex items-center gap-2 mt-1">
+                <div className="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-700">
+                  <div className="w-4 h-4 text-xs">✨</div>
+                  <span className="text-slate-300 text-xs">{data.model || 'gemini-2.0-flash'}</span>
+                </div>
+                {data.provider && (
+                  <div className="w-5 h-5 rounded bg-slate-600 flex items-center justify-center">
+                    <span className="text-xs">{data.provider.charAt(0).toUpperCase()}</span>
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         </div>
       )),
+      start: createWrappedNodeType(({ data }: any) => (
+        <div className="px-4 py-3 rounded-xl bg-green-600 min-w-[120px] shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-green-700 flex items-center justify-center">
+              ▶️
+            </div>
+            <div className="text-white font-semibold text-sm">{data.label || 'Start'}</div>
+          </div>
+        </div>
+      )),
       api: createWrappedNodeType(({ data }: any) => (
-        <div className="px-4 py-2 shadow-md rounded-md bg-green-50 border-2 border-green-400">
-          <div className="flex">
-            <div className="rounded-full w-12 h-12 flex justify-center items-center bg-green-100">
+        <div className="px-4 py-3 rounded-xl bg-slate-800 border border-emerald-500 min-w-[200px] shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-emerald-500 flex items-center justify-center">
               🌐
             </div>
-            <div className="ml-2">
-              <div className="text-lg font-bold text-green-800">{data.label || 'API'}</div>
-              <div className="text-green-600">API Endpoint</div>
+            <div className="flex-1">
+              <div className="text-white font-semibold text-sm">{data.label || 'API Endpoint'}</div>
+              <div className="text-slate-400 text-xs">API Integration</div>
             </div>
           </div>
         </div>
       )),
       database: createWrappedNodeType(({ data }: any) => (
-        <div className="px-4 py-2 shadow-md rounded-md bg-purple-50 border-2 border-purple-400">
-          <div className="flex">
-            <div className="rounded-full w-12 h-12 flex justify-center items-center bg-purple-100">
+        <div className="px-4 py-3 rounded-xl bg-slate-800 border border-purple-500 min-w-[200px] shadow-lg">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-purple-500 flex items-center justify-center">
               🗄️
             </div>
-            <div className="ml-2">
-              <div className="text-lg font-bold text-purple-800">{data.label}</div>
-              <div className="text-purple-600">Database</div>
+            <div className="flex-1">
+              <div className="text-white font-semibold text-sm">{data.label || 'Database'}</div>
+              <div className="text-slate-400 text-xs">Data Storage</div>
             </div>
           </div>
         </div>
@@ -213,7 +233,7 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
         onConnect={onConnect}
         nodeTypes={nodeTypes}
         fitView
-        className="bg-teal-50"
+        className="bg-slate-900"
       >
         <Controls />
         <MiniMap />

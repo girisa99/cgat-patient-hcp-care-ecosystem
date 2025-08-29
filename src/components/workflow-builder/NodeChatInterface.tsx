@@ -10,8 +10,10 @@ import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Send, Bot, User, Settings, Code, X } from 'lucide-react';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Send, Bot, User, Settings, Code, X, Activity } from 'lucide-react';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
+import { ArizeIntegration } from './ArizeIntegration';
 
 interface ChatMessage {
   id: string;
@@ -337,9 +339,32 @@ ${JSON.stringify(testResult.output, null, 2)}
     return <div className="whitespace-pre-wrap">{content}</div>;
   };
 
+  const getTestingCategories = () => {
+    switch (nodeType) {
+      case 'agent':
+        return ['Model Performance', 'Response Quality', 'Prompt Effectiveness', 'Memory Usage'];
+      case 'api':
+        return ['Endpoint Connectivity', 'Response Time', 'Error Handling', 'Rate Limiting'];
+      case 'database':
+        return ['Connection Pool', 'Query Performance', 'Data Integrity', 'Security Policies'];
+      default:
+        return ['Functionality Test', 'Performance Test', 'Integration Test', 'Error Handling'];
+    }
+  };
+
+  const addMessage = (content: string, role: 'user' | 'assistant') => {
+    const message: ChatMessage = {
+      id: Date.now().toString(),
+      role,
+      content,
+      timestamp: new Date(),
+    };
+    setMessages(prev => [...prev, message]);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[600px] flex flex-col">
+      <DialogContent className="max-w-5xl h-[85vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -355,73 +380,131 @@ ${JSON.stringify(testResult.output, null, 2)}
           </DialogTitle>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
-          <div className="space-y-4">
-            {messages.map((message) => (
-              <Card key={message.id} className={getMessageStyle(message)}>
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
-                    <div className="flex-shrink-0 mt-1">
-                      {getMessageIcon(message.role)}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-2">
-                        <span className="font-medium text-sm">
-                          {message.role === 'user' ? 'You' : 'AI Assistant'}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {message.timestamp.toLocaleTimeString()}
-                        </span>
-                        {message.type && (
-                          <Badge variant="outline" className="text-xs">
-                            {message.type}
-                          </Badge>
-                        )}
+        <Tabs defaultValue="chat" className="flex-1 flex flex-col">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="chat">AI Chat</TabsTrigger>
+            <TabsTrigger value="testing">Testing & Arize</TabsTrigger>
+            <TabsTrigger value="config">Configuration</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="chat" className="flex-1 flex flex-col mt-4">
+            <ScrollArea className="flex-1 pr-4" ref={scrollAreaRef}>
+              <div className="space-y-4">
+                {messages.map((message) => (
+                  <Card key={message.id} className={getMessageStyle(message)}>
+                    <CardContent className="p-4">
+                      <div className="flex items-start gap-3">
+                        <div className="flex-shrink-0 mt-1">
+                          {getMessageIcon(message.role)}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-2">
+                            <span className="font-medium text-sm">
+                              {message.role === 'user' ? 'You' : 'AI Assistant'}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {message.timestamp.toLocaleTimeString()}
+                            </span>
+                            {message.type && (
+                              <Badge variant="outline" className="text-xs">
+                                {message.type}
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="text-sm">
+                            {renderMessageContent(message.content)}
+                          </div>
+                        </div>
                       </div>
-                      <div className="text-sm">
-                        {renderMessageContent(message.content)}
+                    </CardContent>
+                  </Card>
+                ))}
+                
+                {isTyping && (
+                  <Card className="mr-12 bg-muted">
+                    <CardContent className="p-4">
+                      <div className="flex items-center gap-3">
+                        <Bot className="h-4 w-4" />
+                        <div className="flex space-x-1">
+                          <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
+                          <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                          <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                        </div>
+                        <span className="text-sm text-muted-foreground">AI is thinking...</span>
                       </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            
-            {isTyping && (
-              <Card className="mr-12 bg-muted">
-                <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    <Bot className="h-4 w-4" />
-                    <div className="flex space-x-1">
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" />
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
-                      <div className="w-2 h-2 bg-current rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
-                    </div>
-                    <span className="text-sm text-muted-foreground">AI is thinking...</span>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </ScrollArea>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </ScrollArea>
 
-        <div className="flex gap-2 pt-4 border-t">
-          <Input
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder="Ask me to configure your node... (e.g., 'Set temperature to 0.8' or 'Optimize for creative writing')"
-            disabled={isLoading}
-            className="flex-1"
-          />
-          <Button 
-            onClick={handleSendMessage} 
-            disabled={!inputValue.trim() || isLoading}
-            size="sm"
-          >
-            <Send className="h-4 w-4" />
-          </Button>
-        </div>
+            <div className="flex gap-2 pt-4 border-t">
+              <Input
+                value={inputValue}
+                onChange={(e) => setInputValue(e.target.value)}
+                onKeyPress={handleKeyPress}
+                placeholder="Ask me to configure your node... (e.g., 'Set temperature to 0.8' or 'Optimize for creative writing')"
+                disabled={isLoading}
+                className="flex-1"
+              />
+              <Button 
+                onClick={handleSendMessage} 
+                disabled={!inputValue.trim() || isLoading}
+                size="sm"
+              >
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="testing" className="flex-1 flex flex-col mt-4">
+            <div className="space-y-4">
+              <ArizeIntegration 
+                nodeId={nodeId}
+                nodeType={nodeType}
+                testingMode={assistMode === 'test' ? 'test' : assistMode}
+                onTestResults={(results) => {
+                  addMessage(`Test completed with status: ${results.status}. Metrics: Latency ${results.metrics.latency.toFixed(1)}ms, Accuracy ${(results.metrics.accuracy * 100).toFixed(1)}%`, 'assistant');
+                }}
+              />
+              
+              {assistMode === 'test' && (
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h4 className="font-medium mb-2 flex items-center gap-2">
+                    <Activity className="w-4 h-4" />
+                    Testing Categories for {nodeType}
+                  </h4>
+                  <div className="grid grid-cols-2 gap-2">
+                    {getTestingCategories().map((category, index) => (
+                      <Button 
+                        key={index} 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => addMessage(`Starting ${category} test...`, 'user')}
+                      >
+                        {category}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </TabsContent>
+
+          <TabsContent value="config" className="flex-1 mt-4">
+            <div className="space-y-4">
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <h4 className="font-medium mb-2 flex items-center gap-2">
+                  <Settings className="w-4 h-4" />
+                  Current Configuration
+                </h4>
+                <pre className="text-sm bg-white p-3 rounded border overflow-auto max-h-96">
+                  {JSON.stringify(currentConfig, null, 2)}
+                </pre>
+              </div>
+            </div>
+          </TabsContent>
+        </Tabs>
       </DialogContent>
     </Dialog>
   );
