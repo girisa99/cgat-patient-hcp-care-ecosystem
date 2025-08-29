@@ -473,21 +473,21 @@ const [internalSearch, setInternalSearch] = useState('');
     ] as any[];
   }, []);
 
+  // Enhanced drag start for node palette
   const onDragStart = (event: React.DragEvent, nodeType: any) => {
-    // Enhanced drag payload with full node type information
-    event.dataTransfer.setData('application/reactflow', nodeType.type_key);
-    event.dataTransfer.setData(
-      'application/json',
-      JSON.stringify({
-        ...nodeType,
-        source: 'enhanced-node-palette',
-        isWorkflowNode: true,
-        label: nodeType.display_name,
-      })
-    );
-    event.dataTransfer.setData('text/plain', nodeType.type_key);
+    // Enhanced drag payload with full node type information including AI assist integration
+    const dragData = {
+      type: nodeType.type_key,
+      nodeType,
+      category: nodeType.category?.name,
+      configuration: nodeType.default_config || {},
+      aiAssistMode: 'configure', // Default mode, can be overridden
+      label: nodeType.display_name,
+      icon: nodeType.icon,
+    };
+
+    event.dataTransfer.setData('application/reactflow', JSON.stringify(dragData));
     event.dataTransfer.effectAllowed = 'move';
-    console.log('[RF] dragStart', { type: nodeType.type_key, nodeType });
   };
 
   const handleNodeClick = (nodeType: any) => {
