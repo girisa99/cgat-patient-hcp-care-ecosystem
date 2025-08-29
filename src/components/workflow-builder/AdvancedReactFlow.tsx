@@ -394,22 +394,36 @@ const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType:
     event.preventDefault();
     event.stopPropagation();
 
-    // Try to get enhanced node data first
+    // Try to get enhanced node data first (parse application/reactflow payload)
     let nodeData: any | undefined;
     try {
-      const enhancedData = event.dataTransfer.getData('application/json');
-      if (enhancedData) {
-        nodeData = JSON.parse(enhancedData);
+      const rfPayload = event.dataTransfer.getData('application/reactflow');
+      if (rfPayload) nodeData = JSON.parse(rfPayload);
+    } catch (err) {
+      console.warn('[RF] Could not parse application/reactflow payload');
+    }
+
+    // Fallbacks: application/json, then text/plain if it looks like JSON
+    if (!nodeData) {
+      try {
+        const enhancedData = event.dataTransfer.getData('application/json');
+        if (enhancedData) nodeData = JSON.parse(enhancedData);
+      } catch (error) {
+        // ignore
       }
-    } catch (error) {
-      console.log('[RF] Could not parse enhanced node data, falling back', error);
+    }
+    if (!nodeData) {
+      const plain = event.dataTransfer.getData('text/plain');
+      if (plain && plain.trim().startsWith('{')) {
+        try { nodeData = JSON.parse(plain); } catch {}
+      }
     }
 
     // Determine type with multiple fallbacks
-    let type = nodeData?.type_key || event.dataTransfer.getData('application/reactflow');
+    let type = nodeData?.type || nodeData?.type_key;
     if (!type) {
-      const plain = event.dataTransfer.getData('text/plain');
-      if (plain) type = plain;
+      const fallback = event.dataTransfer.getData('text/plain');
+      if (fallback && !fallback.trim().startsWith('{')) type = fallback;
     }
     if (!type) {
       console.warn('[RF] Drop ignored: no node type in dataTransfer');
