@@ -135,6 +135,50 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
     try {
       const inputData = JSON.parse(testInput);
 
+      // Start connection analysis span
+      const connectionSpanId = arizeSDK.createSpan('connection-analysis', {
+        'analysis.type': 'node-connections',
+        'workflow.nodeCount': workflowNodes.length,
+        'workflow.edgeCount': workflowEdges.length
+      }, workflowSpanId);
+
+      addTestResult({
+        status: 'running',
+        message: `🔗 Analyzing node connections and flow integrity...`
+      });
+
+      const connectionAnalysis = await arizeSDK.analyzeWorkflowConnections(workflowNodes, workflowEdges);
+      
+      await arizeSDK.finishSpan(connectionSpanId, 'success', {
+        'connections.total': connectionAnalysis.connectionAnalysis.totalConnections,
+        'connections.valid': connectionAnalysis.connectionAnalysis.validConnections,
+        'flow.integrity': connectionAnalysis.connectionAnalysis.flowIntegrity
+      });
+
+      // Report connection analysis results
+      addTestResult({
+        status: connectionAnalysis.connectionAnalysis.flowIntegrity === 'error' ? 'error' : 
+               connectionAnalysis.connectionAnalysis.flowIntegrity === 'warning' ? 'warning' : 'success',
+        message: `🔗 Connection Analysis: ${connectionAnalysis.connectionAnalysis.validConnections}/${connectionAnalysis.connectionAnalysis.totalConnections} valid connections (${connectionAnalysis.connectionAnalysis.flowIntegrity})`
+      });
+
+      // Report flow analysis
+      if (connectionAnalysis.nodeFlowAnalysis.isolatedNodes.length > 0) {
+        addTestResult({
+          status: 'warning',
+          message: `⚠️ Isolated nodes detected: ${connectionAnalysis.nodeFlowAnalysis.isolatedNodes.join(', ')}`
+        });
+      }
+
+      if (connectionAnalysis.processValidation.recommendedFixes.length > 0) {
+        connectionAnalysis.processValidation.recommendedFixes.forEach(fix => {
+          addTestResult({
+            status: 'warning',
+            message: `💡 Recommendation: ${fix}`
+          });
+        });
+      }
+
       // Start workflow analysis span
       const analysisSpanId = arizeSDK.createSpan('workflow-analysis', {
         'analysis.provider': selectedProvider,
@@ -486,33 +530,61 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
                   }%</div>
                   <div>Avg Duration: {Math.round(arizeSDK.metrics.averageDuration)}ms</div>
                   <div>Active Traces: {arizeSDK.metrics.traces.length}</div>
-                </div>
-              </Card>
-              
+            </div>
+
+            <div className="grid grid-cols-1 gap-4">
               <Card className="p-4">
                 <h4 className="font-medium mb-2">Configuration</h4>
-                <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
                   <input
                     type="text"
                     placeholder="Space Key"
                     value={arizeConfig.spaceKey}
                     onChange={(e) => setArizeConfig(prev => ({ ...prev, spaceKey: e.target.value }))}
-                    className="w-full p-2 border rounded text-sm"
+                    className="p-2 border rounded text-sm"
                   />
                   <input
                     type="text"
                     placeholder="Model ID"
                     value={arizeConfig.modelId}
                     onChange={(e) => setArizeConfig(prev => ({ ...prev, modelId: e.target.value }))}
-                    className="w-full p-2 border rounded text-sm"
+                    className="p-2 border rounded text-sm"
                   />
+                </div>
+                <Button 
+                  size="sm" 
+                  className="mt-2"
+                  onClick={() => arizeSDK.initialize(arizeConfig)}
+                  disabled={arizeSDK.isInitialized}
+                >
+                  {arizeSDK.isInitialized ? 'Connected' : 'Connect SDK'}
+                </Button>
+              </Card>
+            </div>
+              </Card>
+              
+              <Card className="p-4">
+                <h4 className="font-medium mb-2">Connection Analysis</h4>
+                <div className="space-y-2 text-sm">
                   <Button 
                     size="sm" 
-                    onClick={() => arizeSDK.initialize(arizeConfig)}
-                    disabled={arizeSDK.isInitialized}
+                    variant="outline"
+                    onClick={async () => {
+                      if (workflowNodes.length > 0) {
+                        const analysis = await arizeSDK.analyzeWorkflowConnections(workflowNodes, workflowEdges);
+                        addTestResult({
+                          status: analysis.connectionAnalysis.flowIntegrity === 'error' ? 'error' : 'success',
+                          message: `🔗 Flow integrity: ${analysis.connectionAnalysis.flowIntegrity} | Valid: ${analysis.connectionAnalysis.validConnections}/${analysis.connectionAnalysis.totalConnections}`
+                        });
+                      }
+                    }}
+                    disabled={workflowNodes.length === 0}
                   >
-                    {arizeSDK.isInitialized ? 'Connected' : 'Connect SDK'}
+                    Analyze Connections
                   </Button>
+                  <div className="text-xs text-muted-foreground">
+                    Validates node-to-node connections, flow integrity, and process continuity
+                  </div>
                 </div>
               </Card>
             </div>

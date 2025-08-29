@@ -226,6 +226,150 @@ export const useArizeSDK = () => {
     });
   }, []);
 
+  const analyzeWorkflowConnections = useCallback(async (
+    nodes: any[],
+    edges: any[]
+  ): Promise<{
+    connectionAnalysis: {
+      totalConnections: number;
+      validConnections: number;
+      missingConnections: string[];
+      invalidConnections: string[];
+      flowIntegrity: 'good' | 'warning' | 'error';
+    };
+    nodeFlowAnalysis: {
+      startNodes: string[];
+      endNodes: string[];
+      isolatedNodes: string[];
+      cyclicPaths: string[];
+      criticalPath: string[];
+    };
+    processValidation: {
+      dataFlowConsistency: boolean;
+      typeCompatibility: Array<{ from: string; to: string; issue: string }>;
+      recommendedFixes: string[];
+    };
+  }> => {
+    const spanId = createSpan('workflow-connection-analysis', {
+      'analysis.nodeCount': nodes.length,
+      'analysis.edgeCount': edges.length
+    });
+
+    try {
+
+      // Analyze node connections
+      const nodeMap = new Map(nodes.map(n => [n.id, n]));
+      const connectionAnalysis = {
+        totalConnections: edges.length,
+        validConnections: 0,
+        missingConnections: [] as string[],
+        invalidConnections: [] as string[],
+        flowIntegrity: 'good' as 'good' | 'warning' | 'error'
+      };
+
+      // Check edge validity
+      edges.forEach(edge => {
+        const sourceExists = nodeMap.has(edge.source);
+        const targetExists = nodeMap.has(edge.target);
+        
+        if (sourceExists && targetExists) {
+          connectionAnalysis.validConnections++;
+        } else {
+          connectionAnalysis.invalidConnections.push(
+            `${edge.source} -> ${edge.target} (${!sourceExists ? 'missing source' : 'missing target'})`
+          );
+        }
+      });
+
+      // Analyze node flow
+      const incomingConnections = new Map<string, number>();
+      const outgoingConnections = new Map<string, number>();
+      
+      edges.forEach(edge => {
+        incomingConnections.set(edge.target, (incomingConnections.get(edge.target) || 0) + 1);
+        outgoingConnections.set(edge.source, (outgoingConnections.get(edge.source) || 0) + 1);
+      });
+
+      const nodeFlowAnalysis = {
+        startNodes: nodes.filter(n => !incomingConnections.has(n.id)).map(n => n.id),
+        endNodes: nodes.filter(n => !outgoingConnections.has(n.id)).map(n => n.id),
+        isolatedNodes: nodes.filter(n => !incomingConnections.has(n.id) && !outgoingConnections.has(n.id)).map(n => n.id),
+        cyclicPaths: [] as string[], // TODO: Implement cycle detection
+        criticalPath: [] as string[] // TODO: Implement critical path analysis
+      };
+
+      // Process validation
+      const typeCompatibility: Array<{ from: string; to: string; issue: string }> = [];
+      const recommendedFixes: string[] = [];
+
+      // Check data type compatibility between connected nodes
+      edges.forEach(edge => {
+        const sourceNode = nodeMap.get(edge.source);
+        const targetNode = nodeMap.get(edge.target);
+        
+        if (sourceNode && targetNode) {
+          // Basic type checking (can be enhanced based on node schemas)
+          if (sourceNode.type === 'input' && targetNode.type === 'output') {
+            typeCompatibility.push({
+              from: sourceNode.id,
+              to: targetNode.id,
+              issue: 'Direct input to output connection may bypass processing'
+            });
+          }
+        }
+      });
+
+      // Generate recommendations
+      if (nodeFlowAnalysis.isolatedNodes.length > 0) {
+        recommendedFixes.push(`Connect isolated nodes: ${nodeFlowAnalysis.isolatedNodes.join(', ')}`);
+      }
+      
+      if (nodeFlowAnalysis.startNodes.length === 0) {
+        recommendedFixes.push('Add at least one start node (node with no incoming connections)');
+      }
+      
+      if (nodeFlowAnalysis.endNodes.length === 0) {
+        recommendedFixes.push('Add at least one end node (node with no outgoing connections)');
+      }
+
+      // Determine flow integrity
+      if (connectionAnalysis.invalidConnections.length > 0 || nodeFlowAnalysis.isolatedNodes.length > 0) {
+        connectionAnalysis.flowIntegrity = 'error';
+      } else if (typeCompatibility.length > 0 || recommendedFixes.length > 0) {
+        connectionAnalysis.flowIntegrity = 'warning';
+      }
+
+      const result = {
+        connectionAnalysis,
+        nodeFlowAnalysis,
+        processValidation: {
+          dataFlowConsistency: typeCompatibility.length === 0,
+          typeCompatibility,
+          recommendedFixes
+        }
+      };
+
+      addSpanEvent(spanId, 'analysis-completed', {
+        'connections.total': connectionAnalysis.totalConnections,
+        'connections.valid': connectionAnalysis.validConnections,
+        'connections.invalid': connectionAnalysis.invalidConnections.length,
+        'nodes.isolated': nodeFlowAnalysis.isolatedNodes.length,
+        'flow.integrity': connectionAnalysis.flowIntegrity
+      });
+
+      await finishSpan(spanId, 'success', {
+        'analysis.result': JSON.stringify(result)
+      });
+
+      return result;
+    } catch (error) {
+      await finishSpan(spanId, 'error', {
+        'analysis.error': error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
+    }
+  }, [createSpan, addSpanEvent, finishSpan]);
+
   const exportTrace = useCallback((traceId: string) => {
     const traceSpans = getTraceSpans(traceId);
     const traceData = {
@@ -267,6 +411,7 @@ export const useArizeSDK = () => {
     getSpan,
     getTraceSpans,
     clearSpans,
-    exportTrace
+    exportTrace,
+    analyzeWorkflowConnections
   };
 };
