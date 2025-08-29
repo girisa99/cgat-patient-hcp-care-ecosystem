@@ -423,17 +423,43 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
         addTestResult({ status: 'warning', message: 'No suggestions returned' });
         return;
       }
-      const nodes = steps.map((s: any, i: number) => ({
-        id: `step-${i + 1}`,
-        type: 'default',
-        data: { label: s.title || `Step ${i + 1}` },
-        position: { x: 120, y: 80 + i * 140 },
-      }));
+      const nodes = steps.map((s: any, i: number) => {
+        const title = s.title || `Step ${i + 1}`;
+        // Infer simple category and icon
+        const lower = title.toLowerCase();
+        const category = lower.includes('agent') ? 'ai-agents' : (lower.includes('vector') || lower.includes('loader') || lower.includes('api')) ? 'integrations' : 'data-processing';
+        const icon = lower.includes('agent') ? 'bot' : lower.includes('api') ? 'globe' : 'database';
+        const models = category === 'ai-agents' ? ['gpt-4o-mini','claude-3.5-sonnet','gemini-2.0-flash'] : ['Standard'];
+        const tools = category === 'ai-agents' ? ['Prompt','Memory','Tools'] : ['Connector','Mapper'];
+        return {
+          id: `step-${i + 1}`,
+          type: 'enhanced',
+          position: { x: 120, y: 80 + i * 140 },
+          data: {
+            label: title,
+            type_key: lower.includes('agent') ? 'agent' : 'node',
+            display_name: title,
+            description: s.description || '',
+            icon,
+            category,
+            color: category === 'ai-agents' ? '#3b82f6' : category === 'integrations' ? '#10b981' : '#8b5cf6',
+            capabilities: s.capabilities || [],
+            requirements: s.requirements || {},
+            configuration: {},
+            tools,
+            models,
+            aiAssistEnabled: true,
+            supportedModes: ['build','generate','test','deploy','configure'],
+            isWorkflowNode: true
+          }
+        } as any;
+      });
       const edges = nodes.slice(0, -1).map((n: any, i: number) => ({
         id: `e-${n.id}-${nodes[i + 1].id}`,
         source: n.id,
         target: nodes[i + 1].id,
         type: 'smoothstep',
+        updatable: true
       }));
       applyChangesToCanvas(nodes, edges, 'Suggested Workflow');
       addTestResult({ status: 'success', message: `Suggested ${nodes.length} steps and connected them` });

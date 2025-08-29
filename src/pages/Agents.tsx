@@ -370,8 +370,36 @@ const AgentsInner = () => {
                 workflowEdges={workflowEdges}
                 selectedNode={selectedNode}
                 onAgentGenerated={(finalAgent: any) => {
-                  setWorkflowNodes(finalAgent.nodes || []);
-                  setWorkflowEdges(finalAgent.edges || []);
+                  const toEnhanced = (nodes: any[]) => (nodes || []).map((n) => {
+                    if (n.type === 'enhanced') return n;
+                    const label = n.data?.label || n.label || n.name || 'Node';
+                    const lower = String(label).toLowerCase();
+                    const category = lower.includes('agent') ? 'ai-agents' : (lower.includes('vector') || lower.includes('api')) ? 'integrations' : 'data-processing';
+                    return {
+                      id: n.id || `${lower.replace(/\s+/g,'-')}-${Date.now()}`,
+                      type: 'enhanced',
+                      position: n.position || { x: 100, y: 100 },
+                      data: {
+                        label,
+                        type_key: n.type || 'node',
+                        display_name: label,
+                        description: n.data?.description || '',
+                        icon: n.data?.icon || (category==='ai-agents'?'bot':category==='integrations'?'globe':'database'),
+                        category,
+                        color: category === 'ai-agents' ? '#3b82f6' : category === 'integrations' ? '#10b981' : '#8b5cf6',
+                        capabilities: n.data?.capabilities || [],
+                        requirements: n.data?.requirements || {},
+                        configuration: n.data?.configuration || {},
+                        tools: n.data?.tools || [],
+                        models: n.data?.models || [],
+                        aiAssistEnabled: true,
+                        supportedModes: ['build','generate','test','deploy','configure'],
+                        isWorkflowNode: true
+                      }
+                    } as any;
+                  });
+                  setWorkflowNodes(toEnhanced(finalAgent.nodes || []));
+                  setWorkflowEdges((finalAgent.edges || []).map((e: any, idx: number) => ({ id: e.id || `e-${idx}`, updatable: true, ...e })));
                   toast.success('Applied to canvas');
                 }}
                 onClose={() => setShowUnifiedAssist(false)}

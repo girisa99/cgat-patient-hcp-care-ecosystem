@@ -91,7 +91,7 @@ export const NodeConfigurationModal: React.FC<NodeConfigurationModalProps> = ({
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="w-full flex flex-wrap gap-2 overflow-x-auto">
             <TabsTrigger value="form">Configuration Form</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
           </TabsList>

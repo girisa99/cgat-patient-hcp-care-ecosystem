@@ -380,8 +380,8 @@ ${JSON.stringify(testResult.output, null, 2)}
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs defaultValue="chat" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+        <Tabs className="flex-1 flex flex-col" defaultValue="chat">
+          <TabsList className="w-full flex flex-wrap gap-2 overflow-x-auto">
             <TabsTrigger value="chat">AI Chat</TabsTrigger>
             <TabsTrigger value="testing">Testing & Arize</TabsTrigger>
             <TabsTrigger value="config">Configuration</TabsTrigger>

@@ -6,7 +6,8 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
-import { Bot, Settings } from 'lucide-react';
+import { Bot, Settings, HelpCircle } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }> = ({ id, data, selected }) => {
   const [config, setConfig] = useState({
@@ -92,71 +93,125 @@ export const AIModelsNode: React.FC<{ id: string; data: any; selected: boolean }
         )}
 
         {isExpanded && (
-          <div className="space-y-3 max-h-64 overflow-y-auto">
-            <div className="space-y-2">
-              <Label className="text-xs">Model</Label>
-              <Select value={config.model} onValueChange={(value) => updateConfig({ model: value })}>
-                <SelectTrigger className="h-7 text-xs">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map((model) => (
-                    <SelectItem key={model.value} value={model.value}>
-                      {model.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          <TooltipProvider>
+            <div className="space-y-3 max-h-64 overflow-y-auto">
+              <div className="space-y-2">
+                <Label className="text-xs">Model</Label>
+                <Select value={config.model} onValueChange={(value) => updateConfig({ model: value })}>
+                  <SelectTrigger className="h-7 text-xs">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((model) => (
+                      <SelectItem key={model.value} value={model.value}>
+                        {model.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Temperature: {config.temperature[0]}</Label>
-              <Slider
-                value={config.temperature}
-                onValueChange={(value) => updateConfig({ temperature: value })}
-                max={2}
-                min={0}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">Temperature: {config.temperature[0]}</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>Controls creativity: lower = precise, higher = creative.</TooltipContent>
+                  </Tooltip>
+                </div>
+                <Slider
+                  value={config.temperature}
+                  onValueChange={(value) => updateConfig({ temperature: value })}
+                  max={2}
+                  min={0}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Max Tokens</Label>
-              <Input
-                type="number"
-                value={config.max_tokens}
-                onChange={(e) => updateConfig({ max_tokens: parseInt(e.target.value) || 0 })}
-                className="h-6 text-xs"
-                min={1}
-                max={4000}
-              />
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">Max Tokens</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>Maximum length of the response.</TooltipContent>
+                  </Tooltip>
+                </div>
+                <Input
+                  type="number"
+                  value={config.max_tokens}
+                  onChange={(e) => updateConfig({ max_tokens: parseInt(e.target.value) || 0 })}
+                  className="h-6 text-xs"
+                  min={1}
+                  max={4000}
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Top P: {config.top_p[0]}</Label>
-              <Slider
-                value={config.top_p}
-                onValueChange={(value) => updateConfig({ top_p: value })}
-                max={1}
-                min={0}
-                step={0.1}
-                className="w-full"
-              />
-            </div>
+              <div className="space-y-2">
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">Top P: {config.top_p[0]}</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>Samples from most likely tokens only (nucleus sampling).</TooltipContent>
+                  </Tooltip>
+                </div>
+                <Slider
+                  value={config.top_p}
+                  onValueChange={(value) => updateConfig({ top_p: value })}
+                  max={1}
+                  min={0}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
 
-            <div className="space-y-2">
-              <Label className="text-xs">Frequency Penalty: {config.frequency_penalty[0]}</Label>
-              <Slider
-                value={config.frequency_penalty}
-                onValueChange={(value) => updateConfig({ frequency_penalty: value })}
-                max={2}
-                min={-2}
-                step={0.1}
-                className="w-full"
-              />
+              <div className="space-y-2">
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">Frequency Penalty: {config.frequency_penalty[0]}</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>Reduces repeated phrases in output.</TooltipContent>
+                  </Tooltip>
+                </div>
+                <Slider
+                  value={config.frequency_penalty}
+                  onValueChange={(value) => updateConfig({ frequency_penalty: value })}
+                  max={2}
+                  min={-2}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center gap-1">
+                  <Label className="text-xs">Presence Penalty: {config.presence_penalty?.[0] ?? 0}</Label>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <HelpCircle className="h-3 w-3 text-muted-foreground" />
+                    </TooltipTrigger>
+                    <TooltipContent>Encourages mentioning new topics.</TooltipContent>
+                  </Tooltip>
+                </div>
+                <Slider
+                  value={config.presence_penalty || [0]}
+                  onValueChange={(value) => updateConfig({ presence_penalty: value })}
+                  max={2}
+                  min={-2}
+                  step={0.1}
+                  className="w-full"
+                />
+              </div>
             </div>
-          </div>
+          </TooltipProvider>
         )}
       </div>
     </BaseWorkflowNode>
