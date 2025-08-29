@@ -16,6 +16,7 @@ import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBase
 import { ArizeTracing } from '@/components/tracing/ArizeTracing';
 import { useArizeSDK } from '@/hooks/useArizeSDK';
 import { useNetworkConnectionMonitoring } from '@/hooks/useNetworkConnectionMonitoring';
+import { MonitoringToolRecommendationPanel } from '@/components/monitoring/MonitoringToolRecommendationPanel';
 
 interface TestResult {
   id: string;
@@ -456,7 +457,7 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
 
       <CardContent className="flex-1 p-4 flex flex-col gap-4">
         <Tabs defaultValue="workspace" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="workspace" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               Workspace
@@ -464,6 +465,10 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
             <TabsTrigger value="tracing" className="flex items-center gap-2">
               <Eye className="h-4 w-4" />
               Tracing
+            </TabsTrigger>
+            <TabsTrigger value="tools" className="flex items-center gap-2">
+              <Settings2 className="h-4 w-4" />
+              Tools
             </TabsTrigger>
             <TabsTrigger value="results" className="flex items-center gap-2">
               <Terminal className="h-4 w-4" />
@@ -613,6 +618,10 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
                 });
               }}
             />
+          </TabsContent>
+
+          <TabsContent value="tools" className="flex-1 flex flex-col">
+            <MonitoringToolRecommendationPanel />
           </TabsContent>
 
           <TabsContent value="results" className="flex-1 flex flex-col">
