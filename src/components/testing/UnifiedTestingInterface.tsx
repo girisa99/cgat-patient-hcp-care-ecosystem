@@ -14,6 +14,7 @@ import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBasedAgentGenerator';
 import { ArizeTracing } from '@/components/tracing/ArizeTracing';
+import { useArizeSDK } from '@/hooks/useArizeSDK';
 
 interface TestResult {
   id: string;
@@ -44,6 +45,11 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
   const [testInput, setTestInput] = useState('{"message": "Hello, test the workflow"}');
   const [testResults, setTestResults] = useState<TestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
+  const [arizeConfig, setArizeConfig] = useState({
+    spaceKey: 'unified-testing',
+    modelId: 'workflow-builder',
+    modelVersion: '1.0.0'
+  });
   const scrollRef = useRef<HTMLDivElement>(null);
   
   const { showSuccess, showError } = useMasterToast();
@@ -55,6 +61,8 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
     isLoading,
     hasAvailableProviders
   } = useUniversalAI({ defaultProvider: selectedProvider });
+  
+  const arizeSDK = useArizeSDK();
 
   // Auto-scroll to bottom when new results come in
   useEffect(() => {
@@ -106,29 +114,33 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
 
     setIsRunning(true);
     
-    // Start Arize tracing
-    let mainTraceId: string | null = null;
-    if (window.arizeTracing?.isConnected) {
-      mainTraceId = await window.arizeTracing.startTrace(
-        'workflow-test',
-        'complete-workflow-execution',
-        {
-          nodeCount: workflowNodes.length,
-          edgeCount: workflowEdges.length,
-          provider: selectedProvider
-        }
-      );
+    // Initialize Arize SDK if not already done
+    if (!arizeSDK.isInitialized) {
+      await arizeSDK.initialize(arizeConfig);
     }
+    
+    // Start main workflow trace
+    const workflowSpanId = arizeSDK.createSpan('workflow-execution', {
+      'workflow.nodeCount': workflowNodes.length,
+      'workflow.edgeCount': workflowEdges.length,
+      'workflow.provider': selectedProvider,
+      'workflow.mode': testingMode
+    });
 
     addTestResult({
       status: 'running',
-      message: `🚀 Starting intelligent workflow test with ${selectedProvider.toUpperCase()} AI...${mainTraceId ? ' (Tracing enabled)' : ''}`
+      message: `🚀 Starting intelligent workflow test with ${selectedProvider.toUpperCase()} AI (Arize SDK enabled)`
     });
 
     try {
       const inputData = JSON.parse(testInput);
 
-      // First analyze the entire workflow
+      // Start workflow analysis span
+      const analysisSpanId = arizeSDK.createSpan('workflow-analysis', {
+        'analysis.provider': selectedProvider,
+        'analysis.complexity': 'unknown'
+      }, workflowSpanId);
+
       addTestResult({
         status: 'running',
         message: `🧠 Analyzing workflow architecture with ${selectedProvider.toUpperCase()}...`
@@ -137,6 +149,12 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
       const analysis = await analyzeWorkflow(workflowNodes, workflowEdges, selectedProvider);
       
       if (analysis) {
+        arizeSDK.addSpanEvent(analysisSpanId, 'analysis-completed', {
+          complexity: analysis.complexity,
+          riskLevel: analysis.riskAssessment,
+          issueCount: analysis.issues?.length || 0
+        });
+
         addTestResult({
           status: 'success',
           message: `📊 Workflow Analysis: ${analysis.complexity} complexity, ${analysis.riskAssessment} risk level`
@@ -144,6 +162,10 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
 
         if (analysis.issues?.length > 0) {
           analysis.issues.forEach((issue: any) => {
+            arizeSDK.addSpanEvent(analysisSpanId, 'analysis-issue', {
+              type: issue.type,
+              message: issue.message
+            });
             addTestResult({
               status: issue.type === 'error' ? 'error' : 'warning',
               message: `⚠️ ${issue.message}`
@@ -152,37 +174,39 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
         }
       }
 
-      // Test each node with AI and tracing
+      await arizeSDK.finishSpan(analysisSpanId, 'success', {
+        'analysis.result': analysis
+      });
+
+      // Test each node with AI and SDK tracing
       let currentData = inputData;
       for (const node of workflowNodes) {
-        // Start node-specific trace
-        let nodeTraceId: string | null = null;
-        if (window.arizeTracing?.isConnected && mainTraceId) {
-          nodeTraceId = await window.arizeTracing.startTrace(
-            node.id,
-            `node-execution-${node.type || 'unknown'}`,
-            {
-              nodeType: node.type,
-              nodeLabel: node.data?.label,
-              inputData: currentData
-            }
-          );
-        }
+        // Start node-specific span
+        const nodeSpanId = arizeSDK.createSpan(`node-${node.type || 'unknown'}`, {
+          'node.id': node.id,
+          'node.type': node.type,
+          'node.label': node.data?.label,
+          'node.inputData': JSON.stringify(currentData)
+        }, workflowSpanId);
 
         addTestResult({
           status: 'running',
-          message: `🎯 AI testing: ${node.data?.label || node.id}${nodeTraceId ? ' (Traced)' : ''}`,
+          message: `🎯 AI testing: ${node.data?.label || node.id} (SDK traced)`,
+        });
+
+        arizeSDK.addSpanEvent(nodeSpanId, 'node-test-start', {
+          provider: selectedProvider,
+          inputSize: JSON.stringify(currentData).length
         });
 
         const nodeResult = await testNode(node, currentData, selectedProvider);
         
         if (nodeResult.success) {
-          if (nodeTraceId && window.arizeTracing?.isConnected) {
-            await window.arizeTracing.endTrace(nodeTraceId, 'success', {
-              outputData: nodeResult.output,
-              executionTime: nodeResult.executionTime
-            });
-          }
+          await arizeSDK.finishSpan(nodeSpanId, 'success', {
+            'node.outputData': JSON.stringify(nodeResult.output),
+            'node.executionTime': nodeResult.executionTime,
+            'node.success': true
+          });
           
           addTestResult({
             status: 'success',
@@ -192,12 +216,11 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
           });
           currentData = nodeResult.output || currentData;
         } else {
-          if (nodeTraceId && window.arizeTracing?.isConnected) {
-            await window.arizeTracing.endTrace(nodeTraceId, 'error', {
-              error: nodeResult.message,
-              executionTime: nodeResult.executionTime
-            });
-          }
+          await arizeSDK.finishSpan(nodeSpanId, 'error', {
+            'node.error': nodeResult.message,
+            'node.executionTime': nodeResult.executionTime,
+            'node.success': false
+          });
           
           addTestResult({
             status: 'error',
@@ -208,28 +231,26 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
         }
       }
 
-      // End main trace
-      if (mainTraceId && window.arizeTracing?.isConnected) {
-        await window.arizeTracing.endTrace(mainTraceId, 'success', {
-          totalNodes: workflowNodes.length,
-          finalOutput: currentData
-        });
-      }
+      // Complete main workflow span
+      await arizeSDK.finishSpan(workflowSpanId, 'success', {
+        'workflow.totalNodes': workflowNodes.length,
+        'workflow.finalOutput': JSON.stringify(currentData),
+        'workflow.completed': true
+      });
 
       addTestResult({
         status: 'success',
-        message: `🎉 Complete workflow test finished using ${selectedProvider.toUpperCase()}!${mainTraceId ? ' (Trace completed)' : ''}`,
+        message: `🎉 Complete workflow test finished using ${selectedProvider.toUpperCase()}! (SDK trace completed)`,
       });
 
       showSuccess(`Workflow testing completed with ${selectedProvider.toUpperCase()}!`);
 
     } catch (error: any) {
-      // End main trace with error
-      if (mainTraceId && window.arizeTracing?.isConnected) {
-        await window.arizeTracing.endTrace(mainTraceId, 'error', {
-          error: error.message
-        });
-      }
+      // End workflow span with error
+      await arizeSDK.finishSpan(workflowSpanId, 'error', {
+        'workflow.error': error.message,
+        'workflow.completed': false
+      });
 
       addTestResult({
         status: 'error',
@@ -452,7 +473,50 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
             )}
           </TabsContent>
 
-          <TabsContent value="tracing" className="flex-1 flex flex-col">
+          <TabsContent value="tracing" className="flex-1 flex flex-col gap-4">
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-4">
+                <h4 className="font-medium mb-2">SDK Metrics</h4>
+                <div className="space-y-2 text-sm">
+                  <div>Total Spans: {arizeSDK.metrics.totalSpans}</div>
+                  <div>Success Rate: {
+                    arizeSDK.metrics.totalSpans > 0 
+                      ? Math.round((arizeSDK.metrics.successfulSpans / arizeSDK.metrics.totalSpans) * 100)
+                      : 0
+                  }%</div>
+                  <div>Avg Duration: {Math.round(arizeSDK.metrics.averageDuration)}ms</div>
+                  <div>Active Traces: {arizeSDK.metrics.traces.length}</div>
+                </div>
+              </Card>
+              
+              <Card className="p-4">
+                <h4 className="font-medium mb-2">Configuration</h4>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    placeholder="Space Key"
+                    value={arizeConfig.spaceKey}
+                    onChange={(e) => setArizeConfig(prev => ({ ...prev, spaceKey: e.target.value }))}
+                    className="w-full p-2 border rounded text-sm"
+                  />
+                  <input
+                    type="text"
+                    placeholder="Model ID"
+                    value={arizeConfig.modelId}
+                    onChange={(e) => setArizeConfig(prev => ({ ...prev, modelId: e.target.value }))}
+                    className="w-full p-2 border rounded text-sm"
+                  />
+                  <Button 
+                    size="sm" 
+                    onClick={() => arizeSDK.initialize(arizeConfig)}
+                    disabled={arizeSDK.isInitialized}
+                  >
+                    {arizeSDK.isInitialized ? 'Connected' : 'Connect SDK'}
+                  </Button>
+                </div>
+              </Card>
+            </div>
+
             <ArizeTracing 
               workflowId={workflowNodes.length > 0 ? `workflow-${Date.now()}` : undefined}
               isEnabled={true}
