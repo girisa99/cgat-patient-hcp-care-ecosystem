@@ -38,6 +38,7 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
   const [configModalOpen, setConfigModalOpen] = useState(false);
   const [chatModalOpen, setChatModalOpen] = useState(false);
   const [configAction, setConfigAction] = useState('');
+  const [chatAssistMode, setChatAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('configure');
 
   // Handle edge connections
   const onConnect = useCallback(
@@ -84,10 +85,11 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
   }, [nodes, setNodes]);
 
   // Handle opening chat interface
-  const handleOpenChat = useCallback((nodeId: string) => {
+  const handleOpenChat = useCallback((nodeId: string, mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure' = 'configure') => {
     const node = nodes.find(n => n.id === nodeId);
     if (node) {
       setSelectedNode(node);
+      setChatAssistMode(mode);
       setChatModalOpen(true);
     }
   }, [nodes]);
@@ -240,6 +242,7 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
           nodeType={String(selectedNode.data?.type || 'default')}
           currentConfig={selectedNode.data?.configuration || {}}
           onConfigurationUpdate={handleConfigurationUpdate}
+          assistMode={chatAssistMode}
         />
       )}
     </div>

@@ -28,6 +28,7 @@ interface NodeChatInterfaceProps {
   nodeType: string;
   currentConfig: any;
   onConfigurationUpdate: (nodeId: string, config: any) => void;
+  assistMode?: 'build' | 'generate' | 'test' | 'deploy' | 'configure';
 }
 
 export const NodeChatInterface: React.FC<NodeChatInterfaceProps> = ({
@@ -37,13 +38,14 @@ export const NodeChatInterface: React.FC<NodeChatInterfaceProps> = ({
   nodeType,
   currentConfig,
   onConfigurationUpdate,
+  assistMode = 'configure',
 }) => {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const scrollAreaRef = useRef<HTMLDivElement>(null);
   
-  const { generateResponse, isLoading } = useUniversalAI();
+  const { generateResponse, testNode, analyzeWorkflow, generateAgent, isLoading } = useUniversalAI();
 
   useEffect(() => {
     if (isOpen) {
@@ -52,17 +54,55 @@ export const NodeChatInterface: React.FC<NodeChatInterfaceProps> = ({
   }, [isOpen, nodeId, nodeType]);
 
   const initializeChat = () => {
-    const welcomeMessage: ChatMessage = {
-      id: 'welcome',
-      role: 'assistant',
-      content: `Hi! I'm here to help you configure your ${nodeType} node. You can ask me to:
+    const getModeSpecificWelcome = () => {
+      switch (assistMode) {
+        case 'build':
+          return `Hi! I'm here to help you build your ${nodeType} node. I can help you:
+• Design the node architecture
+• Set up connections and data flow
+• Configure processing logic
+• Optimize for performance
 
+What would you like to build?`;
+        case 'generate':
+          return `Hi! I'm here to help generate your ${nodeType} node. I can:
+• Auto-generate configuration based on requirements
+• Create templates for common use cases
+• Generate code and settings
+• Suggest optimal parameters
+
+What should I generate for you?`;
+        case 'test':
+          return `Hi! I'm here to help test your ${nodeType} node. I can:
+• Run test scenarios on your configuration
+• Validate node functionality
+• Check for potential issues
+• Performance test the node
+
+What would you like to test?`;
+        case 'deploy':
+          return `Hi! I'm here to help deploy your ${nodeType} node. I can:
+• Prepare deployment configuration
+• Set up environment variables
+• Configure monitoring and alerts
+• Handle production settings
+
+What deployment help do you need?`;
+        default:
+          return `Hi! I'm here to help you configure your ${nodeType} node. You can ask me to:
 • Change specific settings (e.g., "Set temperature to 0.8")
 • Explain configuration options
 • Suggest optimal settings for your use case
 • Generate configuration code
 
-What would you like to configure?`,
+What would you like to configure?`;
+      }
+    };
+
+    const welcomeMessage: ChatMessage = {
+      id: 'welcome',
+      role: 'assistant',
+      content: getModeSpecificWelcome(),
       timestamp: new Date(),
       type: 'suggestion',
     };
@@ -85,12 +125,80 @@ What would you like to configure?`,
     setIsTyping(true);
 
     try {
-      const systemPrompt = `You are an AI assistant helping to configure a ${nodeType} node in a workflow builder. 
+      const getModeSpecificSystemPrompt = () => {
+        const basePrompt = `You are an AI assistant helping with a ${nodeType} node in a workflow builder. 
 
 Current configuration:
 ${JSON.stringify(currentConfig, null, 2)}
 
-Your role:
+Node type: ${nodeType}
+Assist mode: ${assistMode}`;
+
+        switch (assistMode) {
+          case 'build':
+            return `${basePrompt}
+
+Your role in BUILD mode:
+1. Help design and architect the node structure
+2. Suggest optimal configurations for the use case
+3. Provide building blocks and templates
+4. Guide through setup process step by step
+
+When providing responses:
+- Focus on architecture and design decisions
+- Provide clear step-by-step instructions
+- Include configuration in JSON format when helpful
+- Explain design rationale`;
+
+          case 'generate':
+            return `${basePrompt}
+
+Your role in GENERATE mode:
+1. Auto-generate complete configurations based on requirements
+2. Create ready-to-use templates and presets
+3. Generate code snippets and settings
+4. Provide multiple configuration options
+
+When providing responses:
+- Always include complete configuration in JSON format
+- Provide multiple variants when applicable
+- Generate comprehensive settings
+- Include usage examples`;
+
+          case 'test':
+            return `${basePrompt}
+
+Your role in TEST mode:
+1. Create test scenarios for the node configuration
+2. Validate settings and identify potential issues
+3. Suggest test cases and validation steps
+4. Provide performance analysis
+
+When providing responses:
+- Include test scenarios and expected results
+- Identify potential configuration issues
+- Suggest improvements based on testing
+- Provide validation steps`;
+
+          case 'deploy':
+            return `${basePrompt}
+
+Your role in DEPLOY mode:
+1. Prepare production-ready configurations
+2. Set up monitoring and alerting
+3. Configure environment-specific settings
+4. Provide deployment checklists
+
+When providing responses:
+- Include production-ready configuration
+- Provide deployment steps and checklists
+- Include monitoring and alerting setup
+- Consider security and performance aspects`;
+
+          default:
+            return `${basePrompt}
+
+Your role in CONFIGURE mode:
 1. Help users modify configuration settings through natural language
 2. Provide explanations for configuration options
 3. Suggest optimal settings for different use cases
@@ -99,13 +207,42 @@ Your role:
 When providing configuration updates, always respond with:
 1. A clear explanation of what you're changing
 2. The updated configuration in JSON format wrapped in \`\`\`json blocks
-3. Why these changes are beneficial
+3. Why these changes are beneficial`;
+        }
+      };
 
-Be conversational but precise. Focus on the specific node type and its configuration options.`;
+      // Handle different assist modes with specific actions
+      if (assistMode === 'test' && inputValue.toLowerCase().includes('test')) {
+        // Use the testNode function for testing
+        const testResult = await testNode(currentConfig, { message: inputValue }, 'openai');
+        
+        const testMessage: ChatMessage = {
+          id: Date.now().toString() + '_test',
+          role: 'assistant',
+          content: `Test completed! Here are the results:
+
+**Status:** ${testResult.status}
+**Success:** ${testResult.success ? 'Yes' : 'No'}
+**Execution Time:** ${testResult.executionTime}ms
+
+**Output:**
+\`\`\`json
+${JSON.stringify(testResult.output, null, 2)}
+\`\`\`
+
+**Message:** ${testResult.message}`,
+          timestamp: new Date(),
+          type: 'configuration',
+        };
+        
+        setMessages(prev => [...prev, testMessage]);
+        setIsTyping(false);
+        return;
+      }
 
       const response = await generateResponse({
         prompt: inputValue,
-        systemPrompt,
+        systemPrompt: getModeSpecificSystemPrompt(),
         provider: 'openai',
         model: 'gpt-4o-mini',
       });
@@ -207,7 +344,10 @@ Be conversational but precise. Focus on the specific node type and its configura
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Bot className="h-5 w-5" />
-              AI Configuration Assistant - {nodeType} Node
+              AI {assistMode.charAt(0).toUpperCase() + assistMode.slice(1)} Assistant - {nodeType} Node
+              <Badge variant="outline" className="ml-2">
+                {assistMode.toUpperCase()}
+              </Badge>
             </div>
             <Button variant="ghost" size="sm" onClick={onClose}>
               <X className="h-4 w-4" />

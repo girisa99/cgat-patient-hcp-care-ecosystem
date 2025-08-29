@@ -9,7 +9,7 @@ import {
   ContextMenuSubTrigger,
   ContextMenuTrigger,
 } from '@/components/ui/context-menu';
-import { Settings, Copy, Trash2, Edit3, Database, MessageSquare, Bot } from 'lucide-react';
+import { Settings, Copy, Trash2, Edit3, Database, MessageSquare, Bot, Sparkles, TestTube, Rocket } from 'lucide-react';
 
 interface NodeContextMenuProps {
   children: React.ReactNode;
@@ -18,7 +18,7 @@ interface NodeContextMenuProps {
   onConfigureNode: (nodeId: string, action: string) => void;
   onDeleteNode: (nodeId: string) => void;
   onDuplicateNode: (nodeId: string) => void;
-  onOpenChat: (nodeId: string) => void;
+  onOpenChat: (nodeId: string, mode?: 'build' | 'generate' | 'test' | 'deploy' | 'configure') => void;
 }
 
 export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
@@ -76,10 +76,34 @@ export const NodeContextMenu: React.FC<NodeContextMenuProps> = ({
         {children}
       </ContextMenuTrigger>
       <ContextMenuContent className="w-64">
-        <ContextMenuItem onClick={() => onOpenChat(nodeId)}>
-          <MessageSquare className="mr-2 h-4 w-4" />
-          Configure with AI Chat
-        </ContextMenuItem>
+        <ContextMenuSub>
+          <ContextMenuSubTrigger>
+            <MessageSquare className="mr-2 h-4 w-4" />
+            AI Assist Modes
+          </ContextMenuSubTrigger>
+          <ContextMenuSubContent className="w-48">
+            <ContextMenuItem onClick={() => onOpenChat(nodeId, 'build')}>
+              <Bot className="mr-2 h-4 w-4" />
+              Build Mode
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => onOpenChat(nodeId, 'generate')}>
+              <Sparkles className="mr-2 h-4 w-4" />
+              Generate Mode
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => onOpenChat(nodeId, 'test')}>
+              <TestTube className="mr-2 h-4 w-4" />
+              Test Mode
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => onOpenChat(nodeId, 'deploy')}>
+              <Rocket className="mr-2 h-4 w-4" />
+              Deploy Mode
+            </ContextMenuItem>
+            <ContextMenuItem onClick={() => onOpenChat(nodeId, 'configure')}>
+              <Settings className="mr-2 h-4 w-4" />
+              Configure Mode
+            </ContextMenuItem>
+          </ContextMenuSubContent>
+        </ContextMenuSub>
         
         <ContextMenuSeparator />
         
