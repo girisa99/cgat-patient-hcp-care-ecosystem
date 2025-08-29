@@ -8,11 +8,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Sparkles, TestTube, Play, Brain, Zap, Settings2, 
-  CheckCircle, XCircle, X, Clock, Terminal, Download, RotateCcw 
+  CheckCircle, XCircle, X, Clock, Terminal, Download, RotateCcw, Eye 
 } from 'lucide-react';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBasedAgentGenerator';
+import { ArizeTracing } from '@/components/tracing/ArizeTracing';
 
 interface TestResult {
   id: string;
@@ -104,9 +105,24 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
     if (isRunning || workflowNodes.length === 0) return;
 
     setIsRunning(true);
+    
+    // Start Arize tracing
+    let mainTraceId: string | null = null;
+    if (window.arizeTracing?.isConnected) {
+      mainTraceId = await window.arizeTracing.startTrace(
+        'workflow-test',
+        'complete-workflow-execution',
+        {
+          nodeCount: workflowNodes.length,
+          edgeCount: workflowEdges.length,
+          provider: selectedProvider
+        }
+      );
+    }
+
     addTestResult({
       status: 'running',
-      message: `🚀 Starting intelligent workflow test with ${selectedProvider.toUpperCase()} AI...`
+      message: `🚀 Starting intelligent workflow test with ${selectedProvider.toUpperCase()} AI...${mainTraceId ? ' (Tracing enabled)' : ''}`
     });
 
     try {
@@ -136,17 +152,38 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
         }
       }
 
-      // Test each node with AI
+      // Test each node with AI and tracing
       let currentData = inputData;
       for (const node of workflowNodes) {
+        // Start node-specific trace
+        let nodeTraceId: string | null = null;
+        if (window.arizeTracing?.isConnected && mainTraceId) {
+          nodeTraceId = await window.arizeTracing.startTrace(
+            node.id,
+            `node-execution-${node.type || 'unknown'}`,
+            {
+              nodeType: node.type,
+              nodeLabel: node.data?.label,
+              inputData: currentData
+            }
+          );
+        }
+
         addTestResult({
           status: 'running',
-          message: `🎯 AI testing: ${node.data?.label || node.id}`,
+          message: `🎯 AI testing: ${node.data?.label || node.id}${nodeTraceId ? ' (Traced)' : ''}`,
         });
 
         const nodeResult = await testNode(node, currentData, selectedProvider);
         
         if (nodeResult.success) {
+          if (nodeTraceId && window.arizeTracing?.isConnected) {
+            await window.arizeTracing.endTrace(nodeTraceId, 'success', {
+              outputData: nodeResult.output,
+              executionTime: nodeResult.executionTime
+            });
+          }
+          
           addTestResult({
             status: 'success',
             message: `✅ ${nodeResult.message || `Node completed successfully`}`,
@@ -155,6 +192,13 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
           });
           currentData = nodeResult.output || currentData;
         } else {
+          if (nodeTraceId && window.arizeTracing?.isConnected) {
+            await window.arizeTracing.endTrace(nodeTraceId, 'error', {
+              error: nodeResult.message,
+              executionTime: nodeResult.executionTime
+            });
+          }
+          
           addTestResult({
             status: 'error',
             message: `❌ ${nodeResult.message || `Node test failed`}`,
@@ -164,14 +208,29 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
         }
       }
 
+      // End main trace
+      if (mainTraceId && window.arizeTracing?.isConnected) {
+        await window.arizeTracing.endTrace(mainTraceId, 'success', {
+          totalNodes: workflowNodes.length,
+          finalOutput: currentData
+        });
+      }
+
       addTestResult({
         status: 'success',
-        message: `🎉 Complete workflow test finished using ${selectedProvider.toUpperCase()}!`,
+        message: `🎉 Complete workflow test finished using ${selectedProvider.toUpperCase()}!${mainTraceId ? ' (Trace completed)' : ''}`,
       });
 
       showSuccess(`Workflow testing completed with ${selectedProvider.toUpperCase()}!`);
 
     } catch (error: any) {
+      // End main trace with error
+      if (mainTraceId && window.arizeTracing?.isConnected) {
+        await window.arizeTracing.endTrace(mainTraceId, 'error', {
+          error: error.message
+        });
+      }
+
       addTestResult({
         status: 'error',
         message: `💥 Test failed: ${error.message}`
@@ -318,10 +377,14 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
 
       <CardContent className="flex-1 p-4 flex flex-col gap-4">
         <Tabs defaultValue="workspace" className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-2">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="workspace" className="flex items-center gap-2">
               <Zap className="h-4 w-4" />
               Workspace
+            </TabsTrigger>
+            <TabsTrigger value="tracing" className="flex items-center gap-2">
+              <Eye className="h-4 w-4" />
+              Tracing
             </TabsTrigger>
             <TabsTrigger value="results" className="flex items-center gap-2">
               <Terminal className="h-4 w-4" />
@@ -387,6 +450,19 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
                 </div>
               </div>
             )}
+          </TabsContent>
+
+          <TabsContent value="tracing" className="flex-1 flex flex-col">
+            <ArizeTracing 
+              workflowId={workflowNodes.length > 0 ? `workflow-${Date.now()}` : undefined}
+              isEnabled={true}
+              onTraceEvent={(trace) => {
+                addTestResult({
+                  status: trace.status === 'error' ? 'error' : trace.status === 'warning' ? 'warning' : 'success',
+                  message: `🔍 Trace: ${trace.nodeId || trace.workflowId} - ${trace.status} (${trace.duration}ms)`
+                });
+              }}
+            />
           </TabsContent>
 
           <TabsContent value="results" className="flex-1 flex flex-col">

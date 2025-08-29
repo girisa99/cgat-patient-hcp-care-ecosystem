@@ -32,6 +32,18 @@ serve(async (req) => {
       throw new Error(`Failed to get workflow instance: ${instanceError.message}`);
     }
 
+    // Initialize Arize tracing if available
+    let arizeTraceId: string | null = null;
+    if (nodeData.arizeConfig?.enabled) {
+      // In production, this would use actual Arize SDK
+      arizeTraceId = `trace_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      console.log('Arize trace started:', arizeTraceId, {
+        workflowInstanceId,
+        nodeId: nodeData.id,
+        nodeType: nodeData.type
+      });
+    }
+
     // Log execution start
     const { data: logEntry, error: logError } = await supabase
       .from('workflow_execution_logs')
@@ -41,7 +53,8 @@ serve(async (req) => {
         node_type: nodeData.type,
         execution_status: 'started',
         input_data: nodeData,
-        started_at: new Date().toISOString()
+        started_at: new Date().toISOString(),
+        arize_trace_id: arizeTraceId
       })
       .select()
       .single();
@@ -74,6 +87,15 @@ serve(async (req) => {
 
       const executionTime = Date.now() - startTime;
 
+      // Log Arize trace completion
+      if (arizeTraceId) {
+        console.log('Arize trace completed:', arizeTraceId, {
+          status: 'success',
+          executionTime,
+          outputData: result
+        });
+      }
+
       // Update log entry with success
       if (logEntry) {
         await supabase
@@ -82,7 +104,8 @@ serve(async (req) => {
             execution_status: 'completed',
             output_data: result,
             execution_time_ms: executionTime,
-            completed_at: new Date().toISOString()
+            completed_at: new Date().toISOString(),
+            arize_trace_id: arizeTraceId
           })
           .eq('id', logEntry.id);
       }
@@ -104,6 +127,15 @@ serve(async (req) => {
     } catch (executionError) {
       const executionTime = Date.now() - startTime;
       
+      // Log Arize trace error
+      if (arizeTraceId) {
+        console.log('Arize trace failed:', arizeTraceId, {
+          status: 'error',
+          error: executionError.message,
+          executionTime
+        });
+      }
+
       // Update log entry with error
       if (logEntry) {
         await supabase
@@ -112,7 +144,8 @@ serve(async (req) => {
             execution_status: 'failed',
             error_details: { message: executionError.message, stack: executionError.stack },
             execution_time_ms: executionTime,
-            completed_at: new Date().toISOString()
+            completed_at: new Date().toISOString(),
+            arize_trace_id: arizeTraceId
           })
           .eq('id', logEntry.id);
       }
