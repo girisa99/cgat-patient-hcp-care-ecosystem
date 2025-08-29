@@ -82,6 +82,7 @@ import { RealTimeExecutionEngine } from './RealTimeExecutionEngine';
 import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
 import { DynamicNodeConfigurator } from './nodes/DynamicNodeConfigurator';
+import { NodeChatInterface } from './NodeChatInterface';
 
 const LazySmartNodeConfigurator = lazy(() => import('./SmartNodeConfigurator').then(m => ({ default: m.SmartNodeConfigurator })));
 const LazyDynamicConfigurator = lazy(() => import('./nodes/DynamicNodeConfigurator').then(m => ({ default: m.DynamicNodeConfigurator })));
@@ -239,6 +240,10 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   const [showInsights, setShowInsights] = useState(false);
   const [showMiniMap, setShowMiniMap] = useState(true);
 
+  // AI Assist state
+  const [chatModalOpen, setChatModalOpen] = useState(false);
+  const [chatAssistMode, setChatAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('configure');
+
   // Configuration State
   const [connectionMode, setConnectionMode] = useState<ConnectionMode>(ConnectionMode.Loose);
   const [backgroundVariant, setBackgroundVariant] = useState<BackgroundVariant>(BackgroundVariant.Dots);
@@ -310,6 +315,62 @@ const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType:
     return clean;
   };
 
+  const getCategoryName = (category: any): string => {
+    if (!category) return 'general';
+    if (typeof category === 'string') return category;
+    return category.name || category.display_name || 'general';
+  };
+
+  const getCategoryColor = (category: string): string => {
+    switch (category) {
+      case 'ai-agents': return '#3b82f6';
+      case 'integrations': return '#10b981';
+      case 'data-processing': return '#8b5cf6';
+      case 'communication': return '#f59e0b';
+      case 'automation': return '#ef4444';
+      case 'analytics': return '#06b6d4';
+      default: return '#6b7280';
+    }
+  };
+
+  const getToolsForCategory = (category: string): string[] => {
+    switch (category) {
+      case 'ai-agents':
+        return ['OpenAI', 'Claude', 'Gemini', 'GPT-4', 'DALL-E'];
+      case 'integrations':
+        return ['REST API', 'GraphQL', 'Webhook', 'OAuth2', 'JWT'];
+      case 'data-processing':
+        return ['SQL', 'NoSQL', 'Redis', 'Elasticsearch', 'MongoDB'];
+      case 'communication':
+        return ['Email', 'SMS', 'Slack', 'Teams', 'WhatsApp'];
+      case 'automation':
+        return ['Scheduler', 'Trigger', 'Workflow', 'Lambda', 'CRON'];
+      case 'analytics':
+        return ['Metrics', 'Dashboard', 'Reports', 'Charts', 'KPIs'];
+      default:
+        return ['General', 'Custom', 'Basic'];
+    }
+  };
+
+  const getModelsForCategory = (category: string): string[] => {
+    switch (category) {
+      case 'ai-agents':
+        return ['gpt-4o-mini', 'claude-3.5-sonnet', 'gemini-2.0-flash', 'gpt-4o'];
+      case 'integrations':
+        return ['REST', 'GraphQL', 'SOAP', 'gRPC'];
+      case 'data-processing':
+        return ['SQL', 'Document', 'Key-Value', 'Graph'];
+      case 'communication':
+        return ['SMTP', 'HTTP', 'WebSocket', 'Push'];
+      case 'automation':
+        return ['Event', 'Schedule', 'Trigger', 'Condition'];
+      case 'analytics':
+        return ['Time Series', 'Aggregation', 'Reporting', 'Real-time'];
+      default:
+        return ['Standard'];
+    }
+  };
+
   // Event Handlers
   const onConnect: OnConnect = useCallback(
     (params) => setEdges((eds) => addEdge(params, eds)),
@@ -359,6 +420,8 @@ const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType:
     console.log('[RF] onDrop', { type, position, nodeData });
 
 const cleanLabel = getCleanNodeDisplay(nodeData, type);
+const categoryName = getCategoryName(nodeData?.category);
+const color = nodeData?.color || getCategoryColor(categoryName);
 const newNode = {
   id: `${type}_${Date.now()}`,
   type: 'enhanced',
@@ -369,11 +432,15 @@ const newNode = {
     display_name: cleanLabel,
     description: nodeData?.description || '',
     icon: nodeData?.icon || 'settings',
-    color: nodeData?.color || '#6366f1',
+    color,
     capabilities: nodeData?.capabilities || [],
     requirements: nodeData?.requirements || {},
     default_config: nodeData?.default_config || {},
     category: nodeData?.category,
+    tools: getToolsForCategory(categoryName),
+    models: getModelsForCategory(categoryName),
+    aiAssistEnabled: true,
+    supportedModes: ['build', 'generate', 'test', 'deploy', 'configure'],
     isWorkflowNode: true,
     shouldShowAssetSelector: true, // Show asset selector when dropped
     ...nodeData,
@@ -389,6 +456,16 @@ setConfigNodeInfo({
   category: String(((newNode.data as any)?.category && ((newNode.data as any).category.name || (newNode.data as any).category)) || 'general'),
 });
 setShowConfigurator(true);
+// Auto-trigger AI Assist if specified in drag data
+if (nodeData?.aiAssistMode) {
+  try {
+    setTimeout(() => {
+      setSelectedNode(newNode as any);
+      setChatAssistMode(nodeData.aiAssistMode);
+      setChatModalOpen(true);
+    }, 400);
+  } catch {}
+}
   }, [screenToFlowPosition, setNodes]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
@@ -417,6 +494,18 @@ setShowConfigurator(true);
   const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
     // allow ContextMenuTrigger to handle default context menu
   }, []);
+
+  // Open AI Assist chat for a node
+  const openAIAssist = useCallback((nodeId: string, mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure' = 'configure') => {
+    const node = getNodes().find(n => n.id === nodeId) || null;
+    if (node) setSelectedNode(node);
+    setChatAssistMode(mode);
+    setChatModalOpen(true);
+  }, [getNodes]);
+
+  const handleConfigurationUpdate = useCallback((nodeId: string, config: any) => {
+    setNodes((nds) => nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, configuration: { ...(n.data as any)?.configuration, ...config }, isConfigured: true } } : n));
+  }, [setNodes]);
 
   const handleFitView = useCallback(() => {
     fitView({ padding: 0.1 });
@@ -448,6 +537,8 @@ setShowConfigurator(true);
     const position = screenToFlowPosition(center);
     console.log('[RF] click-add', { type, position });
 const cleanLabel = getCleanNodeDisplay(nodeTypeObj, type);
+const categoryName = getCategoryName(nodeTypeObj?.category);
+const color = nodeTypeObj?.color || getCategoryColor(categoryName);
 const newNode: Node = {
   id: `${type}_${Date.now()}`,
   type: 'enhanced',
@@ -458,11 +549,15 @@ const newNode: Node = {
     display_name: cleanLabel,
     description: nodeTypeObj?.description || '',
     icon: nodeTypeObj?.icon || 'settings',
-    color: nodeTypeObj?.color || '#6366f1',
+    color,
     capabilities: nodeTypeObj?.capabilities || [],
     requirements: nodeTypeObj?.requirements || {},
     default_config: nodeTypeObj?.default_config || {},
     category: nodeTypeObj?.category,
+    tools: getToolsForCategory(categoryName),
+    models: getModelsForCategory(categoryName),
+    aiAssistEnabled: true,
+    supportedModes: ['build', 'generate', 'test', 'deploy', 'configure'],
     isWorkflowNode: true,
     ...nodeTypeObj,
   },
@@ -916,6 +1011,16 @@ return (
                     Configure Node
                   </ContextMenuItem>
                   <ContextMenuSub>
+                    <ContextMenuSubTrigger>AI Assist Modes</ContextMenuSubTrigger>
+                    <ContextMenuSubContent>
+                      <ContextMenuItem onClick={() => openAIAssist(selectedNode.id, 'build')}>Build</ContextMenuItem>
+                      <ContextMenuItem onClick={() => openAIAssist(selectedNode.id, 'generate')}>Generate</ContextMenuItem>
+                      <ContextMenuItem onClick={() => openAIAssist(selectedNode.id, 'test')}>Test</ContextMenuItem>
+                      <ContextMenuItem onClick={() => openAIAssist(selectedNode.id, 'deploy')}>Deploy</ContextMenuItem>
+                      <ContextMenuItem onClick={() => openAIAssist(selectedNode.id, 'configure')}>Configure</ContextMenuItem>
+                    </ContextMenuSubContent>
+                  </ContextMenuSub>
+                  <ContextMenuSub>
                     <ContextMenuSubTrigger>Connector Positions</ContextMenuSubTrigger>
                     <ContextMenuSubContent>
                       <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('update-node', { detail: { nodeId: selectedNode.id, updates: { inputPosition: 'left' } } }))}>Input: Left</ContextMenuItem>
@@ -1050,6 +1155,18 @@ return (
         </div>
       )}
       
+      {/* Node Chat Interface */}
+      {selectedNode && (
+        <NodeChatInterface
+          isOpen={chatModalOpen}
+          onClose={() => setChatModalOpen(false)}
+          nodeId={selectedNode.id}
+          nodeType={String((selectedNode.data as any)?.type_key || selectedNode.type || 'default')}
+          currentConfig={(selectedNode.data as any)?.configuration || {}}
+          onConfigurationUpdate={handleConfigurationUpdate}
+          assistMode={chatAssistMode}
+        />
+      )}
 
       {/* Node Update Handler */}
       <NodeUpdateHandler 

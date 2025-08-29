@@ -94,6 +94,8 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
   const nodeColor = data.color || '#6366f1';
   const capabilities = data.capabilities || [];
   const requirements = data.requirements || {};
+  const tools: string[] = (data as any).tools || [];
+  const models: string[] = (data as any).models || [];
 
   const handleSaveLabel = (newLabel: string) => {
     setNodeLabel(newLabel);
@@ -284,6 +286,34 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
                       }}
                     >
                       {capability.replace(/_/g, ' ')}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Tools */}
+            {tools.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-foreground mb-1">Tools:</div>
+                <div className="flex flex-wrap gap-1">
+                  {tools.map((tool, i) => (
+                    <Badge key={i} variant="secondary" className="text-xs px-1.5 py-0.5 font-normal" style={{ backgroundColor: `${nodeColor}0F`, color: nodeColor, border: `1px solid ${nodeColor}1F` }}>
+                      {tool}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Models */}
+            {models.length > 0 && (
+              <div>
+                <div className="text-xs font-medium text-foreground mb-1">Models:</div>
+                <div className="flex flex-wrap gap-1">
+                  {models.map((model, i) => (
+                    <Badge key={i} variant="outline" className="text-xs px-1.5 py-0.5 font-normal" style={{ borderColor: `${nodeColor}30`, color: nodeColor }}>
+                      {model}
                     </Badge>
                   ))}
                 </div>
