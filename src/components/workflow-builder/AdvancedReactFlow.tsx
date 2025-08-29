@@ -469,18 +469,15 @@ setConfigNodeInfo({
   nodeType: String((newNode.data as any)?.type_key || 'unknown'),
   category: String(((newNode.data as any)?.category && ((newNode.data as any).category.name || (newNode.data as any).category)) || 'general'),
 });
-setShowConfigurator(true);
-// Auto-trigger AI Assist if specified in drag data
-if (nodeData?.aiAssistMode) {
-  try {
-    setTimeout(() => {
-      setSelectedNode(newNode as any);
-      setChatAssistMode(nodeData.aiAssistMode);
-      setChatModalOpen(true);
-    }, 400);
-  } catch {}
-}
-  }, [screenToFlowPosition, setNodes]);
+// Do not auto-open any modal on drop; provide a gentle hint instead
+try {
+  showSuccess(`${cleanLabel} added`, 'Right-click the node for AI Assist or Configure options.');
+} catch {}
+
+// Optionally mark node as selected so users can see it
+setSelectedNode(newNode as any);
+
+  }, [screenToFlowPosition, setNodes, showSuccess]);
 
   const onDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
