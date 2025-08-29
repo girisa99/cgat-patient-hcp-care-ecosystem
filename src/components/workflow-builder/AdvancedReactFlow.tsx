@@ -83,6 +83,8 @@ import { SessionPersistenceManager } from './SessionPersistenceManager';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
 import { DynamicNodeConfigurator } from './nodes/DynamicNodeConfigurator';
 import { NodeChatInterface } from './NodeChatInterface';
+import { NodeContextMenu } from './NodeContextMenu';
+import { performComprehensiveConsolidation } from '@/utils/consolidation';
 
 const LazySmartNodeConfigurator = lazy(() => import('./SmartNodeConfigurator').then(m => ({ default: m.SmartNodeConfigurator })));
 const LazyDynamicConfigurator = lazy(() => import('./nodes/DynamicNodeConfigurator').then(m => ({ default: m.DynamicNodeConfigurator })));
@@ -288,7 +290,7 @@ const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType:
   const validationIssues: any[] = useMemo(() => [], [nodes, edges]);
 
   // Safe Node and Edge Types
-  const safeNodeTypes: NodeTypes = useMemo(() => ({
+  const baseNodeTypes: NodeTypes = useMemo(() => ({
     custom: CustomNode,
     enhanced: (props) => <EnhancedWorkflowNode {...props} />,
     agent: (props) => <AgentNode {...props} />,
@@ -518,6 +520,53 @@ setSelectedNode(newNode as any);
     setNodes((nds) => nds.map((n) => n.id === nodeId ? { ...n, data: { ...n.data, configuration: { ...(n.data as any)?.configuration, ...config }, isConfigured: true } } : n));
   }, [setNodes]);
 
+  const handleOpenChat = useCallback((nodeId: string, mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure' = 'configure') => {
+    openAIAssist(nodeId, mode);
+  }, [openAIAssist]);
+
+  const handleConfigureNode = useCallback((nodeId: string, action: string) => {
+    const node = getNodes().find(n => n.id === nodeId);
+    if (!node) return;
+    setSelectedNode(node);
+    setConfigNodeInfo({
+      nodeId,
+      nodeType: String((node.data as any)?.type_key || node.type || 'default'),
+      category: String((((node.data as any)?.category && (((node.data as any).category as any).name)) || (node.data as any)?.category || 'general')),
+      initialConfig: {
+        tools: (node.data as any)?.tools || [],
+        credentials: (node.data as any)?.credentials || [],
+        variables: (node.data as any)?.variables || [],
+      },
+    });
+    setShowConfigurator(true);
+  }, [getNodes]);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+    setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+  }, [setNodes, setEdges]);
+
+  const handleDuplicateNode = useCallback((nodeId: string) => {
+    const node = getNodes().find(n => n.id === nodeId);
+    if (!node) return;
+    const newId = `${nodeId}-copy-${Date.now()}`;
+    const offset = { x: node.position.x + 40, y: node.position.y + 40 };
+    const newNode: Node = { ...node, id: newId, position: offset, data: { ...(node.data as any), label: `${(node.data as any)?.label || 'Node'} (copy)` } } as Node;
+    setNodes((nds) => nds.concat(newNode));
+  }, [getNodes, setNodes]);
+
+  const scanDuplicates = useCallback(async () => {
+    try {
+      const report = await performComprehensiveConsolidation();
+      const duplicatesCount = Object.values((report as any)?.codebaseAnalysis?.duplicates || {}).reduce((sum: number, arr: string[]) => sum + ((arr && arr.length) || 0), 0);
+      showSuccess('Duplicate scan complete', `${duplicatesCount} duplicates found. See console for details.`);
+      console.log('[Consolidation Report]', report);
+    } catch (e) {
+      showError('Duplicate scan failed');
+      console.error(e);
+    }
+  }, [showSuccess, showError]);
+
   const handleFitView = useCallback(() => {
     fitView({ padding: 0.1 });
   }, [fitView]);
@@ -712,7 +761,29 @@ useEffect(() => {
   return () => window.removeEventListener('open-node-test', testHandler as EventListener);
 }, [getNodes]);
 
-return (
+  // Wrap base node types with right-click context menu
+  const safeNodeTypes: NodeTypes = useMemo(() => {
+    const wrap = (Original: any) => (props: any) => (
+      <NodeContextMenu
+        nodeId={props.id}
+        nodeType={String(props.data?.type_key || props.type || 'default')}
+        onConfigureNode={handleConfigureNode}
+        onDeleteNode={handleDeleteNode}
+        onDuplicateNode={handleDuplicateNode}
+        onOpenChat={handleOpenChat}
+      >
+        <Original {...props} />
+      </NodeContextMenu>
+    );
+    return {
+      custom: wrap(baseNodeTypes.custom),
+      enhanced: wrap(baseNodeTypes.enhanced),
+      agent: wrap(baseNodeTypes.agent),
+      ai: wrap(baseNodeTypes.ai),
+    } as NodeTypes;
+  }, [handleConfigureNode, handleDeleteNode, handleDuplicateNode, handleOpenChat, baseNodeTypes]);
+
+  return (
     <div className="flex h-full w-full bg-background min-h-0" data-config-open={showConfigurator ? 'true' : 'false'}>
       {/* Unified Sidebar */}
       {!canvasOnly && (
@@ -1073,6 +1144,8 @@ return (
                 </ContextMenuSubContent>
               </ContextMenuSub>
 
+              <Separator />
+              <ContextMenuItem onClick={scanDuplicates}>Scan for Duplicates</ContextMenuItem>
               <Separator />
               <ContextMenuItem onClick={handleFitView}>Fit View</ContextMenuItem>
               <ContextMenuItem onClick={handleClear}>Clear All</ContextMenuItem>
