@@ -15,6 +15,7 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBasedAgentGenerator';
 import { ArizeTracing } from '@/components/tracing/ArizeTracing';
 import { useArizeSDK } from '@/hooks/useArizeSDK';
+import { useNetworkConnectionMonitoring } from '@/hooks/useNetworkConnectionMonitoring';
 
 interface TestResult {
   id: string;
@@ -63,6 +64,7 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
   } = useUniversalAI({ defaultProvider: selectedProvider });
   
   const arizeSDK = useArizeSDK();
+  const networkMonitoring = useNetworkConnectionMonitoring();
 
   // Auto-scroll to bottom when new results come in
   useEffect(() => {
@@ -134,6 +136,18 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
 
     try {
       const inputData = JSON.parse(testInput);
+
+      // Start network monitoring
+      if (!networkMonitoring.isMonitoring) {
+        networkMonitoring.startMonitoring();
+      }
+
+      // Monitor workflow connections in parallel
+      const monitoringPromise = networkMonitoring.monitorWorkflowConnections(
+        `workflow-${Date.now()}`,
+        workflowNodes,
+        workflowEdges
+      );
 
       // Start connection analysis span
       const connectionSpanId = arizeSDK.createSpan('connection-analysis', {
@@ -530,6 +544,33 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
                   }%</div>
                   <div>Avg Duration: {Math.round(arizeSDK.metrics.averageDuration)}ms</div>
                   <div>Active Traces: {arizeSDK.metrics.traces.length}</div>
+                </div>
+              </Card>
+              
+              <Card className="p-4">
+                <h4 className="font-medium mb-2">Network Monitoring</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex items-center justify-between">
+                    <span>Status:</span>
+                    <Badge variant={networkMonitoring.isMonitoring ? "default" : "secondary"}>
+                      {networkMonitoring.isMonitoring ? 'Active' : 'Inactive'}
+                    </Badge>
+                  </div>
+                  <div>Connections Monitored: {networkMonitoring.connectionMetrics.length}</div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant={networkMonitoring.isMonitoring ? "outline" : "default"}
+                      onClick={() => networkMonitoring.isMonitoring ? networkMonitoring.stopMonitoring() : networkMonitoring.startMonitoring()}
+                    >
+                      {networkMonitoring.isMonitoring ? 'Stop' : 'Start'} Monitoring
+                    </Button>
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Real-time monitoring with Arize, Datadog, New Relic, and Prometheus integration support
+                  </div>
+                </div>
+              </Card>
             </div>
 
             <div className="grid grid-cols-1 gap-4">
@@ -559,33 +600,6 @@ export const UnifiedTestingInterface: React.FC<UnifiedTestingInterfaceProps> = (
                 >
                   {arizeSDK.isInitialized ? 'Connected' : 'Connect SDK'}
                 </Button>
-              </Card>
-            </div>
-              </Card>
-              
-              <Card className="p-4">
-                <h4 className="font-medium mb-2">Connection Analysis</h4>
-                <div className="space-y-2 text-sm">
-                  <Button 
-                    size="sm" 
-                    variant="outline"
-                    onClick={async () => {
-                      if (workflowNodes.length > 0) {
-                        const analysis = await arizeSDK.analyzeWorkflowConnections(workflowNodes, workflowEdges);
-                        addTestResult({
-                          status: analysis.connectionAnalysis.flowIntegrity === 'error' ? 'error' : 'success',
-                          message: `🔗 Flow integrity: ${analysis.connectionAnalysis.flowIntegrity} | Valid: ${analysis.connectionAnalysis.validConnections}/${analysis.connectionAnalysis.totalConnections}`
-                        });
-                      }
-                    }}
-                    disabled={workflowNodes.length === 0}
-                  >
-                    Analyze Connections
-                  </Button>
-                  <div className="text-xs text-muted-foreground">
-                    Validates node-to-node connections, flow integrity, and process continuity
-                  </div>
-                </div>
               </Card>
             </div>
 

@@ -2669,6 +2669,57 @@ export type Database = {
         }
         Relationships: []
       }
+      connection_analytics: {
+        Row: {
+          connection_status: string
+          connection_type: string
+          created_at: string | null
+          data_size_bytes: number | null
+          error_message: string | null
+          id: string
+          latency_ms: number | null
+          metadata: Json | null
+          node_id: string
+          source_node: string | null
+          target_node: string | null
+          updated_at: string | null
+          user_id: string | null
+          workflow_id: string
+        }
+        Insert: {
+          connection_status: string
+          connection_type: string
+          created_at?: string | null
+          data_size_bytes?: number | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json | null
+          node_id: string
+          source_node?: string | null
+          target_node?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          workflow_id: string
+        }
+        Update: {
+          connection_status?: string
+          connection_type?: string
+          created_at?: string | null
+          data_size_bytes?: number | null
+          error_message?: string | null
+          id?: string
+          latency_ms?: number | null
+          metadata?: Json | null
+          node_id?: string
+          source_node?: string | null
+          target_node?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+          workflow_id?: string
+        }
+        Relationships: []
+      }
       connector_activity_logs: {
         Row: {
           action_description: string | null
@@ -4612,6 +4663,60 @@ export type Database = {
           updated_at?: string | null
           user_id?: string | null
           user_preferences?: Json | null
+        }
+        Relationships: []
+      }
+      network_monitoring: {
+        Row: {
+          created_at: string | null
+          duration_ms: number | null
+          end_time: string | null
+          id: string
+          logs: Json | null
+          metrics: Json | null
+          monitoring_type: string
+          operation_name: string
+          session_id: string
+          span_id: string | null
+          start_time: string
+          status: string
+          tags: Json | null
+          trace_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          duration_ms?: number | null
+          end_time?: string | null
+          id?: string
+          logs?: Json | null
+          metrics?: Json | null
+          monitoring_type: string
+          operation_name: string
+          session_id: string
+          span_id?: string | null
+          start_time: string
+          status: string
+          tags?: Json | null
+          trace_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          duration_ms?: number | null
+          end_time?: string | null
+          id?: string
+          logs?: Json | null
+          metrics?: Json | null
+          monitoring_type?: string
+          operation_name?: string
+          session_id?: string
+          span_id?: string | null
+          start_time?: string
+          status?: string
+          tags?: Json | null
+          trace_id?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
