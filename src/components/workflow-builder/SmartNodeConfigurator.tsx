@@ -36,7 +36,16 @@ const [isSaving, setIsSaving] = useState(false);
 const [revealedKey, setRevealedKey] = useState<string | null>(null);
   useEffect(() => {
     if (node) {
+      console.log('[SmartNodeConfigurator] Configuring node:', { 
+        nodeId: node.id, 
+        nodeType: node.data?.type_key || node.type, 
+        nodeData: node.data,
+        category: node.data?.category
+      });
+      
       const evaluation = NodeRequirementEvaluator.evaluateNode(node);
+      console.log('[SmartNodeConfigurator] Node evaluation:', evaluation);
+      
       setNodeEvaluation(evaluation);
       setConfig(node.data || {});
       
@@ -46,7 +55,17 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
           req => req.type === 'required' && !node.data?.[req.field]
         )?.category;
         if (firstMissingCategory) {
+          console.log('[SmartNodeConfigurator] Auto-selecting category with missing requirements:', firstMissingCategory);
           setActiveTab(firstMissingCategory);
+        }
+      } else {
+        // Default to credentials tab if available, otherwise first available tab
+        const availableCategories = ['credentials', 'input_schema', 'functions', 'variables', 'advanced', 'flow_state', 'javascript', 'scenarios']
+          .filter(cat => evaluation.requirements.some(req => req.category === cat));
+        const defaultTab = availableCategories.includes('credentials') ? 'credentials' : availableCategories[0];
+        if (defaultTab) {
+          console.log('[SmartNodeConfigurator] Using default tab:', defaultTab);
+          setActiveTab(defaultTab);
         }
       }
     }

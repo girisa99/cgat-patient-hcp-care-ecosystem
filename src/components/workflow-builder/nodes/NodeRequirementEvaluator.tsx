@@ -643,6 +643,55 @@ export const NodeRequirementEvaluator = {
         { id: 'collection_name', type: 'required', category: 'input_schema', field: 'collection_name', label: 'Collection Name', description: 'Namespace/collection to use' }
       ],
 
+      // Business Healthcare Tools - Individual node requirements
+      'npi_validator': [
+        { id: 'api_key', type: 'required', category: 'credentials', field: 'api_key', label: 'NPI Registry API Key', description: 'API key for NPPES registry access' },
+        { id: 'npi_number', type: 'required', category: 'input_schema', field: 'npi_number', label: 'NPI Number', description: '10-digit National Provider Identifier' },
+        { id: 'include_taxonomy', type: 'optional', category: 'input_schema', field: 'include_taxonomy', label: 'Include Taxonomy', description: 'Include provider taxonomy codes', defaultValue: true },
+        { id: 'validation_mode', type: 'optional', category: 'advanced', field: 'validation_mode', label: 'Validation Mode', description: 'full, basic, or quick validation', defaultValue: 'full' },
+        { id: 'cache_results', type: 'optional', category: 'advanced', field: 'cache_results', label: 'Cache Results', description: 'Cache validation results', defaultValue: true }
+      ],
+      
+      'cms_data_integration': [
+        { id: 'cms_api_key', type: 'required', category: 'credentials', field: 'cms_api_key', label: 'CMS API Key', description: 'Centers for Medicare & Medicaid Services API key' },
+        { id: 'dataset_type', type: 'required', category: 'input_schema', field: 'dataset_type', label: 'Dataset Type', description: 'medicare, medicaid, or quality_measures' },
+        { id: 'provider_id', type: 'optional', category: 'input_schema', field: 'provider_id', label: 'Provider ID', description: 'CMS provider identifier' },
+        { id: 'data_format', type: 'optional', category: 'advanced', field: 'data_format', label: 'Data Format', description: 'json, xml, or csv', defaultValue: 'json' },
+        { id: 'rate_limit', type: 'optional', category: 'advanced', field: 'rate_limit', label: 'Rate Limit (req/min)', description: 'API rate limit', defaultValue: 60 }
+      ],
+      
+      'fda_integration': [
+        { id: 'fda_api_key', type: 'optional', category: 'credentials', field: 'fda_api_key', label: 'FDA API Key', description: 'Optional FDA API key for higher limits' },
+        { id: 'database_type', type: 'required', category: 'input_schema', field: 'database_type', label: 'Database Type', description: 'drugs, devices, foods, or recalls' },
+        { id: 'search_term', type: 'required', category: 'input_schema', field: 'search_term', label: 'Search Term', description: 'Product name, NDC, or device ID' },
+        { id: 'result_limit', type: 'optional', category: 'advanced', field: 'result_limit', label: 'Result Limit', description: 'Maximum results to return', defaultValue: 100 },
+        { id: 'include_adverse_events', type: 'optional', category: 'advanced', field: 'include_adverse_events', label: 'Include Adverse Events', description: 'Include safety data', defaultValue: false }
+      ],
+      
+      'icd_codes_lookup': [
+        { id: 'icd_api_key', type: 'optional', category: 'credentials', field: 'icd_api_key', label: 'ICD API Key', description: 'Optional ICD API key for enhanced features' },
+        { id: 'icd_version', type: 'required', category: 'input_schema', field: 'icd_version', label: 'ICD Version', description: 'ICD-10, ICD-11, or both', defaultValue: 'ICD-10' },
+        { id: 'code_or_description', type: 'required', category: 'input_schema', field: 'code_or_description', label: 'Code or Description', description: 'ICD code or diagnosis description' },
+        { id: 'search_type', type: 'optional', category: 'advanced', field: 'search_type', label: 'Search Type', description: 'exact, fuzzy, or contains', defaultValue: 'fuzzy' },
+        { id: 'include_children', type: 'optional', category: 'advanced', field: 'include_children', label: 'Include Child Codes', description: 'Include subcategory codes', defaultValue: true }
+      ],
+      
+      'hipaa_compliance_checker': [
+        { id: 'encryption_key', type: 'required', category: 'credentials', field: 'encryption_key', label: 'Encryption Key', description: 'Key for PHI encryption validation' },
+        { id: 'compliance_level', type: 'required', category: 'input_schema', field: 'compliance_level', label: 'Compliance Level', description: 'basic, standard, or strict' },
+        { id: 'data_to_validate', type: 'required', category: 'input_schema', field: 'data_to_validate', label: 'Data to Validate', description: 'PHI data for compliance checking' },
+        { id: 'audit_trail', type: 'optional', category: 'advanced', field: 'audit_trail', label: 'Audit Trail', description: 'Generate compliance audit logs', defaultValue: true },
+        { id: 'risk_assessment', type: 'optional', category: 'advanced', field: 'risk_assessment', label: 'Risk Assessment', description: 'Perform risk level analysis', defaultValue: true }
+      ],
+      
+      'clinical_decision_support': [
+        { id: 'medical_api_key', type: 'required', category: 'credentials', field: 'medical_api_key', label: 'Medical Knowledge API Key', description: 'API key for medical knowledge base' },
+        { id: 'patient_data', type: 'required', category: 'input_schema', field: 'patient_data', label: 'Patient Data', description: 'Clinical data for decision support' },
+        { id: 'decision_type', type: 'required', category: 'input_schema', field: 'decision_type', label: 'Decision Type', description: 'diagnosis, treatment, or drug_interaction' },
+        { id: 'confidence_threshold', type: 'optional', category: 'advanced', field: 'confidence_threshold', label: 'Confidence Threshold', description: 'Minimum confidence for recommendations', defaultValue: 0.8 },
+        { id: 'evidence_level', type: 'optional', category: 'advanced', field: 'evidence_level', label: 'Evidence Level', description: 'A, B, or C level evidence only', defaultValue: 'B' }
+      ],
+
       // Human Oversight nodes
       'healthcare_compliance': [
         { id: 'compliance_level', type: 'required', category: 'input_schema', field: 'compliance_level', label: 'Compliance Level', description: 'low, medium, high' },
