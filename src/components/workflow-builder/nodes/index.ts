@@ -111,6 +111,15 @@ export const workflowNodeTypes = {
   // Voice & Healthcare nodes - specialized configuration
   voice: VoiceConfigurationNode,
   healthcare_compliance: HealthcareComplianceConfigurationNode,
+  
+  // Business Healthcare Tools - all use healthcare compliance configuration
+  npi_validator: HealthcareComplianceConfigurationNode,
+  cms_data_integration: HealthcareComplianceConfigurationNode,  
+  fda_integration: HealthcareComplianceConfigurationNode,
+  icd_codes_lookup: HealthcareComplianceConfigurationNode,
+  hipaa_compliance_checker: HealthcareComplianceConfigurationNode,
+  clinical_decision_support: HealthcareComplianceConfigurationNode,
+  
   vector_store: VectorStoreConfigurationNode,
   
   // Testing nodes - specialized testing configuration

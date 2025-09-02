@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -7,8 +7,10 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { 
   Lightbulb, MapPin, Wand2, Bot, Zap, Plug, Database, 
   MessageCircle, Mic, Users, Rocket, TestTube, Settings,
-  CheckSquare, Workflow, Target, ChevronDown, ChevronRight
+  CheckSquare, Workflow, Target, ChevronDown, ChevronRight,
+  Shield, UserCheck, Building2, Heart, FileText
 } from 'lucide-react';
+import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 
 interface NodePaletteItem {
   id: string;
@@ -16,7 +18,7 @@ interface NodePaletteItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
-  category: 'core' | 'ai' | 'actions' | 'integrations' | 'deployment';
+  category: 'core' | 'ai' | 'actions' | 'integrations' | 'deployment' | 'healthcare_compliance';
   color: string;
 }
 
@@ -345,19 +347,75 @@ const categories = [
 
 export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass }) => {
   console.log('[NodePalette] render start');
+  const { categories: dbCategories, nodeTypes: dbNodeTypes, isLoading } = useWorkflowNodes();
+  
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
     'core': true,
     'ai': true,
     'integrations': false,
     'actions': false,
-    'deployment': false
+    'deployment': false,
+    'healthcare_compliance': true // Show business nodes by default
   });
+  
   const toggleCategory = (categoryId: string) => {
     setOpenCategories(prev => ({
       ...prev,
       [categoryId]: !prev[categoryId]
     }));
   };
+
+  // Icon mapping for business nodes
+  const getBusinessNodeIcon = (typeKey: string) => {
+    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+      'npi_validator': UserCheck,
+      'cms_data_integration': Building2,
+      'fda_integration': Shield,
+      'icd_codes_lookup': FileText,
+      'hipaa_compliance_checker': Shield,
+      'clinical_decision_support': Heart
+    };
+    return iconMap[typeKey] || Shield;
+  };
+
+  // Combine static nodes with database nodes
+  const combinedNodes = useMemo(() => {
+    const staticNodes = [...nodeTypes];
+    
+    // Add business nodes from database
+    dbNodeTypes.forEach(dbNode => {
+      if (dbNode.category?.name === 'healthcare_compliance') {
+        const BusinessIcon = getBusinessNodeIcon(dbNode.type_key);
+        staticNodes.push({
+          id: dbNode.type_key,
+          type: dbNode.type_key,
+          title: dbNode.display_name,
+          icon: BusinessIcon,
+          description: dbNode.description,
+          category: 'healthcare_compliance' as any,
+          color: 'bg-emerald-50 border-emerald-200'
+        });
+      }
+    });
+    
+    return staticNodes;
+  }, [dbNodeTypes]);
+
+  const combinedCategories = useMemo(() => {
+    const staticCategories = [...categories];
+    
+    // Add healthcare compliance category if we have business nodes
+    const hasBusinessNodes = dbNodeTypes.some(node => node.category?.name === 'healthcare_compliance');
+    if (hasBusinessNodes) {
+      staticCategories.splice(2, 0, {
+        id: 'healthcare_compliance',
+        name: 'Healthcare & Business Tools',
+        color: 'bg-emerald-100'
+      });
+    }
+    
+    return staticCategories;
+  }, [dbNodeTypes]);
 
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
     // Standardized drag payload: primary type + JSON meta for config
@@ -400,9 +458,14 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
       <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-4 pr-3 pb-6 space-y-3">
-            {categories.map((category) => {
-              const categoryNodes = nodeTypes.filter(node => node.category === category.id);
-              const isOpen = openCategories[category.id];
+            {isLoading ? (
+              <div className="p-4 text-center text-muted-foreground">
+                Loading business nodes...
+              </div>
+            ) : (
+              combinedCategories.map((category) => {
+                const categoryNodes = combinedNodes.filter(node => node.category === category.id);
+                const isOpen = openCategories[category.id];
               
               return (
                 <Collapsible 
@@ -416,7 +479,14 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                       className="w-full justify-between p-2 h-auto hover:bg-muted/50"
                     >
                       <div className="flex items-center gap-2">
-                        <Badge variant="secondary" className={`text-xs ${category.color}`}>
+                        <Badge 
+                          variant={category.id === 'healthcare_compliance' ? 'default' : 'secondary'} 
+                          className={`text-xs ${category.color} ${
+                            category.id === 'healthcare_compliance' 
+                              ? 'bg-emerald-600 text-white' 
+                              : ''
+                          }`}
+                        >
                           {category.name}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
@@ -478,8 +548,9 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                     </div>
                   </CollapsibleContent>
                 </Collapsible>
-              );
-            })}
+                );
+              })
+            )}
           </div>
         </ScrollArea>
       </CardContent>
