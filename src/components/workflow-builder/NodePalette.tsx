@@ -18,7 +18,7 @@ interface NodePaletteItem {
   title: string;
   icon: React.ComponentType<{ className?: string }>;
   description: string;
-  category: 'core' | 'ai' | 'actions' | 'integrations' | 'deployment' | 'healthcare_compliance';
+  category: 'core' | 'ai' | 'actions' | 'integrations' | 'deployment' | 'business_tools';
   color: string;
 }
 
@@ -355,7 +355,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     'integrations': false,
     'actions': false,
     'deployment': false,
-    'healthcare_compliance': true // Show business nodes by default
+    'business_tools': true // Show business nodes by default
   });
   
   const toggleCategory = (categoryId: string) => {
@@ -378,44 +378,50 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     return iconMap[typeKey] || Shield;
   };
 
-  // Combine static nodes with database nodes
-  const combinedNodes = useMemo(() => {
-    const staticNodes = [...nodeTypes];
+  // Business nodes from database (separate from workflow nodes)
+  const businessNodes = useMemo(() => {
+    const nodes: NodePaletteItem[] = [];
     
-    // Add business nodes from database
     dbNodeTypes.forEach(dbNode => {
       if (dbNode.category?.name === 'healthcare_compliance') {
         const BusinessIcon = getBusinessNodeIcon(dbNode.type_key);
-        staticNodes.push({
+        nodes.push({
           id: dbNode.type_key,
           type: dbNode.type_key,
           title: dbNode.display_name,
           icon: BusinessIcon,
           description: dbNode.description,
-          category: 'healthcare_compliance' as any,
-          color: 'bg-emerald-50 border-emerald-200'
+          category: 'business_tools' as any,
+          color: 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-300'
         });
       }
     });
     
-    return staticNodes;
+    return nodes;
   }, [dbNodeTypes]);
 
-  const combinedCategories = useMemo(() => {
-    const staticCategories = [...categories];
+  // Keep workflow nodes separate
+  const workflowNodes = nodeTypes;
+
+  // Categories including business tools as separate section
+  const allCategories = useMemo(() => {
+    const workflowCategories = [...categories];
     
-    // Add healthcare compliance category if we have business nodes
-    const hasBusinessNodes = dbNodeTypes.some(node => node.category?.name === 'healthcare_compliance');
+    // Add business tools section at the top if we have business nodes
+    const hasBusinessNodes = businessNodes.length > 0;
     if (hasBusinessNodes) {
-      staticCategories.splice(2, 0, {
-        id: 'healthcare_compliance',
-        name: 'Healthcare & Business Tools',
-        color: 'bg-emerald-100'
-      });
+      return [
+        {
+          id: 'business_tools',
+          name: 'Business Tools',
+          color: 'bg-gradient-to-r from-emerald-100 to-teal-100'
+        },
+        ...workflowCategories
+      ];
     }
     
-    return staticCategories;
-  }, [dbNodeTypes]);
+    return workflowCategories;
+  }, [businessNodes]);
 
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
     // Standardized drag payload: primary type + JSON meta for config
@@ -435,25 +441,25 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
           <Workflow className="h-4 w-4" />
           Node Palette
         </CardTitle>
-        <div className="space-y-2">
-          <p className="text-xs text-muted-foreground">
-            <strong>Drag & Drop Workflow Nodes:</strong>
-          </p>
-          <div className="space-y-1 text-xs text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0" />
-              <span><strong>Enhanced Nodes</strong> → All-in-one configuration within nodes</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-              <span><strong>Workflow Nodes</strong> → Create executable workflow elements</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="w-2 h-2 bg-secondary rounded-full flex-shrink-0" />
-              <span><strong>Config Nodes</strong> → Open configuration panels</span>
+          <div className="space-y-2">
+            <p className="text-xs text-muted-foreground">
+              <strong>Drag & Drop Nodes:</strong>
+            </p>
+            <div className="space-y-1 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0" />
+                <span><strong>Business Tools</strong> → ICD, NPI, FDA, CMS, HIPAA validation</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0" />
+                <span><strong>Enhanced Nodes</strong> → All-in-one configuration within nodes</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
+                <span><strong>Workflow Nodes</strong> → Create executable workflow elements</span>
+              </div>
             </div>
           </div>
-        </div>
       </CardHeader>
       <CardContent className="flex-1 min-h-0 p-0 overflow-hidden">
         <ScrollArea className="h-full">
@@ -463,8 +469,11 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                 Loading business nodes...
               </div>
             ) : (
-              combinedCategories.map((category) => {
-                const categoryNodes = combinedNodes.filter(node => node.category === category.id);
+              allCategories.map((category) => {
+                // Get nodes for this category
+                const categoryNodes = category.id === 'business_tools' 
+                  ? businessNodes 
+                  : workflowNodes.filter(node => node.category === category.id);
                 const isOpen = openCategories[category.id];
               
               return (
@@ -480,14 +489,17 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                     >
                       <div className="flex items-center gap-2">
                         <Badge 
-                          variant={category.id === 'healthcare_compliance' ? 'default' : 'secondary'} 
+                          variant={category.id === 'business_tools' ? 'default' : 'secondary'} 
                           className={`text-xs ${category.color} ${
-                            category.id === 'healthcare_compliance' 
-                              ? 'bg-emerald-600 text-white' 
+                            category.id === 'business_tools' 
+                              ? 'bg-emerald-600 text-white border-emerald-700' 
                               : ''
                           }`}
                         >
                           {category.name}
+                          {category.id === 'business_tools' && (
+                            <Shield className="h-3 w-3 ml-1" />
+                          )}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           ({categoryNodes.length})
@@ -515,11 +527,12 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                             configType: node.type.includes('Node') ? node.type : undefined
                           })}
                            className={`
-                             p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing
-                             hover:shadow-sm transition-all duration-200 hover:scale-[1.01]
-                             ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
-                             ${['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) ? 'ring-2 ring-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50' : ''}
-                           `}
+                              p-3 rounded-lg border-2 border-dashed cursor-grab active:cursor-grabbing
+                              hover:shadow-sm transition-all duration-200 hover:scale-[1.01]
+                              ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
+                              ${['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) ? 'ring-2 ring-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50' : ''}
+                              ${category.id === 'business_tools' ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300 shadow-sm' : ''}
+                            `}
                         >
                           <div className="flex items-start gap-3">
                             <div className="p-1.5 bg-white rounded-md shadow-sm flex-shrink-0">
@@ -527,16 +540,19 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                             </div>
                             <div className="flex-1 min-w-0">
                                <h4 className="font-medium text-sm text-foreground flex items-center gap-1 flex-wrap">
-                                 {node.title}
-                                 {['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && (
-                                   <Badge variant="default" className="text-xs px-1 py-0 bg-indigo-500">Enhanced</Badge>
-                                 )}
-                                 {!node.type.includes('Node') && !['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && (
-                                   <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
-                                 )}
-                                 {node.type.includes('Node') && (
-                                   <Badge variant="secondary" className="text-xs px-1 py-0">Config</Badge>
-                                 )}
+                                  {node.title}
+                                  {category.id === 'business_tools' && (
+                                    <Badge variant="default" className="text-xs px-1 py-0 bg-emerald-600 text-white">Business</Badge>
+                                  )}
+                                  {['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && (
+                                    <Badge variant="default" className="text-xs px-1 py-0 bg-indigo-500">Enhanced</Badge>
+                                  )}
+                                  {!node.type.includes('Node') && !['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && category.id !== 'business_tools' && (
+                                    <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
+                                  )}
+                                  {node.type.includes('Node') && (
+                                    <Badge variant="secondary" className="text-xs px-1 py-0">Config</Badge>
+                                  )}
                                </h4>
                               <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
                                 {node.description}
