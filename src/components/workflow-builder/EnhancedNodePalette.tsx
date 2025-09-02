@@ -60,6 +60,18 @@ const getIconComponent = (iconName: string) => {
   return iconMap[iconName] || Workflow;
 };
 
+// Icon mapping for business nodes
+const getBusinessNodeIcon = (iconName: string) => {
+  const businessIconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+    'user-check': Bot, // NPI Validator - using Bot as fallback for user-check
+    'building': Database, // CMS - using Database as fallback for building
+    'shield': Bot, // FDA/HIPAA - using Bot as fallback for shield
+    'file-text': FileText, // ICD
+    'heart': Bot, // Clinical Decision Support - using Bot as fallback for heart
+  };
+  return businessIconMap[iconName] || Bot;
+};
+
 interface EnhancedNodePaletteProps {
   heightClass?: string;
   onNodeSelect?: (nodeType: any) => void;
@@ -101,12 +113,12 @@ const [internalSearch, setInternalSearch] = useState('');
   }, []);
 
   React.useEffect(() => {
-    // Initialize expanded state for the 8 consolidated categories only
+    // Initialize expanded state for categories including business_tools
     setExpandedCategories((prev) => {
       if (Object.keys(prev).length) return prev;
       const initial: Record<string, boolean> = {};
-      ['ai_models_processing','data_integration','communication_channels','automation_workflow','development_testing','templates_configuration','storage_cache','human_oversight']
-        .forEach((name) => { initial[name] = false; });
+      ['business_tools','ai_models_processing','data_integration','communication_channels','automation_workflow','development_testing','templates_configuration','storage_cache','human_oversight']
+        .forEach((name) => { initial[name] = name === 'business_tools'; }); // Open business_tools by default
       return initial;
     });
   }, []);
@@ -158,8 +170,35 @@ const [internalSearch, setInternalSearch] = useState('');
   // Get populated nodes from backend data
   const populatedNodes = getPopulatedNodes();
 
-  // Consolidated 8 meaningful categories with optimized UX sequence and provider grouping
+  // Consolidated categories with optimized UX sequence, including business tools
   const computed: Record<string, typeof nodeTypes> = {
+    // 0. Business Tools - Healthcare/compliance tools at the top
+    business_tools: [
+      ...filteredNodeTypes.filter((nt) => 
+        nt.category?.name === 'healthcare_compliance' ||
+        match(nt, ['npi','cms','fda','icd','hipaa','clinical decision support','healthcare','compliance','medical'])
+      )
+    ].sort((a, b) => {
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        
+        // Core business validation tools first
+        if (name.includes('npi') && name.includes('validator')) return 1;
+        if (name.includes('hipaa') && name.includes('compliance')) return 2;
+        if (name.includes('icd') && name.includes('codes')) return 3;
+        if (name.includes('cms') && name.includes('data')) return 4;
+        if (name.includes('fda') && name.includes('integration')) return 5;
+        if (name.includes('clinical') && name.includes('decision')) return 6;
+        return 7;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    }),
+    
     // 1. AI Models & Processing - Most important, group by provider
     ai_models_processing: [
       ...filteredNodeTypes.filter((nt) =>
@@ -371,9 +410,21 @@ const [internalSearch, setInternalSearch] = useState('');
     return acc;
   }, { ...baseByCategory } as Record<string, typeof nodeTypes>);
 
-  // 8 consolidated categories with optimized UX sequence
+  // Enhanced categories including business tools
   const allCategories = React.useMemo(() => {
     return [
+      {
+        id: 'business-tools',
+        name: 'business_tools',
+        display_name: 'Business Tools', 
+        description: 'Healthcare compliance, validation, and business data tools',
+        icon: 'shield',
+        color: '#10b981',
+        order_index: 0,
+        is_active: true,
+        created_at: '',
+        updated_at: ''
+      },
       {
         id: 'ai-models-processing',
         name: 'ai_models_processing', 
