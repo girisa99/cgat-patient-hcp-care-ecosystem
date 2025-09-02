@@ -1301,6 +1301,7 @@ useEffect(() => {
             </div>
             <Button size="sm" variant="ghost" onClick={() => {
               setShowConfigurator(false);
+              setConfigNodeInfo(null);
               try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
             }}>
               ✕
@@ -1326,6 +1327,7 @@ useEffect(() => {
                 }}
                 onClose={() => {
                   setShowConfigurator(false);
+                  setConfigNodeInfo(null);
                   try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
                 }}
               />
