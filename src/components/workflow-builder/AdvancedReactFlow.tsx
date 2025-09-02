@@ -495,11 +495,15 @@ setSelectedNode(newNode as any);
   }, []);
 
   const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
+    event.preventDefault();
+    event.stopPropagation();
     setContextEdge(null);
     setSelectedNode(node);
   }, []);
 
   const handleEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
+    event.preventDefault();
+    event.stopPropagation();
     setSelectedNode(null);
     setContextEdge(edge);
   }, []);
@@ -1267,10 +1271,12 @@ useEffect(() => {
       <SessionPersistenceManager 
         sessionId={sessionId}
         onSessionRestore={(sessionData) => {
-          if (sessionData?.canvas?.nodes) {
+          const currentNodes = getNodes();
+          const currentEdges = getEdges();
+          if (sessionData?.canvas?.nodes && currentNodes.length === 0) {
             setNodes(sessionData.canvas.nodes);
           }
-          if (sessionData?.canvas?.edges) {
+          if (sessionData?.canvas?.edges && currentEdges.length === 0) {
             setEdges(sessionData.canvas.edges);
           }
         }}
