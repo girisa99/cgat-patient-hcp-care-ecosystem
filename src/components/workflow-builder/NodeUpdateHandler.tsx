@@ -11,7 +11,7 @@ interface NodeUpdateHandlerProps {
 
 export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: NodeUpdateHandlerProps) => {
   const { getNodes, setNodes, getEdges, setEdges } = useReactFlow();
-  const { autoSave } = useAgentSession();
+  const { manualSave } = useAgentSession();
   const { showSuccess, showError } = useMasterToast();
 
   const updateNode = useCallback(async (nodeId: string, updates: any) => {
@@ -23,9 +23,9 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
       setNodes(updatedNodes);
       
       // Persist to backend if sessionId exists
-      if (sessionId && autoSave) {
+      if (sessionId && manualSave) {
         try {
-          autoSave.mutate({
+          manualSave.mutate({
             sessionId,
             updates: {
               canvas: {
@@ -36,7 +36,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
             }
           });
         } catch (error) {
-          console.warn('Auto-save failed:', error);
+          console.warn('Manual save failed:', error);
         }
       }
       
@@ -45,7 +45,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
     } catch (error) {
       showError('Failed to update node');
     }
-  }, [getNodes, setNodes, getEdges, sessionId, autoSave, onNodeUpdate, showSuccess, showError]);
+  }, [getNodes, setNodes, getEdges, sessionId, manualSave, onNodeUpdate, showSuccess, showError]);
 
   const deleteNode = useCallback(async (nodeId: string) => {
     try {
@@ -58,9 +58,9 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
       setEdges(updatedEdges);
       
       // Persist to backend if sessionId exists
-      if (sessionId && autoSave) {
+      if (sessionId && manualSave) {
         try {
-          autoSave.mutate({
+          manualSave.mutate({
             sessionId,
             updates: {
               canvas: {
@@ -71,7 +71,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
             }
           });
         } catch (error) {
-          console.warn('Auto-save failed:', error);
+          console.warn('Manual save failed:', error);
         }
       }
       
@@ -80,7 +80,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
     } catch (error) {
       showError('Failed to delete node');
     }
-  }, [getNodes, setNodes, getEdges, setEdges, sessionId, autoSave, onNodeDelete, showSuccess, showError]);
+  }, [getNodes, setNodes, getEdges, setEdges, sessionId, manualSave, onNodeDelete, showSuccess, showError]);
 
   // Keyboard shortcuts handler
   const handleKeyDown = useCallback((event: KeyboardEvent) => {
@@ -103,9 +103,9 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
         const updatedEdges = getEdges().filter(edge => !edge.selected);
         setEdges(updatedEdges);
         
-        if (sessionId && autoSave) {
+        if (sessionId && manualSave) {
           try {
-            autoSave.mutate({
+            manualSave.mutate({
               sessionId,
               updates: {
                 canvas: {
@@ -116,14 +116,14 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
               }
             });
           } catch (error) {
-            console.warn('Auto-save failed:', error);
+            console.warn('Manual save failed:', error);
           }
         }
         
         showSuccess(`${selectedEdges.length} edge(s) deleted`);
       }
     }
-  }, [getNodes, getEdges, setEdges, deleteNode, sessionId, autoSave, showSuccess]);
+  }, [getNodes, getEdges, setEdges, deleteNode, sessionId, manualSave, showSuccess]);
 
   // Add keyboard event listener
   React.useEffect(() => {
@@ -157,9 +157,9 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
         },
       } as any;
       setNodes([...nodes, newNode]);
-      if (sessionId && autoSave) {
+      if (sessionId && manualSave) {
         try {
-          autoSave.mutate({
+          manualSave.mutate({
             sessionId,
             updates: {
               canvas: {
@@ -170,7 +170,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
             }
           });
         } catch (error) {
-          console.warn('Auto-save failed:', error);
+          console.warn('Manual save failed:', error);
         }
       }
       showSuccess('Node duplicated');
@@ -183,9 +183,9 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
         data: { ...n.data, isStartNode: n.id === nodeId }
       }));
       setNodes(updatedNodes);
-      if (sessionId && autoSave) {
+      if (sessionId && manualSave) {
         try {
-          autoSave.mutate({
+          manualSave.mutate({
             sessionId,
             updates: {
               canvas: {
@@ -196,7 +196,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
             }
           });
         } catch (error) {
-          console.warn('Auto-save failed:', error);
+          console.warn('Manual save failed:', error);
         }
       }
       showSuccess('Marked as start node');
@@ -228,7 +228,7 @@ export const useNodeUpdateHandler = ({ sessionId, onNodeUpdate, onNodeDelete }: 
       window.removeEventListener('update-node', onUpdate as EventListener);
       window.removeEventListener('node-config-updated', onConfigUpdated as EventListener);
     };
-  }, [getNodes, setNodes, getEdges, sessionId, autoSave, showSuccess, updateNode, deleteNode]);
+  }, [getNodes, setNodes, getEdges, sessionId, manualSave, showSuccess, updateNode, deleteNode]);
 
   return {
     updateNode,

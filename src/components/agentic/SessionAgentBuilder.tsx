@@ -43,24 +43,24 @@ export const SessionAgentBuilder = () => {
     userSessions,
     createSession,
     updateSession,
-    autoSave,
+    manualSave,
     deleteSession,
     deployAgent,
   } = useAgentSession(currentSessionId || undefined);
 
-  // Auto-save functionality
+  // Manual save when step changes
   useEffect(() => {
     if (currentSession && currentSessionId) {
-      const autoSaveTimer = setTimeout(() => {
-        autoSave.mutate({
+      const saveTimer = setTimeout(() => {
+        manualSave.mutate({
           sessionId: currentSessionId,
           updates: { current_step: currentStep }
         });
-      }, 2000); // Auto-save after 2 seconds of inactivity
+      }, 2000); // Save after 2 seconds of inactivity
 
-      return () => clearTimeout(autoSaveTimer);
+      return () => clearTimeout(saveTimer);
     }
-  }, [currentStep, currentSession, currentSessionId, autoSave]);
+  }, [currentStep, currentSession, currentSessionId, manualSave]);
 
   const handleCreateNewSession = () => {
     console.log('🚀 handleCreateNewSession called');

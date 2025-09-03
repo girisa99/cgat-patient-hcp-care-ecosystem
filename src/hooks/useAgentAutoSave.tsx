@@ -17,11 +17,10 @@ export const useAgentAutoSave = ({
   sessionId, 
   enabled = true 
 }: UseAgentAutoSaveProps) => {
-  const { createSession, updateSession, autoSave } = useAgentSession();
+  const { createSession, updateSession, manualSave } = useAgentSession();
   const { toast } = useToast();
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const lastSavedRef = useRef<string>('');
-  const savingRef = useRef<boolean>(false); // Prevent concurrent saves
 
   const saveProgress = useCallback(async () => {
     if (!enabled || !sessionId) return;
@@ -34,7 +33,7 @@ export const useAgentAutoSave = ({
     // Use global session save manager to prevent concurrent saves
     try {
       const result = await sessionSaveManager.saveSession(sessionId, async () => {
-        console.log('🔄 Auto-saving agent session data:', { sessionId, currentStep, dataKeys: Object.keys(data) });
+        console.log('🔄 Manual saving agent session data:', { sessionId, currentStep, dataKeys: Object.keys(data) });
         
         const saveData: AgentSessionUpdate = {
           ...data,
@@ -42,36 +41,36 @@ export const useAgentAutoSave = ({
         };
 
         if (sessionId) {
-          return await autoSave.mutateAsync({ sessionId, updates: saveData });
+          return await manualSave.mutateAsync({ sessionId, updates: saveData });
         } else {
           // NO AUTO-CREATION - require explicit session creation
-          console.log('⚠️ No session ID provided - skipping auto-save. User must create session first.');
+          console.log('⚠️ No session ID provided - skipping save. User must create session first.');
           throw new Error('Session must be created explicitly before saving');
         }
       });
 
       lastSavedRef.current = currentDataString;
-      console.log('✅ Auto-save completed successfully');
+      console.log('✅ Manual save completed successfully');
       return result;
     } catch (error) {
-      console.error('❌ Auto-save failed:', error);
+      console.error('❌ Manual save failed:', error);
       
       // Only show toast for non-constraint violation errors to avoid spam
       const errorMessage = error?.message || '';
       if (!errorMessage.includes('duplicate key value violates unique constraint') && 
           !errorMessage.includes('already being saved')) {
         toast({
-          title: "Auto-save Failed",
-          description: "Your progress couldn't be saved automatically. Please save manually.",
+          title: "Save Failed",
+          description: "Your progress couldn't be saved. Please try again.",
           variant: "destructive",
         });
       } else {
-        console.log('🔄 Skipping auto-save error toast - likely concurrent save or constraint violation');
+        console.log('🔄 Skipping save error toast - likely concurrent save or constraint violation');
       }
     }
-  }, [data, currentStep, sessionId, enabled, autoSave, createSession, toast]);
+  }, [data, currentStep, sessionId, enabled, manualSave, toast]);
 
-  // Auto-save with debouncing
+  // Auto-save with debouncing (now uses manualSave)
   useEffect(() => {
     if (!enabled) return;
 
@@ -80,10 +79,10 @@ export const useAgentAutoSave = ({
       clearTimeout(saveTimeoutRef.current);
     }
 
-    // Set new timeout for auto-save (2 seconds after last change)
+    // Set new timeout for save (3 seconds after last change)
     saveTimeoutRef.current = setTimeout(() => {
       saveProgress();
-    }, 2000);
+    }, 3000);
 
     return () => {
       if (saveTimeoutRef.current) {
@@ -93,7 +92,7 @@ export const useAgentAutoSave = ({
   }, [saveProgress]);
 
   // Manual save function
-  const manualSave = useCallback(async () => {
+  const manualSaveFunction = useCallback(async () => {
     const result = await saveProgress();
     toast({
       title: "Progress Saved",
@@ -103,8 +102,8 @@ export const useAgentAutoSave = ({
   }, [saveProgress, toast]);
 
   return {
-    manualSave,
-    isSaving: createSession.isPending || updateSession.isPending || autoSave.isPending || (sessionId ? sessionSaveManager.isSessionBeingSaved(sessionId) : false),
+    manualSave: manualSaveFunction,
+    isSaving: createSession.isPending || updateSession.isPending || manualSave.isPending || (sessionId ? sessionSaveManager.isSessionBeingSaved(sessionId) : false),
     saveProgress
   };
 };

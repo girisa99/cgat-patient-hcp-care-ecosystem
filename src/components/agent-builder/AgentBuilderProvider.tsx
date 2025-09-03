@@ -32,7 +32,7 @@ interface AgentBuilderContextType {
   // Session Operations
   createSession: any;
   updateSession: any;
-  autoSave: any;
+  manualSave: any;
   deleteSession: any;
   deployAgent: any;
   isLoading: boolean;
@@ -85,7 +85,7 @@ export const AgentBuilderProvider: React.FC<AgentBuilderProviderProps> = ({
     userSessions,
     createSession,
     updateSession,
-    autoSave,
+    manualSave,
     deleteSession,
     deployAgent,
     isLoading,
@@ -186,7 +186,7 @@ export const AgentBuilderProvider: React.FC<AgentBuilderProviderProps> = ({
     // Session Operations
     createSession,
     updateSession,
-    autoSave,
+    manualSave,
     deleteSession,
     deployAgent,
     isLoading,

@@ -71,7 +71,14 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
           prompt: prompt.trim(),
           provider: selectedProvider,
           generateConnections: true,
-          includeTemplates: true
+          includeTemplates: true,
+          // Pass agent properties to AI generation
+          agentConfig: {
+            categories: [],
+            business_units: [],
+            topics: [],
+            agent_type: 'single'
+          }
         }
       });
 

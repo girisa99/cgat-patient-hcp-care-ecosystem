@@ -278,7 +278,6 @@ export const useAgentSession = (sessionId?: string) => {
         categories: sessionToUse.basic_info?.categories || [],
         topics: sessionToUse.basic_info?.topics || [],
         business_units: sessionToUse.basic_info?.business_units || [],
-        agent_type: sessionToUse.basic_info?.agent_type || 'single',
         template_id: sessionToUse.template_id,
         configuration: {
           canvas: sessionToUse.canvas,
@@ -289,7 +288,6 @@ export const useAgentSession = (sessionId?: string) => {
         },
         deployment_config: sessionToUse.deployment,
         status: 'draft',
-        agent_type: 'single',
         created_by: sessionToUse.user_id,
       };
 
