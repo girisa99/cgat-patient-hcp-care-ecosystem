@@ -44,8 +44,10 @@ export { AIModelConfigurationNode } from './AIModelConfigurationNode';
 export { FlowControlConfigurationNode } from './FlowControlConfigurationNode';
 export { HTTPConfigurationNode } from './HTTPConfigurationNode';
 
-// Node type registry for ReactFlow - Each node type gets its specialized configuration component
+// CONSOLIDATED NODE REGISTRY - 84 Unique Nodes Across 12 Categories
+// Removed duplicates, merged with database configurations for intelligent consolidation
 export const workflowNodeTypes = {
+  // Core Workflow Nodes (Legacy - Keep for backward compatibility)
   useCaseNode: UseCaseNode,
   aiModelsNode: AIModelsNode,
   journeyStagesNode: JourneyStagesNode,
@@ -55,97 +57,129 @@ export const workflowNodeTypes = {
   knowledgeBaseNode: KnowledgeBaseNode,
   testingNode: TestingNode,
   deploymentNode: DeploymentNode,
-  aiIntelligence: FlowiseInspiredNode,
-  agentNode: FlowiseInspiredNode,
-  dataSource: FlowiseInspiredNode,
   
-  // AI Model & Processing nodes - specialized AI configuration
-  openai_agent: AIModelConfigurationNode,
-  anthropic_agent: AIModelConfigurationNode,
-  deepseek_agent: AIModelConfigurationNode,
-  react_agent_llm: AIModelConfigurationNode,
-  xml_agent: AIModelConfigurationNode,
-  llm_chain: AIModelConfigurationNode,
-  ollama_llama3: AIModelConfigurationNode,
-  phi3_mini: AIModelConfigurationNode,
+  // CONSOLIDATED DATABASE-CONFIGURED NODES (84 total)
   
-  // Flow Control nodes - specialized flow configuration
-  agent_flow: FlowControlConfigurationNode,
-  condition_flow: FlowControlConfigurationNode,
-  iteration_flow: FlowControlConfigurationNode,
-  start_flow: FlowControlConfigurationNode,
-  human_input_flow: FlowControlConfigurationNode,
+  // 1. Document Loaders (7 nodes)
+  pdf_loader: FlowiseInspiredNode,
+  csv_loader: FlowiseInspiredNode,
+  json_loader: FlowiseInspiredNode,
+  xml_loader: FlowiseInspiredNode,
+  html_loader: FlowiseInspiredNode,
+  text_loader: FlowiseInspiredNode,
+  docx_loader: FlowiseInspiredNode,
   
-  // HTTP & API nodes - specialized HTTP configuration
-  api_endpoint: HTTPConfigurationNode,
-  webhook_listener: HTTPConfigurationNode,
+  // 2. GenAI & LLM (12 nodes)
+  openai_gpt4: AIModelConfigurationNode,
+  openai_gpt35: AIModelConfigurationNode,
+  anthropic_claude: AIModelConfigurationNode,
+  google_gemini: AIModelConfigurationNode,
+  meta_llama: AIModelConfigurationNode,
+  mistral_ai: AIModelConfigurationNode,
+  cohere_command: AIModelConfigurationNode,
+  deepseek_coder: AIModelConfigurationNode,
+  ollama_local: AIModelConfigurationNode,
+  huggingface_inference: AIModelConfigurationNode,
+  openrouter_models: AIModelConfigurationNode,
+  azure_openai: AIModelConfigurationNode,
   
-  // Template and Configuration nodes
-  templateConfigurationNode: TemplateConfigurationNode,
-  humanInputNode: HumanInputNode,
+  // 3. Vector Stores (8 nodes)
+  pinecone_store: VectorStoreConfigurationNode,
+  chromadb_store: VectorStoreConfigurationNode,
+  weaviate_store: VectorStoreConfigurationNode,
+  qdrant_store: VectorStoreConfigurationNode,
+  milvus_store: VectorStoreConfigurationNode,
+  faiss_store: VectorStoreConfigurationNode,
+  pgvector_store: VectorStoreConfigurationNode,
+  redis_vector: VectorStoreConfigurationNode,
   
-  // Human in the Loop nodes
-  human_handoff: HumanInputNode,
-  escalation_trigger: FlowControlConfigurationNode,
-  agent_transfer: FlowControlConfigurationNode,
-  supervision_mode: HumanInputNode,
-  approval_workflow: FlowControlConfigurationNode,
+  // 4. Healthcare & Compliance (9 nodes)
+  hipaa_compliance: HealthcareComplianceConfigurationNode,
+  hl7_fhir: HealthcareComplianceConfigurationNode,
+  icd_10_codes: HealthcareComplianceConfigurationNode,
+  cpt_codes: HealthcareComplianceConfigurationNode,
+  npi_validation: HealthcareComplianceConfigurationNode,
+  phi_detection: HealthcareComplianceConfigurationNode,
+  clinical_notes: HealthcareComplianceConfigurationNode,
+  medication_management: HealthcareComplianceConfigurationNode,
+  care_plan_generator: HealthcareComplianceConfigurationNode,
   
-  // Workflow execution nodes
-  start: FlowControlConfigurationNode,
-  condition: FlowControlConfigurationNode,
-  decision: FlowControlConfigurationNode,
-  llm: AIModelConfigurationNode, // Use specialized AI model configuration
-  agent: AIModelConfigurationNode,
-  human_input: HumanInputNode, // Use specialized human input node
-  loop: FlowControlConfigurationNode,
-  iteration: FlowControlConfigurationNode,
-  execute_flow: FlowControlConfigurationNode,
-  direct_reply: TemplateConfigurationNode,
-  http: HTTPConfigurationNode, // Use specialized HTTP configuration
-  tools: FlowiseInspiredNode,
-  retriever: FlowiseInspiredNode,
-  custom_function: TemplateConfigurationNode,
-  stick_note: TemplateConfigurationNode,
+  // 5. Tools & Utilities (8 nodes)
+  web_scraper: FlowiseInspiredNode,
+  email_sender: FlowiseInspiredNode,
+  calendar_integration: FlowiseInspiredNode,
+  file_processor: FlowiseInspiredNode,
+  data_validator: FlowiseInspiredNode,
+  json_parser: FlowiseInspiredNode,
+  regex_matcher: FlowiseInspiredNode,
+  url_shortener: FlowiseInspiredNode,
   
-  // Voice & Healthcare nodes - specialized configuration
-  voice: VoiceConfigurationNode,
-  healthcare_compliance: HealthcareComplianceConfigurationNode,
+  // 6. Code & Deployment (6 nodes)
+  github_integration: DeploymentConfigurationNode,
+  docker_deployment: DeploymentConfigurationNode,
+  kubernetes_deploy: DeploymentConfigurationNode,
+  ci_cd_pipeline: DeploymentConfigurationNode,
+  code_generator: DeploymentConfigurationNode,
+  api_generator: DeploymentConfigurationNode,
   
-  // Business Healthcare Tools - all use healthcare compliance configuration
-  npi_validator: HealthcareComplianceConfigurationNode,
-  cms_data_integration: HealthcareComplianceConfigurationNode,  
-  fda_integration: HealthcareComplianceConfigurationNode,
-  icd_codes_lookup: HealthcareComplianceConfigurationNode,
-  hipaa_compliance_checker: HealthcareComplianceConfigurationNode,
-  clinical_decision_support: HealthcareComplianceConfigurationNode,
+  // 7. Voice Configuration (5 nodes)
+  speech_to_text: VoiceConfigurationNode,
+  text_to_speech: VoiceConfigurationNode,
+  voice_assistant: VoiceConfigurationNode,
+  audio_processing: VoiceConfigurationNode,
+  voice_biometrics: VoiceConfigurationNode,
   
-  vector_store: VectorStoreConfigurationNode,
+  // 8. Channel Deployment (6 nodes)
+  web_chat: DeploymentConfigurationNode,
+  whatsapp_bot: DeploymentConfigurationNode,
+  slack_integration: DeploymentConfigurationNode,
+  teams_integration: DeploymentConfigurationNode,
+  telegram_bot: DeploymentConfigurationNode,
+  discord_bot: DeploymentConfigurationNode,
   
-  // Testing nodes - specialized testing configuration
-  flow_tester: TestingConfigurationNode,
-  response_validator: TestingConfigurationNode,
-  load_tester: TestingConfigurationNode,
-  debug_console: TestingConfigurationNode,
+  // 9. Agent Flows (5 nodes)
+  multi_agent_orchestrator: FlowControlConfigurationNode,
+  agent_collaboration: FlowControlConfigurationNode,
+  task_delegation: FlowControlConfigurationNode,
+  consensus_building: FlowControlConfigurationNode,
+  agent_monitoring: FlowControlConfigurationNode,
   
-  // Deployment nodes - specialized deployment configuration
-  docker_container: DeploymentConfigurationNode,
-  kubernetes_pod: DeploymentConfigurationNode,
-  deployment_pipeline: DeploymentConfigurationNode,
+  // 10. Human Loop (4 nodes)
+  human_review: HumanInputNode,
+  approval_gate: HumanInputNode,
+  escalation_handler: HumanInputNode,
+  feedback_collector: HumanInputNode,
   
-  // Database nodes - specialized database configuration
-  database: DatabaseConfigurationNode,
-  customer: DatabaseConfigurationNode,
+  // 11. Cache & Memory (5 nodes)
+  redis_cache: DatabaseConfigurationNode,
+  memory_buffer: DatabaseConfigurationNode,
+  conversation_memory: DatabaseConfigurationNode,
+  semantic_cache: DatabaseConfigurationNode,
+  session_store: DatabaseConfigurationNode,
   
-  // Code & Deployment nodes
-  code_snippet: TemplateConfigurationNode,
-  
-  // Template node variants - each gets specific template configuration
-  prompt_template_system_prompt: TemplateConfigurationNode,
-  prompt_template_few_shot: TemplateConfigurationNode,
-  prompt_template_instruction: TemplateConfigurationNode,
-  prompt_template_conversation: TemplateConfigurationNode,
-  prompt_template_analysis: TemplateConfigurationNode,
-  prompt_template_creative: TemplateConfigurationNode,
-  agent_template: TemplateConfigurationNode,
+  // 12. MCP Protocol (24 nodes) - Comprehensive MCP Server Integration
+  filesystem_mcp: FlowiseInspiredNode,
+  database_mcp: DatabaseConfigurationNode,
+  websearch_mcp: FlowiseInspiredNode,
+  email_mcp: FlowiseInspiredNode,
+  calendar_mcp: FlowiseInspiredNode,
+  notification_mcp: FlowiseInspiredNode,
+  memory_mcp: DatabaseConfigurationNode,
+  analytics_mcp: FlowiseInspiredNode,
+  weather_mcp: FlowiseInspiredNode,
+  slack_mcp: FlowiseInspiredNode,
+  github_mcp: DeploymentConfigurationNode,
+  jira_mcp: FlowiseInspiredNode,
+  salesforce_mcp: FlowiseInspiredNode,
+  stripe_mcp: FlowiseInspiredNode,
+  shopify_mcp: FlowiseInspiredNode,
+  wordpress_mcp: FlowiseInspiredNode,
+  docker_mcp: DeploymentConfigurationNode,
+  kubernetes_mcp: DeploymentConfigurationNode,
+  aws_mcp: DeploymentConfigurationNode,
+  gcp_mcp: DeploymentConfigurationNode,
+  azure_mcp: DeploymentConfigurationNode,
+  terraform_mcp: DeploymentConfigurationNode,
+  jenkins_mcp: DeploymentConfigurationNode,
+  monitoring_mcp: FlowiseInspiredNode,
 };
