@@ -1,4 +1,4 @@
-// Configuration Components Index - All 78 Node Configurations
+// Configuration Components Index - All 84 Node Configurations
 export { DocumentLoadersConfig } from './DocumentLoadersConfig';
 export { GenAIConfig } from './GenAIConfig';
 export { VectorStoresConfig } from './VectorStoresConfig';
@@ -11,3 +11,9 @@ export { AgentFlowsConfig } from './AgentFlowsConfig';
 export { HumanLoopConfig } from './HumanLoopConfig';
 export { CacheMemoryConfig } from './CacheMemoryConfig';
 export { DeploymentEnvironmentsConfig } from './DeploymentEnvironmentsConfig';
+export { TestingValidationConfig } from './TestingValidationConfig';
+export { VisionModelsConfig } from './VisionModelsConfig';
+export { ChainsWorkflowsConfig } from './ChainsWorkflowsConfig';
+export { SmallLanguageModelsConfig } from './SmallLanguageModelsConfig';
+export { UtilitiesConfig } from './UtilitiesConfig';
+export { MCPProtocolConfig } from './MCPProtocolConfig';
