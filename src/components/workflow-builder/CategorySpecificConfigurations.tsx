@@ -11,6 +11,15 @@ import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Plus, Trash2, Bot, Database, MessageCircle, Search, Globe, Zap, Mail, Calculator, FileText, Code, Settings, Clock, PenTool, Image, Volume2, Webhook, Filter, BarChart3, FileCheck, Users, Shield, AlertTriangle } from 'lucide-react';
 
+// Import new configuration components
+import { DocumentLoadersConfig } from './configurations/DocumentLoadersConfig';
+import { GenAIConfig } from './configurations/GenAIConfig';
+import { VectorStoresConfig } from './configurations/VectorStoresConfig';
+import { HealthcareComplianceConfig } from './configurations/HealthcareComplianceConfig';
+import { ToolsUtilitiesConfig } from './configurations/ToolsUtilitiesConfig';
+import { CodeDeploymentConfig } from './configurations/CodeDeploymentConfig';
+import { VoiceConfig } from './configurations/VoiceConfig';
+
 interface CategoryConfigProps {
   category: string;
   nodeType: string;
@@ -2242,6 +2251,35 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
       </Card>
     </div>
   );
+
+  // Handle new configuration components first
+  if (['document_loaders', 'pdf_loader', 'csv_loader', 'api_loader', 'json_loader', 'text_loader', 'github_loader', 'firecrawl_loader'].includes(nodeType)) {
+    return <DocumentLoadersConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['anthropic_agent', 'openai_agent', 'deepseek_agent', 'llm_chain', 'react_agent_llm', 'xml_agent'].includes(nodeType)) {
+    return <GenAIConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['pinecone', 'chroma', 'weaviate', 'faiss', 'elasticsearch'].includes(nodeType)) {
+    return <VectorStoresConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['hipaa_compliance_checker', 'icd_codes_lookup', 'npi_validator', 'clinical_decision_support', 'cms_data_integration', 'fda_integration'].includes(nodeType)) {
+    return <HealthcareComplianceConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['calculator', 'email_tool', 'web_scraper', 'code_executor', 'math_tool', 'send_email'].includes(nodeType)) {
+    return <ToolsUtilitiesConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['api_endpoint', 'docker_container', 'webhook_listener', 'deployment_pipeline', 'kubernetes_pod', 'code_snippet'].includes(nodeType)) {
+    return <CodeDeploymentConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['text_to_speech', 'speech_to_text', 'voice_call_channel', 'tts', 'stt', 'voice_channel'].includes(nodeType)) {
+    return <VoiceConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
 
   // Main render logic based on category and node type
   switch (category) {
