@@ -17,6 +17,7 @@ import { Switch } from '@/components/ui/switch';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Slider } from '@/components/ui/slider';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 
 interface DynamicConfigurationFormProps {
   nodeType: string;
@@ -33,6 +34,18 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
 }) => {
   const getFormSchema = () => {
     switch (`${nodeType}-${configAction}`) {
+      case 'start-basic':
+      case 'Start-basic':
+        return z.object({
+          inputType: z.enum(['chat', 'form', 'api', 'webhook']),
+          ephemeralMemory: z.boolean().optional(),
+          persistState: z.boolean().optional(),
+          flowState: z.array(z.object({
+            key: z.string().min(1),
+            value: z.string()
+          })).optional(),
+        });
+
       case 'agent-ai-model':
         return z.object({
           model: z.string().min(1, 'Model is required'),
@@ -89,6 +102,153 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
 
   const renderFormFields = () => {
     switch (`${nodeType}-${configAction}`) {
+      case 'start-basic':
+      case 'Start-basic':
+        return (
+          <div className="space-y-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Start Node Configuration</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="inputType"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Input Type *</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select input type" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="chat">
+                            <div className="space-y-1">
+                              <div className="font-medium">Chat Input</div>
+                              <div className="text-sm text-muted-foreground">Start the conversation with chat input</div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="form">
+                            <div className="space-y-1">
+                              <div className="font-medium">Form Input</div>
+                              <div className="text-sm text-muted-foreground">Start the workflow with form inputs</div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="api">
+                            <div className="space-y-1">
+                              <div className="font-medium">API Input</div>
+                              <div className="text-sm text-muted-foreground">Start with API endpoint trigger</div>
+                            </div>
+                          </SelectItem>
+                          <SelectItem value="webhook">
+                            <div className="space-y-1">
+                              <div className="font-medium">Webhook Input</div>
+                              <div className="text-sm text-muted-foreground">Start with webhook trigger</div>
+                            </div>
+                          </SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="ephemeralMemory"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Ephemeral Memory</FormLabel>
+                        <FormDescription>
+                          Enable temporary memory for this session
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+
+                <div className="space-y-2">
+                  <FormLabel>Flow State</FormLabel>
+                  <div className="space-y-2">
+                    {(configuration.flowState || []).map((state: any, index: number) => (
+                      <div key={index} className="flex gap-2 p-2 border rounded">
+                        <Input
+                          placeholder="Key"
+                          value={state.key}
+                          onChange={(e) => {
+                            const newFlowState = [...(configuration.flowState || [])];
+                            newFlowState[index] = { ...newFlowState[index], key: e.target.value };
+                            onChange({ ...configuration, flowState: newFlowState });
+                          }}
+                        />
+                        <Input
+                          placeholder="Value"
+                          value={state.value}
+                          onChange={(e) => {
+                            const newFlowState = [...(configuration.flowState || [])];
+                            newFlowState[index] = { ...newFlowState[index], value: e.target.value };
+                            onChange({ ...configuration, flowState: newFlowState });
+                          }}
+                        />
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            const newFlowState = (configuration.flowState || []).filter((_: any, i: number) => i !== index);
+                            onChange({ ...configuration, flowState: newFlowState });
+                          }}
+                        >
+                          ×
+                        </Button>
+                      </div>
+                    ))}
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        const newFlowState = [...(configuration.flowState || []), { key: '', value: '' }];
+                        onChange({ ...configuration, flowState: newFlowState });
+                      }}
+                      className="w-full"
+                    >
+                      + Add Flow State
+                    </Button>
+                  </div>
+                </div>
+
+                <FormField
+                  control={form.control}
+                  name="persistState"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                      <div className="space-y-0.5">
+                        <FormLabel className="text-base">Persist State</FormLabel>
+                        <FormDescription>
+                          Save state across workflow sessions
+                        </FormDescription>
+                      </div>
+                      <FormControl>
+                        <Switch
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              </CardContent>
+            </Card>
+          </div>
+        );
+
       case 'agent-ai-model':
         return (
           <div className="space-y-6">

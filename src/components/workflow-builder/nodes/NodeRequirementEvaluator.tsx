@@ -3,7 +3,7 @@ import { Node } from '@xyflow/react';
 export interface NodeRequirement {
   id: string;
   type: 'required' | 'optional' | 'conditional';
-  category: 'credentials' | 'input_schema' | 'functions' | 'variables' | 'advanced' | 'flow_state' | 'javascript' | 'scenarios';
+  category: 'credentials' | 'input_schema' | 'functions' | 'variables' | 'advanced' | 'flow_state' | 'javascript' | 'scenarios' | 'basic';
   field: string;
   label: string;
   description: string;
@@ -615,7 +615,50 @@ export const NodeRequirementEvaluator = {
         { id: 'fields', type: 'optional', category: 'input_schema', field: 'fields', label: 'Fields Schema', description: 'Schema for inputs to collect' },
         { id: 'deadline_minutes', type: 'optional', category: 'advanced', field: 'deadline_minutes', label: 'Deadline (minutes)', description: 'Optional timeout for manual step' }
       ],
-      'start': [ ],
+      'start': [
+        { 
+          id: 'input_type', 
+          type: 'required', 
+          category: 'basic', 
+          field: 'input_type', 
+          label: 'Input Type', 
+          description: 'Type of input for this workflow', 
+          defaultValue: 'chat' 
+        },
+        { 
+          id: 'ephemeral_memory', 
+          type: 'optional', 
+          category: 'basic', 
+          field: 'ephemeral_memory', 
+          label: 'Ephemeral Memory', 
+          description: 'Enable temporary memory for session' 
+        },
+        { 
+          id: 'flow_state', 
+          type: 'optional', 
+          category: 'flow_state', 
+          field: 'flow_state', 
+          label: 'Flow State', 
+          description: 'Key-value pairs for workflow state management' 
+        },
+        { 
+          id: 'persist_state', 
+          type: 'optional', 
+          category: 'basic', 
+          field: 'persist_state', 
+          label: 'Persist State', 
+          description: 'Save state across workflow sessions' 
+        },
+        { 
+          id: 'trigger_type', 
+          type: 'optional', 
+          category: 'advanced', 
+          field: 'trigger_type', 
+          label: 'Trigger Type', 
+          description: 'How this workflow is triggered', 
+          defaultValue: 'manual' 
+        }
+      ],
 
       // Data & Integration nodes
       'http': [

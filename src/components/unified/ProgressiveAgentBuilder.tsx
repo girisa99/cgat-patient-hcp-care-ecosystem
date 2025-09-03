@@ -43,6 +43,14 @@ export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = (
         // Connect to unified AI assist system
         unified_ai_generated: true,
         generation_source: 'unified_ai_assist',
+        // Add start node configuration
+        ...(node.type === 'start' && {
+          input_type: node.data?.input_type || 'chat',
+          ephemeral_memory: node.data?.ephemeral_memory || false,
+          flow_state: node.data?.flow_state || [],
+          persist_state: node.data?.persist_state || false,
+          trigger_type: node.data?.trigger_type || 'manual'
+        }),
         // Add ecosystem-specific properties based on node type
         ...(node.type === 'agent' && {
           aiProvider: node.data?.aiProvider || 'openai',

@@ -60,7 +60,7 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
         }
       } else {
         // Default to credentials tab if available, otherwise first available tab
-        const availableCategories = ['credentials', 'input_schema', 'functions', 'variables', 'advanced', 'flow_state', 'javascript', 'scenarios']
+        const availableCategories = ['basic', 'credentials', 'input_schema', 'functions', 'variables', 'advanced', 'flow_state', 'javascript', 'scenarios']
           .filter(cat => evaluation.requirements.some(req => req.category === cat));
         const defaultTab = availableCategories.includes('credentials') ? 'credentials' : availableCategories[0];
         if (defaultTab) {
@@ -154,7 +154,8 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
       functions: Code,
       variables: Zap,
       advanced: Settings,
-      flow_state: Zap,
+      flow_state: Settings,
+      basic: Settings,
       javascript: Code,
       scenarios: AlertCircle
     };
@@ -265,6 +266,116 @@ const [revealedKey, setRevealedKey] = useState<string | null>(null);
               rows={8}
             />
             <p className="text-sm text-muted-foreground">{req.description}</p>
+          </div>
+        );
+
+      case 'input_type':
+        return (
+          <div key={req.id} className="space-y-2">
+            <Label className={isMissing ? 'text-red-500' : ''}>{req.label}</Label>
+            {isRequired && <Badge variant="secondary" className="text-xs">Required</Badge>}
+            <Select value={currentValue || ''} onValueChange={(value) => updateConfig(req.field, value)}>
+              <SelectTrigger className={isMissing ? 'border-red-500' : ''}>
+                <SelectValue placeholder="Select input type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="chat">
+                  <div className="space-y-1">
+                    <div className="font-medium">Chat Input</div>
+                    <div className="text-sm text-muted-foreground">Start the conversation with chat input</div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="form">
+                  <div className="space-y-1">
+                    <div className="font-medium">Form Input</div>
+                    <div className="text-sm text-muted-foreground">Start the workflow with form inputs</div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="api">
+                  <div className="space-y-1">
+                    <div className="font-medium">API Input</div>
+                    <div className="text-sm text-muted-foreground">Start with API endpoint trigger</div>
+                  </div>
+                </SelectItem>
+                <SelectItem value="webhook">
+                  <div className="space-y-1">
+                    <div className="font-medium">Webhook Input</div>
+                    <div className="text-sm text-muted-foreground">Start with webhook trigger</div>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">{req.description}</p>
+          </div>
+        );
+
+      case 'flow_state':
+        const flowStateArray = Array.isArray(currentValue) ? currentValue : [];
+        return (
+          <div key={req.id} className="space-y-2">
+            <Label className={isMissing ? 'text-red-500' : ''}>{req.label}</Label>
+            {isRequired && <Badge variant="secondary" className="text-xs">Required</Badge>}
+            <div className="space-y-2">
+              {flowStateArray.map((state: any, index: number) => (
+                <div key={index} className="flex gap-2 p-2 border rounded">
+                  <Input
+                    placeholder="Key *"
+                    value={state.key || ''}
+                    onChange={(e) => {
+                      const newFlowState = [...flowStateArray];
+                      newFlowState[index] = { ...newFlowState[index], key: e.target.value };
+                      updateConfig(req.field, newFlowState);
+                    }}
+                  />
+                  <Input
+                    placeholder="Value"
+                    value={state.value || ''}
+                    onChange={(e) => {
+                      const newFlowState = [...flowStateArray];
+                      newFlowState[index] = { ...newFlowState[index], value: e.target.value };
+                      updateConfig(req.field, newFlowState);
+                    }}
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      const newFlowState = flowStateArray.filter((_: any, i: number) => i !== index);
+                      updateConfig(req.field, newFlowState);
+                    }}
+                  >
+                    ×
+                  </Button>
+                </div>
+              ))}
+              <Button
+                variant="outline"
+                onClick={() => {
+                  const newFlowState = [...flowStateArray, { key: '', value: '' }];
+                  updateConfig(req.field, newFlowState);
+                }}
+                className="w-full"
+              >
+                + Add Flow State
+              </Button>
+            </div>
+            <p className="text-sm text-muted-foreground">{req.description}</p>
+          </div>
+        );
+
+      case 'ephemeral_memory':
+      case 'persist_state':
+        return (
+          <div key={req.id} className="flex flex-row items-center justify-between rounded-lg border p-4">
+            <div className="space-y-0.5">
+              <Label className={`text-base ${isMissing ? 'text-red-500' : ''}`}>{req.label}</Label>
+              {isRequired && <Badge variant="secondary" className="text-xs">Required</Badge>}
+              <p className="text-sm text-muted-foreground">{req.description}</p>
+            </div>
+            <Switch
+              checked={Boolean(currentValue)}
+              onCheckedChange={(checked) => updateConfig(req.field, checked)}
+            />
           </div>
         );
 
