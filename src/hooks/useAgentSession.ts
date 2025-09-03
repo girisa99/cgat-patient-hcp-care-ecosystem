@@ -195,8 +195,8 @@ export const useAgentSession = (sessionId?: string) => {
     },
   });
 
-  // Auto-save functionality
-  const autoSave = useMutation({
+  // Manual save only - no auto-save to prevent excessive saves
+  const manualSave = useMutation({
     mutationFn: async ({ sessionId, updates }: { sessionId: string; updates: AgentSessionUpdate }) => {
       const { data, error } = await supabase
         .from('agent_sessions')
@@ -206,32 +206,19 @@ export const useAgentSession = (sessionId?: string) => {
          .maybeSingle();
 
       if (error) {
-        // If it's a primary key constraint violation, it's likely a race condition
-        if (error.code === '23505' && error.message.includes('agent_sessions_pkey')) {
-          console.log('🔄 Ignoring primary key constraint violation (race condition)');
-          // Return the existing data by fetching it
-          const { data: existingData, error: fetchError } = await supabase
-            .from('agent_sessions')
-            .select()
-            .eq('id', sessionId)
-            .maybeSingle();
-          
-          if (fetchError || !existingData) {
-            throw new Error(`Failed to auto-save session: ${error.message}`);
-          }
-          return existingData as AgentSession;
-        }
-        
-        throw new Error(`Failed to auto-save session: ${error.message}`);
+        throw new Error(`Failed to save session: ${error.message}`);
       }
 
-      if (!data) { throw new Error('Failed to auto-save session: no data returned'); }
+      if (!data) { throw new Error('Failed to save session: no data returned'); }
 
       return data as AgentSession;
     },
     onSuccess: (data) => {
       setCurrentSession(data);
-      // Don't show toast for auto-save to avoid spam
+      toast({
+        title: "Saved",
+        description: "Agent session saved successfully.",
+      });
     },
   });
 
@@ -291,6 +278,7 @@ export const useAgentSession = (sessionId?: string) => {
         categories: sessionToUse.basic_info?.categories || [],
         topics: sessionToUse.basic_info?.topics || [],
         business_units: sessionToUse.basic_info?.business_units || [],
+        agent_type: sessionToUse.basic_info?.agent_type || 'single',
         template_id: sessionToUse.template_id,
         configuration: {
           canvas: sessionToUse.canvas,
@@ -344,7 +332,7 @@ export const useAgentSession = (sessionId?: string) => {
     isLoading,
     createSession,
     updateSession,
-    autoSave,
+    manualSave,
     deleteSession,
     deployAgent,
     checkDuplicateName,
