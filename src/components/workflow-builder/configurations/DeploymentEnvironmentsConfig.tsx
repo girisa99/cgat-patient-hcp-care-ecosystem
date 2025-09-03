@@ -842,3 +842,5 @@ export const DeploymentEnvironmentsConfig: React.FC<DeploymentEnvironmentsConfig
       return renderDevelopmentEnvironment(); // Default fallback
   }
 };
+
+export default DeploymentEnvironmentsConfig;
