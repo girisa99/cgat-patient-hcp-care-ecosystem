@@ -28,23 +28,76 @@ export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = (
     console.log('Generated agent:', agentData);
     
         // Enhance nodes with comprehensive configuration from category system
-        const enhancedNodes = (agentData.nodes || []).map((node: any) => ({
-          ...node,
-          data: {
-            ...node.data,
-            // Preserve category system integration
-            type_key: node.data?.type_key || node.type,
-            category: node.data?.category,
-            personalized: node.data?.personalized || true,
-            // Apply comprehensive configuration structure
-            configuration: {
-              // Basic settings
-              name: node.data?.name || node.data?.label,
-              description: node.data?.description,
-              enabled: true,
+        const enhancedNodes = (agentData.nodes || []).map((node: any) => {
+          const baseConfiguration = {
+            // Basic settings for all nodes
+            name: node.data?.name || node.data?.label,
+            description: node.data?.description,
+            enabled: true,
+            
+            // Preserve existing configuration
+            ...node.data?.configuration
+          };
+
+          // Node-specific configuration based on type
+          let specificConfiguration = {};
+          
+          switch (node.type) {
+            case 'condition':
+              specificConfiguration = {
+                model: node.data?.model || 'ChatAnthropic',
+                instructions: node.data?.instructions || 'Determine the appropriate condition based on input',
+                input: node.data?.input || '{{question}}',
+                scenarios: node.data?.scenarios || [{ text: 'Default scenario' }],
+                overrideSystemPrompt: false
+              };
+              break;
               
-              // AI Model settings if applicable
-              ...(node.type === 'agent' && {
+            case 'customFunction':
+              specificConfiguration = {
+                inputVariables: node.data?.inputVariables || [{ name: 'input', value: '{{input}}' }],
+                javascriptFunction: node.data?.javascriptFunction || '// Your JavaScript code here\nreturn { result: input };',
+                updateFlowState: node.data?.updateFlowState || []
+              };
+              break;
+              
+            case 'executeFlow':
+              specificConfiguration = {
+                connectCredential: node.data?.connectCredential || 'default',
+                selectFlow: node.data?.selectFlow || '',
+                input: node.data?.input || '{{input}}',
+                baseUrl: node.data?.baseUrl || 'http://localhost:3000',
+                returnResponseAs: node.data?.returnResponseAs || 'json',
+                updateFlowState: node.data?.updateFlowState || []
+              };
+              break;
+              
+            case 'directReply':
+              specificConfiguration = {
+                message: node.data?.message || 'Default reply message'
+              };
+              break;
+              
+            case 'humanInput':
+              specificConfiguration = {
+                descriptionType: node.data?.descriptionType || 'fixed'
+              };
+              break;
+              
+            case 'http':
+              specificConfiguration = {
+                httpCredential: node.data?.httpCredential || '',
+                method: node.data?.method || 'GET',
+                url: node.data?.url || '',
+                headers: node.data?.headers || [],
+                queryParams: node.data?.queryParams || [],
+                bodyType: node.data?.bodyType || 'JSON',
+                responseType: node.data?.responseType || 'JSON'
+              };
+              break;
+              
+            case 'agent':
+              specificConfiguration = {
                 provider: node.data?.provider || 'ChatAnthropic',
                 model: node.data?.model || 'claude-sonnet-4-0',
                 temperature: node.data?.temperature || 0.7,
@@ -53,25 +106,46 @@ export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = (
                 tools: node.data?.tools || [],
                 enableMemory: true,
                 memoryType: 'All Messages'
-              }),
+              };
+              break;
               
-              // Start node settings
-              ...(node.type === 'start' && {
+            case 'start':
+              specificConfiguration = {
                 inputType: node.data?.inputType || 'chat',
                 ephemeralMemory: node.data?.ephemeralMemory || false,
                 flowState: node.data?.flowState || [],
                 persistState: node.data?.persistState || false,
                 triggerType: node.data?.triggerType || 'manual'
-              }),
+              };
+              break;
               
-              // Apply existing configuration
-              ...node.data?.configuration
-            },
-            // Connect to unified AI assist system
-            unified_ai_generated: true,
-            generation_source: 'unified_ai_assist'
+            default:
+              // Generic configuration for other node types
+              specificConfiguration = {
+                logicType: 'condition',
+                conditions: []
+              };
           }
-        }));
+
+          return {
+            ...node,
+            data: {
+              ...node.data,
+              // Preserve category system integration
+              type_key: node.data?.type_key || node.type,
+              category: node.data?.category,
+              personalized: node.data?.personalized || true,
+              // Apply comprehensive configuration structure
+              configuration: {
+                ...baseConfiguration,
+                ...specificConfiguration
+              },
+              // Connect to unified AI assist system
+              unified_ai_generated: true,
+              generation_source: 'unified_ai_assist'
+            }
+          };
+        });
 
     setGeneratedAgent({
       ...agentData,

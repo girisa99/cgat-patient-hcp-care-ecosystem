@@ -510,149 +510,753 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <FormField
-            control={form.control}
-            name="logicType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Logic Type</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select logic type" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="condition">Conditional Logic</SelectItem>
-                    <SelectItem value="loop">Loop Logic</SelectItem>
-                    <SelectItem value="branch">Branch Logic</SelectItem>
-                    <SelectItem value="switch">Switch Logic</SelectItem>
-                  </SelectContent>
-                </Select>
-              </FormItem>
-            )}
-          />
-
-          {configuration.logicType === 'condition' && (
-            <div className="space-y-4 p-4 border rounded-lg">
-              <h4 className="font-medium">Conditional Rules</h4>
-              {(configuration.conditions || []).map((condition: any, index: number) => (
-                <div key={index} className="space-y-2 p-3 border rounded">
-                  <div className="flex items-center justify-between">
-                    <Badge variant="outline">Condition {index + 1}</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => {
-                        const newConditions = (configuration.conditions || []).filter((_: any, i: number) => i !== index);
-                        onChange({ ...configuration, conditions: newConditions });
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2">
-                    <Input
-                      placeholder="Field"
-                      value={condition.field || ''}
-                      onChange={(e) => {
-                        const newConditions = [...(configuration.conditions || [])];
-                        newConditions[index] = { ...newConditions[index], field: e.target.value };
-                        onChange({ ...configuration, conditions: newConditions });
-                      }}
-                    />
-                    <Select
-                      value={condition.operator || ''}
-                      onValueChange={(value) => {
-                        const newConditions = [...(configuration.conditions || [])];
-                        newConditions[index] = { ...newConditions[index], operator: value };
-                        onChange({ ...configuration, conditions: newConditions });
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Operator" />
-                      </SelectTrigger>
+          
+          {/* Condition Agent Configuration */}
+          {nodeType === 'condition' && (
+            <>
+              <FormField
+                control={form.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Model *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select AI model" />
+                        </SelectTrigger>
+                      </FormControl>
                       <SelectContent>
-                        <SelectItem value="equals">Equals</SelectItem>
-                        <SelectItem value="not_equals">Not Equals</SelectItem>
-                        <SelectItem value="contains">Contains</SelectItem>
-                        <SelectItem value="greater_than">Greater Than</SelectItem>
-                        <SelectItem value="less_than">Less Than</SelectItem>
+                        <SelectItem value="ChatAnthropic">ChatAnthropic</SelectItem>
+                        <SelectItem value="ChatOpenAI">ChatOpenAI</SelectItem>
+                        <SelectItem value="ChatGoogleGenerativeAI">ChatGoogleGenerativeAI</SelectItem>
                       </SelectContent>
                     </Select>
-                    <Input
-                      placeholder="Value"
-                      value={condition.value || ''}
-                      onChange={(e) => {
-                        const newConditions = [...(configuration.conditions || [])];
-                        newConditions[index] = { ...newConditions[index], value: e.target.value };
-                        onChange({ ...configuration, conditions: newConditions });
-                      }}
-                    />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="instructions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Instructions *</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Determine if the user is interested in learning about AI"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="input"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Input *</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="{{question}}"
+                        className="min-h-[60px]"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4">
+                <FormLabel>Scenarios *</FormLabel>
+                {(configuration.scenarios || []).map((scenario: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline">Scenario {index + 1}</Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newScenarios = (configuration.scenarios || []).filter((_: any, i: number) => i !== index);
+                          onChange({ ...configuration, scenarios: newScenarios });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div>
+                      <FormLabel>Scenario *</FormLabel>
+                      <Input
+                        placeholder="User is asking for a pizza"
+                        value={scenario.text || ''}
+                        onChange={(e) => {
+                          const newScenarios = [...(configuration.scenarios || [])];
+                          newScenarios[index] = { ...newScenarios[index], text: e.target.value };
+                          onChange({ ...configuration, scenarios: newScenarios });
+                        }}
+                      />
+                    </div>
                   </div>
-                </div>
-              ))}
-              
-              <Button
-                variant="outline"
-                onClick={() => {
-                  const newConditions = [...(configuration.conditions || []), { field: '', operator: '', value: '' }];
-                  onChange({ ...configuration, conditions: newConditions });
-                }}
-                className="w-full"
-              >
-                <Plus className="h-4 w-4 mr-2" />
-                Add Condition
-              </Button>
-            </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newScenarios = [...(configuration.scenarios || []), { text: '' }];
+                    onChange({ ...configuration, scenarios: newScenarios });
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Scenarios
+                </Button>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="overrideSystemPrompt"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                    <div className="space-y-0.5">
+                      <FormLabel className="text-base">Override System Prompt</FormLabel>
+                      <FormDescription>
+                        Override the default system prompt
+                      </FormDescription>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </>
           )}
 
-          {configuration.logicType === 'loop' && (
-            <div className="space-y-4 p-4 border rounded-lg">
-              <h4 className="font-medium">Loop Settings</h4>
-              <div className="grid grid-cols-2 gap-4">
-                <FormField
-                  control={form.control}
-                  name="loopType"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Loop Type</FormLabel>
+          {/* Custom Function Configuration */}
+          {nodeType === 'customFunction' && (
+            <>
+              <div className="space-y-4">
+                <FormLabel>Input Variables</FormLabel>
+                {(configuration.inputVariables || []).map((variable: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline">Variable {index + 1}</Badge>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const newVariables = (configuration.inputVariables || []).filter((_: any, i: number) => i !== index);
+                          onChange({ ...configuration, inputVariables: newVariables });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <FormLabel>Variable Name *</FormLabel>
+                        <Input
+                          placeholder="variableName"
+                          value={variable.name || ''}
+                          onChange={(e) => {
+                            const newVariables = [...(configuration.inputVariables || [])];
+                            newVariables[index] = { ...newVariables[index], name: e.target.value };
+                            onChange({ ...configuration, inputVariables: newVariables });
+                          }}
+                        />
+                      </div>
+                      <div>
+                        <FormLabel>Variable Value *</FormLabel>
+                        <Input
+                          placeholder="{{value}}"
+                          value={variable.value || ''}
+                          onChange={(e) => {
+                            const newVariables = [...(configuration.inputVariables || [])];
+                            newVariables[index] = { ...newVariables[index], value: e.target.value };
+                            onChange({ ...configuration, inputVariables: newVariables });
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newVariables = [...(configuration.inputVariables || []), { name: '', value: '' }];
+                    onChange({ ...configuration, inputVariables: newVariables });
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Input Variables
+                </Button>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="javascriptFunction"
+                render={({ field }) => (
+                  <FormItem>
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Javascript Function *</FormLabel>
+                      <Button variant="outline" size="sm">
+                        See Example
+                      </Button>
+                    </div>
+                    <FormControl>
+                      <Textarea
+                        placeholder="// Your JavaScript code here"
+                        className="min-h-[200px] font-mono"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4">
+                <FormLabel>Update Flow State</FormLabel>
+                {(configuration.updateFlowState || []).map((state: any, index: number) => (
+                  <div key={index} className="grid grid-cols-2 gap-3 p-3 border rounded">
+                    <div>
+                      <FormLabel>Key *</FormLabel>
+                      <Input
+                        placeholder="key"
+                        value={state.key || ''}
+                        onChange={(e) => {
+                          const newStates = [...(configuration.updateFlowState || [])];
+                          newStates[index] = { ...newStates[index], key: e.target.value };
+                          onChange({ ...configuration, updateFlowState: newStates });
+                        }}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <FormLabel>Value *</FormLabel>
+                        <Input
+                          placeholder="{{value}}"
+                          value={state.value || ''}
+                          onChange={(e) => {
+                            const newStates = [...(configuration.updateFlowState || [])];
+                            newStates[index] = { ...newStates[index], value: e.target.value };
+                            onChange({ ...configuration, updateFlowState: newStates });
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-6"
+                        onClick={() => {
+                          const newStates = (configuration.updateFlowState || []).filter((_: any, i: number) => i !== index);
+                          onChange({ ...configuration, updateFlowState: newStates });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newStates = [...(configuration.updateFlowState || []), { key: '', value: '' }];
+                    onChange({ ...configuration, updateFlowState: newStates });
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Update Flow State
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Execute Flow Configuration */}
+          {nodeType === 'executeFlow' && (
+            <>
+              <FormField
+                control={form.control}
+                name="connectCredential"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Connect Credential</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select credential" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="default">Default</SelectItem>
+                        <SelectItem value="custom">Custom</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="selectFlow"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Select Flow *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select flow to execute" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="flow1">Flow 1</SelectItem>
+                        <SelectItem value="flow2">Flow 2</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="input"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Input *</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter input data"
+                        className="min-h-[80px]"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <Button variant="outline" className="w-full">
+                Override Config
+              </Button>
+
+              <FormField
+                control={form.control}
+                name="baseUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Base URL</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="http://localhost:3000"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="returnResponseAs"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Return Response As *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select response format" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="json">JSON</SelectItem>
+                        <SelectItem value="text">Text</SelectItem>
+                        <SelectItem value="raw">Raw</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4">
+                <FormLabel>Update Flow State</FormLabel>
+                {(configuration.updateFlowState || []).map((state: any, index: number) => (
+                  <div key={index} className="grid grid-cols-2 gap-3 p-3 border rounded">
+                    <div>
+                      <FormLabel>Key *</FormLabel>
+                      <Input
+                        placeholder="key"
+                        value={state.key || ''}
+                        onChange={(e) => {
+                          const newStates = [...(configuration.updateFlowState || [])];
+                          newStates[index] = { ...newStates[index], key: e.target.value };
+                          onChange({ ...configuration, updateFlowState: newStates });
+                        }}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <FormLabel>Value *</FormLabel>
+                        <Input
+                          placeholder="{{value}}"
+                          value={state.value || ''}
+                          onChange={(e) => {
+                            const newStates = [...(configuration.updateFlowState || [])];
+                            newStates[index] = { ...newStates[index], value: e.target.value };
+                            onChange({ ...configuration, updateFlowState: newStates });
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-6"
+                        onClick={() => {
+                          const newStates = (configuration.updateFlowState || []).filter((_: any, i: number) => i !== index);
+                          onChange({ ...configuration, updateFlowState: newStates });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newStates = [...(configuration.updateFlowState || []), { key: '', value: '' }];
+                    onChange({ ...configuration, updateFlowState: newStates });
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Update Flow State
+                </Button>
+              </div>
+            </>
+          )}
+
+          {/* Direct Reply Configuration */}
+          {nodeType === 'directReply' && (
+            <FormField
+              control={form.control}
+              name="message"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Message *</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Enter your direct reply message"
+                      className="min-h-[100px]"
+                      {...field}
+                    />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* Human Input Configuration */}
+          {nodeType === 'humanInput' && (
+            <FormField
+              control={form.control}
+              name="descriptionType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Description Type *</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select description type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="fixed">
+                        <div className="space-y-1">
+                          <div className="font-medium">Fixed</div>
+                          <div className="text-sm text-muted-foreground">Specify a fixed description</div>
+                        </div>
+                      </SelectItem>
+                      <SelectItem value="dynamic">
+                        <div className="space-y-1">
+                          <div className="font-medium">Dynamic</div>
+                          <div className="text-sm text-muted-foreground">Use LLM to generate a description</div>
+                        </div>
+                      </SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
+          )}
+
+          {/* HTTP Configuration */}
+          {nodeType === 'http' && (
+            <>
+              <FormField
+                control={form.control}
+                name="httpCredential"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>HTTP Credential</FormLabel>
+                    <div className="flex gap-2">
                       <Select onValueChange={field.onChange} defaultValue={field.value}>
                         <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select type" />
+                          <SelectTrigger className="flex-1">
+                            <SelectValue placeholder="Select credential" />
                           </SelectTrigger>
                         </FormControl>
                         <SelectContent>
-                          <SelectItem value="for">For Loop</SelectItem>
-                          <SelectItem value="while">While Loop</SelectItem>
-                          <SelectItem value="foreach">For Each</SelectItem>
+                          <SelectItem value="basic">HTTP Basic Auth</SelectItem>
+                          <SelectItem value="bearer">HTTP Bearer Token</SelectItem>
+                          <SelectItem value="apikey">HTTP Api Key</SelectItem>
                         </SelectContent>
                       </Select>
-                    </FormItem>
-                  )}
-                />
+                      <Button variant="outline" size="sm">
+                        + Add
+                      </Button>
+                    </div>
+                  </FormItem>
+                )}
+              />
 
-                <FormField
-                  control={form.control}
-                  name="maxIterations"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Max Iterations</FormLabel>
+              <FormField
+                control={form.control}
+                name="method"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Method *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
                       <FormControl>
-                        <Input
-                          type="number"
-                          placeholder="100"
-                          {...field}
-                          onChange={(e) => field.onChange(parseInt(e.target.value))}
-                        />
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select HTTP method" />
+                        </SelectTrigger>
                       </FormControl>
-                    </FormItem>
-                  )}
-                />
+                      <SelectContent>
+                        <SelectItem value="GET">GET</SelectItem>
+                        <SelectItem value="POST">POST</SelectItem>
+                        <SelectItem value="PUT">PUT</SelectItem>
+                        <SelectItem value="DELETE">DELETE</SelectItem>
+                        <SelectItem value="PATCH">PATCH</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="url"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>URL *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="https://api.example.com/endpoint"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <div className="space-y-4">
+                <FormLabel>Headers</FormLabel>
+                {(configuration.headers || []).map((header: any, index: number) => (
+                  <div key={index} className="grid grid-cols-2 gap-3 p-3 border rounded">
+                    <div>
+                      <FormLabel>Key *</FormLabel>
+                      <Input
+                        placeholder="Content-Type"
+                        value={header.key || ''}
+                        onChange={(e) => {
+                          const newHeaders = [...(configuration.headers || [])];
+                          newHeaders[index] = { ...newHeaders[index], key: e.target.value };
+                          onChange({ ...configuration, headers: newHeaders });
+                        }}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <FormLabel>Value *</FormLabel>
+                        <Input
+                          placeholder="application/json"
+                          value={header.value || ''}
+                          onChange={(e) => {
+                            const newHeaders = [...(configuration.headers || [])];
+                            newHeaders[index] = { ...newHeaders[index], value: e.target.value };
+                            onChange({ ...configuration, headers: newHeaders });
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-6"
+                        onClick={() => {
+                          const newHeaders = (configuration.headers || []).filter((_: any, i: number) => i !== index);
+                          onChange({ ...configuration, headers: newHeaders });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newHeaders = [...(configuration.headers || []), { key: '', value: '' }];
+                    onChange({ ...configuration, headers: newHeaders });
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Headers
+                </Button>
               </div>
-            </div>
+
+              <div className="space-y-4">
+                <FormLabel>Query Params</FormLabel>
+                {(configuration.queryParams || []).map((param: any, index: number) => (
+                  <div key={index} className="grid grid-cols-2 gap-3 p-3 border rounded">
+                    <div>
+                      <FormLabel>Key *</FormLabel>
+                      <Input
+                        placeholder="param"
+                        value={param.key || ''}
+                        onChange={(e) => {
+                          const newParams = [...(configuration.queryParams || [])];
+                          newParams[index] = { ...newParams[index], key: e.target.value };
+                          onChange({ ...configuration, queryParams: newParams });
+                        }}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <div className="flex-1">
+                        <FormLabel>Value *</FormLabel>
+                        <Input
+                          placeholder="value"
+                          value={param.value || ''}
+                          onChange={(e) => {
+                            const newParams = [...(configuration.queryParams || [])];
+                            newParams[index] = { ...newParams[index], value: e.target.value };
+                            onChange({ ...configuration, queryParams: newParams });
+                          }}
+                        />
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="mt-6"
+                        onClick={() => {
+                          const newParams = (configuration.queryParams || []).filter((_: any, i: number) => i !== index);
+                          onChange({ ...configuration, queryParams: newParams });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+                
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const newParams = [...(configuration.queryParams || []), { key: '', value: '' }];
+                    onChange({ ...configuration, queryParams: newParams });
+                  }}
+                  className="w-full"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Query Params
+                </Button>
+              </div>
+
+              <FormField
+                control={form.control}
+                name="bodyType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Body Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select body type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="JSON">JSON</SelectItem>
+                        <SelectItem value="Text">Text</SelectItem>
+                        <SelectItem value="Array Buffer">Array Buffer</SelectItem>
+                        <SelectItem value="Raw (Base64)">Raw (Base64)</SelectItem>
+                        <SelectItem value="x-www-form-urlencoded">x-www-form-urlencoded</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="responseType"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Response Type</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select response type" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="JSON">JSON</SelectItem>
+                        <SelectItem value="Text">Text</SelectItem>
+                        <SelectItem value="Array Buffer">Array Buffer</SelectItem>
+                        <SelectItem value="Raw (Base64)">Raw (Base64)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </>
+          )}
+
+          {/* Generic logic type for other nodes */}
+          {!['condition', 'customFunction', 'executeFlow', 'directReply', 'humanInput', 'http'].includes(nodeType) && (
+            <FormField
+              control={form.control}
+              name="logicType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Logic Type</FormLabel>
+                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select logic type" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="condition">Conditional Logic</SelectItem>
+                      <SelectItem value="loop">Loop Logic</SelectItem>
+                      <SelectItem value="branch">Branch Logic</SelectItem>
+                      <SelectItem value="switch">Switch Logic</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormItem>
+              )}
+            />
           )}
         </CardContent>
       </Card>
@@ -836,7 +1440,7 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
     </div>
   );
 
-  // Main render logic based on category
+  // Main render logic based on category and node type
   switch (category) {
     case 'AI Agents':
     case 'ai-agents':
@@ -852,6 +1456,12 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
     
     case 'Logic & Flow':
     case 'logic-flow':
+    case 'condition':
+    case 'customFunction':
+    case 'executeFlow':
+    case 'directReply':
+    case 'humanInput':
+    case 'http':
       return renderLogicFlowConfiguration();
     
     case 'Analytics':
@@ -863,6 +1473,11 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
       return renderHumanHandoffConfiguration();
     
     default:
+      // Check for specific node types that need custom configuration
+      if (['condition', 'customFunction', 'executeFlow', 'directReply', 'humanInput', 'http'].includes(nodeType)) {
+        return renderLogicFlowConfiguration();
+      }
+      
       return (
         <div className="text-center py-8">
           <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
