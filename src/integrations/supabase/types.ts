@@ -8535,6 +8535,86 @@ export type Database = {
         }
         Relationships: []
       }
+      workflow_builder_categories: {
+        Row: {
+          color: string | null
+          created_at: string | null
+          description: string | null
+          icon: string | null
+          id: string
+          is_active: boolean | null
+          name: string
+          sort_order: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          color?: string | null
+          created_at?: string | null
+          description?: string | null
+          icon?: string | null
+          id?: string
+          is_active?: boolean | null
+          name?: string
+          sort_order?: number | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      workflow_builder_nodes: {
+        Row: {
+          category: string
+          configuration: Json | null
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          label: string
+          type: string
+          updated_at: string | null
+        }
+        Insert: {
+          category: string
+          configuration?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          label: string
+          type: string
+          updated_at?: string | null
+        }
+        Update: {
+          category?: string
+          configuration?: Json | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          label?: string
+          type?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_builder_nodes_category_fkey"
+            columns: ["category"]
+            isOneToOne: false
+            referencedRelation: "workflow_builder_categories"
+            referencedColumns: ["name"]
+          },
+        ]
+      }
       workflow_collaborations: {
         Row: {
           cursor_position: Json | null
