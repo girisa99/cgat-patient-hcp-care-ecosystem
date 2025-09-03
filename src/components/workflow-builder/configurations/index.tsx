@@ -1,8 +1,13 @@
-// Configuration Components Index
+// Configuration Components Index - All 78 Node Configurations
 export { DocumentLoadersConfig } from './DocumentLoadersConfig';
 export { GenAIConfig } from './GenAIConfig';
 export { VectorStoresConfig } from './VectorStoresConfig';
 export { HealthcareComplianceConfig } from './HealthcareComplianceConfig';
-
-// Import all other configuration components as they're created
-// This will be the central import point for all category configurations
+export { ToolsUtilitiesConfig } from './ToolsUtilitiesConfig';
+export { CodeDeploymentConfig } from './CodeDeploymentConfig';
+export { VoiceConfig } from './VoiceConfig';
+export { ChannelDeploymentConfig } from './ChannelDeploymentConfig';
+export { AgentFlowsConfig } from './AgentFlowsConfig';
+export { HumanLoopConfig } from './HumanLoopConfig';
+export { CacheMemoryConfig } from './CacheMemoryConfig';
+export { DeploymentEnvironmentsConfig } from './DeploymentEnvironmentsConfig';

@@ -19,6 +19,11 @@ import { HealthcareComplianceConfig } from './configurations/HealthcareComplianc
 import { ToolsUtilitiesConfig } from './configurations/ToolsUtilitiesConfig';
 import { CodeDeploymentConfig } from './configurations/CodeDeploymentConfig';
 import { VoiceConfig } from './configurations/VoiceConfig';
+import { ChannelDeploymentConfig } from './configurations/ChannelDeploymentConfig';
+import { AgentFlowsConfig } from './configurations/AgentFlowsConfig';
+import { HumanLoopConfig } from './configurations/HumanLoopConfig';
+import { CacheMemoryConfig } from './configurations/CacheMemoryConfig';
+import { DeploymentEnvironmentsConfig } from './configurations/DeploymentEnvironmentsConfig';
 
 interface CategoryConfigProps {
   category: string;
@@ -2279,6 +2284,27 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
   
   if (['text_to_speech', 'speech_to_text', 'voice_call_channel', 'tts', 'stt', 'voice_channel'].includes(nodeType)) {
     return <VoiceConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  // Additional comprehensive configurations for all remaining 39 nodes
+  if (['email_channel', 'whatsapp_channel', 'sms_messaging', 'instagram_channel', 'web_chat_channel'].includes(nodeType)) {
+    return <ChannelDeploymentConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['start_flow', 'condition_flow', 'iteration_flow', 'human_input_flow', 'agent_flow'].includes(nodeType)) {
+    return <AgentFlowsConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['human_handoff', 'agent_transfer', 'approval_workflow', 'escalation_trigger', 'supervision_mode'].includes(nodeType)) {
+    return <HumanLoopConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['redis_cache', 'conversation_memory', 'conversational_retrieval_qa'].includes(nodeType)) {
+    return <CacheMemoryConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['dev_environment', 'test_environment', 'staging_environment', 'production_environment', 'uat_environment'].includes(nodeType)) {
+    return <DeploymentEnvironmentsConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
   }
 
   // Main render logic based on category and node type
