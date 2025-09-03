@@ -265,6 +265,34 @@ const [showEdgeControls, setShowEdgeControls] = useState(false);
 const [showConfigurator, setShowConfigurator] = useState(false);
 const [configNodeInfo, setConfigNodeInfo] = useState<{ nodeId: string; nodeType: string; category: string; initialConfig?: any } | null>(null);
 
+// Panel management - ensure only one panel is open at a time
+const openConfigPanel = (nodeInfo: { nodeId: string; nodeType: string; category: string; initialConfig?: any }) => {
+  // Close other panels
+  setShowInsights(false);
+  setChatModalOpen(false);
+  // Open config panel
+  setConfigNodeInfo(nodeInfo);
+  setShowConfigurator(true);
+};
+
+const openChatPanel = () => {
+  // Close other panels
+  setShowInsights(false);
+  setShowConfigurator(false);
+  setConfigNodeInfo(null);
+  // Open chat panel
+  setChatModalOpen(true);
+};
+
+const openInsightsPanel = () => {
+  // Close other panels
+  setShowConfigurator(false);
+  setConfigNodeInfo(null);
+  setChatModalOpen(false);
+  // Open insights panel
+  setShowInsights(true);
+};
+
   // References
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
 
@@ -517,7 +545,7 @@ setSelectedNode(newNode as any);
     const node = getNodes().find(n => n.id === nodeId) || null;
     if (node) setSelectedNode(node);
     setChatAssistMode(mode);
-    setChatModalOpen(true);
+    openChatPanel();
   }, [getNodes]);
 
   const handleConfigurationUpdate = useCallback((nodeId: string, config: any) => {
@@ -532,7 +560,7 @@ setSelectedNode(newNode as any);
     const node = getNodes().find(n => n.id === nodeId);
     if (!node) return;
     setSelectedNode(node);
-    setConfigNodeInfo({
+    openConfigPanel({
       nodeId,
       nodeType: String((node.data as any)?.type_key || node.type || 'default'),
       category: String((((node.data as any)?.category && (((node.data as any).category as any).name)) || (node.data as any)?.category || 'general')),
@@ -542,7 +570,6 @@ setSelectedNode(newNode as any);
         variables: (node.data as any)?.variables || [],
       },
     });
-    setShowConfigurator(true);
   }, [getNodes]);
 
   const handleDeleteNode = useCallback((nodeId: string) => {
@@ -731,7 +758,7 @@ useEffect(() => {
     const nodeName = nodeData?.name || nodeData?.label || nodeData?.title || node.type || 'Node';
     const cleanNodeName = String(nodeName).replace(/[^a-zA-Z0-9\s]/g, '').trim() || 'Node';
 
-    setConfigNodeInfo({
+    openConfigPanel({
       nodeId: node.id,
       nodeType: cleanNodeName,
       category: String(((nodeData?.category && (((nodeData.category as any).name) || nodeData.category)) || 'general')),
@@ -741,7 +768,6 @@ useEffect(() => {
         variables: nodeData?.variables || [],
       },
     });
-    setShowConfigurator(true);
     try { window.dispatchEvent(new CustomEvent('inline-config-opened')); } catch {}
   };
 
@@ -1205,7 +1231,12 @@ useEffect(() => {
                   <Activity className="h-4 w-4" />
                   Analytics & Insights
                 </CardTitle>
-                <Button size="sm" variant="ghost" onClick={() => setShowInsights(false)}>
+                <Button size="sm" variant="ghost" onClick={() => {
+                  setShowInsights(false);
+                  setShowConfigurator(false);
+                  setConfigNodeInfo(null);
+                  setChatModalOpen(false);
+                }}>
                   ✕
                 </Button>
               </div>
@@ -1247,7 +1278,12 @@ useEffect(() => {
       {selectedNode && (
         <NodeChatInterface
           isOpen={chatModalOpen}
-          onClose={() => setChatModalOpen(false)}
+          onClose={() => {
+            setChatModalOpen(false);
+            setShowConfigurator(false);
+            setConfigNodeInfo(null);
+            setShowInsights(false);
+          }}
           nodeId={selectedNode.id}
           nodeType={String((selectedNode.data as any)?.type_key || selectedNode.type || 'default')}
           currentConfig={(selectedNode.data as any)?.configuration || {}}
@@ -1302,7 +1338,8 @@ useEffect(() => {
             <Button size="sm" variant="ghost" onClick={() => {
               setShowConfigurator(false);
               setConfigNodeInfo(null);
-              try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
+              setShowInsights(false);
+              setChatModalOpen(false);
             }}>
               ✕
             </Button>
@@ -1328,7 +1365,8 @@ useEffect(() => {
                 onClose={() => {
                   setShowConfigurator(false);
                   setConfigNodeInfo(null);
-                  try { window.dispatchEvent(new CustomEvent('inline-config-closed')); } catch {}
+                  setShowInsights(false);
+                  setChatModalOpen(false);
                 }}
               />
             </Suspense>
