@@ -22,6 +22,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { ChevronDown, ChevronUp, Plus, Trash2, Settings, Bot, Database, Webhook, MessageCircle, Brain, Search, Calculator, Code, FileText, Globe, Clock, Zap, Mail, Sheet, Image, PenTool } from 'lucide-react';
+import { CategorySpecificConfigurations } from './CategorySpecificConfigurations';
+import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 
 interface DynamicConfigurationFormProps {
   nodeType: string;
@@ -37,6 +39,11 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
   onChange,
 }) => {
   const [expandedSections, setExpandedSections] = useState<string[]>(['basic']);
+  const { nodeTypes, getNodeTypeByKey } = useWorkflowNodes();
+  
+  // Get node type information for category-specific configuration
+  const nodeTypeInfo = getNodeTypeByKey(nodeType);
+  const category = nodeTypeInfo?.category?.name || nodeType;
 
   // AI Provider configurations
   const aiProviders = [
@@ -279,191 +286,26 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
   };
 
   const renderFormFields = () => {
-    // Comprehensive configuration that works for all node types
     return (
       <div className="space-y-6">
+        {/* Category-specific configuration */}
+        <CategorySpecificConfigurations
+          category={category}
+          nodeType={nodeType}
+          configuration={configuration}
+          onChange={onChange}
+          form={form}
+        />
+        
+        {/* Universal accordion sections that apply to all nodes */}
         <Accordion type="multiple" value={expandedSections} onValueChange={setExpandedSections}>
           
-          {/* AI Model Configuration */}
-          {(nodeType === 'agent' || configAction === 'ai-model' || configuration.provider) && (
-            <AccordionItem value="model">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <Bot className="h-5 w-5" />
-                  Model Configuration
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <Card>
-                  <CardContent className="space-y-4 pt-4">
-                    <FormField
-                      control={form.control}
-                      name="provider"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>AI Provider *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value || configuration.provider}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select AI provider" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent className="max-h-60">
-                              {aiProviders.map((provider) => (
-                                <SelectItem key={provider.value} value={provider.value}>
-                                  <div className="flex items-center gap-2">
-                                    <provider.icon className="h-4 w-4" />
-                                    {provider.label}
-                                  </div>
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    {configuration.provider && (
-                      <Accordion type="single" collapsible>
-                        <AccordionItem value="provider-params">
-                          <AccordionTrigger className="text-sm">
-                            {configuration.provider} Parameters
-                          </AccordionTrigger>
-                          <AccordionContent className="space-y-4">
-                            <FormField
-                              control={form.control}
-                              name="connectCredential"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Connect Credential *</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select credential" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                      <SelectItem value="default">Default</SelectItem>
-                                      <SelectItem value="custom">Custom</SelectItem>
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="modelName"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Model Name *</FormLabel>
-                                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                      <SelectTrigger>
-                                        <SelectValue placeholder="Select model" />
-                                      </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent className="max-h-60">
-                                      {aiProviders.find(p => p.value === configuration.provider)?.models.map((model) => (
-                                        <SelectItem key={model} value={model}>
-                                          <div className="space-y-1">
-                                            <div className="font-medium">{model}</div>
-                                            <div className="text-xs text-muted-foreground">
-                                              {model.includes('opus') ? 'Most capable model for complex tasks' :
-                                               model.includes('sonnet') ? 'Balanced performance and speed' :
-                                               model.includes('haiku') ? 'Fastest model for simple tasks' :
-                                               'High-performance model'}
-                                            </div>
-                                          </div>
-                                        </SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="extendedThinking"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-sm">Extended Thinking</FormLabel>
-                                    <FormDescription className="text-xs">
-                                      Enable deeper reasoning for complex problems
-                                    </FormDescription>
-                                  </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="budgetTokens"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Budget Tokens</FormLabel>
-                                  <FormControl>
-                                    <Input
-                                      type="number"
-                                      placeholder="1024"
-                                      value={field.value || ''}
-                                      onChange={(e) => field.onChange(parseInt(e.target.value) || 0)}
-                                    />
-                                  </FormControl>
-                                  <FormDescription className="text-xs">
-                                    Maximum tokens to use for this request
-                                  </FormDescription>
-                                </FormItem>
-                              )}
-                            />
-
-                            <FormField
-                              control={form.control}
-                              name="allowImageUploads"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                                  <div className="space-y-0.5">
-                                    <FormLabel className="text-sm">Allow Image Uploads</FormLabel>
-                                    <FormDescription className="text-xs">
-                                      Enable image processing capabilities
-                                    </FormDescription>
-                                  </div>
-                                  <FormControl>
-                                    <Switch
-                                      checked={field.value}
-                                      onCheckedChange={field.onChange}
-                                    />
-                                  </FormControl>
-                                </FormItem>
-                              )}
-                            />
-                          </AccordionContent>
-                        </AccordionItem>
-                      </Accordion>
-                    )}
-                  </CardContent>
-                </Card>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
-          {/* Messages Configuration */}
+          {/* Messages Configuration - Universal */}
           <AccordionItem value="messages">
             <AccordionTrigger className="text-lg font-semibold">
               <div className="flex items-center gap-2">
                 <MessageCircle className="h-5 w-5" />
-                Messages
+                Messages & Communication
               </div>
             </AccordionTrigger>
             <AccordionContent>
@@ -538,12 +380,12 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
             </AccordionContent>
           </AccordionItem>
 
-          {/* Tools Configuration */}
+          {/* Tools Configuration - Universal */}
           <AccordionItem value="tools">
             <AccordionTrigger className="text-lg font-semibold">
               <div className="flex items-center gap-2">
                 <Settings className="h-5 w-5" />
-                Tools
+                Tools & Integrations
               </div>
             </AccordionTrigger>
             <AccordionContent>
@@ -710,7 +552,7 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
             </AccordionContent>
           </AccordionItem>
 
-          {/* Knowledge Configuration */}
+          {/* Knowledge Configuration - Universal */}
           <AccordionItem value="knowledge">
             <AccordionTrigger className="text-lg font-semibold">
               <div className="flex items-center gap-2">
@@ -953,234 +795,7 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
             </AccordionContent>
           </AccordionItem>
 
-          {/* Start Node Configuration */}
-          {(nodeType === 'start' || nodeType === 'Start' || configAction === 'basic') && (
-            <AccordionItem value="start">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-5 w-5" />
-                  Start Configuration
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <Card>
-                  <CardContent className="space-y-4 pt-4">
-                    <FormField
-                      control={form.control}
-                      name="inputType"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Input Type *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select input type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="chat">
-                                <div className="space-y-1">
-                                  <div className="font-medium">Chat Input</div>
-                                  <div className="text-sm text-muted-foreground">Start with chat input</div>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="form">
-                                <div className="space-y-1">
-                                  <div className="font-medium">Form Input</div>
-                                  <div className="text-sm text-muted-foreground">Start with form inputs</div>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="api">
-                                <div className="space-y-1">
-                                  <div className="font-medium">API Input</div>
-                                  <div className="text-sm text-muted-foreground">Start with API trigger</div>
-                                </div>
-                              </SelectItem>
-                              <SelectItem value="webhook">
-                                <div className="space-y-1">
-                                  <div className="font-medium">Webhook Input</div>
-                                  <div className="text-sm text-muted-foreground">Start with webhook trigger</div>
-                                </div>
-                              </SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="ephemeralMemory"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Ephemeral Memory</FormLabel>
-                            <FormDescription>
-                              Enable temporary memory for this session
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="space-y-2">
-                      <FormLabel>Flow State</FormLabel>
-                      <div className="space-y-2">
-                        {(configuration.flowState || []).map((state: any, index: number) => (
-                          <div key={index} className="flex gap-2 p-2 border rounded">
-                            <Input
-                              placeholder="Key"
-                              value={state.key}
-                              onChange={(e) => {
-                                const newFlowState = [...(configuration.flowState || [])];
-                                newFlowState[index] = { ...newFlowState[index], key: e.target.value };
-                                onChange({ ...configuration, flowState: newFlowState });
-                              }}
-                            />
-                            <Input
-                              placeholder="Value"
-                              value={state.value}
-                              onChange={(e) => {
-                                const newFlowState = [...(configuration.flowState || [])];
-                                newFlowState[index] = { ...newFlowState[index], value: e.target.value };
-                                onChange({ ...configuration, flowState: newFlowState });
-                              }}
-                            />
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                const newFlowState = (configuration.flowState || []).filter((_: any, i: number) => i !== index);
-                                onChange({ ...configuration, flowState: newFlowState });
-                              }}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ))}
-                        <Button
-                          variant="outline"
-                          onClick={() => {
-                            const newFlowState = [...(configuration.flowState || []), { key: '', value: '' }];
-                            onChange({ ...configuration, flowState: newFlowState });
-                          }}
-                          className="w-full"
-                        >
-                          <Plus className="h-4 w-4 mr-2" />
-                          Add Flow State
-                        </Button>
-                      </div>
-                    </div>
-
-                    <FormField
-                      control={form.control}
-                      name="persistState"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                          <div className="space-y-0.5">
-                            <FormLabel className="text-base">Persist State</FormLabel>
-                            <FormDescription>
-                              Save state across workflow sessions
-                            </FormDescription>
-                          </div>
-                          <FormControl>
-                            <Switch
-                              checked={field.value}
-                              onCheckedChange={field.onChange}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
-          {/* API Configuration */}
-          {(nodeType === 'api' || configAction === 'endpoint') && (
-            <AccordionItem value="api">
-              <AccordionTrigger className="text-lg font-semibold">
-                <div className="flex items-center gap-2">
-                  <Webhook className="h-5 w-5" />
-                  API Configuration
-                </div>
-              </AccordionTrigger>
-              <AccordionContent>
-                <Card>
-                  <CardContent className="space-y-4 pt-4">
-                    <FormField
-                      control={form.control}
-                      name="url"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>API URL *</FormLabel>
-                          <FormControl>
-                            <Input placeholder="https://api.example.com/endpoint" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="method"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>HTTP Method *</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select HTTP method" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="GET">GET</SelectItem>
-                              <SelectItem value="POST">POST</SelectItem>
-                              <SelectItem value="PUT">PUT</SelectItem>
-                              <SelectItem value="DELETE">DELETE</SelectItem>
-                              <SelectItem value="PATCH">PATCH</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="timeout"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Timeout (ms)</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              placeholder="30000"
-                              {...field}
-                              onChange={(e) => field.onChange(parseInt(e.target.value))}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </CardContent>
-                </Card>
-              </AccordionContent>
-            </AccordionItem>
-          )}
-
-          {/* Basic Configuration - Always available as fallback */}
+          {/* Basic Configuration - Always available */}
           <AccordionItem value="basic">
             <AccordionTrigger className="text-lg font-semibold">
               <div className="flex items-center gap-2">

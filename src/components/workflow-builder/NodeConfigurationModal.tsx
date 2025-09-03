@@ -9,7 +9,7 @@ import { DynamicConfigurationForm } from './DynamicConfigurationForm';
 import { ConfigurationTemplates } from './ConfigurationTemplates';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Save, X, RotateCcw } from 'lucide-react';
+import { Save, X, RotateCcw, Settings } from 'lucide-react';
 
 interface NodeConfigurationModalProps {
   isOpen: boolean;
@@ -70,10 +70,20 @@ export const NodeConfigurationModal: React.FC<NodeConfigurationModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden">
-        <DialogHeader>
+      <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex-shrink-0 border-b pb-4">
           <DialogTitle className="flex items-center justify-between">
-            {getModalTitle()}
+            <div className="flex items-center gap-3">
+              <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center">
+                <Settings className="h-4 w-4 text-primary" />
+              </div>
+              <div>
+                <h2 className="text-lg font-semibold">{getModalTitle()}</h2>
+                <p className="text-sm text-muted-foreground">
+                  Configure {nodeType} node settings and parameters
+                </p>
+              </div>
+            </div>
             <div className="flex gap-2">
               <Button variant="outline" size="sm" onClick={handleReset}>
                 <RotateCcw className="h-4 w-4 mr-2" />
@@ -81,7 +91,7 @@ export const NodeConfigurationModal: React.FC<NodeConfigurationModalProps> = ({
               </Button>
               <Button size="sm" onClick={handleSave}>
                 <Save className="h-4 w-4 mr-2" />
-                Save
+                Save & Apply
               </Button>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 <X className="h-4 w-4" />
@@ -90,29 +100,61 @@ export const NodeConfigurationModal: React.FC<NodeConfigurationModalProps> = ({
           </DialogTitle>
         </DialogHeader>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1">
-          <TabsList className="w-full flex flex-wrap gap-2 overflow-x-auto">
-            <TabsTrigger value="form">Configuration Form</TabsTrigger>
-            <TabsTrigger value="templates">Templates</TabsTrigger>
-          </TabsList>
+        <div className="flex-1 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col h-full">
+            <div className="flex-shrink-0 border-b">
+              <TabsList className="w-full justify-start h-12 bg-transparent p-0">
+                <TabsTrigger 
+                  value="form" 
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  Configuration
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="templates"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  Templates
+                </TabsTrigger>
+                <TabsTrigger 
+                  value="advanced"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+                >
+                  Advanced
+                </TabsTrigger>
+              </TabsList>
+            </div>
 
-          <TabsContent value="form" className="flex-1 overflow-auto">
-            <DynamicConfigurationForm
-              nodeType={nodeType}
-              configAction={configAction}
-              configuration={configuration}
-              onChange={setConfiguration}
-            />
-          </TabsContent>
+            <TabsContent value="form" className="flex-1 overflow-auto mt-0 p-4">
+              <DynamicConfigurationForm
+                nodeType={nodeType}
+                configAction={configAction}
+                configuration={configuration}
+                onChange={setConfiguration}
+              />
+            </TabsContent>
 
-          <TabsContent value="templates" className="flex-1 overflow-auto">
-            <ConfigurationTemplates
-              nodeType={nodeType}
-              configAction={configAction}
-              onApplyTemplate={handleTemplateApply}
-            />
-          </TabsContent>
-        </Tabs>
+            <TabsContent value="templates" className="flex-1 overflow-auto mt-0 p-4">
+              <ConfigurationTemplates
+                nodeType={nodeType}
+                configAction={configAction}
+                onApplyTemplate={handleTemplateApply}
+              />
+            </TabsContent>
+
+            <TabsContent value="advanced" className="flex-1 overflow-auto mt-0 p-4">
+              <div className="space-y-4">
+                <div className="text-center py-8">
+                  <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">Advanced Configuration</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Advanced settings and custom parameters will be available here
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
+        </div>
       </DialogContent>
     </Dialog>
   );

@@ -27,49 +27,51 @@ export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = (
   const handleAgentGeneration = (agentData: any) => {
     console.log('Generated agent:', agentData);
     
-    // Enhance nodes with personalized functionality from category system
-    const enhancedNodes = (agentData.nodes || []).map((node: any) => ({
-      ...node,
-      data: {
-        ...node.data,
-        // Preserve category system integration
-        type_key: node.data?.type_key || node.type,
-        category: node.data?.category,
-        personalized: node.data?.personalized || true,
-        // Maintain existing personalized capabilities
-        capabilities: node.data?.capabilities || [],
-        requirements: node.data?.requirements || {},
-        configuration: node.data?.configuration || {},
-        // Connect to unified AI assist system
-        unified_ai_generated: true,
-        generation_source: 'unified_ai_assist',
-        // Add start node configuration
-        ...(node.type === 'start' && {
-          input_type: node.data?.input_type || 'chat',
-          ephemeral_memory: node.data?.ephemeral_memory || false,
-          flow_state: node.data?.flow_state || [],
-          persist_state: node.data?.persist_state || false,
-          trigger_type: node.data?.trigger_type || 'manual'
-        }),
-        // Add ecosystem-specific properties based on node type
-        ...(node.type === 'agent' && {
-          aiProvider: node.data?.aiProvider || 'openai',
-          model: node.data?.model || 'gpt-4o-mini'
-        }),
-        ...(node.type === 'condition' && {
-          evaluationType: 'rule-based',
-          conditions: node.data?.conditions || []
-        }),
-        ...(node.type === 'http' && {
-          method: 'GET',
-          timeout: 30000
-        }),
-        ...(node.type === 'database' && {
-          connectionType: 'read-write',
-          queryType: 'select'
-        })
-      }
-    }));
+        // Enhance nodes with comprehensive configuration from category system
+        const enhancedNodes = (agentData.nodes || []).map((node: any) => ({
+          ...node,
+          data: {
+            ...node.data,
+            // Preserve category system integration
+            type_key: node.data?.type_key || node.type,
+            category: node.data?.category,
+            personalized: node.data?.personalized || true,
+            // Apply comprehensive configuration structure
+            configuration: {
+              // Basic settings
+              name: node.data?.name || node.data?.label,
+              description: node.data?.description,
+              enabled: true,
+              
+              // AI Model settings if applicable
+              ...(node.type === 'agent' && {
+                provider: node.data?.provider || 'ChatAnthropic',
+                model: node.data?.model || 'claude-sonnet-4-0',
+                temperature: node.data?.temperature || 0.7,
+                maxTokens: node.data?.maxTokens || 4000,
+                messages: node.data?.messages || [],
+                tools: node.data?.tools || [],
+                enableMemory: true,
+                memoryType: 'All Messages'
+              }),
+              
+              // Start node settings
+              ...(node.type === 'start' && {
+                inputType: node.data?.inputType || 'chat',
+                ephemeralMemory: node.data?.ephemeralMemory || false,
+                flowState: node.data?.flowState || [],
+                persistState: node.data?.persistState || false,
+                triggerType: node.data?.triggerType || 'manual'
+              }),
+              
+              // Apply existing configuration
+              ...node.data?.configuration
+            },
+            // Connect to unified AI assist system
+            unified_ai_generated: true,
+            generation_source: 'unified_ai_assist'
+          }
+        }));
 
     setGeneratedAgent({
       ...agentData,
