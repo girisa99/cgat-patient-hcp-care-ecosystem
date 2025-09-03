@@ -33,7 +33,7 @@ import {
   Trash2, Copy, Edit, RotateCcw, Maximize2, Sun, Moon, X, Rocket
 } from 'lucide-react';
 import { WorkflowControls } from './WorkflowControls';
-import { UnifiedNodeConfigurator } from './UnifiedNodeConfigurator';
+import { NodeConfigurationModal } from './NodeConfigurationModal';
 
 import { useMasterToast } from '@/hooks/useMasterToast';
 
@@ -120,20 +120,14 @@ const FlowiseAgentNode = ({ id, data, selected }: { id: string; data: any; selec
       </div>
 
       {/* Configuration Dialog */}
-      <Dialog open={showConfigurator} onOpenChange={setShowConfigurator}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Configure Agent Node</DialogTitle>
-          </DialogHeader>
-          <UnifiedNodeConfigurator
-            nodeId={id}
-            nodeType="agent"
-            category="ai_models"
-            onSave={() => setShowConfigurator(false)}
-            onCancel={() => setShowConfigurator(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <NodeConfigurationModal
+        isOpen={showConfigurator}
+        onClose={() => setShowConfigurator(false)}
+        nodeId={id}
+        nodeType={data.nodeType || "llm-agent"}
+        configAction="configure"
+        onSave={() => setShowConfigurator(false)}
+      />
     </>
   );
 };
@@ -196,20 +190,14 @@ const FlowiseDataNode = ({ id, data, selected }: { id: string; data: any; select
       </div>
 
       {/* Configuration Dialog */}
-      <Dialog open={showConfigurator} onOpenChange={setShowConfigurator}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Configure Data Node</DialogTitle>
-          </DialogHeader>
-          <UnifiedNodeConfigurator
-            nodeId={id}
-            nodeType="data"
-            category="data_integration"
-            onSave={() => setShowConfigurator(false)}
-            onCancel={() => setShowConfigurator(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <NodeConfigurationModal
+        isOpen={showConfigurator}
+        onClose={() => setShowConfigurator(false)}
+        nodeId={id}
+        nodeType={data.nodeType || "retriever"}
+        configAction="configure"
+        onSave={() => setShowConfigurator(false)}
+      />
     </>
   );
 };
@@ -263,20 +251,14 @@ const FlowiseIntegrationNode = ({ id, data, selected }: { id: string; data: any;
       </div>
 
       {/* Configuration Dialog */}
-      <Dialog open={showConfigurator} onOpenChange={setShowConfigurator}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>Configure Integration Node</DialogTitle>
-          </DialogHeader>
-          <UnifiedNodeConfigurator
-            nodeId={id}
-            nodeType="integration"
-            category="channels_communication"
-            onSave={() => setShowConfigurator(false)}
-            onCancel={() => setShowConfigurator(false)}
-          />
-        </DialogContent>
-      </Dialog>
+      <NodeConfigurationModal
+        isOpen={showConfigurator}
+        onClose={() => setShowConfigurator(false)}
+        nodeId={id}
+        nodeType={data.nodeType || "http-request"}
+        configAction="configure"
+        onSave={() => setShowConfigurator(false)}
+      />
     </>
   );
 };
@@ -430,15 +412,77 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
   };
 
   const handleNodeSelect = (nodeItem: any) => {
-    const computedNodeType = (nodeItem.type === 'llm' || nodeItem.type === 'vlm')
-      ? 'agent'
-      : (nodeItem.type === 'api' || nodeItem.type === 'mcp')
-        ? 'data'
-        : 'integration';
+    // Map node library items to proper node types for configuration
+    let computedNodeType = nodeItem.type;
+    let category = 'ai_models';
+
+    // Map the node library types to our comprehensive configuration types
+    switch (nodeItem.type) {
+      case 'llm':
+      case 'vlm':
+        computedNodeType = 'llm-agent';
+        category = 'ai_models';
+        break;
+      case 'condition':
+        computedNodeType = 'condition-agent';
+        category = 'logic_flow';
+        break;
+      case 'custom-function':
+        computedNodeType = 'custom-function';
+        category = 'logic_flow';
+        break;
+      case 'execute-flow':
+        computedNodeType = 'execute-flow';
+        category = 'logic_flow';
+        break;
+      case 'direct-reply':
+        computedNodeType = 'direct-reply';
+        category = 'logic_flow';
+        break;
+      case 'human-input':
+        computedNodeType = 'human-input';
+        category = 'logic_flow';
+        break;
+      case 'http':
+        computedNodeType = 'http-request';
+        category = 'channels_communication';
+        break;
+      case 'retriever':
+        computedNodeType = 'retriever';
+        category = 'data_integration';
+        break;
+      case 'tool':
+        computedNodeType = 'tool';
+        category = 'tools_utilities';
+        break;
+      case 'iteration':
+        computedNodeType = 'iteration';
+        category = 'logic_flow';
+        break;
+      case 'loop':
+        computedNodeType = 'loop';
+        category = 'logic_flow';
+        break;
+      case 'api':
+      case 'mcp':
+        computedNodeType = 'data';
+        category = 'data_integration';
+        break;
+      default:
+        computedNodeType = 'integration';
+        category = 'channels_communication';
+    }
+
+    // Determine the FlowiseAI visual node type
+    const flowiseNodeType = (nodeItem.type === 'llm' || nodeItem.type === 'vlm')
+      ? 'Agent'
+      : (nodeItem.type === 'api' || nodeItem.type === 'mcp' || nodeItem.type === 'retriever')
+        ? 'Data'
+        : 'Integration';
 
     const newNode: Node = {
       id: `${Date.now()}`,
-      type: `flowise${computedNodeType.charAt(0).toUpperCase()}${computedNodeType.slice(1)}`,
+      type: `flowise${flowiseNodeType}`,
       position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
       data: { 
         label: nodeItem.name,
@@ -446,17 +490,13 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
         model: nodeItem.provider,
         capabilities: nodeItem.capabilities,
         status: nodeItem.status,
-        configuration: nodeItem.configuration
+        configuration: nodeItem.configuration,
+        nodeType: computedNodeType // Store the actual configuration type
       }
     };
     setNodes((nds) => [...nds, newNode]);
 
-    // Auto-open unified configurator after adding the node
-    const category = computedNodeType === 'agent'
-      ? 'ai_models'
-      : computedNodeType === 'data'
-        ? 'data_integration'
-        : 'channels_communication';
+    // Auto-open comprehensive configuration modal after adding the node
     setConfigNodeInfo({ nodeId: newNode.id, nodeType: computedNodeType, category });
     setShowConfigurator(true);
 
@@ -724,23 +764,23 @@ const FlowiseStyleWorkflowInner: React.FC<FlowiseStyleWorkflowProps> = ({
           </Panel>
         </ReactFlow>
 
-        {/* Global Unified Configurator Dialog (auto-opens on add) */}
-        {configNodeInfo && (
-          <Dialog open={showConfigurator} onOpenChange={setShowConfigurator}>
-            <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Configure {configNodeInfo.nodeType} Node</DialogTitle>
-              </DialogHeader>
-              <UnifiedNodeConfigurator
-                nodeId={configNodeInfo.nodeId}
-                nodeType={configNodeInfo.nodeType}
-                category={configNodeInfo.category}
-                onSave={() => setShowConfigurator(false)}
-                onCancel={() => setShowConfigurator(false)}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
+      {/* Global Node Configuration Dialog */}
+      {configNodeInfo && (
+        <NodeConfigurationModal
+          isOpen={showConfigurator}
+          onClose={() => {
+            setShowConfigurator(false);
+            setConfigNodeInfo(null);
+          }}
+          nodeId={configNodeInfo.nodeId}
+          nodeType={configNodeInfo.nodeType}
+          configAction="configure"
+          onSave={() => {
+            setShowConfigurator(false);
+            setConfigNodeInfo(null);
+          }}
+        />
+      )}
       </div>
     </div>
   );
