@@ -2313,6 +2313,31 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
     return <DeploymentEnvironmentsConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
   }
 
+  // New comprehensive configurations for remaining node types
+  if (['unit_testing', 'integration_testing', 'load_testing', 'validation_engine', 'test_automation'].includes(nodeType)) {
+    return <TestingValidationConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+
+  if (['image_classification', 'object_detection', 'image_segmentation', 'ocr_text_extraction', 'vision_llm'].includes(nodeType)) {
+    return <VisionModelsConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+
+  if (['sequential_chain', 'parallel_workflow', 'conditional_workflow', 'loop_workflow', 'workflow_router'].includes(nodeType)) {
+    return <ChainsWorkflowsConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+
+  if (['local_slm', 'phi3_mini', 'llama3_2_3b', 'qwen2_5_3b', 'gemma2_2b', 'embedding_model', 'sentence_transformers', 'bge_models'].includes(nodeType)) {
+    return <SmallLanguageModelsConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+
+  if (['text_processor', 'data_transformer', 'math_calculator', 'scheduler', 'utility_tool'].includes(nodeType)) {
+    return <UtilitiesConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+
+  if (['filesystem_mcp', 'database_mcp', 'websearch_mcp', 'email_mcp', 'calendar_mcp', 'notification_mcp', 'memory_mcp', 'analytics_mcp', 'weather_mcp', 'slack_mcp', 'github_mcp', 'jira_mcp', 'salesforce_mcp', 'stripe_mcp', 'shopify_mcp', 'wordpress_mcp', 'docker_mcp', 'kubernetes_mcp', 'aws_mcp', 'gcp_mcp', 'azure_mcp', 'terraform_mcp', 'jenkins_mcp', 'monitoring_mcp'].includes(nodeType)) {
+    return <MCPProtocolConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+
   // Main render logic based on category and node type
   switch (category) {
     case 'AI Agents':
