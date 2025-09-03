@@ -384,7 +384,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
   const allNodes = useMemo(() => {
     return dbNodeTypes.map(dbNode => {
       // Get appropriate icon based on category or type
-      let IconComponent = Settings; // default
+      let IconComponent: React.ComponentType<any> = Settings; // default
       
       // Business/Healthcare specific icons
       if (dbNode.category?.name === 'business_tools' || dbNode.category?.name === 'healthcare_systems') {
