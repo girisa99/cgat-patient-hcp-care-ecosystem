@@ -183,9 +183,15 @@ export const ToolCreator: React.FC = () => {
       } else {
         // Create new tool
         await createNodeType({
-          ...formData,
-          type_key: typeKey,
-          is_active: true
+          type: typeKey,
+          category: formData.category_id || 'custom',
+          label: formData.display_name,
+          description: formData.description || '',
+          configuration: {
+            inputs: formData.input_schema || [],
+            outputs: formData.output_schema || {},
+            settings: formData.default_config || {}
+          }
         });
         toast.success('Tool created successfully!');
       }

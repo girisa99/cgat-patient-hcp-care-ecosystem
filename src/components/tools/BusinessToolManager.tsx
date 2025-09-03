@@ -171,11 +171,11 @@ export const BusinessToolManager: React.FC = () => {
       }
 
       await createNodeType({
-        ...formData,
-        is_draggable: true,
-        is_configurable: true,
-        is_active: true,
-        order_index: 999
+        type: formData.type_key,
+        category: formData.category_id,
+        label: formData.display_name,
+        description: formData.description || '',
+        configuration: formData.default_config || {}
       });
       
       // Reset form

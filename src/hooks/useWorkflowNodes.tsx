@@ -50,16 +50,27 @@ export const useWorkflowNodes = () => {
     isLoading: categoriesLoading,
     error: categoriesError
   } = useQuery({
-    queryKey: ['workflow-node-categories'],
+    queryKey: ['workflow-builder-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('workflow_node_categories')
+        .from('workflow_builder_categories')
         .select('*')
         .eq('is_active', true)
-        .order('order_index');
+        .order('sort_order');
       
       if (error) throw error;
-      return data as WorkflowNodeCategory[];
+      return data.map(cat => ({
+        id: cat.id,
+        name: cat.name,
+        display_name: cat.name.charAt(0).toUpperCase() + cat.name.slice(1).replace(/_/g, ' '),
+        description: cat.description || '',
+        icon: cat.icon || 'Box',
+        color: cat.color || '#6B7280',
+        order_index: cat.sort_order || 0,
+        is_active: cat.is_active,
+        created_at: cat.created_at || '',
+        updated_at: cat.updated_at || ''
+      }));
     }
   });
 
@@ -69,25 +80,55 @@ export const useWorkflowNodes = () => {
     isLoading: nodeTypesLoading,
     error: nodeTypesError
   } = useQuery({
-    queryKey: ['workflow-node-types'],
+    queryKey: ['workflow-builder-nodes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('workflow_node_types')
-        .select(`
-          *,
-          category:workflow_node_categories(*)
-        `)
+        .from('workflow_builder_nodes')
+        .select('*')
         .eq('is_active', true)
-        .order('order_index');
+        .order('type');
       
       if (error) throw error;
-      return data as WorkflowNodeType[];
+      
+      return data.map(node => ({
+        id: node.id,
+        category_id: node.category,
+        type_key: node.type,
+        display_name: node.label,
+        description: node.description || '',
+        detailed_explanation: node.description || '',
+        icon: 'Box',
+        color: '#6B7280',
+        is_draggable: true,
+        is_configurable: true,
+        default_config: typeof node.configuration === 'object' ? (node.configuration as Record<string, any>) : {},
+        input_schema: (typeof node.configuration === 'object' && node.configuration && (node.configuration as any)?.inputs) || {},
+        output_schema: (typeof node.configuration === 'object' && node.configuration && (node.configuration as any)?.outputs) || {},
+        capabilities: [],
+        requirements: {},
+        order_index: 0,
+        is_active: node.is_active,
+        created_at: node.created_at || '',
+        updated_at: node.updated_at || '',
+        category: {
+          id: node.category,
+          name: node.category,
+          display_name: node.category.charAt(0).toUpperCase() + node.category.slice(1).replace(/_/g, ' '),
+          description: '',
+          icon: 'Box',
+          color: '#6B7280',
+          order_index: 0,
+          is_active: true,
+          created_at: '',
+          updated_at: ''
+        }
+      }));
     }
   });
 
   // Group node types by category
   const nodeTypesByCategory = nodeTypes.reduce((acc, nodeType) => {
-    const categoryName = nodeType.category?.name || 'uncategorized';
+    const categoryName = nodeType.category_id || 'uncategorized';
     if (!acc[categoryName]) {
       acc[categoryName] = [];
     }
@@ -97,13 +138,22 @@ export const useWorkflowNodes = () => {
 
   // Create node type mutation
   const createNodeTypeMutation = useMutation({
-    mutationFn: async (nodeType: Omit<WorkflowNodeType, 'id' | 'created_at' | 'updated_at' | 'category'>) => {
-      const user = await supabase.auth.getUser();
+    mutationFn: async (nodeData: {
+      type: string;
+      category: string;
+      label: string;
+      description?: string;
+      configuration?: any;
+    }) => {
       const { data, error } = await supabase
-        .from('workflow_node_types')
+        .from('workflow_builder_nodes')
         .insert([{
-          ...nodeType,
-          created_by: user.data.user?.id
+          type: nodeData.type,
+          category: nodeData.category,
+          label: nodeData.label,
+          description: nodeData.description || '',
+          configuration: nodeData.configuration || {},
+          is_active: true
         }])
         .select()
         .single();
@@ -112,7 +162,7 @@ export const useWorkflowNodes = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflow-node-types'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-builder-nodes'] });
       toast.success("Node type created successfully");
     },
     onError: (error: any) => {
@@ -122,9 +172,9 @@ export const useWorkflowNodes = () => {
 
   // Update node type mutation
   const updateNodeTypeMutation = useMutation({
-    mutationFn: async ({ id, ...updates }: Partial<WorkflowNodeType> & { id: string }) => {
+    mutationFn: async ({ id, ...updates }: any) => {
       const { data, error } = await supabase
-        .from('workflow_node_types')
+        .from('workflow_builder_nodes')
         .update(updates)
         .eq('id', id)
         .select()
@@ -134,7 +184,7 @@ export const useWorkflowNodes = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflow-node-types'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-builder-nodes'] });
       toast.success("Node type updated successfully");
     },
     onError: (error: any) => {
@@ -146,14 +196,14 @@ export const useWorkflowNodes = () => {
   const deleteNodeTypeMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('workflow_node_types')
+        .from('workflow_builder_nodes')
         .delete()
         .eq('id', id);
       
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflow-node-types'] });
+      queryClient.invalidateQueries({ queryKey: ['workflow-builder-nodes'] });
       toast.success("Node type deleted successfully");
     },
     onError: (error: any) => {
