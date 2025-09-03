@@ -93,26 +93,37 @@ export const workflowNodeTypes = {
   pgvector_store: VectorStoreConfigurationNode,
   redis_vector: VectorStoreConfigurationNode,
   
-  // 4. Healthcare & Compliance (9 nodes)
+  // 4. Healthcare & Compliance (9 nodes) - NORMALIZED KEYS
   hipaa_compliance: HealthcareComplianceConfigurationNode,
+  hipaa_compliance_checker: HealthcareComplianceConfigurationNode, // Alias
   hl7_fhir: HealthcareComplianceConfigurationNode,
-  icd_10_codes: HealthcareComplianceConfigurationNode,
+  icd_codes_lookup: HealthcareComplianceConfigurationNode, // Primary key
+  icd_10_codes: HealthcareComplianceConfigurationNode, // Alias
   cpt_codes: HealthcareComplianceConfigurationNode,
-  npi_validation: HealthcareComplianceConfigurationNode,
+  npi_validator: HealthcareComplianceConfigurationNode, // Primary key
+  npi_validation: HealthcareComplianceConfigurationNode, // Alias
   phi_detection: HealthcareComplianceConfigurationNode,
   clinical_notes: HealthcareComplianceConfigurationNode,
+  clinical_decision_support: HealthcareComplianceConfigurationNode,
   medication_management: HealthcareComplianceConfigurationNode,
   care_plan_generator: HealthcareComplianceConfigurationNode,
+  cms_data_integration: HealthcareComplianceConfigurationNode,
+  fda_integration: HealthcareComplianceConfigurationNode,
   
-  // 5. Tools & Utilities (8 nodes)
+  // 5. Tools & Utilities - NORMALIZED KEYS (12 nodes)
   web_scraper: FlowiseInspiredNode,
   email_sender: FlowiseInspiredNode,
+  email_tool: FlowiseInspiredNode, // Alias
+  send_email: FlowiseInspiredNode, // Alias
   calendar_integration: FlowiseInspiredNode,
   file_processor: FlowiseInspiredNode,
   data_validator: FlowiseInspiredNode,
   json_parser: FlowiseInspiredNode,
   regex_matcher: FlowiseInspiredNode,
   url_shortener: FlowiseInspiredNode,
+  calculator: FlowiseInspiredNode,
+  math_tool: FlowiseInspiredNode, // Alias
+  code_executor: FlowiseInspiredNode,
   
   // 6. Code & Deployment (6 nodes)
   github_integration: DeploymentConfigurationNode,

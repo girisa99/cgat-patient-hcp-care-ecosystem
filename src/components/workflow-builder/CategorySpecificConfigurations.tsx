@@ -29,7 +29,9 @@ import { ChannelDeploymentConfig } from './configurations/ChannelDeploymentConfi
 import { AgentFlowsConfig } from './configurations/AgentFlowsConfig';
 import { HumanLoopConfig } from './configurations/HumanLoopConfig';
 import { CacheMemoryConfig } from './configurations/CacheMemoryConfig';
-import { DeploymentEnvironmentsConfig } from './configurations/DeploymentEnvironmentsConfig';
+import { EmailConfig } from './configurations/EmailConfig';
+import { CalendarConfig } from './configurations/CalendarConfig';
+import { WordPressConfig } from './configurations/WordPressConfig';
 
 interface CategoryConfigProps {
   category: string;
@@ -2280,7 +2282,19 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
     return <HealthcareComplianceConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
   }
   
-  if (['calculator', 'email_tool', 'web_scraper', 'code_executor', 'math_tool', 'send_email'].includes(nodeType)) {
+  if (['calculator', 'email_tool', 'web_scraper', 'code_executor', 'math_tool', 'send_email', 'email_sender', 'email_mcp'].includes(nodeType)) {
+    return <EmailConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['calendar_integration', 'calendar_mcp'].includes(nodeType)) {
+    return <CalendarConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['wordpress_mcp'].includes(nodeType)) {
+    return <WordPressConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
+  }
+  
+  if (['web_scraper', 'code_executor', 'math_tool', 'calculator'].includes(nodeType)) {
     return <ToolsUtilitiesConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
   }
   
