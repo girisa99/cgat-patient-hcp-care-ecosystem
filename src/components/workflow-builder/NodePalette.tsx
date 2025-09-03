@@ -360,20 +360,20 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     return initial;
   });
   
-  const toggleCategory = (categoryId: string) => {
+  const toggleCategory = (categoryName: string) => {
     setOpenCategories(prev => ({
       ...prev,
-      [categoryId]: !prev[categoryId]
+      [categoryName]: !prev[categoryName]
     }));
   };
 
   // Icon mapping for business nodes
-  const getBusinessNodeIcon = (typeKey: string) => {
+  const getBusinessNodeIcon = (typeKey: string): React.ComponentType<{ className?: string }> => {
     const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
       'npi_validator': UserCheck,
-      'cms_data_integration': Building2,
-      'fda_integration': Shield,
-      'icd_codes_lookup': FileText,
+      'cms_provider_lookup': Building2,
+      'fda_drug_lookup': Shield,
+      'icd10_lookup': FileText,
       'hipaa_compliance_checker': Shield,
       'clinical_decision_support': Heart
     };
@@ -384,7 +384,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
   const allNodes = useMemo(() => {
     return dbNodeTypes.map(dbNode => {
       // Get appropriate icon based on category or type
-      let IconComponent = Settings; // default
+      let IconComponent: React.ComponentType<{ className?: string }> = Settings; // default
       
       // Business/Healthcare specific icons
       if (dbNode.category?.name === 'business_tools' || dbNode.category?.name === 'healthcare_systems') {
