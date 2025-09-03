@@ -26,157 +26,873 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
   onChange,
   form
 }) => {
-  const renderAIAgentsConfiguration = () => (
-    <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5" />
-            AI Agent Configuration
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
-            <FormField
-              control={form.control}
-              name="provider"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>AI Provider *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value || configuration.provider}>
-                    <FormControl>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select provider" />
-                      </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="ChatAnthropic">
-                        <div className="flex items-center gap-2">
-                          <Bot className="h-4 w-4" />
-                          ChatAnthropic
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="ChatOpenAI">
-                        <div className="flex items-center gap-2">
-                          <MessageCircle className="h-4 w-4" />
-                          ChatOpenAI
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="ChatGoogleGenerativeAI">
-                        <div className="flex items-center gap-2">
-                          <Search className="h-4 w-4" />
-                          Google Gemini
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
+  const renderAIAgentsConfiguration = () => {
+    // Comprehensive LLM Agent Configuration
+    if (nodeType === 'llm-agent') {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                LLM Agent Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Model Selection */}
+              <FormField
+                control={form.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Model *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select AI model" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value="aws-chatbedrock">🟠 AWS ChatBedrock</SelectItem>
+                        <SelectItem value="azure-chatopenai">🔵 Azure ChatOpenAI</SelectItem>
+                        <SelectItem value="chatalibabatonyi">🟠 ChatAlibabaTongyi</SelectItem>
+                        <SelectItem value="chatanthropic">🟣 ChatAnthropic</SelectItem>
+                        <SelectItem value="chatbaiduwenxin">🔴 ChatBaiduWenxin</SelectItem>
+                        <SelectItem value="chatcerebras">🟢 ChatCerebras</SelectItem>
+                        <SelectItem value="chatcohere">🟣 ChatCohere</SelectItem>
+                        <SelectItem value="chatfireworks">🟣 ChatFireworks</SelectItem>
+                        <SelectItem value="chatgooglegenerativeai">🔵 ChatGoogleGenerativeAI</SelectItem>
+                        <SelectItem value="chatgooglevertekai">🔵 ChatGoogleVertexAI</SelectItem>
+                        <SelectItem value="chathuggingface">🟡 ChatHuggingFace</SelectItem>
+                        <SelectItem value="chatibmwatsonx">🔵 ChatIBMWatsonx</SelectItem>
+                        <SelectItem value="chatjihuaiim">🟠 ChatJiehuaiim</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
 
-            <FormField
-              control={form.control}
-              name="model"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Model *</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
-                    <FormControl>
+              {/* Messages Configuration */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Messages</FormLabel>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const messages = configuration.messages || [];
+                      onChange({ ...configuration, messages: [...messages, { role: 'user', content: '' }] });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Messages
+                  </Button>
+                </div>
+                
+                {(configuration.messages || []).map((message: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Role *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const messages = [...(configuration.messages || [])];
+                          messages.splice(index, 1);
+                          onChange({ ...configuration, messages });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Select 
+                      value={message.role || 'user'} 
+                      onValueChange={(value) => {
+                        const messages = [...(configuration.messages || [])];
+                        messages[index] = { ...messages[index], role: value };
+                        onChange({ ...configuration, messages });
+                      }}
+                    >
                       <SelectTrigger>
-                        <SelectValue placeholder="Select model" />
+                        <SelectValue />
                       </SelectTrigger>
-                    </FormControl>
-                    <SelectContent>
-                      <SelectItem value="claude-opus-4-0">Claude Opus 4.0</SelectItem>
-                      <SelectItem value="claude-sonnet-4-0">Claude Sonnet 4.0</SelectItem>
-                      <SelectItem value="gpt-4o">GPT-4o</SelectItem>
-                      <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormItem>
-              )}
-            />
-          </div>
+                      <SelectContent>
+                        <SelectItem value="system">System</SelectItem>
+                        <SelectItem value="user">User</SelectItem>
+                        <SelectItem value="assistant">Assistant</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    
+                    <div>
+                      <FormLabel>Content *</FormLabel>
+                      <Textarea
+                        value={message.content || ''}
+                        onChange={(e) => {
+                          const messages = [...(configuration.messages || [])];
+                          messages[index] = { ...messages[index], content: e.target.value };
+                          onChange({ ...configuration, messages });
+                        }}
+                        placeholder="Message content"
+                        rows={3}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
 
-          <FormField
-            control={form.control}
-            name="systemPrompt"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>System Prompt</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="You are a helpful AI assistant..."
-                    className="min-h-[100px]"
-                    {...field}
+              {/* Memory Configuration */}
+              <div className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    checked={configuration.enableMemory || false}
+                    onCheckedChange={(checked) => onChange({ ...configuration, enableMemory: checked })}
                   />
-                </FormControl>
-                <FormDescription>Define the AI's role and behavior</FormDescription>
-              </FormItem>
-            )}
-          />
-
-          <div className="grid grid-cols-3 gap-4">
-            <FormField
-              control={form.control}
-              name="temperature"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Temperature: {field.value || 0.7}</FormLabel>
-                  <FormControl>
-                    <Slider
-                      min={0}
-                      max={2}
-                      step={0.1}
-                      value={[field.value || 0.7]}
-                      onValueChange={(value) => field.onChange(value[0])}
+                  <FormLabel>Enable Memory</FormLabel>
+                </div>
+                
+                {configuration.enableMemory && (
+                  <>
+                    <FormField
+                      control={form.control}
+                      name="memoryType"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel>Memory Type</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value || 'all-messages'}>
+                            <FormControl>
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                            </FormControl>
+                            <SelectContent>
+                              <SelectItem value="all-messages">
+                                <div>
+                                  <div className="font-medium">All Messages</div>
+                                  <div className="text-sm text-muted-foreground">Retrieve all messages from the conversation</div>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="window-size">
+                                <div>
+                                  <div className="font-medium">Window Size</div>
+                                  <div className="text-sm text-muted-foreground">Uses a fixed window size to surface the last N messages</div>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="conversation-summary">
+                                <div>
+                                  <div className="font-medium">Conversation Summary</div>
+                                  <div className="text-sm text-muted-foreground">Summarizes the whole conversation</div>
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="conversation-summary-buffer">
+                                <div>
+                                  <div className="font-medium">Conversation Summary Buffer</div>
+                                  <div className="text-sm text-muted-foreground">Summarize conversations once token limit is reached. Default to 2000</div>
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormItem>
+                      )}
                     />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
+                  </>
+                )}
+              </div>
 
-            <FormField
-              control={form.control}
-              name="maxTokens"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Max Tokens</FormLabel>
-                  <FormControl>
+              {/* Input Message */}
+              <FormField
+                control={form.control}
+                name="inputMessage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Input Message</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Input message template"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Return Response As */}
+              <FormField
+                control={form.control}
+                name="returnResponseAs"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Return Response As *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || 'user-message'}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="user-message">User Message</SelectItem>
+                        <SelectItem value="assistant-message">Assistant Message</SelectItem>
+                        <SelectItem value="system-message">System Message</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              {/* JSON Structured Output */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel>JSON Structured Output</FormLabel>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const outputs = configuration.jsonStructuredOutput || [];
+                      onChange({ ...configuration, jsonStructuredOutput: [...outputs, { key: '', type: 'String', description: '' }] });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add JSON Structured Output
+                  </Button>
+                </div>
+                
+                {(configuration.jsonStructuredOutput || []).map((output: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Key *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const outputs = [...(configuration.jsonStructuredOutput || [])];
+                          outputs.splice(index, 1);
+                          onChange({ ...configuration, jsonStructuredOutput: outputs });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <Input
-                      type="number"
-                      placeholder="4000"
+                      value={output.key || ''}
+                      onChange={(e) => {
+                        const outputs = [...(configuration.jsonStructuredOutput || [])];
+                        outputs[index] = { ...outputs[index], key: e.target.value };
+                        onChange({ ...configuration, jsonStructuredOutput: outputs });
+                      }}
+                      placeholder="Key name"
+                    />
+                    
+                    <div>
+                      <FormLabel>Type *</FormLabel>
+                      <Select 
+                        value={output.type || 'String'} 
+                        onValueChange={(value) => {
+                          const outputs = [...(configuration.jsonStructuredOutput || [])];
+                          outputs[index] = { ...outputs[index], type: value };
+                          onChange({ ...configuration, jsonStructuredOutput: outputs });
+                        }}
+                      >
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="String">String</SelectItem>
+                          <SelectItem value="String Array">String Array</SelectItem>
+                          <SelectItem value="Number">Number</SelectItem>
+                          <SelectItem value="Boolean">Boolean</SelectItem>
+                          <SelectItem value="Enum">Enum</SelectItem>
+                          <SelectItem value="JSON Array">JSON Array</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div>
+                      <FormLabel>Description *</FormLabel>
+                      <Input
+                        value={output.description || ''}
+                        onChange={(e) => {
+                          const outputs = [...(configuration.jsonStructuredOutput || [])];
+                          outputs[index] = { ...outputs[index], description: e.target.value };
+                          onChange({ ...configuration, jsonStructuredOutput: outputs });
+                        }}
+                        placeholder="Description of the key"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Update Flow State */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Update Flow State</FormLabel>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const states = configuration.updateFlowState || [];
+                      onChange({ ...configuration, updateFlowState: [...states, { key: '', value: '' }] });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Update Flow State
+                  </Button>
+                </div>
+                
+                {(configuration.updateFlowState || []).map((state: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Key *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const states = [...(configuration.updateFlowState || [])];
+                          states.splice(index, 1);
+                          onChange({ ...configuration, updateFlowState: states });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Input
+                      value={state.key || ''}
+                      onChange={(e) => {
+                        const states = [...(configuration.updateFlowState || [])];
+                        states[index] = { ...states[index], key: e.target.value };
+                        onChange({ ...configuration, updateFlowState: states });
+                      }}
+                      placeholder="State key"
+                    />
+                    
+                    <div>
+                      <FormLabel>Value *</FormLabel>
+                      <Input
+                        value={state.value || ''}
+                        onChange={(e) => {
+                          const states = [...(configuration.updateFlowState || [])];
+                          states[index] = { ...states[index], value: e.target.value };
+                          onChange({ ...configuration, updateFlowState: states });
+                        }}
+                        placeholder="State value"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Retriever Agent Configuration
+    if (nodeType === 'retriever-agent') {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Search className="h-5 w-5" />
+                Retriever Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Knowledge Document Stores */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Knowledge (Document Stores) *</FormLabel>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const stores = configuration.documentStores || [];
+                      onChange({ ...configuration, documentStores: [...stores, { name: '', type: 'vector' }] });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Knowledge (Document Stores)
+                  </Button>
+                </div>
+                
+                {(configuration.documentStores || []).map((store: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Document Store *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const stores = [...(configuration.documentStores || [])];
+                          stores.splice(index, 1);
+                          onChange({ ...configuration, documentStores: stores });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Select 
+                      value={store.name || ''} 
+                      onValueChange={(value) => {
+                        const stores = [...(configuration.documentStores || [])];
+                        stores[index] = { ...stores[index], name: value };
+                        onChange({ ...configuration, documentStores: stores });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select document store" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="vector-store-1">Vector Store 1</SelectItem>
+                        <SelectItem value="vector-store-2">Vector Store 2</SelectItem>
+                        <SelectItem value="knowledge-base">Knowledge Base</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                ))}
+              </div>
+
+              {/* Retriever Query */}
+              <FormField
+                control={form.control}
+                name="retrieverQuery"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Retriever Query *</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Enter your query here"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              {/* Output Format */}
+              <FormField
+                control={form.control}
+                name="outputFormat"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Output Format *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || 'text'}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="text">Text</SelectItem>
+                        <SelectItem value="text-with-metadata">Text with Metadata</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              {/* Metadata Fields */}
+              {configuration.outputFormat === 'text-with-metadata' && (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <FormLabel>Metadata Fields</FormLabel>
+                    <Button 
+                      type="button"
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => {
+                        const fields = configuration.metadataFields || [];
+                        onChange({ ...configuration, metadataFields: [...fields, { key: '', value: '' }] });
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-1" />
+                      Add Field
+                    </Button>
+                  </div>
+                  
+                  {(configuration.metadataFields || []).map((field: any, index: number) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <FormLabel>Key *</FormLabel>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const fields = [...(configuration.metadataFields || [])];
+                            fields.splice(index, 1);
+                            onChange({ ...configuration, metadataFields: fields });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      <Input
+                        value={field.key || ''}
+                        onChange={(e) => {
+                          const fields = [...(configuration.metadataFields || [])];
+                          fields[index] = { ...fields[index], key: e.target.value };
+                          onChange({ ...configuration, metadataFields: fields });
+                        }}
+                        placeholder="Field key"
+                      />
+                      
+                      <div>
+                        <FormLabel>Value *</FormLabel>
+                        <Input
+                          value={field.value || ''}
+                          onChange={(e) => {
+                            const fields = [...(configuration.metadataFields || [])];
+                            fields[index] = { ...fields[index], value: e.target.value };
+                            onChange({ ...configuration, metadataFields: fields });
+                          }}
+                          placeholder="Field value"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Update Flow State */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Update Flow State</FormLabel>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const states = configuration.updateFlowState || [];
+                      onChange({ ...configuration, updateFlowState: [...states, { key: '', value: '' }] });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Update Flow State
+                  </Button>
+                </div>
+                
+                {(configuration.updateFlowState || []).map((state: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Key *</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const states = [...(configuration.updateFlowState || [])];
+                          states.splice(index, 1);
+                          onChange({ ...configuration, updateFlowState: states });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Input
+                      value={state.key || ''}
+                      onChange={(e) => {
+                        const states = [...(configuration.updateFlowState || [])];
+                        states[index] = { ...states[index], key: e.target.value };
+                        onChange({ ...configuration, updateFlowState: states });
+                      }}
+                      placeholder="State key"
+                    />
+                    
+                    <div>
+                      <FormLabel>Value *</FormLabel>
+                      <Input
+                        value={state.value || ''}
+                        onChange={(e) => {
+                          const states = [...(configuration.updateFlowState || [])];
+                          states[index] = { ...states[index], value: e.target.value };
+                          onChange({ ...configuration, updateFlowState: states });
+                        }}
+                        placeholder="State value"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Tool Agent Configuration
+    if (nodeType === 'tool-agent') {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Tool Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Tool Selection */}
+              <FormField
+                control={form.control}
+                name="tool"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Tool *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select tool" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent className="max-h-60">
+                        <SelectItem value="aws-sns">🟠 AWS SNS</SelectItem>
+                        <SelectItem value="agent-as-tool">🤖 Agent as Tool</SelectItem>
+                        <SelectItem value="arxiv">📚 Arxiv</SelectItem>
+                        <SelectItem value="bravesearch-api">🔍 BraveSearch API</SelectItem>
+                        <SelectItem value="calculator">🧮 Calculator</SelectItem>
+                        <SelectItem value="chatflow-tool">💬 Chatflow Tool</SelectItem>
+                        <SelectItem value="code-interpreter-e2b">💻 Code Interpreter by E2B</SelectItem>
+                        <SelectItem value="composio">🔧 Composio</SelectItem>
+                        <SelectItem value="current-datetime">⏰ CurrentDateTime</SelectItem>
+                        <SelectItem value="custom-tool">🛠️ Custom Tool</SelectItem>
+                        <SelectItem value="exa-search">🔍 Exa Search</SelectItem>
+                        <SelectItem value="gmail">📧 Gmail</SelectItem>
+                        <SelectItem value="google-calendar">📅 Google Calendar</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              {/* Tool Parameters */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <FormLabel>Tool Parameters</FormLabel>
+                  <Button 
+                    type="button"
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      const params = configuration.toolParameters || [];
+                      onChange({ ...configuration, toolParameters: [...params, { key: '', value: '' }] });
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    Add Parameter
+                  </Button>
+                </div>
+                
+                {(configuration.toolParameters || []).map((param: any, index: number) => (
+                  <div key={index} className="border rounded-lg p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <FormLabel>Parameter Key</FormLabel>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          const params = [...(configuration.toolParameters || [])];
+                          params.splice(index, 1);
+                          onChange({ ...configuration, toolParameters: params });
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <Input
+                      value={param.key || ''}
+                      onChange={(e) => {
+                        const params = [...(configuration.toolParameters || [])];
+                        params[index] = { ...params[index], key: e.target.value };
+                        onChange({ ...configuration, toolParameters: params });
+                      }}
+                      placeholder="Parameter key"
+                    />
+                    
+                    <div>
+                      <FormLabel>Parameter Value</FormLabel>
+                      <Input
+                        value={param.value || ''}
+                        onChange={(e) => {
+                          const params = [...(configuration.toolParameters || [])];
+                          params[index] = { ...params[index], value: e.target.value };
+                          onChange({ ...configuration, toolParameters: params });
+                        }}
+                        placeholder="Parameter value"
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Default AI Agents Configuration
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Bot className="h-5 w-5" />
+              AI Agent Configuration
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="provider"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>AI Provider *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value || configuration.provider}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select provider" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="ChatAnthropic">
+                          <div className="flex items-center gap-2">
+                            <Bot className="h-4 w-4" />
+                            ChatAnthropic
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="ChatOpenAI">
+                          <div className="flex items-center gap-2">
+                            <MessageCircle className="h-4 w-4" />
+                            ChatOpenAI
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="ChatGoogleGenerativeAI">
+                          <div className="flex items-center gap-2">
+                            <Search className="h-4 w-4" />
+                            Google Gemini
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="model"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Model *</FormLabel>
+                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                      <FormControl>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select model" />
+                        </SelectTrigger>
+                      </FormControl>
+                      <SelectContent>
+                        <SelectItem value="claude-opus-4-0">Claude Opus 4.0</SelectItem>
+                        <SelectItem value="claude-sonnet-4-0">Claude Sonnet 4.0</SelectItem>
+                        <SelectItem value="gpt-4o">GPT-4o</SelectItem>
+                        <SelectItem value="gemini-1.5-pro">Gemini 1.5 Pro</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormItem>
+                )}
+              />
+            </div>
+
+            <FormField
+              control={form.control}
+              name="systemPrompt"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>System Prompt</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="You are a helpful AI assistant..."
+                      className="min-h-[100px]"
                       {...field}
-                      onChange={(e) => field.onChange(parseInt(e.target.value))}
                     />
                   </FormControl>
+                  <FormDescription>Define the AI's role and behavior</FormDescription>
                 </FormItem>
               )}
             />
 
-            <FormField
-              control={form.control}
-              name="topP"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Top P: {field.value || 1}</FormLabel>
-                  <FormControl>
-                    <Slider
-                      min={0}
-                      max={1}
-                      step={0.01}
-                      value={[field.value || 1]}
-                      onValueChange={(value) => field.onChange(value[0])}
-                    />
-                  </FormControl>
-                </FormItem>
-              )}
-            />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+            <div className="grid grid-cols-3 gap-4">
+              <FormField
+                control={form.control}
+                name="temperature"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Temperature: {field.value || 0.7}</FormLabel>
+                    <FormControl>
+                      <Slider
+                        min={0}
+                        max={2}
+                        step={0.1}
+                        value={[field.value || 0.7]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="maxTokens"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Tokens</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="4000"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="topP"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Top P: {field.value || 1}</FormLabel>
+                    <FormControl>
+                      <Slider
+                        min={0}
+                        max={1}
+                        step={0.01}
+                        value={[field.value || 1]}
+                        onValueChange={(value) => field.onChange(value[0])}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  };
 
   const renderDataProcessingConfiguration = () => (
     <div className="space-y-6">
@@ -500,7 +1216,93 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
     </div>
   );
 
-  const renderLogicFlowConfiguration = () => (
+  const renderLogicFlowConfiguration = () => {
+    // Iteration Node Configuration
+    if (nodeType === 'iteration-node') {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Iteration Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="arrayInput"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Array Input *</FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="Array input configuration"
+                        rows={3}
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    // Loop Node Configuration  
+    if (nodeType === 'loop-node') {
+      return (
+        <div className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5" />
+                Loop Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <FormField
+                control={form.control}
+                name="loopBackTo"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Loop Back To *</FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="Node to loop back to"
+                        {...field}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="maxLoopCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Max Loop Count *</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="number"
+                        placeholder="5"
+                        {...field}
+                        onChange={(e) => field.onChange(parseInt(e.target.value))}
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+        </div>
+      );
+    }
+
+    return (
     <div className="space-y-6">
       <Card>
         <CardHeader>
