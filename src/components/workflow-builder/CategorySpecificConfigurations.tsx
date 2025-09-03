@@ -2064,6 +2064,7 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
       </Card>
     </div>
   );
+  };
 
   const renderAnalyticsConfiguration = () => (
     <div className="space-y-6">
