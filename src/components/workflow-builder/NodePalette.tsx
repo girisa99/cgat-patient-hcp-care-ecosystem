@@ -346,16 +346,18 @@ const categories = [
 ];
 
 export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass }) => {
-  console.log('[NodePalette] render start');
+  console.log('[NodePalette] render start - DB-only mode');
   const { categories: dbCategories, nodeTypes: dbNodeTypes, isLoading } = useWorkflowNodes();
   
-  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>({
-    'core': true,
-    'ai': true,
-    'integrations': false,
-    'actions': false,
-    'deployment': false,
-    'business_tools': true // Show business nodes by default
+  // Initialize open categories based on actual DB categories
+  const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(() => {
+    const initial: Record<string, boolean> = {};
+    // Show business tools and core categories by default
+    const defaultOpen = ['business_tools', 'healthcare_systems', 'actions', 'automation'];
+    dbCategories.forEach(cat => {
+      initial[cat.name] = defaultOpen.includes(cat.name);
+    });
+    return initial;
   });
   
   const toggleCategory = (categoryId: string) => {
@@ -378,50 +380,53 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     return iconMap[typeKey] || Shield;
   };
 
-  // Business nodes from database (separate from workflow nodes)
-  const businessNodes = useMemo(() => {
-    const nodes: NodePaletteItem[] = [];
-    
-    dbNodeTypes.forEach(dbNode => {
-      if (dbNode.category?.name === 'healthcare_compliance') {
-        const BusinessIcon = getBusinessNodeIcon(dbNode.type_key);
-        nodes.push({
-          id: dbNode.type_key,
-          type: dbNode.type_key,
-          title: dbNode.display_name,
-          icon: BusinessIcon,
-          description: dbNode.description,
-          category: 'business_tools' as any,
-          color: 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-300'
-        });
+  // Convert DB nodes to NodePaletteItem format
+  const allNodes = useMemo(() => {
+    return dbNodeTypes.map(dbNode => {
+      // Get appropriate icon based on category or type
+      let IconComponent = Settings; // default
+      
+      // Business/Healthcare specific icons
+      if (dbNode.category?.name === 'business_tools' || dbNode.category?.name === 'healthcare_systems') {
+        IconComponent = getBusinessNodeIcon(dbNode.type_key);
+      } else if (dbNode.category?.name === 'actions') {
+        IconComponent = Zap;
+      } else if (dbNode.category?.name === 'automation') {
+        IconComponent = Bot;
+      } else if (dbNode.category?.name === 'communication') {
+        IconComponent = MessageCircle;
+      } else if (dbNode.category?.name === 'data') {
+        IconComponent = Database;
       }
+
+      return {
+        id: dbNode.id,
+        type: dbNode.type_key,
+        title: dbNode.display_name,
+        icon: IconComponent,
+        description: dbNode.description,
+        category: dbNode.category?.name || 'uncategorized',
+        color: getNodeColor(dbNode.category?.name || 'uncategorized')
+      } as NodePaletteItem;
     });
-    
-    return nodes;
   }, [dbNodeTypes]);
 
-  // Keep workflow nodes separate
-  const workflowNodes = nodeTypes;
-
-  // Categories including business tools as separate section
-  const allCategories = useMemo(() => {
-    const workflowCategories = [...categories];
-    
-    // Add business tools section at the top if we have business nodes
-    const hasBusinessNodes = businessNodes.length > 0;
-    if (hasBusinessNodes) {
-      return [
-        {
-          id: 'business_tools',
-          name: 'Business Tools',
-          color: 'bg-gradient-to-r from-emerald-100 to-teal-100'
-        },
-        ...workflowCategories
-      ];
-    }
-    
-    return workflowCategories;
-  }, [businessNodes]);
+  // Get color for category
+  const getNodeColor = (categoryName: string) => {
+    const colorMap: Record<string, string> = {
+      'business_tools': 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-300',
+      'healthcare_systems': 'bg-red-50 border-red-200 ring-1 ring-red-300',
+      'actions': 'bg-orange-50 border-orange-200',
+      'automation': 'bg-indigo-50 border-indigo-200',
+      'communication': 'bg-blue-50 border-blue-200',
+      'data': 'bg-purple-50 border-purple-200',
+      'development_tools': 'bg-cyan-50 border-cyan-200',
+      'finance': 'bg-green-50 border-green-200',
+      'crm_systems': 'bg-pink-50 border-pink-200',
+      'data_analytics': 'bg-yellow-50 border-yellow-200'
+    };
+    return colorMap[categoryName] || 'bg-gray-50 border-gray-200';
+  };
 
   const onDragStart = (event: React.DragEvent, nodeType: string, data: any) => {
     // Standardized drag payload: primary type + JSON meta for config
@@ -469,18 +474,16 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                 Loading business nodes...
               </div>
             ) : (
-              allCategories.map((category) => {
-                // Get nodes for this category
-                const categoryNodes = category.id === 'business_tools' 
-                  ? businessNodes 
-                  : workflowNodes.filter(node => node.category === category.id);
-                const isOpen = openCategories[category.id];
+              dbCategories.map((category) => {
+                // Get nodes for this category from DB
+                const categoryNodes = allNodes.filter(node => node.category === category.name);
+                const isOpen = openCategories[category.name];
               
               return (
                 <Collapsible 
-                  key={category.id} 
+                  key={category.name} 
                   open={isOpen}
-                  onOpenChange={() => toggleCategory(category.id)}
+                  onOpenChange={() => toggleCategory(category.name)}
                 >
                   <CollapsibleTrigger asChild>
                     <Button
@@ -489,15 +492,17 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                     >
                       <div className="flex items-center gap-2">
                         <Badge 
-                          variant={category.id === 'business_tools' ? 'default' : 'secondary'} 
-                          className={`text-xs ${category.color} ${
-                            category.id === 'business_tools' 
+                          variant={['business_tools', 'healthcare_systems'].includes(category.name) ? 'default' : 'secondary'} 
+                          className={`text-xs ${
+                            category.name === 'business_tools' 
                               ? 'bg-emerald-600 text-white border-emerald-700' 
-                              : ''
+                              : category.name === 'healthcare_systems'
+                              ? 'bg-red-600 text-white border-red-700'
+                              : 'bg-secondary'
                           }`}
                         >
-                          {category.name}
-                          {category.id === 'business_tools' && (
+                          {category.display_name}
+                          {['business_tools', 'healthcare_systems'].includes(category.name) && (
                             <Shield className="h-3 w-3 ml-1" />
                           )}
                         </Badge>
