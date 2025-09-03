@@ -113,15 +113,16 @@ const [internalSearch, setInternalSearch] = useState('');
   }, []);
 
   React.useEffect(() => {
-    // Initialize expanded state for categories including business_tools
+    // Initialize expanded state based on real DB categories
     setExpandedCategories((prev) => {
       if (Object.keys(prev).length) return prev;
       const initial: Record<string, boolean> = {};
-      ['business_tools','ai_models_processing','data_integration','communication_channels','automation_workflow','development_testing','templates_configuration','storage_cache','human_oversight']
-        .forEach((name) => { initial[name] = name === 'business_tools'; }); // Open business_tools by default
+      categories.forEach((cat) => {
+        initial[cat.name] = ['business_tools', 'healthcare_systems'].includes(cat.name);
+      });
       return initial;
     });
-  }, []);
+  }, [categories]);
 
   const toggleCategory = (categoryName: string) => {
     setExpandedCategories(prev => ({
@@ -175,7 +176,8 @@ const [internalSearch, setInternalSearch] = useState('');
     // 0. Business Tools - Healthcare/compliance tools at the top
     business_tools: [
       ...filteredNodeTypes.filter((nt) => 
-        nt.category?.name === 'healthcare_compliance' ||
+        nt.category?.name === 'business_tools' ||
+        nt.category?.name === 'healthcare_systems' ||
         match(nt, ['npi','cms','fda','icd','hipaa','clinical decision support','healthcare','compliance','medical'])
       )
     ].sort((a, b) => {
@@ -405,124 +407,10 @@ const [internalSearch, setInternalSearch] = useState('');
     return Array.from(m.values());
   };
 
-  const allNodeTypesByCategory = Object.entries(computed).reduce((acc, [key, list]) => {
-    acc[key] = dedupe([...(baseByCategory[key] || []), ...list]);
-    return acc;
-  }, { ...baseByCategory } as Record<string, typeof nodeTypes>);
+  const allNodeTypesByCategory = { ...baseByCategory } as Record<string, typeof nodeTypes>;
 
-  // Enhanced categories including business tools
-  const allCategories = React.useMemo(() => {
-    return [
-      {
-        id: 'business-tools',
-        name: 'business_tools',
-        display_name: 'Business Tools', 
-        description: 'Healthcare compliance, validation, and business data tools',
-        icon: 'shield',
-        color: '#10b981',
-        order_index: 0,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'ai-models-processing',
-        name: 'ai_models_processing', 
-        display_name: 'AI Models & Processing',
-        description: 'Core AI models, LLMs, and processing nodes',
-        icon: 'brain',
-        color: '#3b82f6',
-        order_index: 1,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'templates-configuration',
-        name: 'templates_configuration',
-        display_name: 'Templates & Configuration', 
-        description: 'Prompts, templates, and system configurations',
-        icon: 'file-text',
-        color: '#ef4444',
-        order_index: 2,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'communication-channels',
-        name: 'communication_channels',
-        display_name: 'Communication Channels',
-        description: 'Voice, chat, email, and deployment channels',
-        icon: 'message-square',
-        color: '#10b981',
-        order_index: 3,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'automation-workflow',
-        name: 'automation_workflow', 
-        display_name: 'Automation & Workflow',
-        description: 'Workflow controls, conditions, and automation',
-        icon: 'zap',
-        color: '#f59e0b',
-        order_index: 4,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'data-integration',
-        name: 'data_integration',
-        display_name: 'Data & Integration',
-        description: 'Data processing, APIs, and integrations',
-        icon: 'database',
-        color: '#06b6d4',
-        order_index: 5,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'storage-cache',
-        name: 'storage_cache',
-        display_name: 'Storage & Cache',
-        description: 'Data storage, memory, and caching systems',
-        icon: 'grid-3x3',
-        color: '#84cc16',
-        order_index: 6,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'human-oversight',
-        name: 'human_oversight',
-        display_name: 'Human Oversight',
-        description: 'Human handoffs, approvals, and supervision',
-        icon: 'eye',
-        color: '#f97316',
-        order_index: 7,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      },
-      {
-        id: 'development-testing',
-        name: 'development_testing',
-        display_name: 'Development & Testing',
-        description: 'Testing, validation, and development tools',
-        icon: 'wrench',
-        color: '#8b5cf6',
-        order_index: 8,
-        is_active: true,
-        created_at: '',
-        updated_at: ''
-      }
-    ] as any[];
-  }, []);
+  // Use real DB categories
+  const allCategories = React.useMemo(() => categories, [categories]);
 
   // Enhanced drag start for node palette
   const onDragStart = (event: React.DragEvent, nodeType: any) => {

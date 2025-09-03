@@ -213,7 +213,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                               hover:shadow-sm transition-all duration-200 hover:scale-[1.01]
                               ${node.color} ${!node.type.includes('Node') ? 'ring-1 ring-primary/20' : ''}
                               ${['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) ? 'ring-2 ring-indigo-300 bg-gradient-to-br from-indigo-50 to-blue-50' : ''}
-                              ${category.id === 'business_tools' ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300 shadow-sm' : ''}
+                              ${category.name === 'business_tools' ? 'bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-300 shadow-sm' : ''}
                             `}
                         >
                           <div className="flex items-start gap-3">
@@ -223,13 +223,13 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                             <div className="flex-1 min-w-0">
                                <h4 className="font-medium text-sm text-foreground flex items-center gap-1 flex-wrap">
                                   {node.title}
-                                  {category.id === 'business_tools' && (
+                                  {category.name === 'business_tools' && (
                                     <Badge variant="default" className="text-xs px-1 py-0 bg-emerald-600 text-white">Business</Badge>
                                   )}
                                   {['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && (
                                     <Badge variant="default" className="text-xs px-1 py-0 bg-indigo-500">Enhanced</Badge>
                                   )}
-                                  {!node.type.includes('Node') && !['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && category.id !== 'business_tools' && (
+                                  {!node.type.includes('Node') && !['aiIntelligence', 'agentNode', 'dataSource'].includes(node.type) && category.name !== 'business_tools' && (
                                     <Badge variant="outline" className="text-xs px-1 py-0">Workflow</Badge>
                                   )}
                                   {node.type.includes('Node') && (
