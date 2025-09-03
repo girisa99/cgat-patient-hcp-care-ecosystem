@@ -29,6 +29,7 @@ import { ChannelDeploymentConfig } from './configurations/ChannelDeploymentConfi
 import { AgentFlowsConfig } from './configurations/AgentFlowsConfig';
 import { HumanLoopConfig } from './configurations/HumanLoopConfig';
 import { CacheMemoryConfig } from './configurations/CacheMemoryConfig';
+import { DeploymentEnvironmentsConfig } from './configurations/DeploymentEnvironmentsConfig';
 import { EmailConfig } from './configurations/EmailConfig';
 import { CalendarConfig } from './configurations/CalendarConfig';
 import { WordPressConfig } from './configurations/WordPressConfig';
