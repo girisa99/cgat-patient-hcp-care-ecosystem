@@ -501,7 +501,14 @@ const AgentsInner = () => {
     return (
       <AppLayout>
         <div className="h-screen flex flex-col">
-          <UnifiedWorkflowExperience />
+          <UnifiedWorkflowExperience 
+            onWorkflowUpdate={handleWorkflowGenerated}
+            onNodeAdd={handleNodeGenerated}
+            onNodeTest={(nodeId, result) => {
+              console.log('Node test result:', { nodeId, result });
+              toast.success('Node test completed!');
+            }}
+          />
           
           {/* AI Assistant Integration */}
           <AIAssistIntegration

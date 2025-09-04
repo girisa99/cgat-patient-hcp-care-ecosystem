@@ -38,11 +38,23 @@ interface WorkflowScenario {
   useCase: string;
 }
 
+interface UnifiedWorkflowExperienceProps {
+  embedded?: boolean;
+  onWorkflowUpdate?: (nodes: any[], edges: any[]) => void;
+  onNodeAdd?: (node: any) => void;
+  onNodeTest?: (nodeId: string, result: any) => void;
+}
+
 /**
  * Unified Workflow Experience - Complete UX for workflow creation
  * Addresses: Node types, Agent relationships, Drag & Drop, AI assistance
  */
-export const UnifiedWorkflowExperience: React.FC = () => {
+export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps> = ({ 
+  embedded = false,
+  onWorkflowUpdate,
+  onNodeAdd,
+  onNodeTest
+}) => {
   const { nodeTypes, categories } = useWorkflowNodes();
   const [selectedMode, setSelectedMode] = useState<'prompt' | 'visual' | 'template'>('prompt');
   const [promptInput, setPromptInput] = useState('');
@@ -181,14 +193,68 @@ export const UnifiedWorkflowExperience: React.FC = () => {
   }, [promptInput]);
 
   const handleWorkflowGenerated = useCallback((workflow: any) => {
+    console.log('Workflow generated:', workflow);
+    
+    // Update the workflow canvas with generated nodes and edges
+    if (workflow.nodes && Array.isArray(workflow.nodes)) {
+      // Convert AI-generated workflow to ReactFlow format
+      const reactFlowNodes = workflow.nodes.map((node: any, index: number) => ({
+        id: node.id || `node-${Date.now()}-${index}`,
+        type: node.type || 'agent',
+        position: node.position || { x: 100 + (index * 250), y: 100 + Math.floor(index / 4) * 150 },
+        data: {
+          label: node.label || node.name || `Generated Node ${index + 1}`,
+          description: node.description || node.purpose || 'AI-generated workflow node',
+          ...node.data,
+          aiGenerated: true
+        }
+      }));
+      
+      const reactFlowEdges = workflow.edges?.map((edge: any, index: number) => ({
+        id: edge.id || `edge-${Date.now()}-${index}`,
+        source: edge.source,
+        target: edge.target,
+        type: edge.type || 'default',
+        animated: true,
+        style: { stroke: '#8b5cf6' }
+      })) || [];
+      
+      // Trigger canvas update (this will be handled by the parent component)
+      if (onWorkflowUpdate) {
+        onWorkflowUpdate(reactFlowNodes, reactFlowEdges);
+      }
+    }
+    
     setActiveStep('design');
     setShowAIAssist(false);
     toast.success('Workflow generated! Review and customize your nodes.');
-  }, []);
+  }, [onWorkflowUpdate]);
 
   const handleNodeGenerated = useCallback((node: any) => {
+    console.log('Node generated:', node);
+    
+    // Add the generated node to the canvas
+    if (node) {
+      const reactFlowNode = {
+        id: node.id || `node-${Date.now()}`,
+        type: node.type || 'agent',
+        position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
+        data: {
+          label: node.name || node.label || 'Generated Node',
+          description: node.description || node.purpose || 'AI-generated node',
+          ...node.data,
+          aiGenerated: true
+        }
+      };
+      
+      // Trigger node addition (this will be handled by the parent component)
+      if (onNodeAdd) {
+        onNodeAdd(reactFlowNode);
+      }
+    }
+    
     toast.success('Node generated successfully!');
-  }, []);
+  }, [onNodeAdd]);
 
   const handleAIAssistOpen = useCallback((mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure', nodeId?: string) => {
     setAIAssistMode(mode);

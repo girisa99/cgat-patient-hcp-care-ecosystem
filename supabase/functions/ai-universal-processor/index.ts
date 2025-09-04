@@ -18,20 +18,45 @@ Deno.serve(async (req) => {
       systemPrompt, 
       temperature = 0.7, 
       maxTokens = 1000,
-      context = {}
+      context = {},
+      action = 'generate'
     } = await req.json();
 
-    console.log('AI Universal Processor:', { provider, model, promptLength: prompt?.length });
+    console.log('AI Universal Processor:', { provider, model, promptLength: prompt?.length, action });
 
     let response;
     let usage = null;
+
+    // Handle different actions
+    let enhancedPrompt = prompt;
+    let enhancedSystemPrompt = systemPrompt;
+
+    if (action === 'configure_node') {
+      enhancedSystemPrompt = `You are an AI assistant that helps configure workflow nodes. 
+Generate a detailed configuration for the specified node based on the user's requirements.
+Return a JSON object with the node configuration including settings, parameters, and properties.`;
+      
+      enhancedPrompt = `Configure a workflow node with the following requirements: ${prompt}
+      
+Context: ${JSON.stringify(context, null, 2)}
+
+Please provide a comprehensive node configuration in JSON format.`;
+    } else if (action === 'test_node') {
+      enhancedSystemPrompt = `You are an AI assistant that helps test workflow nodes.
+Simulate the execution of the specified node and provide test results.
+Return a JSON object with test status, results, and any recommendations.`;
+    } else if (action === 'deploy_agent') {
+      enhancedSystemPrompt = `You are an AI assistant that helps deploy AI agents.
+Generate deployment configuration and instructions for the specified agent.
+Return a JSON object with deployment settings, environment requirements, and setup instructions.`;
+    }
 
     switch (provider) {
       case 'openai':
         if (!OPENAI_API_KEY) {
           throw new Error('OpenAI API key not configured');
         }
-        response = await callOpenAI(model || 'gpt-4o-mini', prompt, systemPrompt, temperature, maxTokens);
+        response = await callOpenAI(model || 'gpt-4o-mini', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
         usage = response.usage;
         break;
 
@@ -39,14 +64,14 @@ Deno.serve(async (req) => {
         if (!CLAUDE_API_KEY) {
           throw new Error('Claude API key not configured');
         }
-        response = await callClaude(model || 'claude-3-haiku', prompt, systemPrompt, temperature, maxTokens);
+        response = await callClaude(model || 'claude-3-haiku', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
         break;
 
       case 'gemini':
         if (!GEMINI_API_KEY) {
           throw new Error('Gemini API key not configured');
         }
-        response = await callGemini(model || 'gemini-pro', prompt, systemPrompt, temperature, maxTokens);
+        response = await callGemini(model || 'gemini-pro', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
         break;
 
       default:

@@ -140,8 +140,20 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
         case 'test':
           // Test existing nodes
           if (selectedNodeId) {
-            const testResult = await testNode({ id: selectedNodeId }, {}, selectedProvider);
-            showSuccess(`Test completed: ${testResult.status}`);
+            const { data: testData, error: testError } = await supabase.functions.invoke('ai-universal-processor', {
+              body: {
+                action: 'test_node',
+                prompt: prompt.trim(),
+                nodeId: selectedNodeId,
+                provider: selectedProvider,
+                context
+              }
+            });
+
+            if (testError) throw testError;
+            
+            showSuccess(`Test completed successfully!`);
+            console.log('Test results:', testData);
           } else {
             showError('Please select a node to test');
           }
@@ -162,7 +174,36 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
           if (configError) throw configError;
           
           showSuccess('Configuration generated successfully!');
-          onNodeGenerated(configData);
+          
+          // Parse configuration if it's a JSON string
+          let parsedConfig = configData;
+          if (typeof configData.content === 'string') {
+            try {
+              parsedConfig = JSON.parse(configData.content);
+            } catch {
+              parsedConfig = { content: configData.content };
+            }
+          }
+          
+          onNodeGenerated(parsedConfig);
+          break;
+
+        case 'deploy':
+          // Deploy existing agents
+          const { data: deployData, error: deployError } = await supabase.functions.invoke('ai-universal-processor', {
+            body: {
+              action: 'deploy_agent',
+              prompt: prompt.trim(),
+              nodeId: selectedNodeId,
+              provider: selectedProvider,
+              context
+            }
+          });
+
+          if (deployError) throw deployError;
+          
+          showSuccess('Agent deployment configuration generated!');
+          onNodeGenerated(deployData);
           break;
 
         default:
