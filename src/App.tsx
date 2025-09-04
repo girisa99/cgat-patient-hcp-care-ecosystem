@@ -46,6 +46,7 @@ import TherapySelection from '@/pages/TherapySelection';
 import CreditApplication from '@/pages/CreditApplication';
 import AgentCreationWizard from '@/components/agentic/AgentCreationWizard';
 import AgentWorkflowStudio from '@/pages/AgentWorkflowStudio';
+import UnifiedWorkflowStudio from '@/pages/UnifiedWorkflowStudio';
 import MCPDemo from '@/pages/MCPDemo';
 import { AgentBuilderProvider } from '@/components/agent-builder/AgentBuilderProvider';
 import { GuidedNodeBasedBuilder } from '@/components/guided-flow/GuidedNodeBasedBuilder';
@@ -139,6 +140,11 @@ const AppContent = () => {
                       <AgentBuilderProvider>
                         <AgentWorkflowStudio />
                       </AgentBuilderProvider>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/unified-workflow" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
+                      <UnifiedWorkflowStudio />
                     </ProtectedRoute>
                   } />
                   <Route path="/guided" element={
