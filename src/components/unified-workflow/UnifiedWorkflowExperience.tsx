@@ -17,6 +17,9 @@ import { EnhancedNodePalette } from '@/components/workflow-builder/EnhancedNodeP
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { AIAssistIntegration } from './AIAssistIntegration';
 import { ConfigurableNodePanel } from './ConfigurableNodePanel';
+import { TemplateGallery } from './TemplateGallery';
+import { EnvironmentChannelManager } from './EnvironmentChannelManager';
+import { DynamicNodeConfiguration } from './DynamicNodeConfiguration';
 import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
 
 interface NodeTypeInfo {
@@ -68,6 +71,9 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
   const [isTestMode, setIsTestMode] = useState(false);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [showDeploymentManager, setShowDeploymentManager] = useState(false);
+  const [showDynamicConfig, setShowDynamicConfig] = useState(false);
   
   // Canvas state (kept local and synced to canvas component)
   const [canvasNodes, setCanvasNodes] = useState<any[]>([]);
@@ -289,6 +295,21 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
     toast.success(`${scenario.title} template loaded`);
   }, []);
 
+  const handleTemplateSelect = useCallback((template: any) => {
+    // Apply template to canvas
+    if (template.configuration && template.configuration.nodes) {
+      setCanvasNodes(template.configuration.nodes);
+      setCanvasEdges(template.configuration.edges || []);
+    }
+    setActiveStep('design');
+    toast.success(`Template "${template.name}" applied`);
+  }, []);
+
+  const handleDeployment = useCallback((deploymentConfig: any) => {
+    console.log('Deployment config:', deploymentConfig);
+    toast.success('Agent deployed successfully');
+  }, []);
+
   const renderNodeTypeGuide = () => (
     <Card className="mb-6">
       <CardHeader>
@@ -465,6 +486,22 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
                   </CardContent>
                 </Card>
               ))}
+              
+              <Card className="cursor-pointer hover:shadow-md transition-shadow border-dashed">
+                <CardContent className="p-6 text-center">
+                  <Sparkles className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="font-semibold mb-2">Browse Template Gallery</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Explore more pre-built templates from the community
+                  </p>
+                  <Button 
+                    variant="outline"
+                    onClick={() => setShowTemplateGallery(true)}
+                  >
+                    Open Gallery
+                  </Button>
+                </CardContent>
+              </Card>
             </div>
           </CardContent>
         </Card>
@@ -584,7 +621,7 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
               <Button 
                 variant="outline" 
                 size="sm"
-                onClick={() => handleNodeConfigOpen({})}
+                onClick={() => setShowDynamicConfig(true)}
               >
                 <Settings className="h-4 w-4 mr-1" />
                 Configure
@@ -649,20 +686,111 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Configure Nodes & Agents</span>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowDynamicConfig(true)}
+                >
+                  <Bot className="h-4 w-4 mr-1" />
+                  Node Config
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setActiveStep('test')}
+                >
+                  Next: Test
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Select nodes from your workflow to configure their behavior, AI models, and settings.</p>
+          </CardContent>
+        </Card>
+      )}
+      
+      {activeStep === 'test' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Test & Validate Workflow</span>
+              <div className="flex gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleAIAssistOpen('test')}
+                >
+                  <Bot className="h-4 w-4 mr-1" />
+                  AI Test
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setActiveStep('deploy')}
+                >
+                  Next: Deploy
+                </Button>
+              </div>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-muted-foreground">Run validation tests on your workflow to ensure proper operation before deployment.</p>
+          </CardContent>
+        </Card>
+      )}
+      
+      {activeStep === 'deploy' && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span>Deploy Agents</span>
               <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => handleAIAssistOpen('configure')}
+                onClick={() => setShowDeploymentManager(true)}
               >
-                <Bot className="h-4 w-4 mr-1" />
-                AI Configure
+                <Bot className="h-4 w-4 mr-2" />
+                Deploy to Channels
               </Button>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-muted-foreground">Node configuration interface coming soon...</p>
+            <p className="text-muted-foreground">Choose deployment environments and channels for your agents.</p>
           </CardContent>
         </Card>
+      )}
+
+      {/* Template Gallery */}
+      <TemplateGallery
+        isOpen={showTemplateGallery}
+        onClose={() => setShowTemplateGallery(false)}
+        onTemplateSelect={handleTemplateSelect}
+      />
+
+      {/* Deployment Manager */}
+      <EnvironmentChannelManager
+        isOpen={showDeploymentManager}
+        onClose={() => setShowDeploymentManager(false)}
+        onDeploy={handleDeployment}
+        agentId="current-agent"
+      />
+
+      {/* Dynamic Node Configuration */}
+      {showDynamicConfig && (
+        <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+          <div className="w-full max-w-4xl max-h-[90vh] overflow-auto">
+            <DynamicNodeConfiguration
+              nodeType={selectedNodeData?.type || 'default'}
+              configuration={selectedNodeData?.configuration || {}}
+              onChange={(config) => setSelectedNodeData({...selectedNodeData, configuration: config})}
+              onSave={() => {
+                setShowDynamicConfig(false);
+                toast.success('Node configuration saved');
+              }}
+              onCancel={() => setShowDynamicConfig(false)}
+            />
+          </div>
+        </div>
       )}
 
       {/* AI Assistant Integration */}

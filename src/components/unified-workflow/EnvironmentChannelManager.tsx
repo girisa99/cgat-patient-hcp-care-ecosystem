@@ -48,7 +48,7 @@ export const EnvironmentChannelManager: React.FC<EnvironmentChannelManagerProps>
         .from('deployment_environments')
         .select('*')
         .eq('status', 'active')
-        .order('is_default', { ascending: false });
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data || [];
@@ -156,12 +156,12 @@ export const EnvironmentChannelManager: React.FC<EnvironmentChannelManagerProps>
                       <SelectContent>
                         {environments.map((env) => (
                           <SelectItem key={env.id} value={env.id}>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium">{env.name}</span>
-                              {env.is_default && (
-                                <Badge variant="secondary" className="text-xs">Default</Badge>
-                              )}
-                            </div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{env.name}</span>
+                            {env.environment_type === 'production' && (
+                              <Badge variant="secondary" className="text-xs">Production</Badge>
+                            )}
+                          </div>
                           </SelectItem>
                         ))}
                       </SelectContent>
