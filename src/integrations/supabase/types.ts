@@ -9255,13 +9255,75 @@ export type Database = {
           },
         ]
       }
+      workflow_node_instances: {
+        Row: {
+          configuration: Json | null
+          created_at: string | null
+          created_by: string | null
+          id: string
+          instance_name: string | null
+          is_active: boolean | null
+          metadata: Json | null
+          node_id: string
+          node_type_key: string
+          position: Json | null
+          size: Json | null
+          updated_at: string | null
+          workflow_id: string
+        }
+        Insert: {
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          instance_name?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          node_id: string
+          node_type_key: string
+          position?: Json | null
+          size?: Json | null
+          updated_at?: string | null
+          workflow_id: string
+        }
+        Update: {
+          configuration?: Json | null
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          instance_name?: string | null
+          is_active?: boolean | null
+          metadata?: Json | null
+          node_id?: string
+          node_type_key?: string
+          position?: Json | null
+          size?: Json | null
+          updated_at?: string | null
+          workflow_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_node_instances_node_type_key_fkey"
+            columns: ["node_type_key"]
+            isOneToOne: false
+            referencedRelation: "workflow_node_types"
+            referencedColumns: ["type_key"]
+          },
+        ]
+      }
       workflow_node_types: {
         Row: {
+          ai_model_config: Json | null
+          apis_config: Json | null
+          business_rules: Json | null
           capabilities: Json | null
           category_id: string
           color: string | null
+          configuration_schema: Json | null
+          connectors_config: Json | null
           created_at: string | null
           created_by: string | null
+          data_storage_config: Json | null
           default_config: Json | null
           description: string | null
           detailed_explanation: string | null
@@ -9277,13 +9339,21 @@ export type Database = {
           requirements: Json | null
           type_key: string
           updated_at: string | null
+          validation_rules: Json | null
+          variables_config: Json | null
         }
         Insert: {
+          ai_model_config?: Json | null
+          apis_config?: Json | null
+          business_rules?: Json | null
           capabilities?: Json | null
           category_id: string
           color?: string | null
+          configuration_schema?: Json | null
+          connectors_config?: Json | null
           created_at?: string | null
           created_by?: string | null
+          data_storage_config?: Json | null
           default_config?: Json | null
           description?: string | null
           detailed_explanation?: string | null
@@ -9299,13 +9369,21 @@ export type Database = {
           requirements?: Json | null
           type_key: string
           updated_at?: string | null
+          validation_rules?: Json | null
+          variables_config?: Json | null
         }
         Update: {
+          ai_model_config?: Json | null
+          apis_config?: Json | null
+          business_rules?: Json | null
           capabilities?: Json | null
           category_id?: string
           color?: string | null
+          configuration_schema?: Json | null
+          connectors_config?: Json | null
           created_at?: string | null
           created_by?: string | null
+          data_storage_config?: Json | null
           default_config?: Json | null
           description?: string | null
           detailed_explanation?: string | null
@@ -9321,6 +9399,8 @@ export type Database = {
           requirements?: Json | null
           type_key?: string
           updated_at?: string | null
+          validation_rules?: Json | null
+          variables_config?: Json | null
         }
         Relationships: [
           {
