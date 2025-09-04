@@ -14,6 +14,8 @@ import {
 import { toast } from 'sonner';
 import { EnhancedWorkflowCanvas } from '@/components/workflow-builder/EnhancedWorkflowCanvas';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
+import { AIAssistIntegration } from './AIAssistIntegration';
+import { ConfigurableNodePanel } from './ConfigurableNodePanel';
 
 interface NodeTypeInfo {
   id: string;
@@ -46,6 +48,11 @@ export const UnifiedWorkflowExperience: React.FC = () => {
   const [selectedScenario, setSelectedScenario] = useState<WorkflowScenario | null>(null);
   const [showNodeHelp, setShowNodeHelp] = useState(false);
   const [activeStep, setActiveStep] = useState<'scenario' | 'design' | 'configure' | 'test' | 'deploy'>('scenario');
+  const [showAIAssist, setShowAIAssist] = useState(false);
+  const [aiAssistMode, setAIAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('build');
+  const [selectedNodeId, setSelectedNodeId] = useState<string>();
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
 
   // Define comprehensive node type information
   const nodeTypeInfo: NodeTypeInfo[] = [
@@ -166,14 +173,38 @@ export const UnifiedWorkflowExperience: React.FC = () => {
       return;
     }
 
-    toast.success('Generating workflow from your description...');
-    
-    // Simulate AI workflow generation
-    setTimeout(() => {
-      setActiveStep('design');
-      toast.success('Workflow generated! Review and customize your nodes.');
-    }, 2000);
+    // Open AI Assist with the prompt
+    setAIAssistMode('build');
+    setShowAIAssist(true);
   }, [promptInput]);
+
+  const handleWorkflowGenerated = useCallback((workflow: any) => {
+    setActiveStep('design');
+    setShowAIAssist(false);
+    toast.success('Workflow generated! Review and customize your nodes.');
+  }, []);
+
+  const handleNodeGenerated = useCallback((node: any) => {
+    toast.success('Node generated successfully!');
+  }, []);
+
+  const handleAIAssistOpen = useCallback((mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure', nodeId?: string) => {
+    setAIAssistMode(mode);
+    setSelectedNodeId(nodeId);
+    setShowAIAssist(true);
+  }, []);
+
+  const handleNodeConfigOpen = useCallback((nodeData: any) => {
+    setSelectedNodeData(nodeData);
+    setSelectedNodeId(nodeData?.id);
+    setShowConfigPanel(true);
+  }, []);
+
+  const handleNodeConfigSave = useCallback((nodeData: any) => {
+    // Save node configuration
+    toast.success('Node configuration saved');
+    setShowConfigPanel(false);
+  }, []);
 
   const handleScenarioSelect = useCallback((scenario: WorkflowScenario) => {
     setSelectedScenario(scenario);
@@ -302,10 +333,19 @@ export const UnifiedWorkflowExperience: React.FC = () => {
               onChange={(e) => setPromptInput(e.target.value)}
               rows={4}
             />
-            <Button onClick={handlePromptGenerate} className="w-full">
-              <Sparkles className="h-4 w-4 mr-2" />
-              Generate Workflow from Description
-            </Button>
+            <div className="flex gap-2">
+              <Button onClick={handlePromptGenerate} className="flex-1">
+                <Sparkles className="h-4 w-4 mr-2" />
+                Generate with AI
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => handleAIAssistOpen('configure')}
+                className="px-3"
+              >
+                <Settings className="h-4 w-4" />
+              </Button>
+            </div>
           </CardContent>
         </Card>
       )}
@@ -399,14 +439,42 @@ export const UnifiedWorkflowExperience: React.FC = () => {
             <EnhancedWorkflowCanvas />
           </div>
 
-          <div className="flex justify-between mt-4">
+          <div className="flex justify-between items-center mt-4">
             <Button variant="outline" onClick={() => setActiveStep('scenario')}>
               Back to Scenarios
             </Button>
-            <Button onClick={() => setActiveStep('configure')}>
-              Configure Nodes
-              <ArrowRight className="h-4 w-4 ml-2" />
-            </Button>
+            
+            <div className="flex gap-2">
+              {/* AI Assist Buttons */}
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleAIAssistOpen('generate')}
+              >
+                <Bot className="h-4 w-4 mr-1" />
+                AI Generate
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleAIAssistOpen('test')}
+              >
+                <Play className="h-4 w-4 mr-1" />
+                AI Test
+              </Button>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleNodeConfigOpen({})}
+              >
+                <Settings className="h-4 w-4 mr-1" />
+                Configure
+              </Button>
+              <Button onClick={() => setActiveStep('configure')}>
+                Next Step
+                <ArrowRight className="h-4 w-4 ml-2" />
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -460,13 +528,42 @@ export const UnifiedWorkflowExperience: React.FC = () => {
       {activeStep === 'configure' && (
         <Card>
           <CardHeader>
-            <CardTitle>Configure Nodes & Agents</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              <span>Configure Nodes & Agents</span>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => handleAIAssistOpen('configure')}
+              >
+                <Bot className="h-4 w-4 mr-1" />
+                AI Configure
+              </Button>
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-muted-foreground">Node configuration interface coming soon...</p>
           </CardContent>
         </Card>
       )}
+
+      {/* AI Assistant Integration */}
+      <AIAssistIntegration
+        isOpen={showAIAssist}
+        onClose={() => setShowAIAssist(false)}
+        onWorkflowGenerated={handleWorkflowGenerated}
+        onNodeGenerated={handleNodeGenerated}
+        initialMode={aiAssistMode}
+        selectedNodeId={selectedNodeId}
+      />
+
+      {/* Configurable Node Panel */}
+      <ConfigurableNodePanel
+        isOpen={showConfigPanel}
+        onClose={() => setShowConfigPanel(false)}
+        nodeData={selectedNodeData}
+        onSave={handleNodeConfigSave}
+        onAIAssist={handleAIAssistOpen}
+      />
     </div>
   );
 };
