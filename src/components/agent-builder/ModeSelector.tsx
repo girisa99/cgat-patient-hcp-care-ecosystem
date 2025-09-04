@@ -10,10 +10,11 @@ import {
   Brain,
   MousePointer,
   Sliders,
-  Sparkles
+  Sparkles,
+  Network
 } from 'lucide-react';
 
-export type AgentMode = 'visual' | 'manual' | 'unified';
+export type AgentMode = 'visual' | 'manual' | 'unified' | 'ecosystem';
 
 interface ModeSelectorProps {
   onModeSelect: (mode: AgentMode) => void;
@@ -39,7 +40,7 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
         </div>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-4 md:grid-cols-2 gap-6">
         {/* Unified Workflow Experience - NEW */}
         <Card className={`cursor-pointer transition-all hover:shadow-lg ${
           selectedMode === 'unified' ? 'ring-2 ring-primary border-primary' : ''
@@ -207,6 +208,63 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
 
             <div className="text-xs text-muted-foreground text-center">
               Best for: Experienced users, complex requirements, precise control
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Agent Ecosystem Management - NEW */}
+        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
+          selectedMode === 'ecosystem' ? 'ring-2 ring-primary border-primary' : ''
+        }`}>
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-12 h-12 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mb-3">
+              <Network className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="flex items-center justify-center gap-2">
+              Agent Ecosystem
+              <Badge variant="default" className="text-xs bg-gradient-to-r from-green-600 to-teal-600">
+                MANAGE
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Manage agent lifecycle, deployments, and performance monitoring
+            </p>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Agent lifecycle management</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Workflow deployment bridge</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Performance monitoring</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Multi-agent orchestration</span>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Button 
+                onClick={() => onModeSelect('ecosystem')}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-green-600 to-teal-600 hover:from-green-700 hover:to-teal-700"
+                variant={selectedMode === 'ecosystem' ? 'default' : 'outline'}
+              >
+                <Network className="w-4 h-4" />
+                Manage Ecosystem
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground text-center">
+              Best for: Production agents, DevOps, performance optimization
             </div>
           </CardContent>
         </Card>

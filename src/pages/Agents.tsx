@@ -59,6 +59,9 @@ import { UnifiedWorkflowExperience } from '@/components/unified-workflow/Unified
 import { AIAssistIntegration } from '@/components/unified-workflow/AIAssistIntegration';
 import { ConfigurableNodePanel } from '@/components/unified-workflow/ConfigurableNodePanel';
 
+// Import new Agent Ecosystem components
+import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
+
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
@@ -67,7 +70,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const AgentsInner = () => {
   // State management
-  const [selectedMode, setSelectedMode] = useState<AgentMode | null>('unified' as any);
+  const [selectedMode, setSelectedMode] = useState<AgentMode | null>('unified');
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
@@ -192,11 +195,15 @@ const AgentsInner = () => {
       toast.success('Switched to Unified Workflow Experience');
     } else if (mode === 'visual') {
       setVisualWorkflowSubTab('use-case');
+    } else if (mode === 'ecosystem') {
+      toast.success('Switched to Agent Ecosystem Management');
     } else {
       setAgentBuilderTab('agent-config');
     }
     
-    const modeText = mode === 'unified' ? 'Unified Workflow' : mode === 'visual' ? 'Visual Workflow' : 'Manual Configuration';
+    const modeText = mode === 'unified' ? 'Unified Workflow' : 
+                     mode === 'visual' ? 'Visual Workflow' : 
+                     mode === 'ecosystem' ? 'Agent Ecosystem' : 'Manual Configuration';
     toast.success(`Switched to ${modeText} mode`);
   };
 
@@ -505,6 +512,15 @@ const AgentsInner = () => {
             onAIAssist={handleAIAssistOpen}
           />
         </div>
+      </AppLayout>
+    );
+  }
+
+  // Agent Ecosystem Management mode
+  if (selectedMode === 'ecosystem') {
+    return (
+      <AppLayout>
+        <AgentEcosystemDashboard />
       </AppLayout>
     );
   }
