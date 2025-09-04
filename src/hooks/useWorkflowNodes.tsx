@@ -53,20 +53,24 @@ export const useWorkflowNodes = () => {
     queryKey: ['workflow-builder-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('workflow_builder_categories')
+        .from('workflow_node_categories')
         .select('*')
         .eq('is_active', true)
-        .order('sort_order');
+        .order('order_index');
       
       if (error) throw error;
+      
+      console.log('[useWorkflowNodes] Fetched categories:', data?.length, 'categories');
+      console.log('[useWorkflowNodes] Categories:', data?.map(c => c.name));
+      
       return data.map(cat => ({
         id: cat.id,
         name: cat.name,
-        display_name: cat.name.charAt(0).toUpperCase() + cat.name.slice(1).replace(/_/g, ' '),
+        display_name: cat.display_name,
         description: cat.description || '',
         icon: cat.icon || 'Box',
         color: cat.color || '#6B7280',
-        order_index: cat.sort_order || 0,
+        order_index: cat.order_index || 0,
         is_active: cat.is_active,
         created_at: cat.created_at || '',
         updated_at: cat.updated_at || ''
@@ -83,37 +87,43 @@ export const useWorkflowNodes = () => {
     queryKey: ['workflow-builder-nodes'],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from('workflow_builder_nodes')
-        .select('*')
+        .from('workflow_node_types')
+        .select(`
+          *,
+          category:workflow_node_categories(*)
+        `)
         .eq('is_active', true)
-        .order('type');
+        .order('order_index');
       
       if (error) throw error;
       
+      console.log('[useWorkflowNodes] Fetched node types:', data?.length, 'nodes');
+      console.log('[useWorkflowNodes] Sample node data:', data?.[0]);
+      
       return data.map(node => ({
         id: node.id,
-        category_id: node.category,
-        type_key: node.type,
-        display_name: node.label,
+        category_id: node.category_id,
+        type_key: node.type_key,
+        display_name: node.display_name,
         description: node.description || '',
-        detailed_explanation: node.description || '',
-        icon: 'Box',
-        color: '#6B7280',
-        is_draggable: true,
-        is_configurable: true,
-        default_config: typeof node.configuration === 'object' ? (node.configuration as Record<string, any>) : {},
-        input_schema: (typeof node.configuration === 'object' && node.configuration && (node.configuration as any)?.inputs) || {},
-        output_schema: (typeof node.configuration === 'object' && node.configuration && (node.configuration as any)?.outputs) || {},
-        capabilities: [],
-        requirements: {},
-        order_index: 0,
+        detailed_explanation: node.detailed_explanation || node.description || '',
+        icon: node.icon || 'Box',
+        color: node.color || '#6B7280',
+        is_draggable: node.is_draggable,
+        is_configurable: node.is_configurable,
+        default_config: (node.default_config && typeof node.default_config === 'object') ? node.default_config as Record<string, any> : {},
+        input_schema: (node.input_schema && typeof node.input_schema === 'object') ? node.input_schema as Record<string, any> : {},
+        output_schema: (node.output_schema && typeof node.output_schema === 'object') ? node.output_schema as Record<string, any> : {},
+        capabilities: Array.isArray(node.capabilities) ? node.capabilities.map(c => String(c)) : [],
+        requirements: (node.requirements && typeof node.requirements === 'object') ? node.requirements as Record<string, any> : {},
+        order_index: node.order_index || 0,
         is_active: node.is_active,
         created_at: node.created_at || '',
         updated_at: node.updated_at || '',
-        category: {
-          id: node.category,
-          name: node.category,
-          display_name: node.category.charAt(0).toUpperCase() + node.category.slice(1).replace(/_/g, ' '),
+        category: node.category || {
+          id: node.category_id,
+          name: 'uncategorized',
+          display_name: 'Uncategorized',
           description: '',
           icon: 'Box',
           color: '#6B7280',
@@ -128,7 +138,7 @@ export const useWorkflowNodes = () => {
 
   // Group node types by category
   const nodeTypesByCategory = nodeTypes.reduce((acc, nodeType) => {
-    const categoryName = nodeType.category_id || 'uncategorized';
+    const categoryName = nodeType.category?.name || 'uncategorized';
     if (!acc[categoryName]) {
       acc[categoryName] = [];
     }
@@ -146,13 +156,13 @@ export const useWorkflowNodes = () => {
       configuration?: any;
     }) => {
       const { data, error } = await supabase
-        .from('workflow_builder_nodes')
+        .from('workflow_node_types')
         .insert([{
-          type: nodeData.type,
-          category: nodeData.category,
-          label: nodeData.label,
+          type_key: nodeData.type,
+          category_id: nodeData.category,
+          display_name: nodeData.label,
           description: nodeData.description || '',
-          configuration: nodeData.configuration || {},
+          default_config: nodeData.configuration || {},
           is_active: true
         }])
         .select()
@@ -174,7 +184,7 @@ export const useWorkflowNodes = () => {
   const updateNodeTypeMutation = useMutation({
     mutationFn: async ({ id, ...updates }: any) => {
       const { data, error } = await supabase
-        .from('workflow_builder_nodes')
+        .from('workflow_node_types')
         .update(updates)
         .eq('id', id)
         .select()
@@ -196,7 +206,7 @@ export const useWorkflowNodes = () => {
   const deleteNodeTypeMutation = useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
-        .from('workflow_builder_nodes')
+        .from('workflow_node_types')
         .delete()
         .eq('id', id);
       
