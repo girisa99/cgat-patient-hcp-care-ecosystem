@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { EnhancedWorkflowCanvas } from '@/components/workflow-builder/EnhancedWorkflowCanvas';
+import { NodePalette } from '@/components/workflow-builder/NodePalette';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { AIAssistIntegration } from './AIAssistIntegration';
 import { ConfigurableNodePanel } from './ConfigurableNodePanel';
@@ -322,16 +323,16 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
           ))}
         </div>
 
-        <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-          <h4 className="font-semibold text-blue-900 mb-2">Key Concepts:</h4>
-          <ul className="text-sm text-blue-800 space-y-1">
-            <li>• <strong>Agents are not nodes</strong> - Agents are deployed through agent nodes</li>
-            <li>• <strong>Every workflow needs</strong> a Start node and End node</li>
-            <li>• <strong>Single agents</strong> handle specific tasks independently</li>
-            <li>• <strong>Multi-agent systems</strong> coordinate multiple specialized agents</li>
-            <li>• <strong>Connections</strong> define the flow between nodes with optional conditions</li>
-          </ul>
-        </div>
+          <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+            <h4 className="font-semibold text-blue-900 mb-2">🎯 How to Build Workflows:</h4>
+            <ul className="text-sm text-blue-800 space-y-1">
+              <li>• <strong>AI Generate:</strong> Use "AI Intelligence & Suggestions" button to generate workflows</li>
+              <li>• <strong>Drag & Drop:</strong> Drag nodes from the left palette to the canvas</li>
+              <li>• <strong>Connect Nodes:</strong> Click and drag between node connection points</li>
+              <li>• <strong>Configure:</strong> Right-click nodes for configuration options</li>
+              <li>• <strong>Test:</strong> Use AI Assistant to test individual nodes or complete workflows</li>
+            </ul>
+          </div>
       </CardContent>
     </Card>
   );
@@ -504,21 +505,32 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         <CardContent>
           {showNodeHelp && renderNodeTypeGuide()}
           
-          <div className="border rounded-lg p-4 min-h-[500px] relative">
-            <EnhancedWorkflowCanvas />
+          <div className="grid grid-cols-12 gap-4 min-h-[600px]">
+            {/* Node Palette */}
+            <div className="col-span-3">
+              <NodePalette onNodeAdd={handleNodeGenerated} />
+            </div>
             
-            {/* Test Mode Overlay */}
-            {isTestMode && (
-              <div className="absolute top-4 right-4 z-10">
-                <AnimatedFlowVisualizer 
-                  nodes={[]} // Would get actual nodes from canvas
-                  edges={[]} // Would get actual edges from canvas
-                  isTestMode={isTestMode}
-                  onTestStart={() => {}}
-                  onTestStop={() => setIsTestMode(false)}
-                />
-              </div>
-            )}
+            {/* Workflow Canvas */}
+            <div className="col-span-9 border rounded-lg relative">
+              <EnhancedWorkflowCanvas 
+                onNodesChange={onWorkflowUpdate ? (nodes) => onWorkflowUpdate(nodes, []) : undefined}
+                onEdgesChange={onWorkflowUpdate ? (edges) => onWorkflowUpdate([], edges) : undefined}
+              />
+              
+              {/* Test Mode Overlay */}
+              {isTestMode && (
+                <div className="absolute top-4 right-4 z-10">
+                  <AnimatedFlowVisualizer 
+                    nodes={[]} // Would get actual nodes from canvas
+                    edges={[]} // Would get actual edges from canvas
+                    isTestMode={isTestMode}
+                    onTestStart={() => {}}
+                    onTestStop={() => setIsTestMode(false)}
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           <div className="flex justify-between items-center mt-4">
