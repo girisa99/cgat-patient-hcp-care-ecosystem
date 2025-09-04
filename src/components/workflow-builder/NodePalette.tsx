@@ -29,11 +29,17 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
   console.log('[NodePalette] render start - DB-only mode');
   const { categories: dbCategories, nodeTypes: dbNodeTypes, isLoading } = useWorkflowNodes();
   
-  // Initialize open categories based on actual DB categories
+  // Initialize open categories - Show core agent lifecycle phases by default
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    // Show core workflow and business categories by default
-    const defaultOpen = ['triggers', 'actions', 'conditions', 'business_tools', 'healthcare_systems', 'social_media'];
+    // Show agent lifecycle flow - core phases expanded by default
+    const defaultOpen = [
+      'Agent Flows',      // Phase 1: Design
+      'triggers',         // Phase 1: Design 
+      'GenAI & LLM',      // Phase 3: AI Intelligence
+      'business_tools',   // Phase 4: Business Integration
+      'social_media'      // Phase 4: Popular integration
+    ];
     dbCategories.forEach(cat => {
       initial[cat.name] = defaultOpen.includes(cat.name);
     });
@@ -166,6 +172,55 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     event.dataTransfer.effectAllowed = 'move';
   };
 
+  // Agent lifecycle phase helpers
+  const getLifecyclePhase = (categoryName: string) => {
+    const phaseMap: Record<string, string> = {
+      // Phase 1: Design & Planning
+      'Agent Flows': 'design', 'triggers': 'design', 'conditions': 'design', 'actions': 'design',
+      // Phase 2: Knowledge & Context  
+      'Document Loaders': 'knowledge', 'Vector Stores': 'knowledge', 'Cache & Memory': 'knowledge', 'data': 'knowledge',
+      // Phase 3: AI & Intelligence
+      'GenAI & LLM': 'ai', 'Voice Configuration': 'ai', 'Human Loop': 'ai',
+      // Phase 4: Business Integrations
+      'business_tools': 'business', 'healthcare_systems': 'business', 'crm_systems': 'business', 
+      'finance': 'business', 'hr_management': 'business', 'project_management': 'business',
+      'communication': 'business', 'social_media': 'business', 'e_commerce': 'business',
+      // Phase 5: Development & Automation
+      'automation': 'development', 'MCP Protocol': 'development', 'Tools & Utilities': 'development',
+      'development_tools': 'development', 'Code & Deployment': 'development', 'security': 'development',
+      // Phase 6: Deployment & Monitoring
+      'Channel Deployment': 'deployment', 'data_analytics': 'deployment', 'document_management': 'deployment'
+    };
+    return phaseMap[categoryName] || 'other';
+  };
+
+  const getLifecyclePhaseColor = (categoryName: string) => {
+    const phase = getLifecyclePhase(categoryName);
+    const colorMap: Record<string, string> = {
+      'design': 'bg-blue-600 text-white border-blue-700',
+      'knowledge': 'bg-purple-600 text-white border-purple-700', 
+      'ai': 'bg-emerald-600 text-white border-emerald-700',
+      'business': 'bg-orange-600 text-white border-orange-700',
+      'development': 'bg-cyan-600 text-white border-cyan-700',
+      'deployment': 'bg-pink-600 text-white border-pink-700',
+      'other': 'bg-secondary'
+    };
+    return colorMap[phase] || 'bg-secondary';
+  };
+
+  const getLifecyclePhaseIcon = (categoryName: string) => {
+    const phase = getLifecyclePhase(categoryName);
+    const iconMap: Record<string, JSX.Element> = {
+      'design': <Workflow className="h-3 w-3 ml-1" />,
+      'knowledge': <Database className="h-3 w-3 ml-1" />,
+      'ai': <Bot className="h-3 w-3 ml-1" />,
+      'business': <Building2 className="h-3 w-3 ml-1" />,
+      'development': <Code className="h-3 w-3 ml-1" />,
+      'deployment': <Rocket className="h-3 w-3 ml-1" />
+    };
+    return iconMap[phase] || null;
+  };
+
   return (
     <Card className="h-full flex flex-col">
       <CardHeader className="flex-shrink-0 pb-3">
@@ -175,20 +230,28 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
         </CardTitle>
           <div className="space-y-2">
             <p className="text-xs text-muted-foreground">
-              <strong>Drag & Drop Nodes:</strong>
+              <strong>Agent Lifecycle Flow:</strong>
             </p>
             <div className="space-y-1 text-xs text-muted-foreground">
               <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full flex-shrink-0" />
+                <span><strong>Design</strong> → Agent Flows, Triggers, Conditions, Actions</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="w-2 h-2 bg-purple-500 rounded-full flex-shrink-0" />
+                <span><strong>Knowledge</strong> → Document Loaders, Vector Stores, Data</span>
+              </div>
+              <div className="flex items-center gap-2">
                 <div className="w-2 h-2 bg-emerald-500 rounded-full flex-shrink-0" />
-                <span><strong>Business Tools</strong> → ICD, NPI, FDA, CMS, HIPAA validation</span>
+                <span><strong>AI Intelligence</strong> → GenAI & LLM, Voice, Human Loop</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-indigo-500 rounded-full flex-shrink-0" />
-                <span><strong>Enhanced Nodes</strong> → All-in-one configuration within nodes</span>
+                <div className="w-2 h-2 bg-orange-500 rounded-full flex-shrink-0" />
+                <span><strong>Business</strong> → CRM, Finance, Healthcare, Social Media</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 bg-primary rounded-full flex-shrink-0" />
-                <span><strong>Workflow Nodes</strong> → Create executable workflow elements</span>
+                <div className="w-2 h-2 bg-cyan-500 rounded-full flex-shrink-0" />
+                <span><strong>Development</strong> → Automation, Tools, Security, Deployment</span>
               </div>
             </div>
           </div>
@@ -218,29 +281,12 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                       className="w-full justify-between p-2 h-auto hover:bg-muted/50"
                     >
                       <div className="flex items-center gap-2">
-                       <Badge 
-                          variant={['business_tools', 'healthcare_systems', 'triggers', 'actions', 'social_media'].includes(category.name) ? 'default' : 'secondary'} 
-                          className={`text-xs ${
-                            category.name === 'business_tools' 
-                              ? 'bg-emerald-600 text-white border-emerald-700' 
-                              : category.name === 'healthcare_systems'
-                              ? 'bg-red-600 text-white border-red-700'
-                              : category.name === 'triggers'
-                              ? 'bg-red-600 text-white border-red-700'
-                              : category.name === 'actions'
-                              ? 'bg-green-600 text-white border-green-700'
-                              : category.name === 'social_media'
-                              ? 'bg-blue-600 text-white border-blue-700'
-                              : 'bg-secondary'
-                          }`}
+                        <Badge 
+                          variant={getLifecyclePhase(category.name) !== 'other' ? 'default' : 'secondary'} 
+                          className={`text-xs ${getLifecyclePhaseColor(category.name)}`}
                         >
                           {category.display_name}
-                          {['business_tools', 'healthcare_systems'].includes(category.name) && (
-                            <Shield className="h-3 w-3 ml-1" />
-                          )}
-                          {category.name === 'triggers' && <Zap className="h-3 w-3 ml-1" />}
-                          {category.name === 'actions' && <Play className="h-3 w-3 ml-1" />}
-                          {category.name === 'social_media' && <Share2 className="h-3 w-3 ml-1" />}
+                          {getLifecyclePhaseIcon(category.name)}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           ({categoryNodes.length})
