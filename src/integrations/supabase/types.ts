@@ -1705,6 +1705,63 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_workflow_traces: {
+        Row: {
+          agent_id: string | null
+          conversation_id: string | null
+          created_at: string
+          duration_ms: number | null
+          end_time: string | null
+          id: string
+          logs: Json | null
+          metadata: Json | null
+          operation_name: string
+          parent_span_id: string | null
+          span_id: string | null
+          start_time: string
+          status: string | null
+          tags: Json | null
+          trace_id: string
+          user_id: string
+        }
+        Insert: {
+          agent_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          end_time?: string | null
+          id?: string
+          logs?: Json | null
+          metadata?: Json | null
+          operation_name: string
+          parent_span_id?: string | null
+          span_id?: string | null
+          start_time?: string
+          status?: string | null
+          tags?: Json | null
+          trace_id: string
+          user_id: string
+        }
+        Update: {
+          agent_id?: string | null
+          conversation_id?: string | null
+          created_at?: string
+          duration_ms?: number | null
+          end_time?: string | null
+          id?: string
+          logs?: Json | null
+          metadata?: Json | null
+          operation_name?: string
+          parent_span_id?: string | null
+          span_id?: string | null
+          start_time?: string
+          status?: string | null
+          tags?: Json | null
+          trace_id?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       alternative_solutions: {
         Row: {
           category: string
@@ -5405,6 +5462,45 @@ export type Database = {
           sms_notifications?: boolean | null
           system_updates?: boolean | null
           updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      observability_configs: {
+        Row: {
+          api_key_encrypted: string | null
+          configuration: Json | null
+          created_at: string
+          id: string
+          is_enabled: boolean
+          platform: string
+          project_id: string | null
+          space_key: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          api_key_encrypted?: string | null
+          configuration?: Json | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          platform: string
+          project_id?: string | null
+          space_key?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          api_key_encrypted?: string | null
+          configuration?: Json | null
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          platform?: string
+          project_id?: string | null
+          space_key?: string | null
+          updated_at?: string
           user_id?: string
         }
         Relationships: []
