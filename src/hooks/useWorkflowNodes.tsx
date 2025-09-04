@@ -32,6 +32,15 @@ export interface WorkflowNodeType {
   output_schema: Record<string, any>;
   capabilities: string[];
   requirements: Record<string, any>;
+  // New consolidated configuration fields
+  configurationSchema?: Record<string, any>;
+  aiModelConfig?: Record<string, any>;
+  variablesConfig?: any[];
+  apisConfig?: any[];
+  connectorsConfig?: any[];
+  dataStorageConfig?: Record<string, any>;
+  validationRules?: Record<string, any>;
+  businessRules?: Record<string, any>;
   order_index: number;
   is_active: boolean;
   created_by?: string;
@@ -50,7 +59,7 @@ export const useWorkflowNodes = () => {
     isLoading: categoriesLoading,
     error: categoriesError
   } = useQuery({
-    queryKey: ['workflow-builder-categories'],
+    queryKey: ['consolidated-node-categories'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('workflow_node_categories')
@@ -84,7 +93,7 @@ export const useWorkflowNodes = () => {
     isLoading: nodeTypesLoading,
     error: nodeTypesError
   } = useQuery({
-    queryKey: ['workflow-builder-nodes'],
+    queryKey: ['consolidated-node-types'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('workflow_node_types')
@@ -116,6 +125,15 @@ export const useWorkflowNodes = () => {
         output_schema: (node.output_schema && typeof node.output_schema === 'object') ? node.output_schema as Record<string, any> : {},
         capabilities: Array.isArray(node.capabilities) ? node.capabilities.map(c => String(c)) : [],
         requirements: (node.requirements && typeof node.requirements === 'object') ? node.requirements as Record<string, any> : {},
+        // Consolidated configuration fields from the new structure
+        configurationSchema: (node.configuration_schema && typeof node.configuration_schema === 'object') ? node.configuration_schema as Record<string, any> : {},
+        aiModelConfig: (node.ai_model_config && typeof node.ai_model_config === 'object') ? node.ai_model_config as Record<string, any> : {},
+        variablesConfig: Array.isArray(node.variables_config) ? node.variables_config : [],
+        apisConfig: Array.isArray(node.apis_config) ? node.apis_config : [],
+        connectorsConfig: Array.isArray(node.connectors_config) ? node.connectors_config : [],
+        dataStorageConfig: (node.data_storage_config && typeof node.data_storage_config === 'object') ? node.data_storage_config as Record<string, any> : {},
+        validationRules: (node.validation_rules && typeof node.validation_rules === 'object') ? node.validation_rules as Record<string, any> : {},
+        businessRules: (node.business_rules && typeof node.business_rules === 'object') ? node.business_rules as Record<string, any> : {},
         order_index: node.order_index || 0,
         is_active: node.is_active,
         created_at: node.created_at || '',
@@ -172,7 +190,7 @@ export const useWorkflowNodes = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflow-builder-nodes'] });
+      queryClient.invalidateQueries({ queryKey: ['consolidated-node-types'] });
       toast.success("Node type created successfully");
     },
     onError: (error: any) => {
@@ -194,7 +212,7 @@ export const useWorkflowNodes = () => {
       return data;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflow-builder-nodes'] });
+      queryClient.invalidateQueries({ queryKey: ['consolidated-node-types'] });
       toast.success("Node type updated successfully");
     },
     onError: (error: any) => {
@@ -213,7 +231,7 @@ export const useWorkflowNodes = () => {
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['workflow-builder-nodes'] });
+      queryClient.invalidateQueries({ queryKey: ['consolidated-node-types'] });
       toast.success("Node type deleted successfully");
     },
     onError: (error: any) => {

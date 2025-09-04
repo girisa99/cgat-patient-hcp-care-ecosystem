@@ -51,20 +51,29 @@ export const useNodeSuggestions = () => {
     },
   });
 
-  // Save node configuration
+  // Save node configuration (updated for consolidated structure)
   const saveNodeConfig = useMutation({
     mutationFn: async (config: NodeSuggestionConfig) => {
+      // Save to workflow_node_instances instead of node_configurations
       const { data, error } = await supabase
-        .from('node_configurations')
+        .from('workflow_node_instances')
         .upsert({
+          workflow_id: config.config?.workflowId,
           node_id: config.id,
-          configuration_type: config.type,
-          variables: config.config?.variables || [],
-          apis: config.config?.apis || [],
-          data_storage: config.config?.dataStorage || {},
-          connectors: config.config?.connectors || [],
-          ai_model_config: config.config?.aiModel || {},
-          workflow_id: config.config?.workflowId || null
+          node_type_key: config.type,
+          instance_name: config.label,
+          configuration: {
+            variables: config.config?.variables || [],
+            apis: config.config?.apis || [],
+            dataStorage: config.config?.dataStorage || {},
+            connectors: config.config?.connectors || [],
+            aiModel: config.config?.aiModel || {}
+          },
+          metadata: {
+            category: config.category,
+            priority: config.priority,
+            dependencies: config.dependencies || []
+          }
         })
         .select()
         .single();

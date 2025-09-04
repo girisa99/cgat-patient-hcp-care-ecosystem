@@ -252,7 +252,7 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
         requiresHuman: z.boolean().optional()
       })).optional(),
       
-      // Knowledge
+      // Knowledge & Configuration (Consolidated)
       knowledgeDocumentStores: z.array(z.string()).optional(),
       knowledgeVectorEmbeddings: z.array(z.object({
         vectorStore: z.string(),
@@ -266,6 +266,16 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
       inputMessage: z.string().optional(),
       returnResponseAs: z.string().optional(),
       updateFlowState: z.boolean().optional(),
+      
+      // Consolidated Configuration Fields
+      configurationSchema: z.any().optional(),
+      aiModelConfig: z.any().optional(),
+      variablesConfig: z.array(z.any()).optional(),
+      apisConfig: z.array(z.any()).optional(),
+      connectorsConfig: z.array(z.any()).optional(),
+      dataStorageConfig: z.any().optional(),
+      validationRules: z.any().optional(),
+      businessRules: z.any().optional(),
       
       // API fields
       url: z.string().optional(),
