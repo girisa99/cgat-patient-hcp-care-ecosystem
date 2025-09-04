@@ -22,7 +22,11 @@ import {
   Sparkles,
   ArrowUp,
   ArrowDown,
-  X
+  X,
+  Target,
+  Brain,
+  Network,
+  Users
 } from 'lucide-react';
 
 // Import existing components
@@ -51,6 +55,9 @@ import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetP
 import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
 import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
 import { UnifiedAgentAssist } from '@/components/unified/UnifiedAgentAssist';
+import { UnifiedWorkflowExperience } from '@/components/unified-workflow/UnifiedWorkflowExperience';
+import { AIAssistIntegration } from '@/components/unified-workflow/AIAssistIntegration';
+import { ConfigurableNodePanel } from '@/components/unified-workflow/ConfigurableNodePanel';
 
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
@@ -60,7 +67,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 const AgentsInner = () => {
   // State management
-  const [selectedMode, setSelectedMode] = useState<AgentMode | null>('visual' as any);
+  const [selectedMode, setSelectedMode] = useState<AgentMode | null>('unified' as any);
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
@@ -78,6 +85,10 @@ const AgentsInner = () => {
   const [workflowNodes, setWorkflowNodes] = useState<any[]>([]);
   const [workflowEdges, setWorkflowEdges] = useState<any[]>([]);
   const [showUnifiedAssist, setShowUnifiedAssist] = useState(false);
+  const [showAIAssist, setShowAIAssist] = useState(false);
+  const [showConfigPanel, setShowConfigPanel] = useState(false);
+  const [aiAssistMode, setAIAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('build');
+  const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -176,13 +187,17 @@ const AgentsInner = () => {
     try { localStorage.setItem('agentBuilder_selectedMode', mode as any); } catch {}
     setShowModeSelector(false);
     
-    if (mode === 'visual') {
+    if (mode === 'unified') {
+      // Use unified workflow experience
+      toast.success('Switched to Unified Workflow Experience');
+    } else if (mode === 'visual') {
       setVisualWorkflowSubTab('use-case');
     } else {
       setAgentBuilderTab('agent-config');
     }
     
-    toast.success(`Switched to ${mode === 'visual' ? 'Visual Workflow' : 'Manual Configuration'} mode`);
+    const modeText = mode === 'unified' ? 'Unified Workflow' : mode === 'visual' ? 'Visual Workflow' : 'Manual Configuration';
+    toast.success(`Switched to ${modeText} mode`);
   };
 
   const handleUseCaseSelect = (useCase: string) => {
@@ -204,23 +219,35 @@ const AgentsInner = () => {
     toast.success('Setup complete! Customize your agent\'s appearance.');
   };
 
-  const handlePromptGenerate = (prompt: string, generatedConfig: any) => {
-    if (selectedMode === 'visual') {
-      setWizardData(prev => ({
-        ...prev,
-        generatedWorkflow: generatedConfig,
-        prompt: prompt
-      }));
-      setVisualWorkflowSubTab('journey');
-      toast.success('Workflow generated! Proceed to Journey to review and refine.');
+  const handleAIAssistOpen = (mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure', nodeId?: string) => {
+    setAIAssistMode(mode);
+    setSelectedNodeData(nodeId ? { id: nodeId } : null);
+    setShowAIAssist(true);
+  };
+
+  const handleWorkflowGenerated = (workflow: any) => {
+    setWorkflowNodes(workflow.nodes || []);
+    setWorkflowEdges(workflow.edges || []);
+    toast.success('Workflow generated successfully!');
+  };
+
+  const handleNodeGenerated = (node: any) => {
+    if (node.nodes) {
+      setWorkflowNodes(prev => [...prev, ...node.nodes]);
     } else {
-      setWizardData(prev => ({
-        ...prev,
-        generatedConfig: generatedConfig,
-        prompt: prompt
-      }));
-      toast.success('Configuration generated! Review the settings.');
+      setWorkflowNodes(prev => [...prev, node]);
     }
+    toast.success('Node generated successfully!');
+  };
+
+  const handleNodeConfigOpen = (nodeData: any) => {
+    setSelectedNodeData(nodeData);
+    setShowConfigPanel(true);
+  };
+
+  const handleNodeConfigSave = (nodeData: any) => {
+    toast.success('Node configuration saved');
+    setShowConfigPanel(false);
   };
 
   // Genie AI Layout - Matching screenshot structure exactly
@@ -452,7 +479,37 @@ const AgentsInner = () => {
     );
   }
 
-  // Main render - Genie AI Layout
+  // Main content based on selected mode
+  if (selectedMode === 'unified') {
+    return (
+      <AppLayout>
+        <div className="h-screen flex flex-col">
+          <UnifiedWorkflowExperience />
+          
+          {/* AI Assistant Integration */}
+          <AIAssistIntegration
+            isOpen={showAIAssist}
+            onClose={() => setShowAIAssist(false)}
+            onWorkflowGenerated={handleWorkflowGenerated}
+            onNodeGenerated={handleNodeGenerated}
+            initialMode={aiAssistMode}
+            selectedNodeId={selectedNodeData?.id}
+          />
+
+          {/* Configurable Node Panel */}
+          <ConfigurableNodePanel
+            isOpen={showConfigPanel}
+            onClose={() => setShowConfigPanel(false)}
+            nodeData={selectedNodeData}
+            onSave={handleNodeConfigSave}
+            onAIAssist={handleAIAssistOpen}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Main render - Genie AI Layout (Visual/Manual modes)
   return renderFlowiseLayout();
 };
 

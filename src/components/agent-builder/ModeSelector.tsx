@@ -9,10 +9,11 @@ import {
   ArrowRight,
   Brain,
   MousePointer,
-  Sliders
+  Sliders,
+  Sparkles
 } from 'lucide-react';
 
-export type AgentMode = 'visual' | 'manual';
+export type AgentMode = 'visual' | 'manual' | 'unified';
 
 interface ModeSelectorProps {
   onModeSelect: (mode: AgentMode) => void;
@@ -38,7 +39,64 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
         </div>
       </div>
 
-      <div className="grid md:grid-cols-2 gap-6">
+      <div className="grid md:grid-cols-3 gap-6">
+        {/* Unified Workflow Experience - NEW */}
+        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
+          selectedMode === 'unified' ? 'ring-2 ring-primary border-primary' : ''
+        }`}>
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-3">
+              <Brain className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="flex items-center justify-center gap-2">
+              Unified Experience
+              <Badge variant="default" className="text-xs bg-gradient-to-r from-blue-600 to-purple-600">
+                NEW
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Complete guided experience with AI assistance at every step
+            </p>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">AI-powered scenario generation</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Drag-and-drop with AI suggestions</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Real-time testing & deployment</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Database-synced node library</span>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Button 
+                onClick={() => onModeSelect('unified')}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+                variant={selectedMode === 'unified' ? 'default' : 'outline'}
+              >
+                <Sparkles className="w-4 h-4" />
+                Start Unified Builder
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground text-center">
+              Best for: All users, complete workflows, AI-assisted development
+            </div>
+          </CardContent>
+        </Card>
+
         {/* Visual Workflow Mode */}
         <Card className={`cursor-pointer transition-all hover:shadow-lg ${
           selectedMode === 'visual' ? 'ring-2 ring-primary border-primary' : ''
