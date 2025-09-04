@@ -4822,56 +4822,6 @@ export type Database = {
         }
         Relationships: []
       }
-      node_configurations: {
-        Row: {
-          ai_model_config: Json | null
-          apis: Json | null
-          configuration_type: string
-          connectors: Json | null
-          created_at: string
-          data_storage: Json | null
-          id: string
-          node_id: string
-          updated_at: string
-          variables: Json | null
-          workflow_id: string
-        }
-        Insert: {
-          ai_model_config?: Json | null
-          apis?: Json | null
-          configuration_type: string
-          connectors?: Json | null
-          created_at?: string
-          data_storage?: Json | null
-          id?: string
-          node_id: string
-          updated_at?: string
-          variables?: Json | null
-          workflow_id: string
-        }
-        Update: {
-          ai_model_config?: Json | null
-          apis?: Json | null
-          configuration_type?: string
-          connectors?: Json | null
-          created_at?: string
-          data_storage?: Json | null
-          id?: string
-          node_id?: string
-          updated_at?: string
-          variables?: Json | null
-          workflow_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "node_configurations_workflow_id_fkey"
-            columns: ["workflow_id"]
-            isOneToOne: false
-            referencedRelation: "agent_workflows"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       node_suggestions: {
         Row: {
           applied_at: string | null
@@ -8535,86 +8485,6 @@ export type Database = {
         }
         Relationships: []
       }
-      workflow_builder_categories: {
-        Row: {
-          color: string | null
-          created_at: string | null
-          description: string | null
-          icon: string | null
-          id: string
-          is_active: boolean | null
-          name: string
-          sort_order: number | null
-          updated_at: string | null
-        }
-        Insert: {
-          color?: string | null
-          created_at?: string | null
-          description?: string | null
-          icon?: string | null
-          id?: string
-          is_active?: boolean | null
-          name: string
-          sort_order?: number | null
-          updated_at?: string | null
-        }
-        Update: {
-          color?: string | null
-          created_at?: string | null
-          description?: string | null
-          icon?: string | null
-          id?: string
-          is_active?: boolean | null
-          name?: string
-          sort_order?: number | null
-          updated_at?: string | null
-        }
-        Relationships: []
-      }
-      workflow_builder_nodes: {
-        Row: {
-          category: string
-          configuration: Json | null
-          created_at: string | null
-          description: string | null
-          id: string
-          is_active: boolean | null
-          label: string
-          type: string
-          updated_at: string | null
-        }
-        Insert: {
-          category: string
-          configuration?: Json | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          label: string
-          type: string
-          updated_at?: string | null
-        }
-        Update: {
-          category?: string
-          configuration?: Json | null
-          created_at?: string | null
-          description?: string | null
-          id?: string
-          is_active?: boolean | null
-          label?: string
-          type?: string
-          updated_at?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "workflow_builder_nodes_category_fkey"
-            columns: ["category"]
-            isOneToOne: false
-            referencedRelation: "workflow_builder_categories"
-            referencedColumns: ["name"]
-          },
-        ]
-      }
       workflow_collaborations: {
         Row: {
           cursor_position: Json | null
@@ -9107,60 +8977,6 @@ export type Database = {
           },
         ]
       }
-      workflow_node_configs: {
-        Row: {
-          configuration: Json | null
-          created_at: string | null
-          id: string
-          metadata: Json | null
-          node_id: string
-          node_type_key: string
-          position: Json | null
-          size: Json | null
-          updated_at: string | null
-          workflow_instance_id: string
-        }
-        Insert: {
-          configuration?: Json | null
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          node_id: string
-          node_type_key: string
-          position?: Json | null
-          size?: Json | null
-          updated_at?: string | null
-          workflow_instance_id: string
-        }
-        Update: {
-          configuration?: Json | null
-          created_at?: string | null
-          id?: string
-          metadata?: Json | null
-          node_id?: string
-          node_type_key?: string
-          position?: Json | null
-          size?: Json | null
-          updated_at?: string | null
-          workflow_instance_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "workflow_node_configs_node_type_key_fkey"
-            columns: ["node_type_key"]
-            isOneToOne: false
-            referencedRelation: "workflow_node_types"
-            referencedColumns: ["type_key"]
-          },
-          {
-            foreignKeyName: "workflow_node_configs_workflow_instance_id_fkey"
-            columns: ["workflow_instance_id"]
-            isOneToOne: false
-            referencedRelation: "workflow_instances"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       workflow_node_dependencies: {
         Row: {
           condition: Json | null
@@ -9302,6 +9118,13 @@ export type Database = {
           workflow_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "workflow_node_instances_node_type_key_fkey"
+            columns: ["node_type_key"]
+            isOneToOne: false
+            referencedRelation: "consolidated_node_catalog"
+            referencedColumns: ["type_key"]
+          },
           {
             foreignKeyName: "workflow_node_instances_node_type_key_fkey"
             columns: ["node_type_key"]
@@ -9560,7 +9383,39 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      consolidated_node_catalog: {
+        Row: {
+          ai_model_config: Json | null
+          apis_config: Json | null
+          business_rules: Json | null
+          capabilities: Json | null
+          category_color: string | null
+          category_description: string | null
+          category_display_name: string | null
+          category_icon: string | null
+          category_name: string | null
+          category_order: number | null
+          configuration_schema: Json | null
+          connectors_config: Json | null
+          data_storage_config: Json | null
+          default_config: Json | null
+          detailed_explanation: string | null
+          input_schema: Json | null
+          is_active: boolean | null
+          node_color: string | null
+          node_description: string | null
+          node_display_name: string | null
+          node_icon: string | null
+          node_id: string | null
+          node_order: number | null
+          output_schema: Json | null
+          requirements: Json | null
+          type_key: string | null
+          validation_rules: Json | null
+          variables_config: Json | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _table_exists: {
