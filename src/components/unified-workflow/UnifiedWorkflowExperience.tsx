@@ -403,10 +403,11 @@ export const UnifiedWorkflowExperience: React.FC = () => {
           </CardHeader>
           <CardContent>
             <Button 
-              onClick={() => setActiveStep('design')}
+              onClick={() => handleAIAssistOpen('generate')}
               className="w-full"
             >
-              Open Visual Canvas
+              <Brain className="h-4 w-4 mr-2" />
+              AI Intelligence & Suggestions
             </Button>
           </CardContent>
         </Card>
