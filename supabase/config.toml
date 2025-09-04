@@ -61,3 +61,9 @@ verify_jwt = false
 
 [functions.check-ai-provider]
 verify_jwt = false
+
+[functions.arize-integration]
+verify_jwt = true
+
+[functions.langwatch-integration] 
+verify_jwt = true

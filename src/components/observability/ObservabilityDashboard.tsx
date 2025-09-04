@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -6,7 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
   Activity, 
   Eye, 
@@ -19,83 +18,38 @@ import {
   Target,
   TrendingUp,
   Database,
-  Globe,
-  Monitor
+  Play
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-
-interface ObservabilityConfig {
-  arizeEnabled: boolean;
-  langwatchEnabled: boolean;
-  arizeApiKey?: string;
-  arizeSpaceKey?: string;
-  langwatchApiKey?: string;
-  langwatchProjectId?: string;
-}
+import { useObservabilityConfig } from '@/hooks/useObservabilityConfig';
+import { useObservabilityMetrics } from '@/hooks/useObservabilityMetrics';
 
 export const ObservabilityDashboard: React.FC = () => {
-  const [config, setConfig] = useState<ObservabilityConfig>({
-    arizeEnabled: false,
-    langwatchEnabled: false
-  });
-  const [metrics, setMetrics] = useState({
-    totalTraces: 0,
-    activeWorkflows: 0,
-    averageLatency: 0,
-    errorRate: 0
-  });
-  const [traces, setTraces] = useState<any[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+  const {
+    config,
+    isLoading: isLoadingConfig,
+    saveConfig,
+    isSaving,
+    initializePlatform,
+    isInitializing,
+  } = useObservabilityConfig();
 
-  useEffect(() => {
-    loadObservabilityData();
-  }, []);
+  const {
+    traces,
+    metrics,
+    arizeMetrics,
+    langwatchAnalytics,
+    isLoading: isLoadingMetrics,
+  } = useObservabilityMetrics();
 
-  const loadObservabilityData = async () => {
-    try {
-      // Load workflow execution traces
-      const { data: tracesData } = await supabase
-        .from('workflow_execution_traces')
-        .select('*')
-        .order('created_at', { ascending: false })
-        .limit(50);
+  const isLoading = isLoadingConfig || isLoadingMetrics;
 
-      setTraces(tracesData || []);
-
-      // Calculate metrics  
-      const totalTraces = tracesData?.length || 0;
-      const activeWorkflows = new Set(tracesData?.map(t => t.workflow_id)).size;
-      const avgLatency = tracesData?.reduce((acc, t) => acc + (t.total_duration_ms || 0), 0) / Math.max(totalTraces, 1);
-      const errors = tracesData?.filter(t => t.status === 'error').length || 0;
-      const errorRate = totalTraces > 0 ? (errors / totalTraces) * 100 : 0;
-
-      setMetrics({
-        totalTraces,
-        activeWorkflows,
-        averageLatency: Math.round(avgLatency),
-        errorRate: Math.round(errorRate * 100) / 100
-      });
-
-    } catch (error) {
-      console.error('Error loading observability data:', error);
-      toast.error('Failed to load observability data');
-    }
+  const handleConfigChange = (updates: Partial<typeof config>) => {
+    const newConfig = { ...config, ...updates };
+    saveConfig(newConfig);
   };
 
-  const handleConfigSave = async () => {
-    setIsLoading(true);
-    try {
-      // Configuration will be handled via UI for now
-
-      toast.success('Observability configuration saved');
-      await loadObservabilityData();
-    } catch (error) {
-      console.error('Error saving configuration:', error);
-      toast.error('Failed to save configuration');
-    } finally {
-      setIsLoading(false);
-    }
+  const handleInitializePlatform = (platform: 'arize' | 'langwatch') => {
+    initializePlatform(platform);
   };
 
   const getStatusColor = (status: string) => {
@@ -198,8 +152,8 @@ export const ObservabilityDashboard: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Active Workflows</p>
-                <p className="text-2xl font-bold">{metrics.activeWorkflows}</p>
+                <p className="text-sm text-muted-foreground">Success Rate</p>
+                <p className="text-2xl font-bold">{metrics.successRate.toFixed(1)}%</p>
               </div>
               <Activity className="w-8 h-8 text-green-500" />
             </div>
@@ -210,8 +164,8 @@ export const ObservabilityDashboard: React.FC = () => {
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Avg Latency</p>
-                <p className="text-2xl font-bold">{metrics.averageLatency}ms</p>
+                <p className="text-sm text-muted-foreground">Avg Response Time</p>
+                <p className="text-2xl font-bold">{metrics.avgResponseTime.toFixed(0)}ms</p>
               </div>
               <Zap className="w-8 h-8 text-yellow-500" />
             </div>
@@ -258,7 +212,7 @@ export const ObservabilityDashboard: React.FC = () => {
                   <Switch
                     id="arize-enabled"
                     checked={config.arizeEnabled}
-                    onCheckedChange={(checked) => setConfig(prev => ({ ...prev, arizeEnabled: checked }))}
+                    onCheckedChange={(checked) => handleConfigChange({ arizeEnabled: checked })}
                   />
                 </div>
                 
@@ -271,7 +225,7 @@ export const ObservabilityDashboard: React.FC = () => {
                         type="password"
                         placeholder="Enter Arize API key"
                         value={config.arizeApiKey || ''}
-                        onChange={(e) => setConfig(prev => ({ ...prev, arizeApiKey: e.target.value }))}
+                        onChange={(e) => handleConfigChange({ arizeApiKey: e.target.value })}
                       />
                     </div>
                     
@@ -281,7 +235,7 @@ export const ObservabilityDashboard: React.FC = () => {
                         id="arize-space-key"
                         placeholder="Enter Arize space key"
                         value={config.arizeSpaceKey || ''}
-                        onChange={(e) => setConfig(prev => ({ ...prev, arizeSpaceKey: e.target.value }))}
+                        onChange={(e) => handleConfigChange({ arizeSpaceKey: e.target.value })}
                       />
                     </div>
                   </>
@@ -306,7 +260,7 @@ export const ObservabilityDashboard: React.FC = () => {
                   <Switch
                     id="langwatch-enabled"
                     checked={config.langwatchEnabled}
-                    onCheckedChange={(checked) => setConfig(prev => ({ ...prev, langwatchEnabled: checked }))}
+                    onCheckedChange={(checked) => handleConfigChange({ langwatchEnabled: checked })}
                   />
                 </div>
                 
@@ -319,7 +273,7 @@ export const ObservabilityDashboard: React.FC = () => {
                         type="password"
                         placeholder="Enter LangWatch API key"
                         value={config.langwatchApiKey || ''}
-                        onChange={(e) => setConfig(prev => ({ ...prev, langwatchApiKey: e.target.value }))}
+                        onChange={(e) => handleConfigChange({ langwatchApiKey: e.target.value })}
                       />
                     </div>
                     
@@ -329,7 +283,7 @@ export const ObservabilityDashboard: React.FC = () => {
                         id="langwatch-project"
                         placeholder="Enter LangWatch project ID"
                         value={config.langwatchProjectId || ''}
-                        onChange={(e) => setConfig(prev => ({ ...prev, langwatchProjectId: e.target.value }))}
+                        onChange={(e) => handleConfigChange({ langwatchProjectId: e.target.value })}
                       />
                     </div>
                   </>
@@ -339,9 +293,15 @@ export const ObservabilityDashboard: React.FC = () => {
           </div>
 
           <div className="flex justify-end">
-            <Button onClick={handleConfigSave} disabled={isLoading}>
+            <Button 
+              onClick={() => {
+                if (config.arizeEnabled) handleInitializePlatform('arize');
+                if (config.langwatchEnabled) handleInitializePlatform('langwatch');
+              }} 
+              disabled={isSaving || isInitializing}
+            >
               <Settings className="w-4 h-4 mr-2" />
-              {isLoading ? 'Saving...' : 'Save Configuration'}
+              {isSaving || isInitializing ? 'Initializing...' : 'Test & Initialize Platforms'}
             </Button>
           </div>
         </TabsContent>
@@ -369,14 +329,14 @@ export const ObservabilityDashboard: React.FC = () => {
                           {getStatusIcon(trace.status)}
                         </div>
                         <div>
-                          <p className="font-medium">{trace.workflow_name || 'Unnamed Workflow'}</p>
+                          <p className="font-medium">{trace.operation_name || 'Unnamed Operation'}</p>
                           <p className="text-sm text-muted-foreground">
                             {new Date(trace.created_at).toLocaleString()}
                           </p>
                         </div>
                       </div>
                       <div className="flex items-center gap-4 text-sm">
-                        <span>{trace.execution_duration_ms}ms</span>
+                        <span>{trace.duration_ms || 0}ms</span>
                         <Badge variant={trace.status === 'success' ? 'default' : 'destructive'}>
                           {trace.status}
                         </Badge>
