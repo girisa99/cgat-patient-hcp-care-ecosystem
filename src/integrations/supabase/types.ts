@@ -2501,6 +2501,54 @@ export type Database = {
           },
         ]
       }
+      arize_configurations: {
+        Row: {
+          api_endpoint: string | null
+          configuration: Json | null
+          created_at: string | null
+          id: string
+          is_enabled: boolean | null
+          log_level: string | null
+          model_id: string | null
+          model_version: string | null
+          organization_key: string | null
+          sampling_rate: number | null
+          space_key: string | null
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          api_endpoint?: string | null
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          log_level?: string | null
+          model_id?: string | null
+          model_version?: string | null
+          organization_key?: string | null
+          sampling_rate?: number | null
+          space_key?: string | null
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          api_endpoint?: string | null
+          configuration?: Json | null
+          created_at?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          log_level?: string | null
+          model_id?: string | null
+          model_version?: string | null
+          organization_key?: string | null
+          sampling_rate?: number | null
+          space_key?: string | null
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       audit_logs: {
         Row: {
           action: string
@@ -9138,6 +9186,136 @@ export type Database = {
           },
         ]
       }
+      workflow_execution_steps: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          error_message: string | null
+          id: string
+          input_data: Json | null
+          node_id: string
+          node_name: string
+          node_type: string
+          output_data: Json | null
+          performance_metrics: Json | null
+          started_at: string | null
+          status: string
+          step_index: number
+          trace_id: string
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json | null
+          node_id: string
+          node_name: string
+          node_type: string
+          output_data?: Json | null
+          performance_metrics?: Json | null
+          started_at?: string | null
+          status?: string
+          step_index: number
+          trace_id: string
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          error_message?: string | null
+          id?: string
+          input_data?: Json | null
+          node_id?: string
+          node_name?: string
+          node_type?: string
+          output_data?: Json | null
+          performance_metrics?: Json | null
+          started_at?: string | null
+          status?: string
+          step_index?: number
+          trace_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_execution_steps_trace_id_fkey"
+            columns: ["trace_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_execution_traces"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_execution_traces: {
+        Row: {
+          arize_trace_id: string | null
+          completed_at: string | null
+          created_at: string | null
+          created_by: string | null
+          error_count: number | null
+          id: string
+          metadata: Json | null
+          node_count: number | null
+          session_id: string | null
+          started_at: string
+          status: string
+          success_count: number | null
+          total_duration_ms: number | null
+          trace_id: string
+          updated_at: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          arize_trace_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          error_count?: number | null
+          id?: string
+          metadata?: Json | null
+          node_count?: number | null
+          session_id?: string | null
+          started_at?: string
+          status?: string
+          success_count?: number | null
+          total_duration_ms?: number | null
+          trace_id: string
+          updated_at?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          arize_trace_id?: string | null
+          completed_at?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          error_count?: number | null
+          id?: string
+          metadata?: Json | null
+          node_count?: number | null
+          session_id?: string | null
+          started_at?: string
+          status?: string
+          success_count?: number | null
+          total_duration_ms?: number | null
+          trace_id?: string
+          updated_at?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_execution_traces_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "agent_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       workflow_executions: {
         Row: {
           completed_at: string | null
@@ -9724,6 +9902,53 @@ export type Database = {
           usage_count?: number | null
         }
         Relationships: []
+      }
+      workflow_performance_metrics: {
+        Row: {
+          created_at: string | null
+          id: string
+          measured_at: string | null
+          measurement_window: string | null
+          metadata: Json | null
+          metric_type: string
+          metric_unit: string
+          metric_value: number
+          session_id: string | null
+          workflow_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          measured_at?: string | null
+          measurement_window?: string | null
+          metadata?: Json | null
+          metric_type: string
+          metric_unit: string
+          metric_value: number
+          session_id?: string | null
+          workflow_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          measured_at?: string | null
+          measurement_window?: string | null
+          metadata?: Json | null
+          metric_type?: string
+          metric_unit?: string
+          metric_value?: number
+          session_id?: string | null
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_performance_metrics_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "agent_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       workflow_templates: {
         Row: {
