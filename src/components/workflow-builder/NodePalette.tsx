@@ -8,7 +8,9 @@ import {
   Lightbulb, MapPin, Wand2, Bot, Zap, Plug, Database, 
   MessageCircle, Mic, Users, Rocket, TestTube, Settings,
   CheckSquare, Workflow, Target, ChevronDown, ChevronRight,
-  Shield, UserCheck, Building2, Heart, FileText
+  Shield, UserCheck, Building2, Heart, FileText, Share2,
+  Twitter, Facebook, Instagram, Linkedin, Youtube, Video,
+  Calendar, BarChart3
 } from 'lucide-react';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 
@@ -30,7 +32,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
     // Show business tools and core categories by default
-    const defaultOpen = ['business_tools', 'healthcare_systems', 'actions', 'automation'];
+    const defaultOpen = ['business_tools', 'healthcare_systems', 'actions', 'automation', 'social_media'];
     dbCategories.forEach(cat => {
       initial[cat.name] = defaultOpen.includes(cat.name);
     });
@@ -57,6 +59,22 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     return iconMap[typeKey] || Shield;
   };
 
+  // Icon mapping for social media nodes
+  const getSocialMediaIcon = (typeKey: string) => {
+    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+      'twitter_post': Twitter,
+      'twitter_monitor': Twitter,
+      'facebook_post': Facebook,
+      'instagram_post': Instagram,
+      'linkedin_post': Linkedin,
+      'youtube_upload': Youtube,
+      'tiktok_post': Video,
+      'social_scheduler': Calendar,
+      'social_analytics': BarChart3
+    };
+    return iconMap[typeKey] || Share2;
+  };
+
   // Convert DB nodes to NodePaletteItem format
   const allNodes = useMemo(() => {
     return dbNodeTypes.map(dbNode => {
@@ -66,6 +84,8 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
       // Business/Healthcare specific icons
       if (dbNode.category?.name === 'business_tools' || dbNode.category?.name === 'healthcare_systems') {
         IconComponent = getBusinessNodeIcon(dbNode.type_key);
+      } else if (dbNode.category?.name === 'social_media') {
+        IconComponent = getSocialMediaIcon(dbNode.type_key);
       } else if (dbNode.category?.name === 'actions') {
         IconComponent = Zap;
       } else if (dbNode.category?.name === 'automation') {
@@ -93,6 +113,7 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     const colorMap: Record<string, string> = {
       'business_tools': 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-300',
       'healthcare_systems': 'bg-red-50 border-red-200 ring-1 ring-red-300',
+      'social_media': 'bg-blue-50 border-blue-200 ring-1 ring-blue-300',
       'actions': 'bg-orange-50 border-orange-200',
       'automation': 'bg-indigo-50 border-indigo-200',
       'communication': 'bg-blue-50 border-blue-200',
