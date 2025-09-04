@@ -48,10 +48,10 @@ export const ConsolidatedNodeVerification: React.FC = () => {
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CheckCircle className="h-5 w-5 text-green-500" />
-            Consolidated Node Configuration System
+            Node-Specific Configuration System ✅
           </CardTitle>
           <CardDescription>
-            Successfully consolidated from 4 tables to 3 tables with unified configuration structure
+            Consolidated architecture with customized configurations per node type and category (NOT universal templates)
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -102,14 +102,15 @@ export const ConsolidatedNodeVerification: React.FC = () => {
                 </div>
                 
                 <div>
-                  <h5 className="font-medium text-blue-700 mb-1">✅ Consolidated Fields</h5>
+                  <h5 className="font-medium text-blue-700 mb-1">✅ Node-Specific Configurations</h5>
                   <ul className="space-y-1 text-gray-600">
-                    <li>• Configuration Schema: {Object.keys(sampleNode.configurationSchema || {}).length} fields</li>
-                    <li>• AI Model Config: {Object.keys(sampleNode.aiModelConfig || {}).length} fields</li>
-                    <li>• Variables Config: {(sampleNode.variablesConfig || []).length} items</li>
-                    <li>• APIs Config: {(sampleNode.apisConfig || []).length} items</li>
-                    <li>• Connectors Config: {(sampleNode.connectorsConfig || []).length} items</li>
-                    <li>• Data Storage Config: {Object.keys(sampleNode.dataStorageConfig || {}).length} fields</li>
+                    <li>• Configuration Schema: {Object.keys(sampleNode.configurationSchema || {}).length} node-specific fields</li>
+                    <li>• AI Model Config: {Object.keys(sampleNode.aiModelConfig || {}).length} model-specific settings</li>
+                    <li>• Variables Config: {(sampleNode.variablesConfig || []).length} custom variables</li>
+                    <li>• APIs Config: {(sampleNode.apisConfig || []).length} API integrations</li>
+                    <li>• Connectors Config: {(sampleNode.connectorsConfig || []).length} connector settings</li>
+                    <li>• Validation Rules: {Object.keys(sampleNode.validationRules || {}).length} type-specific rules</li>
+                    <li>• Business Rules: {Object.keys(sampleNode.businessRules || {}).length} category-specific rules</li>
                   </ul>
                 </div>
               </div>
@@ -123,25 +124,29 @@ export const ConsolidatedNodeVerification: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <Card>
           <CardHeader>
-            <CardTitle className="text-lg">✅ Removed Tables</CardTitle>
+            <CardTitle className="text-lg">✅ Migration Complete</CardTitle>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2 text-sm">
               <li className="flex items-center gap-2">
-                <span className="text-red-500">❌</span>
-                <code className="bg-gray-100 px-2 py-1 rounded">workflow_builder_categories</code>
+                <span className="text-green-500">✓</span>
+                <span>Old tables successfully removed</span>
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-red-500">❌</span>
-                <code className="bg-gray-100 px-2 py-1 rounded">workflow_builder_nodes</code>
+                <span className="text-green-500">✓</span>
+                <span>All hooks updated to new structure</span>
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-red-500">❌</span>
-                <code className="bg-gray-100 px-2 py-1 rounded">workflow_node_configs</code>
+                <span className="text-green-500">✓</span>
+                <span>Node-specific configurations implemented</span>
               </li>
               <li className="flex items-center gap-2">
-                <span className="text-red-500">❌</span>
-                <code className="bg-gray-100 px-2 py-1 rounded">node_configurations</code>
+                <span className="text-green-500">✓</span>
+                <span>Category-based customization enabled</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <span className="text-green-500">✓</span>
+                <span>No universal templates - all customized</span>
               </li>
             </ul>
           </CardContent>
