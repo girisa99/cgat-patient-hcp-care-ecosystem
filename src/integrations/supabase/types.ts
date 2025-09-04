@@ -371,6 +371,59 @@ export type Database = {
           },
         ]
       }
+      agent_audit_logs: {
+        Row: {
+          action_description: string
+          action_type: string
+          actor_type: string | null
+          actor_user_id: string | null
+          after_state: Json | null
+          agent_id: string
+          before_state: Json | null
+          created_at: string | null
+          execution_context: Json | null
+          id: string
+          ip_address: unknown | null
+          user_agent: string | null
+        }
+        Insert: {
+          action_description: string
+          action_type: string
+          actor_type?: string | null
+          actor_user_id?: string | null
+          after_state?: Json | null
+          agent_id: string
+          before_state?: Json | null
+          created_at?: string | null
+          execution_context?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Update: {
+          action_description?: string
+          action_type?: string
+          actor_type?: string | null
+          actor_user_id?: string | null
+          after_state?: Json | null
+          agent_id?: string
+          before_state?: Json | null
+          created_at?: string | null
+          execution_context?: Json | null
+          id?: string
+          ip_address?: unknown | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_audit_logs_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_channel_deployments: {
         Row: {
           agent_id: string
@@ -437,6 +490,63 @@ export type Database = {
           {
             foreignKeyName: "fk_agent_channel_deployments_agent"
             columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_communications: {
+        Row: {
+          conversation_id: string | null
+          created_at: string | null
+          from_agent_id: string
+          id: string
+          message_payload: Json
+          message_type: string
+          metadata: Json | null
+          processed_at: string | null
+          status: string | null
+          to_agent_id: string | null
+          workflow_execution_id: string | null
+        }
+        Insert: {
+          conversation_id?: string | null
+          created_at?: string | null
+          from_agent_id: string
+          id?: string
+          message_payload: Json
+          message_type: string
+          metadata?: Json | null
+          processed_at?: string | null
+          status?: string | null
+          to_agent_id?: string | null
+          workflow_execution_id?: string | null
+        }
+        Update: {
+          conversation_id?: string | null
+          created_at?: string | null
+          from_agent_id?: string
+          id?: string
+          message_payload?: Json
+          message_type?: string
+          metadata?: Json | null
+          processed_at?: string | null
+          status?: string | null
+          to_agent_id?: string | null
+          workflow_execution_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_communications_from_agent_id_fkey"
+            columns: ["from_agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "agent_communications_to_agent_id_fkey"
+            columns: ["to_agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
             referencedColumns: ["id"]
@@ -609,6 +719,50 @@ export type Database = {
           },
         ]
       }
+      agent_health_checks: {
+        Row: {
+          agent_id: string
+          check_result: Json
+          check_type: string
+          checked_by: string | null
+          created_at: string | null
+          error_details: Json | null
+          health_status: string
+          id: string
+          response_time_ms: number | null
+        }
+        Insert: {
+          agent_id: string
+          check_result: Json
+          check_type: string
+          checked_by?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          health_status?: string
+          id?: string
+          response_time_ms?: number | null
+        }
+        Update: {
+          agent_id?: string
+          check_result?: Json
+          check_type?: string
+          checked_by?: string | null
+          created_at?: string | null
+          error_details?: Json | null
+          health_status?: string
+          id?: string
+          response_time_ms?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_health_checks_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_knowledge_bases: {
         Row: {
           agent_id: string
@@ -655,6 +809,112 @@ export type Database = {
           },
         ]
       }
+      agent_lifecycle_states: {
+        Row: {
+          agent_id: string
+          change_summary: string | null
+          created_at: string | null
+          created_by: string | null
+          deployed_at: string | null
+          deployment_config: Json | null
+          health_check_config: Json | null
+          id: string
+          metadata: Json | null
+          retired_at: string | null
+          rollback_config: Json | null
+          status: string
+          version: string
+        }
+        Insert: {
+          agent_id: string
+          change_summary?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deployed_at?: string | null
+          deployment_config?: Json | null
+          health_check_config?: Json | null
+          id?: string
+          metadata?: Json | null
+          retired_at?: string | null
+          rollback_config?: Json | null
+          status: string
+          version?: string
+        }
+        Update: {
+          agent_id?: string
+          change_summary?: string | null
+          created_at?: string | null
+          created_by?: string | null
+          deployed_at?: string | null
+          deployment_config?: Json | null
+          health_check_config?: Json | null
+          id?: string
+          metadata?: Json | null
+          retired_at?: string | null
+          rollback_config?: Json | null
+          status?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_lifecycle_states_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_node_deployments: {
+        Row: {
+          agent_configuration: Json
+          agent_id: string
+          created_at: string | null
+          deployed_by: string | null
+          deployment_metadata: Json | null
+          deployment_status: string
+          execution_context: Json | null
+          id: string
+          node_configuration: Json
+          updated_at: string | null
+          workflow_node_id: string
+        }
+        Insert: {
+          agent_configuration?: Json
+          agent_id: string
+          created_at?: string | null
+          deployed_by?: string | null
+          deployment_metadata?: Json | null
+          deployment_status?: string
+          execution_context?: Json | null
+          id?: string
+          node_configuration?: Json
+          updated_at?: string | null
+          workflow_node_id: string
+        }
+        Update: {
+          agent_configuration?: Json
+          agent_id?: string
+          created_at?: string | null
+          deployed_by?: string | null
+          deployment_metadata?: Json | null
+          deployment_status?: string
+          execution_context?: Json | null
+          id?: string
+          node_configuration?: Json
+          updated_at?: string | null
+          workflow_node_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_node_deployments_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       agent_organization_mapping: {
         Row: {
           agent_id: string
@@ -693,6 +953,94 @@ export type Database = {
           },
           {
             foreignKeyName: "fk_agent_organization_mapping_agent"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_performance_metrics: {
+        Row: {
+          agent_id: string
+          execution_context: Json | null
+          id: string
+          measurement_timestamp: string | null
+          metadata: Json | null
+          metric_type: string
+          metric_unit: string
+          metric_value: number
+        }
+        Insert: {
+          agent_id: string
+          execution_context?: Json | null
+          id?: string
+          measurement_timestamp?: string | null
+          metadata?: Json | null
+          metric_type: string
+          metric_unit?: string
+          metric_value: number
+        }
+        Update: {
+          agent_id?: string
+          execution_context?: Json | null
+          id?: string
+          measurement_timestamp?: string | null
+          metadata?: Json | null
+          metric_type?: string
+          metric_unit?: string
+          metric_value?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_performance_metrics_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "agents"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      agent_permissions: {
+        Row: {
+          agent_id: string
+          expires_at: string | null
+          granted_at: string | null
+          granted_by: string | null
+          id: string
+          is_active: boolean | null
+          permission_scope: Json | null
+          permission_type: string
+          resource_identifier: string | null
+          resource_type: string
+        }
+        Insert: {
+          agent_id: string
+          expires_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          permission_scope?: Json | null
+          permission_type: string
+          resource_identifier?: string | null
+          resource_type: string
+        }
+        Update: {
+          agent_id?: string
+          expires_at?: string | null
+          granted_at?: string | null
+          granted_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          permission_scope?: Json | null
+          permission_type?: string
+          resource_identifier?: string | null
+          resource_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_permissions_agent_id_fkey"
             columns: ["agent_id"]
             isOneToOne: false
             referencedRelation: "agents"
@@ -884,6 +1232,47 @@ export type Database = {
           validation_checkpoints?: Json | null
         }
         Relationships: []
+      }
+      agent_template_versions: {
+        Row: {
+          changelog: string | null
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_stable: boolean | null
+          template_id: string
+          version: string
+        }
+        Insert: {
+          changelog?: string | null
+          configuration: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_stable?: boolean | null
+          template_id: string
+          version: string
+        }
+        Update: {
+          changelog?: string | null
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_stable?: boolean | null
+          template_id?: string
+          version?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "agent_template_versions_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "agent_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       agent_templates: {
         Row: {
