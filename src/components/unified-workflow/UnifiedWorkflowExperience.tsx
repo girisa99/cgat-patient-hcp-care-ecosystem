@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { EnhancedWorkflowCanvas } from '@/components/workflow-builder/EnhancedWorkflowCanvas';
-import { NodePalette } from '@/components/workflow-builder/NodePalette';
+import { EnhancedNodePalette } from '@/components/workflow-builder/EnhancedNodePalette';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { AIAssistIntegration } from './AIAssistIntegration';
 import { ConfigurableNodePanel } from './ConfigurableNodePanel';
@@ -68,6 +68,10 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
   const [isTestMode, setIsTestMode] = useState(false);
+  
+  // Canvas state (kept local and synced to canvas component)
+  const [canvasNodes, setCanvasNodes] = useState<any[]>([]);
+  const [canvasEdges, setCanvasEdges] = useState<any[]>([]);
 
   // Define comprehensive node type information
   const nodeTypeInfo: NodeTypeInfo[] = [
@@ -220,7 +224,11 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         style: { stroke: '#8b5cf6' }
       })) || [];
       
-      // Trigger canvas update (this will be handled by the parent component)
+      // Update local canvas state
+      setCanvasNodes(reactFlowNodes as any);
+      setCanvasEdges(reactFlowEdges as any);
+      
+      // Trigger canvas update callback (optional)
       if (onWorkflowUpdate) {
         onWorkflowUpdate(reactFlowNodes, reactFlowEdges);
       }
@@ -508,14 +516,22 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
           <div className="grid grid-cols-12 gap-4 min-h-[600px]">
             {/* Node Palette */}
             <div className="col-span-3">
-              <NodePalette onNodeAdd={handleNodeGenerated} />
+              <EnhancedNodePalette onNodeSelect={() => {}} />
             </div>
             
             {/* Workflow Canvas */}
             <div className="col-span-9 border rounded-lg relative">
               <EnhancedWorkflowCanvas 
-                onNodesChange={onWorkflowUpdate ? (nodes) => onWorkflowUpdate(nodes, []) : undefined}
-                onEdgesChange={onWorkflowUpdate ? (edges) => onWorkflowUpdate([], edges) : undefined}
+                initialNodes={canvasNodes}
+                initialEdges={canvasEdges}
+                onNodesChange={(nodes) => {
+                  setCanvasNodes(nodes as any);
+                  onWorkflowUpdate?.(nodes as any, canvasEdges as any);
+                }}
+                onEdgesChange={(edges) => {
+                  setCanvasEdges(edges as any);
+                  onWorkflowUpdate?.(canvasNodes as any, edges as any);
+                }}
               />
               
               {/* Test Mode Overlay */}

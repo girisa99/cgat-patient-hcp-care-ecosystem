@@ -41,6 +41,19 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
   const [configAction, setConfigAction] = useState('');
   const [chatAssistMode, setChatAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('configure');
 
+  // Sync with external changes to initialNodes/initialEdges
+  React.useEffect(() => {
+    if (initialNodes && initialNodes.length) {
+      setNodes(initialNodes as any);
+    }
+  }, [JSON.stringify(initialNodes)]);
+
+  React.useEffect(() => {
+    if (initialEdges && initialEdges.length) {
+      setEdges(initialEdges as any);
+    }
+  }, [JSON.stringify(initialEdges)]);
+
   // Handle opening chat interface
   const handleOpenChat = useCallback((nodeId: string, mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure' = 'configure') => {
     const node = nodes.find(n => n.id === nodeId);
