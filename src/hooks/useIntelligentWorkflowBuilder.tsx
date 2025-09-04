@@ -268,13 +268,14 @@ export const useIntelligentWorkflowBuilder = () => {
 
   // Suggest connector swaps within nodes
   const suggestConnectorSwaps = useCallback((node: Node, availableConnectors: string[]) => {
-    const currentConnectors = node.data?.connectors || [];
+    const currentConnectors = (node.data?.connectors as string[]) || [];
+    const capabilities = (node.data?.capabilities as string[]) || [];
     const suggestions: IntelligentSuggestion[] = [];
 
     // Analyze node type and suggest better connectors
     if (node.type?.includes('agent')) {
       // For AI agents, suggest vision models if handling images
-      if ((node.data?.capabilities as string[])?.includes('vision') && !currentConnectors.includes('gpt-4-vision')) {
+      if (capabilities.includes('vision') && !currentConnectors.includes('gpt-4-vision')) {
         suggestions.push({
           id: `connector-swap-${Date.now()}`,
           type: 'configuration',
@@ -288,7 +289,7 @@ export const useIntelligentWorkflowBuilder = () => {
       }
 
       // Suggest multi-modal models for complex tasks
-      if ((node.data?.capabilities as string[])?.length > 3 && !currentConnectors.includes('gpt-4o')) {
+      if (capabilities.length > 3 && !currentConnectors.includes('gpt-4o')) {
         suggestions.push({
           id: `connector-swap-${Date.now()}-2`,
           type: 'configuration',
