@@ -66,6 +66,10 @@ import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/
 import { ObservabilityDashboard } from '@/components/observability/ObservabilityDashboard';
 import { AnimatedFlowVisualizer } from '@/components/observability/AnimatedFlowVisualizer';
 
+// Import Security & Governance components  
+import { AgentSecurityDashboard } from '@/components/agent-security/AgentSecurityDashboard';
+import { AgentGovernanceDashboard } from '@/components/agent-governance/AgentGovernanceDashboard';
+
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
@@ -545,6 +549,24 @@ const AgentsInner = () => {
     return (
       <AppLayout>
         <AnimatedFlowVisualizer />
+      </AppLayout>
+    );
+  }
+
+  // Security & Compliance mode
+  if (selectedMode === 'security') {
+    return (
+      <AppLayout>
+        <AgentSecurityDashboard />
+      </AppLayout>
+    );
+  }
+
+  // AI Governance mode
+  if (selectedMode === 'governance') {
+    return (
+      <AppLayout>
+        <AgentGovernanceDashboard />
       </AppLayout>
     );
   }

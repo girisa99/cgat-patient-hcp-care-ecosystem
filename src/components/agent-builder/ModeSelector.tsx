@@ -14,10 +14,12 @@ import {
   Network,
   Activity,
   Eye,
-  MonitorPlay
+  MonitorPlay,
+  Shield,
+  Gavel
 } from 'lucide-react';
 
-export type AgentMode = 'visual' | 'manual' | 'unified' | 'ecosystem' | 'observability' | 'animated-flow';
+export type AgentMode = 'visual' | 'manual' | 'unified' | 'ecosystem' | 'observability' | 'animated-flow' | 'security' | 'governance';
 
 interface ModeSelectorProps {
   onModeSelect: (mode: AgentMode) => void;
@@ -382,6 +384,120 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
 
             <div className="text-xs text-muted-foreground text-center">
               Best for: Testing, debugging, workflow visualization
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Security & Compliance */}
+        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
+          selectedMode === 'security' ? 'ring-2 ring-primary border-primary' : ''
+        }`}>
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-12 h-12 bg-gradient-to-r from-red-500 to-orange-600 rounded-full flex items-center justify-center mb-3">
+              <Shield className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="flex items-center justify-center gap-2">
+              Security & Compliance
+              <Badge variant="destructive" className="text-xs">
+                SECURE
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              Comprehensive security monitoring and regulatory compliance
+            </p>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Vulnerability scanning</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">HIPAA/GDPR compliance</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Access control management</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Audit trail monitoring</span>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Button 
+                onClick={() => onModeSelect('security')}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-red-600 to-orange-600 hover:from-red-700 hover:to-orange-700"
+                variant={selectedMode === 'security' ? 'default' : 'outline'}
+              >
+                <Shield className="w-4 h-4" />
+                Security Dashboard
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground text-center">
+              Best for: Enterprise security, compliance officers, auditors
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* AI Governance */}
+        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
+          selectedMode === 'governance' ? 'ring-2 ring-primary border-primary' : ''
+        }`}>
+          <CardHeader className="text-center pb-4">
+            <div className="mx-auto w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full flex items-center justify-center mb-3">
+              <Gavel className="w-6 h-6 text-white" />
+            </div>
+            <CardTitle className="flex items-center justify-center gap-2">
+              AI Governance
+              <Badge variant="default" className="text-xs bg-gradient-to-r from-indigo-600 to-blue-600">
+                GOVERN
+              </Badge>
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <p className="text-sm text-muted-foreground text-center">
+              AI ethics, policy management, and governance workflows
+            </p>
+            
+            <div className="space-y-3">
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Policy compliance tracking</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Approval workflows</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">Risk management</span>
+              </div>
+              <div className="flex items-center gap-3">
+                <div className="w-2 h-2 bg-primary rounded-full"></div>
+                <span className="text-sm">AI ethics monitoring</span>
+              </div>
+            </div>
+
+            <div className="pt-4">
+              <Button 
+                onClick={() => onModeSelect('governance')}
+                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-indigo-600 to-blue-600 hover:from-indigo-700 hover:to-blue-700"
+                variant={selectedMode === 'governance' ? 'default' : 'outline'}
+              >
+                <Gavel className="w-4 h-4" />
+                Governance Center
+                <ArrowRight className="w-4 h-4" />
+              </Button>
+            </div>
+
+            <div className="text-xs text-muted-foreground text-center">
+              Best for: Governance officers, policy managers, risk teams
             </div>
           </CardContent>
         </Card>
