@@ -66,7 +66,7 @@ export const ObservabilityDashboard: React.FC = () => {
       // Calculate metrics  
       const totalTraces = tracesData?.length || 0;
       const activeWorkflows = new Set(tracesData?.map(t => t.workflow_id)).size;
-      const avgLatency = tracesData?.reduce((acc, t) => acc + (t.duration_ms || 0), 0) / Math.max(totalTraces, 1);
+      const avgLatency = tracesData?.reduce((acc, t) => acc + (t.total_duration_ms || 0), 0) / Math.max(totalTraces, 1);
       const errors = tracesData?.filter(t => t.status === 'error').length || 0;
       const errorRate = totalTraces > 0 ? (errors / totalTraces) * 100 : 0;
 

@@ -531,6 +531,24 @@ const AgentsInner = () => {
     );
   }
 
+  // AI Observability mode
+  if (selectedMode === 'observability') {
+    return (
+      <AppLayout>
+        <ObservabilityDashboard />
+      </AppLayout>
+    );
+  }
+
+  // Animated Flow Visualizer mode
+  if (selectedMode === 'animated-flow') {
+    return (
+      <AppLayout>
+        <AnimatedFlowVisualizer />
+      </AppLayout>
+    );
+  }
+
   // Main render - Genie AI Layout (Visual/Manual modes)
   return renderFlowiseLayout();
 };
