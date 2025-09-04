@@ -16,6 +16,7 @@ import { EnhancedWorkflowCanvas } from '@/components/workflow-builder/EnhancedWo
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { AIAssistIntegration } from './AIAssistIntegration';
 import { ConfigurableNodePanel } from './ConfigurableNodePanel';
+import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
 
 interface NodeTypeInfo {
   id: string;
@@ -53,6 +54,7 @@ export const UnifiedWorkflowExperience: React.FC = () => {
   const [selectedNodeId, setSelectedNodeId] = useState<string>();
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
+  const [isTestMode, setIsTestMode] = useState(false);
 
   // Define comprehensive node type information
   const nodeTypeInfo: NodeTypeInfo[] = [
@@ -436,8 +438,21 @@ export const UnifiedWorkflowExperience: React.FC = () => {
         <CardContent>
           {showNodeHelp && renderNodeTypeGuide()}
           
-          <div className="border rounded-lg p-4 min-h-[500px]">
+          <div className="border rounded-lg p-4 min-h-[500px] relative">
             <EnhancedWorkflowCanvas />
+            
+            {/* Test Mode Overlay */}
+            {isTestMode && (
+              <div className="absolute top-4 right-4 z-10">
+                <AnimatedFlowVisualizer 
+                  nodes={[]} // Would get actual nodes from canvas
+                  edges={[]} // Would get actual edges from canvas
+                  isTestMode={isTestMode}
+                  onTestStart={() => {}}
+                  onTestStop={() => setIsTestMode(false)}
+                />
+              </div>
+            )}
           </div>
 
           <div className="flex justify-between items-center mt-4">
@@ -462,6 +477,15 @@ export const UnifiedWorkflowExperience: React.FC = () => {
               >
                 <Play className="h-4 w-4 mr-1" />
                 AI Test
+              </Button>
+              
+              <Button 
+                variant={isTestMode ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setIsTestMode(!isTestMode)}
+              >
+                <Zap className="h-4 w-4 mr-1" />
+                {isTestMode ? 'Exit Test' : 'Test Mode'}
               </Button>
               <Button 
                 variant="outline" 
