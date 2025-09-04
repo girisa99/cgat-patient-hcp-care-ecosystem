@@ -62,6 +62,10 @@ import { ConfigurableNodePanel } from '@/components/unified-workflow/Configurabl
 // Import new Agent Ecosystem components
 import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
 
+// Import Observability components
+import { ObservabilityDashboard } from '@/components/observability/ObservabilityDashboard';
+import { AnimatedFlowVisualizer } from '@/components/observability/AnimatedFlowVisualizer';
+
 import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,6 +96,8 @@ const AgentsInner = () => {
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [aiAssistMode, setAIAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('build');
   const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
+  const [showObservability, setShowObservability] = useState(false);
+  const [showAnimatedFlow, setShowAnimatedFlow] = useState(false);
 
   console.log('[Agents] state init', {
     selectedMode,
