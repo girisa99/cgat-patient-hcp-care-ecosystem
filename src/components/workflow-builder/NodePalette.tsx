@@ -10,7 +10,8 @@ import {
   CheckSquare, Workflow, Target, ChevronDown, ChevronRight,
   Shield, UserCheck, Building2, Heart, FileText, Share2,
   Twitter, Facebook, Instagram, Linkedin, Youtube, Video,
-  Calendar, BarChart3
+  Calendar, BarChart3, Play, GitBranch, Activity, DollarSign,
+  ShoppingCart, Contact, Code, Box
 } from 'lucide-react';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 
@@ -31,8 +32,8 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
   // Initialize open categories based on actual DB categories
   const [openCategories, setOpenCategories] = useState<Record<string, boolean>>(() => {
     const initial: Record<string, boolean> = {};
-    // Show business tools and core categories by default
-    const defaultOpen = ['business_tools', 'healthcare_systems', 'actions', 'automation', 'social_media'];
+    // Show core workflow and business categories by default
+    const defaultOpen = ['triggers', 'actions', 'conditions', 'business_tools', 'healthcare_systems', 'social_media'];
     dbCategories.forEach(cat => {
       initial[cat.name] = defaultOpen.includes(cat.name);
     });
@@ -59,9 +60,10 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     return iconMap[typeKey] || Shield;
   };
 
-  // Icon mapping for social media nodes
-  const getSocialMediaIcon = (typeKey: string) => {
-    const iconMap: Record<string, React.ComponentType<{ className?: string }>> = {
+  // Enhanced icon mapping for all node types
+  const getNodeIcon = (typeKey: string, categoryName: string) => {
+    // Social Media Icons
+    const socialIcons: Record<string, React.ComponentType<{ className?: string }>> = {
       'twitter_post': Twitter,
       'twitter_monitor': Twitter,
       'facebook_post': Facebook,
@@ -72,29 +74,46 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
       'social_scheduler': Calendar,
       'social_analytics': BarChart3
     };
-    return iconMap[typeKey] || Share2;
+    
+    // Business/Healthcare Icons
+    const businessIcons: Record<string, React.ComponentType<{ className?: string }>> = {
+      'npi_validator': UserCheck,
+      'cms_provider_lookup': Building2,
+      'fda_drug_lookup': Shield,
+      'icd10_lookup': FileText,
+      'hipaa_compliance_checker': Shield,
+      'clinical_decision_support': Heart
+    };
+    
+    // Category-specific icons
+    if (categoryName === 'social_media') return socialIcons[typeKey] || Share2;
+    if (categoryName === 'business_tools' || categoryName === 'healthcare_systems') {
+      return businessIcons[typeKey] || Shield;
+    }
+    if (categoryName === 'triggers') return Zap;
+    if (categoryName === 'actions') return Play;
+    if (categoryName === 'conditions') return GitBranch;
+    if (categoryName === 'data') return Database;
+    if (categoryName === 'communication') return MessageCircle;
+    if (categoryName === 'automation') return Bot;
+    if (categoryName === 'security') return Shield;
+    if (categoryName === 'finance') return DollarSign;
+    if (categoryName === 'hr_management') return Users;
+    if (categoryName === 'document_management') return FileText;
+    if (categoryName === 'e_commerce') return ShoppingCart;
+    if (categoryName === 'project_management') return CheckSquare;
+    if (categoryName === 'crm_systems') return Contact;
+    if (categoryName === 'development_tools') return Code;
+    if (categoryName === 'data_analytics') return BarChart3;
+    
+    return Settings; // default
   };
 
   // Convert DB nodes to NodePaletteItem format
   const allNodes = useMemo(() => {
     return dbNodeTypes.map(dbNode => {
-      // Get appropriate icon based on category or type
-      let IconComponent: React.ComponentType<any> = Settings; // default
-      
-      // Business/Healthcare specific icons
-      if (dbNode.category?.name === 'business_tools' || dbNode.category?.name === 'healthcare_systems') {
-        IconComponent = getBusinessNodeIcon(dbNode.type_key);
-      } else if (dbNode.category?.name === 'social_media') {
-        IconComponent = getSocialMediaIcon(dbNode.type_key);
-      } else if (dbNode.category?.name === 'actions') {
-        IconComponent = Zap;
-      } else if (dbNode.category?.name === 'automation') {
-        IconComponent = Bot;
-      } else if (dbNode.category?.name === 'communication') {
-        IconComponent = MessageCircle;
-      } else if (dbNode.category?.name === 'data') {
-        IconComponent = Database;
-      }
+      // Get appropriate icon based on category and type
+      const IconComponent = getNodeIcon(dbNode.type_key, dbNode.category?.name || 'uncategorized');
 
       return {
         id: dbNode.id,
@@ -108,20 +127,30 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
     });
   }, [dbNodeTypes]);
 
-  // Get color for category
+  // Get color for category - Enhanced for all migrated categories
   const getNodeColor = (categoryName: string) => {
     const colorMap: Record<string, string> = {
+      // Core workflow categories
+      'triggers': 'bg-red-50 border-red-200 ring-1 ring-red-300',
+      'actions': 'bg-green-50 border-green-200 ring-1 ring-green-300',
+      'conditions': 'bg-blue-50 border-blue-200 ring-1 ring-blue-300',
+      'data': 'bg-purple-50 border-purple-200 ring-1 ring-purple-300',
+      
+      // Business & Enterprise
       'business_tools': 'bg-emerald-50 border-emerald-200 ring-1 ring-emerald-300',
       'healthcare_systems': 'bg-red-50 border-red-200 ring-1 ring-red-300',
+      'communication': 'bg-cyan-50 border-cyan-200 ring-1 ring-cyan-300',
+      'data_analytics': 'bg-yellow-50 border-yellow-200 ring-1 ring-yellow-300',
+      'automation': 'bg-orange-50 border-orange-200 ring-1 ring-orange-300',
+      'security': 'bg-red-50 border-red-200 ring-1 ring-red-300',
+      'finance': 'bg-green-50 border-green-200 ring-1 ring-green-300',
+      'hr_management': 'bg-purple-50 border-purple-200 ring-1 ring-purple-300',
+      'document_management': 'bg-blue-50 border-blue-200 ring-1 ring-blue-300',
       'social_media': 'bg-blue-50 border-blue-200 ring-1 ring-blue-300',
-      'actions': 'bg-orange-50 border-orange-200',
-      'automation': 'bg-indigo-50 border-indigo-200',
-      'communication': 'bg-blue-50 border-blue-200',
-      'data': 'bg-purple-50 border-purple-200',
-      'development_tools': 'bg-cyan-50 border-cyan-200',
-      'finance': 'bg-green-50 border-green-200',
-      'crm_systems': 'bg-pink-50 border-pink-200',
-      'data_analytics': 'bg-yellow-50 border-yellow-200'
+      'e_commerce': 'bg-red-50 border-red-200 ring-1 ring-red-300',
+      'project_management': 'bg-green-50 border-green-200 ring-1 ring-green-300',
+      'crm_systems': 'bg-pink-50 border-pink-200 ring-1 ring-pink-300',
+      'development_tools': 'bg-gray-50 border-gray-200 ring-1 ring-gray-300'
     };
     return colorMap[categoryName] || 'bg-gray-50 border-gray-200';
   };
@@ -189,13 +218,19 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                       className="w-full justify-between p-2 h-auto hover:bg-muted/50"
                     >
                       <div className="flex items-center gap-2">
-                        <Badge 
-                          variant={['business_tools', 'healthcare_systems'].includes(category.name) ? 'default' : 'secondary'} 
+                       <Badge 
+                          variant={['business_tools', 'healthcare_systems', 'triggers', 'actions', 'social_media'].includes(category.name) ? 'default' : 'secondary'} 
                           className={`text-xs ${
                             category.name === 'business_tools' 
                               ? 'bg-emerald-600 text-white border-emerald-700' 
                               : category.name === 'healthcare_systems'
                               ? 'bg-red-600 text-white border-red-700'
+                              : category.name === 'triggers'
+                              ? 'bg-red-600 text-white border-red-700'
+                              : category.name === 'actions'
+                              ? 'bg-green-600 text-white border-green-700'
+                              : category.name === 'social_media'
+                              ? 'bg-blue-600 text-white border-blue-700'
                               : 'bg-secondary'
                           }`}
                         >
@@ -203,6 +238,9 @@ export const NodePalette: React.FC<{ heightClass?: string }> = ({ heightClass })
                           {['business_tools', 'healthcare_systems'].includes(category.name) && (
                             <Shield className="h-3 w-3 ml-1" />
                           )}
+                          {category.name === 'triggers' && <Zap className="h-3 w-3 ml-1" />}
+                          {category.name === 'actions' && <Play className="h-3 w-3 ml-1" />}
+                          {category.name === 'social_media' && <Share2 className="h-3 w-3 ml-1" />}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           ({categoryNodes.length})
