@@ -23,6 +23,8 @@ import { EnvironmentChannelManager } from './EnvironmentChannelManager';
 import { DynamicNodeConfiguration } from './DynamicNodeConfiguration';
 import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
 import { EnhancedNodeConfigurationPanel } from '@/components/workflow-builder/EnhancedNodeConfigurationPanel';
+import { useTemplateIntegration } from '@/components/workflow-builder/TemplateIntegrationManager';
+import { useAIWorkflowIntegration } from '@/components/workflow-builder/AIWorkflowIntegration';
 import { MarkerType } from '@xyflow/react';
 
 interface NodeTypeInfo {
@@ -377,163 +379,37 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
     toast.success(`${scenario.title} template loaded`);
   }, []);
 
-  const handleTemplateSelect = useCallback(async (template: any) => {
-    console.log('Loading template:', template);
-    
-    try {
-      let nodes: any[] = [];
-      let edges: any[] = [];
-      
-      // Fetch full template data if only ID provided
-      if (template.id && !template.configuration && !template.canvas) {
-        console.log('Fetching full template data for ID:', template.id);
-        const { data: fullTemplate, error } = await supabase
-          .from('agent_templates')
-          .select('*')
-          .eq('id', template.id)
-          .single();
-          
-        if (error) {
-          console.error('Error fetching template:', error);
-          toast.error('Failed to load template');
-          return;
-        }
-        
-        if (fullTemplate) {
-          template = fullTemplate;
-        }
-      }
-      
-      // Handle different template data structures with improved logic
-      console.log('Template structure:', template);
-      
-      // Priority 1: Check configuration.nodes
-      if (template.configuration?.nodes && Array.isArray(template.configuration.nodes)) {
-        nodes = template.configuration.nodes;
-        edges = template.configuration.edges || [];
-        console.log('Loaded from configuration.nodes');
-      }
-      // Priority 2: Check canvas.nodes  
-      else if (template.canvas?.nodes && Array.isArray(template.canvas.nodes)) {
-        nodes = template.canvas.nodes;
-        edges = template.canvas.edges || [];
-        console.log('Loaded from canvas.nodes');
-      }
-      // Priority 3: Check configuration.canvas.nodes
-      else if (template.configuration?.canvas?.nodes && Array.isArray(template.configuration.canvas.nodes)) {
-        nodes = template.configuration.canvas.nodes;
-        edges = template.configuration.canvas.edges || [];
-        console.log('Loaded from configuration.canvas.nodes');
-      }
-      // Priority 4: Convert journey_stages to workflow
-      else if (template.journey_stages && Array.isArray(template.journey_stages) && template.journey_stages.length > 0) {
-        console.log('Converting journey stages to workflow');
-        nodes = template.journey_stages.map((stage: any, index: number) => ({
-          id: stage.id || `stage-${index}`,
-          type: 'enhanced',
-          position: { x: index * 300 + 100, y: 100 + (index % 2) * 150 },
-          data: {
-            label: stage.title || stage.name || `Stage ${index + 1}`,
-            description: stage.description || '',
-            type_key: stage.type || 'action',
-            category: stage.category || 'general',
-            configuration: stage.configuration || {},
-            templateSource: true
-          }
-        }));
-        
-        // Create sequential connections between stages
-        edges = nodes.slice(0, -1).map((node, index) => ({
-          id: `edge-${index}`,
-          source: node.id,
-          target: nodes[index + 1].id,
-          animated: true,
-          style: { stroke: '#8b5cf6' },
-          markerEnd: { type: MarkerType.ArrowClosed }
-        }));
-      }
-      // Priority 5: Create default workflow structure
-      else {
-        console.log('Creating default template structure');
-        nodes = [
-          {
-            id: 'start-node',
-            type: 'start',
-            position: { x: 100, y: 100 },
-            data: { 
-              label: 'Start', 
-              type_key: 'start',
-              category: 'control'
-            }
-          },
-          {
-            id: 'template-agent',
-            type: 'enhanced',
-            position: { x: 350, y: 100 },
-            data: { 
-              label: template.name || 'Template Agent',
-              description: template.description || 'Generated from template',
-              type_key: 'llm-agent',
-              category: 'ai-agents',
-              configuration: {
-                model: 'gpt-4o',
-                temperature: 0.7,
-                maxTokens: 1000,
-                messages: [{
-                  role: 'system',
-                  content: `You are ${template.name || 'a helpful assistant'}. ${template.description || ''}`
-                }]
-              },
-              templateSource: true
-            }
-          },
-          {
-            id: 'end-node',
-            type: 'end',
-            position: { x: 600, y: 100 },
-            data: { 
-              label: 'End', 
-              type_key: 'end',
-              category: 'control'
-            }
-          }
-        ];
-        
-        edges = [
-          {
-            id: 'edge-start-agent',
-            source: 'start-node',
-            target: 'template-agent',
-            animated: true,
-            style: { stroke: '#8b5cf6' },
-            markerEnd: { type: 'ArrowClosed' }
-          },
-          {
-            id: 'edge-2',
-            source: 'agent-node',
-            target: 'end-node',
-            animated: true,
-            style: { stroke: '#8b5cf6' },
-            markerEnd: { type: 'ArrowClosed' }
-          }
-        ];
-      }
-      
-      // Apply to canvas
+  // Initialize integration managers
+  // Initialize integration hooks
+  const templateManager = useTemplateIntegration({
+    onWorkflowUpdate: (nodes, edges) => {
       setCanvasNodes(nodes);
       setCanvasEdges(edges);
-      
-      // Notify parent component
       onWorkflowUpdate?.(nodes, edges);
-      
+    },
+    onTemplateLoaded: (template) => {
       setActiveStep('design');
-      toast.success(`Template "${template.name}" loaded with ${nodes.length} nodes and ${edges.length} connections`);
-      
-    } catch (error) {
-      console.error('Error loading template:', error);
-      toast.error('Failed to load template');
+      setShowTemplateGallery(false);
     }
-  }, [onWorkflowUpdate]);
+  });
+
+  const aiWorkflowManager = useAIWorkflowIntegration({
+    onWorkflowUpdate: (nodes, edges) => {
+      setCanvasNodes(nodes);
+      setCanvasEdges(edges);
+      onWorkflowUpdate?.(nodes, edges);
+    },
+    onNodeGenerated: (node) => {
+      const updatedNodes = [...canvasNodes, node];
+      setCanvasNodes(updatedNodes);
+      onWorkflowUpdate?.(updatedNodes, canvasEdges);
+      onNodeAdd?.(node);
+    }
+  });
+
+  const handleTemplateSelect = useCallback(async (template: any) => {
+    await templateManager.handleTemplateLoad(template);
+  }, [templateManager]);
 
   const handleDeployment = useCallback((deploymentConfig: any) => {
     console.log('Deployment config:', deploymentConfig);
