@@ -680,6 +680,7 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
             {/* Workflow Canvas */}
             <div className="col-span-9 border rounded-lg relative">
               <EnhancedWorkflowCanvas 
+                key={`uwf-canvas-${canvasNodes.length}-${canvasEdges.length}`}
                 initialNodes={canvasNodes}
                 initialEdges={canvasEdges}
                 onNodesChange={(nodes) => {

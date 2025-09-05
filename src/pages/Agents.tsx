@@ -532,6 +532,7 @@ const { user } = useMasterAuth();
                   <SidebarProvider className="w-full h-full min-h-0">
                     <div className="min-h-0 h-full flex w-full">
                       <AdvancedReactFlowWrapper 
+                        key={`adv-rf-${workflowNodes.length}-${workflowEdges.length}`}
                         fitParent={true}
                         workflowType="visual"
                         sessionId={currentSession?.id}

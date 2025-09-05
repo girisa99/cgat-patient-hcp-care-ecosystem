@@ -42,24 +42,39 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
   const [configAction, setConfigAction] = useState('');
   const [chatAssistMode, setChatAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('configure');
 
-  // Sync with external changes to initialNodes/initialEdges
-  React.useEffect(() => {
-    if (initialNodes && initialNodes.length) {
-      setNodes(initialNodes as any);
-    }
-  }, [JSON.stringify(initialNodes)]);
+// Sync with external changes to initialNodes/initialEdges
+React.useEffect(() => {
+  if (initialNodes && initialNodes.length) {
+    setNodes(initialNodes as any);
+  }
+}, [JSON.stringify(initialNodes)]);
 
-  React.useEffect(() => {
-    if (initialEdges && initialEdges.length) {
-      const processed = (initialEdges as any).map((e: Edge) => ({
-        ...e,
-        animated: true,
-        style: { ...(e.style || {}), stroke: '#8b5cf6' },
-        markerEnd: { type: MarkerType.ArrowClosed },
-      }));
-      setEdges(processed as any);
-    }
-  }, [JSON.stringify(initialEdges)]);
+React.useEffect(() => {
+  // If we have explicit edges, normalize and apply them
+  if (initialEdges && initialEdges.length) {
+    const processed = (initialEdges as any).map((e: Edge) => ({
+      ...e,
+      animated: true,
+      style: { ...(e.style || {}), stroke: '#8b5cf6' },
+      markerEnd: { type: MarkerType.ArrowClosed },
+    }));
+    setEdges(processed as any);
+    return;
+  }
+  // Auto-connect sequentially when nodes are present but no edges provided
+  if ((initialNodes?.length || 0) > 1 && (!initialEdges || initialEdges.length === 0)) {
+    const auto = (initialNodes as any).slice(0, -1).map((n: Node, idx: number) => ({
+      id: `auto-edge-${idx}`,
+      source: n.id,
+      target: (initialNodes as any)[idx + 1].id,
+      animated: true,
+      style: { stroke: '#8b5cf6' },
+      markerEnd: { type: MarkerType.ArrowClosed },
+      type: 'smoothstep',
+    }));
+    setEdges(auto as any);
+  }
+}, [JSON.stringify(initialEdges), JSON.stringify(initialNodes)]);
 
   // Handle opening chat interface
   const handleOpenChat = useCallback((nodeId: string, mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure' = 'configure') => {
