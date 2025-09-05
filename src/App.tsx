@@ -45,11 +45,7 @@ import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
 import CreditApplication from '@/pages/CreditApplication';
 import AgentCreationWizard from '@/components/agentic/AgentCreationWizard';
-import AgentWorkflowStudio from '@/pages/AgentWorkflowStudio';
-import UnifiedWorkflowStudio from '@/pages/UnifiedWorkflowStudio';
 import MCPDemo from '@/pages/MCPDemo';
-import { AgentBuilderProvider } from '@/components/agent-builder/AgentBuilderProvider';
-import { GuidedNodeBasedBuilder } from '@/components/guided-flow/GuidedNodeBasedBuilder';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -128,32 +124,11 @@ const AppContent = () => {
                       <Agents />
                     </ProtectedRoute>
                   } />
-                  <Route path="/agents/new" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
-                      <AgentBuilderProvider>
-                        <AgentCreationWizard />
-                      </AgentBuilderProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/agents/workflow-studio" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
-                      <AgentBuilderProvider>
-                        <AgentWorkflowStudio />
-                      </AgentBuilderProvider>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/unified-workflow" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
-                      <UnifiedWorkflowStudio />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/guided" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
-                      <AgentBuilderProvider>
-                        <GuidedNodeBasedBuilder />
-                      </AgentBuilderProvider>
-                    </ProtectedRoute>
-                  } />
+                  {/* Legacy routes - redirect to consolidated /agents */}
+                  <Route path="/agents/new" element={<Navigate to="/agents" replace />} />
+                  <Route path="/agents/workflow-studio" element={<Navigate to="/agents" replace />} />
+                  <Route path="/unified-workflow" element={<Navigate to="/agents" replace />} />
+                  <Route path="/guided" element={<Navigate to="/agents" replace />} />
                   <Route path="/mcp" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
                       <MCPDemo />

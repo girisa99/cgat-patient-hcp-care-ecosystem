@@ -40,7 +40,7 @@ import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBase
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { JourneyEditor } from '@/components/agentic/JourneyEditor';
 import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
-import { ReactFlowWrapper as CustomerJourneyBuilder } from '@/components/workflow-builder/ReactFlowWrapper';
+import { AdvancedReactFlowWrapper as CustomerJourneyBuilder } from '@/components/workflow-builder/AdvancedReactFlow';
 import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
 import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
 import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';

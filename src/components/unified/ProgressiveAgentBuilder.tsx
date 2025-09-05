@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sparkles, Brain, Zap, Settings } from 'lucide-react';
 import { PromptBasedAgentGenerator } from '../agent-builder/PromptBasedAgentGenerator';
-import { ReactFlowWrapper } from '../workflow-builder/ReactFlowWrapper';
+import { AdvancedReactFlowWrapper } from '../workflow-builder/AdvancedReactFlow';
 import { AutoConnectProcessor } from '../workflow-builder/AutoConnectProcessor';
 
 interface ProgressiveAgentBuilderProps {
@@ -223,16 +223,14 @@ export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = (
           <TabsContent value="visual" className="h-full p-0">
             {generatedAgent && (
               <div className="h-full">
-                <ReactFlowWrapper
-                  initialWorkflow={{ nodes, edges }}
+                <AdvancedReactFlowWrapper
+                  initialNodes={nodes}
+                  initialEdges={edges}
                   onSave={(workflow) => {
                     setNodes(workflow.nodes);
                     setEdges(workflow.edges);
                   }}
-                  useCaseData={{
-                    name: generatedAgent.agentName,
-                    description: generatedAgent.description
-                  }}
+                  workflowType="visual"
                 />
               </div>
             )}
