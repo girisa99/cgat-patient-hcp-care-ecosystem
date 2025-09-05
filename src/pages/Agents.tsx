@@ -253,18 +253,26 @@ const AgentsInner = () => {
   };
 
   const handleWorkflowGenerated = (workflow: any) => {
+    console.log('[Agents] handleWorkflowGenerated called with:', workflow);
     setWorkflowNodes(workflow.nodes || []);
     setWorkflowEdges(workflow.edges || []);
-    toast.success('Workflow generated successfully!');
+    // Only show success if not already shown by the component
+    if (workflow && !workflow._successShown) {
+      toast.success('Workflow generated successfully!');
+    }
   };
 
   const handleNodeGenerated = (node: any) => {
+    console.log('[Agents] handleNodeGenerated called with:', node);
     if (node.nodes) {
       setWorkflowNodes(prev => [...prev, ...node.nodes]);
     } else {
       setWorkflowNodes(prev => [...prev, node]);
     }
-    toast.success('Node generated successfully!');
+    // Only show success if not already shown by the component
+    if (node && !node._successShown) {
+      toast.success('Node generated successfully!');
+    }
   };
 
   const handleNodeConfigOpen = (nodeData: any) => {
@@ -562,8 +570,8 @@ const AgentsInner = () => {
           isOpen={showTemplateGallery}
           onClose={() => setShowTemplateGallery(false)}
           onTemplateSelect={(template) => {
-            console.log('Template selected:', template);
-            toast.success(`Template "${template.name}" applied!`);
+            console.log('[Agents] Template selected:', template);
+            // Remove duplicate success message - TemplateGallery should handle it
             setShowTemplateGallery(false);
           }}
         />
@@ -573,8 +581,8 @@ const AgentsInner = () => {
           isOpen={showDeploymentManager}
           onClose={() => setShowDeploymentManager(false)}
           onDeploy={(config) => {
-            console.log('Deployment config:', config);
-            toast.success('Agent deployed successfully!');
+            console.log('[Agents] Deployment config:', config);
+            // Remove duplicate success message - EnvironmentChannelManager should handle it
             setShowDeploymentManager(false);
           }}
         />
