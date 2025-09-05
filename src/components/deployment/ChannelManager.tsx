@@ -33,21 +33,29 @@ export const ChannelManager: React.FC<ChannelManagerProps> = ({
   onChannelsChange
 }) => {
   const [isAddChannelOpen, setIsAddChannelOpen] = useState(false);
-  const [newChannel, setNewChannel] = useState({
+  type ChannelType = 'voice' | 'webchat' | 'email' | 'sms' | 'scheduling' | 'uber' | 'web' | 'mobile';
+  
+  const [newChannel, setNewChannel] = useState<{
+    name: string;
+    type: ChannelType;
+    description: string;
+    maxAgents: number;
+  }>({
     name: '',
-    type: 'voice-call',
+    type: 'voice',
     description: '',
     maxAgents: 5
   });
 
   const channelTypes = [
-    { value: 'voice-call', label: 'Voice Call', icon: <Phone className="h-4 w-4" /> },
-    { value: 'web-chat', label: 'Web Chat', icon: <MessageCircle className="h-4 w-4" /> },
+    { value: 'voice', label: 'Voice Call', icon: <Phone className="h-4 w-4" /> },
+    { value: 'webchat', label: 'Web Chat', icon: <MessageCircle className="h-4 w-4" /> },
     { value: 'email', label: 'Email', icon: <Mail className="h-4 w-4" /> },
-    { value: 'messaging', label: 'Messaging', icon: <MessageCircle className="h-4 w-4" /> },
-    { value: 'voice-assistant', label: 'Voice Assistant', icon: <Mic className="h-4 w-4" /> },
-    { value: 'instagram', label: 'Instagram', icon: <Instagram className="h-4 w-4" /> },
-    { value: 'website', label: 'Website', icon: <Globe className="h-4 w-4" /> }
+    { value: 'sms', label: 'SMS/Messaging', icon: <MessageCircle className="h-4 w-4" /> },
+    { value: 'mobile', label: 'Mobile App', icon: <Mic className="h-4 w-4" /> },
+    { value: 'scheduling', label: 'Scheduling', icon: <Instagram className="h-4 w-4" /> },
+    { value: 'web', label: 'Website', icon: <Globe className="h-4 w-4" /> },
+    { value: 'uber', label: 'Transportation', icon: <Globe className="h-4 w-4" /> }
   ];
 
   const generateChannelId = (name: string, type: string) => {
@@ -61,13 +69,14 @@ export const ChannelManager: React.FC<ChannelManagerProps> = ({
 
   const getChannelColor = (type: string) => {
     const colors = {
-      'voice-call': 'blue',
-      'web-chat': 'green',
+      'voice': 'blue',
+      'webchat': 'green',
       'email': 'purple',
-      'messaging': 'orange',
-      'voice-assistant': 'pink',
-      'instagram': 'red',
-      'website': 'gray'
+      'sms': 'orange',
+      'mobile': 'pink',
+      'scheduling': 'red',
+      'web': 'gray',
+      'uber': 'yellow'
     };
     return colors[type as keyof typeof colors] || 'gray';
   };
@@ -87,6 +96,7 @@ export const ChannelManager: React.FC<ChannelManagerProps> = ({
       id: channelId,
       name: newChannel.name,
       description: newChannel.description,
+      type: newChannel.type,
       icon: getChannelIcon(newChannel.type),
       color: getChannelColor(newChannel.type),
       isActive: true,
@@ -97,7 +107,7 @@ export const ChannelManager: React.FC<ChannelManagerProps> = ({
 
     onChannelsChange([...channels, channel]);
     setIsAddChannelOpen(false);
-    setNewChannel({ name: '', type: 'voice-call', description: '', maxAgents: 5 });
+    setNewChannel({ name: '', type: 'voice', description: '', maxAgents: 5 });
 
     toast({
       title: "Channel Added",
@@ -107,13 +117,14 @@ export const ChannelManager: React.FC<ChannelManagerProps> = ({
 
   const getDefaultFeatures = (type: string): string[] => {
     const featureMap = {
-      'voice-call': ['Real-time Audio', 'Call Recording', 'Hold/Transfer'],
-      'web-chat': ['Live Chat', 'File Sharing', 'Chat History'],
+      'voice': ['Real-time Audio', 'Call Recording', 'Hold/Transfer'],
+      'webchat': ['Live Chat', 'File Sharing', 'Chat History'],
       'email': ['Auto-Reply', 'Threading', 'Attachments'],
-      'messaging': ['Quick Replies', 'Rich Media', 'Status Updates'],
-      'voice-assistant': ['Voice Recognition', 'TTS', 'Wake Words'],
-      'instagram': ['DM Support', 'Story Replies', 'Media Sharing'],
-      'website': ['Widget Chat', 'Page Context', 'Form Integration']
+      'sms': ['Quick Replies', 'Rich Media', 'Status Updates'],
+      'mobile': ['Push Notifications', 'Offline Support', 'Biometric Auth'],
+      'scheduling': ['Calendar Integration', 'Automated Booking', 'Reminders'],
+      'web': ['Widget Chat', 'Page Context', 'Form Integration'],
+      'uber': ['Real-time Tracking', 'Automated Booking', 'Health Integration']
     };
     return featureMap[type as keyof typeof featureMap] || ['Basic Features'];
   };
@@ -195,7 +206,7 @@ export const ChannelManager: React.FC<ChannelManagerProps> = ({
               </div>
               <div>
                 <label className="text-sm font-medium">Channel Type</label>
-                <Select value={newChannel.type} onValueChange={(value) => setNewChannel(prev => ({ ...prev, type: value }))}>
+                <Select value={newChannel.type} onValueChange={(value: ChannelType) => setNewChannel(prev => ({ ...prev, type: value }))}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>

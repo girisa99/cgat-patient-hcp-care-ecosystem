@@ -19,7 +19,15 @@ export interface Channel {
   icon: React.ReactNode;
   isActive: boolean;
   config?: Record<string, any>;
+  // Additional properties for existing components
+  color?: string;
+  assignedAgents?: any[];
+  maxAgents?: number;
+  features?: string[];
 }
+
+// Legacy alias for backward compatibility
+export type DeploymentChannel = Channel;
 
 export const defaultChannels: Channel[] = [
   {
@@ -124,12 +132,16 @@ interface DeploymentChannelsProps {
   channels?: Channel[];
   onChannelToggle?: (channelId: string) => void;
   selectedChannels?: string[];
+  onAddChannel?: () => void;
+  onConfigureChannel?: (channelId: string) => void;
 }
 
 export const DeploymentChannels: React.FC<DeploymentChannelsProps> = ({
   channels = defaultChannels,
   onChannelToggle,
-  selectedChannels = []
+  selectedChannels = [],
+  onAddChannel,
+  onConfigureChannel
 }) => {
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
