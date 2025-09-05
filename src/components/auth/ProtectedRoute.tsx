@@ -28,6 +28,14 @@ const ProtectedRoute = ({
   const { canRead, canWrite, canAdmin } = useFacilityScope();
   const navigate = useNavigate();
 
+  // Defer role checks until roles are loaded to avoid false redirects
+  const rolesStillLoading = Boolean(
+    isAuthenticated &&
+    requiredRoles &&
+    requiredRoles.length > 0 &&
+    userRoles.length === 0
+  );
+
   // ProtectedRoute check
 
   // Check role-based access
@@ -67,21 +75,27 @@ const ProtectedRoute = ({
     if (!isLoading && !isLoadingFacilities && !isAuthenticated) {
       console.log('🔄 Redirecting to login for authentication...');
       navigate('/login', { replace: true });
+      return;
+    }
+    // Wait for roles to load before enforcing role checks
+    if (rolesStillLoading) {
+      console.log('⏳ Waiting for roles to load before access check...');
+      return;
     }
     // Check role and facility access after authentication
-    else if (!isLoading && !isLoadingFacilities && isAuthenticated && (!hasRequiredRole || !hasValidFacilityAccess)) {
+    if (!isLoading && !isLoadingFacilities && isAuthenticated && (!hasRequiredRole || !hasValidFacilityAccess)) {
       console.log('🚫 Insufficient permissions, redirecting to home...');
       navigate('/', { replace: true });
     }
-  }, [isLoading, isLoadingFacilities, isAuthenticated, hasRequiredRole, hasValidFacilityAccess, navigate]);
+  }, [isLoading, isLoadingFacilities, isAuthenticated, rolesStillLoading, hasRequiredRole, hasValidFacilityAccess, navigate]);
 
-  // Show loading spinner while checking auth and facilities
-  if (isLoading || isLoadingFacilities) {
+  // Show loading spinner while checking auth, roles, and facilities
+  if (isLoading || isLoadingFacilities || rolesStillLoading) {
     console.log('⏳ ProtectedRoute loading...');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <LoadingSpinner size="lg" />
-        <span className="ml-3 text-gray-600">Loading...</span>
+        <span className="ml-3 text-gray-600">{rolesStillLoading ? 'Loading permissions...' : 'Loading...'}</span>
       </div>
     );
   }
