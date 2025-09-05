@@ -34,6 +34,7 @@ import { ModeSelector, type AgentMode } from '@/components/agent-builder/ModeSel
 import { PromptAssistant } from '@/components/agent-builder/PromptAssistant';
 import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
 import { IntelligentQuestionnaire } from '@/components/agent-builder/IntelligentQuestionnaire';
+import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBasedAgentGenerator';
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { JourneyEditor } from '@/components/agentic/JourneyEditor';
 import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
@@ -44,6 +45,7 @@ import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
 import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosystem';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useMasterToast } from '@/hooks/useMasterToast';
 import { toast } from 'sonner';
 import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDesigner';
 import { AIModelSelector } from '@/components/agentic/AIModelSelector';
@@ -85,7 +87,7 @@ const AgentsInner = () => {
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
-  const [visualWorkflowSubTab, setVisualWorkflowSubTab] = useState('use-case');
+  const [visualWorkflowSubTab, setVisualWorkflowSubTab] = useState<'use-case' | 'journey' | 'builder' | 'ai-prompt'>('use-case');
   const [selectedUseCase, setSelectedUseCase] = useState('');
   const [journeyStages, setJourneyStages] = useState<any[]>([]);
   const [wizardData, setWizardData] = useState<any>({});
@@ -235,14 +237,14 @@ const AgentsInner = () => {
 
   const handleJourneyComplete = (stages: any[]) => {
     setJourneyStages(stages);
-    setVisualWorkflowSubTab('wizard');
-    toast.success('Journey stages defined! Complete your agent setup.');
+    setVisualWorkflowSubTab('builder');
+    toast.success('Journey stages defined! Now use the builder.');
   };
 
   const handleWizardComplete = (data: any) => {
     setWizardData(data);
-    setVisualWorkflowSubTab('canvas');
-    toast.success('Setup complete! Customize your agent\'s appearance.');
+    setVisualWorkflowSubTab('builder');
+    toast.success('Setup complete! Now use the visual builder.');
   };
 
   const handleAIAssistOpen = (mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure', nodeId?: string) => {
@@ -312,44 +314,177 @@ const AgentsInner = () => {
           </div>
         </div>
 
-        {/* Main Content - Flowise-Inspired Layout */}
-        <div className="flex-1 flex overflow-hidden">
-          {/* Full Canvas Area with Integrated Palette */}
-          <div className="flex-1 flex flex-col bg-gray-50/50 min-h-0">
-            {/* ReactFlow Builder */}
-            <div className="flex-1 min-h-0 relative">
-              <ErrorBoundary fallbackComponent={({ error, retry }) => (
-                <div className="absolute inset-0 flex items-center justify-center p-4">
-                  <div className="text-xs text-center space-y-2 max-w-lg">
-                    <div className="font-medium">Canvas failed to load</div>
-                    <div className="text-muted-foreground break-all mx-auto">{error?.message}</div>
-                    {error?.stack && (
-                      <pre className="text-left bg-muted/30 p-2 rounded max-h-48 overflow-auto whitespace-pre-wrap">{error.stack}</pre>
-                    )}
-                    <Button size="sm" variant="outline" onClick={retry}>Retry</Button>
+        {/* Main Content with Tabs */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {/* Visual Mode Tabs */}
+          <div className="border-b bg-card px-4 py-2">
+            <div className="flex items-center gap-1">
+              <Button 
+                variant={visualWorkflowSubTab === 'use-case' ? 'default' : 'ghost'} 
+                size="sm" 
+                className="h-8 px-3 text-xs"
+                onClick={() => setVisualWorkflowSubTab('use-case')}
+              >
+                <Target className="w-3 h-3 mr-1" />
+                Use Case
+              </Button>
+              <Button 
+                variant={visualWorkflowSubTab === 'journey' ? 'default' : 'ghost'} 
+                size="sm" 
+                className="h-8 px-3 text-xs"
+                onClick={() => setVisualWorkflowSubTab('journey')}
+              >
+                <ArrowRight className="w-3 h-3 mr-1" />
+                Journey
+              </Button>
+              <Button 
+                variant={visualWorkflowSubTab === 'builder' ? 'default' : 'ghost'} 
+                size="sm" 
+                className="h-8 px-3 text-xs"
+                onClick={() => setVisualWorkflowSubTab('builder')}
+              >
+                <Brain className="w-3 h-3 mr-1" />
+                Builder
+              </Button>
+              <Button 
+                variant={visualWorkflowSubTab === 'ai-prompt' ? 'default' : 'ghost'} 
+                size="sm" 
+                className="h-8 px-3 text-xs"
+                onClick={() => setVisualWorkflowSubTab('ai-prompt')}
+              >
+                <Sparkles className="w-3 h-3 mr-1" />
+                AI Prompt
+              </Button>
+            </div>
+          </div>
+
+          {/* Tab Content */}
+          <div className="flex-1 overflow-hidden">
+            {/* Use Case Tab */}
+            {visualWorkflowSubTab === 'use-case' && (
+              <div className="h-full p-6">
+                <UseCaseSelector 
+                  selectedUseCase={selectedUseCase}
+                  onUseCaseChange={handleUseCaseSelect}
+                  selectedCategories={[]}
+                  selectedTopics={[]}
+                />
+              </div>
+            )}
+
+            {/* Journey Tab */}
+            {visualWorkflowSubTab === 'journey' && (
+              <div className="h-full p-6">
+                {selectedUseCase ? (
+                  <JourneyEditor
+                    useCase={selectedUseCase}
+                    onApplied={handleJourneyComplete}
+                  />
+                ) : (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground">Please select a use case first</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* AI Prompt Tab */}
+            {visualWorkflowSubTab === 'ai-prompt' && (
+              <div className="h-full p-6">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
+                  <div className="space-y-4">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Sparkles className="w-5 h-5" />
+                          AI Agent Builder
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <PromptBasedAgentGenerator 
+                          onGenerate={(agent) => {
+                            setWorkflowNodes(agent.nodes || []);
+                            setWorkflowEdges(agent.edges || []);
+                            toast.success('Agent generated successfully!');
+                            setVisualWorkflowSubTab('builder');
+                          }}
+                        />
+                      </CardContent>
+                    </Card>
+                  </div>
+                  <div className="space-y-4">
+                    <Card className="flex-1">
+                      <CardHeader>
+                        <CardTitle>Generated Workflow Preview</CardTitle>
+                      </CardHeader>
+                      <CardContent className="h-64 overflow-auto">
+                        {workflowNodes.length > 0 ? (
+                          <div className="space-y-2">
+                            <p className="text-sm text-muted-foreground">
+                              {workflowNodes.length} nodes, {workflowEdges.length} connections
+                            </p>
+                            <div className="grid grid-cols-1 gap-2">
+                              {workflowNodes.slice(0, 5).map((node, idx) => (
+                                <div key={idx} className="p-2 border rounded text-xs">
+                                  <div className="font-medium">{node.data?.label || `Node ${idx + 1}`}</div>
+                                  <div className="text-muted-foreground">{node.type}</div>
+                                </div>
+                              ))}
+                              {workflowNodes.length > 5 && (
+                                <div className="text-xs text-muted-foreground">
+                                  ... and {workflowNodes.length - 5} more nodes
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-center py-8 text-muted-foreground">
+                            <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                            <p>Generate an agent to see preview</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
-              )}>
-                <SidebarProvider className="w-full h-full min-h-0">
-                  <div className="min-h-0 h-full flex w-full">
-                    <AdvancedReactFlowWrapper 
-                      fitParent={true}
-                      workflowType="visual"
-                      sessionId={currentSession?.id}
-                      initialNodes={workflowNodes}
-                      initialEdges={workflowEdges}
-                       onNodeSelect={(node) => {
-                         setSelectedNode(node);
-                         setRightPanelTab('config');
-                         setShowPromptAssistant(false);
-                       }}
-                      onSave={handleFlowSave}
-                    />
+              </div>
+            )}
+
+            {/* Builder Tab */}
+            {visualWorkflowSubTab === 'builder' && (
+              <div className="flex-1 flex overflow-hidden bg-gray-50/50">
+                <ErrorBoundary fallbackComponent={({ error, retry }) => (
+                  <div className="absolute inset-0 flex items-center justify-center p-4">
+                    <div className="text-xs text-center space-y-2 max-w-lg">
+                      <div className="font-medium">Canvas failed to load</div>
+                      <div className="text-muted-foreground break-all mx-auto">{error?.message}</div>
+                      {error?.stack && (
+                        <pre className="text-left bg-muted/30 p-2 rounded max-h-48 overflow-auto whitespace-pre-wrap">{error.stack}</pre>
+                      )}
+                      <Button size="sm" variant="outline" onClick={retry}>Retry</Button>
+                    </div>
                   </div>
-                </SidebarProvider>
-              </ErrorBoundary>
-              
-            </div>
+                )}>
+                  <SidebarProvider className="w-full h-full min-h-0">
+                    <div className="min-h-0 h-full flex w-full">
+                      <AdvancedReactFlowWrapper 
+                        fitParent={true}
+                        workflowType="visual"
+                        sessionId={currentSession?.id}
+                        initialNodes={workflowNodes}
+                        initialEdges={workflowEdges}
+                         onNodeSelect={(node) => {
+                           setSelectedNode(node);
+                           setRightPanelTab('config');
+                           setShowPromptAssistant(false);
+                         }}
+                        onSave={handleFlowSave}
+                      />
+                    </div>
+                  </SidebarProvider>
+                </ErrorBoundary>
+              </div>
+            )}
           </div>
         </div>
 
