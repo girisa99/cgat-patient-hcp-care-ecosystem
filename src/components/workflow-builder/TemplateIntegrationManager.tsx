@@ -296,26 +296,39 @@ export const useTemplateIntegration = ({
         };
       });
 
-      // Enhance edges with proper ReactFlow structure
-      const enhancedEdges = edges.map((edge: any, index: number) => ({
-        id: edge.id || `edge-${Date.now()}-${index}`,
-        source: edge.source,
-        target: edge.target,
-        type: edge.type || 'default',
-        animated: edge.animated !== false,
-        style: edge.style || { stroke: '#8b5cf6' },
-        markerEnd: edge.markerEnd || { type: MarkerType.ArrowClosed },
-        ...edge
-      }));
+      // Enhance edges with proper ReactFlow structure; if none, create sequential animated connectors
+      let finalEdges: any[] = [];
+      if (edges && edges.length > 0) {
+        finalEdges = edges.map((edge: any, index: number) => ({
+          id: edge.id || `edge-${Date.now()}-${index}`,
+          source: edge.source,
+          target: edge.target,
+          type: edge.type || 'default',
+          animated: edge.animated !== false,
+          style: edge.style || { stroke: '#8b5cf6' },
+          markerEnd: edge.markerEnd || { type: MarkerType.ArrowClosed },
+          ...edge
+        }));
+      } else {
+        finalEdges = enhancedNodes.slice(0, -1).map((node, index) => ({
+          id: `edge-auto-${index}`,
+          source: node.id,
+          target: enhancedNodes[index + 1].id,
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: '#8b5cf6' },
+          markerEnd: { type: MarkerType.ArrowClosed }
+        }));
+      }
 
       console.log('Template loaded successfully:', {
         nodesCount: enhancedNodes.length,
-        edgesCount: enhancedEdges.length,
+        edgesCount: finalEdges.length,
         templateName: template.name,
         databaseNodeTypesUsed: enhancedNodes.map(n => n.data?.type_key).filter(Boolean)
       });
 
-      onWorkflowUpdate(enhancedNodes, enhancedEdges);
+      onWorkflowUpdate(enhancedNodes, finalEdges);
       onTemplateLoaded(template);
       
       toast.success(`Template "${template.name || 'Workflow'}" loaded with ${enhancedNodes.length} nodes using database node types`);
