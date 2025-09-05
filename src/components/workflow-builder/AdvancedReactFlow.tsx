@@ -229,13 +229,47 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   }, [initialNodes, setNodes]);
 
   useEffect(() => {
-    setEdges(initialEdges || []);
-  }, [initialEdges, setEdges]);
+    if (initialEdges && initialEdges.length) {
+      const processed = (initialEdges as any).map((e: any) => ({
+        ...e,
+        animated: e.animated !== false,
+        style: { ...(e.style || {}), stroke: '#8b5cf6' },
+        markerEnd: e.markerEnd || { type: MarkerType.ArrowClosed },
+      }));
+      setEdges(processed as any);
+    } else if ((initialNodes?.length || 0) > 1) {
+      const auto = (initialNodes as any).slice(0, -1).map((n: any, idx: number) => ({
+        id: `auto-edge-${idx}`,
+        source: n.id,
+        target: (initialNodes as any)[idx + 1].id,
+        type: 'smoothstep',
+        animated: true,
+        style: { stroke: '#8b5cf6' },
+        markerEnd: { type: MarkerType.ArrowClosed },
+      }));
+      setEdges(auto as any);
+    } else {
+      setEdges([]);
+    }
+  }, [initialEdges, initialNodes, setEdges]);
 
   // UI State
   const [activeTab, setActiveTab] = useState('layout');
   const [canvasOnly, setCanvasOnly] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+
+  // Auto-fit view when nodes/edges update so users immediately see results
+  useEffect(() => {
+    try {
+      if ((nodes?.length || 0) > 0) {
+        const t = setTimeout(() => {
+          fitView({ padding: 0.2, includeHiddenNodes: true });
+        }, 60);
+        return () => clearTimeout(t);
+      }
+    } catch {}
+  }, [nodes, edges, fitView]);
+
   const [showTestConsole, setShowTestConsole] = useState(false);
   const [showCodeEditor, setShowCodeEditor] = useState(false);
   const [showExecutionEngine, setShowExecutionEngine] = useState(false);

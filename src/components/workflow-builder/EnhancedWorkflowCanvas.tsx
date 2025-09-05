@@ -404,7 +404,7 @@ React.useEffect(() => {
           isOpen={configModalOpen}
           onClose={() => setConfigModalOpen(false)}
           nodeId={selectedNode.id}
-          nodeType={String(selectedNode.data?.type || 'default')}
+          nodeType={String(selectedNode.data?.type_key || selectedNode.data?.type || 'default')}
           configAction={configAction}
           initialData={selectedNode.data?.configuration}
           onSave={handleConfigurationSave}
@@ -417,7 +417,7 @@ React.useEffect(() => {
           isOpen={chatModalOpen}
           onClose={() => setChatModalOpen(false)}
           nodeId={selectedNode.id}
-          nodeType={String(selectedNode.data?.type || 'default')}
+          nodeType={String(selectedNode.data?.type_key || selectedNode.data?.type || 'default')}
           currentConfig={selectedNode.data?.configuration || {}}
           onConfigurationUpdate={handleConfigurationUpdate}
           assistMode={chatAssistMode}
