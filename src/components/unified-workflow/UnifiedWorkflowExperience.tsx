@@ -299,7 +299,8 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
 
     setActiveStep('design');
     setShowAIAssist(false);
-    toast.success('Workflow generated! Review and customize your nodes.');
+    // Avoid duplicate success notifications; parent page may show one toast
+    onWorkflowUpdate?.(reactFlowNodes, reactFlowEdges);
   }, [onWorkflowUpdate]);
 
   const handleNodeGenerated = useCallback((node: any) => {
