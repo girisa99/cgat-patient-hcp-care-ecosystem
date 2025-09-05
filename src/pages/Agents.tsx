@@ -58,6 +58,9 @@ import { UnifiedAgentAssist } from '@/components/unified/UnifiedAgentAssist';
 import { UnifiedWorkflowExperience } from '@/components/unified-workflow/UnifiedWorkflowExperience';
 import { AIAssistIntegration } from '@/components/unified-workflow/AIAssistIntegration';
 import { ConfigurableNodePanel } from '@/components/unified-workflow/ConfigurableNodePanel';
+import { TemplateGallery } from '@/components/unified-workflow/TemplateGallery';
+import { EnvironmentChannelManager } from '@/components/unified-workflow/EnvironmentChannelManager';
+import { DynamicNodeConfiguration } from '@/components/unified-workflow/DynamicNodeConfiguration';
 
 // Import new Agent Ecosystem components
 import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
@@ -102,6 +105,10 @@ const AgentsInner = () => {
   const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
   const [showObservability, setShowObservability] = useState(false);
   const [showAnimatedFlow, setShowAnimatedFlow] = useState(false);
+  const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [showDeploymentManager, setShowDeploymentManager] = useState(false);
+  const [showNodeCategories, setShowNodeCategories] = useState(true);
+  const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -205,6 +212,8 @@ const AgentsInner = () => {
       toast.success('Switched to Unified Workflow Experience');
     } else if (mode === 'visual') {
       setVisualWorkflowSubTab('use-case');
+      // Auto-show template gallery and asset panel for visual mode
+      setShowTemplateGallery(true);
     } else if (mode === 'ecosystem') {
       toast.success('Switched to Agent Ecosystem Management');
     } else {
@@ -280,11 +289,19 @@ const AgentsInner = () => {
           </div>
           
           <div className="flex items-center gap-1">
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowTemplateGallery(true)}>
+              <Database className="w-3 h-3 mr-1" />
+              Templates
+            </Button>
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowLibrariesPanel(!showLibrariesPanel)}>
+              <Network className="w-3 h-3 mr-1" />
+              Libraries
+            </Button>
             <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
               <Save className="w-3 h-3 mr-1" />
               Save
             </Button>
-            <Button size="sm" className="h-7 px-2 text-xs bg-primary hover:bg-primary/90">
+            <Button size="sm" className="h-7 px-2 text-xs bg-primary hover:bg-primary/90" onClick={() => setShowDeploymentManager(true)}>
               <Play className="w-3 h-3 mr-1" />
               Deploy
             </Button>
@@ -401,6 +418,48 @@ const AgentsInner = () => {
                   </Button>
                 </div>
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* Template Gallery */}
+        <TemplateGallery
+          isOpen={showTemplateGallery}
+          onClose={() => setShowTemplateGallery(false)}
+          onTemplateSelect={(template) => {
+            console.log('Template selected:', template);
+            toast.success(`Template "${template.name}" applied!`);
+            setShowTemplateGallery(false);
+          }}
+        />
+
+        {/* Deployment Manager */}
+        <EnvironmentChannelManager
+          isOpen={showDeploymentManager}
+          onClose={() => setShowDeploymentManager(false)}
+          onDeploy={(config) => {
+            console.log('Deployment config:', config);
+            toast.success('Agent deployed successfully!');
+            setShowDeploymentManager(false);
+          }}
+        />
+
+        {/* Libraries Panel */}
+        {showLibrariesPanel && (
+          <div className="fixed top-14 right-4 w-80 h-[calc(100vh-80px)] border bg-card rounded-lg shadow-lg flex flex-col z-30">
+            <div className="p-3 border-b flex items-center justify-between">
+              <h3 className="font-semibold text-sm">Libraries & Actions</h3>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => setShowLibrariesPanel(false)}
+                className="h-6 w-6 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            <div className="flex-1 overflow-auto">
+              <LibrariesAndActions />
             </div>
           </div>
         )}
