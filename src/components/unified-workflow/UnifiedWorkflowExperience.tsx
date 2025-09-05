@@ -17,12 +17,12 @@ import { EnhancedWorkflowCanvas } from '@/components/workflow-builder/EnhancedWo
 import { EnhancedNodePalette } from '@/components/workflow-builder/EnhancedNodePalette';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { AIAssistIntegration } from './AIAssistIntegration';
-import { ConfigurableNodePanel } from './ConfigurableNodePanel';
 import { TemplateGallery } from './TemplateGallery';
 import { SaveAsTemplateModal } from '@/components/workflow-builder/SaveAsTemplateModal';
 import { EnvironmentChannelManager } from './EnvironmentChannelManager';
 import { DynamicNodeConfiguration } from './DynamicNodeConfiguration';
 import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
+import { EnhancedNodeConfigurationPanel } from '@/components/workflow-builder/EnhancedNodeConfigurationPanel';
 import { MarkerType } from '@xyflow/react';
 
 interface NodeTypeInfo {
@@ -344,11 +344,32 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
     setShowConfigPanel(true);
   }, []);
 
-  const handleNodeConfigSave = useCallback((nodeData: any) => {
-    // Save node configuration
-    toast.success('Node configuration saved');
+  const handleNodeConfigSave = useCallback((nodeId: string, configuration: any) => {
+    console.log('Saving node configuration:', { nodeId, configuration });
+    
+    // Update the canvas nodes with the new configuration
+    const updatedNodes = canvasNodes.map(node => {
+      if (node.id === nodeId) {
+        return {
+          ...node,
+          data: {
+            ...node.data,
+            configuration: {
+              ...node.data?.configuration,
+              ...configuration
+            }
+          }
+        };
+      }
+      return node;
+    });
+    
+    setCanvasNodes(updatedNodes);
+    onWorkflowUpdate?.(updatedNodes, canvasEdges);
+    
+    toast.success('Node configuration saved successfully!');
     setShowConfigPanel(false);
-  }, []);
+  }, [canvasNodes, canvasEdges, onWorkflowUpdate]);
 
   const handleScenarioSelect = useCallback((scenario: WorkflowScenario) => {
     setSelectedScenario(scenario);
@@ -363,106 +384,126 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
       let nodes: any[] = [];
       let edges: any[] = [];
       
-      // Handle different template data structures
-      if (template.configuration) {
-        if (template.configuration.nodes) {
-          nodes = template.configuration.nodes;
-          edges = template.configuration.edges || [];
-        } else if (template.configuration.canvas) {
-          nodes = template.configuration.canvas.nodes || [];
-          edges = template.configuration.canvas.edges || [];
-        }
-      } else if (template.canvas) {
-        nodes = template.canvas.nodes || [];
-        edges = template.canvas.edges || [];
-      } else if (template.journey_stages && Array.isArray(template.journey_stages)) {
-        // Convert journey stages to nodes and edges
-        nodes = template.journey_stages.map((stage: any, index: number) => ({
-          id: `stage-${index}`,
-          type: 'enhanced',
-          position: { x: index * 250 + 100, y: 100 },
-          data: {
-            label: stage.title || stage.name || `Stage ${index + 1}`,
-            description: stage.description || '',
-            type_key: stage.type || 'action',
-            category: stage.category || 'general',
-            configuration: stage.configuration || {},
-            aiGenerated: true
-          }
-        }));
-        
-        // Create sequential connections
-        edges = nodes.slice(0, -1).map((_, index) => ({
-          id: `edge-${index}`,
-          source: `stage-${index}`,
-          target: `stage-${index + 1}`,
-          animated: true,
-          style: { stroke: '#8b5cf6' },
-          markerEnd: { type: 'ArrowClosed' }
-        }));
-      }
-      
-      // Load template from database if ID provided
-      if (template.id && (!nodes.length && !edges.length)) {
+      // Fetch full template data if only ID provided
+      if (template.id && !template.configuration && !template.canvas) {
+        console.log('Fetching full template data for ID:', template.id);
         const { data: fullTemplate, error } = await supabase
           .from('agent_templates')
           .select('*')
           .eq('id', template.id)
           .single();
           
-          if (fullTemplate) {
-            // Cast fullTemplate to any to handle dynamic JSON fields
-            const templateData = fullTemplate as any;
-            
-            // Check for canvas data in various possible locations
-            if (templateData.canvas && typeof templateData.canvas === 'object') {
-              const canvasData = templateData.canvas;
-              nodes = canvasData.nodes || [];
-              edges = canvasData.edges || [];
-            } else if (templateData.configuration && typeof templateData.configuration === 'object') {
-              const configData = templateData.configuration;
-              if (configData.nodes) {
-                nodes = configData.nodes || [];
-                edges = configData.edges || [];
-              }
-            }
-          }
+        if (error) {
+          console.error('Error fetching template:', error);
+          toast.error('Failed to load template');
+          return;
+        }
+        
+        if (fullTemplate) {
+          template = fullTemplate;
+        }
       }
       
-      // Apply default workflow if no specific structure found
-      if (!nodes.length) {
+      // Handle different template data structures with improved logic
+      console.log('Template structure:', template);
+      
+      // Priority 1: Check configuration.nodes
+      if (template.configuration?.nodes && Array.isArray(template.configuration.nodes)) {
+        nodes = template.configuration.nodes;
+        edges = template.configuration.edges || [];
+        console.log('Loaded from configuration.nodes');
+      }
+      // Priority 2: Check canvas.nodes  
+      else if (template.canvas?.nodes && Array.isArray(template.canvas.nodes)) {
+        nodes = template.canvas.nodes;
+        edges = template.canvas.edges || [];
+        console.log('Loaded from canvas.nodes');
+      }
+      // Priority 3: Check configuration.canvas.nodes
+      else if (template.configuration?.canvas?.nodes && Array.isArray(template.configuration.canvas.nodes)) {
+        nodes = template.configuration.canvas.nodes;
+        edges = template.configuration.canvas.edges || [];
+        console.log('Loaded from configuration.canvas.nodes');
+      }
+      // Priority 4: Convert journey_stages to workflow
+      else if (template.journey_stages && Array.isArray(template.journey_stages) && template.journey_stages.length > 0) {
+        console.log('Converting journey stages to workflow');
+        nodes = template.journey_stages.map((stage: any, index: number) => ({
+          id: stage.id || `stage-${index}`,
+          type: 'enhanced',
+          position: { x: index * 300 + 100, y: 100 + (index % 2) * 150 },
+          data: {
+            label: stage.title || stage.name || `Stage ${index + 1}`,
+            description: stage.description || '',
+            type_key: stage.type || 'action',
+            category: stage.category || 'general',
+            configuration: stage.configuration || {},
+            templateSource: true
+          }
+        }));
+        
+        // Create sequential connections between stages
+        edges = nodes.slice(0, -1).map((node, index) => ({
+          id: `edge-${index}`,
+          source: node.id,
+          target: nodes[index + 1].id,
+          animated: true,
+          style: { stroke: '#8b5cf6' },
+          markerEnd: { type: MarkerType.ArrowClosed }
+        }));
+      }
+      // Priority 5: Create default workflow structure
+      else {
+        console.log('Creating default template structure');
         nodes = [
           {
             id: 'start-node',
             type: 'start',
             position: { x: 100, y: 100 },
-            data: { label: 'Start', type_key: 'start' }
+            data: { 
+              label: 'Start', 
+              type_key: 'start',
+              category: 'control'
+            }
           },
           {
-            id: 'agent-node',
-            type: 'agent',
-            position: { x: 300, y: 100 },
+            id: 'template-agent',
+            type: 'enhanced',
+            position: { x: 350, y: 100 },
             data: { 
-              label: template.name || 'Agent',
-              description: template.description || '',
-              type_key: 'agent',
+              label: template.name || 'Template Agent',
+              description: template.description || 'Generated from template',
+              type_key: 'llm-agent',
               category: 'ai-agents',
-              configuration: template.configuration || {}
+              configuration: {
+                model: 'gpt-4o',
+                temperature: 0.7,
+                maxTokens: 1000,
+                messages: [{
+                  role: 'system',
+                  content: `You are ${template.name || 'a helpful assistant'}. ${template.description || ''}`
+                }]
+              },
+              templateSource: true
             }
           },
           {
             id: 'end-node',
             type: 'end',
-            position: { x: 500, y: 100 },
-            data: { label: 'End', type_key: 'end' }
+            position: { x: 600, y: 100 },
+            data: { 
+              label: 'End', 
+              type_key: 'end',
+              category: 'control'
+            }
           }
         ];
         
         edges = [
           {
-            id: 'edge-1',
+            id: 'edge-start-agent',
             source: 'start-node',
-            target: 'agent-node',
+            target: 'template-agent',
             animated: true,
             style: { stroke: '#8b5cf6' },
             markerEnd: { type: 'ArrowClosed' }
@@ -1014,14 +1055,23 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         selectedNodeId={selectedNodeId}
       />
 
-      {/* Configurable Node Panel */}
-      <ConfigurableNodePanel
-        isOpen={showConfigPanel}
-        onClose={() => setShowConfigPanel(false)}
-        nodeData={selectedNodeData}
-        onSave={handleNodeConfigSave}
-        onAIAssist={handleAIAssistOpen}
-      />
+      {/* Enhanced Node Configuration Panel */}
+      {selectedNodeData && (
+        <EnhancedNodeConfigurationPanel
+          isOpen={showConfigPanel}
+          onClose={() => {
+            setShowConfigPanel(false);
+            setSelectedNodeData(null);
+          }}
+          nodeId={selectedNodeData.id}
+          nodeType={selectedNodeData.data?.type_key || selectedNodeData.type || 'default'}
+          nodeName={selectedNodeData.data?.label}
+          nodeCategory={selectedNodeData.data?.category}
+          initialConfiguration={selectedNodeData.data?.configuration || {}}
+          onSave={handleNodeConfigSave}
+          onTest={onNodeTest}
+        />
+      )}
     </div>
   );
 };

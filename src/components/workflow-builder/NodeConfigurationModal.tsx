@@ -40,6 +40,7 @@ export const NodeConfigurationModal: React.FC<NodeConfigurationModalProps> = ({
   }, [initialData]);
 
   const handleSave = () => {
+    console.log('Saving node configuration:', { nodeId, configuration });
     onSave(nodeId, configuration);
     onClose();
   };
@@ -49,8 +50,10 @@ export const NodeConfigurationModal: React.FC<NodeConfigurationModalProps> = ({
   };
 
   const handleTemplateApply = (template: any) => {
-    setConfiguration({ ...configuration, ...template });
+    const updatedConfig = { ...configuration, ...template };
+    setConfiguration(updatedConfig);
     setActiveTab('form');
+    console.log('Applied template configuration:', updatedConfig);
   };
 
   const getModalTitle = () => {
