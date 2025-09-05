@@ -48,6 +48,7 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
   const [prompt, setPrompt] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'claude' | 'gemini'>('openai');
   const [isMinimized, setIsMinimized] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   
   const aiModes: AIAssistMode[] = [
     {
@@ -94,6 +95,7 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
     }
 
     try {
+      setIsProcessing(true);
       const context = {
         availableCategories: categories.map(cat => ({
           id: cat.id,
@@ -124,9 +126,8 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
           });
 
           if (workflowError) throw workflowError;
-          
-          showSuccess('Workflow generated successfully!');
           onWorkflowGenerated(workflowData);
+          onClose();
           break;
 
         case 'generate':
@@ -214,6 +215,8 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
     } catch (error) {
       console.error('AI generation error:', error);
       showError('Failed to process AI request. Please try again.');
+    } finally {
+      setIsProcessing(false);
     }
   }, [prompt, activeMode, selectedProvider, nodeTypes, categories, selectedNodeId, generateAgent, testNode, onWorkflowGenerated, onNodeGenerated, showSuccess, showError]);
 
@@ -259,10 +262,10 @@ ${activeMode === 'configure' ? '• "Configure this node for handling emergency 
 
           <Button 
             onClick={handleAIGenerate}
-            disabled={isLoading || !prompt.trim()}
+            disabled={isLoading || isProcessing || !prompt.trim()}
             className="min-w-32"
           >
-            {isLoading ? (
+            {isLoading || isProcessing ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
             ) : (
               <>

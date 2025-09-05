@@ -214,9 +214,9 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
       const id = node.id || node.key || `node-${Date.now()}-${index}`;
       const label = node.label || node.name || `Generated Node ${index + 1}`;
       // Track multiple keys that might be referenced by edges
-      [node.id, node.key, node.name, node.label, `idx-${index}`]
-        .filter(Boolean)
-        .forEach((k: string) => idMap.set(String(k), id));
+      [node.id, node.key, node.name, node.label, index, `idx-${index}`]
+        .filter((k) => k !== undefined && k !== null)
+        .forEach((k: any) => idMap.set(String(k), id));
 
       return {
         id,
@@ -231,25 +231,38 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
       };
     });
 
-    const rawEdges: any[] = Array.isArray(workflow?.edges)
+    const rawEdgesInput: any[] = Array.isArray(workflow?.edges)
       ? workflow.edges
       : Array.isArray(workflow?.connections)
         ? workflow.connections
         : [];
 
-    const mapEndpoint = (v: any): string | undefined => {
+    const normalizeEndpoint = (v: any): string | undefined => {
       if (!v) return undefined;
+      if (typeof v === 'object') {
+        // Try common shapes like { id }, { key }, { name }, { label }, { index }
+        const maybe = v.id || v.key || v.name || v.label || v.nodeId || v.node || v.source || v.target || v.from || v.to;
+        if (maybe) return normalizeEndpoint(maybe);
+        if (typeof v.index !== 'undefined') return normalizeEndpoint(v.index);
+      }
       const s = String(v);
       if (reactFlowNodes.find(n => n.id === s)) return s;
       const byMap = idMap.get(s);
       if (byMap) return byMap;
+      const num = Number(s);
+      if (!Number.isNaN(num)) {
+        const byIdx = reactFlowNodes[num]?.id;
+        if (byIdx) return byIdx;
+        const byIdxMap = idMap.get(`idx-${num}`);
+        if (byIdxMap) return byIdxMap;
+      }
       const byLabel = reactFlowNodes.find(n => n.data?.label === s);
       return byLabel?.id;
     };
 
-    const reactFlowEdges = rawEdges.map((edge: any, index: number) => {
-      let source = mapEndpoint(edge.source || edge.from || edge.start || edge.src);
-      let target = mapEndpoint(edge.target || edge.to || edge.end || edge.dst);
+    const reactFlowEdges = rawEdgesInput.map((edge: any, index: number) => {
+      const source = normalizeEndpoint(edge.source ?? edge.from ?? edge.start ?? edge.src ?? edge.sourceId ?? edge.source_index ?? edge.sourceIndex);
+      const target = normalizeEndpoint(edge.target ?? edge.to ?? edge.end ?? edge.dst ?? edge.targetId ?? edge.target_index ?? edge.targetIndex);
 
       return {
         id: edge.id || `edge-${Date.now()}-${index}`,
