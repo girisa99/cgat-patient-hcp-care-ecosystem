@@ -174,7 +174,8 @@ Generate a workflow for: "${prompt}"`;
         throw new Error('Unsupported AI provider');
     }
 
-    console.log('AI response received');
+    console.log('AI response received, status:', response?.status);
+    console.log('Result preview:', result?.choices?.[0]?.message?.content?.substring(0, 200) + '...');
 
     // Extract and parse the generated content
     let generatedContent;
@@ -193,10 +194,18 @@ Generate a workflow for: "${prompt}"`;
     // Parse JSON from the response
     const jsonMatch = generatedContent.match(/\{[\s\S]*\}/);
     if (!jsonMatch) {
-      throw new Error('Could not parse JSON from AI response');
+      console.error('Could not find JSON in response:', generatedContent.substring(0, 500));
+      throw new Error('Could not parse JSON from AI response. Please try again.');
     }
 
-    const agentData = JSON.parse(jsonMatch[0]);
+    let agentData;
+    try {
+      agentData = JSON.parse(jsonMatch[0]);
+      console.log('Parsed agent data successfully, nodes:', agentData.nodes?.length || 0);
+    } catch (parseError) {
+      console.error('JSON parse error:', parseError, 'Content:', jsonMatch[0].substring(0, 200));
+      throw new Error('Failed to parse AI response JSON');
+    }
 
     // Enhance with auto-positioning if not provided
     if (agentData.nodes) {

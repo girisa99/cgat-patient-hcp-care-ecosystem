@@ -211,13 +211,12 @@ const AgentsInner = () => {
     
     if (mode === 'unified') {
       // Use unified workflow experience
-      toast.success('Switched to Unified Workflow Experience');
     } else if (mode === 'visual') {
       setVisualWorkflowSubTab('use-case');
       // Auto-show template gallery and asset panel for visual mode
       setShowTemplateGallery(true);
     } else if (mode === 'ecosystem') {
-      toast.success('Switched to Agent Ecosystem Management');
+      // Switch to ecosystem mode
     } else {
       setAgentBuilderTab('agent-config');
     }
@@ -405,7 +404,7 @@ const AgentsInner = () => {
                           onGenerate={(agent) => {
                             setWorkflowNodes(agent.nodes || []);
                             setWorkflowEdges(agent.edges || []);
-                            toast.success('Agent generated successfully!');
+                            // Remove duplicate success message - PromptBasedAgentGenerator already shows it
                             setVisualWorkflowSubTab('builder');
                           }}
                         />
@@ -517,8 +516,9 @@ const AgentsInner = () => {
                 </div>
                 <Button 
                   className="w-full h-8"
+                  disabled={true}
                   onClick={() => {
-                    toast.success('Workflow generated!');
+                    // Remove placeholder functionality
                     setShowPromptAssistant(false);
                   }}
                 >
@@ -700,7 +700,7 @@ const AgentsInner = () => {
             onNodeAdd={handleNodeGenerated}
             onNodeTest={(nodeId, result) => {
               console.log('Node test result:', { nodeId, result });
-              toast.success('Node test completed!');
+              // Remove duplicate success notification
             }}
           />
           
