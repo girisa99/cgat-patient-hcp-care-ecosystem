@@ -219,15 +219,31 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         .filter((k) => k !== undefined && k !== null)
         .forEach((k: any) => idMap.set(String(k), id));
 
+      // Infer node type for clear visuals
+      const inferType = (n: any, lbl: string) => {
+        const t = String(n.type || '').toLowerCase();
+        const l = String(lbl || '').toLowerCase();
+        const cat = String(n.category || '').toLowerCase();
+        if (t.includes('start') || l.includes('start')) return 'start';
+        if (t.includes('end') || l.includes('end') || l.includes('finish') || l.includes('complete')) return 'end';
+        if (t.includes('agent') || cat.includes('agent') || l.includes('agent')) return 'agent';
+        if (t.includes('api') || l.includes('api')) return 'api';
+        if (t.includes('db') || t.includes('database') || l.includes('database')) return 'database';
+        return n.type || 'default';
+      };
+
+      const type = inferType(node, label);
+
       return {
         id,
-        type: node.type || 'agent',
+        type,
         position: node.position || { x: 100 + (index * 250), y: 100 + Math.floor(index / 4) * 150 },
         data: {
           label,
           description: node.description || node.purpose || 'AI-generated workflow node',
           ...node.data,
-          aiGenerated: true
+          aiGenerated: true,
+          category: type === 'agent' ? 'ai-agents' : undefined
         }
       };
     });

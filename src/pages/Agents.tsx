@@ -252,16 +252,24 @@ const AgentsInner = () => {
     setShowAIAssist(true);
   };
 
-  const handleWorkflowGenerated = (workflow: any) => {
-    console.log('[Agents] handleWorkflowGenerated called with:', workflow);
+  // Avoid duplicate success toasts when canvas updates propagate
+  const aiSuccessToastShown = React.useRef(false);
+
+  // Receive full workflow objects from AI Assistant only
+  const handleAIGeneratedWorkflow = (workflow: any) => {
+    console.log('[Agents] AI generated workflow:', workflow);
     setWorkflowNodes(workflow.nodes || []);
     setWorkflowEdges(workflow.edges || []);
-    // Only show success if not already shown by the component
-    if (workflow && !workflow._successShown) {
+    if (!aiSuccessToastShown.current) {
       toast.success('Workflow generated successfully!');
+      aiSuccessToastShown.current = true;
     }
   };
-
+  // Receive node/edge updates from the canvas (no toasts here)
+  const handleWorkflowUpdate = (nodes: any[], edges: any[]) => {
+    setWorkflowNodes(nodes || []);
+    setWorkflowEdges(edges || []);
+  };
   const handleNodeGenerated = (node: any) => {
     console.log('[Agents] handleNodeGenerated called with:', node);
     if (node.nodes) {
@@ -704,7 +712,7 @@ const AgentsInner = () => {
       <AppLayout>
         <div className="h-screen flex flex-col">
           <UnifiedWorkflowExperience 
-            onWorkflowUpdate={handleWorkflowGenerated}
+            onWorkflowUpdate={handleWorkflowUpdate}
             onNodeAdd={handleNodeGenerated}
             onNodeTest={(nodeId, result) => {
               console.log('Node test result:', { nodeId, result });
@@ -716,19 +724,10 @@ const AgentsInner = () => {
           <AIAssistIntegration
             isOpen={showAIAssist}
             onClose={() => setShowAIAssist(false)}
-            onWorkflowGenerated={handleWorkflowGenerated}
+            onWorkflowGenerated={handleAIGeneratedWorkflow}
             onNodeGenerated={handleNodeGenerated}
             initialMode={aiAssistMode}
             selectedNodeId={selectedNodeData?.id}
-          />
-
-          {/* Configurable Node Panel */}
-          <ConfigurableNodePanel
-            isOpen={showConfigPanel}
-            onClose={() => setShowConfigPanel(false)}
-            nodeData={selectedNodeData}
-            onSave={handleNodeConfigSave}
-            onAIAssist={handleAIAssistOpen}
           />
         </div>
       </AppLayout>
