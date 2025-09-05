@@ -30,6 +30,7 @@ interface AIAssistIntegrationProps {
   onNodeGenerated: (node: any) => void;
   initialMode?: 'build' | 'generate' | 'test' | 'deploy' | 'configure';
   selectedNodeId?: string;
+  isAIHealthy?: boolean;
 }
 
 export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
@@ -38,7 +39,8 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
   onWorkflowGenerated,
   onNodeGenerated,
   initialMode = 'build',
-  selectedNodeId
+  selectedNodeId,
+  isAIHealthy = true,
 }) => {
   const { nodeTypes, categories } = useWorkflowNodes();
   const { generateAgent, testNode, analyzeWorkflow, isLoading } = useUniversalAI();
@@ -262,8 +264,9 @@ ${activeMode === 'configure' ? '• "Configure this node for handling emergency 
 
           <Button 
             onClick={handleAIGenerate}
-            disabled={isLoading || isProcessing || !prompt.trim()}
+            disabled={isLoading || isProcessing || !prompt.trim() || !isAIHealthy}
             className="min-w-32"
+            title={!isAIHealthy ? 'AI services are unavailable. Please check health status.' : undefined}
           >
             {isLoading || isProcessing ? (
               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
@@ -274,6 +277,10 @@ ${activeMode === 'configure' ? '• "Configure this node for handling emergency 
               </>
             )}
           </Button>
+
+          {!isAIHealthy && (
+            <div className="text-xs text-muted-foreground ml-3">AI services offline — try again after health check.</div>
+          )}
         </div>
 
         {/* Context Information */}

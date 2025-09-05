@@ -52,6 +52,8 @@ interface UnifiedWorkflowExperienceProps {
   onWorkflowUpdate?: (nodes: any[], edges: any[]) => void;
   onNodeAdd?: (node: any) => void;
   onNodeTest?: (nodeId: string, result: any) => void;
+  onNodeConfigSave?: (nodes: any[], edges: any[]) => void;
+  isAIHealthy?: boolean;
 }
 
 /**
@@ -62,7 +64,9 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
   embedded = false,
   onWorkflowUpdate,
   onNodeAdd,
-  onNodeTest
+  onNodeTest,
+  onNodeConfigSave,
+  isAIHealthy = true,
 }) => {
   const { nodeTypes, categories } = useWorkflowNodes();
   const [selectedMode, setSelectedMode] = useState<'prompt' | 'visual' | 'template'>('prompt');
@@ -368,10 +372,11 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
     
     setCanvasNodes(updatedNodes);
     onWorkflowUpdate?.(updatedNodes, canvasEdges);
+    onNodeConfigSave?.(updatedNodes, canvasEdges);
     
     toast.success('Node configuration saved successfully!');
     setShowConfigPanel(false);
-  }, [canvasNodes, canvasEdges, onWorkflowUpdate]);
+  }, [canvasNodes, canvasEdges, onWorkflowUpdate, onNodeConfigSave]);
 
   const handleScenarioSelect = useCallback((scenario: WorkflowScenario) => {
     setSelectedScenario(scenario);
@@ -929,6 +934,7 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         onNodeGenerated={handleNodeGenerated}
         initialMode={aiAssistMode}
         selectedNodeId={selectedNodeId}
+        isAIHealthy={isAIHealthy}
       />
 
       {/* Enhanced Node Configuration Panel */}

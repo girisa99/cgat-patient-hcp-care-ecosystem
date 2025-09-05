@@ -64,6 +64,7 @@ import { ConfigurableNodePanel } from '@/components/unified-workflow/Configurabl
 import { TemplateGallery } from '@/components/unified-workflow/TemplateGallery';
 import { EnvironmentChannelManager } from '@/components/unified-workflow/EnvironmentChannelManager';
 import { DynamicNodeConfiguration } from '@/components/unified-workflow/DynamicNodeConfiguration';
+import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 
 // Import new Agent Ecosystem components
 import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
@@ -119,6 +120,13 @@ const AgentsInner = () => {
     showModeSelector,
     showQuestionnaire
   });
+
+  const { status: aiHealth, checkHealth } = useAIServiceHealth();
+  const isAIHealthy = aiHealth.overallHealthy;
+
+  useEffect(() => {
+    checkHealth();
+  }, [checkHealth]);
 
 
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
@@ -324,10 +332,13 @@ const AgentsInner = () => {
               <Play className="w-3 h-3 mr-1" />
               Deploy
             </Button>
-            <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)}>
+            <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)} disabled={!isAIHealthy} title={!isAIHealthy ? 'AI services are unavailable. Check health status.' : undefined}>
               <Sparkles className="w-3 h-3 mr-1" />
               🚀 Unified AI Assist
             </Button>
+            <Badge variant={isAIHealthy ? 'secondary' : 'destructive'} className="ml-2 text-xs">
+              AI: {isAIHealthy ? 'Healthy' : 'Offline'}
+            </Badge>
           </div>
         </div>
 
@@ -757,6 +768,11 @@ const AgentsInner = () => {
               console.log('Node test result:', { nodeId, result });
               // Remove duplicate success notification
             }}
+            onNodeConfigSave={(nodes, edges) => {
+              // Persist updated configuration to the current session
+              handleFlowSave({ nodes, edges });
+            }}
+            isAIHealthy={isAIHealthy}
           />
           
           {/* AI Assistant Integration */}
@@ -767,6 +783,7 @@ const AgentsInner = () => {
             onNodeGenerated={handleNodeGenerated}
             initialMode={aiAssistMode}
             selectedNodeId={selectedNodeData?.id}
+            isAIHealthy={isAIHealthy}
           />
         </div>
       </AppLayout>
