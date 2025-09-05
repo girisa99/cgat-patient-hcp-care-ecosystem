@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SaveAsTemplateModal } from '@/components/workflow-builder/SaveAsTemplateModal';
 import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -19,7 +20,7 @@ import {
   MessageCircle,
   Plus,
   Play,
-  Save,
+  Save as SaveIcon,
   Sparkles,
   ArrowUp,
   ArrowDown,
@@ -47,7 +48,6 @@ import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosyst
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useMasterToast } from '@/hooks/useMasterToast';
-import { toast } from 'sonner';
 import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDesigner';
 import { AIModelSelector } from '@/components/agentic/AIModelSelector';
 import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
@@ -109,6 +109,7 @@ const AgentsInner = () => {
   const [showObservability, setShowObservability] = useState(false);
   const [showAnimatedFlow, setShowAnimatedFlow] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const [showDeploymentManager, setShowDeploymentManager] = useState(false);
   const [showNodeCategories, setShowNodeCategories] = useState(true);
   const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
@@ -315,9 +316,9 @@ const AgentsInner = () => {
               <Network className="w-3 h-3 mr-1" />
               Libraries
             </Button>
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs">
-              <Save className="w-3 h-3 mr-1" />
-              Save
+            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowSaveAsTemplate(true)} disabled={workflowNodes.length === 0}>
+              <SaveIcon className="w-3 h-3 mr-1" />
+              Save as Template
             </Button>
             <Button size="sm" className="h-7 px-2 text-xs bg-primary hover:bg-primary/90" onClick={() => setShowDeploymentManager(true)}>
               <Play className="w-3 h-3 mr-1" />
@@ -456,7 +457,27 @@ const AgentsInner = () => {
                         ) : (
                           <div className="text-center py-8 text-muted-foreground">
                             <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <p>Generate an agent to see preview</p>
+                            <div className="flex gap-2 mt-4">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowTemplateGallery(true)}
+                                className="gap-2"
+                              >
+                                <Sparkles className="h-4 w-4" />
+                                Templates
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => setShowSaveAsTemplate(true)}
+                                disabled={workflowNodes.length === 0}
+                                className="gap-2"
+                              >
+                                <SaveIcon className="h-4 w-4" />
+                                Save as Template
+                              </Button>
+                            </div>
                           </div>
                         )}
                       </CardContent>
