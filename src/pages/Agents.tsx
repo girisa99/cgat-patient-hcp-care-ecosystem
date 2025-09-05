@@ -145,6 +145,7 @@ const { user } = useMasterAuth();
     },
     onTemplateLoaded: () => {
       setShowTemplateGallery(false);
+      setVisualWorkflowSubTab('builder');
     }
   });
 
