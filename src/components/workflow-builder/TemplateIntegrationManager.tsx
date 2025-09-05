@@ -69,14 +69,14 @@ export const useTemplateIntegration = ({
       let nodes: any[] = [];
       let edges: any[] = [];
       
-      // Fetch full template data if only ID provided
-      if (template.id && !template.configuration && !template.canvas) {
+      // Fetch full template data if only ID provided and no usable structure included
+      if (template.id && !template.configuration && !template.canvas && !template.journey_stages) {
         console.log('Fetching full template data for ID:', template.id);
         const { data: fullTemplate, error } = await supabase
           .from('agent_templates')
           .select('*')
           .eq('id', template.id)
-          .single();
+          .maybeSingle();
           
         if (error) {
           console.error('Error fetching template:', error);
