@@ -9,15 +9,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { 
   Play, Square, Bot, GitBranch, Zap, MessageSquare, Settings, 
   Sparkles, Workflow, Users, ArrowRight, Plus, FileText, 
-  Target, Brain, Network, Layers
+  Target, Brain, Network, Layers, Save
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { EnhancedWorkflowCanvas } from '@/components/workflow-builder/EnhancedWorkflowCanvas';
 import { EnhancedNodePalette } from '@/components/workflow-builder/EnhancedNodePalette';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { AIAssistIntegration } from './AIAssistIntegration';
 import { ConfigurableNodePanel } from './ConfigurableNodePanel';
 import { TemplateGallery } from './TemplateGallery';
+import { SaveAsTemplateModal } from '@/components/workflow-builder/SaveAsTemplateModal';
 import { EnvironmentChannelManager } from './EnvironmentChannelManager';
 import { DynamicNodeConfiguration } from './DynamicNodeConfiguration';
 import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
@@ -74,6 +76,7 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
   const [isTestMode, setIsTestMode] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [showDeploymentManager, setShowDeploymentManager] = useState(false);
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const [showDynamicConfig, setShowDynamicConfig] = useState(false);
   
   // Canvas state (kept local and synced to canvas component)
@@ -353,15 +356,143 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
     toast.success(`${scenario.title} template loaded`);
   }, []);
 
-  const handleTemplateSelect = useCallback((template: any) => {
-    // Apply template to canvas
-    if (template.configuration && template.configuration.nodes) {
-      setCanvasNodes(template.configuration.nodes);
-      setCanvasEdges(template.configuration.edges || []);
+  const handleTemplateSelect = useCallback(async (template: any) => {
+    console.log('Loading template:', template);
+    
+    try {
+      let nodes: any[] = [];
+      let edges: any[] = [];
+      
+      // Handle different template data structures
+      if (template.configuration) {
+        if (template.configuration.nodes) {
+          nodes = template.configuration.nodes;
+          edges = template.configuration.edges || [];
+        } else if (template.configuration.canvas) {
+          nodes = template.configuration.canvas.nodes || [];
+          edges = template.configuration.canvas.edges || [];
+        }
+      } else if (template.canvas) {
+        nodes = template.canvas.nodes || [];
+        edges = template.canvas.edges || [];
+      } else if (template.journey_stages && Array.isArray(template.journey_stages)) {
+        // Convert journey stages to nodes and edges
+        nodes = template.journey_stages.map((stage: any, index: number) => ({
+          id: `stage-${index}`,
+          type: 'enhanced',
+          position: { x: index * 250 + 100, y: 100 },
+          data: {
+            label: stage.title || stage.name || `Stage ${index + 1}`,
+            description: stage.description || '',
+            type_key: stage.type || 'action',
+            category: stage.category || 'general',
+            configuration: stage.configuration || {},
+            aiGenerated: true
+          }
+        }));
+        
+        // Create sequential connections
+        edges = nodes.slice(0, -1).map((_, index) => ({
+          id: `edge-${index}`,
+          source: `stage-${index}`,
+          target: `stage-${index + 1}`,
+          animated: true,
+          style: { stroke: '#8b5cf6' },
+          markerEnd: { type: 'ArrowClosed' }
+        }));
+      }
+      
+      // Load template from database if ID provided
+      if (template.id && (!nodes.length && !edges.length)) {
+        const { data: fullTemplate, error } = await supabase
+          .from('agent_templates')
+          .select('*')
+          .eq('id', template.id)
+          .single();
+          
+          if (fullTemplate) {
+            // Cast fullTemplate to any to handle dynamic JSON fields
+            const templateData = fullTemplate as any;
+            
+            // Check for canvas data in various possible locations
+            if (templateData.canvas && typeof templateData.canvas === 'object') {
+              const canvasData = templateData.canvas;
+              nodes = canvasData.nodes || [];
+              edges = canvasData.edges || [];
+            } else if (templateData.configuration && typeof templateData.configuration === 'object') {
+              const configData = templateData.configuration;
+              if (configData.nodes) {
+                nodes = configData.nodes || [];
+                edges = configData.edges || [];
+              }
+            }
+          }
+      }
+      
+      // Apply default workflow if no specific structure found
+      if (!nodes.length) {
+        nodes = [
+          {
+            id: 'start-node',
+            type: 'start',
+            position: { x: 100, y: 100 },
+            data: { label: 'Start', type_key: 'start' }
+          },
+          {
+            id: 'agent-node',
+            type: 'agent',
+            position: { x: 300, y: 100 },
+            data: { 
+              label: template.name || 'Agent',
+              description: template.description || '',
+              type_key: 'agent',
+              category: 'ai-agents',
+              configuration: template.configuration || {}
+            }
+          },
+          {
+            id: 'end-node',
+            type: 'end',
+            position: { x: 500, y: 100 },
+            data: { label: 'End', type_key: 'end' }
+          }
+        ];
+        
+        edges = [
+          {
+            id: 'edge-1',
+            source: 'start-node',
+            target: 'agent-node',
+            animated: true,
+            style: { stroke: '#8b5cf6' },
+            markerEnd: { type: 'ArrowClosed' }
+          },
+          {
+            id: 'edge-2',
+            source: 'agent-node',
+            target: 'end-node',
+            animated: true,
+            style: { stroke: '#8b5cf6' },
+            markerEnd: { type: 'ArrowClosed' }
+          }
+        ];
+      }
+      
+      // Apply to canvas
+      setCanvasNodes(nodes);
+      setCanvasEdges(edges);
+      
+      // Notify parent component
+      onWorkflowUpdate?.(nodes, edges);
+      
+      setActiveStep('design');
+      toast.success(`Template "${template.name}" loaded with ${nodes.length} nodes and ${edges.length} connections`);
+      
+    } catch (error) {
+      console.error('Error loading template:', error);
+      toast.error('Failed to load template');
     }
-    setActiveStep('design');
-    toast.success(`Template "${template.name}" applied`);
-  }, []);
+  }, [onWorkflowUpdate]);
 
   const handleDeployment = useCallback((deploymentConfig: any) => {
     console.log('Deployment config:', deploymentConfig);
@@ -557,6 +688,16 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
                     onClick={() => setShowTemplateGallery(true)}
                   >
                     Open Gallery
+                  </Button>
+                  <Button 
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setShowSaveAsTemplate(true)}
+                    disabled={canvasNodes.length === 0}
+                    className="gap-2 ml-2"
+                  >
+                    <Save className="h-4 w-4" />
+                    Save as Template
                   </Button>
                 </CardContent>
               </Card>
@@ -823,6 +964,18 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         isOpen={showTemplateGallery}
         onClose={() => setShowTemplateGallery(false)}
         onTemplateSelect={handleTemplateSelect}
+      />
+
+      {/* Save as Template Modal */}
+      <SaveAsTemplateModal
+        isOpen={showSaveAsTemplate}
+        onClose={() => setShowSaveAsTemplate(false)}
+        nodes={canvasNodes}
+        edges={canvasEdges}
+        onSave={(templateId) => {
+          console.log('Template saved with ID:', templateId);
+          toast.success('Template saved! It will appear in the template gallery.');
+        }}
       />
 
       {/* Deployment Manager */}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { SaveAsTemplateModal } from '@/components/workflow-builder/SaveAsTemplateModal';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -579,8 +580,25 @@ const AgentsInner = () => {
           onClose={() => setShowTemplateGallery(false)}
           onTemplateSelect={(template) => {
             console.log('[Agents] Template selected:', template);
-            // Remove duplicate success message - TemplateGallery should handle it
+            // Apply template to workflow canvas
+            if (template.configuration && template.configuration.nodes) {
+              setWorkflowNodes(template.configuration.nodes);
+              setWorkflowEdges(template.configuration.edges || []);
+            }
             setShowTemplateGallery(false);
+            toast.success(`Template "${template.name}" loaded successfully`);
+          }}
+        />
+
+        {/* Save as Template Modal */}
+        <SaveAsTemplateModal
+          isOpen={showSaveAsTemplate}
+          onClose={() => setShowSaveAsTemplate(false)}
+          nodes={workflowNodes}
+          edges={workflowEdges}
+          onSave={(templateId) => {
+            console.log('Template saved with ID:', templateId);
+            toast.success('Template saved! It will appear in the template gallery.');
           }}
         />
 
