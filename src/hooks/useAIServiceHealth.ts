@@ -79,7 +79,8 @@ export const useAIServiceHealth = () => {
     // 3) Check ai-universal-processor
     const aiUniversalProcessor = await checkFunction('ai-universal-processor', {
       action: 'health_check',
-      provider: 'openai'
+      provider: 'openai',
+      prompt: 'ping'
     });
     if (!aiUniversalProcessor) {
       errors['ai-universal-processor'] = 'unavailable';

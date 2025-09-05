@@ -31,6 +31,7 @@ interface AIAssistIntegrationProps {
   initialMode?: 'build' | 'generate' | 'test' | 'deploy' | 'configure';
   selectedNodeId?: string;
   isAIHealthy?: boolean;
+  initialPrompt?: string;
 }
 
 export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
@@ -41,16 +42,24 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
   initialMode = 'build',
   selectedNodeId,
   isAIHealthy = true,
+  initialPrompt = '',
 }) => {
   const { nodeTypes, categories } = useWorkflowNodes();
   const { generateAgent, testNode, analyzeWorkflow, isLoading } = useUniversalAI();
   const { showSuccess, showError } = useMasterToast();
   
   const [activeMode, setActiveMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>(initialMode);
-  const [prompt, setPrompt] = useState('');
+  const [prompt, setPrompt] = useState(initialPrompt);
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'claude' | 'gemini'>('openai');
   const [isMinimized, setIsMinimized] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  
+  // Prefill prompt when opened with an initial prompt
+  React.useEffect(() => {
+    if (isOpen && initialPrompt && !prompt) {
+      setPrompt(initialPrompt);
+    }
+  }, [isOpen, initialPrompt]);
   
   const aiModes: AIAssistMode[] = [
     {

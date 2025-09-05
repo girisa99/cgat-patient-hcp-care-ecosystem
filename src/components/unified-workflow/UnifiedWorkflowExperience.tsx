@@ -936,6 +936,7 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         initialMode={aiAssistMode}
         selectedNodeId={selectedNodeId}
         isAIHealthy={isAIHealthy}
+        initialPrompt={promptInput}
       />
 
       {/* Enhanced Node Configuration Panel */}
