@@ -66,7 +66,7 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
 
   // Handle edge connections
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge(params, eds)),
+    (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#8b5cf6' } }, eds)),
     [setEdges]
   );
 

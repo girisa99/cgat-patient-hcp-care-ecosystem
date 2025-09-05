@@ -205,41 +205,67 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
 
   const handleWorkflowGenerated = useCallback((workflow: any) => {
     console.log('Workflow generated:', workflow);
-    
-    // Update the workflow canvas with generated nodes and edges
-    if (workflow.nodes && Array.isArray(workflow.nodes)) {
-      // Convert AI-generated workflow to ReactFlow format
-      const reactFlowNodes = workflow.nodes.map((node: any, index: number) => ({
-        id: node.id || `node-${Date.now()}-${index}`,
+
+    // Normalize and map nodes/edges to ReactFlow format
+    const rawNodes: any[] = Array.isArray(workflow?.nodes) ? workflow.nodes : [];
+    const idMap = new Map<string, string>();
+
+    const reactFlowNodes = rawNodes.map((node: any, index: number) => {
+      const id = node.id || node.key || `node-${Date.now()}-${index}`;
+      const label = node.label || node.name || `Generated Node ${index + 1}`;
+      // Track multiple keys that might be referenced by edges
+      [node.id, node.key, node.name, node.label, `idx-${index}`]
+        .filter(Boolean)
+        .forEach((k: string) => idMap.set(String(k), id));
+
+      return {
+        id,
         type: node.type || 'agent',
         position: node.position || { x: 100 + (index * 250), y: 100 + Math.floor(index / 4) * 150 },
         data: {
-          label: node.label || node.name || `Generated Node ${index + 1}`,
+          label,
           description: node.description || node.purpose || 'AI-generated workflow node',
           ...node.data,
           aiGenerated: true
         }
-      }));
-      
-      const reactFlowEdges = workflow.edges?.map((edge: any, index: number) => ({
+      };
+    });
+
+    const rawEdges: any[] = Array.isArray(workflow?.edges)
+      ? workflow.edges
+      : Array.isArray(workflow?.connections)
+        ? workflow.connections
+        : [];
+
+    const mapEndpoint = (v: any): string | undefined => {
+      if (!v) return undefined;
+      const s = String(v);
+      if (reactFlowNodes.find(n => n.id === s)) return s;
+      const byMap = idMap.get(s);
+      if (byMap) return byMap;
+      const byLabel = reactFlowNodes.find(n => n.data?.label === s);
+      return byLabel?.id;
+    };
+
+    const reactFlowEdges = rawEdges.map((edge: any, index: number) => {
+      let source = mapEndpoint(edge.source || edge.from || edge.start || edge.src);
+      let target = mapEndpoint(edge.target || edge.to || edge.end || edge.dst);
+
+      return {
         id: edge.id || `edge-${Date.now()}-${index}`,
-        source: edge.source,
-        target: edge.target,
+        source: source || '',
+        target: target || '',
         type: edge.type || 'default',
         animated: true,
         style: { stroke: '#8b5cf6' }
-      })) || [];
-      
-      // Update local canvas state
-      setCanvasNodes(reactFlowNodes as any);
-      setCanvasEdges(reactFlowEdges as any);
-      
-      // Trigger canvas update callback (optional)
-      if (onWorkflowUpdate) {
-        onWorkflowUpdate(reactFlowNodes, reactFlowEdges);
-      }
-    }
-    
+      };
+    }).filter((e: any) => e.source && e.target);
+
+    setCanvasNodes(reactFlowNodes as any);
+    setCanvasEdges(reactFlowEdges as any);
+
+    onWorkflowUpdate?.(reactFlowNodes, reactFlowEdges);
+
     setActiveStep('design');
     setShowAIAssist(false);
     toast.success('Workflow generated! Review and customize your nodes.');
@@ -575,8 +601,8 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
               {isTestMode && (
                 <div className="absolute top-4 right-4 z-10">
                   <AnimatedFlowVisualizer 
-                    nodes={[]} // Would get actual nodes from canvas
-                    edges={[]} // Would get actual edges from canvas
+                    nodes={canvasNodes}
+                    edges={canvasEdges}
                     isTestMode={isTestMode}
                     onTestStart={() => {}}
                     onTestStop={() => setIsTestMode(false)}
