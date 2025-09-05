@@ -106,10 +106,17 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
         })),
         availableNodeTypes: nodeTypes.map(node => ({
           key: node.type_key,
+          id: node.id,
           display_name: node.display_name,
           category: node.category?.name,
           description: node.description,
-          capabilities: node.capabilities
+          capabilities: node.capabilities,
+          default_config: node.default_config,
+          input_schema: node.input_schema,
+          output_schema: node.output_schema,
+          validation_rules: node.validationRules,
+          ai_model_config: node.aiModelConfig,
+          connectors_config: node.connectorsConfig
         })),
         mode: activeMode
       };
@@ -237,13 +244,13 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
         </div>
 
         <Textarea
-          placeholder={`${currentMode!.description}... 
+          placeholder={`${currentMode!.description}...
 
 Examples for ${activeMode}:
-${activeMode === 'build' ? '• "Create a patient onboarding workflow with intake, assessment, and care assignment"' : ''}
-${activeMode === 'generate' ? '• "Generate a specialized nurse agent for medication management"' : ''}
-${activeMode === 'test' ? '• "Test this agent with sample patient data"' : ''}
-${activeMode === 'configure' ? '• "Configure this node for handling emergency cases"' : ''}`}
+${activeMode === 'build' ? '• Create a patient triage workflow using OpenAI GPT-4 and medication reconciliation nodes' : ''}
+${activeMode === 'generate' ? '• Generate a Claude-powered clinical decision support agent' : ''}
+${activeMode === 'test' ? '• Test this OpenAI agent with sample patient assessment data' : ''}
+${activeMode === 'configure' ? '• Configure this medication manager node with dosage validation rules' : ''}`}
           value={prompt}
           onChange={(e) => setPrompt(e.target.value)}
           rows={4}
@@ -285,10 +292,11 @@ ${activeMode === 'configure' ? '• "Configure this node for handling emergency 
 
         {/* Context Information */}
         <div className="text-xs text-muted-foreground p-3 bg-secondary/50 rounded-lg">
-          <p className="font-medium mb-1">AI will use your existing system:</p>
-          <p>• {categories.length} categories: {categories.map(c => c.name).join(', ')}</p>
-          <p>• {nodeTypes.length} node types available</p>
-          <p>• Configurations sync with your database</p>
+          <p className="font-medium mb-1">AI will use your DATABASE-DRIVEN system:</p>
+          <p>• {categories.length} categories from workflow_node_categories</p>
+          <p>• {nodeTypes.length} node types from workflow_node_types</p>
+          <p>• Real schemas, configurations, and capabilities</p>
+          <p>• Templates sync with database node types</p>
         </div>
       </div>
     );
