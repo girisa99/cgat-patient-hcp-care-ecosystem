@@ -51,7 +51,13 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
 
   React.useEffect(() => {
     if (initialEdges && initialEdges.length) {
-      setEdges(initialEdges as any);
+      const processed = (initialEdges as any).map((e: Edge) => ({
+        ...e,
+        animated: true,
+        style: { ...(e.style || {}), stroke: '#8b5cf6' },
+        markerEnd: { type: MarkerType.ArrowClosed },
+      }));
+      setEdges(processed as any);
     }
   }, [JSON.stringify(initialEdges)]);
 
@@ -76,6 +82,25 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
       ),
     [setEdges]
   );
+
+  // Edge and node helpers
+  const handleEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
+    event.preventDefault();
+    setEdges((eds) =>
+      eds.map((e) => (e.id === edge.id ? { ...e, source: edge.target, target: edge.source } : e))
+    );
+    toast.success('Edge direction swapped');
+  }, [setEdges]);
+
+  const handleNodeDoubleClick = useCallback((_: any, node: Node) => {
+    setSelectedNode(node);
+    setConfigAction('configure');
+    setConfigModalOpen(true);
+  }, []);
+
+  const handleNodeClick = useCallback((_: any, node: Node) => {
+    setSelectedNode(node);
+  }, []);
 
   // Handle drag and drop with enhanced AI integration
   const { handleDrop, handleDragOver } = useEnhancedDragDropHandler({
@@ -231,6 +256,17 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
             <div className="font-semibold text-sm">{data.label || 'Start'}</div>
           </div>
         </div>
+      )),
+      end: createWrappedNodeType(({ data }: any) => (
+        <div className="px-4 py-3 rounded-xl bg-red-600 text-white min-w-[120px] shadow-lg border-2 border-red-700">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded bg-red-700 flex items-center justify-center">
+              ⏹️
+            </div>
+            <div className="font-semibold text-sm">{data.label || 'End'}</div>
+          </div>
+        </div>
+      )),
       api: createWrappedNodeType(({ data }: any) => (
         <div className={`px-4 py-3 rounded-xl min-w-[200px] shadow-lg border-2 ${getCategoryStyling('integrations')}`}>
           <div className="flex items-center gap-3">
@@ -316,6 +352,9 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
         nodeTypes={nodeTypes}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
+        onEdgeContextMenu={handleEdgeContextMenu}
+        onNodeDoubleClick={handleNodeDoubleClick}
+        onNodeClick={handleNodeClick}
         className="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
       >
         <Controls />

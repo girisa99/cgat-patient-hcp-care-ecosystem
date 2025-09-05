@@ -21,6 +21,7 @@ import { TemplateGallery } from './TemplateGallery';
 import { EnvironmentChannelManager } from './EnvironmentChannelManager';
 import { DynamicNodeConfiguration } from './DynamicNodeConfiguration';
 import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
+import { MarkerType } from '@xyflow/react';
 
 interface NodeTypeInfo {
   id: string;
@@ -270,7 +271,8 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         target: target || '',
         type: edge.type || 'default',
         animated: true,
-        style: { stroke: '#8b5cf6' }
+        style: { stroke: '#8b5cf6' },
+        markerEnd: { type: MarkerType.ArrowClosed }
       };
     }).filter((e: any) => e.source && e.target);
 
