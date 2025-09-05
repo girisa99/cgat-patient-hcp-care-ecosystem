@@ -141,6 +141,7 @@ const { user } = useMasterAuth();
       const normalizedNodes = (nodes || []).map((n: any) => ({ ...n, type: 'enhanced' }));
       setWorkflowNodes(normalizedNodes);
       setWorkflowEdges(edges || []);
+      toast.success(`Template applied: ${normalizedNodes.length} nodes, ${(edges || []).length} connectors`);
     },
     onTemplateLoaded: () => {
       setShowTemplateGallery(false);
