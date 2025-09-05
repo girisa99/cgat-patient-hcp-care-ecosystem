@@ -64,6 +64,7 @@ import { ConfigurableNodePanel } from '@/components/unified-workflow/Configurabl
 import { TemplateGallery } from '@/components/unified-workflow/TemplateGallery';
 import { EnvironmentChannelManager } from '@/components/unified-workflow/EnvironmentChannelManager';
 import { DynamicNodeConfiguration } from '@/components/unified-workflow/DynamicNodeConfiguration';
+import { useTemplateIntegration } from '@/components/workflow-builder/TemplateIntegrationManager';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 
 // Import new Agent Ecosystem components
@@ -131,7 +132,20 @@ const AgentsInner = () => {
 
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
   const { createSession, updateSession } = useAgentSession();
-  const { user } = useMasterAuth();
+const { user } = useMasterAuth();
+
+  // Use Template Integration to map templates to real nodes/edges and ensure connectors
+  const templateManager = useTemplateIntegration({
+    onWorkflowUpdate: (nodes, edges) => {
+      // Normalize node type for AdvancedReactFlow: render with enhanced node component
+      const normalizedNodes = (nodes || []).map((n: any) => ({ ...n, type: 'enhanced' }));
+      setWorkflowNodes(normalizedNodes);
+      setWorkflowEdges(edges || []);
+    },
+    onTemplateLoaded: () => {
+      setShowTemplateGallery(false);
+    }
+  });
 
   const handleFlowSave = async (flowData: any) => {
     try {
@@ -612,13 +626,8 @@ const AgentsInner = () => {
           onClose={() => setShowTemplateGallery(false)}
           onTemplateSelect={(template) => {
             console.log('[Agents] Template selected:', template);
-            // Apply template to workflow canvas
-            if (template.configuration && template.configuration.nodes) {
-              setWorkflowNodes(template.configuration.nodes);
-              setWorkflowEdges(template.configuration.edges || []);
-            }
-            setShowTemplateGallery(false);
-            toast.success(`Template "${template.name}" loaded successfully`);
+            // Use unified template integration to map to real nodes/edges and auto-connect
+            templateManager.handleTemplateLoad(template);
           }}
         />
 
