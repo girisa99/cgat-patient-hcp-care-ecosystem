@@ -878,21 +878,33 @@ useEffect(() => {
                   snapToGrid={snapToGrid}
                   snapGrid={[15, 15]}
                   fitView
+                  fitViewOptions={{ padding: 0.1, includeHiddenNodes: true }}
                   attributionPosition="bottom-left"
+                  // Enhanced scrolling and zooming
                   zoomOnScroll={true}
-                  zoomOnDoubleClick={true}
+                  zoomOnDoubleClick={false}
                   zoomOnPinch={true}
                   panOnScroll={true}
                   panOnScrollMode={panOnScrollMode}
                   panOnDrag={dragMode === 'pan'}
+                  preventScrolling={false}
                   nodesDraggable={nodesDraggable}
                   connectOnClick={connectOnClick}
-                  minZoom={0.1}
-                  maxZoom={2}
+                  minZoom={0.05}
+                  maxZoom={4}
                   defaultViewport={{ x: 0, y: 0, zoom: 1 }}
                   selectionOnDrag={dragMode === 'select'}
                   multiSelectionKeyCode="Shift"
                   deleteKeyCode={["Delete", "Backspace"]}
+                  // Allow infinite canvas expansion
+                  translateExtent={[
+                    [-5000, -5000],
+                    [5000, 5000],
+                  ]}
+                  nodeExtent={[
+                    [-4000, -4000],
+                    [4000, 4000],
+                  ]}
                   className="bg-gray-50"
                 >
                   <Background variant={backgroundVariant} gap={12} size={1} />

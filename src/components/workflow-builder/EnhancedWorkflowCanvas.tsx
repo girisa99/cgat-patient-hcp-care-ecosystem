@@ -342,7 +342,7 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
   };
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full min-h-[600px]">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -356,6 +356,27 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
         onNodeDoubleClick={handleNodeDoubleClick}
         onNodeClick={handleNodeClick}
         className="bg-gradient-to-br from-slate-100 to-slate-200 dark:from-slate-800 dark:to-slate-900"
+        // Enable scrolling and zooming
+        panOnScroll={true}
+        zoomOnScroll={true}
+        zoomOnPinch={true}
+        zoomOnDoubleClick={false}
+        preventScrolling={false}
+        // Fit view on mount
+        fitView
+        fitViewOptions={{
+          padding: 0.2,
+          includeHiddenNodes: true,
+        }}
+        // Allow infinite canvas
+        translateExtent={[
+          [-2000, -2000],
+          [2000, 2000],
+        ]}
+        nodeExtent={[
+          [-1500, -1500],
+          [1500, 1500],
+        ]}
       >
         <Controls />
         <MiniMap />
