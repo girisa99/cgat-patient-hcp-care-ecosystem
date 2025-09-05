@@ -11,6 +11,7 @@ import {
   MiniMap,
   Background,
   BackgroundVariant,
+  MarkerType,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -66,7 +67,13 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
 
   // Handle edge connections
   const onConnect = useCallback(
-    (params: Connection) => setEdges((eds) => addEdge({ ...params, animated: true, style: { stroke: '#8b5cf6' } }, eds)),
+    (params: Connection) =>
+      setEdges((eds) =>
+        addEdge(
+          { ...params, animated: true, style: { stroke: '#8b5cf6' }, markerEnd: { type: MarkerType.ArrowClosed } },
+          eds
+        )
+      ),
     [setEdges]
   );
 
@@ -224,7 +231,6 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
             <div className="font-semibold text-sm">{data.label || 'Start'}</div>
           </div>
         </div>
-      )),
       api: createWrappedNodeType(({ data }: any) => (
         <div className={`px-4 py-3 rounded-xl min-w-[200px] shadow-lg border-2 ${getCategoryStyling('integrations')}`}>
           <div className="flex items-center gap-3">
