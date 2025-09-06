@@ -75,6 +75,14 @@ import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/
 import { ObservabilityDashboard } from '@/components/observability/ObservabilityDashboard';
 import { AnimatedFlowVisualizer } from '@/components/observability/AnimatedFlowVisualizer';
 
+// Import Unified Flow Components
+import { RealTimeVisualBuilder } from '@/components/integration/RealTimeVisualBuilder';
+import { FlowAnalyticsDashboard } from '@/components/analytics/FlowAnalyticsDashboard';
+import { AIIntegrationManager } from '@/components/ai/AIIntegrationManager';
+import { EnhancedVisualBuilder } from '@/components/builders/EnhancedVisualBuilder';
+import { CohesiveFlowTester } from '@/components/integration/CohesiveFlowTester';
+import { useUnifiedFlow } from '@/hooks/useUnifiedFlow';
+
 // Import Security & Governance components  
 import { AgentSecurityDashboard } from '@/components/agent-security/AgentSecurityDashboard';
 import { AgentGovernanceDashboard } from '@/components/agent-governance/AgentGovernanceDashboard';
@@ -116,6 +124,11 @@ const AgentsInner = () => {
   const [showDeploymentManager, setShowDeploymentManager] = useState(false);
   const [showNodeCategories, setShowNodeCategories] = useState(true);
   const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
+  
+  // Unified Flow State
+  const [sessionId] = useState(() => crypto.randomUUID());
+  const [userId] = useState(() => 'demo-user-' + Math.random().toString(36).substr(2, 9));
+  const { state: flowState, actions: flowActions, metrics, insights, isConnected } = useUnifiedFlow(sessionId, userId);
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -278,6 +291,53 @@ const AgentsInner = () => {
     setAIAssistMode(mode);
     setSelectedNodeData(nodeId ? { id: nodeId } : null);
     setShowAIAssist(true);
+  };
+
+  // Unified Flow Handlers
+  const handleAIPrompt = async (prompt: string) => {
+    try {
+      await flowActions.processAIPrompt(prompt);
+      flowActions.trackAnalytics({
+        category: 'flow',
+        action: 'ai_prompt_submitted',
+        label: 'agents_page',
+        metadata: { promptLength: prompt.length }
+      });
+    } catch (error) {
+      console.error('Error processing AI prompt:', error);
+    }
+  };
+
+  const handleTemplateUpdate = async (templateId: string, changes: any) => {
+    try {
+      await flowActions.updateTemplate(templateId, changes);
+      flowActions.trackAnalytics({
+        category: 'template',
+        action: 'template_updated',
+        label: 'agents_page',
+        metadata: { templateId, changeCount: Object.keys(changes).length }
+      });
+    } catch (error) {
+      console.error('Error updating template:', error);
+    }
+  };
+
+  const handleModelChange = (model: string) => {
+    flowActions.trackAnalytics({
+      category: 'ai',
+      action: 'model_changed',
+      label: model,
+      metadata: { sessionId }
+    });
+  };
+
+  const handleSettingsUpdate = (settings: any) => {
+    flowActions.trackAnalytics({
+      category: 'ai',
+      action: 'settings_updated',
+      label: 'configuration',
+      metadata: settings
+    });
   };
 
   // Avoid duplicate success toasts when canvas updates propagate
@@ -803,19 +863,148 @@ const AgentsInner = () => {
     return (
       <AppLayout>
         <div className="h-screen flex flex-col">
-          <UnifiedWorkflowExperience 
-            onWorkflowUpdate={handleWorkflowUpdate}
-            onNodeAdd={handleNodeGenerated}
-            onNodeTest={(nodeId, result) => {
-              console.log('Node test result:', { nodeId, result });
-              // Remove duplicate success notification
-            }}
-            onNodeConfigSave={(nodes, edges) => {
-              // Persist updated configuration to the current session
-              handleFlowSave({ nodes, edges });
-            }}
-            isAIHealthy={isAIHealthy}
-          />
+          {/* Unified Flow Header with Metrics */}
+          <div className="border-b bg-card p-4">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center gap-2">
+                <Workflow className="w-6 h-6 text-primary" />
+                <h1 className="text-2xl font-bold">Unified Flow Integration</h1>
+                {isConnected && <Badge className="animate-pulse">Live</Badge>}
+              </div>
+              <Badge variant={isAIHealthy ? 'secondary' : 'destructive'}>
+                AI: {isAIHealthy ? 'Healthy' : 'Offline'}
+              </Badge>
+            </div>
+            
+            {/* Metrics Overview */}
+            <div className="grid grid-cols-5 gap-4">
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Bot className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-medium">Total Events</span>
+                </div>
+                <div className="text-xl font-bold">{metrics.totalEvents}</div>
+              </Card>
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Brain className="w-4 h-4 text-primary" />
+                  <span className="text-xs font-medium">AI Prompts</span>
+                </div>
+                <div className="text-xl font-bold">{metrics.aiPrompts}</div>
+              </Card>
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Database className="w-4 h-4 text-secondary" />
+                  <span className="text-xs font-medium">Templates</span>
+                </div>
+                <div className="text-xl font-bold">{metrics.templateUpdates}</div>
+              </Card>
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap className="w-4 h-4 text-accent" />
+                  <span className="text-xs font-medium">Visual Changes</span>
+                </div>
+                <div className="text-xl font-bold">{metrics.visualChanges}</div>
+              </Card>
+              <Card className="p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Target className="w-4 h-4 text-green-600" />
+                  <span className="text-xs font-medium">Completion</span>
+                </div>
+                <div className="text-xl font-bold">{metrics.flowCompletionRate}%</div>
+              </Card>
+            </div>
+          </div>
+
+          {/* Unified Flow Tabs */}
+          <div className="flex-1 flex flex-col">
+            <div className="border-b bg-card px-4 py-2">
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant={visualWorkflowSubTab === 'use-case' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="h-8 px-3 text-xs"
+                  onClick={() => setVisualWorkflowSubTab('use-case')}
+                >
+                  <Workflow className="w-3 h-3 mr-1" />
+                  Real-Time Builder
+                </Button>
+                <Button 
+                  variant={visualWorkflowSubTab === 'journey' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="h-8 px-3 text-xs"
+                  onClick={() => setVisualWorkflowSubTab('journey')}
+                >
+                  <Brain className="w-3 h-3 mr-1" />
+                  AI Integration
+                </Button>
+                <Button 
+                  variant={visualWorkflowSubTab === 'builder' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="h-8 px-3 text-xs"
+                  onClick={() => setVisualWorkflowSubTab('builder')}
+                >
+                  <Bot className="w-3 h-3 mr-1" />
+                  Analytics
+                </Button>
+                <Button 
+                  variant={visualWorkflowSubTab === 'ai-prompt' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="h-8 px-3 text-xs"
+                  onClick={() => setVisualWorkflowSubTab('ai-prompt')}
+                >
+                  <Settings className="w-3 h-3 mr-1" />
+                  Enhanced Builder
+                </Button>
+                <Button 
+                  variant={agentBuilderTab === 'testing' ? 'default' : 'ghost'} 
+                  size="sm" 
+                  className="h-8 px-3 text-xs"
+                  onClick={() => setAgentBuilderTab('testing')}
+                >
+                  <Play className="w-3 h-3 mr-1" />
+                  Integration Tests
+                </Button>
+              </div>
+            </div>
+            
+            {/* Tab Content */}
+            <div className="flex-1 overflow-hidden">
+              {visualWorkflowSubTab === 'use-case' && (
+                <RealTimeVisualBuilder
+                  sessionId={sessionId}
+                  userId={userId}
+                  onAIPrompt={handleAIPrompt}
+                  onTemplateUpdate={handleTemplateUpdate}
+                />
+              )}
+              {visualWorkflowSubTab === 'journey' && (
+                <AIIntegrationManager
+                  onModelChange={handleModelChange}
+                  onSettingsUpdate={handleSettingsUpdate}
+                />
+              )}
+              {visualWorkflowSubTab === 'builder' && (
+                <FlowAnalyticsDashboard />
+              )}
+              {visualWorkflowSubTab === 'ai-prompt' && (
+                <EnhancedVisualBuilder
+                  sessionId={sessionId}
+                  onSave={(data) => {
+                    flowActions.trackAnalytics({
+                      category: 'visual',
+                      action: 'workflow_saved',
+                      label: 'enhanced_builder',
+                      metadata: { nodeCount: data?.nodes?.length || 0 }
+                    });
+                  }}
+                />
+              )}
+              {agentBuilderTab === 'testing' && (
+                <CohesiveFlowTester />
+              )}
+            </div>
+          </div>
           
           {/* AI Assistant Integration */}
           <AIAssistIntegration
