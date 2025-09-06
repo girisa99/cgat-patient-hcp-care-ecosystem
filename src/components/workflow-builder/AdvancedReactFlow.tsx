@@ -216,6 +216,10 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   capturedRequirements,
   journeyStages,
 }) => {
+  // Real-time collaboration - temporarily disabled until import is fixed
+  // const { collaborators, isConnected, broadcastWorkflowChange, updatePresence } = useRealtimeCollaboration(sessionId || 'default');
+  const collaborators: any[] = [];
+  const isConnected = false;
   // Core ReactFlow State
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);

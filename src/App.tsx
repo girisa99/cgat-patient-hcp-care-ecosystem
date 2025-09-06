@@ -124,6 +124,13 @@ const AppContent = () => {
                       <Agents />
                     </ProtectedRoute>
                   } />
+                  <Route path="/enterprise-analytics" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading analytics..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/EnterpriseAnalytics')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   {/* Legacy routes - redirect to consolidated /agents */}
                   <Route path="/agents/new" element={<Navigate to="/agents" replace />} />
                   <Route path="/agents/workflow-studio" element={<Navigate to="/agents" replace />} />
