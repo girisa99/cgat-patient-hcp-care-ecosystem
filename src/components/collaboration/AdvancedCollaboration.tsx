@@ -74,9 +74,7 @@ export const AdvancedCollaboration: React.FC<AdvancedCollaborationProps> = ({
     if (isConnected) {
       broadcastWorkflowChange({
         type: change.type,
-        data: change.data,
-        user_id: user?.id,
-        timestamp: new Date().toISOString()
+        data: change.data
       });
     }
 
@@ -92,7 +90,7 @@ export const AdvancedCollaboration: React.FC<AdvancedCollaborationProps> = ({
         id: Date.now(),
         type: 'concurrent_edit',
         component: change.component,
-        users: potentialConflicts.map(c => c.name),
+        users: potentialConflicts.map(c => c.user_name || c.user_id),
         timestamp: new Date().toISOString()
       }]);
     }
@@ -119,9 +117,7 @@ export const AdvancedCollaboration: React.FC<AdvancedCollaborationProps> = ({
     if (isConnected) {
       broadcastWorkflowChange({
         type: 'chat_message',
-        data: message,
-        user_id: user.id,
-        timestamp: message.timestamp
+        data: message
       });
     }
   };
@@ -153,7 +149,7 @@ export const AdvancedCollaboration: React.FC<AdvancedCollaborationProps> = ({
                 }}
               />
               <div className="bg-primary text-primary-foreground text-xs px-2 py-1 rounded-md">
-                {collab.name}
+                {collab.user_name || collab.user_id}
               </div>
             </div>
           </motion.div>
@@ -274,12 +270,12 @@ export const AdvancedCollaboration: React.FC<AdvancedCollaborationProps> = ({
                   <Avatar className="w-6 h-6">
                     <AvatarImage src={collaborator.avatar_url} />
                     <AvatarFallback className="text-xs">
-                      {collaborator.name.slice(0, 2).toUpperCase()}
+                      {(collaborator.user_name || collaborator.user_id).slice(0, 2).toUpperCase()}
                     </AvatarFallback>
                   </Avatar>
                   
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-medium truncate">{collaborator.name}</p>
+                    <p className="text-xs font-medium truncate">{collaborator.user_name || collaborator.user_id}</p>
                     <p className="text-xs text-muted-foreground">
                       {collaborator.active_component || 'Viewing'}
                     </p>

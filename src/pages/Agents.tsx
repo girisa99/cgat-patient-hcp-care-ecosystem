@@ -85,6 +85,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Node, ReactFlowProvider } from '@xyflow/react';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
+// Advanced features imports
+import AdvancedCollaboration from '@/components/collaboration/AdvancedCollaboration';
+import AdvancedAnalytics from '@/components/analytics/AdvancedAnalytics';
+import EnterpriseFeatures from '@/components/enterprise/EnterpriseFeatures';
+
 const AgentsInner = () => {
   // State management
   const [selectedMode, setSelectedMode] = useState<AgentMode | null>('unified');
@@ -882,6 +887,61 @@ const AgentsInner = () => {
       </AppLayout>
     );
   }
+
+        {/* Advanced Features Panel */}
+        {showAdvancedFeatures && (
+          <div className="fixed inset-0 bg-background z-50 overflow-auto">
+            <div className="flex items-center justify-between p-4 border-b">
+              <h2 className="text-xl font-bold flex items-center gap-2">
+                <Users className="w-5 h-5" />
+                Advanced Features
+              </h2>
+              <Button 
+                variant="ghost" 
+                onClick={() => setShowAdvancedFeatures(false)}
+                className="h-8 w-8 p-0"
+              >
+                <X className="w-4 h-4" />
+              </Button>
+            </div>
+            
+            <div className="p-6">
+              <div className="flex gap-4 mb-6">
+                <Button 
+                  variant={advancedFeatureTab === 'collaboration' ? 'default' : 'outline'}
+                  onClick={() => setAdvancedFeatureTab('collaboration')}
+                >
+                  Real-time Collaboration
+                </Button>
+                <Button 
+                  variant={advancedFeatureTab === 'analytics' ? 'default' : 'outline'}
+                  onClick={() => setAdvancedFeatureTab('analytics')}
+                >
+                  Advanced Analytics
+                </Button>
+                <Button 
+                  variant={advancedFeatureTab === 'enterprise' ? 'default' : 'outline'}
+                  onClick={() => setAdvancedFeatureTab('enterprise')}
+                >
+                  Enterprise Features
+                </Button>
+              </div>
+              
+              {advancedFeatureTab === 'collaboration' && (
+                <AdvancedCollaboration 
+                  sessionId={currentSessionId || 'default'}
+                  onWorkflowChange={handleWorkflowUpdate}
+                />
+              )}
+              {advancedFeatureTab === 'analytics' && (
+                <AdvancedAnalytics sessionId={currentSessionId} />
+              )}
+              {advancedFeatureTab === 'enterprise' && (
+                <EnterpriseFeatures />
+              )}
+            </div>
+          </div>
+        )}
 
   // Main render - Genie AI Layout (Visual/Manual modes)
   return renderFlowiseLayout();
