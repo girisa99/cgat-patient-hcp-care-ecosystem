@@ -86,7 +86,7 @@ const AppContent = () => {
                   <Route path="/" element={
                     userRoles.includes('demoUser') 
                       ? <DemoDashboard />
-                      : userRoles.includes('onboardingTeam') && !userRoles.includes('superAdmin') 
+                      : userRoles.includes('onboardingTeam')
                         ? <OnboardingDashboard /> 
                         : <Dashboard />
                   } />
@@ -128,6 +128,13 @@ const AppContent = () => {
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser']}>
                       <Suspense fallback={<PageLoading message="Loading analytics..." />}>
                         {React.createElement(React.lazy(() => import('@/pages/EnterpriseAnalytics')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/system-completion" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading system completion..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/SystemCompletion')))}
                       </Suspense>
                     </ProtectedRoute>
                   } />
