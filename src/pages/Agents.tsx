@@ -116,6 +116,8 @@ const AgentsInner = () => {
   const [showDeploymentManager, setShowDeploymentManager] = useState(false);
   const [showNodeCategories, setShowNodeCategories] = useState(true);
   const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
+  const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
+  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise'>('collaboration');
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -353,6 +355,10 @@ const AgentsInner = () => {
             <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)} disabled={!isAIHealthy} title={!isAIHealthy ? 'AI services are unavailable. Check health status.' : undefined}>
               <Sparkles className="w-3 h-3 mr-1" />
               🚀 Unified AI Assist
+            </Button>
+            <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg" onClick={() => setShowAdvancedFeatures(!showAdvancedFeatures)}>
+              <Users className="w-3 h-3 mr-1" />
+              Advanced Features
             </Button>
             <Badge variant={isAIHealthy ? 'secondary' : 'destructive'} className="ml-2 text-xs">
               AI: {isAIHealthy ? 'Healthy' : 'Offline'}
