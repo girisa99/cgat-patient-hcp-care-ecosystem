@@ -10136,6 +10136,10 @@ export type Database = {
         Args: { p_role_name: string; p_user_id: string }
         Returns: undefined
       }
+      auto_cleanup_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       auto_sync_demo_user_access: {
         Args: Record<PropertyKey, never>
         Returns: Json
