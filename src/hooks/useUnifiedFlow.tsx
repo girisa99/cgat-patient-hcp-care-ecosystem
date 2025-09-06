@@ -1,5 +1,34 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { unifiedFlowIntegrator, FlowEvent, TemplateUpdate, VisualChange, AnalyticsEvent } from '@/services/integration/UnifiedFlowIntegrator';
+
+// Types for unified flow (keeping compatible interface)
+export interface FlowEvent {
+  id: string;
+  type: string;
+  sessionId: string;
+  userId?: string;
+  timestamp: string;
+  data: any;
+}
+
+export interface TemplateUpdate {
+  templateId: string;
+  changes: any;
+  triggeredBy: string;
+}
+
+export interface VisualChange {
+  type: string;
+  nodeId?: string;
+  data: any;
+  coordinates?: { x: number; y: number };
+}
+
+export interface AnalyticsEvent {
+  category: 'visual' | 'flow' | 'ai' | 'template' | 'collaboration';
+  action: string;
+  label: string;
+  metadata?: any;
+}
 
 export interface UnifiedFlowState {
   aiPrompts: FlowEvent[];
@@ -30,22 +59,12 @@ export const useUnifiedFlow = (sessionId: string, userId?: string) => {
 
   const unsubscribersRef = useRef<(() => void)[]>([]);
 
-  // Initialize unified flow integration
+  // Initialize unified flow integration (mock implementation)
   useEffect(() => {
     setState(prev => ({ ...prev, isConnected: true }));
-
-    // Subscribe to all event types
-    const unsubscribers = [
-      unifiedFlowIntegrator.subscribe('ai_prompt', handleAIPromptEvent),
-      unifiedFlowIntegrator.subscribe('template_update', handleTemplateUpdateEvent),
-      unifiedFlowIntegrator.subscribe('visual_change', handleVisualChangeEvent),
-      unifiedFlowIntegrator.subscribe('analytics_track', handleAnalyticsEvent)
-    ];
-
-    unsubscribersRef.current = unsubscribers;
-
+    
+    // Cleanup function
     return () => {
-      unsubscribers.forEach(unsub => unsub());
       setState(prev => ({ ...prev, isConnected: false }));
     };
   }, [sessionId]);
@@ -88,7 +107,23 @@ export const useUnifiedFlow = (sessionId: string, userId?: string) => {
     setState(prev => ({ ...prev, isProcessing: true }));
     
     try {
-      await unifiedFlowIntegrator.processAIPrompt(prompt, sessionId, userId);
+      // Mock AI prompt processing - integrate with your existing AI systems
+      console.log('Processing AI prompt:', prompt);
+      
+      // Simulate processing and add to state
+      const event: FlowEvent = {
+        id: crypto.randomUUID(),
+        type: 'ai_prompt',
+        sessionId,
+        userId,
+        timestamp: new Date().toISOString(),
+        data: { prompt }
+      };
+      
+      setState(prev => ({
+        ...prev,
+        aiPrompts: [event, ...prev.aiPrompts].slice(0, 50)
+      }));
     } catch (error) {
       console.error('Error processing AI prompt:', error);
       throw error;
@@ -101,13 +136,22 @@ export const useUnifiedFlow = (sessionId: string, userId?: string) => {
     setState(prev => ({ ...prev, isProcessing: true }));
 
     try {
-      const templateUpdate: TemplateUpdate = {
-        templateId,
-        changes,
-        triggeredBy: 'user_action'
+      // Mock template update - integrate with your existing template systems
+      console.log('Updating template:', templateId, changes);
+      
+      const event: FlowEvent = {
+        id: crypto.randomUUID(),
+        type: 'template_update',
+        sessionId,
+        userId,
+        timestamp: new Date().toISOString(),
+        data: { templateId, changes }
       };
-
-      await unifiedFlowIntegrator.updateTemplate(templateUpdate, sessionId, userId);
+      
+      setState(prev => ({
+        ...prev,
+        templateUpdates: [event, ...prev.templateUpdates].slice(0, 50)
+      }));
     } catch (error) {
       console.error('Error updating template:', error);
       throw error;
@@ -118,7 +162,22 @@ export const useUnifiedFlow = (sessionId: string, userId?: string) => {
 
   const broadcastVisualChange = useCallback(async (change: VisualChange) => {
     try {
-      await unifiedFlowIntegrator.processVisualChange(change, sessionId, userId);
+      // Mock visual change broadcast - integrate with your existing visual systems
+      console.log('Broadcasting visual change:', change);
+      
+      const event: FlowEvent = {
+        id: crypto.randomUUID(),
+        type: 'visual_change',
+        sessionId,
+        userId,
+        timestamp: new Date().toISOString(),
+        data: change
+      };
+      
+      setState(prev => ({
+        ...prev,
+        visualChanges: [event, ...prev.visualChanges].slice(0, 100)
+      }));
     } catch (error) {
       console.error('Error broadcasting visual change:', error);
       throw error;
@@ -126,7 +185,13 @@ export const useUnifiedFlow = (sessionId: string, userId?: string) => {
   }, [sessionId, userId]);
 
   const trackAnalytics = useCallback((event: AnalyticsEvent) => {
-    unifiedFlowIntegrator.trackAnalytics(event);
+    // Mock analytics tracking - integrate with your existing analytics systems
+    console.log('Tracking analytics:', event);
+    
+    setState(prev => ({
+      ...prev,
+      analytics: [event, ...prev.analytics].slice(0, 200)
+    }));
   }, []);
 
   const clearEvents = useCallback(() => {

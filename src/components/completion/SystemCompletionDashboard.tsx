@@ -4,8 +4,6 @@ import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { CheckCircle, Target, TrendingUp } from 'lucide-react';
-import { EnhancedVisualBuilder } from '@/components/builders/EnhancedVisualBuilder';
-import { AIIntegrationManager } from '@/components/ai/AIIntegrationManager';
 import { ComprehensiveTestingSystem } from '@/components/testing/ComprehensiveTestingSystem';
 import { AdvancedDeploymentSystem } from '@/components/deployment/AdvancedDeploymentSystem';
 
@@ -98,11 +96,15 @@ export const SystemCompletionDashboard: React.FC = () => {
         </TabsList>
 
         <TabsContent value="visual-builder">
-          <EnhancedVisualBuilder />
+          <div className="text-center p-8 text-muted-foreground">
+            Visual Builder functionality integrated into the main Agents page
+          </div>
         </TabsContent>
 
         <TabsContent value="ai-integration">
-          <AIIntegrationManager />
+          <div className="text-center p-8 text-muted-foreground">
+            AI Integration functionality integrated into the main Agents page
+          </div>
         </TabsContent>
 
         <TabsContent value="testing">
