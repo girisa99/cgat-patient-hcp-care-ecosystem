@@ -7,6 +7,7 @@ import { RealTimeVisualBuilder } from '@/components/integration/RealTimeVisualBu
 import { FlowAnalyticsDashboard } from '@/components/analytics/FlowAnalyticsDashboard';
 import { AIIntegrationManager } from '@/components/ai/AIIntegrationManager';
 import { EnhancedVisualBuilder } from '@/components/builders/EnhancedVisualBuilder';
+import { CohesiveFlowTester } from '@/components/integration/CohesiveFlowTester';
 import { useUnifiedFlow } from '@/hooks/useUnifiedFlow';
 import { 
   Workflow, Activity, Brain, BarChart3, 
@@ -172,7 +173,7 @@ export const UnifiedFlowDemo: React.FC = () => {
         transition={{ delay: 0.3 }}
       >
         <Tabs defaultValue="integrated-builder" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="integrated-builder" className="flex items-center gap-2">
               <Grid className="w-4 h-4" />
               Real-Time Builder
@@ -188,6 +189,10 @@ export const UnifiedFlowDemo: React.FC = () => {
             <TabsTrigger value="enhanced-builder" className="flex items-center gap-2">
               <Workflow className="w-4 h-4" />
               Enhanced Builder
+            </TabsTrigger>
+            <TabsTrigger value="cohesive-testing" className="flex items-center gap-2">
+              <Activity className="w-4 h-4" />
+              Integration Tests
             </TabsTrigger>
           </TabsList>
 
@@ -223,6 +228,10 @@ export const UnifiedFlowDemo: React.FC = () => {
                 });
               }}
             />
+          </TabsContent>
+
+          <TabsContent value="cohesive-testing">
+            <CohesiveFlowTester />
           </TabsContent>
         </Tabs>
       </motion.div>
