@@ -930,7 +930,12 @@ const AgentsInner = () => {
               {advancedFeatureTab === 'collaboration' && (
                 <AdvancedCollaboration 
                   sessionId={currentSessionId || 'default'}
-                  onWorkflowChange={handleWorkflowUpdate}
+                  onWorkflowChange={(change) => {
+                    // Handle different types of workflow changes
+                    if (change.type === 'workflow_update' && change.data?.nodes && change.data?.edges) {
+                      handleWorkflowUpdate(change.data.nodes, change.data.edges);
+                    }
+                  }}
                 />
               )}
               {advancedFeatureTab === 'analytics' && (
