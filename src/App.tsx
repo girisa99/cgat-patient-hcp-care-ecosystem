@@ -138,11 +138,13 @@ const AppContent = () => {
                       </Suspense>
                     </ProtectedRoute>
                   } />
-                  {/* Legacy routes - redirect to consolidated /agents */}
-                  <Route path="/agents/new" element={<Navigate to="/agents" replace />} />
-                  <Route path="/agents/workflow-studio" element={<Navigate to="/agents" replace />} />
-                  <Route path="/unified-workflow" element={<Navigate to="/agents" replace />} />
-                  <Route path="/guided" element={<Navigate to="/agents" replace />} />
+                  <Route path="/unified-flow" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading unified flow..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/UnifiedFlowDemo')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                   <Route path="/mcp" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
                       <MCPDemo />
