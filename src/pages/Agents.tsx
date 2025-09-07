@@ -89,6 +89,7 @@ import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import AdvancedCollaboration from '@/components/collaboration/AdvancedCollaboration';
 import AdvancedAnalytics from '@/components/analytics/AdvancedAnalytics';
 import EnterpriseFeatures from '@/components/enterprise/EnterpriseFeatures';
+import { GapAnalysisReport } from '@/components/assessment/GapAnalysisReport';
 
 const AgentsInner = () => {
   // State management
@@ -122,7 +123,7 @@ const AgentsInner = () => {
   const [showNodeCategories, setShowNodeCategories] = useState(true);
   const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
   const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
-  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise'>('collaboration');
+  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment'>('collaboration');
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -925,6 +926,12 @@ const AgentsInner = () => {
                 >
                   Enterprise Features
                 </Button>
+                <Button 
+                  variant={advancedFeatureTab === 'assessment' ? 'default' : 'outline'}
+                  onClick={() => setAdvancedFeatureTab('assessment')}
+                >
+                  Gap Analysis
+                </Button>
               </div>
               
               {advancedFeatureTab === 'collaboration' && (
@@ -943,6 +950,9 @@ const AgentsInner = () => {
               )}
               {advancedFeatureTab === 'enterprise' && (
                 <EnterpriseFeatures />
+              )}
+              {advancedFeatureTab === 'assessment' && (
+                <GapAnalysisReport />
               )}
             </div>
           </div>
