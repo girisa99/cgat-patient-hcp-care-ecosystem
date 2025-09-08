@@ -10428,6 +10428,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: undefined
       }
+      optimize_slow_queries: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       progress_journey_stage: {
         Args: {
           p_conversation_id: string
@@ -10436,6 +10440,10 @@ export type Database = {
           p_transition_data?: Json
         }
         Returns: Json
+      }
+      schedule_maintenance: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       secure_assign_user_role: {
         Args: { target_role_name: string; target_user_id: string }
