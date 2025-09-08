@@ -295,6 +295,17 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
     onChange(data);
   };
 
+  // Watch form changes and immediately propagate them
+  React.useEffect(() => {
+    const subscription = form.watch((value) => {
+      // Only propagate if there are actual changes
+      if (JSON.stringify(value) !== JSON.stringify(configuration)) {
+        onChange(value);
+      }
+    });
+    return () => subscription.unsubscribe();
+  }, [form, onChange, configuration]);
+
   const renderFormFields = () => {
     return (
       <div className="space-y-6">
