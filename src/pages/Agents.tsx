@@ -298,10 +298,52 @@ const AgentsInner = () => {
   // Receive full workflow objects from AI Assistant only
   const handleAIGeneratedWorkflow = (workflow: any) => {
     console.log('[Agents] AI generated workflow:', workflow);
-    setWorkflowNodes(workflow.nodes || []);
-    setWorkflowEdges(workflow.edges || []);
+
+    // Normalize nodes → ensure ids, map to DB node types, and enforce enhanced renderer
+    const ensureId = (n: any, idx: number) => ({ ...n, id: String(n.id || `node-${idx}-${Date.now()}`) });
+    let rawNodes: any[] = Array.isArray(workflow?.nodes) ? workflow.nodes : [];
+    rawNodes = rawNodes.map(ensureId).map((n: any, idx: number) => {
+      const label = n.data?.label || n.label || n.name || n.display_name || `Node ${idx + 1}`;
+      const key = (n.data?.type_key || n.type || '').toString().toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_');
+      const match = nodeTypes.find(nt =>
+        (nt.type_key || '').toLowerCase() === key ||
+        (nt.display_name || '').toLowerCase() === (label || '').toLowerCase()
+      );
+
+      return {
+        id: n.id,
+        type: 'enhanced',
+        position: n.position || { x: 100 + (idx % 3) * 280, y: 120 + Math.floor(idx / 3) * 160 },
+        data: {
+          ...(n.data || {}),
+          label,
+          type_key: match?.type_key || key || 'node',
+          category: match?.category || n.data?.category,
+          configuration: n.data?.configuration || match?.default_config || {},
+          default_config: match?.default_config || {},
+          isWorkflowNode: true
+        }
+      } as any;
+    });
+
+    // Build edges: use provided or sequential fallback
+    let rawEdges: any[] = Array.isArray(workflow?.edges) ? workflow.edges : [];
+    if (!rawEdges.length && rawNodes.length > 1) {
+      rawEdges = rawNodes.slice(0, -1).map((n: any, i: number) => ({
+        id: `e-${n.id}-${rawNodes[i + 1].id}`,
+        source: n.id,
+        target: rawNodes[i + 1].id,
+        type: 'smoothstep',
+        animated: true
+      }));
+    }
+
+    setWorkflowNodes(rawNodes);
+    setWorkflowEdges(rawEdges);
+    setShowUnifiedAssist(true);
+
     if (!aiSuccessToastShown.current) {
-      toast.success('Workflow generated successfully!');
+      toast.success(`Workflow ready: ${rawNodes.length} nodes, ${rawEdges.length} connectors`);
       aiSuccessToastShown.current = true;
     }
   };
