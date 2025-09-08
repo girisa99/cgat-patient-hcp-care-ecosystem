@@ -445,13 +445,6 @@ const openInsightsPanel = () => {
     [setEdges]
   );
 
-  const onEdgeUpdate = useCallback(
-    (oldEdge: Edge, newConnection: Connection) => {
-      setEdges((eds) => updateEdge(oldEdge, newConnection, eds));
-    },
-    [setEdges]
-  );
-
   const handleNodeSelect = useCallback((node: Node | null) => {
     setSelectedNode(node);
     onNodeSelect?.(node);
@@ -902,7 +895,6 @@ useEffect(() => {
                   onNodesChange={handleNodesChange}
                   onEdgesChange={onEdgesChange}
                   onConnect={onConnect}
-                  onEdgeUpdate={onEdgeUpdate}
                   onDrop={onDrop}
                   onDragOver={onDragOver}
                   onNodeContextMenu={handleNodeContextMenu}
@@ -937,7 +929,6 @@ useEffect(() => {
                   nodesDraggable={nodesDraggable}
                   connectOnClick={connectOnClick}
                   nodesConnectable={true}
-                  edgesUpdatable={true}
                  
                   minZoom={0.05}
                   maxZoom={4}
