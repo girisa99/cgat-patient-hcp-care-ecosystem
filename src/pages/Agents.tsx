@@ -831,6 +831,9 @@ const AgentsInner = () => {
                   });
                   setWorkflowNodes(toEnhanced(finalAgent.nodes || []));
                   setWorkflowEdges((finalAgent.edges || []).map((e: any, idx: number) => ({ id: e.id || `e-${idx}`, updatable: true, ...e })));
+                  // Switch to canvas view and close assistant panel
+                  setVisualWorkflowSubTab('builder');
+                  setShowUnifiedAssist(false);
                   toast.success('Applied to canvas');
                 }}
                 onClose={() => setShowUnifiedAssist(false)}
@@ -902,16 +905,7 @@ const AgentsInner = () => {
             isAIHealthy={isAIHealthy}
           />
           
-          {/* AI Assistant Integration */}
-          <AIAssistIntegration
-            isOpen={showAIAssist}
-            onClose={() => setShowAIAssist(false)}
-            onWorkflowGenerated={handleAIGeneratedWorkflow}
-            onNodeGenerated={handleNodeGenerated}
-            initialMode={aiAssistMode}
-            selectedNodeId={selectedNodeData?.id}
-            isAIHealthy={isAIHealthy}
-          />
+          {/* AI Assistant Integration is managed internally by UnifiedWorkflowExperience */}
         </div>
       </AppLayout>
     );
