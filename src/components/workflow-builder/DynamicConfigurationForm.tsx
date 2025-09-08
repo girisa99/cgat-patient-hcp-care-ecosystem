@@ -24,6 +24,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { ChevronDown, ChevronUp, Plus, Trash2, Settings, Bot, Database, Webhook, MessageCircle, Brain, Search, Calculator, Code, FileText, Globe, Clock, Zap, Mail, Sheet, Image, PenTool } from 'lucide-react';
 import { CategorySpecificConfigurations } from './CategorySpecificConfigurations';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
+import { useIntegrationOptions } from '@/hooks/useIntegrationOptions';
 
 interface DynamicConfigurationFormProps {
   nodeType: string;
@@ -43,7 +44,13 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
   
   // Get node type information for category-specific configuration
   const nodeTypeInfo = getNodeTypeByKey(nodeType);
-  const category = nodeTypeInfo?.category?.name || nodeType;
+const category = nodeTypeInfo?.category?.name || nodeType;
+
+// Integration options (schema tables, MCP/function-calling tools)
+const { tables, mcpLikeTools, getTextLikeColumns, isLoading: isOptionsLoading } = useIntegrationOptions();
+
+// Local UI state for adding document stores
+const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; column?: string }>({});
 
   // AI Provider configurations
   const aiProviders = [
@@ -206,6 +213,15 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
       parameters: []
     }
   ];
+
+  // Dynamically include MCP/function-calling capable integrations from DB
+  const dynamicTools = (mcpLikeTools || []).map((i: any) => ({
+    value: `integration:${i.id}`,
+    label: i.name,
+    icon: Settings,
+    description: `${i.provider || 'Integration'} (function-calling)`
+  }));
+  const toolsOptions = [...dynamicTools, ...availableTools];
 
   const getFormSchema = () => {
     // Flexible schema that accommodates all configuration types
@@ -434,11 +450,11 @@ export const DynamicConfigurationForm: React.FC<DynamicConfigurationFormProps> =
                           value={tool.type}
                           onValueChange={(value) => {
                             const newTools = [...(configuration.tools || [])];
-                            const selectedTool = availableTools.find(t => t.value === value);
+                            const selectedTool = (toolsOptions || []).find(t => t.value === value);
                             newTools[index] = { 
                               ...newTools[index], 
                               type: value, 
-                              name: selectedTool?.label || value,
+                              name: (selectedTool as any)?.label || value,
                               parameters: {}
                             };
                             onChange({ ...configuration, tools: newTools });
