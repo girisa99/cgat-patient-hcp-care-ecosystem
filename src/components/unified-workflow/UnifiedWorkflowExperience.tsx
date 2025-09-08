@@ -286,7 +286,7 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
       return byLabel?.id;
     };
 
-    const reactFlowEdges = rawEdgesInput.map((edge: any, index: number) => {
+    let reactFlowEdges = rawEdgesInput.map((edge: any, index: number) => {
       const source = normalizeEndpoint(edge.source ?? edge.from ?? edge.start ?? edge.src ?? edge.sourceId ?? edge.source_index ?? edge.sourceIndex);
       const target = normalizeEndpoint(edge.target ?? edge.to ?? edge.end ?? edge.dst ?? edge.targetId ?? edge.target_index ?? edge.targetIndex);
 
@@ -294,12 +294,57 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
         id: edge.id || `edge-${Date.now()}-${index}`,
         source: source || '',
         target: target || '',
-        type: edge.type || 'default',
+        type: edge.type || 'smoothstep',
         animated: true,
         style: { stroke: '#8b5cf6' },
         markerEnd: { type: MarkerType.ArrowClosed }
       };
     }).filter((e: any) => e.source && e.target);
+
+    // If no edges provided, auto-create smart connectors based on node labels
+    if (reactFlowEdges.length === 0 && reactFlowNodes.length > 0) {
+      const byLabel = (includes: string[]) =>
+        reactFlowNodes.find(n => {
+          const l = String(n.data?.label || '').toLowerCase();
+          return includes.every(k => l.includes(k));
+        });
+
+      const start = byLabel(['start']);
+      const capPatient = byLabel(['capture', 'patient']);
+      const insPatient = byLabel(['insert', 'patient']);
+      const capProvider = byLabel(['capture', 'provider']);
+      const insProvider = byLabel(['insert', 'provider']);
+      const capTreat = byLabel(['capture', 'treatment']);
+      const insTreat = byLabel(['insert', 'treatment']);
+
+      const addEdgeUnique = (src?: any, tgt?: any) => {
+        if (!src || !tgt) return;
+        const exists = reactFlowEdges.some(e => e.source === src.id && e.target === tgt.id);
+        if (exists) return;
+        reactFlowEdges.push({
+          id: `edge-${src.id}-${tgt.id}`,
+          source: src.id,
+          target: tgt.id,
+          type: 'smoothstep',
+          animated: true,
+          style: { stroke: '#8b5cf6' },
+          markerEnd: { type: MarkerType.ArrowClosed }
+        });
+      };
+
+      // Domain-intent edges (as per user expectation)
+      addEdgeUnique(start, capPatient);
+      addEdgeUnique(capPatient, insPatient);
+      addEdgeUnique(capProvider, insProvider);
+      addEdgeUnique(capTreat, insTreat);
+
+      // Fallback: simple sequential chain if still empty
+      if (reactFlowEdges.length === 0 && reactFlowNodes.length > 1) {
+        for (let i = 0; i < reactFlowNodes.length - 1; i++) {
+          addEdgeUnique(reactFlowNodes[i], reactFlowNodes[i + 1]);
+        }
+      }
+    }
 
     setCanvasNodes(reactFlowNodes as any);
     setCanvasEdges(reactFlowEdges as any);
