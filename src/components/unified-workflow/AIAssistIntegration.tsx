@@ -152,7 +152,14 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
           // Generate specific nodes/agents
           const agentData = await generateAgent(prompt, selectedProvider);
           if (agentData) {
-            onNodeGenerated(agentData);
+            // If a full workflow came back, apply to canvas and close assistant
+            const wf = agentData?.workflow || agentData?.agent || agentData;
+            if (Array.isArray(wf?.nodes)) {
+              onWorkflowGenerated(wf);
+              onClose();
+            } else {
+              onNodeGenerated(agentData);
+            }
           }
           break;
 
