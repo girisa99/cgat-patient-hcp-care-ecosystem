@@ -127,7 +127,8 @@ export class AuthStateManager {
         
         // Force a clean page load to ensure proper state initialization
         setTimeout(() => {
-          window.location.href = '/dashboard';
+          // Redirect to role-based default route; App will resolve correct dashboard per role
+          window.location.href = '/';
         }, 300);
         
         return { success: true };
