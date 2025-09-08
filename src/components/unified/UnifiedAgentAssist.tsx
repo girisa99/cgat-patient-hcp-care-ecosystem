@@ -417,6 +417,7 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
         showError('Please describe what to build first');
         return;
       }
+      setIsRunning(true);
       addTestResult({ status: 'running', message: 'Generating workflow suggestions...' });
       const steps = await generateSuggestions(buildPrompt, selectedProvider);
       if (!steps || steps.length === 0) {
@@ -464,9 +465,19 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
       applyChangesToCanvas(nodes, edges, 'Suggested Workflow');
       addTestResult({ status: 'success', message: `Suggested ${nodes.length} steps and connected them` });
       showSuccess('Workflow suggestions applied to canvas');
+      
+      // Auto-close the panel after successful generation
+      setTimeout(() => {
+        if (onClose) {
+          onClose();
+        }
+      }, 1000);
+      
     } catch (e: any) {
       addTestResult({ status: 'error', message: `Suggestion failed: ${e.message}` });
       showError(`Suggestion failed: ${e.message}`);
+    } finally {
+      setIsRunning(false);
     }
   };
 
@@ -603,6 +614,11 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
           <CardTitle className="flex items-center gap-2">
             <Bot className="h-5 w-5" />
             Unified AI Assist
+            {(workflowNodes?.length > 0 || workflowEdges?.length > 0) && (
+              <Badge variant="outline" className="text-xs ml-2">
+                {workflowNodes?.length || 0} nodes, {workflowEdges?.length || 0} edges
+              </Badge>
+            )}
           </CardTitle>
           
           <div className="flex items-center gap-2">
@@ -741,10 +757,10 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
                       className="min-h-[80px]"
                     />
                   </div>
-                  <Button className="w-full" onClick={handleSuggestWorkflow} disabled={!buildPrompt || isSuggesting}>
-                    <Sparkles className="w-4 h-4 mr-2" />
-                    Generate Workflow Suggestions
-                  </Button>
+                  <Button className="w-full" onClick={handleSuggestWorkflow} disabled={!buildPrompt || isSuggesting || isRunning}>
+                     <Sparkles className="w-4 h-4 mr-2" />
+                     {isRunning ? 'Generating...' : 'Generate Workflow Suggestions'}
+                   </Button>
                   
                   <div className="bg-muted/20 p-4 rounded-lg">
                     <p className="font-medium mb-2 text-sm">Smart Actions</p>

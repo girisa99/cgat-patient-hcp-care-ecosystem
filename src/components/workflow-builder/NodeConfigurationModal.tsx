@@ -9,7 +9,10 @@ import { DynamicConfigurationForm } from './DynamicConfigurationForm';
 import { ConfigurationTemplates } from './ConfigurationTemplates';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { Save, X, RotateCcw, Settings } from 'lucide-react';
+import { Save, X, RotateCcw, Settings, Database, Layers } from 'lucide-react';
+import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 
 interface NodeConfigurationModalProps {
   isOpen: boolean;
@@ -32,12 +35,23 @@ export const NodeConfigurationModal: React.FC<NodeConfigurationModalProps> = ({
 }) => {
   const [configuration, setConfiguration] = useState(initialData || {});
   const [activeTab, setActiveTab] = useState('form');
+  const { nodeTypes, getNodeTypeByKey } = useWorkflowNodes();
+  
+  // Get node type information from database
+  const nodeTypeInfo = getNodeTypeByKey(nodeType) || getNodeTypeByKey(initialData?.type_key);
 
   useEffect(() => {
     if (initialData) {
       setConfiguration(initialData);
     }
-  }, [initialData]);
+    // Load default config from database if available
+    if (nodeTypeInfo?.default_config) {
+      setConfiguration(prev => ({
+        ...nodeTypeInfo.default_config,
+        ...prev, // Keep any existing configuration
+      }));
+    }
+  }, [initialData, nodeTypeInfo]);
 
   const handleSave = () => {
     console.log('Saving node configuration:', { nodeId, configuration });
@@ -146,14 +160,102 @@ export const NodeConfigurationModal: React.FC<NodeConfigurationModalProps> = ({
             </TabsContent>
 
             <TabsContent value="advanced" className="flex-1 overflow-auto mt-0 p-4">
-              <div className="space-y-4">
-                <div className="text-center py-8">
-                  <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Advanced Configuration</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Advanced settings and custom parameters will be available here
-                  </p>
-                </div>
+              <div className="space-y-6">
+                {/* Database Node Information */}
+                {nodeTypeInfo && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Database className="h-5 w-5" />
+                        Node Database Information
+                      </CardTitle>
+                      <CardDescription>
+                        Information loaded from the workflow_node_types database
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div>
+                          <span className="font-medium">Type Key:</span>
+                          <Badge variant="outline" className="ml-2">{nodeTypeInfo.type_key}</Badge>
+                        </div>
+                        <div>
+                          <span className="font-medium">Category:</span>
+                          <Badge className="ml-2">{nodeTypeInfo.category?.display_name}</Badge>
+                        </div>
+                        <div>
+                          <span className="font-medium">Configurable:</span>
+                          <Badge variant={nodeTypeInfo.is_configurable ? "default" : "secondary"} className="ml-2">
+                            {nodeTypeInfo.is_configurable ? "Yes" : "No"}
+                          </Badge>
+                        </div>
+                        <div>
+                          <span className="font-medium">Draggable:</span>
+                          <Badge variant={nodeTypeInfo.is_draggable ? "default" : "secondary"} className="ml-2">
+                            {nodeTypeInfo.is_draggable ? "Yes" : "No"}
+                          </Badge>
+                        </div>
+                      </div>
+                      
+                      {nodeTypeInfo.capabilities?.length > 0 && (
+                        <div>
+                          <span className="font-medium text-sm">Capabilities:</span>
+                          <div className="flex flex-wrap gap-1 mt-2">
+                            {nodeTypeInfo.capabilities.map((cap, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {cap}
+                              </Badge>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {/* Configuration Schema */}
+                {nodeTypeInfo?.configurationSchema && Object.keys(nodeTypeInfo.configurationSchema).length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Layers className="h-5 w-5" />
+                        Configuration Schema
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-40">
+                        {JSON.stringify(nodeTypeInfo.configurationSchema, null, 2)}
+                      </pre>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {/* Default Configuration */}
+                {nodeTypeInfo?.default_config && Object.keys(nodeTypeInfo.default_config).length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Settings className="h-5 w-5" />
+                        Default Configuration
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <pre className="text-xs bg-muted p-3 rounded overflow-auto max-h-40">
+                        {JSON.stringify(nodeTypeInfo.default_config, null, 2)}
+                      </pre>
+                    </CardContent>
+                  </Card>
+                )}
+                
+                {!nodeTypeInfo && (
+                  <div className="text-center py-8">
+                    <Settings className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-medium mb-2">Advanced Configuration</h3>
+                    <p className="text-sm text-muted-foreground">
+                      No database information available for this node type: {nodeType}
+                    </p>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </Tabs>

@@ -406,7 +406,7 @@ React.useEffect(() => {
           nodeId={selectedNode.id}
           nodeType={String(selectedNode.data?.type_key || selectedNode.data?.type || 'default')}
           configAction={configAction}
-          initialData={selectedNode.data?.configuration}
+          initialData={selectedNode.data?.configuration || {}}
           onSave={handleConfigurationSave}
         />
       )}

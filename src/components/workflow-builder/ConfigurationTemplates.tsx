@@ -15,6 +15,7 @@ export const ConfigurationTemplates: React.FC<ConfigurationTemplatesProps> = ({
   configAction,
   onApplyTemplate,
 }) => {
+  // Enhanced templates based on real node types from database
   const getTemplates = () => {
     switch (`${nodeType}-${configAction}`) {
       case 'agent-ai-model':
@@ -185,7 +186,8 @@ export const ConfigurationTemplates: React.FC<ConfigurationTemplatesProps> = ({
         ];
 
       default:
-        return [
+        // Enhanced default templates based on node type
+        const baseTemplates = [
           {
             id: 'basic-config',
             name: 'Basic Configuration',
@@ -193,12 +195,45 @@ export const ConfigurationTemplates: React.FC<ConfigurationTemplatesProps> = ({
             icon: Workflow,
             category: 'General',
             config: {
-              name: 'Default Configuration',
-              description: 'Basic configuration template',
+              name: nodeType === 'enhanced' ? 'Enhanced Node' : `${nodeType} Node`,
+              description: `Configuration for ${nodeType} node type`,
               enabled: true,
             },
           },
+          {
+            id: 'production-ready',
+            name: 'Production Ready',
+            description: 'Optimized for production use',
+            icon: Bot,
+            category: 'Production',
+            config: {
+              name: `Production ${nodeType}`,
+              description: `Production-ready ${nodeType} configuration`,
+              enabled: true,
+              timeout: 30000,
+              retries: 3,
+              monitoring: true,
+              logging: 'info'
+            },
+          },
+          {
+            id: 'development',
+            name: 'Development Mode',
+            description: 'Development and testing configuration',
+            icon: Database,
+            category: 'Development',
+            config: {
+              name: `Dev ${nodeType}`,
+              description: `Development ${nodeType} configuration`,
+              enabled: true,
+              timeout: 10000,
+              retries: 1,
+              monitoring: false,
+              logging: 'debug'
+            },
+          }
         ];
+        return baseTemplates;
     }
   };
 

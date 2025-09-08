@@ -319,9 +319,13 @@ const AgentsInner = () => {
           label,
           type_key: match?.type_key || key || 'node',
           category: match?.category || n.data?.category,
-          configuration: n.data?.configuration || match?.default_config || {},
+          configuration: {
+            ...(match?.default_config || {}),
+            ...(n.data?.configuration || {}),
+          },
           default_config: match?.default_config || {},
-          isWorkflowNode: true
+          isWorkflowNode: true,
+          nodeTypeInfo: match // Include full database node type info
         }
       } as any;
     });
