@@ -28,6 +28,8 @@ interface EnhancedWorkflowCanvasProps {
   initialEdges?: Edge[];
   onNodesChange?: (nodes: Node[]) => void;
   onEdgesChange?: (edges: Edge[]) => void;
+  // New: notify parent when a node's configuration is saved so it can persist to DB
+  onNodeConfigSave?: (nodes: Node[], edges: Edge[]) => void;
 }
 
 export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
@@ -35,6 +37,7 @@ export const EnhancedWorkflowCanvas: React.FC<EnhancedWorkflowCanvasProps> = ({
   initialEdges = [],
   onNodesChange,
   onEdgesChange,
+  onNodeConfigSave,
 }) => {
   const [nodes, setNodes, handleNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, handleEdgesChange] = useEdgesState(initialEdges);
@@ -167,8 +170,8 @@ React.useEffect(() => {
 
   // Handle configuration save
   const handleConfigurationSave = useCallback((nodeId: string, configuration: any) => {
-    setNodes((nds) =>
-      nds.map((node) =>
+    setNodes((nds) => {
+      const updated = nds.map((node) =>
         node.id === nodeId
           ? {
               ...node,
@@ -181,10 +184,13 @@ React.useEffect(() => {
               },
             }
           : node
-      )
-    );
+      );
+      // Notify parent immediately after local update to persist in DB/session
+      onNodeConfigSave?.(updated as any, edges as any);
+      return updated as any;
+    });
     toast.success('Configuration saved successfully');
-  }, [setNodes]);
+  }, [setNodes, onNodeConfigSave, edges]);
 
   // Handle configuration update from chat
   const handleConfigurationUpdate = useCallback((nodeId: string, config: any) => {

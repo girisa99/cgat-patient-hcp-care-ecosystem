@@ -738,6 +738,13 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
                   setCanvasEdges(edges as any);
                   onWorkflowUpdate?.(canvasNodes as any, edges as any);
                 }}
+                onNodeConfigSave={(nodes, edges) => {
+                  // Keep local state and propagate so /agents can persist to DB session
+                  setCanvasNodes(nodes as any);
+                  setCanvasEdges(edges as any);
+                  onWorkflowUpdate?.(nodes as any, edges as any);
+                  onNodeConfigSave?.(nodes as any, edges as any);
+                }}
               />
               
               {/* Test Mode Overlay */}
