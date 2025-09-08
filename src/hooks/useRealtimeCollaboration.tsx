@@ -13,7 +13,7 @@ interface CollaboratorPresence {
 }
 
 interface WorkflowChange {
-  type: 'node_added' | 'node_removed' | 'node_updated' | 'connection_added' | 'connection_removed' | 'chat_message';
+  type: 'node_added' | 'node_removed' | 'node_updated' | 'connection_added' | 'connection_removed' | 'chat_message' | 'property_changed';
   data: any;
   user_id: string;
   timestamp: string;

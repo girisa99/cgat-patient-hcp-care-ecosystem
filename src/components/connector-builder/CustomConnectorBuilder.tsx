@@ -655,7 +655,7 @@ export const CustomConnectorBuilder: React.FC = () => {
       
       const updatedTestCases = connectorConfig.testing.testCases.map(testCase => ({
         ...testCase,
-        status: Math.random() > 0.3 ? 'passed' : 'failed' as const
+        status: (Math.random() > 0.3 ? 'passed' : 'failed') as 'pending' | 'passed' | 'failed'
       }));
       
       setConnectorConfig(prev => ({
@@ -685,13 +685,13 @@ export const CustomConnectorBuilder: React.FC = () => {
       const { data, error } = await supabase
         .from('workflow_node_types')
         .update({
-          connectorsConfig: [
+          connectors_config: [
             ...(nodeTypes.find(nt => nt.id === connectorConfig.nodeTypeMapping.nodeTypeId)?.connectorsConfig || []),
             {
               id: connectorConfig.id,
               name: connectorConfig.name,
               type: connectorConfig.type,
-              config: connectorConfig,
+              config: JSON.parse(JSON.stringify(connectorConfig)),
               createdAt: new Date().toISOString()
             }
           ]

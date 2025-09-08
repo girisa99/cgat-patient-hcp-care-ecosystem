@@ -361,7 +361,7 @@ Focus on relevance, purchase likelihood, and revenue optimization.`,
         prompt: `Analyze this financial transaction for fraud risk:
 
 Transaction Details:
-- Amount: ${{amount}}
+- Amount: $\{{amount}}
 - Merchant: {{merchant}}
 - Location: {{location}}
 - Time: {{timestamp}}

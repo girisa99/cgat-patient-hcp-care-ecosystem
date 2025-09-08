@@ -32,7 +32,7 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface CollaborativeChange {
   id: string;
-  type: 'node_added' | 'node_removed' | 'node_updated' | 'connection_added' | 'connection_removed' | 'chat_message';
+  type: 'node_added' | 'node_removed' | 'node_updated' | 'connection_added' | 'connection_removed' | 'chat_message' | 'property_changed';
   elementId: string;
   userId: string;
   userName: string;
