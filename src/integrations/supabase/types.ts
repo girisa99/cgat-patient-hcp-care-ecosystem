@@ -10424,6 +10424,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      optimize_database_performance: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       progress_journey_stage: {
         Args: {
           p_conversation_id: string
