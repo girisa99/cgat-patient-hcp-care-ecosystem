@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useTenantContext, useFacilityScope } from '@/contexts/TenantContext';
 import LoadingSpinner from '@/components/ui/LoadingSpinner';
+import { normalizeRoles, normalizeRoleName } from '@/utils/roles';
 
 interface ProtectedRouteProps {
   children: ReactNode;
@@ -28,6 +29,9 @@ const ProtectedRoute = ({
   const { canRead, canWrite, canAdmin } = useFacilityScope();
   const navigate = useNavigate();
 
+  const normalizedUserRoles = normalizeRoles(userRoles);
+  const normalizedRequiredRoles = requiredRoles?.map(normalizeRoleName);
+
   // Defer role checks until roles are loaded to avoid false redirects
   const rolesStillLoading = Boolean(
     isAuthenticated &&
@@ -39,8 +43,8 @@ const ProtectedRoute = ({
   // ProtectedRoute check
 
   // Check role-based access
-  const hasRequiredRole = !requiredRoles || requiredRoles.length === 0 || 
-    requiredRoles.some(role => userRoles.includes(role)) || isSuperAdmin;
+  const hasRequiredRole = !normalizedRequiredRoles || normalizedRequiredRoles.length === 0 || 
+    normalizedRequiredRoles.some(role => normalizedUserRoles.includes(role)) || isSuperAdmin;
 
   // Check facility-based access
   const hasFacilityAccess = () => {

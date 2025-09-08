@@ -46,6 +46,7 @@ import TherapySelection from '@/pages/TherapySelection';
 import CreditApplication from '@/pages/CreditApplication';
 import AgentCreationWizard from '@/components/agentic/AgentCreationWizard';
 import MCPDemo from '@/pages/MCPDemo';
+import { getDefaultRouteForRoles, normalizeRoles } from '@/utils/roles';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -68,6 +69,11 @@ const AppContent = () => {
     return <PageLoading message="Initializing application..." />;
   }
 
+  // Wait for roles to load to avoid dashboard flicker
+  if (isAuthenticated && userRoles.length === 0) {
+    return <PageLoading message="Loading your dashboard..." />;
+  }
+
   console.log('🎯 Rendering routes, isAuthenticated:', isAuthenticated);
 
   return (
@@ -84,11 +90,7 @@ const AppContent = () => {
                 <>
                   {/* Role-based default route */}
                   <Route path="/" element={
-                    userRoles.includes('demoUser') 
-                      ? <DemoDashboard />
-                      : userRoles.includes('onboardingTeam')
-                        ? <OnboardingDashboard /> 
-                        : <Dashboard />
+                    <Navigate to={getDefaultRouteForRoles(normalizeRoles(userRoles))} replace />
                   } />
                   
                   {/* SuperAdmin & Admin & Healthcare Staff routes */}
