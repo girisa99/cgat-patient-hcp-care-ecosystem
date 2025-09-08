@@ -67,7 +67,7 @@ export const AIIntelligenceNode: React.FC<AIIntelligenceNodeProps> = ({ id, data
 
   return (
     <div className="relative">
-      <Handle type="target" position={Position.Left} className="custom-handle" />
+      <Handle type="target" position={Position.Left} className="custom-handle w-3 h-3 bg-primary border-2 border-background rounded-full shadow" />
       
       <Card className={`min-w-[280px] ${selected ? 'ring-2 ring-primary' : ''} ${isExpanded ? 'w-[420px]' : ''}`}>
         <CardHeader className="pb-2">
@@ -359,7 +359,7 @@ export const AIIntelligenceNode: React.FC<AIIntelligenceNodeProps> = ({ id, data
         </CardContent>
       </Card>
 
-      <Handle type="source" position={Position.Right} className="custom-handle" />
+      <Handle type="source" position={Position.Right} className="custom-handle w-3 h-3 bg-primary border-2 border-background rounded-full shadow" />
     </div>
   );
 };

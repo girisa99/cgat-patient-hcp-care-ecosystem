@@ -928,6 +928,8 @@ useEffect(() => {
                   preventScrolling={false}
                   nodesDraggable={nodesDraggable}
                   connectOnClick={connectOnClick}
+                  nodesConnectable={true}
+                
                   minZoom={0.05}
                   maxZoom={4}
                   defaultViewport={{ x: 0, y: 0, zoom: 1 }}
