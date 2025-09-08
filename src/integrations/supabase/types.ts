@@ -10169,6 +10169,10 @@ export type Database = {
         Args: { p_confirm?: boolean; p_user_id?: string }
         Returns: Json
       }
+      cleanup_old_performance_data: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       cleanup_orphaned_role_assignments: {
         Args: Record<PropertyKey, never>
         Returns: number
