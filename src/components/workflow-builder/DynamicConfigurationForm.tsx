@@ -21,7 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { ChevronDown, ChevronUp, Plus, Trash2, Settings, Bot, Database, Webhook, MessageCircle, Brain, Search, Calculator, Code, FileText, Globe, Clock, Zap, Mail, Sheet, Image, PenTool } from 'lucide-react';
+import { ChevronDown, ChevronUp, Plus, Trash2, Settings, Bot, Database, Webhook, MessageCircle, Brain, Search, Calculator, Code, FileText, Globe, Clock, Zap, Mail, Sheet, Image, PenTool, AlertTriangle } from 'lucide-react';
 import { CategorySpecificConfigurations } from './CategorySpecificConfigurations';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { useIntegrationOptions } from '@/hooks/useIntegrationOptions';
@@ -269,7 +269,12 @@ const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; col
       })).optional(),
       
       // Knowledge & Configuration (Consolidated)
-      knowledgeDocumentStores: z.array(z.string()).optional(),
+      knowledgeDocumentStores: z.array(z.object({
+        table: z.string(),
+        column: z.string(),
+        name: z.string(),
+        description: z.string().optional()
+      })).optional(),
       knowledgeVectorEmbeddings: z.array(z.object({
         vectorStore: z.string(),
         embeddingModel: z.string(),
@@ -282,6 +287,30 @@ const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; col
       inputMessage: z.string().optional(),
       returnResponseAs: z.string().optional(),
       updateFlowState: z.boolean().optional(),
+      
+      // Variables Configuration
+      variables: z.array(z.object({
+        name: z.string(),
+        type: z.enum(['string', 'number', 'boolean', 'array', 'object']),
+        defaultValue: z.string().optional(),
+        description: z.string().optional()
+      })).optional(),
+      
+      // Data Destinations Configuration
+      destinations: z.array(z.object({
+        type: z.enum(['database', 'api', 'vector']),
+        table: z.string().optional(),
+        operation: z.enum(['insert', 'update', 'upsert']).optional(),
+        url: z.string().optional(),
+        method: z.enum(['POST', 'PUT', 'PATCH']).optional(),
+        vectorStore: z.string().optional()
+      })).optional(),
+      
+      // Logging & Error Handling
+      enableLogging: z.boolean().optional(),
+      retryOnFailure: z.boolean().optional(),
+      maxRetries: z.number().min(1).max(10).optional(),
+      retryDelay: z.number().min(1).max(300).optional(),
       
       // Consolidated Configuration Fields
       configurationSchema: z.any().optional(),
@@ -451,12 +480,25 @@ const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; col
                           onValueChange={(value) => {
                             const newTools = [...(configuration.tools || [])];
                             const selectedTool = (toolsOptions || []).find(t => t.value === value);
-                            newTools[index] = { 
-                              ...newTools[index], 
-                              type: value, 
-                              name: (selectedTool as any)?.label || value,
-                              parameters: {}
-                            };
+                            const originalTool = availableTools.find(t => t.value === value);
+                            
+                            if (originalTool) {
+                              // This is an original tool with known parameters
+                              newTools[index] = { 
+                                ...newTools[index], 
+                                type: value, 
+                                name: selectedTool?.label || value,
+                                parameters: {}
+                              };
+                            } else {
+                              // This is a dynamic MCP integration
+                              newTools[index] = { 
+                                ...newTools[index], 
+                                type: value, 
+                                name: selectedTool?.label || value,
+                                parameters: { integrationId: value.replace('integration:', '') }
+                              };
+                            }
                             onChange({ ...configuration, tools: newTools });
                           }}
                         >
@@ -464,7 +506,7 @@ const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; col
                             <SelectValue placeholder="Select tool" />
                           </SelectTrigger>
                           <SelectContent className="max-h-60">
-                            {availableTools.map((availableTool) => (
+                            {toolsOptions.map((availableTool) => (
                               <SelectItem key={availableTool.value} value={availableTool.value}>
                                 <div className="flex items-center gap-2">
                                   <availableTool.icon className="h-4 w-4" />
@@ -603,13 +645,122 @@ const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; col
                   <Button
                     variant="outline"
                     onClick={() => {
-                      // Add knowledge document store
+                      const newDocStores = [...(configuration.knowledgeDocumentStores || []), {
+                        table: '',
+                        column: '',
+                        name: '',
+                        description: ''
+                      }];
+                      onChange({ ...configuration, knowledgeDocumentStores: newDocStores });
                     }}
                     className="w-full"
                   >
                     <Plus className="h-4 w-4 mr-2" />
                     Add Knowledge (Document Store)
                   </Button>
+
+                  {/* Document Stores List */}
+                  {(configuration.knowledgeDocumentStores || []).map((docStore: any, index: number) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline">Document Store {index + 1}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newDocStores = (configuration.knowledgeDocumentStores || []).filter((_: any, i: number) => i !== index);
+                            onChange({ ...configuration, knowledgeDocumentStores: newDocStores });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <FormLabel className="text-sm">Table *</FormLabel>
+                          <Select 
+                            value={docStore.table}
+                            onValueChange={(value) => {
+                              const newDocStores = [...(configuration.knowledgeDocumentStores || [])];
+                              newDocStores[index] = { ...newDocStores[index], table: value, column: '' };
+                              onChange({ ...configuration, knowledgeDocumentStores: newDocStores });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select table" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {tables.map((table) => (
+                                <SelectItem key={table.table_name} value={table.table_name}>
+                                  <div className="flex items-center gap-2">
+                                    <Database className="h-4 w-4" />
+                                    <span>{table.table_name}</span>
+                                    {table.rls_enabled && <Badge variant="secondary" className="text-xs">RLS</Badge>}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <FormLabel className="text-sm">Text Column *</FormLabel>
+                          <Select 
+                            value={docStore.column}
+                            onValueChange={(value) => {
+                              const newDocStores = [...(configuration.knowledgeDocumentStores || [])];
+                              newDocStores[index] = { ...newDocStores[index], column: value };
+                              onChange({ ...configuration, knowledgeDocumentStores: newDocStores });
+                            }}
+                            disabled={!docStore.table}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select column" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {getTextLikeColumns(docStore.table).map((column) => (
+                                <SelectItem key={column.column_name} value={column.column_name}>
+                                  <div className="flex items-center gap-2">
+                                    <FileText className="h-4 w-4" />
+                                    <span>{column.column_name}</span>
+                                    <Badge variant="outline" className="text-xs">{column.data_type}</Badge>
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <FormLabel className="text-sm">Store Name *</FormLabel>
+                        <Input
+                          placeholder="Enter document store name"
+                          value={docStore.name}
+                          onChange={(e) => {
+                            const newDocStores = [...(configuration.knowledgeDocumentStores || [])];
+                            newDocStores[index] = { ...newDocStores[index], name: e.target.value };
+                            onChange({ ...configuration, knowledgeDocumentStores: newDocStores });
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <FormLabel className="text-sm">Description</FormLabel>
+                        <Textarea
+                          placeholder="Describe what this document store contains..."
+                          value={docStore.description}
+                          onChange={(e) => {
+                            const newDocStores = [...(configuration.knowledgeDocumentStores || [])];
+                            newDocStores[index] = { ...newDocStores[index], description: e.target.value };
+                            onChange({ ...configuration, knowledgeDocumentStores: newDocStores });
+                          }}
+                          className="min-h-[60px]"
+                        />
+                      </div>
+                    </div>
+                  ))}
 
                   <Button
                     variant="outline"
@@ -827,6 +978,423 @@ const [docStoreSelection, setDocStoreSelection] = useState<{ table?: string; col
                       </FormItem>
                     )}
                   />
+                </CardContent>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Variables Configuration - Universal */}
+          <AccordionItem value="variables">
+            <AccordionTrigger className="text-lg font-semibold">
+              <div className="flex items-center gap-2">
+                <Code className="h-5 w-5" />
+                Variables & Parameters
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card>
+                <CardContent className="space-y-4 pt-4">
+                  {(configuration.variables || []).map((variable: any, index: number) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline">Variable {index + 1}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newVariables = (configuration.variables || []).filter((_: any, i: number) => i !== index);
+                            onChange({ ...configuration, variables: newVariables });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <FormLabel className="text-sm">Variable Name *</FormLabel>
+                          <Input
+                            placeholder="e.g., user_id, api_key"
+                            value={variable.name}
+                            onChange={(e) => {
+                              const newVariables = [...(configuration.variables || [])];
+                              newVariables[index] = { ...newVariables[index], name: e.target.value };
+                              onChange({ ...configuration, variables: newVariables });
+                            }}
+                          />
+                        </div>
+
+                        <div>
+                          <FormLabel className="text-sm">Type *</FormLabel>
+                          <Select 
+                            value={variable.type}
+                            onValueChange={(value) => {
+                              const newVariables = [...(configuration.variables || [])];
+                              newVariables[index] = { ...newVariables[index], type: value };
+                              onChange({ ...configuration, variables: newVariables });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select type" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="string">String</SelectItem>
+                              <SelectItem value="number">Number</SelectItem>
+                              <SelectItem value="boolean">Boolean</SelectItem>
+                              <SelectItem value="array">Array</SelectItem>
+                              <SelectItem value="object">Object</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <FormLabel className="text-sm">Default Value</FormLabel>
+                        <Input
+                          placeholder="Default value (optional)"
+                          value={variable.defaultValue}
+                          onChange={(e) => {
+                            const newVariables = [...(configuration.variables || [])];
+                            newVariables[index] = { ...newVariables[index], defaultValue: e.target.value };
+                            onChange({ ...configuration, variables: newVariables });
+                          }}
+                        />
+                      </div>
+
+                      <div>
+                        <FormLabel className="text-sm">Description</FormLabel>
+                        <Textarea
+                          placeholder="Describe this variable..."
+                          value={variable.description}
+                          onChange={(e) => {
+                            const newVariables = [...(configuration.variables || [])];
+                            newVariables[index] = { ...newVariables[index], description: e.target.value };
+                            onChange({ ...configuration, variables: newVariables });
+                          }}
+                          className="min-h-[60px]"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const newVariables = [...(configuration.variables || []), { 
+                        name: '', 
+                        type: 'string', 
+                        defaultValue: '', 
+                        description: '' 
+                      }];
+                      onChange({ ...configuration, variables: newVariables });
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Variable
+                  </Button>
+                </CardContent>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Database & API Destinations - Universal */}
+          <AccordionItem value="destinations">
+            <AccordionTrigger className="text-lg font-semibold">
+              <div className="flex items-center gap-2">
+                <Database className="h-5 w-5" />
+                Data Destinations & APIs
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card>
+                <CardContent className="space-y-4 pt-4">
+                  <div className="text-sm text-muted-foreground mb-4">
+                    Configure where to push data from this node
+                  </div>
+                  
+                  {(configuration.destinations || []).map((destination: any, index: number) => (
+                    <div key={index} className="border rounded-lg p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Badge variant="outline">Destination {index + 1}</Badge>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => {
+                            const newDestinations = (configuration.destinations || []).filter((_: any, i: number) => i !== index);
+                            onChange({ ...configuration, destinations: newDestinations });
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      <div>
+                        <FormLabel className="text-sm">Destination Type *</FormLabel>
+                        <Select 
+                          value={destination.type}
+                          onValueChange={(value) => {
+                            const newDestinations = [...(configuration.destinations || [])];
+                            newDestinations[index] = { ...newDestinations[index], type: value };
+                            onChange({ ...configuration, destinations: newDestinations });
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select destination type" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="database">
+                              <div className="flex items-center gap-2">
+                                <Database className="h-4 w-4" />
+                                <span>Database Table</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="api">
+                              <div className="flex items-center gap-2">
+                                <Webhook className="h-4 w-4" />
+                                <span>API Endpoint</span>
+                              </div>
+                            </SelectItem>
+                            <SelectItem value="vector">
+                              <div className="flex items-center gap-2">
+                                <Brain className="h-4 w-4" />
+                                <span>Vector Store</span>
+                              </div>
+                            </SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      {destination.type === 'database' && (
+                        <div className="grid grid-cols-2 gap-3">
+                          <div>
+                            <FormLabel className="text-sm">Table *</FormLabel>
+                            <Select 
+                              value={destination.table}
+                              onValueChange={(value) => {
+                                const newDestinations = [...(configuration.destinations || [])];
+                                newDestinations[index] = { ...newDestinations[index], table: value };
+                                onChange({ ...configuration, destinations: newDestinations });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select table" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {tables.map((table) => (
+                                  <SelectItem key={table.table_name} value={table.table_name}>
+                                    <div className="flex items-center gap-2">
+                                      <Database className="h-4 w-4" />
+                                      <span>{table.table_name}</span>
+                                      {table.rls_enabled && <Badge variant="secondary" className="text-xs">RLS</Badge>}
+                                    </div>
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+
+                          <div>
+                            <FormLabel className="text-sm">Operation *</FormLabel>
+                            <Select 
+                              value={destination.operation}
+                              onValueChange={(value) => {
+                                const newDestinations = [...(configuration.destinations || [])];
+                                newDestinations[index] = { ...newDestinations[index], operation: value };
+                                onChange({ ...configuration, destinations: newDestinations });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select operation" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="insert">Insert</SelectItem>
+                                <SelectItem value="update">Update</SelectItem>
+                                <SelectItem value="upsert">Upsert</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      {destination.type === 'api' && (
+                        <div className="space-y-3">
+                          <div>
+                            <FormLabel className="text-sm">API URL *</FormLabel>
+                            <Input
+                              placeholder="https://api.example.com/webhook"
+                              value={destination.url}
+                              onChange={(e) => {
+                                const newDestinations = [...(configuration.destinations || [])];
+                                newDestinations[index] = { ...newDestinations[index], url: e.target.value };
+                                onChange({ ...configuration, destinations: newDestinations });
+                              }}
+                            />
+                          </div>
+
+                          <div>
+                            <FormLabel className="text-sm">HTTP Method *</FormLabel>
+                            <Select 
+                              value={destination.method}
+                              onValueChange={(value) => {
+                                const newDestinations = [...(configuration.destinations || [])];
+                                newDestinations[index] = { ...newDestinations[index], method: value };
+                                onChange({ ...configuration, destinations: newDestinations });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select method" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="POST">POST</SelectItem>
+                                <SelectItem value="PUT">PUT</SelectItem>
+                                <SelectItem value="PATCH">PATCH</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      )}
+
+                      {destination.type === 'vector' && (
+                        <div>
+                          <FormLabel className="text-sm">Vector Store *</FormLabel>
+                          <Select 
+                            value={destination.vectorStore}
+                            onValueChange={(value) => {
+                              const newDestinations = [...(configuration.destinations || [])];
+                              newDestinations[index] = { ...newDestinations[index], vectorStore: value };
+                              onChange({ ...configuration, destinations: newDestinations });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select vector store" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pinecone">Pinecone</SelectItem>
+                              <SelectItem value="weaviate">Weaviate</SelectItem>
+                              <SelectItem value="chroma">Chroma</SelectItem>
+                              <SelectItem value="supabase-vector">Supabase Vector</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                  
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const newDestinations = [...(configuration.destinations || []), { 
+                        type: 'database', 
+                        table: '', 
+                        operation: 'insert' 
+                      }];
+                      onChange({ ...configuration, destinations: newDestinations });
+                    }}
+                    className="w-full"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    Add Data Destination
+                  </Button>
+                </CardContent>
+              </Card>
+            </AccordionContent>
+          </AccordionItem>
+
+          {/* Logging & Retry Configuration - Universal */}
+          <AccordionItem value="logging">
+            <AccordionTrigger className="text-lg font-semibold">
+              <div className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5" />
+                Logging & Error Handling
+              </div>
+            </AccordionTrigger>
+            <AccordionContent>
+              <Card>
+                <CardContent className="space-y-4 pt-4">
+                  <FormField
+                    control={form.control}
+                    name="enableLogging"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Enable Logging</FormLabel>
+                          <FormDescription>
+                            Log node execution details for debugging
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="retryOnFailure"
+                    render={({ field }) => (
+                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                        <div className="space-y-0.5">
+                          <FormLabel className="text-base">Retry on Failure</FormLabel>
+                          <FormDescription>
+                            Automatically retry failed operations
+                          </FormDescription>
+                        </div>
+                        <FormControl>
+                          <Switch
+                            checked={field.value}
+                            onCheckedChange={field.onChange}
+                          />
+                        </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  {configuration.retryOnFailure && (
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="maxRetries"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Max Retries</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="10"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="retryDelay"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Retry Delay (seconds)</FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                min="1"
+                                max="300"
+                                {...field}
+                                onChange={(e) => field.onChange(parseInt(e.target.value))}
+                              />
+                            </FormControl>
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </AccordionContent>
