@@ -91,6 +91,7 @@ import AdvancedAnalytics from '@/components/analytics/AdvancedAnalytics';
 import EnterpriseFeatures from '@/components/enterprise/EnterpriseFeatures';
 import { GapAnalysisReport } from '@/components/assessment/GapAnalysisReport';
 import { SystemImplementationStatus } from '@/components/assessment/SystemImplementationStatus';
+import { ComprehensiveAgentAssessment } from '@/components/assessment/ComprehensiveAgentAssessment';
 
 const AgentsInner = () => {
   // State management
@@ -954,8 +955,11 @@ const AgentsInner = () => {
               )}
               {advancedFeatureTab === 'assessment' && (
                 <div className="space-y-6">
-                  <SystemImplementationStatus />
-                  <GapAnalysisReport />
+                  <ComprehensiveAgentAssessment />
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <SystemImplementationStatus />
+                    <GapAnalysisReport />
+                  </div>
                 </div>
               )}
             </div>
