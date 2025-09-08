@@ -92,6 +92,8 @@ import EnterpriseFeatures from '@/components/enterprise/EnterpriseFeatures';
 import { GapAnalysisReport } from '@/components/assessment/GapAnalysisReport';
 import { SystemImplementationStatus } from '@/components/assessment/SystemImplementationStatus';
 import { ComprehensiveAgentAssessment } from '@/components/assessment/ComprehensiveAgentAssessment';
+import { ComprehensivePerformanceAnalyzer } from '@/components/performance/ComprehensivePerformanceAnalyzer';
+import { QueryPerformanceOptimizer } from '@/components/performance/QueryPerformanceOptimizer';
 
 const AgentsInner = () => {
   // State management
@@ -956,6 +958,17 @@ const AgentsInner = () => {
               {advancedFeatureTab === 'assessment' && (
                 <div className="space-y-6">
                   <ComprehensiveAgentAssessment />
+                  
+                  {/* Performance Analysis Section */}
+                  <div className="mt-8">
+                    <ComprehensivePerformanceAnalyzer />
+                  </div>
+                  
+                  {/* Query Performance Optimizer */}
+                  <div className="mt-8">
+                    <QueryPerformanceOptimizer />
+                  </div>
+                  
                   <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                     <SystemImplementationStatus />
                     <GapAnalysisReport />
