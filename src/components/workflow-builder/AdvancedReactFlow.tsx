@@ -445,6 +445,13 @@ const openInsightsPanel = () => {
     [setEdges]
   );
 
+  const onEdgeUpdate = useCallback(
+    (oldEdge: Edge, newConnection: Connection) => {
+      setEdges((eds) => updateEdge(oldEdge, newConnection, eds));
+    },
+    [setEdges]
+  );
+
   const handleNodeSelect = useCallback((node: Node | null) => {
     setSelectedNode(node);
     onNodeSelect?.(node);
@@ -561,15 +568,13 @@ setSelectedNode(newNode as any);
   }, []);
 
   const handleNodeContextMenu = useCallback((event: React.MouseEvent, node: Node) => {
-    event.preventDefault();
-    event.stopPropagation();
+    // Don't stop propagation so Radix ContextMenu can open
     setContextEdge(null);
     setSelectedNode(node);
   }, []);
 
   const handleEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
-    event.preventDefault();
-    event.stopPropagation();
+    // Don't stop propagation so Radix ContextMenu can open
     setSelectedNode(null);
     setContextEdge(edge);
   }, []);
@@ -879,6 +884,8 @@ useEffect(() => {
           className="w-full h-full"
           onDrop={onDrop}
           onDragOver={onDragOver}
+          onWheelCapture={(e) => e.stopPropagation()}
+          style={{ touchAction: 'none' }}
         >
           <ContextMenu>
             <ContextMenuTrigger asChild>
@@ -895,6 +902,7 @@ useEffect(() => {
                   onNodesChange={handleNodesChange}
                   onEdgesChange={onEdgesChange}
                   onConnect={onConnect}
+                  onEdgeUpdate={onEdgeUpdate}
                   onDrop={onDrop}
                   onDragOver={onDragOver}
                   onNodeContextMenu={handleNodeContextMenu}
@@ -925,11 +933,12 @@ useEffect(() => {
                   panOnScroll={true}
                   panOnScrollMode={panOnScrollMode}
                   panOnDrag={dragMode === 'pan'}
-                  preventScrolling={false}
+                  preventScrolling={true}
                   nodesDraggable={nodesDraggable}
                   connectOnClick={connectOnClick}
                   nodesConnectable={true}
-                
+                  edgesUpdatable={true}
+                 
                   minZoom={0.05}
                   maxZoom={4}
                   defaultViewport={{ x: 0, y: 0, zoom: 1 }}
