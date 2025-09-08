@@ -132,7 +132,7 @@ export const GapAnalysisReport: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Overall Scores */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
@@ -182,6 +182,32 @@ export const GapAnalysisReport: React.FC = () => {
               <FileText className="w-8 h-8 text-purple-500" />
             </div>
             <Progress value={analysis.implementation_score.templates} className="mt-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Node Config</p>
+                <p className="text-2xl font-bold">{(analysis.implementation_score as any).node_configuration || 0}%</p>
+              </div>
+              <Settings className="w-8 h-8 text-orange-500" />
+            </div>
+            <Progress value={(analysis.implementation_score as any).node_configuration || 0} className="mt-2" />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium">Connectors</p>
+                <p className="text-2xl font-bold">{(analysis.implementation_score as any).connectors || 0}%</p>
+              </div>
+              <Plug className="w-8 h-8 text-red-500" />
+            </div>
+            <Progress value={(analysis.implementation_score as any).connectors || 0} className="mt-2" />
           </CardContent>
         </Card>
       </div>

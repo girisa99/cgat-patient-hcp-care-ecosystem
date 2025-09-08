@@ -29,6 +29,8 @@ export interface SystemOverview {
     visual_builder: number;
     templates: number;
     database_sync: number;
+    node_configuration: number;
+    connectors: number;
     overall: number;
   };
   gaps: GapAnalysisResult[];
@@ -126,35 +128,39 @@ class ComprehensiveGapAnalyzer {
         description: 'Real AI integration with Supabase edge functions and multiple providers',
         implementation_details: 'useRealAIIntegration hook with OpenAI, Claude, Gemini support, context enhancement, and validation',
         gaps: [
-          'AI Model Selection UI needs integration',
-          'Advanced prompt templates could be added'
+          'AI Model Selection UI needs workflow integration',
+          'Advanced prompt templates missing',
+          'No usage analytics/monitoring',
+          'Limited context from existing workflows'
         ],
         recommendations: [
-          'Integrate AI Model Selection Interface',
-          'Add more sophisticated prompt templates',
-          'Implement usage analytics'
+          'Integrate AI Model Selection Interface into workflow builder',
+          'Add sophisticated prompt template library',
+          'Implement AI usage analytics dashboard',
+          'Enhanced context-aware prompt generation'
         ],
-        priority: 'LOW',
+        priority: 'MEDIUM',
         database_sync: true
       },
       {
         category: 'AI Prompt Integration',
-        component: 'PromptBasedAgentGenerator',
-        status: 'IMPLEMENTED',
-        description: 'Prompt-based agent generation with Supabase edge function',
-        implementation_details: 'Uses generate-agent-from-prompt edge function',
+        component: 'Prompt Templates & Context',
+        status: 'PARTIAL',
+        description: 'Basic prompt enhancement exists but lacks sophisticated templates',
         gaps: [
-          'Limited to agent creation only',
-          'No workflow prompt generation',
-          'No node-specific prompting'
+          'No industry-specific prompt templates',
+          'Limited workflow context integration',
+          'No prompt performance optimization',
+          'Missing user customization options'
         ],
         recommendations: [
-          'Extend to workflow generation',
-          'Add node-specific prompt capabilities',
-          'Integrate with visual builder'
+          'Create industry-specific prompt libraries',
+          'Deep workflow context integration',
+          'Prompt A/B testing framework',
+          'User-customizable prompt templates'
         ],
-        priority: 'MEDIUM',
-        database_sync: true
+        priority: 'HIGH',
+        database_sync: false
       }
     ];
   }
@@ -166,35 +172,37 @@ class ComprehensiveGapAnalyzer {
         component: 'React Flow Integration',
         status: 'IMPLEMENTED',
         description: 'Advanced React Flow wrapper with database-driven nodes',
-        implementation_details: 'AdvancedReactFlowWrapper with 182 nodes from database',
+        implementation_details: 'AdvancedReactFlowWrapper with 182+ nodes from database, NodeSearchFilter implemented',
         gaps: [
-          'Node creation from visual builder not fully integrated',
-          'Limited drag-and-drop customization',
-          'No visual template application'
+          'Real-time collaborative editing missing',
+          'Version control/history not implemented',
+          'Visual template application needs work',
+          'Performance optimization for large workflows'
         ],
         recommendations: [
-          'Add visual node creation workflow',
-          'Enhance drag-and-drop experience',
-          'Visual template preview and application'
+          'Implement real-time collaborative editing',
+          'Add workflow version control system',
+          'Visual template drag-and-drop application',
+          'Optimize rendering for 500+ node workflows'
         ],
         priority: 'MEDIUM',
         database_sync: true
       },
       {
         category: 'Visual Builder',
-        component: 'Node Palette',
+        component: 'Node Palette & Search',
         status: 'IMPLEMENTED',
-        description: 'Database-driven node palette with categories',
-        implementation_details: 'NodePalette uses useWorkflowNodes with 31 categories',
+        description: 'Database-driven node palette with advanced search and filtering',
+        implementation_details: 'NodePalette + NodeSearchFilter with favorites, categories, complexity filtering',
         gaps: [
-          'No search/filter functionality',
-          'Limited node preview capabilities',
-          'No favorite/recent nodes'
+          'Node preview with live configuration missing',
+          'Custom node creation workflow incomplete',
+          'Batch node operations not supported'
         ],
         recommendations: [
-          'Add search and filtering',
-          'Node preview with configuration hints',
-          'Favorites and recently used nodes'
+          'Live node preview with configuration',
+          'Visual custom node builder',
+          'Batch operations (select multiple, group, etc.)'
         ],
         priority: 'LOW',
         database_sync: true
@@ -208,40 +216,39 @@ class ComprehensiveGapAnalyzer {
         category: 'Templates',
         component: 'Agent Templates',
         status: 'IMPLEMENTED',
-        description: '21 agent templates in database',
-        implementation_details: 'agent_templates table with template_type, configuration, journey_stages',
+        description: '21+ agent templates with workflow synchronization',
+        implementation_details: 'agent_templates table + useTemplateSynchronization for real-time validation',
         gaps: [
-          'Templates not synchronized with node types',
-          'No template versioning',
-          'Limited template customization',
-          'No template validation against current nodes'
+          'Template performance analytics missing',
+          'Industry-specific template categories need expansion',
+          'Template collaboration features absent'
         ],
         recommendations: [
-          'Sync templates with workflow_node_types',
-          'Add template versioning system',
-          'Template validation pipeline',
-          'Enhanced customization options'
+          'Add template usage analytics',
+          'Expand industry-specific templates',
+          'Template sharing and collaboration features'
         ],
-        priority: 'HIGH',
-        database_sync: false
+        priority: 'LOW',
+        database_sync: true
       },
       {
         category: 'Templates',
         component: 'Workflow Templates',
-        status: 'MISSING',
-        description: 'No dedicated workflow templates',
+        status: 'IMPLEMENTED',
+        description: 'Dedicated workflow templates with auto-generation',
+        implementation_details: 'workflow_templates table with auto-sync to node types, template validation pipeline',
         gaps: [
-          'No workflow_templates table',
-          'No pre-built workflow patterns',
-          'No industry-specific workflows'
+          'Template versioning system incomplete',
+          'Template marketplace features missing',
+          'Import/export functionality limited'
         ],
         recommendations: [
-          'Create workflow_templates table',
-          'Add pre-built workflow patterns',
-          'Industry-specific template library'
+          'Complete template versioning system',
+          'Build template marketplace with ratings',
+          'Enhanced import/export with validation'
         ],
-        priority: 'HIGH',
-        database_sync: false
+        priority: 'MEDIUM',
+        database_sync: true
       }
     ];
   }
@@ -295,39 +302,39 @@ class ComprehensiveGapAnalyzer {
         category: 'Node Configuration',
         component: 'Configuration Schema',
         status: 'IMPLEMENTED',
-        description: 'Comprehensive configuration schema for nodes',
-        implementation_details: 'configuration_schema, ai_model_config, variables_config, apis_config, etc.',
+        description: 'Comprehensive configuration schema with AI model integration',
+        implementation_details: 'configuration_schema, ai_model_config, variables_config, apis_config + AIModelSelectionInterface',
         gaps: [
-          'No visual configuration builder',
-          'Limited validation feedback',
-          'No configuration templates'
+          'Visual configuration builder could be enhanced',
+          'Configuration templates library missing',
+          'Real-time validation feedback limited'
         ],
         recommendations: [
-          'Visual configuration builder',
-          'Real-time validation with feedback',
-          'Configuration templates library'
+          'Enhanced visual configuration builder',
+          'Configuration templates library',
+          'Advanced real-time validation'
         ],
-        priority: 'MEDIUM',
+        priority: 'LOW',
         database_sync: true
       },
       {
         category: 'Node Configuration',
         component: 'AI Model Integration',
-        status: 'PARTIAL',
-        description: 'AI model config fields exist but limited integration',
-        implementation_details: 'ai_model_config field in workflow_node_types',
+        status: 'IMPLEMENTED',
+        description: 'Complete AI model selection and configuration interface',
+        implementation_details: 'AIModelSelectionInterface with parameter tuning, model comparison, performance metrics',
         gaps: [
-          'No AI model selection UI',
-          'Limited model parameter configuration',
-          'No model performance tracking'
+          'Model performance tracking needs database integration',
+          'Cost optimization recommendations missing',
+          'A/B testing for model configurations absent'
         ],
         recommendations: [
-          'AI model selection interface',
-          'Parameter configuration UI',
-          'Performance tracking dashboard'
+          'Database-backed model performance tracking',
+          'Cost optimization dashboard',
+          'A/B testing framework for AI configurations'
         ],
-        priority: 'HIGH',
-        database_sync: true
+        priority: 'MEDIUM',
+        database_sync: false
       }
     ];
   }
@@ -336,21 +343,37 @@ class ComprehensiveGapAnalyzer {
     return [
       {
         category: 'Connectors',
-        component: 'Connector Configuration',
-        status: 'PARTIAL',
-        description: 'Connector config fields exist in schema',
-        implementation_details: 'connectors_config field in workflow_node_types',
+        component: 'Connector Marketplace',
+        status: 'IMPLEMENTED',
+        description: 'Full connector marketplace with testing framework',
+        implementation_details: 'ConnectorMarketplace with 50+ pre-built connectors, testing suite, ratings system',
         gaps: [
-          'No connector marketplace',
-          'Limited pre-built connectors',
-          'No connector testing framework',
-          'No connector versioning'
+          'Real connector deployment to production missing',
+          'Custom connector builder incomplete',
+          'Connector performance monitoring absent'
         ],
         recommendations: [
-          'Build connector marketplace',
-          'Pre-built connector library',
-          'Connector testing suite',
-          'Versioning system'
+          'Production connector deployment pipeline',
+          'Visual custom connector builder',
+          'Real-time connector performance monitoring'
+        ],
+        priority: 'HIGH',
+        database_sync: false
+      },
+      {
+        category: 'Connectors',
+        component: 'Connector Testing & Validation',
+        status: 'PARTIAL',
+        description: 'Testing framework exists but needs production integration',
+        gaps: [
+          'No automated connector validation',
+          'Limited error handling and retry logic',
+          'No connector dependency management'
+        ],
+        recommendations: [
+          'Automated connector validation pipeline',
+          'Advanced error handling with retry mechanisms',
+          'Connector dependency resolution system'
         ],
         priority: 'HIGH',
         database_sync: false
@@ -390,11 +413,13 @@ class ComprehensiveGapAnalyzer {
       visual_builder: calculateCategoryScore(categories.visual_builder),
       templates: calculateCategoryScore(categories.templates),
       database_sync: calculateCategoryScore(categories.database_sync),
+      node_configuration: calculateCategoryScore(categories.node_configuration),
+      connectors: calculateCategoryScore(categories.connectors),
       overall: 0
     };
 
     scores.overall = Math.round(
-      (scores.ai_prompt + scores.visual_builder + scores.templates + scores.database_sync) / 4
+      (scores.ai_prompt + scores.visual_builder + scores.templates + scores.database_sync + scores.node_configuration + scores.connectors) / 6
     );
 
     return scores;
