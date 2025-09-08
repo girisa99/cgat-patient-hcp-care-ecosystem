@@ -746,6 +746,49 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
                   onNodeConfigSave?.(nodes as any, edges as any);
                 }}
               />
+
+              {/* Right-side vertical AI toolbar */}
+              <div className="absolute right-3 top-1/2 -translate-y-1/2 z-10 flex flex-col gap-2">
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleAIAssistOpen('generate')}
+                  title="AI Generate"
+                >
+                  <Bot className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleAIAssistOpen('test')}
+                  title="AI Test"
+                >
+                  <Play className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant={isTestMode ? 'default' : 'outline'} 
+                  size="sm"
+                  onClick={() => setIsTestMode(!isTestMode)}
+                  title="Test Mode"
+                >
+                  <Zap className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowDynamicConfig(true)}
+                  title="Configure"
+                >
+                  <Settings className="h-4 w-4" />
+                </Button>
+                <Button 
+                  size="sm"
+                  onClick={() => setActiveStep('configure')}
+                  title="Next Steps"
+                >
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+              </div>
               
               {/* Test Mode Overlay */}
               {isTestMode && (

@@ -53,6 +53,7 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'claude' | 'gemini'>('openai');
   const [isMinimized, setIsMinimized] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [includeContext, setIncludeContext] = useState(false);
   
   // Prefill prompt when opened with an initial prompt
   React.useEffect(() => {

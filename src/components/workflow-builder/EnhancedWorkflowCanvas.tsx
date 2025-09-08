@@ -106,10 +106,17 @@ React.useEffect(() => {
   // Edge and node helpers
   const handleEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
     event.preventDefault();
-    setEdges((eds) =>
-      eds.map((e) => (e.id === edge.id ? { ...e, source: edge.target, target: edge.source } : e))
-    );
-    toast.success('Edge direction swapped');
+    if (event.shiftKey) {
+      // Shift + right-click swaps direction
+      setEdges((eds) =>
+        eds.map((e) => (e.id === edge.id ? { ...e, source: edge.target, target: edge.source } : e))
+      );
+      toast.success('Connector direction swapped');
+    } else {
+      // Default right-click deletes connector
+      setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+      toast.success('Connector deleted');
+    }
   }, [setEdges]);
 
   const handleNodeDoubleClick = useCallback((_: any, node: Node) => {
@@ -268,6 +275,21 @@ React.useEffect(() => {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+          <Handle type="target" position={Position.Left} />
+          <Handle type="source" position={Position.Right} />
+        </div>
+      )),
+      'multi-agent': createWrappedNodeType(({ data }: any) => (
+        <div className={`px-4 py-3 rounded-xl min-w-[300px] shadow-lg border-2 ${getCategoryStyling('ai-agents')}`}>
+          <div className="flex items-center gap-3">
+            <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${getCategoryIconBg('ai-agents')}`}>
+              <span>👥</span>
+            </div>
+            <div className="flex-1">
+              <div className="font-semibold text-sm">{data.label || 'Multi-Agent Team'}</div>
+              <div className="text-xs opacity-70">Orchestrated agents</div>
             </div>
           </div>
           <Handle type="target" position={Position.Left} />
