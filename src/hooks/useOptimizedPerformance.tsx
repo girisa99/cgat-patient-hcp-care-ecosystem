@@ -1,5 +1,6 @@
 import { useCallback, useMemo, useRef, useEffect } from 'react';
 import { debounce } from 'lodash';
+import { MemoryLeakDetector } from '@/utils/performance/MemoryLeakDetector';
 
 /**
  * Performance optimization hook that addresses memory issues and improves rendering
@@ -18,36 +19,61 @@ export const useOptimizedPerformance = () => {
       const usage = memory.usedJSHeapSize / memory.totalJSHeapSize;
       performanceRef.current.memoryUsage = usage;
       
-      // Trigger cleanup if memory usage is high
-      if (usage > 0.85) {
+      // Trigger aggressive cleanup if memory usage is high
+      if (usage > 0.80) {
+        console.warn('🚨 Memory usage critical:', (usage * 100).toFixed(1) + '%');
         performMemoryCleanup();
       }
     }
   }, []);
 
-  // Memory cleanup function
+  // Aggressive memory cleanup function
   const performMemoryCleanup = useCallback(() => {
-    console.log('🧹 Performing memory cleanup...');
+    console.log('🧹 Performing aggressive memory cleanup...');
     
-    // Force garbage collection if available
-    if (typeof window !== 'undefined' && (window as any).gc) {
-      try {
+    try {
+      // Clear DOM elements and cached data
+      const elementsToClean = document.querySelectorAll('[data-performance-cached]');
+      elementsToClean.forEach(el => el.remove());
+      
+      // Clear all inline styles that might hold references
+      const styledElements = document.querySelectorAll('[style]');
+      styledElements.forEach(el => el.removeAttribute('style'));
+      
+      // Force garbage collection if available
+      if (typeof window !== 'undefined' && (window as any).gc) {
         (window as any).gc();
-      } catch (e) {
-        // Fallback cleanup strategies
-        // Clear unused event listeners
-        window.removeEventListener('beforeunload', () => {});
-        
-        // Clear any cached data older than 5 minutes
-        const now = Date.now();
-        if (now - performanceRef.current.lastCleanup > 300000) {
-          // Cleanup React Query cache if available
-          if ((window as any).queryClient) {
-            (window as any).queryClient.clear();
-          }
-          performanceRef.current.lastCleanup = now;
-        }
       }
+      
+      // Clear React Query cache aggressively
+      if (typeof window !== 'undefined' && (window as any).queryClient) {
+        (window as any).queryClient.removeQueries();
+        (window as any).queryClient.clear();
+      }
+      
+      // Clear localStorage of old cached data
+      if (typeof window !== 'undefined' && window.localStorage) {
+        const keys = Object.keys(localStorage);
+        keys.forEach(key => {
+          if (key.includes('cache') || key.includes('temp')) {
+            localStorage.removeItem(key);
+          }
+        });
+      }
+      
+      // Clear performance entries
+      if (typeof window !== 'undefined' && window.performance?.clearResourceTimings) {
+        window.performance.clearResourceTimings();
+      }
+      
+      // Use comprehensive memory leak detector
+      MemoryLeakDetector.performCleanup();
+      
+      performanceRef.current.lastCleanup = Date.now();
+      console.log('✅ Enhanced cleanup completed with leak detection');
+      
+    } catch (error) {
+      console.warn('⚠️ Memory cleanup failed:', error);
     }
   }, []);
 
