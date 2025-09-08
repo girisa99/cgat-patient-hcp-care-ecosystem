@@ -311,11 +311,11 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
 
       const start = byLabel(['start']);
       const capPatient = byLabel(['capture', 'patient']);
-      const insPatient = byLabel(['insert', 'patient']);
+      const updPatient = byLabel(['patient', 'database']) || byLabel(['update', 'patient']);
       const capProvider = byLabel(['capture', 'provider']);
-      const insProvider = byLabel(['insert', 'provider']);
+      const updProvider = byLabel(['provider', 'database']) || byLabel(['update', 'provider']);
       const capTreat = byLabel(['capture', 'treatment']);
-      const insTreat = byLabel(['insert', 'treatment']);
+      const updTreat = byLabel(['treatment', 'database']) || byLabel(['update', 'treatment']);
 
       const addEdgeUnique = (src?: any, tgt?: any) => {
         if (!src || !tgt) return;
@@ -334,9 +334,11 @@ export const UnifiedWorkflowExperience: React.FC<UnifiedWorkflowExperienceProps>
 
       // Domain-intent edges (as per user expectation)
       addEdgeUnique(start, capPatient);
-      addEdgeUnique(capPatient, insPatient);
-      addEdgeUnique(capProvider, insProvider);
-      addEdgeUnique(capTreat, insTreat);
+      addEdgeUnique(start, capProvider);
+      addEdgeUnique(start, capTreat);
+      addEdgeUnique(capPatient, updPatient);
+      addEdgeUnique(capProvider, updProvider);
+      addEdgeUnique(capTreat, updTreat);
 
       // Fallback: simple sequential chain if still empty
       if (reactFlowEdges.length === 0 && reactFlowNodes.length > 1) {

@@ -12,6 +12,8 @@ import {
   Background,
   BackgroundVariant,
   MarkerType,
+  Handle,
+  Position,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 
@@ -237,6 +239,8 @@ React.useEffect(() => {
               )}
             </div>
           </div>
+          <Handle type="target" position={Position.Left} />
+          <Handle type="source" position={Position.Right} />
         </div>
       )),
       agent: createWrappedNodeType(({ data }: any) => (
@@ -260,6 +264,8 @@ React.useEffect(() => {
               </div>
             </div>
           </div>
+          <Handle type="target" position={Position.Left} />
+          <Handle type="source" position={Position.Right} />
         </div>
       )),
       start: createWrappedNodeType(({ data }: any) => (
@@ -270,6 +276,7 @@ React.useEffect(() => {
             </div>
             <div className="font-semibold text-sm">{data.label || 'Start'}</div>
           </div>
+          <Handle type="source" position={Position.Right} />
         </div>
       )),
       end: createWrappedNodeType(({ data }: any) => (
@@ -280,6 +287,7 @@ React.useEffect(() => {
             </div>
             <div className="font-semibold text-sm">{data.label || 'End'}</div>
           </div>
+          <Handle type="target" position={Position.Left} />
         </div>
       )),
       api: createWrappedNodeType(({ data }: any) => (
@@ -296,6 +304,8 @@ React.useEffect(() => {
               )}
             </div>
           </div>
+          <Handle type="target" position={Position.Left} />
+          <Handle type="source" position={Position.Right} />
         </div>
       )),
       database: createWrappedNodeType(({ data }: any) => (
@@ -312,6 +322,8 @@ React.useEffect(() => {
               )}
             </div>
           </div>
+          <Handle type="target" position={Position.Left} />
+          <Handle type="source" position={Position.Right} />
         </div>
       )),
     };
