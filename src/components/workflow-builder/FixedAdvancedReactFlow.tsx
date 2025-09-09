@@ -54,7 +54,8 @@ import {
   Settings, Zap, Bot, Users, AlertTriangle, Database, GitBranch,
   Layout, Grid, Layers, Move, RotateCw, Maximize2, Copy, Edit,
   Target, Link, Workflow, Activity, MousePointer, Hand, Square,
-  TestTube, Rocket, Sparkles, Brain, ChevronRight, X, Minimize2
+  TestTube, Rocket, Sparkles, Brain, ChevronRight, X, Minimize2,
+  Lightbulb
 } from 'lucide-react';
 
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
@@ -77,6 +78,8 @@ import { TemplateGallery } from '../unified-workflow/TemplateGallery';
 import { DynamicNodeConfiguration } from '../unified-workflow/DynamicNodeConfiguration';
 import { EnhancedNodeConfigurationPanel } from './EnhancedNodeConfigurationPanel';
 import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
+import { IntelligentNodeRecommendations } from '@/components/workflow-intelligence/IntelligentNodeRecommendations';
+import { AnimatedProcessFlow } from '@/components/workflow-intelligence/AnimatedProcessFlow';
 
 const LazySmartNodeConfigurator = lazy(() => import('./SmartNodeConfigurator').then(m => ({ default: m.SmartNodeConfigurator })));
 
@@ -197,6 +200,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   const [showTestConsole, setShowTestConsole] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [showDynamicConfig, setShowDynamicConfig] = useState(false);
+  const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showProcessFlow, setShowProcessFlow] = useState(false);
 
   // Layout and Interaction State
   const [snapToGrid, setSnapToGrid] = useState(false);
@@ -722,9 +727,19 @@ Examples:
               Test
             </Button>
 
+            <Button size="sm" variant="outline" onClick={() => setShowProcessFlow(!showProcessFlow)}>
+              <Activity className="h-4 w-4 mr-1" />
+              Animate
+            </Button>
+
             <Button size="sm" variant="outline" onClick={() => setShowTemplateGallery(true)}>
               <Layout className="h-4 w-4 mr-1" />
               Templates
+            </Button>
+
+            <Button size="sm" variant="outline" onClick={() => setShowRecommendations(!showRecommendations)}>
+              <Lightbulb className="h-4 w-4 mr-1" />
+              Smart Tips
             </Button>
           </div>
 
@@ -823,6 +838,51 @@ Examples:
           onTest={onNodeTest}
         />
       )}
+
+      {/* Intelligent Node Recommendations */}
+      <IntelligentNodeRecommendations
+        nodes={nodes}
+        edges={edges}
+        isVisible={showRecommendations}
+        onToggle={() => setShowRecommendations(!showRecommendations)}
+        onRecommendationAccept={(recommendation) => {
+          const newNode = {
+            id: `rec-${Date.now()}`,
+            type: 'enhanced',
+            position: recommendation.position,
+            data: {
+              label: recommendation.displayName,
+              type_key: recommendation.nodeType,
+              category: recommendation.category,
+              configuration: {},
+              icon: recommendation.icon,
+              color: recommendation.color,
+              isConfigured: false
+            }
+          };
+          setNodes(prev => [...prev, newNode]);
+          onNodeAdd?.(newNode);
+        }}
+        onRecommendationGenerate={(prompt) => {
+          setAIPrompt(prompt);
+          setShowAIAssist(true);
+        }}
+      />
+
+      {/* Animated Process Flow */}
+      <AnimatedProcessFlow
+        nodes={nodes}
+        edges={edges}
+        isVisible={showProcessFlow}
+        onToggle={() => setShowProcessFlow(!showProcessFlow)}
+        onNodeExecuted={(nodeId, result) => {
+          console.log(`Node ${nodeId} executed:`, result);
+          if (onNodeTest) {
+            onNodeTest(nodeId, result);
+          }
+        }}
+        testData={{}}
+      />
 
     </div>
   );

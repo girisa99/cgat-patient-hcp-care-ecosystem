@@ -69,6 +69,7 @@ import { useTemplateIntegration } from '@/components/workflow-builder/TemplateIn
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 import { ConsolidationVerification } from '@/components/verification/ConsolidationVerification';
 import ComprehensiveFunctionalityAudit from '@/components/assessment/ComprehensiveFunctionalityAudit';
+import { ComprehensiveWorkflowAudit } from '@/components/assessment/ComprehensiveWorkflowAudit';
 
 // Import new Agent Ecosystem components
 import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
@@ -129,7 +130,7 @@ const AgentsInner = () => {
   const [showNodeCategories, setShowNodeCategories] = useState(true);
   const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
   const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
-  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment' | 'verification' | 'audit'>('collaboration');
+  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment' | 'verification' | 'audit' | 'workflow-audit'>('collaboration');
 
   console.log('[Agents] state init', {
     selectedMode,
