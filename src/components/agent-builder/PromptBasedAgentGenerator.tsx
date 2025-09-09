@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Sparkles, Play, Users, FileText, MessageSquare, Search, Brain } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { supabase } from '@/integrations/supabase/client';
+import { getErrorMessage } from '@/utils/errorHandling';
 
 interface PromptBasedAgentGeneratorProps {
   onGenerate: (agentData: any) => void;
@@ -89,7 +90,7 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
       setPrompt('');
     } catch (error) {
       console.error('Error generating agent:', error);
-      showError('Failed to generate agent. Please try again.');
+      showError(getErrorMessage(error));
     } finally {
       setIsGenerating(false);
     }

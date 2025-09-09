@@ -518,8 +518,26 @@ const AgentsInner = () => {
                       <CardContent>
                         <PromptBasedAgentGenerator 
                           onGenerate={(agent) => {
-                            // Normalize nodes and edges for the canvas
-                            const rawNodes = (agent?.nodes || []).map((n: any, idx: number) => ({
+                            // Normalize nodes and edges for the canvas (support multiple response shapes)
+                            const nodesSource: any[] = (agent?.nodes
+                              || agent?.workflow?.nodes
+                              || agent?.data?.nodes
+                              || agent?.result?.nodes
+                              || []);
+                            const edgesSource: any[] = (agent?.edges
+                              || agent?.workflow?.edges
+                              || agent?.data?.edges
+                              || agent?.result?.edges
+                              || []);
+
+                            if (!Array.isArray(nodesSource) || nodesSource.length === 0) {
+                              console.warn('[Agents] No nodes returned by AI generator. Raw payload:', agent);
+                              const details = (agent?.error || agent?.details || 'AI returned no workflow nodes');
+                              toast.error(typeof details === 'string' ? details : 'No nodes generated. Try another prompt or provider.');
+                              return;
+                            }
+
+                            const rawNodes = nodesSource.map((n: any, idx: number) => ({
                               id: String(n.id || `node-${idx}-${Date.now()}`),
                               type: 'enhanced',
                               position: n.position || { x: 100 + (idx % 3) * 280, y: 120 + Math.floor(idx / 3) * 160 },
@@ -531,7 +549,8 @@ const AgentsInner = () => {
                                 isWorkflowNode: true,
                               }
                             }));
-                            let rawEdges = Array.isArray(agent?.edges) ? agent.edges : [];
+
+                            let rawEdges = Array.isArray(edgesSource) ? edgesSource : [];
                             if (!rawEdges.length && rawNodes.length > 1) {
                               rawEdges = rawNodes.slice(0, -1).map((n: any, i: number) => ({
                                 id: `e-${n.id}-${rawNodes[i + 1].id}`,
@@ -541,6 +560,7 @@ const AgentsInner = () => {
                                 animated: true,
                               }));
                             }
+
                             setWorkflowNodes(rawNodes);
                             setWorkflowEdges(rawEdges);
                             // Switch to canvas view
