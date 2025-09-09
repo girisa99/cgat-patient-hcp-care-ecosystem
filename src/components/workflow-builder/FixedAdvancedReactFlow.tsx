@@ -347,7 +347,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
         onOpenChat={(nodeId, mode) => {
           setSelectedNode(getNodes().find((n) => n.id === nodeId) || null);
           setAIAssistMode(mode || 'configure');
-          setShowAIAssist(true);
+          setShowRightAIPanel(true);
         }}
       >
         <Original {...props} />
@@ -529,7 +529,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
       }
 
       showSuccess(`Generated ${generatedNodes.length} nodes and ${generatedEdges.length} connections from prompt`);
-      setShowAIAssist(false);
+      setShowRightAIPanel(false);
       setAIPrompt('');
     } catch (error) {
       console.error('AI prompt generation error:', error);
@@ -704,7 +704,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
 
   // AI Assistant Dialog Component
   const AIAssistDialog = () => (
-    <Dialog open={showAIAssist} onOpenChange={setShowAIAssist}>
+    <Dialog open={showRightAIPanel} onOpenChange={setShowRightAIPanel}>
       <DialogContent className="max-w-4xl max-h-[90vh]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
@@ -976,7 +976,7 @@ Examples:
         }}
         onRecommendationGenerate={(prompt) => {
           setAIPrompt(prompt);
-          setShowAIAssist(true);
+          setShowRightAIPanel(true);
         }}
       />
 

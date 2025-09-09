@@ -459,13 +459,13 @@ const AgentsInner = () => {
                 Builder
               </Button>
               <Button 
-                variant={visualWorkflowSubTab === 'ai-prompt' ? 'default' : 'ghost'} 
+                variant="outline" 
                 size="sm" 
-                className="h-8 px-3 text-xs"
-                onClick={() => setVisualWorkflowSubTab('ai-prompt')}
+                className="h-8 px-3 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
+                onClick={() => setShowUnifiedAssist(true)}
               >
                 <Sparkles className="w-3 h-3 mr-1" />
-                AI Prompt
+                AI Assistant
               </Button>
             </div>
           </div>

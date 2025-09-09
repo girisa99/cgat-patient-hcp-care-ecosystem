@@ -32,6 +32,7 @@ import {
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { useRealAIIntegration } from '@/hooks/useRealAIIntegration';
 import { useApiServices } from '@/hooks/useApiServices';
+import { useClaudeIntegration } from '@/hooks/useClaudeIntegration';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
 interface AIWorkflowPromptProps {
@@ -64,7 +65,7 @@ const EXAMPLE_PROMPTS = [
 
 const AI_PROVIDERS = [
   { id: 'openai', name: 'OpenAI', models: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14'] },
-  { id: 'claude', name: 'Claude', models: ['claude-3-opus', 'claude-3-sonnet'] },
+  { id: 'claude', name: 'Claude', models: ['claude-sonnet-4-20250514', 'claude-opus-4-20250514'] },
   { id: 'gemini', name: 'Gemini', models: ['gemini-pro'] }
 ];
 
@@ -98,6 +99,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
     isGenerating, 
     enhancePromptWithContext 
   } = useRealAIIntegration();
+  const { generateWorkflowWithClaude, isLoading: isClaudeLoading } = useClaudeIntegration();
   const { showSuccess, showError, showInfo } = useMasterToast();
 
   // Update model when provider changes
@@ -115,27 +117,37 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
     }
 
     try {
-      // Enhance prompt with database context
-      const enhancedPrompt = await enhancePromptWithContext(prompt, {
-        categories,
-        nodeTypes: nodeTypesByCategory
-      });
-
-      const workflow = await generateWorkflowFromPrompt({
-        prompt: enhancedPrompt,
-        context: {
-          existingNodes: Object.values(nodeTypesByCategory).flat()
-        },
-        config: {
-          provider: selectedProvider as 'openai' | 'claude' | 'gemini',
-          model: selectedModel
+      if (selectedProvider === 'claude') {
+        // Use Claude integration
+        const workflow = await generateWorkflowWithClaude(prompt);
+        if (workflow) {
+          showSuccess('Workflow generated successfully with Claude!');
+          onWorkflowGenerated(workflow);
+          setPrompt('');
         }
-      });
+      } else {
+        // Use existing OpenAI/Gemini integration
+        const enhancedPrompt = await enhancePromptWithContext(prompt, {
+          categories,
+          nodeTypes: nodeTypesByCategory
+        });
 
-      if (workflow) {
-        showSuccess('Workflow generated successfully!');
-        onWorkflowGenerated(workflow);
-        setPrompt('');
+        const workflow = await generateWorkflowFromPrompt({
+          prompt: enhancedPrompt,
+          context: {
+            existingNodes: Object.values(nodeTypesByCategory).flat()
+          },
+          config: {
+            provider: selectedProvider as 'openai' | 'claude' | 'gemini',
+            model: selectedModel
+          }
+        });
+
+        if (workflow) {
+          showSuccess('Workflow generated successfully!');
+          onWorkflowGenerated(workflow);
+          setPrompt('');
+        }
       }
     } catch (error) {
       console.error('Error generating workflow:', error);
@@ -298,11 +310,11 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
               {/* Generate Button */}
               <Button 
                 onClick={handleGenerate} 
-                disabled={isGenerating || !prompt.trim()}
+                disabled={isGenerating || isClaudeLoading || !prompt.trim()}
                 className="w-full h-8"
                 size="sm"
               >
-                {isGenerating ? (
+                {(isGenerating || isClaudeLoading) ? (
                   <>
                     <Loader2 className="h-3 w-3 mr-2 animate-spin" />
                     Generating...
@@ -310,7 +322,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
                 ) : (
                   <>
                     <Play className="h-3 w-3 mr-2" />
-                    Generate
+                    Generate with {selectedProvider === 'claude' ? 'Claude' : selectedProvider}
                   </>
                 )}
               </Button>
