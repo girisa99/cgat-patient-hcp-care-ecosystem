@@ -83,9 +83,23 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
         }
       });
 
-      if (error) throw error;
+      if (error) {
+        console.error('Edge function error:', error);
+        throw new Error(`Generation failed: ${error.message || 'Unknown error'}`);
+      }
       
-      showSuccess('Agent generated successfully!');
+      if (!agentData) {
+        throw new Error('No data returned from AI generation');
+      }
+      
+      // Check if we got nodes back
+      if (!agentData.nodes || agentData.nodes.length === 0) {
+        console.warn('No nodes in generated data:', agentData);
+        showError('AI generated workflow but no nodes were created. Try a different prompt.');
+        return;
+      }
+      
+      showSuccess(`Agent generated successfully! Created ${agentData.nodes.length} nodes.`);
       onGenerate(agentData);
       setPrompt('');
     } catch (error) {

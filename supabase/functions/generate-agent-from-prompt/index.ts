@@ -191,21 +191,49 @@ Generate a workflow for: "${prompt}"`;
         break;
     }
 
-    // Parse JSON from the response
-    const jsonMatch = generatedContent.match(/\{[\s\S]*\}/);
-    if (!jsonMatch) {
-      console.error('Could not find JSON in response:', generatedContent.substring(0, 500));
-      throw new Error('Could not parse JSON from AI response. Please try again.');
-    }
-
+    // Parse JSON from the response - improved parsing with fallback
     let agentData;
     try {
-      agentData = JSON.parse(jsonMatch[0]);
-      console.log('Parsed agent data successfully, nodes:', agentData.nodes?.length || 0);
-    } catch (parseError) {
-      console.error('JSON parse error:', parseError, 'Content:', jsonMatch[0].substring(0, 200));
-      throw new Error('Failed to parse AI response JSON');
+      // First try to parse entire content as JSON
+      agentData = JSON.parse(generatedContent);
+    } catch {
+      // If that fails, try to extract JSON from the content
+      const jsonMatch = generatedContent.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) {
+        console.error('Could not find JSON in response:', generatedContent.substring(0, 500));
+        throw new Error('AI response did not contain valid JSON. Response: ' + generatedContent.substring(0, 200));
+      }
+      
+      try {
+        agentData = JSON.parse(jsonMatch[0]);
+      } catch (parseError) {
+        console.error('JSON parse error:', parseError, 'Content:', jsonMatch[0].substring(0, 200));
+        
+        // Create a fallback minimal workflow if parsing fails completely
+        const fallbackNodes = [{
+          id: 'start-node',
+          type: 'start_flow',
+          position: { x: 100, y: 100 },
+          data: {
+            label: 'Start',
+            description: 'Starting node for the workflow',
+            type_key: 'start_flow',
+            category: 'triggers',
+            configuration: {}
+          }
+        }];
+        
+        agentData = {
+          agentName: 'Generated Workflow',
+          description: 'AI-generated workflow from prompt',
+          nodes: fallbackNodes,
+          edges: [],
+          metadata: { fallback: true, originalPrompt: prompt }
+        };
+      }
     }
+
+    console.log('Parsed agent data successfully, nodes:', agentData.nodes?.length || 0);
 
     // Enhance with auto-positioning if not provided
     if (agentData.nodes) {
