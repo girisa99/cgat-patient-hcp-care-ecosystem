@@ -40,7 +40,7 @@ import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBase
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { JourneyEditor } from '@/components/agentic/JourneyEditor';
 import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
-import { AdvancedReactFlowWrapper as CustomerJourneyBuilder } from '@/components/workflow-builder/AdvancedReactFlow';
+import { ConsolidatedAdvancedReactFlow } from '@/components/workflow-builder/AdvancedReactFlow';
 import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
 import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
 import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
@@ -646,19 +646,25 @@ const AgentsInner = () => {
                         </div>
                       </div>
                       
-                      <AdvancedReactFlowWrapper
-                        key={`adv-rf-${workflowNodes.length}-${workflowEdges.length}`}
-                        fitParent={true}
-                        workflowType="visual"
-                        sessionId={currentSession?.id}
+                      <ConsolidatedAdvancedReactFlow
+                        key={`consolidated-rf-${workflowNodes.length}-${workflowEdges.length}`}
                         initialNodes={workflowNodes}
                         initialEdges={workflowEdges}
-                         onNodeSelect={(node) => {
-                           setSelectedNode(node);
-                           setRightPanelTab('config');
-                           setShowPromptAssistant(false);
-                         }}
+                        workflowType="visual"
+                        sessionId={currentSession?.id}
+                        fitParent={true}
+                        onNodeSelect={(node) => {
+                          setSelectedNode(node);
+                          setRightPanelTab('config');
+                          setShowPromptAssistant(false);
+                        }}
                         onSave={handleFlowSave}
+                        onWorkflowUpdate={handleWorkflowUpdate}
+                        onNodeAdd={handleNodeGenerated}
+                        onNodeConfigSave={(nodes, edges) => {
+                          handleFlowSave({ nodes, edges });
+                        }}
+                        isAIHealthy={isAIHealthy}
                       />
                     </div>
                   </SidebarProvider>
@@ -887,25 +893,32 @@ const AgentsInner = () => {
   }
 
   // Main content based on selected mode
+  // Unified mode with consolidated component
   if (selectedMode === 'unified') {
     return (
       <AppLayout>
         <div className="h-screen flex flex-col">
-          <UnifiedWorkflowExperience 
+          <ConsolidatedAdvancedReactFlow
+            initialNodes={workflowNodes}
+            initialEdges={workflowEdges}
+            workflowType="visual"
+            sessionId={currentSession?.id}
             onWorkflowUpdate={handleWorkflowUpdate}
             onNodeAdd={handleNodeGenerated}
             onNodeTest={(nodeId, result) => {
               console.log('Node test result:', { nodeId, result });
-              // Remove duplicate success notification
             }}
             onNodeConfigSave={(nodes, edges) => {
-              // Persist updated configuration to the current session
               handleFlowSave({ nodes, edges });
             }}
             isAIHealthy={isAIHealthy}
+            embedded={false}
+            onSave={handleFlowSave}
+            onNodeSelect={(node) => {
+              setSelectedNode(node);
+              setRightPanelTab('config');
+            }}
           />
-          
-          {/* AI Assistant Integration is managed internally by UnifiedWorkflowExperience */}
         </div>
       </AppLayout>
     );
