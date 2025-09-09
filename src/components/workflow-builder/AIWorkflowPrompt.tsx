@@ -224,7 +224,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
       <div className="flex-1 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <div className="p-2 border-b bg-background relative z-30">
-            <TabsList level="child" className="flex w-full h-9 gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
+            <TabsList level="child" className="flex w-full h-9 gap-2 flex-wrap bg-background">
               <TabsTrigger level="child" value="generate" className="text-xs px-2">
                 <Sparkles className="h-3 w-3 mr-1" />
                 Generate
@@ -429,7 +429,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[120] bg-popover">
                       <SelectItem value="staging">Staging</SelectItem>
                       <SelectItem value="production">Production</SelectItem>
                       <SelectItem value="development">Development</SelectItem>
