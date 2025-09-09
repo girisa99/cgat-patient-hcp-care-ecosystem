@@ -72,7 +72,7 @@ import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
 import { AgentNode } from './nodes/AgentNode';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { EnhancedNodePalette } from './EnhancedNodePalette';
-import { AIWorkflowPrompt } from './AIWorkflowPrompt';
+import { RightDockedAIPanel } from './RightDockedAIPanel';
 import { NodeContextMenu } from './NodeContextMenu';
 import { TestingConsolePanel } from './TestingConsolePanel';
 import { TemplateGallery } from '../unified-workflow/TemplateGallery';
@@ -189,7 +189,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   const { fitView, getNodes, getEdges, screenToFlowPosition } = useReactFlow();
 
   // AI Integration State
-  const [showAIAssist, setShowAIAssist] = useState(false);
+  const [showRightAIPanel, setShowRightAIPanel] = useState(false);
   const [aiAssistMode, setAIAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('build');
   const [aiPrompt, setAIPrompt] = useState('');
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'claude' | 'gemini'>('openai');
@@ -801,12 +801,12 @@ Examples:
             <Button 
               size="sm" 
               variant="outline" 
-              onClick={() => setShowAIAssist(true)}
+              onClick={() => setShowRightAIPanel(true)}
               disabled={!isAIHealthy}
               title={isAIHealthy ? "Generate workflow from AI prompt" : "AI Services Unavailable"}
             >
               <Bot className="h-4 w-4 mr-1" />
-              AI Prompt
+              AI Assistant
             </Button>
 
             <Button size="sm" variant="outline" onClick={() => setShowTestConsole(!showTestConsole)}>
@@ -845,39 +845,22 @@ Examples:
       {/* Main Flow Area */}
       <div className="flex-1 relative flex min-h-0">
         {!canvasOnly && (
-          <div className="w-48 md:w-56 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-40 relative animate-fade-in">
-            <Tabs defaultValue="nodes" className="h-full flex flex-col">
-              <div className="p-3 border-b bg-background sticky top-0 z-50 shadow-sm">
-                <TabsList level="child" className="grid w-full grid-cols-2 h-9">
-                  <TabsTrigger level="child" value="nodes" className="flex items-center gap-1 text-xs">
-                    <Database className="h-3 w-3" />
-                    Node Library
-                  </TabsTrigger>
-                  <TabsTrigger level="child" value="ai" className="flex items-center gap-1 text-xs">
-                    <Brain className="h-3 w-3" />
-                    AI Assistant
-                  </TabsTrigger>
-                </TabsList>
+          <div className="w-64 md:w-72 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
+            <div className="h-full flex flex-col">
+              <div className="p-3 border-b bg-background">
+                <h3 className="font-semibold text-sm flex items-center gap-2">
+                  <Database className="h-4 w-4 text-primary" />
+                  Node Library
+                </h3>
               </div>
               
-              <div className="flex-1 overflow-hidden pt-4">
-                <TabsContent level="child" value="nodes" className="h-full m-0 pt-2 data-[state=active]:flex data-[state=active]:flex-col">
-                  <EnhancedNodePalette heightClass="flex-1" />
-                </TabsContent>
-                
-                <TabsContent level="child" value="ai" className="h-full m-0 p-0 pt-2 data-[state=active]:flex data-[state=active]:flex-col">
-                  <div className="flex-1 overflow-y-auto">
-                    <AIWorkflowPrompt 
-                      onWorkflowGenerated={handleWorkflowGenerated}
-                      className="h-full"
-                    />
-                  </div>
-                </TabsContent>
+              <div className="flex-1 overflow-y-auto">
+                <EnhancedNodePalette heightClass="flex-1" />
               </div>
-            </Tabs>
+            </div>
           </div>
         )}
-        <div className="flex-1 relative min-w-0 z-0">
+        <div className="flex-1 relative min-w-0 z-0" style={{ marginRight: showRightAIPanel ? '384px' : '0' }}>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -931,8 +914,12 @@ Examples:
         </div>
       </div>
 
-      {/* AI Assistant Dialog */}
-      <AIAssistDialog />
+      {/* Right Docked AI Panel */}
+      <RightDockedAIPanel
+        isOpen={showRightAIPanel}
+        onClose={() => setShowRightAIPanel(false)}
+        onWorkflowGenerated={handleWorkflowGenerated}
+      />
 
       {/* Template Gallery */}
       {showTemplateGallery && (
