@@ -45,7 +45,7 @@ export const UnifiedAgentAssist: React.FC<UnifiedAgentAssistProps> = ({
   onAgentGenerated,
   onClose
 }) => {
-  const [assistMode, setAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy'>('build');
+  const [assistMode, setAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy'>('generate');
   const [selectedProvider, setSelectedProvider] = useState<'openai' | 'claude' | 'gemini'>('openai');
   const [testInput, setTestInput] = useState('{"message": "Hello, test the workflow"}');
   const [testResults, setTestResults] = useState<TestResult[]>([]);
@@ -691,12 +691,6 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
                 <SelectValue />
               </SelectTrigger>
               <SelectContent className="z-[120] bg-popover">
-                <SelectItem value="build">
-                  <div className="flex items-center gap-2">
-                    <Bot className="h-4 w-4" />
-                    Build
-                  </div>
-                </SelectItem>
                 <SelectItem value="generate">
                   <div className="flex items-center gap-2">
                     <Sparkles className="h-4 w-4" />
@@ -739,15 +733,6 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
               >
                 <TestTube className="h-3 w-3 mr-1" />
                 Test
-              </Button>
-              <Button
-                variant={assistMode === 'build' ? 'secondary' : 'ghost'}
-                size="sm"
-                className="h-8 px-2"
-                onClick={() => setAssistMode('build')}
-              >
-                <Zap className="h-3 w-3 mr-1" />
-                Visual
               </Button>
               <Button
                 variant={assistMode === 'deploy' ? 'secondary' : 'ghost'}

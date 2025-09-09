@@ -233,10 +233,6 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
                 <TestTube className="h-3 w-3 mr-1" />
                 Test
               </TabsTrigger>
-              <TabsTrigger level="child" value="visual" className="text-xs px-2">
-                <Workflow className="h-3 w-3 mr-1" />
-                Visual
-              </TabsTrigger>
               <TabsTrigger level="child" value="deploy" className="text-xs px-2">
                 <Rocket className="h-3 w-3 mr-1" />
                 Deploy
@@ -246,6 +242,9 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
 
           <div className="flex-1 overflow-y-auto">
             <TabsContent level="child" value="generate" className="h-full p-3 space-y-3">
+              <div className="p-2 bg-muted/40 rounded text-[11px] text-muted-foreground">
+                Tip: Use the canvas and Node Library on the left to visually build your workflow. Drag nodes and connect them there. This panel helps you Generate, Test, and Deploy.
+              </div>
               {/* Example Prompts - Simplified */}
               <div className="space-y-2">
                 <div className="text-xs font-medium text-muted-foreground">Quick Start</div>
@@ -402,17 +401,6 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
               </div>
             </TabsContent>
 
-            <TabsContent level="child" value="visual" className="h-full p-3 space-y-3">
-              <div className="space-y-2 text-xs text-muted-foreground">
-                <div className="font-medium text-foreground">Visual Workflow</div>
-                <p>Use the canvas on the right to visually build your workflow. Drag nodes from the Node Library tab, then connect them.</p>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>Drag to pan; scroll to zoom</li>
-                  <li>Right-click a node for configuration</li>
-                  <li>Use the Smart Tips button above the canvas for suggestions</li>
-                </ul>
-              </div>
-            </TabsContent>
 
             <TabsContent level="child" value="deploy" className="h-full p-3 space-y-3">
               <div className="space-y-3">
