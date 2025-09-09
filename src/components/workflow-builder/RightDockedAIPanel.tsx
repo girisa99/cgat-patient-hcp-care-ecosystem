@@ -69,6 +69,7 @@ export const RightDockedAIPanel: React.FC<RightDockedAIPanelProps> = ({
             <AIWorkflowPrompt 
               onWorkflowGenerated={onWorkflowGenerated}
               className="h-full"
+              hideHeader
             />
           </div>
         </div>

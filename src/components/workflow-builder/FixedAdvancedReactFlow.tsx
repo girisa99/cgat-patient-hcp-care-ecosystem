@@ -860,7 +860,7 @@ Examples:
             </div>
           </div>
         )}
-        <div className="flex-1 relative min-w-0 z-0" style={{ marginRight: showRightAIPanel ? '384px' : '0' }}>
+        <div className="flex-1 relative min-w-0 z-0">
           <ReactFlow
             nodes={nodes}
             edges={edges}
