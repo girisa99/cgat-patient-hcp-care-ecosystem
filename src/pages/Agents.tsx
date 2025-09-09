@@ -622,33 +622,6 @@ const AgentsInner = () => {
                 )}>
                   <SidebarProvider className="w-full h-full min-h-0">
                     <div className="min-h-0 h-full flex w-full">
-                      {/* Left Panel - Node Palette */}
-                      <div className="w-80 border-r bg-background flex flex-col">
-                        <div className="p-4 border-b">
-                          <h3 className="font-semibold text-sm">Node Palette</h3>
-                          <p className="text-xs text-muted-foreground">
-                            {nodeTypes?.length || 0} nodes • {categories?.length || 0} categories
-                          </p>
-                        </div>
-                        <div className="flex-1 overflow-hidden">
-                          <NodePalette 
-                            onNodeAdd={(nodeType) => {
-                              const newNode = {
-                                id: `${nodeType.type || 'node'}-${Date.now()}`,
-                                type: 'enhanced',
-                                position: { x: Math.random() * 400 + 100, y: Math.random() * 300 + 100 },
-                                data: {
-                                  ...nodeType.data,
-                                  type_key: nodeType.type || 'node',
-                                  label: nodeType.data?.label || nodeType.type || 'New Node'
-                                }
-                              };
-                              setWorkflowNodes(prev => [...prev, newNode]);
-                              toast.success(`Added ${nodeType.data?.label || 'node'} to canvas`);
-                            }}
-                          />
-                        </div>
-                      </div>
                       
             <FixedAdvancedReactFlow
                         key={`consolidated-rf-${workflowNodes.length}-${workflowEdges.length}`}
