@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +16,9 @@ import {
   Eye,
   MonitorPlay,
   Shield,
-  Gavel
+  Gavel,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 
 export type AgentMode = 'visual' | 'manual' | 'unified' | 'ecosystem' | 'observability' | 'animated-flow' | 'security' | 'governance';
@@ -36,11 +38,45 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
 }) => {
   console.log('[ModeSelector] icon types', { Workflow: typeof Workflow, Settings: typeof Settings, Zap: typeof Zap, ArrowRight: typeof ArrowRight, Brain: typeof Brain, MousePointer: typeof MousePointer, Sliders: typeof Sliders });
   
-  // Filter modes based on user role - customer onboarding gets simplified options
+  // Filter modes based on user role (onboarding sees all options but guided copy)
   const isCustomerOnboarding = userRole === 'onboardingTeam';
-  const recommendedModes = isCustomerOnboarding 
-    ? ['unified', 'visual', 'manual'] 
-    : ['unified', 'visual', 'manual', 'ecosystem', 'observability', 'animated-flow', 'security', 'governance'];
+  const recommendedModes = ['unified', 'visual', 'manual', 'ecosystem', 'observability', 'animated-flow', 'security', 'governance'] as const;
+
+  // Horizontal scroll helpers
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+
+  const updateScrollButtons = () => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setCanScrollLeft(el.scrollLeft > 0);
+    setCanScrollRight(el.scrollLeft + el.clientWidth < el.scrollWidth - 1);
+  };
+
+  const scrollByAmount = (dx: number) => {
+    const el = scrollRef.current;
+    if (!el) return;
+    el.scrollBy({ left: dx, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    if (layout !== 'horizontal-scroll') return;
+    const el = scrollRef.current;
+    if (!el) return;
+    const onScroll = () => updateScrollButtons();
+    updateScrollButtons();
+    el.addEventListener('scroll', onScroll);
+    const ResizeObs = (window as any).ResizeObserver;
+    const ro = ResizeObs ? new ResizeObs(updateScrollButtons) : null;
+    if (ro) ro.observe(el);
+    window.addEventListener('resize', updateScrollButtons);
+    return () => {
+      el.removeEventListener('scroll', onScroll);
+      if (ro) ro.disconnect();
+      window.removeEventListener('resize', updateScrollButtons);
+    };
+  }, [layout]);
 
   const getAllModeCards = () => {
     const allCards = [
@@ -527,13 +563,35 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
 
       {layout === 'horizontal-scroll' ? (
         <div className="relative">
-          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+          {/* Edge fades */}
+          <div className="pointer-events-none absolute left-0 top-0 h-full w-10 bg-gradient-to-r from-background to-transparent" />
+          <div className="pointer-events-none absolute right-0 top-0 h-full w-10 bg-gradient-to-l from-background to-transparent" />
+
+          {/* Scroll container */}
+          <div ref={scrollRef} className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
             {getAllModeCards()}
           </div>
+
+          {/* Arrows */}
+          {canScrollLeft && (
+            <div className="absolute left-2 top-1/2 -translate-y-1/2">
+              <Button variant="secondary" size="icon" onClick={() => scrollByAmount(-320)} aria-label="Scroll left">
+                <ChevronLeft className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
+          {canScrollRight && (
+            <div className="absolute right-2 top-1/2 -translate-y-1/2">
+              <Button variant="secondary" size="icon" onClick={() => scrollByAmount(320)} aria-label="Scroll right">
+                <ChevronRight className="w-5 h-5" />
+              </Button>
+            </div>
+          )}
+
           {/* Scroll indicators */}
           <div className="flex justify-center mt-4 gap-2">
             {getAllModeCards().map((_, index) => (
-              <div key={index} className="w-2 h-2 rounded-full bg-gray-300" />
+              <div key={index} className="w-2 h-2 rounded-full bg-muted" />
             ))}
           </div>
         </div>
