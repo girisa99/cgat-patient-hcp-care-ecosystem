@@ -40,7 +40,7 @@ import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBase
 import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
 import { JourneyEditor } from '@/components/agentic/JourneyEditor';
 import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
-import { ConsolidatedAdvancedReactFlow } from '@/components/workflow-builder/AdvancedReactFlow';
+import { FixedAdvancedReactFlow } from '@/components/workflow-builder/FixedAdvancedReactFlow';
 import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
 import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
 import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
@@ -648,7 +648,7 @@ const AgentsInner = () => {
                         </div>
                       </div>
                       
-                      <ConsolidatedAdvancedReactFlow
+            <FixedAdvancedReactFlow
                         key={`consolidated-rf-${workflowNodes.length}-${workflowEdges.length}`}
                         initialNodes={workflowNodes}
                         initialEdges={workflowEdges}
@@ -900,7 +900,7 @@ const AgentsInner = () => {
     return (
       <AppLayout>
         <div className="h-screen flex flex-col">
-          <ConsolidatedAdvancedReactFlow
+          <FixedAdvancedReactFlow
             initialNodes={workflowNodes}
             initialEdges={workflowEdges}
             workflowType="visual"
