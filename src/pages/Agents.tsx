@@ -68,6 +68,7 @@ import { DynamicNodeConfiguration } from '@/components/unified-workflow/DynamicN
 import { useTemplateIntegration } from '@/components/workflow-builder/TemplateIntegrationManager';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 import { ConsolidationVerification } from '@/components/verification/ConsolidationVerification';
+import ComprehensiveFunctionalityAudit from '@/components/assessment/ComprehensiveFunctionalityAudit';
 
 // Import new Agent Ecosystem components
 import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
@@ -128,7 +129,7 @@ const AgentsInner = () => {
   const [showNodeCategories, setShowNodeCategories] = useState(true);
   const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
   const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
-  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment'>('collaboration');
+  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment' | 'verification' | 'audit'>('collaboration');
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -1013,6 +1014,18 @@ const AgentsInner = () => {
                 >
                   Gap Analysis
                 </Button>
+                <Button 
+                  variant={advancedFeatureTab === 'verification' ? 'default' : 'outline'}
+                  onClick={() => setAdvancedFeatureTab('verification')}
+                >
+                  Verification
+                </Button>
+                <Button 
+                  variant={advancedFeatureTab === 'audit' ? 'default' : 'outline'}
+                  onClick={() => setAdvancedFeatureTab('audit')}
+                >
+                  Functionality Audit
+                </Button>
               </div>
               
               {advancedFeatureTab === 'collaboration' && (
@@ -1051,6 +1064,12 @@ const AgentsInner = () => {
                     <GapAnalysisReport />
                   </div>
                 </div>
+              )}
+              {advancedFeatureTab === 'verification' && (
+                <ConsolidationVerification />
+              )}
+              {advancedFeatureTab === 'audit' && (
+                <ComprehensiveFunctionalityAudit />
               )}
             </div>
           </div>
