@@ -874,7 +874,7 @@ const AgentsInner = () => {
   if (selectedMode === 'unified') {
     return (
       <AppLayout>
-        <div className="h-screen flex flex-col">
+        <div className="h-[80vh] flex flex-col">
           <FixedAdvancedReactFlow
             initialNodes={workflowNodes}
             initialEdges={workflowEdges}

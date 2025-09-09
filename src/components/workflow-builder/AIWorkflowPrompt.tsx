@@ -198,7 +198,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
 
   return (
     <div className={`h-full flex flex-col ${className}`}>
-      <div className="p-3 border-b bg-muted/30">
+      <div className="p-3 border-b bg-background sticky top-0 z-20">
         <h3 className="font-semibold text-sm flex items-center gap-2">
           <Brain className="h-4 w-4 text-primary" />
           AI Workflow Assistant
@@ -207,7 +207,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
       
       <div className="flex-1 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-          <div className="p-2 border-b">
+          <div className="p-2 border-b bg-background sticky top-10 z-10">
             <TabsList level="child" className="grid w-full grid-cols-4 h-9">
               <TabsTrigger level="child" value="generate" className="text-xs px-2">
                 <Sparkles className="h-3 w-3 mr-1" />
