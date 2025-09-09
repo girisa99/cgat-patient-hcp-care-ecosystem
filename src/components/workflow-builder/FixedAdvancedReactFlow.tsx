@@ -845,9 +845,9 @@ Examples:
       {/* Main Flow Area */}
       <div className="flex-1 relative flex min-h-0">
         {!canvasOnly && (
-          <div className="w-56 md:w-64 bg-background border-r flex flex-col min-h-0 overflow-hidden pointer-events-auto z-10 animate-fade-in">
+          <div className="w-48 md:w-56 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-40 relative animate-fade-in">
             <Tabs defaultValue="nodes" className="h-full flex flex-col">
-              <div className="p-3 border-b bg-background sticky top-0 z-20 shadow-sm">
+              <div className="p-3 border-b bg-background sticky top-0 z-50 shadow-sm">
                 <TabsList level="child" className="grid w-full grid-cols-2 h-9">
                   <TabsTrigger level="child" value="nodes" className="flex items-center gap-1 text-xs">
                     <Database className="h-3 w-3" />
@@ -877,7 +877,7 @@ Examples:
             </Tabs>
           </div>
         )}
-        <div className="flex-1 relative min-w-0">
+        <div className="flex-1 relative min-w-0 z-0">
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -901,7 +901,7 @@ Examples:
             fitViewOptions={{ padding: 0.2 }}
             multiSelectionKeyCode="Shift"
             deleteKeyCode={["Backspace", "Delete"]}
-            className="bg-background"
+            className="bg-background z-0"
           >
             <Background variant={backgroundVariant} gap={12} size={1} />
             <Controls />

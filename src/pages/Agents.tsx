@@ -607,7 +607,7 @@ const AgentsInner = () => {
 
             {/* Builder Tab */}
             {visualWorkflowSubTab === 'builder' && (
-              <div className="flex-1 flex overflow-hidden bg-gray-50/50">
+              <div className="h-[78vh] flex overflow-hidden bg-gray-50/50">
                 <ErrorBoundary fallbackComponent={({ error, retry }) => (
                   <div className="absolute inset-0 flex items-center justify-center p-4">
                     <div className="text-xs text-center space-y-2 max-w-lg">
