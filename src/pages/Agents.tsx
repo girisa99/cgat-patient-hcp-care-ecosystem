@@ -518,6 +518,8 @@ const AgentsInner = () => {
                       <CardContent>
                         <PromptBasedAgentGenerator 
                           onGenerate={(agent) => {
+                            console.log('[Agents Prompt Tab] Raw agent data received:', agent);
+                            
                             // Normalize nodes and edges for the canvas (support multiple response shapes)
                             const nodesSource: any[] = (agent?.nodes
                               || agent?.workflow?.nodes
@@ -529,6 +531,8 @@ const AgentsInner = () => {
                               || agent?.data?.edges
                               || agent?.result?.edges
                               || []);
+
+                            console.log('[Agents Prompt Tab] Extracted nodes:', nodesSource.length, 'edges:', edgesSource.length);
 
                             if (!Array.isArray(nodesSource) || nodesSource.length === 0) {
                               console.warn('[Agents] No nodes returned by AI generator. Raw payload:', agent);
@@ -561,10 +565,14 @@ const AgentsInner = () => {
                               }));
                             }
 
+                            console.log('[Agents Prompt Tab] Setting workflow nodes:', rawNodes.length, 'edges:', rawEdges.length);
+                            
                             setWorkflowNodes(rawNodes);
                             setWorkflowEdges(rawEdges);
                             // Switch to canvas view
                             setVisualWorkflowSubTab('builder');
+                            
+                            toast.success(`Generated ${rawNodes.length} nodes - switched to canvas view`);
                           }}
                         />
                       </CardContent>
@@ -807,6 +815,8 @@ const AgentsInner = () => {
                 workflowEdges={workflowEdges}
                 selectedNode={selectedNode}
                 onAgentGenerated={(finalAgent: any) => {
+                  console.log('[UnifiedAssist] Raw agent data received:', finalAgent);
+                  
                   // Normalize workflow shape from various generators
                   const nodesSource: any[] = (finalAgent?.nodes
                     || finalAgent?.workflow?.nodes
@@ -818,6 +828,8 @@ const AgentsInner = () => {
                     || finalAgent?.data?.edges
                     || finalAgent?.result?.edges
                     || []);
+
+                  console.log('[UnifiedAssist] Extracted nodes:', nodesSource.length, 'edges:', edgesSource.length);
 
                   if (!Array.isArray(nodesSource) || nodesSource.length === 0) {
                     console.warn('[UnifiedAssist] No nodes returned. Raw payload:', finalAgent);
@@ -868,11 +880,14 @@ const AgentsInner = () => {
                     }));
                   }
 
+                  console.log('[UnifiedAssist] Final enhanced nodes:', enhancedNodes.length);
+                  console.log('[UnifiedAssist] Final edges:', finalEdges.length);
+                  
                   setWorkflowNodes(enhancedNodes);
                   setWorkflowEdges(finalEdges);
                   setVisualWorkflowSubTab('builder');
                   setShowUnifiedAssist(false);
-                  toast.success('Applied to canvas');
+                  toast.success(`Applied ${enhancedNodes.length} nodes to canvas`);
                 }}
                 onClose={() => setShowUnifiedAssist(false)}
               />

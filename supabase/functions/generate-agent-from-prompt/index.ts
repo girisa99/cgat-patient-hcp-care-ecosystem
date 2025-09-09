@@ -120,13 +120,13 @@ Generate a workflow for: "${prompt}"`;
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            model: 'gpt-4o',
+            model: 'gpt-4.1-2025-04-14',
             messages: [
               { role: 'system', content: systemPrompt },
               { role: 'user', content: prompt }
             ],
-            temperature: 0.7,
-            max_tokens: 3000
+            temperature: 0.3,
+            max_tokens: 4000
           }),
         });
         result = await response.json();
@@ -175,21 +175,35 @@ Generate a workflow for: "${prompt}"`;
     }
 
     console.log('AI response received, status:', response?.status);
-    console.log('Result preview:', result?.choices?.[0]?.message?.content?.substring(0, 200) + '...');
+    
+    if (!response?.ok) {
+      throw new Error(`AI API error: ${response?.status} ${response?.statusText}`);
+    }
 
     // Extract and parse the generated content
     let generatedContent;
     switch (provider) {
       case 'openai':
+        if (!result.choices?.[0]?.message?.content) {
+          throw new Error('OpenAI returned no content');
+        }
         generatedContent = result.choices[0].message.content;
         break;
       case 'claude':
+        if (!result.content?.[0]?.text) {
+          throw new Error('Claude returned no content');
+        }
         generatedContent = result.content[0].text;
         break;
       case 'gemini':
+        if (!result.candidates?.[0]?.content?.parts?.[0]?.text) {
+          throw new Error('Gemini returned no content');
+        }
         generatedContent = result.candidates[0].content.parts[0].text;
         break;
     }
+    
+    console.log('Generated content preview:', generatedContent.substring(0, 300) + '...');
 
     // Parse JSON from the response - improved parsing with fallback
     let agentData;
@@ -235,16 +249,39 @@ Generate a workflow for: "${prompt}"`;
 
     console.log('Parsed agent data successfully, nodes:', agentData.nodes?.length || 0);
 
-    // Enhance with auto-positioning if not provided
-    if (agentData.nodes) {
-      agentData.nodes.forEach((node: any, index: number) => {
+    // Ensure nodes have required properties for the canvas
+    if (agentData.nodes && Array.isArray(agentData.nodes)) {
+      agentData.nodes = agentData.nodes.map((node: any, index: number) => {
+        // Auto-position if not provided
         if (!node.position) {
           node.position = {
             x: (index % 3) * 300 + 100,
             y: Math.floor(index / 3) * 200 + 100
           };
         }
+        
+        // Ensure required data structure
+        if (!node.data) {
+          node.data = {};
+        }
+        
+        // Ensure we have a label
+        if (!node.data.label && !node.label) {
+          node.data.label = node.name || node.data.display_name || `Node ${index + 1}`;
+        }
+        
+        // Ensure we have a type_key
+        if (!node.data.type_key && node.type) {
+          node.data.type_key = node.type;
+        }
+        
+        return node;
       });
+      
+      console.log('Enhanced nodes count:', agentData.nodes.length);
+      console.log('Sample node structure:', JSON.stringify(agentData.nodes[0] || {}, null, 2));
+    } else {
+      console.warn('No valid nodes array found in agentData');
     }
 
     // Add metadata
