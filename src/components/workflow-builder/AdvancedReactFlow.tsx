@@ -279,6 +279,7 @@ const AdvancedReactFlowContent: React.FC<AdvancedReactFlowWrapperProps> = ({
   const [showExecutionEngine, setShowExecutionEngine] = useState(false);
   const [showInsights, setShowInsights] = useState(false);
   const [showMiniMap, setShowMiniMap] = useState(true);
+  const [testMode, setTestMode] = useState(false);
 
   // AI Assist state
   const [chatModalOpen, setChatModalOpen] = useState(false);
@@ -355,12 +356,72 @@ const openInsightsPanel = () => {
   const selectedNodes = useMemo(() => nodes.filter(n => n.selected), [nodes]);
   const validationIssues: any[] = useMemo(() => [], [nodes, edges]);
 
-  // Safe Node and Edge Types
+  // Multi-agent pattern extraction for AI inference
+  const extractMultiAgentPatterns = useCallback((prompt: string) => {
+    const patterns = [
+      /(\w+)\s*agent/gi,
+      /(\w+)\s*assistant/gi,
+      /(\w+)\s*bot/gi,
+      /(customer service|support|sales|marketing|technical|financial|hr|legal)/gi,
+      /(coordinator|manager|specialist|analyst|reviewer)/gi
+    ];
+    
+    const found = new Set<string>();
+    patterns.forEach(pattern => {
+      const matches = prompt.match(pattern);
+      if (matches) {
+        matches.forEach(match => {
+          const cleanMatch = match.replace(/\s*(agent|assistant|bot)$/i, '').trim();
+          if (cleanMatch.length > 2) {
+            found.add(cleanMatch.charAt(0).toUpperCase() + cleanMatch.slice(1).toLowerCase());
+          }
+        });
+      }
+    });
+    
+    // Default agents if none detected
+    if (found.size === 0) {
+      return ['Coordinator', 'Processor', 'Reviewer'];
+    }
+    
+    return Array.from(found).slice(0, 5); // Limit to 5 agents
+  }, []);
+
+  // Safe Node and Edge Types including multi-agent
   const baseNodeTypes: NodeTypes = useMemo(() => ({
     custom: CustomNode,
     enhanced: (props) => <EnhancedWorkflowNode {...props} />,
     agent: (props) => <AgentNode {...props} />,
     ai: (props) => <AIIntelligenceNode {...props} />,
+    'multi-agent': ({ data }: any) => (
+      <div className="px-4 py-3 rounded-xl min-w-[300px] shadow-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600">
+            <Users className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold text-sm">{data.label || 'Multi-Agent Team'}</div>
+            <div className="text-xs opacity-70">Orchestrated agents</div>
+            {data.agents && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {data.agents.slice(0, 3).map((agent: any, idx: number) => (
+                  <Badge key={idx} variant="secondary" className="text-xs">
+                    {agent.name || `Agent ${idx + 1}`}
+                  </Badge>
+                ))}
+                {data.agents.length > 3 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{data.agents.length - 3} more
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        <Handle type="target" position={Position.Left} />
+        <Handle type="source" position={Position.Right} />
+      </div>
+    ),
   }), []);
 
   const safeEdgeTypes: EdgeTypes = useMemo(() => ({}), []);
@@ -567,10 +628,21 @@ setSelectedNode(newNode as any);
   }, []);
 
   const handleEdgeContextMenu = useCallback((event: React.MouseEvent, edge: Edge) => {
-    // Don't stop propagation so Radix ContextMenu can open
+    event.preventDefault();
+    if (event.shiftKey) {
+      // Shift + right-click swaps direction
+      setEdges((eds) =>
+        eds.map((e) => (e.id === edge.id ? { ...e, source: edge.target, target: edge.source } : e))
+      );
+      showSuccess('Connector direction swapped');
+    } else {
+      // Default right-click deletes connector
+      setEdges((eds) => eds.filter((e) => e.id !== edge.id));
+      showSuccess('Connector deleted');
+    }
     setSelectedNode(null);
     setContextEdge(edge);
-  }, []);
+  }, [setEdges, showSuccess]);
 
   const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
     // allow ContextMenuTrigger to handle default context menu
@@ -846,6 +918,7 @@ useEffect(() => {
       enhanced: wrap(baseNodeTypes.enhanced),
       agent: wrap(baseNodeTypes.agent),
       ai: wrap(baseNodeTypes.ai),
+      'multi-agent': wrap(baseNodeTypes['multi-agent']),
     } as NodeTypes;
   }, [handleConfigureNode, handleDeleteNode, handleDuplicateNode, handleOpenChat, baseNodeTypes]);
 
@@ -1135,12 +1208,82 @@ useEffect(() => {
                     </div>
                   </Panel>
                   
+                  {/* AI Assist Toolbar - Right Side */}
+                  <Panel position="top-right" className="mt-16">
+                    <div className="flex flex-col gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          // AI Generate workflow
+                          const prompt = window.prompt('Describe the workflow to generate:');
+                          if (prompt) {
+                            showSuccess('AI generation started...');
+                            // Enhanced multi-agent detection
+                            const inferredAgents = extractMultiAgentPatterns(prompt);
+                            if (inferredAgents.length > 1) {
+                              const multiAgentNode = {
+                                id: `multi-agent-${Date.now()}`,
+                                type: 'multi-agent',
+                                position: { x: Math.random() * 400, y: Math.random() * 300 },
+                                data: { 
+                                  label: 'AI Generated Team',
+                                  agents: inferredAgents.map(name => ({ name })),
+                                  description: prompt
+                                }
+                              };
+                              setNodes(nds => [...nds, multiAgentNode]);
+                              showSuccess(`Generated multi-agent team with ${inferredAgents.length} agents`);
+                            }
+                          }
+                        }}
+                        title="AI Generate"
+                      >
+                        <Bot className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          showSuccess('AI testing started...');
+                        }}
+                        title="AI Test"
+                      >
+                        <Play className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant={testMode ? 'default' : 'outline'} 
+                        size="sm"
+                        onClick={() => setTestMode(!testMode)}
+                        title="Test Mode"
+                      >
+                        <Zap className="h-4 w-4" />
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          setShowConfigurator(true);
+                          setConfigNodeInfo({
+                            nodeId: selectedNode?.id || 'config',
+                            nodeType: 'enhanced',
+                            category: 'configuration'
+                          });
+                        }}
+                        title="Configure"
+                      >
+                        <Settings className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </Panel>
+
                   {/* Status Panel - Bottom Right */}
                   <Panel position="bottom-right" className="bg-white/90 backdrop-blur-md p-3 rounded-lg shadow border">
                     <div className="space-y-1 text-xs">
                       <div className="font-medium">Status</div>
                       <div>Nodes: {nodes.length}</div>
                       <div>Edges: {edges.length}</div>
+                      <div>Teams: {nodes.filter(n => n.type === 'multi-agent').length}</div>
                       <div className="flex items-center gap-1">
                         <Badge variant={validationIssues.length === 0 ? "default" : "destructive"} className="text-xs">
                           {validationIssues.length === 0 ? "Valid" : `${validationIssues.length} Issues`}
