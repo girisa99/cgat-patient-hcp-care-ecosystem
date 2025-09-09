@@ -845,7 +845,7 @@ Examples:
       {/* Main Flow Area */}
       <div className="flex-1 relative flex min-h-0">
         {!canvasOnly && (
-          <div className="w-64 md:w-72 bg-background border-r flex flex-col min-h-0 overflow-hidden pointer-events-auto z-10 animate-fade-in">
+          <div className="w-56 md:w-64 bg-background border-r flex flex-col min-h-0 overflow-hidden pointer-events-auto z-10 animate-fade-in">
             <Tabs defaultValue="nodes" className="h-full flex flex-col">
               <div className="p-3 border-b bg-background sticky top-0 z-20 shadow-sm">
                 <TabsList level="child" className="grid w-full grid-cols-2 h-9">
@@ -877,7 +877,7 @@ Examples:
             </Tabs>
           </div>
         )}
-        <div className="flex-1 relative">
+        <div className="flex-1 relative min-w-0">
           <ReactFlow
             nodes={nodes}
             edges={edges}
