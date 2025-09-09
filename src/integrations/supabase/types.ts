@@ -4786,6 +4786,56 @@ export type Database = {
         }
         Relationships: []
       }
+      knowledge_base_configs: {
+        Row: {
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_enabled: boolean | null
+          knowledge_type: string
+          metadata: Json | null
+          node_config_id: string | null
+          source_column: string | null
+          source_table: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          knowledge_type: string
+          metadata?: Json | null
+          node_config_id?: string | null
+          source_column?: string | null
+          source_table?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_enabled?: boolean | null
+          knowledge_type?: string
+          metadata?: Json | null
+          node_config_id?: string | null
+          source_column?: string | null
+          source_table?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_configs_node_config_id_fkey"
+            columns: ["node_config_id"]
+            isOneToOne: false
+            referencedRelation: "nodes_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       labeling_projects: {
         Row: {
           annotation_guidelines: string | null
@@ -5414,6 +5464,66 @@ export type Database = {
           workflow_id?: string | null
         }
         Relationships: []
+      }
+      nodes_config: {
+        Row: {
+          agent_session_id: string | null
+          change_summary: string | null
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          id: string
+          is_active: boolean | null
+          node_id: string
+          node_type: string
+          updated_at: string | null
+          version: number | null
+          workflow_id: string | null
+        }
+        Insert: {
+          agent_session_id?: string | null
+          change_summary?: string | null
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          node_id: string
+          node_type: string
+          updated_at?: string | null
+          version?: number | null
+          workflow_id?: string | null
+        }
+        Update: {
+          agent_session_id?: string | null
+          change_summary?: string | null
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          id?: string
+          is_active?: boolean | null
+          node_id?: string
+          node_type?: string
+          updated_at?: string | null
+          version?: number | null
+          workflow_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nodes_config_agent_session_id_fkey"
+            columns: ["agent_session_id"]
+            isOneToOne: false
+            referencedRelation: "agent_sessions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nodes_config_workflow_id_fkey"
+            columns: ["workflow_id"]
+            isOneToOne: false
+            referencedRelation: "agent_workflows"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notification_preferences: {
         Row: {
@@ -8049,6 +8159,62 @@ export type Database = {
         }
         Relationships: []
       }
+      tool_executions: {
+        Row: {
+          completed_at: string | null
+          created_at: string | null
+          duration_ms: number | null
+          error_details: Json | null
+          execution_context: Json | null
+          id: string
+          input_data: Json | null
+          node_config_id: string | null
+          output_data: Json | null
+          status: string | null
+          tool_name: string
+          tool_type: string
+          triggered_by: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          execution_context?: Json | null
+          id?: string
+          input_data?: Json | null
+          node_config_id?: string | null
+          output_data?: Json | null
+          status?: string | null
+          tool_name: string
+          tool_type: string
+          triggered_by?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string | null
+          duration_ms?: number | null
+          error_details?: Json | null
+          execution_context?: Json | null
+          id?: string
+          input_data?: Json | null
+          node_config_id?: string | null
+          output_data?: Json | null
+          status?: string | null
+          tool_name?: string
+          tool_type?: string
+          triggered_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tool_executions_node_config_id_fkey"
+            columns: ["node_config_id"]
+            isOneToOne: false
+            referencedRelation: "nodes_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       treatment_center_onboarding: {
         Row: {
           ach_preference: string | null
@@ -8589,6 +8755,59 @@ export type Database = {
             columns: ["related_functionality_id"]
             isOneToOne: false
             referencedRelation: "system_functionality_registry"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vector_configs: {
+        Row: {
+          configuration: Json
+          created_at: string | null
+          created_by: string | null
+          description: string | null
+          document_sources: Json | null
+          embedding_model: string
+          id: string
+          knowledge_name: string
+          node_config_id: string | null
+          return_source_documents: boolean | null
+          updated_at: string | null
+          vector_store_type: string
+        }
+        Insert: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          document_sources?: Json | null
+          embedding_model: string
+          id?: string
+          knowledge_name: string
+          node_config_id?: string | null
+          return_source_documents?: boolean | null
+          updated_at?: string | null
+          vector_store_type: string
+        }
+        Update: {
+          configuration?: Json
+          created_at?: string | null
+          created_by?: string | null
+          description?: string | null
+          document_sources?: Json | null
+          embedding_model?: string
+          id?: string
+          knowledge_name?: string
+          node_config_id?: string | null
+          return_source_documents?: boolean | null
+          updated_at?: string | null
+          vector_store_type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vector_configs_node_config_id_fkey"
+            columns: ["node_config_id"]
+            isOneToOne: false
+            referencedRelation: "nodes_config"
             referencedColumns: ["id"]
           },
         ]
