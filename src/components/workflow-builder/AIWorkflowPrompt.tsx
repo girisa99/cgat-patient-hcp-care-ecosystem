@@ -283,12 +283,12 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
                 <div className="text-xs font-medium text-muted-foreground">AI Settings</div>
                 <div className="grid grid-cols-2 gap-2">
                   <Select value={selectedProvider} onValueChange={setSelectedProvider}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
+                    <SelectTrigger className="h-8 text-xs bg-background border">
+                      <SelectValue placeholder="Select Provider" />
                     </SelectTrigger>
-                    <SelectContent className="z-[60] bg-popover">
+                    <SelectContent className="z-[150] bg-popover border shadow-lg">
                       {AI_PROVIDERS.map(provider => (
-                        <SelectItem key={provider.id} value={provider.id}>
+                        <SelectItem key={provider.id} value={provider.id} className="cursor-pointer hover:bg-accent">
                           {provider.name}
                         </SelectItem>
                       ))}
@@ -296,12 +296,12 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
                   </Select>
                   
                   <Select value={selectedModel} onValueChange={setSelectedModel}>
-                    <SelectTrigger className="h-8 text-xs">
-                      <SelectValue />
+                    <SelectTrigger className="h-8 text-xs bg-background border">
+                      <SelectValue placeholder="Select Model" />
                     </SelectTrigger>
-                    <SelectContent className="z-[60] bg-popover">
+                    <SelectContent className="z-[150] bg-popover border shadow-lg">
                       {selectedProviderData?.models.map(model => (
-                        <SelectItem key={model} value={model}>
+                        <SelectItem key={model} value={model} className="cursor-pointer hover:bg-accent">
                           {model.split('-')[0]}
                         </SelectItem>
                       ))}

@@ -23,7 +23,7 @@ export const RightDockedAIPanel: React.FC<RightDockedAIPanelProps> = ({
 
   return (
     <div 
-      className={`fixed top-0 right-0 h-screen bg-background border-l shadow-lg z-[100] flex ${
+      className={`fixed top-0 right-0 h-screen bg-background border-l shadow-lg z-[90] flex ${
         isCollapsed ? 'w-12' : 'w-80 md:w-96'
       } transition-all duration-300 ${className}`}
     >
