@@ -608,7 +608,7 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
 
   return (
     <Card className="w-full h-[600px] flex flex-col">
-      <CardHeader className="p-3 border-b">
+      <CardHeader className="p-3 border-b sticky top-0 z-50 bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/80">
         {/* Main Action Bar */}
         <div className="flex items-center justify-between mb-3">
           <CardTitle className="flex items-center gap-2">
@@ -676,7 +676,7 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[120] bg-popover">
                 {availableProviders.map(provider => (
                   <SelectItem key={provider.id} value={provider.id}>
                     {provider.name}
@@ -690,7 +690,7 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[120] bg-popover">
                 <SelectItem value="build">
                   <div className="flex items-center gap-2">
                     <Bot className="h-4 w-4" />
@@ -717,6 +717,48 @@ curl -X POST "${baseUrl}/webhooks/${agentId}" \\
                 </SelectItem>
               </SelectContent>
             </Select>
+          </div>
+        </div>
+        <div className="mt-2">
+          <div className="p-2 border-t bg-background relative z-40">
+            <div className="flex w-full h-9 gap-2 overflow-x-auto whitespace-nowrap no-scrollbar">
+              <Button
+                variant={assistMode === 'generate' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-8 px-2"
+                onClick={() => setAssistMode('generate')}
+              >
+                <Sparkles className="h-3 w-3 mr-1" />
+                Generate
+              </Button>
+              <Button
+                variant={assistMode === 'test' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-8 px-2"
+                onClick={() => setAssistMode('test')}
+              >
+                <TestTube className="h-3 w-3 mr-1" />
+                Test
+              </Button>
+              <Button
+                variant={assistMode === 'build' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-8 px-2"
+                onClick={() => setAssistMode('build')}
+              >
+                <Zap className="h-3 w-3 mr-1" />
+                Visual
+              </Button>
+              <Button
+                variant={assistMode === 'deploy' ? 'secondary' : 'ghost'}
+                size="sm"
+                className="h-8 px-2"
+                onClick={() => setAssistMode('deploy')}
+              >
+                <Rocket className="h-3 w-3 mr-1" />
+                Deploy
+              </Button>
+            </div>
           </div>
         </div>
       </CardHeader>

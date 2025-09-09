@@ -777,7 +777,7 @@ const AgentsInner = () => {
 
         {/* Unified AI Assist (non-blocking right panel) */}
         {showUnifiedAssist && (
-          <aside className="fixed inset-y-0 right-0 z-40 w-[min(560px,100vw)] border-l bg-card shadow-xl flex flex-col">
+          <aside className="fixed inset-y-0 right-0 z-[100] w-[min(560px,100vw)] border-l bg-card shadow-xl flex flex-col">
             <div className="flex-1 overflow-auto p-3">
               <UnifiedAgentAssist
                 workflowNodes={workflowNodes}
