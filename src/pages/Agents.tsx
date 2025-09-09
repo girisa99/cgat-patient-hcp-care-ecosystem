@@ -70,6 +70,7 @@ import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 import { ConsolidationVerification } from '@/components/verification/ConsolidationVerification';
 import ComprehensiveFunctionalityAudit from '@/components/assessment/ComprehensiveFunctionalityAudit';
 import { ComprehensiveWorkflowAudit } from '@/components/assessment/ComprehensiveWorkflowAudit';
+import ConsolidatedFunctionalityAudit from '@/components/assessment/ConsolidatedFunctionalityAudit';
 
 // Import new Agent Ecosystem components
 import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
