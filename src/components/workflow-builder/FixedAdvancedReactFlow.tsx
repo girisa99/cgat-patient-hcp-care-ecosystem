@@ -373,8 +373,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
           category: startNodeType?.category?.name || 'workflow',
           configuration: startNodeType?.default_config || {},
           isConfigured: true,
-          color: startNodeType?.color || '#10b981',
-          icon: startNodeType?.icon || 'Play'
+          color: String(startNodeType?.color || '#10b981'),
+          icon: String(startNodeType?.icon || 'Play')
         }
       });
 
@@ -401,8 +401,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
               provider: selectedProvider
             },
             isConfigured: true,
-            color: agentNodeType?.color || '#8b5cf6',
-            icon: agentNodeType?.icon || 'Bot'
+            color: String(agentNodeType?.color || '#8b5cf6'),
+            icon: String(agentNodeType?.icon || 'Bot')
           }
         });
       });
@@ -419,8 +419,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
           category: endNodeType?.category?.name || 'workflow',
           configuration: endNodeType?.default_config || {},
           isConfigured: true,
-          color: endNodeType?.color || '#ef4444',
-          icon: endNodeType?.icon || 'CheckCircle'
+          color: String(endNodeType?.color || '#ef4444'),
+          icon: String(endNodeType?.icon || 'CheckCircle')
         }
       });
 
@@ -466,8 +466,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     if (node && node.data) {
       setConfigNodeInfo({
         nodeId: node.id,
-        nodeType: node.data.type_key || node.type || 'enhanced',
-        category: node.data.category || 'general',
+        nodeType: String(node.data.type_key || node.type || 'enhanced'),
+        category: String(node.data.category || 'general'),
         initialConfig: node.data.configuration || {}
       });
       setShowConfigurator(true);
@@ -535,8 +535,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
         label: 'Start',
         type_key: startNodeType?.type_key || 'workflow_start',
         category: startNodeType?.category?.name || 'workflow',
-            icon: (startNodeType?.icon as string) || 'Play',
-            color: (startNodeType?.color as string) || '#10b981',
+        icon: String(startNodeType?.icon || 'Play'),
+        color: String(startNodeType?.color || '#10b981'),
         configuration: startNodeType?.default_config || {},
         isConfigured: true
       }
@@ -550,8 +550,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
         label: 'End',
         type_key: endNodeType?.type_key || 'workflow_end',
         category: endNodeType?.category?.name || 'workflow',
-        icon: endNodeType?.icon || 'CheckCircle',
-        color: endNodeType?.color || '#ef4444',
+        icon: String(endNodeType?.icon || 'CheckCircle'),
+        color: String(endNodeType?.color || '#ef4444'),
         configuration: endNodeType?.default_config || {},
         isConfigured: true
       }
@@ -601,8 +601,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
             type_key: nodeData.type_key || type,
             category: nodeData.category?.name || 'general',
             configuration: nodeData.default_config || {},
-            icon: nodeData.icon,
-            color: nodeData.color,
+            icon: String(nodeData.icon || 'Circle'),
+            color: String(nodeData.color || '#6b7280'),
             isConfigured: false
           },
         };
