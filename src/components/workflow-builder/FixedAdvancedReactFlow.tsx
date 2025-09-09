@@ -845,16 +845,36 @@ Examples:
       {/* Main Flow Area */}
       <div className="flex-1 relative flex min-h-0">
         {!canvasOnly && (
-          <div className="flex">
-            {/* Enhanced Node Library */}
-            <div className="w-80 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
-              <EnhancedNodePalette heightClass="min-h-full" />
-            </div>
-            
-            {/* AI Workflow Prompt Panel */}
-            <div className="w-96 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
-              <AIWorkflowPrompt onWorkflowGenerated={handleWorkflowGenerated} />
-            </div>
+          <div className="w-80 bg-background border-r flex flex-col min-h-0 overflow-hidden pointer-events-auto z-10 animate-fade-in">
+            <Tabs defaultValue="nodes" className="h-full flex flex-col">
+              <div className="p-3 border-b bg-muted/30">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="nodes" className="flex items-center gap-1 text-xs">
+                    <Database className="h-3 w-3" />
+                    Node Library
+                  </TabsTrigger>
+                  <TabsTrigger value="ai" className="flex items-center gap-1 text-xs">
+                    <Brain className="h-3 w-3" />
+                    AI Assistant
+                  </TabsTrigger>
+                </TabsList>
+              </div>
+              
+              <div className="flex-1 overflow-hidden">
+                <TabsContent value="nodes" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                  <EnhancedNodePalette heightClass="flex-1" />
+                </TabsContent>
+                
+                <TabsContent value="ai" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+                  <div className="flex-1 overflow-y-auto">
+                    <AIWorkflowPrompt 
+                      onWorkflowGenerated={handleWorkflowGenerated}
+                      className="h-full"
+                    />
+                  </div>
+                </TabsContent>
+              </div>
+            </Tabs>
           </div>
         )}
         <div className="flex-1 relative">
