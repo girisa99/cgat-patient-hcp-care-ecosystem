@@ -848,12 +848,12 @@ Examples:
           <div className="w-80 bg-background border-r flex flex-col min-h-0 overflow-hidden pointer-events-auto z-10 animate-fade-in">
             <Tabs defaultValue="nodes" className="h-full flex flex-col">
               <div className="p-3 border-b bg-muted/30">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="nodes" className="flex items-center gap-1 text-xs">
+                <TabsList level="child" className="grid w-full grid-cols-2 h-9">
+                  <TabsTrigger level="child" value="nodes" className="flex items-center gap-1 text-xs">
                     <Database className="h-3 w-3" />
                     Node Library
                   </TabsTrigger>
-                  <TabsTrigger value="ai" className="flex items-center gap-1 text-xs">
+                  <TabsTrigger level="child" value="ai" className="flex items-center gap-1 text-xs">
                     <Brain className="h-3 w-3" />
                     AI Assistant
                   </TabsTrigger>
@@ -861,11 +861,11 @@ Examples:
               </div>
               
               <div className="flex-1 overflow-hidden">
-                <TabsContent value="nodes" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <TabsContent level="child" value="nodes" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
                   <EnhancedNodePalette heightClass="flex-1" />
                 </TabsContent>
                 
-                <TabsContent value="ai" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <TabsContent level="child" value="ai" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
                   <div className="flex-1 overflow-y-auto">
                     <AIWorkflowPrompt 
                       onWorkflowGenerated={handleWorkflowGenerated}
