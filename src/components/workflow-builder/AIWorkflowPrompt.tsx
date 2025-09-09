@@ -271,7 +271,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60] bg-popover">
                       {AI_PROVIDERS.map(provider => (
                         <SelectItem key={provider.id} value={provider.id}>
                           {provider.name}
@@ -284,7 +284,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
                     <SelectTrigger className="h-8 text-xs">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="z-[60] bg-popover">
                       {selectedProviderData?.models.map(model => (
                         <SelectItem key={model} value={model}>
                           {model.split('-')[0]}

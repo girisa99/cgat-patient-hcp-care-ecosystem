@@ -738,7 +738,7 @@ Examples:
               <SelectTrigger className="w-32">
                 <SelectValue />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-[60] bg-popover">
                 <SelectItem value="openai">OpenAI</SelectItem>
                 <SelectItem value="claude">Claude</SelectItem>
                 <SelectItem value="gemini">Gemini</SelectItem>
@@ -860,12 +860,12 @@ Examples:
                 </TabsList>
               </div>
               
-              <div className="flex-1 overflow-hidden">
-                <TabsContent level="child" value="nodes" className="h-full m-0 data-[state=active]:flex data-[state=active]:flex-col">
+              <div className="flex-1 overflow-hidden pt-4">
+                <TabsContent level="child" value="nodes" className="h-full m-0 pt-2 data-[state=active]:flex data-[state=active]:flex-col">
                   <EnhancedNodePalette heightClass="flex-1" />
                 </TabsContent>
                 
-                <TabsContent level="child" value="ai" className="h-full m-0 p-0 data-[state=active]:flex data-[state=active]:flex-col">
+                <TabsContent level="child" value="ai" className="h-full m-0 p-0 pt-2 data-[state=active]:flex data-[state=active]:flex-col">
                   <div className="flex-1 overflow-y-auto">
                     <AIWorkflowPrompt 
                       onWorkflowGenerated={handleWorkflowGenerated}
