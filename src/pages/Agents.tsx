@@ -244,7 +244,7 @@ const AgentsInner = () => {
 
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
   const { createSession, updateSession } = useAgentSession();
-  const { user } = useMasterAuth();
+  const { userRoles, user } = useMasterAuth();
   const { nodeTypes, categories, isLoading: nodesLoading } = useWorkflowNodes();
 
   // Use Template Integration to map templates to real nodes/edges and ensure connectors
@@ -1074,6 +1074,8 @@ const AgentsInner = () => {
           <ModeSelector 
             selectedMode={selectedMode}
             onModeSelect={(mode) => handleModeSelect(mode as any)}
+            layout={userRoles.includes('onboardingTeam') ? 'horizontal-scroll' : 'grid'}
+            userRole={userRoles[0]}
           />
         </div>
       </AppLayout>
@@ -1150,7 +1152,20 @@ const AgentsInner = () => {
   if (selectedMode === 'observability') {
     return (
       <AppLayout>
-        <ObservabilityDashboard />
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">AI Observability Dashboard</h1>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowModeSelector(true)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Mode Selection
+            </Button>
+          </div>
+          <ObservabilityDashboard />
+        </div>
       </AppLayout>
     );
   }
@@ -1159,7 +1174,20 @@ const AgentsInner = () => {
   if (selectedMode === 'animated-flow') {
     return (
       <AppLayout>
-        <AnimatedFlowVisualizer />
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">Animated Flow Visualizer</h1>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowModeSelector(true)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Mode Selection
+            </Button>
+          </div>
+          <AnimatedFlowVisualizer />
+        </div>
       </AppLayout>
     );
   }
@@ -1168,7 +1196,20 @@ const AgentsInner = () => {
   if (selectedMode === 'security') {
     return (
       <AppLayout>
-        <AgentSecurityDashboard />
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">Security & Compliance Dashboard</h1>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowModeSelector(true)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Mode Selection
+            </Button>
+          </div>
+          <AgentSecurityDashboard />
+        </div>
       </AppLayout>
     );
   }
@@ -1177,7 +1218,20 @@ const AgentsInner = () => {
   if (selectedMode === 'governance') {
     return (
       <AppLayout>
-        <AgentGovernanceDashboard />
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">AI Governance Dashboard</h1>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowModeSelector(true)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Mode Selection
+            </Button>
+          </div>
+          <AgentGovernanceDashboard />
+        </div>
       </AppLayout>
     );
   }

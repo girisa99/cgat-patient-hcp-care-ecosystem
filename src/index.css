@@ -213,4 +213,24 @@
   .form-stable select {
     transition: border-color 0.2s ease-in-out;
   }
+
+  /* Custom scrollbar styles for horizontal scroll cards */
+  .scrollbar-hide {
+    -ms-overflow-style: none;  /* Internet Explorer 10+ */
+    scrollbar-width: none;  /* Firefox */
+  }
+  .scrollbar-hide::-webkit-scrollbar { 
+    display: none;  /* Safari and Chrome */
+  }
+
+  /* Snap scroll for horizontal cards */
+  .snap-x {
+    scroll-snap-type: x mandatory;
+  }
+  .snap-mandatory {
+    scroll-snap-type: mandatory;
+  }
+  .snap-center {
+    scroll-snap-align: center;
+  }
 }

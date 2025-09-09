@@ -24,32 +24,30 @@ export type AgentMode = 'visual' | 'manual' | 'unified' | 'ecosystem' | 'observa
 interface ModeSelectorProps {
   onModeSelect: (mode: AgentMode) => void;
   selectedMode?: AgentMode;
+  layout?: 'grid' | 'horizontal-scroll';
+  userRole?: string;
 }
 
 export const ModeSelector: React.FC<ModeSelectorProps> = ({ 
   onModeSelect, 
-  selectedMode 
+  selectedMode,
+  layout = 'grid',
+  userRole 
 }) => {
   console.log('[ModeSelector] icon types', { Workflow: typeof Workflow, Settings: typeof Settings, Zap: typeof Zap, ArrowRight: typeof ArrowRight, Brain: typeof Brain, MousePointer: typeof MousePointer, Sliders: typeof Sliders });
-  return (
-    <div className="max-w-4xl mx-auto space-y-6">
-      <div className="text-center space-y-4">
-        <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-          <Brain className="w-8 h-8 text-primary" />
-        </div>
-        <div>
-          <h2 className="text-3xl font-bold mb-2">Choose Your Agent Building Method</h2>
-          <p className="text-lg text-muted-foreground">
-            Select the approach that best fits your experience and preferences
-          </p>
-        </div>
-      </div>
+  
+  // Filter modes based on user role - customer onboarding gets simplified options
+  const isCustomerOnboarding = userRole === 'onboardingTeam';
+  const recommendedModes = isCustomerOnboarding 
+    ? ['unified', 'visual', 'manual'] 
+    : ['unified', 'visual', 'manual', 'ecosystem', 'observability', 'animated-flow', 'security', 'governance'];
 
-      <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-6">
-        {/* Unified Workflow Experience - NEW */}
-        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
-          selectedMode === 'unified' ? 'ring-2 ring-primary border-primary' : ''
-        }`}>
+  const getAllModeCards = () => {
+    const allCards = [
+      /* Unified Workflow Experience - NEW */
+      <Card key="unified" className={`cursor-pointer transition-all hover:shadow-lg flex-shrink-0 ${layout === 'horizontal-scroll' ? 'w-80 snap-center' : ''} ${
+        selectedMode === 'unified' ? 'ring-2 ring-primary border-primary' : ''
+      }`}>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 bg-gradient-to-r from-blue-500 to-purple-600 rounded-full flex items-center justify-center mb-3">
               <Brain className="w-6 h-6 text-white" />
@@ -101,12 +99,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               Best for: All users, complete workflows, AI-assisted development
             </div>
           </CardContent>
-        </Card>
+      </Card>,
 
-        {/* Visual Workflow Mode */}
-        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
-          selectedMode === 'visual' ? 'ring-2 ring-primary border-primary' : ''
-        }`}>
+      /* Visual Workflow Mode */
+      <Card key="visual" className={`cursor-pointer transition-all hover:shadow-lg flex-shrink-0 ${layout === 'horizontal-scroll' ? 'w-80 snap-center' : ''} ${
+        selectedMode === 'visual' ? 'ring-2 ring-primary border-primary' : ''
+      }`}>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mb-3">
               <Workflow className="w-6 h-6 text-blue-600" />
@@ -158,12 +156,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               Best for: First-time builders, visual thinkers, rapid prototyping
             </div>
           </CardContent>
-        </Card>
+      </Card>,
 
-        {/* Manual Configuration Mode */}
-        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
-          selectedMode === 'manual' ? 'ring-2 ring-primary border-primary' : ''
-        }`}>
+      /* Manual Configuration Mode */
+      <Card key="manual" className={`cursor-pointer transition-all hover:shadow-lg flex-shrink-0 ${layout === 'horizontal-scroll' ? 'w-80 snap-center' : ''} ${
+        selectedMode === 'manual' ? 'ring-2 ring-primary border-primary' : ''
+      }`}>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center mb-3">
               <Settings className="w-6 h-6 text-purple-600" />
@@ -215,12 +213,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               Best for: Experienced users, complex requirements, precise control
             </div>
           </CardContent>
-        </Card>
+      </Card>,
 
-        {/* Agent Ecosystem Management - NEW */}
-        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
-          selectedMode === 'ecosystem' ? 'ring-2 ring-primary border-primary' : ''
-        }`}>
+      /* Agent Ecosystem Management - NEW */
+      <Card key="ecosystem" className={`cursor-pointer transition-all hover:shadow-lg flex-shrink-0 ${layout === 'horizontal-scroll' ? 'w-80 snap-center' : ''} ${
+        selectedMode === 'ecosystem' ? 'ring-2 ring-primary border-primary' : ''
+      }`}>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 bg-gradient-to-r from-green-500 to-teal-600 rounded-full flex items-center justify-center mb-3">
               <Network className="w-6 h-6 text-white" />
@@ -272,12 +270,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               Best for: Production agents, DevOps, performance optimization
             </div>
           </CardContent>
-        </Card>
+      </Card>,
 
-        {/* AI Observability */}
-        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
-          selectedMode === 'observability' ? 'ring-2 ring-primary border-primary' : ''
-        }`}>
+      /* AI Observability */
+      <Card key="observability" className={`cursor-pointer transition-all hover:shadow-lg flex-shrink-0 ${layout === 'horizontal-scroll' ? 'w-80 snap-center' : ''} ${
+        selectedMode === 'observability' ? 'ring-2 ring-primary border-primary' : ''
+      }`}>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 bg-gradient-to-r from-orange-500 to-red-600 rounded-full flex items-center justify-center mb-3">
               <Activity className="w-6 h-6 text-white" />
@@ -329,12 +327,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               Best for: Production monitoring, performance analysis, observability
             </div>
           </CardContent>
-        </Card>
+      </Card>,
 
-        {/* Animated Flow Visualizer */}
-        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
-          selectedMode === 'animated-flow' ? 'ring-2 ring-primary border-primary' : ''
-        }`}>
+      /* Animated Flow Visualizer */
+      <Card key="animated-flow" className={`cursor-pointer transition-all hover:shadow-lg flex-shrink-0 ${layout === 'horizontal-scroll' ? 'w-80 snap-center' : ''} ${
+        selectedMode === 'animated-flow' ? 'ring-2 ring-primary border-primary' : ''
+      }`}>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 bg-gradient-to-r from-purple-500 to-pink-600 rounded-full flex items-center justify-center mb-3">
               <MonitorPlay className="w-6 h-6 text-white" />
@@ -386,12 +384,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               Best for: Testing, debugging, workflow visualization
             </div>
           </CardContent>
-        </Card>
+      </Card>,
 
-        {/* Security & Compliance */}
-        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
-          selectedMode === 'security' ? 'ring-2 ring-primary border-primary' : ''
-        }`}>
+      /* Security & Compliance */
+      <Card key="security" className={`cursor-pointer transition-all hover:shadow-lg flex-shrink-0 ${layout === 'horizontal-scroll' ? 'w-80 snap-center' : ''} ${
+        selectedMode === 'security' ? 'ring-2 ring-primary border-primary' : ''
+      }`}>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 bg-gradient-to-r from-red-500 to-orange-600 rounded-full flex items-center justify-center mb-3">
               <Shield className="w-6 h-6 text-white" />
@@ -443,12 +441,12 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               Best for: Enterprise security, compliance officers, auditors
             </div>
           </CardContent>
-        </Card>
+      </Card>,
 
-        {/* AI Governance */}
-        <Card className={`cursor-pointer transition-all hover:shadow-lg ${
-          selectedMode === 'governance' ? 'ring-2 ring-primary border-primary' : ''
-        }`}>
+      /* AI Governance */
+      <Card key="governance" className={`cursor-pointer transition-all hover:shadow-lg flex-shrink-0 ${layout === 'horizontal-scroll' ? 'w-80 snap-center' : ''} ${
+        selectedMode === 'governance' ? 'ring-2 ring-primary border-primary' : ''
+      }`}>
           <CardHeader className="text-center pb-4">
             <div className="mx-auto w-12 h-12 bg-gradient-to-r from-indigo-500 to-blue-600 rounded-full flex items-center justify-center mb-3">
               <Gavel className="w-6 h-6 text-white" />
@@ -500,8 +498,50 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
               Best for: Governance officers, policy managers, risk teams
             </div>
           </CardContent>
-        </Card>
+      </Card>
+    ];
+
+    return allCards.filter(card => 
+      recommendedModes.includes(card.key as AgentMode)
+    );
+  };
+
+  return (
+    <div className="max-w-full mx-auto space-y-6">
+      <div className="text-center space-y-4">
+        <div className="mx-auto w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+          <Brain className="w-8 h-8 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-3xl font-bold mb-2">
+            {isCustomerOnboarding ? 'Choose Your Onboarding Method' : 'Choose Your Agent Building Method'}
+          </h2>
+          <p className="text-lg text-muted-foreground">
+            {isCustomerOnboarding 
+              ? 'Select the approach that works best for your customer onboarding process'
+              : 'Select the approach that best fits your experience and preferences'
+            }
+          </p>
+        </div>
       </div>
+
+      {layout === 'horizontal-scroll' ? (
+        <div className="relative">
+          <div className="flex gap-6 overflow-x-auto pb-4 scrollbar-hide snap-x snap-mandatory">
+            {getAllModeCards()}
+          </div>
+          {/* Scroll indicators */}
+          <div className="flex justify-center mt-4 gap-2">
+            {getAllModeCards().map((_, index) => (
+              <div key={index} className="w-2 h-2 rounded-full bg-gray-300" />
+            ))}
+          </div>
+        </div>
+      ) : (
+        <div className="grid lg:grid-cols-3 md:grid-cols-2 gap-6">
+          {getAllModeCards()}
+        </div>
+      )}
 
       {/* AI Prompt Assistant Feature */}
       <Card className="bg-gradient-to-r from-primary/5 to-primary/10 border-primary/20">
