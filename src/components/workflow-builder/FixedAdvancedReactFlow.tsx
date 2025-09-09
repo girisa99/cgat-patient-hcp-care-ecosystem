@@ -288,6 +288,65 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     ),
   }), []);
 
+  // Node context menu handlers for right-click actions
+  const handleConfigureNode = useCallback((nodeId: string, action: string) => {
+    setConfigNodeInfo({
+      nodeId,
+      nodeType: action === 'ai-model' ? 'agent' : 'enhanced',
+      category: action || 'general'
+    });
+    setShowConfigurator(true);
+  }, []);
+
+  const handleDeleteNode = useCallback((nodeId: string) => {
+    setNodes((nds) => nds.filter((n) => n.id !== nodeId));
+    setEdges((eds) => eds.filter((e) => e.source !== nodeId && e.target !== nodeId));
+    showSuccess('Node deleted');
+  }, [setNodes, setEdges, showSuccess]);
+
+  const handleDuplicateNode = useCallback((nodeId: string) => {
+    const node = getNodes().find((n) => n.id === nodeId);
+    if (node) {
+      const newId = `${nodeId}-copy-${Date.now()}`;
+      const newNode = {
+        ...node,
+        id: newId,
+        position: { x: node.position.x + 50, y: node.position.y + 50 },
+        selected: false,
+      };
+      setNodes((nds) => nds.concat(newNode));
+      showSuccess('Node duplicated');
+    }
+  }, [getNodes, setNodes, showSuccess]);
+
+  // Wrap node types to enable right-click context menu & actions
+  const safeNodeTypes: NodeTypes = useMemo(() => {
+    const wrap = (Original: any) => React.memo((props: any) => (
+      <NodeContextMenu
+        nodeId={props.id}
+        nodeType={props.data?.type || 'default'}
+        onConfigureNode={handleConfigureNode}
+        onDeleteNode={handleDeleteNode}
+        onDuplicateNode={handleDuplicateNode}
+        onOpenChat={(nodeId, mode) => {
+          setSelectedNode(getNodes().find((n) => n.id === nodeId) || null);
+          setAIAssistMode(mode || 'configure');
+          setShowAIAssist(true);
+        }}
+      >
+        <Original {...props} />
+      </NodeContextMenu>
+    ));
+
+    return {
+      custom: wrap(CustomNode),
+      enhanced: wrap((props: any) => <EnhancedWorkflowNode {...props} />),
+      agent: wrap((props: any) => <AgentNode {...props} />),
+      ai: wrap((props: any) => <AIIntelligenceNode {...props} />),
+      'multi-agent': wrap((props: any) => (baseNodeTypes['multi-agent'] as any)(props)),
+    } as NodeTypes;
+  }, [handleConfigureNode, handleDeleteNode, handleDuplicateNode, getNodes, baseNodeTypes]);
+
   const safeEdgeTypes: EdgeTypes = useMemo(() => ({}), []);
 
   // Sync incoming initialNodes/initialEdges when they change
@@ -670,21 +729,33 @@ Examples:
               </SelectContent>
             </Select>
 
-            <Button 
-              onClick={handleAIPromptGeneration}
-              disabled={isLoading || isProcessing || !aiPrompt.trim() || !isAIHealthy}
-              className="min-w-32"
-              title={!isAIHealthy ? 'AI services are unavailable. Please check health status.' : undefined}
-            >
-              {isLoading || isProcessing ? (
-                <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
-              ) : (
-                <>
-                  <Brain className="h-4 w-4 mr-2" />
-                  Generate Workflow
-                </>
-              )}
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button 
+                onClick={handleAIPromptGeneration}
+                disabled={isLoading || isProcessing || !aiPrompt.trim() || !isAIHealthy}
+                className="min-w-36 hover-scale"
+                title={!isAIHealthy ? 'AI services are unavailable. Please check health status.' : undefined}
+              >
+                {isLoading || isProcessing ? (
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white" />
+                ) : (
+                  <>
+                    <Brain className="h-4 w-4 mr-2" />
+                    Generate
+                  </>
+                )}
+              </Button>
+              <Button 
+                variant="outline"
+                onClick={handleAIPromptGeneration}
+                disabled={isLoading || isProcessing || !aiPrompt.trim() || !isAIHealthy}
+                className="min-w-36 hover-scale"
+                title={!isAIHealthy ? 'AI services are unavailable. Please check health status.' : undefined}
+              >
+                <Layout className="h-4 w-4 mr-2" />
+                Visual Workflow
+              </Button>
+            </div>
           </div>
 
           {/* Context Information */}
@@ -756,55 +827,64 @@ Examples:
       )}
 
       {/* Main Flow Area */}
-      <div className="flex-1 relative">
-        <ReactFlow
-          nodes={nodes}
-          edges={edges}
-          onNodesChange={handleNodesChange}
-          onEdgesChange={handleEdgesChange}
-          onConnect={onConnect}
-          onNodeClick={handleNodeClick}
-          onDrop={onDrop}
-          onDragOver={onDragOver}
-          nodeTypes={baseNodeTypes}
-          edgeTypes={safeEdgeTypes}
-          connectionMode={connectionMode}
-          snapToGrid={snapToGrid}
-          snapGrid={[15, 15]}
-          nodesDraggable={nodesDraggable}
-          nodesConnectable={true}
-          elementsSelectable={true}
-          panOnScrollMode={panOnScrollMode}
-          selectNodesOnDrag={false}
-          fitView
-          fitViewOptions={{ padding: 0.2 }}
-          className="bg-background"
-        >
-          <Background variant={backgroundVariant} gap={12} size={1} />
-          <Controls />
-          {showMiniMap && <MiniMap />}
-          
-          {canvasOnly && (
-            <Panel position="top-right">
-              <Button size="sm" variant="outline" onClick={() => setCanvasOnly(false)}>
-                <Minimize2 className="h-4 w-4" />
-              </Button>
-            </Panel>
-          )}
-        </ReactFlow>
-
-        {/* Testing Console */}
-        {showTestConsole && (
-          <TestingConsolePanel
-            isVisible={showTestConsole}
-            onToggle={() => setShowTestConsole(!showTestConsole)}
-            sessionId={sessionId}
-            selectedNode={selectedNode}
-            workflowNodes={nodes}
-            workflowEdges={edges}
-            heightClass="h-64"
-          />
+      <div className="flex-1 relative flex min-h-0">
+        {!canvasOnly && (
+          <div className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
+            <EnhancedNodePalette heightClass="min-h-full" />
+          </div>
         )}
+        <div className="flex-1 relative">
+          <ReactFlow
+            nodes={nodes}
+            edges={edges}
+            onNodesChange={handleNodesChange}
+            onEdgesChange={handleEdgesChange}
+            onConnect={onConnect}
+            onNodeClick={handleNodeClick}
+            onDrop={onDrop}
+            onDragOver={onDragOver}
+            nodeTypes={safeNodeTypes}
+            edgeTypes={safeEdgeTypes}
+            connectionMode={connectionMode}
+            snapToGrid={snapToGrid}
+            snapGrid={[15, 15]}
+            nodesDraggable={nodesDraggable}
+            nodesConnectable={true}
+            elementsSelectable={true}
+            panOnScrollMode={panOnScrollMode}
+            selectNodesOnDrag={false}
+            fitView
+            fitViewOptions={{ padding: 0.2 }}
+            multiSelectionKeyCode="Shift"
+            deleteKeyCode={["Backspace", "Delete"]}
+            className="bg-background"
+          >
+            <Background variant={backgroundVariant} gap={12} size={1} />
+            <Controls />
+            {showMiniMap && <MiniMap />}
+            
+            {canvasOnly && (
+              <Panel position="top-right">
+                <Button size="sm" variant="outline" onClick={() => setCanvasOnly(false)}>
+                  <Minimize2 className="h-4 w-4" />
+                </Button>
+              </Panel>
+            )}
+          </ReactFlow>
+
+          {/* Testing Console */}
+          {showTestConsole && (
+            <TestingConsolePanel
+              isVisible={showTestConsole}
+              onToggle={() => setShowTestConsole(!showTestConsole)}
+              sessionId={sessionId}
+              selectedNode={selectedNode}
+              workflowNodes={nodes}
+              workflowEdges={edges}
+              heightClass="h-64"
+            />
+          )}
+        </div>
       </div>
 
       {/* AI Assistant Dialog */}

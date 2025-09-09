@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Node, Edge } from '@xyflow/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -64,6 +64,11 @@ export const IntelligentNodeRecommendations: React.FC<IntelligentNodeRecommendat
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedRecommendation, setSelectedRecommendation] = useState<NodeRecommendation | null>(null);
   const [showDetails, setShowDetails] = useState(false);
+  // Prevent toast spam while the panel is open
+  const notifiedRef = useRef(false);
+  useEffect(() => {
+    if (!isVisible) notifiedRef.current = false;
+  }, [isVisible]);
 
   // AI-powered workflow analysis for intelligent recommendations
   const analyzeWorkflowGaps = useCallback(async () => {
@@ -102,13 +107,19 @@ export const IntelligentNodeRecommendations: React.FC<IntelligentNodeRecommendat
       );
 
       setRecommendations(processedRecommendations);
-      showSuccess(`Generated ${processedRecommendations.length} intelligent recommendations`);
+      if (!notifiedRef.current) {
+        showSuccess(`Generated ${processedRecommendations.length} intelligent recommendations`);
+        notifiedRef.current = true;
+      }
     } catch (error) {
       console.error('Workflow analysis error:', error);
       // Fallback to rule-based recommendations
       const fallbackRecommendations = generateRuleBasedRecommendations();
       setRecommendations(fallbackRecommendations);
-      showSuccess(`Generated ${fallbackRecommendations.length} recommendations (fallback mode)`);
+      if (!notifiedRef.current) {
+        showSuccess(`Generated ${fallbackRecommendations.length} recommendations (fallback mode)`);
+        notifiedRef.current = true;
+      }
     } finally {
       setIsAnalyzing(false);
     }
