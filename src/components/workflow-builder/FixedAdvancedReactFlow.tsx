@@ -75,6 +75,8 @@ import { NodeContextMenu } from './NodeContextMenu';
 import { TestingConsolePanel } from './TestingConsolePanel';
 import { TemplateGallery } from '../unified-workflow/TemplateGallery';
 import { DynamicNodeConfiguration } from '../unified-workflow/DynamicNodeConfiguration';
+import { EnhancedNodeConfigurationPanel } from './EnhancedNodeConfigurationPanel';
+import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
 
 const LazySmartNodeConfigurator = lazy(() => import('./SmartNodeConfigurator').then(m => ({ default: m.SmartNodeConfigurator })));
 
@@ -805,24 +807,21 @@ Examples:
         />
       )}
 
-      {/* Enhanced Node Configuration Panel */}
       {showConfigurator && configNodeInfo && (
-        <Dialog open={showConfigurator} onOpenChange={() => setShowConfigurator(false)}>
-          <DialogContent className="max-w-2xl">
-            <DialogHeader>
-              <DialogTitle>Configure Node: {configNodeInfo.nodeId}</DialogTitle>
-            </DialogHeader>
-            <div className="p-4">
-              <p>Node Type: {configNodeInfo.nodeType}</p>
-              <p>Category: {configNodeInfo.category}</p>
-              <Button onClick={() => {
-                handleNodeConfigurationSave(configNodeInfo.nodeId, configNodeInfo.initialConfig);
-              }}>
-                Save Configuration
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <EnhancedNodeConfigurationPanel
+          isOpen={showConfigurator}
+          onClose={() => {
+            setShowConfigurator(false);
+            setConfigNodeInfo(null);
+          }}
+          nodeId={configNodeInfo.nodeId}
+          nodeType={configNodeInfo.nodeType}
+          nodeName={(selectedNode?.data as any)?.label}
+          nodeCategory={configNodeInfo.category}
+          initialConfiguration={configNodeInfo.initialConfig}
+          onSave={(nodeId, configuration) => handleNodeConfigurationSave(nodeId, configuration)}
+          onTest={onNodeTest}
+        />
       )}
 
     </div>
