@@ -67,6 +67,7 @@ import { EnvironmentChannelManager } from '@/components/unified-workflow/Environ
 import { DynamicNodeConfiguration } from '@/components/unified-workflow/DynamicNodeConfiguration';
 import { useTemplateIntegration } from '@/components/workflow-builder/TemplateIntegrationManager';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
+import { ConsolidationVerification } from '@/components/verification/ConsolidationVerification';
 
 // Import new Agent Ecosystem components
 import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';

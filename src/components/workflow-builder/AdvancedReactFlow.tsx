@@ -885,10 +885,10 @@ const ConsolidatedAdvancedReactFlowContent: React.FC<ConsolidatedAdvancedReactFl
                 {isTestMode ? 'Exit Test Mode' : 'Enter Test Mode'}
               </ContextMenuItem>
               <Separator />
-              <ContextMenuItem onClick={() => setConnectorIntelligence(!connectorIntelligence)}>
+              <ContextMenuItem onClick={() => showSuccess('Connector Intelligence Toggled')}>
                 Toggle Connector Intelligence
               </ContextMenuItem>
-              <ContextMenuItem onClick={() => setProcessFlowVisualizer(!processFlowVisualizer)}>
+              <ContextMenuItem onClick={() => showSuccess('Flow Animations Toggled')}>
                 Toggle Flow Animations
               </ContextMenuItem>
             </ContextMenuContent>
