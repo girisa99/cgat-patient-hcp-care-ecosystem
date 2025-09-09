@@ -64,8 +64,8 @@ export const useRealAIIntegration = () => {
       return {
         success: true,
         workflow: data,
-        nodes: data?.workflow?.nodes || [],
-        edges: data?.workflow?.edges || [],
+        nodes: data?.nodes || data?.workflow?.nodes || data?.data?.nodes || data?.result?.nodes || [],
+        edges: data?.edges || data?.workflow?.edges || data?.data?.edges || data?.result?.edges || [],
         metadata: data?.metadata || {}
       };
 

@@ -149,6 +149,49 @@ const AgentsInner = () => {
     checkHealth();
   }, [checkHealth]);
 
+  // Pick up any pending workflow generated outside /agents
+  useEffect(() => {
+    try {
+      const pending = localStorage.getItem('pendingWorkflow');
+      if (pending) {
+        const agent = JSON.parse(pending);
+        localStorage.removeItem('pendingWorkflow');
+        const nodesSource: any[] = (agent?.nodes || agent?.workflow?.nodes || agent?.data?.nodes || agent?.result?.nodes || []);
+        const edgesSource: any[] = (agent?.edges || agent?.workflow?.edges || agent?.data?.edges || agent?.result?.edges || []);
+        if (Array.isArray(nodesSource) && nodesSource.length) {
+          const rawNodes = nodesSource.map((n: any, idx: number) => ({
+            id: String(n.id || `node-${idx}-${Date.now()}`),
+            type: 'enhanced',
+            position: n.position || { x: 100 + (idx % 3) * 280, y: 120 + Math.floor(idx / 3) * 160 },
+            data: {
+              ...(n.data || {}),
+              label: n.data?.label || n.label || n.name || n.display_name || `Node ${idx + 1}`,
+              type_key: n.data?.type_key || (typeof n.type === 'string' ? n.type : 'node'),
+              configuration: { ...(n.data?.configuration || n.configuration || {}) },
+              isWorkflowNode: true,
+            }
+          }));
+          let rawEdges = Array.isArray(edgesSource) ? edgesSource : [];
+          if (!rawEdges.length && rawNodes.length > 1) {
+            rawEdges = rawNodes.slice(0, -1).map((n: any, i: number) => ({
+              id: `e-${n.id}-${rawNodes[i + 1].id}`,
+              source: n.id,
+              target: rawNodes[i + 1].id,
+              type: 'smoothstep',
+              animated: true,
+            }));
+          }
+          setWorkflowNodes(rawNodes);
+          setWorkflowEdges(rawEdges);
+          setVisualWorkflowSubTab('builder');
+          toast.success(`Loaded ${rawNodes.length} nodes to canvas`);
+        }
+      }
+    } catch (e) {
+      console.warn('Pending workflow load failed:', e);
+    }
+  }, []);
+
 
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
   const { createSession, updateSession } = useAgentSession();

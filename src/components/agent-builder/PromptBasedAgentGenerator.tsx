@@ -101,6 +101,15 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
       
       showSuccess(`Agent generated successfully! Created ${agentData.nodes.length} nodes.`);
       onGenerate(agentData);
+      try {
+        if (typeof window !== 'undefined' && window.location?.pathname !== '/agents') {
+          // Persist for /agents page to pick up and render
+          try { localStorage.setItem('pendingWorkflow', JSON.stringify(agentData)); } catch {}
+          // Navigate to /agents without full reload (react-router)
+          window.history.pushState({}, '', '/agents');
+          window.dispatchEvent(new PopStateEvent('popstate'));
+        }
+      } catch {}
       setPrompt('');
     } catch (error) {
       console.error('Error generating agent:', error);
