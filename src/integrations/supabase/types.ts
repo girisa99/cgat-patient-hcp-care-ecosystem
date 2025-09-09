@@ -10696,6 +10696,10 @@ export type Database = {
         Args: { key_hash: string }
         Returns: undefined
       }
+      user_can_access_node_config: {
+        Args: { config_id: string }
+        Returns: boolean
+      }
       user_has_any_role: {
         Args: { check_user_id: string; role_names: string[] }
         Returns: boolean

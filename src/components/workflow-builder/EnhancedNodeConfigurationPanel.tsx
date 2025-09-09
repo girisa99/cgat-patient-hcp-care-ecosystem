@@ -1,244 +1,484 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Switch } from '@/components/ui/switch';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { 
+  Play, 
+  Save, 
   Settings, 
+  Database, 
+  Brain, 
   Zap, 
-  Bot, 
-  Database,
-  MessageSquare,
-  Code,
-  TestTube,
-  Save,
-  RotateCcw,
+  CheckCircle, 
+  AlertCircle, 
+  Clock,
   X,
-  ChevronRight
+  Plus,
+  Trash2,
+  Eye,
+  History
 } from 'lucide-react';
+import { useNodeConfiguration } from '@/hooks/useNodeConfiguration';
 import { DynamicConfigurationForm } from './DynamicConfigurationForm';
-import { ConfigurationTemplates } from './ConfigurationTemplates';
-import { toast } from 'sonner';
+import { useIntegrationOptions } from '@/hooks/useIntegrationOptions';
+import { format } from 'date-fns';
 
 interface EnhancedNodeConfigurationPanelProps {
-  isOpen: boolean;
-  onClose: () => void;
-  nodeId: string;
-  nodeType: string;
+  node?: any;
+  nodeId?: string;
+  nodeType?: string;
   nodeName?: string;
   nodeCategory?: string;
   initialConfiguration?: any;
-  onSave: (nodeId: string, configuration: any) => void;
-  onTest?: (nodeId: string, configuration: any) => void;
+  isOpen?: boolean;
+  onClose: () => void;
+  onSave?: (nodeId: string, configuration: any) => void;
+  onTest?: (nodeId: string, result: any) => void;
+  sessionId?: string;
+  workflowId?: string;
 }
 
 export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationPanelProps> = ({
-  isOpen,
-  onClose,
+  node,
   nodeId,
   nodeType,
   nodeName,
   nodeCategory,
-  initialConfiguration = {},
+  initialConfiguration,
+  isOpen = true,
+  onClose,
   onSave,
-  onTest
+  onTest,
+  sessionId,
+  workflowId,
 }) => {
-  const [configuration, setConfiguration] = useState(initialConfiguration);
+  // Normalize node data from props
+  const normalizedNode = node || {
+    id: nodeId,
+    type: nodeType,
+    data: initialConfiguration || {},
+  };
   const [activeTab, setActiveTab] = useState('configuration');
-  const [isDirty, setIsDirty] = useState(false);
+  const [selectedTool, setSelectedTool] = useState<string>('');
+  const [toolInputData, setToolInputData] = useState<string>('{}');
 
-  const handleConfigurationChange = useCallback((newConfig: any) => {
-    setConfiguration(newConfig);
-    setIsDirty(true);
-  }, []);
+  const {
+    nodeConfig,
+    toolExecutions,
+    saveConfiguration,
+    executeTool,
+    saveVectorConfig,
+    saveKnowledgeConfig,
+    isSaving,
+    isExecuting,
+  } = useNodeConfiguration(normalizedNode.id, sessionId, workflowId);
 
-  const handleSave = useCallback(() => {
-    try {
-      onSave(nodeId, configuration);
-      setIsDirty(false);
-      toast.success(`Configuration saved for ${nodeName || nodeType}`);
-    } catch (error: any) {
-      toast.error(`Failed to save configuration: ${error.message}`);
-    }
-  }, [nodeId, configuration, onSave, nodeName, nodeType]);
+  const { tables, mcpLikeTools } = useIntegrationOptions();
 
-  const handleReset = useCallback(() => {
-    setConfiguration(initialConfiguration);
-    setIsDirty(false);
-    toast.info('Configuration reset to initial values');
-  }, [initialConfiguration]);
-
-  const handleTemplateApply = useCallback((template: any) => {
-    const updatedConfig = { ...configuration, ...template };
-    setConfiguration(updatedConfig);
-    setIsDirty(true);
-    setActiveTab('configuration');
-    toast.success('Template applied successfully');
-  }, [configuration]);
-
-  const handleTest = useCallback(async () => {
-    if (onTest) {
-      try {
-        await onTest(nodeId, configuration);
-        toast.success('Node test completed');
-      } catch (error: any) {
-        toast.error(`Test failed: ${error.message}`);
-      }
-    }
-  }, [nodeId, configuration, onTest]);
-
-  const getNodeIcon = (type: string) => {
-    switch (type.toLowerCase()) {
-      case 'llm-agent':
-      case 'agent':
-        return Bot;
-      case 'database':
-      case 'vector-store':
-        return Database;
-      case 'api':
-      case 'http-request':
-        return Zap;
-      case 'message':
-      case 'chat':
-        return MessageSquare;
-      case 'code':
-      case 'function':
-        return Code;
-      default:
-        return Settings;
+  const handleConfigurationChange = (newConfig: any) => {
+    saveConfiguration({
+      node_type: normalizedNode.type,
+      configuration: newConfig,
+      change_summary: `Updated configuration at ${new Date().toLocaleString()}`,
+    });
+    
+    // Call external onSave if provided
+    if (onSave && normalizedNode.id) {
+      onSave(normalizedNode.id, newConfig);
     }
   };
 
-  const NodeIcon = getNodeIcon(nodeType);
+  const handleToolExecution = () => {
+    if (!selectedTool) return;
 
+    try {
+      const inputData = JSON.parse(toolInputData);
+      executeTool({
+        toolName: selectedTool,
+        toolType: 'manual_execution',
+        inputData,
+        executionContext: {
+          node_id: normalizedNode.id,
+          executed_via: 'configuration_panel',
+        },
+      });
+    } catch (error) {
+      alert('Invalid JSON in input data');
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-500" />;
+      case 'failed':
+        return <AlertCircle className="h-4 w-4 text-red-500" />;
+      case 'running':
+        return <Clock className="h-4 w-4 text-blue-500" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-500" />;
+    }
+  };
+
+  // Extract tools from node configuration
+  const nodeTools = normalizedNode.data?.tools || [];
+  const availableTools = [...nodeTools.map((t: any) => t.name), ...mcpLikeTools.map(m => m.name)];
+  
+  // Don't render if not open
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-4xl max-h-[90vh] bg-background shadow-xl">
-        <CardHeader className="border-b">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <NodeIcon className="h-5 w-5 text-primary" />
-              </div>
-              <div>
-                <CardTitle className="text-xl">
-                  {nodeName || `${nodeType} Configuration`}
-                </CardTitle>
-                <div className="flex items-center gap-2 mt-1">
-                  <Badge variant="outline" className="text-xs">
-                    {nodeType}
-                  </Badge>
-                  {nodeCategory && (
-                    <>
-                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                      <Badge variant="secondary" className="text-xs">
-                        {nodeCategory}
-                      </Badge>
-                    </>
-                  )}
-                  {isDirty && (
-                    <Badge variant="destructive" className="text-xs">
-                      Modified
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              {onTest && (
-                <Button variant="outline" size="sm" onClick={handleTest}>
-                  <TestTube className="h-4 w-4 mr-2" />
-                  Test
-                </Button>
-              )}
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleReset}
-                disabled={!isDirty}
-              >
-                <RotateCcw className="h-4 w-4 mr-2" />
-                Reset
-              </Button>
-              <Button size="sm" onClick={handleSave} disabled={!isDirty}>
-                <Save className="h-4 w-4 mr-2" />
-                Save
-              </Button>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
+    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+      <div className="bg-background border rounded-lg w-[90vw] h-[90vh] flex flex-col">
+        <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5" />
+            <h2 className="text-lg font-semibold">Node Configuration</h2>
+            <Badge variant="outline">{normalizedNode.type}</Badge>
           </div>
-        </CardHeader>
+          <Button variant="ghost" size="sm" onClick={onClose}>
+            <X className="h-4 w-4" />
+          </Button>
+        </div>
 
-        <CardContent className="p-0">
-          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full">
-            <div className="border-b px-6 py-2">
-              <TabsList className="grid w-full grid-cols-3">
-                <TabsTrigger value="configuration">Configuration</TabsTrigger>
-                <TabsTrigger value="templates">Templates</TabsTrigger>
-                <TabsTrigger value="advanced">Advanced</TabsTrigger>
-              </TabsList>
-            </div>
+        <div className="flex-1 overflow-hidden">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
+            <TabsList className="grid w-full grid-cols-5">
+              <TabsTrigger value="configuration">Configuration</TabsTrigger>
+              <TabsTrigger value="tools">Tools & Execution</TabsTrigger>
+              <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
+              <TabsTrigger value="vectors">Vector Store</TabsTrigger>
+              <TabsTrigger value="history">Execution History</TabsTrigger>
+            </TabsList>
 
-            <ScrollArea className="h-[60vh]">
-              <TabsContent value="configuration" className="p-6 m-0">
-                <DynamicConfigurationForm
-                  nodeType={nodeType}
-                  configAction="configure"
-                  configuration={configuration}
-                  onChange={handleConfigurationChange}
-                />
-              </TabsContent>
-
-              <TabsContent value="templates" className="p-6 m-0">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Configuration Templates</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Apply pre-built configurations for common use cases
-                    </p>
-                  </div>
-                  <Separator />
-                  <ConfigurationTemplates
-                    nodeType={nodeType}
+            <div className="flex-1 overflow-hidden">
+              <TabsContent value="configuration" className="h-full">
+                <ScrollArea className="h-full p-4">
+                  <DynamicConfigurationForm
+                    nodeType={normalizedNode.type}
                     configAction="configure"
-                    onApplyTemplate={handleTemplateApply}
+                    configuration={normalizedNode.data || {}}
+                    onChange={handleConfigurationChange}
                   />
-                </div>
+                  <div className="mt-6 flex justify-end">
+                    <Button onClick={() => handleConfigurationChange(normalizedNode.data)} disabled={isSaving}>
+                      <Save className="h-4 w-4 mr-2" />
+                      {isSaving ? 'Saving...' : 'Save Configuration'}
+                    </Button>
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
-              <TabsContent value="advanced" className="p-6 m-0">
-                <div className="space-y-4">
-                  <div>
-                    <h3 className="text-lg font-semibold mb-2">Advanced Settings</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Advanced configuration options and debugging tools
-                    </p>
-                  </div>
-                  <Separator />
-                  
+              <TabsContent value="tools" className="h-full">
+                <div className="p-4 space-y-6">
                   <Card>
                     <CardHeader>
-                      <CardTitle className="text-base">Configuration JSON</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="h-5 w-5" />
+                        Execute Tools
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <Label>Select Tool</Label>
+                        <Select value={selectedTool} onValueChange={setSelectedTool}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Choose a tool to execute" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {availableTools.map((tool) => (
+                              <SelectItem key={tool} value={tool}>
+                                {tool}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+
+                      <div>
+                        <Label>Input Data (JSON)</Label>
+                        <Textarea
+                          value={toolInputData}
+                          onChange={(e) => setToolInputData(e.target.value)}
+                          placeholder='{"key": "value"}'
+                          className="font-mono text-sm"
+                          rows={6}
+                        />
+                      </div>
+
+                      <Button 
+                        onClick={handleToolExecution} 
+                        disabled={!selectedTool || isExecuting}
+                        className="w-full"
+                      >
+                        <Play className="h-4 w-4 mr-2" />
+                        {isExecuting ? 'Executing...' : 'Run Tool'}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Available Tools</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <pre className="bg-muted p-4 rounded-md text-sm overflow-auto max-h-60">
-                        {JSON.stringify(configuration, null, 2)}
-                      </pre>
+                      <div className="grid grid-cols-2 gap-2">
+                        {nodeTools.map((tool: any, index: number) => (
+                          <Badge key={index} variant="secondary" className="justify-center">
+                            {tool.name}
+                          </Badge>
+                        ))}
+                      </div>
                     </CardContent>
                   </Card>
                 </div>
               </TabsContent>
-            </ScrollArea>
+
+              <TabsContent value="knowledge" className="h-full">
+                <ScrollArea className="h-full p-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Brain className="h-5 w-5" />
+                        Knowledge Base Configuration
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <Accordion type="single" collapsible>
+                        <AccordionItem value="document-stores">
+                          <AccordionTrigger>Document Stores</AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Source Table</Label>
+                                  <Select>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select table" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {tables.map((table) => (
+                                        <SelectItem key={table.table_name} value={table.table_name}>
+                                          {table.table_name}
+                                        </SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label>Source Column</Label>
+                                  <Select>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select column" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="content">content</SelectItem>
+                                      <SelectItem value="description">description</SelectItem>
+                                      <SelectItem value="data">data</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                              <Button 
+                                onClick={() => saveKnowledgeConfig({
+                                  knowledge_type: 'document_store',
+                                  source_table: 'documents',
+                                  source_column: 'content',
+                                  configuration: {},
+                                })}
+                                size="sm"
+                              >
+                                <Plus className="h-4 w-4 mr-2" />
+                                Add Document Store
+                              </Button>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+
+                        <AccordionItem value="vector-embeddings">
+                          <AccordionTrigger>Vector Embeddings</AccordionTrigger>
+                          <AccordionContent>
+                            <div className="space-y-4">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <Label>Embedding Model</Label>
+                                  <Select>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select model" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="text-embedding-3-small">OpenAI Small</SelectItem>
+                                      <SelectItem value="text-embedding-3-large">OpenAI Large</SelectItem>
+                                      <SelectItem value="claude-embed">Claude Embeddings</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div>
+                                  <Label>Collection Name</Label>
+                                  <Input placeholder="knowledge-base" />
+                                </div>
+                              </div>
+                              <div className="flex items-center space-x-2">
+                                <Switch id="source-documents" />
+                                <Label htmlFor="source-documents">Return Source Documents</Label>
+                              </div>
+                            </div>
+                          </AccordionContent>
+                        </AccordionItem>
+                      </Accordion>
+                    </CardContent>
+                  </Card>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="vectors" className="h-full">
+                <ScrollArea className="h-full p-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Database className="h-5 w-5" />
+                        Vector Store Configuration
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label>Vector Store Type</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select vector store" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="supabase">Supabase Vector</SelectItem>
+                              <SelectItem value="pinecone">Pinecone</SelectItem>
+                              <SelectItem value="weaviate">Weaviate</SelectItem>
+                              <SelectItem value="chroma">Chroma</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label>Embedding Model</Label>
+                          <Select>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select embedding model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="text-embedding-3-small">OpenAI Small</SelectItem>
+                              <SelectItem value="text-embedding-3-large">OpenAI Large</SelectItem>
+                              <SelectItem value="claude-embed">Claude Embeddings</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+
+                      <div>
+                        <Label>Knowledge Name</Label>
+                        <Input placeholder="Enter knowledge base name" />
+                      </div>
+
+                      <div>
+                        <Label>Description</Label>
+                        <Textarea placeholder="Describe this vector store configuration" />
+                      </div>
+
+                      <Button 
+                        onClick={() => saveVectorConfig({
+                          vector_store_type: 'supabase',
+                          embedding_model: 'text-embedding-3-small',
+                          knowledge_name: 'default-knowledge',
+                          configuration: {},
+                        })}
+                      >
+                        <Save className="h-4 w-4 mr-2" />
+                        Save Vector Configuration
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </ScrollArea>
+              </TabsContent>
+
+              <TabsContent value="history" className="h-full">
+                <ScrollArea className="h-full p-4">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <History className="h-5 w-5" />
+                        Tool Execution History
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      {toolExecutions && toolExecutions.length > 0 ? (
+                        <div className="space-y-4">
+                          {toolExecutions.map((execution) => (
+                            <div key={execution.id} className="border rounded-lg p-4">
+                              <div className="flex items-center justify-between mb-2">
+                                <div className="flex items-center gap-2">
+                                  {getStatusIcon(execution.status)}
+                                  <span className="font-medium">{execution.tool_name}</span>
+                                  <Badge variant="outline">{execution.tool_type}</Badge>
+                                </div>
+                                <span className="text-sm text-muted-foreground">
+                                  {format(new Date(execution.created_at), 'MMM dd, HH:mm:ss')}
+                                </span>
+                              </div>
+                              
+                              <div className="grid grid-cols-2 gap-4 text-sm">
+                                <div>
+                                  <Label>Status</Label>
+                                  <p className="capitalize">{execution.status}</p>
+                                </div>
+                                {execution.duration_ms && (
+                                  <div>
+                                    <Label>Duration</Label>
+                                    <p>{execution.duration_ms}ms</p>
+                                  </div>
+                                )}
+                              </div>
+
+                              {execution.error_details && (
+                                <div className="mt-3 p-2 bg-red-50 border-red-200 border rounded">
+                                  <Label className="text-red-700">Error</Label>
+                                  <p className="text-red-600 text-sm font-mono">
+                                    {JSON.stringify(execution.error_details, null, 2)}
+                                  </p>
+                                </div>
+                              )}
+
+                              {execution.output_data && Object.keys(execution.output_data).length > 0 && (
+                                <div className="mt-3 p-2 bg-green-50 border-green-200 border rounded">
+                                  <Label className="text-green-700">Output</Label>
+                                  <pre className="text-green-600 text-sm">
+                                    {JSON.stringify(execution.output_data, null, 2)}
+                                  </pre>
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Eye className="h-8 w-8 mx-auto mb-2" />
+                          <p>No tool executions yet</p>
+                          <p className="text-sm">Execute tools to see their history here</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </ScrollArea>
+              </TabsContent>
+            </div>
           </Tabs>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 };
