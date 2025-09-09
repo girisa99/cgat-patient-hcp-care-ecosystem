@@ -130,7 +130,7 @@ const AgentsInner = () => {
   const [showNodeCategories, setShowNodeCategories] = useState(true);
   const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
   const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
-  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment' | 'verification' | 'audit' | 'workflow-audit'>('collaboration');
+  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment' | 'verification' | 'audit' | 'workflow-audit' | 'consolidated-audit'>('collaboration');
 
   console.log('[Agents] state init', {
     selectedMode,
@@ -1033,6 +1033,12 @@ const AgentsInner = () => {
                 >
                   Workflow Audit
                 </Button>
+                <Button 
+                  variant={advancedFeatureTab === 'consolidated-audit' ? 'default' : 'outline'}
+                  onClick={() => setAdvancedFeatureTab('consolidated-audit')}
+                >
+                  System Health
+                </Button>
               </div>
               
               {advancedFeatureTab === 'collaboration' && (
@@ -1080,6 +1086,9 @@ const AgentsInner = () => {
               )}
               {advancedFeatureTab === 'workflow-audit' && (
                 <ComprehensiveWorkflowAudit />
+              )}
+              {advancedFeatureTab === 'consolidated-audit' && (
+                <ConsolidatedFunctionalityAudit />
               )}
             </div>
           </div>
