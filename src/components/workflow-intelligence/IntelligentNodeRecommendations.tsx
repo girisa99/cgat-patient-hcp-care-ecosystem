@@ -117,7 +117,7 @@ export const IntelligentNodeRecommendations: React.FC<IntelligentNodeRecommendat
   // Detect gaps in workflow (missing common patterns)
   const detectWorkflowGaps = (nodes: Node[], edges: Edge[]) => {
     const gaps = [];
-    const nodeTypeSet = new Set(nodes.map(n => n.data?.category?.toLowerCase()));
+    const nodeTypeSet = new Set(nodes.map(n => String(n.data?.category || '').toLowerCase()));
     
     // Common workflow patterns to check
     const patterns = [
@@ -161,8 +161,8 @@ export const IntelligentNodeRecommendations: React.FC<IntelligentNodeRecommendat
     
     // Multi-agent
     const agentNodes = nodes.filter(n => 
-      n.data?.category?.toLowerCase().includes('agent') ||
-      n.data?.type_key?.toLowerCase().includes('agent')
+      String(n.data?.category || '').toLowerCase().includes('agent') ||
+      String(n.data?.type_key || '').toLowerCase().includes('agent')
     );
     if (agentNodes.length > 1) {
       patterns.push('multi_agent');

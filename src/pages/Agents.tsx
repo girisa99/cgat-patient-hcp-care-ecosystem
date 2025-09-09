@@ -1027,6 +1027,12 @@ const AgentsInner = () => {
                 >
                   Functionality Audit
                 </Button>
+                <Button 
+                  variant={advancedFeatureTab === 'workflow-audit' ? 'default' : 'outline'}
+                  onClick={() => setAdvancedFeatureTab('workflow-audit')}
+                >
+                  Workflow Audit
+                </Button>
               </div>
               
               {advancedFeatureTab === 'collaboration' && (
@@ -1071,6 +1077,9 @@ const AgentsInner = () => {
               )}
               {advancedFeatureTab === 'audit' && (
                 <ComprehensiveFunctionalityAudit />
+              )}
+              {advancedFeatureTab === 'workflow-audit' && (
+                <ComprehensiveWorkflowAudit />
               )}
             </div>
           </div>
