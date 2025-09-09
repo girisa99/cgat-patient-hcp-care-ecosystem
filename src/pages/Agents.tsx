@@ -139,8 +139,11 @@ const AgentsInner = () => {
     showQuestionnaire
   });
 
-  const { status: aiHealth, checkHealth } = useAIServiceHealth();
+  const { status: aiHealth, checkHealth, checking } = useAIServiceHealth();
   const isAIHealthy = aiHealth.overallHealthy;
+  const aiCheckComplete = Boolean(aiHealth.lastChecked);
+  const disableAssist = aiCheckComplete ? !isAIHealthy : false;
+  const assistTitle = checking ? 'Checking AI services health...' : (!isAIHealthy && aiCheckComplete ? 'AI services are unavailable. Check health status.' : undefined);
 
   useEffect(() => {
     checkHealth();
@@ -412,7 +415,7 @@ const AgentsInner = () => {
               <Play className="w-3 h-3 mr-1" />
               Deploy
             </Button>
-            <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)} disabled={!isAIHealthy} title={!isAIHealthy ? 'AI services are unavailable. Check health status.' : undefined}>
+            <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)} disabled={disableAssist} title={assistTitle}>
               <Sparkles className="w-3 h-3 mr-1" />
               🚀 Unified AI Assist
             </Button>
