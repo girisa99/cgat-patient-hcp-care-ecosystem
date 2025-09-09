@@ -802,8 +802,7 @@ Examples:
               size="sm" 
               variant="outline" 
               onClick={() => setShowRightAIPanel(true)}
-              disabled={!isAIHealthy}
-              title={isAIHealthy ? "Generate workflow from AI prompt" : "AI Services Unavailable"}
+              title="Generate workflow from AI prompt"
             >
               <Bot className="h-4 w-4 mr-1" />
               AI Assistant
@@ -831,6 +830,22 @@ Examples:
           </div>
 
           <div className="flex items-center gap-2">
+            <Select 
+              defaultValue={typeof window !== 'undefined' ? (localStorage.getItem('agentBuilder_selectedMode') || 'unified') : 'unified'}
+              onValueChange={(val) => {
+                try { localStorage.setItem('agentBuilder_selectedMode', val); } catch {}
+                try { window.dispatchEvent(new CustomEvent('switch-agent-mode', { detail: val })); } catch {}
+              }}
+            >
+              <SelectTrigger className="h-8 w-[150px] text-xs">
+                <SelectValue placeholder="Mode" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unified">Unified</SelectItem>
+                <SelectItem value="visual">Visual</SelectItem>
+                <SelectItem value="ecosystem">Ecosystem</SelectItem>
+              </SelectContent>
+            </Select>
             <Badge variant="secondary" className="text-xs">
               {categories.length} Categories | {nodeTypes.length} Node Types
             </Badge>

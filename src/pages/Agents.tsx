@@ -101,7 +101,13 @@ import { QueryPerformanceOptimizer } from '@/components/performance/QueryPerform
 
 const AgentsInner = () => {
   // State management
-  const [selectedMode, setSelectedMode] = useState<AgentMode | null>('unified');
+  const [selectedMode, setSelectedMode] = useState<AgentMode | null>(() => {
+    try {
+      return (localStorage.getItem('agentBuilder_selectedMode') as AgentMode) || 'unified';
+    } catch {
+      return 'unified';
+    }
+  });
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
@@ -359,6 +365,25 @@ const AgentsInner = () => {
                      mode === 'ecosystem' ? 'Agent Ecosystem' : 'Manual Configuration';
     toast.success(`Switched to ${modeText} mode`);
   };
+
+  // Allow toolbar mode switcher to control this page
+  useEffect(() => {
+    const handler = (e: any) => {
+      const mode = e?.detail as AgentMode;
+      if (!mode) return;
+      setSelectedMode(mode);
+      try { localStorage.setItem('agentBuilder_selectedMode', mode as any); } catch {}
+      if (mode === 'visual') {
+        setVisualWorkflowSubTab('use-case');
+      }
+      const modeText = mode === 'unified' ? 'Unified Workflow' : 
+                       mode === 'visual' ? 'Visual Workflow' : 
+                       mode === 'ecosystem' ? 'Agent Ecosystem' : 'Manual Configuration';
+      toast.success(`Switched to ${modeText} mode`);
+    };
+    window.addEventListener('switch-agent-mode', handler as any);
+    return () => window.removeEventListener('switch-agent-mode', handler as any);
+  }, []);
 
   const handleUseCaseSelect = (useCase: string) => {
     setSelectedUseCase(useCase);
