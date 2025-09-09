@@ -72,6 +72,7 @@ import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
 import { AgentNode } from './nodes/AgentNode';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { EnhancedNodePalette } from './EnhancedNodePalette';
+import { AIWorkflowPrompt } from './AIWorkflowPrompt';
 import { NodeContextMenu } from './NodeContextMenu';
 import { TestingConsolePanel } from './TestingConsolePanel';
 import { TemplateGallery } from '../unified-workflow/TemplateGallery';
@@ -318,6 +319,21 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
       showSuccess('Node duplicated');
     }
   }, [getNodes, setNodes, showSuccess]);
+
+  const handleNodeAdd = useCallback((newNode: Node) => {
+    console.log('Adding node:', newNode);
+    setNodes(nds => [...nds, newNode]);
+  }, [setNodes]);
+
+  const handleWorkflowGenerated = useCallback((workflow: any) => {
+    console.log('Generated workflow:', workflow);
+    if (workflow.nodes && Array.isArray(workflow.nodes)) {
+      setNodes(workflow.nodes);
+    }
+    if (workflow.edges && Array.isArray(workflow.edges)) {
+      setEdges(workflow.edges);
+    }
+  }, [setNodes, setEdges]);
 
   // Wrap node types to enable right-click context menu & actions
   const safeNodeTypes: NodeTypes = useMemo(() => {
@@ -829,8 +845,16 @@ Examples:
       {/* Main Flow Area */}
       <div className="flex-1 relative flex min-h-0">
         {!canvasOnly && (
-          <div className="w-72 min-w-64 h-full border-r bg-background flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
-            <EnhancedNodePalette heightClass="min-h-full" />
+          <div className="flex">
+            {/* Enhanced Node Library */}
+            <div className="w-80 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
+              <EnhancedNodePalette heightClass="min-h-full" />
+            </div>
+            
+            {/* AI Workflow Prompt Panel */}
+            <div className="w-96 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
+              <AIWorkflowPrompt onWorkflowGenerated={handleWorkflowGenerated} />
+            </div>
           </div>
         )}
         <div className="flex-1 relative">

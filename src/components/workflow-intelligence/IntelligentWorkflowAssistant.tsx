@@ -183,6 +183,8 @@ export const IntelligentWorkflowAssistant: React.FC<IntelligentWorkflowAssistant
                   onChange={(e) => setUseCaseInput(e.target.value)}
                   rows={3}
                   className="mt-2"
+                  dir="ltr"
+                  style={{ textAlign: 'left', direction: 'ltr' }}
                 />
               </div>
               
