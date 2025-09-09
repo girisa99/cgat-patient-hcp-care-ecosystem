@@ -192,6 +192,49 @@ const AgentsInner = () => {
     }
   }, []);
 
+  // Global listener for generated workflows dispatched from anywhere
+  useEffect(() => {
+    const handler = (e: any) => {
+      try {
+        const agent = e?.detail;
+        if (!agent) return;
+        const nodesSource: any[] = (agent?.nodes || agent?.workflow?.nodes || agent?.data?.nodes || agent?.result?.nodes || []);
+        const edgesSource: any[] = (agent?.edges || agent?.workflow?.edges || agent?.data?.edges || agent?.result?.edges || []);
+        if (Array.isArray(nodesSource) && nodesSource.length) {
+          const rawNodes = nodesSource.map((n: any, idx: number) => ({
+            id: String(n.id || `node-${idx}-${Date.now()}`),
+            type: 'enhanced',
+            position: n.position || { x: 100 + (idx % 3) * 280, y: 120 + Math.floor(idx / 3) * 160 },
+            data: {
+              ...(n.data || {}),
+              label: n.data?.label || n.label || n.name || n.display_name || `Node ${idx + 1}`,
+              type_key: n.data?.type_key || (typeof n.type === 'string' ? n.type : 'node'),
+              configuration: { ...(n.data?.configuration || n.configuration || {}) },
+              isWorkflowNode: true,
+            }
+          }));
+          let rawEdges = Array.isArray(edgesSource) ? edgesSource : [];
+          if (!rawEdges.length && rawNodes.length > 1) {
+            rawEdges = rawNodes.slice(0, -1).map((n: any, i: number) => ({
+              id: `e-${n.id}-${rawNodes[i + 1].id}`,
+              source: n.id,
+              target: rawNodes[i + 1].id,
+              type: 'smoothstep',
+              animated: true,
+            }));
+          }
+          setWorkflowNodes(rawNodes);
+          setWorkflowEdges(rawEdges);
+          setVisualWorkflowSubTab('builder');
+          toast.success(`Loaded ${rawNodes.length} nodes to canvas`);
+        }
+      } catch (err) {
+        console.warn('workflow-generated handler failed:', err);
+      }
+    };
+    window.addEventListener('workflow-generated', handler as any);
+    return () => window.removeEventListener('workflow-generated', handler as any);
+  }, []);
 
   const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
   const { createSession, updateSession } = useAgentSession();
