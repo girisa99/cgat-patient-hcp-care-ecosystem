@@ -507,6 +507,15 @@ const AgentsInner = () => {
           <div className="flex items-center gap-3">
             <h1 className="text-sm font-semibold">Visual Workflow Builder</h1>
             <Badge variant="secondary" className="text-xs">ADVANCED</Badge>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowModeSelector(true)}
+              className="flex items-center gap-1 text-xs h-7 px-2"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Switch Mode
+            </Button>
           </div>
           
           <div className="flex items-center gap-1">
@@ -544,6 +553,18 @@ const AgentsInner = () => {
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Visual Mode Tabs */}
           <div className="border-b bg-card px-4 py-2">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-lg font-semibold">Visual Workflow Builder</h2>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => setShowModeSelector(true)}
+                className="flex items-center gap-1 text-xs"
+              >
+                <ArrowLeft className="h-3 w-3" />
+                Switch Mode
+              </Button>
+            </div>
             <div className="flex items-center gap-1">
               <Button 
                 variant={visualWorkflowSubTab === 'use-case' ? 'default' : 'ghost'} 
@@ -1032,8 +1053,8 @@ const AgentsInner = () => {
     );
   }
 
-  // Show mode selector if no mode selected
-  if (showModeSelector || !selectedMode) {
+  // Always allow switching back to mode selector
+  if (showModeSelector) {
     console.log('[Agents] rendering ModeSelector branch', { selectedMode, showModeSelector });
     return (
       <AppLayout>
@@ -1065,6 +1086,18 @@ const AgentsInner = () => {
     return (
       <AppLayout>
         <div className="h-[80vh] flex flex-col">
+          <div className="p-2 border-b flex items-center justify-between">
+            <h2 className="text-lg font-semibold">Unified Workflow Builder</h2>
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowModeSelector(true)}
+              className="flex items-center gap-1 text-xs"
+            >
+              <ArrowLeft className="h-3 w-3" />
+              Switch Mode
+            </Button>
+          </div>
           <FixedAdvancedReactFlow
             initialNodes={workflowNodes}
             initialEdges={workflowEdges}
@@ -1095,7 +1128,20 @@ const AgentsInner = () => {
   if (selectedMode === 'ecosystem') {
     return (
       <AppLayout>
-        <AgentEcosystemDashboard />
+        <div className="p-4">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-2xl font-bold">Agent Ecosystem Dashboard</h1>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowModeSelector(true)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Mode Selection
+            </Button>
+          </div>
+          <AgentEcosystemDashboard />
+        </div>
       </AppLayout>
     );
   }
