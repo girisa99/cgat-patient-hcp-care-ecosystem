@@ -34,6 +34,8 @@ import { MultiPartySignature, type Signer } from '@/components/signature/MultiPa
 import { PDFGenerator } from '@/components/signature/PDFGenerator';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
+import { EnhancedProviderSection } from './EnhancedProviderSection';
 
 export interface PatientEnrollmentData {
   // Patient Information
@@ -60,10 +62,13 @@ export interface PatientEnrollmentData {
   providerSpecialty?: string;
   treatmentCenterId?: string;
   treatmentCenterName: string;
+  treatmentCenterAddress?: string;
+  treatmentCenterNpi?: string;
   referralProviderId?: string;
   referralProviderName?: string;
   referralCenterId?: string;
   referralCenterName?: string;
+  referralCenterAddress?: string;
   
   // Insurance Information
   medicalInsurance: {
@@ -199,14 +204,15 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     ...initialData
   });
 
-  const [currentStep, setCurrentStep] = useState(1);
+  const [currentStep, setCurrentStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [pdfGenerating, setPdfGenerating] = useState(false);
   const [providerSignature, setProviderSignature] = useState<string | null>(null);
   const [patientSignature, setPatientSignature] = useState<string | null>(null);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const { showSuccess, showError } = useMasterToast();
 
-  const totalSteps = 8; // Updated to include new sections
+  const totalSteps = 8;
 
   useEffect(() => {
     if (initialData) {
@@ -1062,6 +1068,88 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     </Card>
   );
 
+  const renderMedicalInfo = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <User className="h-5 w-5" />
+          Medical History & Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label htmlFor="primaryPhysician">Primary Physician</Label>
+          <Input
+            id="primaryPhysician"
+            value={formData.primaryPhysician}
+            onChange={(e) => updateFormData('primaryPhysician', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+        <div>
+          <Label htmlFor="medicalHistory">Medical History</Label>
+          <Textarea
+            id="medicalHistory"
+            value={formData.medicalHistory}
+            onChange={(e) => updateFormData('medicalHistory', e.target.value)}
+            disabled={readOnly}
+            rows={3}
+          />
+        </div>
+        <div>
+          <Label htmlFor="currentMedications">Current Medications</Label>
+          <Textarea
+            id="currentMedications"
+            value={formData.currentMedications}
+            onChange={(e) => updateFormData('currentMedications', e.target.value)}
+            disabled={readOnly}
+            rows={3}
+          />
+        </div>
+        <div>
+          <Label htmlFor="allergies">Allergies</Label>
+          <Textarea
+            id="allergies"
+            value={formData.allergies}
+            onChange={(e) => updateFormData('allergies', e.target.value)}
+            disabled={readOnly}
+            rows={2}
+          />
+        </div>
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="treatmentType">Treatment Type</Label>
+            <Input
+              id="treatmentType"
+              value={formData.treatmentType}
+              onChange={(e) => updateFormData('treatmentType', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+          <div>
+            <Label htmlFor="referralSource">Referral Source</Label>
+            <Input
+              id="referralSource"
+              value={formData.referralSource}
+              onChange={(e) => updateFormData('referralSource', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="admissionDate">Admission Date</Label>
+          <Input
+            id="admissionDate"
+            type="date"
+            value={formData.admissionDate || ''}
+            onChange={(e) => updateFormData('admissionDate', e.target.value)}
+            disabled={readOnly}
+          />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   const renderClinicalInfo = () => (
     <Card>
       <CardHeader>
@@ -1148,108 +1236,72 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
             </label>
           </div>
         </div>
-
-        <div>
-          <h4 className="font-medium mb-3">Medical History & Information</h4>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="primaryPhysician">Primary Physician</Label>
-              <Input
-                id="primaryPhysician"
-                value={formData.primaryPhysician}
-                onChange={(e) => updateFormData('primaryPhysician', e.target.value)}
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label htmlFor="medicalHistory">Medical History</Label>
-              <Textarea
-                id="medicalHistory"
-                value={formData.medicalHistory}
-                onChange={(e) => updateFormData('medicalHistory', e.target.value)}
-                disabled={readOnly}
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label htmlFor="currentMedications">Current Medications</Label>
-              <Textarea
-                id="currentMedications"
-                value={formData.currentMedications}
-                onChange={(e) => updateFormData('currentMedications', e.target.value)}
-                disabled={readOnly}
-                rows={3}
-              />
-            </div>
-            <div>
-              <Label htmlFor="allergies">Allergies</Label>
-              <Textarea
-                id="allergies"
-                value={formData.allergies}
-                onChange={(e) => updateFormData('allergies', e.target.value)}
-                disabled={readOnly}
-                rows={2}
-              />
-            </div>
-          </div>
-        </div>
+      </CardContent>
+    </Card>
+  );
       </CardContent>
     </Card>
   );
 
   return (
     <div className="space-y-6">
-      {/* Progress Indicator */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-2">
-            <span className="text-sm font-medium">Enrollment Progress</span>
-            <span className="text-sm text-muted-foreground">{currentStep} of {totalSteps}</span>
-          </div>
-          <div className="w-full bg-muted rounded-full h-2">
-            <div 
-              className="bg-primary h-2 rounded-full transition-all duration-300"
-              style={{ width: `${(currentStep / totalSteps) * 100}%` }}
-            />
-          </div>
-        </CardContent>
-      </Card>
+      {/* Journey Steps Navigation */}
+      <EnrollmentJourneySteps
+        currentStep={currentStep}
+        onStepClick={setCurrentStep}
+        completedSteps={completedSteps}
+      />
 
       {/* Patient Information */}
-      {currentStep === 1 && renderPatientInfo()}
+      {currentStep === 0 && renderPatientInfo()}
 
       {/* Provider Information */}
-      {currentStep === 2 && renderProviderInfo()}
+      {currentStep === 1 && (
+        <EnhancedProviderSection
+          formData={formData}
+          updateFormData={updateFormData}
+          readOnly={readOnly}
+        />
+      )}
 
       {/* Insurance Information */}
-      {currentStep === 3 && renderInsuranceInfo()}
+      {currentStep === 2 && renderInsuranceInfo()}
 
       {/* Therapy Information */}
-      {currentStep === 4 && renderTherapyInfo()}
+      {currentStep === 3 && renderTherapyInfo()}
 
       {/* Clinical Information */}
-      {currentStep === 5 && renderClinicalInfo()}
+      {currentStep === 4 && renderClinicalInfo()}
 
-      {/* Submission Method Selection */}
-      {currentStep === 6 && renderSubmissionOptions()}
+      {/* Medical History (existing) */}
+      {currentStep === 5 && renderMedicalInfo()}
 
       {/* Consent & Signatures */}
-      {currentStep === 7 && renderConsentSignatures()}
+      {currentStep === 6 && renderConsentSignatures()}
+
+      {/* Submission Method Selection */}
+      {currentStep === 7 && renderSubmissionOptions()}
 
       {/* Navigation */}
       <div className="flex justify-between">
         <Button 
           variant="outline"
-          onClick={() => setCurrentStep(prev => Math.max(1, prev - 1))}
-          disabled={currentStep === 1}
+          onClick={() => setCurrentStep(prev => Math.max(0, prev - 1))}
+          disabled={currentStep === 0}
         >
           Previous
         </Button>
         
         <div className="space-x-2">
-          {currentStep < totalSteps ? (
+          {currentStep < totalSteps - 1 ? (
             <Button 
-              onClick={() => setCurrentStep(prev => Math.min(totalSteps, prev + 1))}
+              onClick={() => {
+                // Mark current step as completed
+                if (!completedSteps.includes(currentStep)) {
+                  setCompletedSteps(prev => [...prev, currentStep]);
+                }
+                setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
+              }}
             >
               Next
             </Button>
@@ -1263,6 +1315,9 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
           )}
         </div>
       </div>
+    </div>
+  );
+};
     </div>
   );
 };
