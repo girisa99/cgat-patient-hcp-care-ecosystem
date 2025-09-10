@@ -195,6 +195,83 @@ export const useDataIntegration = () => {
     }
   }, [toast]);
 
+  // Import data from external API
+  const importFromAPI = useCallback(async (
+    apiEndpoint: string,
+    options: DataIntegrationOptions,
+    headers?: Record<string, string>
+  ): Promise<ImportResult> => {
+    setIsProcessing(true);
+    setProgress(0);
+
+    try {
+      const { data: result, error } = await supabase.functions.invoke('data-integration', {
+        body: {
+          operation: 'import_from_api',
+          tableName: options.tableName,
+          apiEndpoint,
+          headers,
+          mapping: options.mapping
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "API Import Complete",
+        description: `${result.success} records imported from API, ${result.errors} errors`,
+      });
+
+      return result;
+    } catch (error) {
+      toast({
+        title: "API Import Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive"
+      });
+      throw error;
+    } finally {
+      setIsProcessing(false);
+      setProgress(0);
+    }
+  }, [toast]);
+
+  // Sync data to external API
+  const syncToAPI = useCallback(async (
+    tableName: string,
+    apiEndpoint: string,
+    filters?: Record<string, any>,
+    headers?: Record<string, string>
+  ) => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('data-integration', {
+        body: {
+          operation: 'sync_to_api',
+          tableName,
+          apiEndpoint,
+          filters,
+          headers
+        }
+      });
+
+      if (error) throw error;
+
+      toast({
+        title: "API Sync Complete",
+        description: `${result.count} records synced to external API`,
+      });
+
+      return result;
+    } catch (error) {
+      toast({
+        title: "API Sync Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [toast]);
+
   // Bulk update records
   const bulkUpdate = useCallback(async (
     tableName: string,
@@ -238,10 +315,12 @@ export const useDataIntegration = () => {
     progress,
     importFromJSON,
     importFromCSV,
+    importFromAPI,
     exportToJSON,
     exportToCSV,
     updateRecord,
-    bulkUpdate
+    bulkUpdate,
+    syncToAPI
   };
 };
 

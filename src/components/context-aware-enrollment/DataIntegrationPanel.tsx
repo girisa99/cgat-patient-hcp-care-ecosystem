@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { useDataIntegration } from '@/hooks/useDataIntegration';
+import { Input } from '@/components/ui/input';
 import { Download, Upload, Database, FileJson, FileSpreadsheet, Zap } from 'lucide-react';
 
 interface DataIntegrationPanelProps {

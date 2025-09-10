@@ -8,12 +8,14 @@ const corsHeaders = {
 };
 
 interface DataOperation {
-  operation: 'import' | 'export' | 'update' | 'bulk_update';
+  operation: 'import' | 'export' | 'update' | 'bulk_update' | 'import_from_api' | 'sync_to_api';
   tableName: string;
   data?: any;
   filters?: Record<string, any>;
   format?: 'json' | 'csv';
   mapping?: Record<string, string>;
+  apiEndpoint?: string;
+  headers?: Record<string, string>;
 }
 
 serve(async (req) => {
@@ -28,7 +30,7 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
     );
 
-    const { operation, tableName, data, filters, format, mapping }: DataOperation = await req.json();
+    const { operation, tableName, data, filters, format, mapping, apiEndpoint, headers }: DataOperation = await req.json();
 
     console.log('Data integration operation:', { operation, tableName, format });
 
@@ -56,6 +58,20 @@ serve(async (req) => {
 
       case 'bulk_update': {
         const result = await handleBulkUpdate(supabaseClient, tableName, data);
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'import_from_api': {
+        const result = await handleImportFromAPI(supabaseClient, tableName, apiEndpoint!, headers, mapping);
+        return new Response(JSON.stringify(result), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        });
+      }
+
+      case 'sync_to_api': {
+        const result = await handleSyncToAPI(supabaseClient, tableName, apiEndpoint!, filters, headers);
         return new Response(JSON.stringify(result), {
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
@@ -185,4 +201,96 @@ function convertJSONToCSV(data: any[]): string {
   );
   
   return [csvHeaders, ...csvRows].join('\n');
+}
+
+async function handleImportFromAPI(supabaseClient: any, tableName: string, apiEndpoint: string, headers?: Record<string, string>, mapping?: Record<string, string>) {
+  const result = { success: 0, errors: 0, details: [] as any[] };
+  
+  try {
+    // Fetch data from external API
+    const fetchHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...headers
+    };
+
+    const response = await fetch(apiEndpoint, {
+      method: 'GET',
+      headers: fetchHeaders
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const apiData = await response.json();
+    const dataArray = Array.isArray(apiData) ? apiData : [apiData];
+
+    // Process and import each record
+    for (let i = 0; i < dataArray.length; i++) {
+      try {
+        const transformedData = transformData(dataArray[i], mapping);
+        
+        const { error } = await supabaseClient
+          .from(tableName)
+          .upsert({
+            ...transformedData,
+            updated_at: new Date().toISOString()
+          });
+
+        if (error) throw error;
+        
+        result.success++;
+      } catch (error: any) {
+        result.errors++;
+        result.details.push({
+          row: i + 1,
+          error: error.message
+        });
+      }
+    }
+
+    return result;
+  } catch (error: any) {
+    throw new Error(`API import failed: ${error.message}`);
+  }
+}
+
+async function handleSyncToAPI(supabaseClient: any, tableName: string, apiEndpoint: string, filters?: Record<string, any>, headers?: Record<string, string>) {
+  try {
+    // Get data from Supabase
+    let query = supabaseClient.from(tableName).select('*');
+    
+    if (filters) {
+      Object.entries(filters).forEach(([key, value]) => {
+        query = query.eq(key, value);
+      });
+    }
+
+    const { data, error } = await query;
+    if (error) throw error;
+
+    // Send data to external API
+    const fetchHeaders: Record<string, string> = {
+      'Content-Type': 'application/json',
+      ...headers
+    };
+
+    const response = await fetch(apiEndpoint, {
+      method: 'POST',
+      headers: fetchHeaders,
+      body: JSON.stringify(data)
+    });
+
+    if (!response.ok) {
+      throw new Error(`API sync failed: ${response.status} ${response.statusText}`);
+    }
+
+    return { 
+      success: true, 
+      count: data.length,
+      message: 'Data successfully synced to external API'
+    };
+  } catch (error: any) {
+    throw new Error(`API sync failed: ${error.message}`);
+  }
 }
