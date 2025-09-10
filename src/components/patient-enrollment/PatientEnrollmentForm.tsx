@@ -46,14 +46,24 @@ export interface PatientEnrollmentData {
   lastName: string;
   middleName?: string;
   dateOfBirth: string;
+  preferredLanguage: 'english' | 'spanish' | 'other';
+  otherLanguage?: string;
+  gender: 'male' | 'female' | 'other';
+  otherGender?: string;
   ssn: string;
   email: string;
-  phone: string;
-  emergencyContactName: string;
-  emergencyContactPhone: string;
+  
+  // Contact Information
+  homePhone?: string;
+  cellPhone: string;
+  alternateContactName?: string;
+  alternateContactRelationship?: string;
+  alternateContactPhone?: string;
+  doNotContactPatient?: boolean;
   
   // Address Information
   address: string;
+  apartment?: string;
   city: string;
   state: string;
   zipCode: string;
@@ -177,12 +187,20 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     lastName: '',
     middleName: '',
     dateOfBirth: '',
+    preferredLanguage: 'english',
+    otherLanguage: '',
+    gender: 'male',
+    otherGender: '',
     ssn: '',
     email: '',
-    phone: '',
-    emergencyContactName: '',
-    emergencyContactPhone: '',
+    homePhone: '',
+    cellPhone: '',
+    alternateContactName: '',
+    alternateContactRelationship: '',
+    alternateContactPhone: '',
+    doNotContactPatient: false,
     address: '',
+    apartment: '',
     city: '',
     state: '',
     zipCode: '',
@@ -702,41 +720,38 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid md:grid-cols-3 gap-4">
+        {/* Name Fields */}
+        <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="firstName">First Name</Label>
+            <Label htmlFor="firstName">First Name *</Label>
             <Input
               id="firstName"
               value={formData.firstName}
               onChange={(e) => updateFormData('firstName', e.target.value)}
               disabled={readOnly}
               required
+              className={!formData.firstName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+              aria-invalid={!formData.firstName?.trim()}
             />
           </div>
           <div>
-            <Label htmlFor="middleName">Middle Name</Label>
-            <Input
-              id="middleName"
-              value={formData.middleName}
-              onChange={(e) => updateFormData('middleName', e.target.value)}
-              disabled={readOnly}
-            />
-          </div>
-          <div>
-            <Label htmlFor="lastName">Last Name</Label>
+            <Label htmlFor="lastName">Last Name *</Label>
             <Input
               id="lastName"
               value={formData.lastName}
               onChange={(e) => updateFormData('lastName', e.target.value)}
               disabled={readOnly}
               required
+              className={!formData.lastName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+              aria-invalid={!formData.lastName?.trim()}
             />
           </div>
         </div>
 
+        {/* Date of Birth and Language */}
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="dateOfBirth">Date of Birth</Label>
+            <Label htmlFor="dateOfBirth">Date of Birth (MM/DD/YYYY) *</Label>
             <Input
               id="dateOfBirth"
               type="date"
@@ -744,45 +759,274 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               onChange={(e) => updateFormData('dateOfBirth', e.target.value)}
               disabled={readOnly}
               required
+              className={!formData.dateOfBirth?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+              aria-invalid={!formData.dateOfBirth?.trim()}
             />
           </div>
           <div>
-            <Label htmlFor="ssn">Social Security Number</Label>
+            <Label>Preferred Language</Label>
+            <div className="flex gap-4 mt-2">
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="preferredLanguage"
+                  value="english"
+                  checked={formData.preferredLanguage === 'english'}
+                  onChange={(e) => updateFormData('preferredLanguage', e.target.value)}
+                  disabled={readOnly}
+                  className="form-radio"
+                />
+                <span className="text-sm">English</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="preferredLanguage"
+                  value="spanish"
+                  checked={formData.preferredLanguage === 'spanish'}
+                  onChange={(e) => updateFormData('preferredLanguage', e.target.value)}
+                  disabled={readOnly}
+                  className="form-radio"
+                />
+                <span className="text-sm">Spanish</span>
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="radio"
+                  name="preferredLanguage"
+                  value="other"
+                  checked={formData.preferredLanguage === 'other'}
+                  onChange={(e) => updateFormData('preferredLanguage', e.target.value)}
+                  disabled={readOnly}
+                  className="form-radio"
+                />
+                <span className="text-sm">Other</span>
+              </label>
+            </div>
+            {formData.preferredLanguage === 'other' && (
+              <Input
+                placeholder="Specify language"
+                value={formData.otherLanguage || ''}
+                onChange={(e) => updateFormData('otherLanguage', e.target.value)}
+                disabled={readOnly}
+                className="mt-2"
+              />
+            )}
+          </div>
+        </div>
+
+        {/* Gender */}
+        <div>
+          <Label>Gender</Label>
+          <div className="flex gap-4 mt-2">
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="gender"
+                value="male"
+                checked={formData.gender === 'male'}
+                onChange={(e) => updateFormData('gender', e.target.value)}
+                disabled={readOnly}
+                className="form-radio"
+              />
+              <span className="text-sm">Male</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="gender"
+                value="female"
+                checked={formData.gender === 'female'}
+                onChange={(e) => updateFormData('gender', e.target.value)}
+                disabled={readOnly}
+                className="form-radio"
+              />
+              <span className="text-sm">Female</span>
+            </label>
+            <label className="flex items-center gap-2">
+              <input
+                type="radio"
+                name="gender"
+                value="other"
+                checked={formData.gender === 'other'}
+                onChange={(e) => updateFormData('gender', e.target.value)}
+                disabled={readOnly}
+                className="form-radio"
+              />
+              <span className="text-sm">Other</span>
+            </label>
+          </div>
+          {formData.gender === 'other' && (
             <Input
-              id="ssn"
-              type="password"
-              value={formData.ssn}
-              onChange={(e) => updateFormData('ssn', e.target.value)}
+              placeholder="Specify gender"
+              value={formData.otherGender || ''}
+              onChange={(e) => updateFormData('otherGender', e.target.value)}
               disabled={readOnly}
-              placeholder="XXX-XX-XXXX"
+              className="mt-2 max-w-xs"
+            />
+          )}
+        </div>
+
+        {/* Address */}
+        <div className="grid md:grid-cols-4 gap-4">
+          <div className="md:col-span-2">
+            <Label htmlFor="address">Street *</Label>
+            <Input
+              id="address"
+              value={formData.address}
+              onChange={(e) => updateFormData('address', e.target.value)}
+              disabled={readOnly}
               required
+              placeholder="123 Main Street"
+              className={!formData.address?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+              aria-invalid={!formData.address?.trim()}
+            />
+          </div>
+          <div>
+            <Label htmlFor="apartment">Apt.</Label>
+            <Input
+              id="apartment"
+              value={formData.apartment || ''}
+              onChange={(e) => updateFormData('apartment', e.target.value)}
+              disabled={readOnly}
+              placeholder="Apt 2B"
+            />
+          </div>
+          <div>
+            <Label htmlFor="city">City *</Label>
+            <Input
+              id="city"
+              value={formData.city}
+              onChange={(e) => updateFormData('city', e.target.value)}
+              disabled={readOnly}
+              required
+              className={!formData.city?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+              aria-invalid={!formData.city?.trim()}
             />
           </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="email">Email Address</Label>
+            <Label htmlFor="state">State *</Label>
             <Input
-              id="email"
-              type="email"
-              value={formData.email}
-              onChange={(e) => updateFormData('email', e.target.value)}
+              id="state"
+              value={formData.state}
+              onChange={(e) => updateFormData('state', e.target.value)}
               disabled={readOnly}
               required
+              placeholder="NY"
+              maxLength={2}
+              className={!formData.state?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+              aria-invalid={!formData.state?.trim()}
             />
           </div>
           <div>
-            <Label htmlFor="phone">Phone Number</Label>
+            <Label htmlFor="zipCode">ZIP *</Label>
             <Input
-              id="phone"
-              type="tel"
-              value={formData.phone}
-              onChange={(e) => updateFormData('phone', e.target.value)}
+              id="zipCode"
+              value={formData.zipCode}
+              onChange={(e) => updateFormData('zipCode', e.target.value)}
               disabled={readOnly}
               required
+              placeholder="10001"
+              maxLength={10}
+              className={!formData.zipCode?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+              aria-invalid={!formData.zipCode?.trim()}
             />
           </div>
+        </div>
+
+        {/* Phone Numbers */}
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="homePhone">Home Phone</Label>
+            <Input
+              id="homePhone"
+              type="tel"
+              value={formData.homePhone || ''}
+              onChange={(e) => updateFormData('homePhone', e.target.value)}
+              disabled={readOnly}
+              placeholder="+1 (555) 123-4567"
+            />
+          </div>
+          <div>
+            <Label htmlFor="cellPhone">Cell Phone *</Label>
+            <Input
+              id="cellPhone"
+              type="tel"
+              value={formData.cellPhone}
+              onChange={(e) => updateFormData('cellPhone', e.target.value)}
+              disabled={readOnly}
+              required
+              placeholder="+1 (555) 987-6543"
+              className={!formData.cellPhone?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+              aria-invalid={!formData.cellPhone?.trim()}
+            />
+          </div>
+        </div>
+
+        {/* Alternate Contact */}
+        <div className="grid md:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="alternateContactName">Alternate Contact Name</Label>
+            <Input
+              id="alternateContactName"
+              value={formData.alternateContactName || ''}
+              onChange={(e) => updateFormData('alternateContactName', e.target.value)}
+              disabled={readOnly}
+              placeholder="John Doe"
+            />
+          </div>
+          <div>
+            <Label htmlFor="alternateContactRelationship">Relationship</Label>
+            <Input
+              id="alternateContactRelationship"
+              value={formData.alternateContactRelationship || ''}
+              onChange={(e) => updateFormData('alternateContactRelationship', e.target.value)}
+              disabled={readOnly}
+              placeholder="Spouse, Parent, etc."
+            />
+          </div>
+          <div>
+            <Label htmlFor="alternateContactPhone">Alt. Phone</Label>
+            <Input
+              id="alternateContactPhone"
+              type="tel"
+              value={formData.alternateContactPhone || ''}
+              onChange={(e) => updateFormData('alternateContactPhone', e.target.value)}
+              disabled={readOnly}
+              placeholder="+1 (555) 111-2222"
+            />
+          </div>
+        </div>
+
+        {/* Do Not Contact Checkbox */}
+        <div className="flex items-center gap-2">
+          <input
+            type="checkbox"
+            id="doNotContactPatient"
+            checked={formData.doNotContactPatient || false}
+            onChange={(e) => updateFormData('doNotContactPatient', e.target.checked)}
+            disabled={readOnly}
+            className="form-checkbox"
+          />
+          <Label htmlFor="doNotContactPatient" className="cursor-pointer">
+            Do not contact patient
+          </Label>
+        </div>
+
+        {/* Email (moved to end) */}
+        <div>
+          <Label htmlFor="email">Email Address</Label>
+          <Input
+            id="email"
+            type="email"
+            value={formData.email}
+            onChange={(e) => updateFormData('email', e.target.value)}
+            disabled={readOnly}
+            placeholder="patient@example.com"
+          />
         </div>
       </CardContent>
     </Card>

@@ -37,7 +37,7 @@ export const PatientDataPrefill: React.FC<PatientDataPrefillProps> = ({
         firstName: '',
         lastName: '',
         email: '',
-        phone: '',
+        cellPhone: '',
         dateOfBirth: ''
       });
       return;
@@ -50,7 +50,7 @@ export const PatientDataPrefill: React.FC<PatientDataPrefillProps> = ({
         firstName: selectedPatient.firstName,
         lastName: selectedPatient.lastName,
         email: selectedPatient.email,
-        phone: selectedPatient.phone || ''
+        cellPhone: selectedPatient.phone || ''
       });
     }
   };
