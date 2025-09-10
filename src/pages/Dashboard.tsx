@@ -30,11 +30,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { normalizeRoles, hasAnyRole } from '@/utils/roles';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [showPresentation, setShowPresentation] = React.useState(false);
   const [quickConnectOpen, setQuickConnectOpen] = React.useState(false);
+  const [quickConnectTarget, setQuickConnectTarget] = React.useState<'order' | 'onboarding' | 'agents'>('order');
   const { userRoles } = useMasterAuth();
   const normalizedRoles = normalizeRoles(userRoles || []);
   const isHealthcareProvider = hasAnyRole(normalizedRoles, ['healthcareProvider']);
@@ -217,7 +219,19 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               <h1 className="text-3xl font-bold text-foreground">Healthcare Provider Dashboard</h1>
               <p className="text-muted-foreground mt-2">Provider tools and workflows</p>
             </div>
-            <Button variant="outline" onClick={() => setQuickConnectOpen(true)} className="whitespace-nowrap">Quick Connect</Button>
+            <div className="flex items-center gap-2">
+              <Select value={quickConnectTarget} onValueChange={(v: 'order'|'onboarding'|'agents') => setQuickConnectTarget(v)}>
+                <SelectTrigger className="w-[200px]">
+                  <SelectValue placeholder="Connect to..." />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="order">Order Management</SelectItem>
+                  <SelectItem value="onboarding">Patient Onboarding</SelectItem>
+                  <SelectItem value="agents">Agents</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button variant="outline" onClick={() => setQuickConnectOpen(true)} className="whitespace-nowrap">Quick Connect</Button>
+            </div>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -256,7 +270,12 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
             onClose={() => setQuickConnectOpen(false)}
             onConnectorCreated={() => {
               setQuickConnectOpen(false);
-              navigate('/api-services');
+              const routeMap: Record<typeof quickConnectTarget, string> = {
+                order: '/order-management',
+                onboarding: '/patient-onboarding',
+                agents: '/agents',
+              };
+              navigate(routeMap[quickConnectTarget]);
             }}
           />
         </div>
