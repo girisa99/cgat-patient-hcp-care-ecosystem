@@ -38,6 +38,7 @@ import { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
 import { EnhancedProviderSection } from './EnhancedProviderSection';
 import { ConsentManagement, type ConsentData } from './ConsentManagement';
 import { CollaborationStatus } from './CollaborationStatus';
+import { PatientDataPrefill } from './PatientDataPrefill';
 
 export interface PatientEnrollmentData {
   // Patient Information

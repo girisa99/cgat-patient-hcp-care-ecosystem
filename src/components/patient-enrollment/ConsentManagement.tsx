@@ -2,7 +2,7 @@
  * CONSENT MANAGEMENT COMPONENT
  * Handles different patient consent options and provider authorization
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Shield, 
   CheckCircle2, 
@@ -20,9 +21,11 @@ import {
   Mail,
   MessageSquare,
   Phone,
-  Building2
+  Building2,
+  Plus
 } from 'lucide-react';
 import { SignatureCapture } from '@/components/signature/SignatureCapture';
+import { useOnboardingDataPrefill } from '@/hooks/useOnboardingDataPrefill';
 
 export interface ConsentData {
   consentType: 'facility_present' | 'digital_remote' | 'verbal';
@@ -65,6 +68,52 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
   readOnly = false
 }) => {
   const [providerSignature, setProviderSignature] = useState<string | null>(null);
+  const [isManualEntry, setIsManualEntry] = useState(false);
+  const [selectedProviderId, setSelectedProviderId] = useState<string>('');
+  const [selectedTreatmentCenterId, setSelectedTreatmentCenterId] = useState<string>('');
+  const { prefillData, isLoading, getUserProfileData } = useOnboardingDataPrefill();
+
+  // Auto-populate from current user data if available
+  useEffect(() => {
+    const loadCurrentUserData = async () => {
+      if (!consentData.providerName && !isLoading) {
+        const userData = await getUserProfileData();
+        if (userData) {
+          handleProviderInfoChange('providerName', userData.name);
+          handleProviderInfoChange('providerEmail', userData.email);
+        }
+      }
+    };
+    loadCurrentUserData();
+  }, [isLoading]);
+
+  const handleProviderSelection = (providerId: string) => {
+    setSelectedProviderId(providerId);
+    if (providerId === 'manual') {
+      setIsManualEntry(true);
+      return;
+    }
+
+    const selectedProvider = prefillData.providers.find(p => p.id === providerId);
+    if (selectedProvider) {
+      handleProviderInfoChange('providerName', selectedProvider.name);
+      handleProviderInfoChange('providerEmail', selectedProvider.email);
+      setIsManualEntry(false);
+    }
+  };
+
+  const handleTreatmentCenterSelection = (centerId: string) => {
+    setSelectedTreatmentCenterId(centerId);
+    if (centerId === 'manual') {
+      return;
+    }
+
+    const selectedCenter = prefillData.treatmentCenters.find(c => c.id === centerId);
+    if (selectedCenter) {
+      handleProviderInfoChange('treatmentCenter', selectedCenter.name);
+      handleProviderInfoChange('treatmentCenterNpi', selectedCenter.npi);
+    }
+  };
 
   const handleProviderInfoChange = (field: keyof ConsentData, value: any) => {
     const updatedData = { [field]: value };
@@ -304,6 +353,33 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
             Complete provider details that will be used throughout the enrollment process
           </p>
           
+          {/* Provider Selection */}
+          <div className="mb-4">
+            <Label htmlFor="providerSelect">Select Provider</Label>
+            <Select 
+              value={selectedProviderId} 
+              onValueChange={handleProviderSelection}
+              disabled={readOnly}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose existing provider or add new" />
+              </SelectTrigger>
+              <SelectContent>
+                {prefillData.providers.map(provider => (
+                  <SelectItem key={provider.id} value={provider.id}>
+                    {provider.name} {provider.email && `(${provider.email})`}
+                  </SelectItem>
+                ))}
+                <SelectItem value="manual">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add New Provider
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
               <Label htmlFor="providerName">Provider Name *</Label>
@@ -311,7 +387,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 id="providerName"
                 value={consentData.providerName}
                 onChange={(e) => handleProviderInfoChange('providerName', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="Dr. John Smith"
               />
@@ -338,7 +414,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 type="tel"
                 value={consentData.providerPhone}
                 onChange={(e) => handleProviderInfoChange('providerPhone', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="+1 (555) 123-4567"
               />
@@ -350,11 +426,38 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 type="email"
                 value={consentData.providerEmail}
                 onChange={(e) => handleProviderInfoChange('providerEmail', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="provider@clinic.com"
               />
             </div>
+          </div>
+
+          {/* Treatment Center Selection */}
+          <div className="mb-4">
+            <Label htmlFor="treatmentCenterSelect">Select Treatment Center</Label>
+            <Select 
+              value={selectedTreatmentCenterId} 
+              onValueChange={handleTreatmentCenterSelection}
+              disabled={readOnly}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Choose existing treatment center or add new" />
+              </SelectTrigger>
+              <SelectContent>
+                {prefillData.treatmentCenters.map(center => (
+                  <SelectItem key={center.id} value={center.id}>
+                    {center.name} {center.npi && `(NPI: ${center.npi})`}
+                  </SelectItem>
+                ))}
+                <SelectItem value="manual">
+                  <div className="flex items-center gap-2">
+                    <Plus className="h-4 w-4" />
+                    Add New Treatment Center
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="grid md:grid-cols-2 gap-4">
@@ -364,7 +467,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 id="treatmentCenter"
                 value={consentData.treatmentCenter}
                 onChange={(e) => handleProviderInfoChange('treatmentCenter', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || (selectedTreatmentCenterId && selectedTreatmentCenterId !== 'manual')}
                 required
                 placeholder="ABC Medical Center"
               />
@@ -375,7 +478,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 id="treatmentCenterNpi"
                 value={consentData.treatmentCenterNpi || ''}
                 onChange={(e) => handleProviderInfoChange('treatmentCenterNpi', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || (selectedTreatmentCenterId && selectedTreatmentCenterId !== 'manual')}
                 placeholder="1234567890"
                 maxLength={10}
               />
