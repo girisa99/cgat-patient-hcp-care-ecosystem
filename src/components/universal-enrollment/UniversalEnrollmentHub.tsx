@@ -82,10 +82,14 @@ export const UniversalEnrollmentHub: React.FC = () => {
     loading,
     error,
     fetchTemplates,
+    createTemplate,
+    updateTemplate,
+    deleteTemplate,
     fetchInstances,
     createInstance,
     updateInstance,
-    deleteInstance
+    deleteInstance,
+    getInstanceStats
   } = useUniversalEnrollment();
 
   useEffect(() => {
@@ -331,15 +335,12 @@ export const UniversalEnrollmentHub: React.FC = () => {
         <TabsContent value="new_enrollment">
           <ModuleEnrollmentForm
             moduleType={selectedModule}
-            instanceId={selectedInstance}
-            onComplete={() => {
+            templates={templates.filter(t => t.module_type === selectedModule)}
+            onInstanceCreate={async (data) => {
+              const result = await createInstance(data);
               setCurrentView('dashboard');
-              setSelectedInstance(null);
               fetchInstances(selectedModule);
-            }}
-            onCancel={() => {
-              setCurrentView('dashboard');
-              setSelectedInstance(null);
+              return result;
             }}
           />
         </TabsContent>
