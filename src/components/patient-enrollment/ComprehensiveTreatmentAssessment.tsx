@@ -1238,10 +1238,160 @@ export const ComprehensiveTreatmentAssessment: React.FC<ComprehensiveTreatmentAs
                   Technology & Monitoring Setup
                 </CardTitle>
               </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Technology and monitoring setup configuration coming soon...
+              <CardContent className="space-y-6">
+                <div className="text-sm text-muted-foreground mb-4">
+                  Configure technology infrastructure and remote monitoring for treatment oversight
                 </div>
+
+                {/* Remote Monitoring Section */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-base">Remote Monitoring Requirements</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="remoteMonitoringRequired"
+                        checked={formData.technologyMonitoring.remoteMonitoringRequired}
+                        onCheckedChange={(checked) => handleFieldUpdate('technologyMonitoring', 'remoteMonitoringRequired', checked === true)}
+                        disabled={readOnly}
+                      />
+                      <Label htmlFor="remoteMonitoringRequired">Remote Monitoring Required *</Label>
+                    </div>
+                    
+                    <div>
+                      <Label htmlFor="technologyAssessment">Technology Assessment *</Label>
+                      <Select
+                        value={formData.technologyMonitoring.technologyAssessment}
+                        onValueChange={(value) => handleFieldUpdate('technologyMonitoring', 'technologyAssessment', value)}
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Patient tech comfort level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="high">High - Very comfortable with technology</SelectItem>
+                          <SelectItem value="medium">Medium - Some assistance needed</SelectItem>
+                          <SelectItem value="low">Low - Significant assistance required</SelectItem>
+                          <SelectItem value="unable">Unable - Caregiver assistance required</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="deviceDistribution">Device Distribution Status *</Label>
+                      <Select
+                        value={formData.technologyMonitoring.deviceDistribution}
+                        onValueChange={(value) => handleFieldUpdate('technologyMonitoring', 'deviceDistribution', value)}
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select distribution status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="required">Required - Devices needed</SelectItem>
+                          <SelectItem value="completed">Completed - Devices distributed</SelectItem>
+                          <SelectItem value="declined">Declined - Patient declined devices</SelectItem>
+                          <SelectItem value="not_applicable">Not Applicable</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        id="trainingProvided"
+                        checked={formData.technologyMonitoring.trainingProvided}
+                        onCheckedChange={(checked) => handleFieldUpdate('technologyMonitoring', 'trainingProvided', checked === true)}
+                        disabled={readOnly}
+                      />
+                      <Label htmlFor="trainingProvided">Device Training Provided</Label>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="technicalSupportContact">Technical Support Contact *</Label>
+                    <Input
+                      id="technicalSupportContact"
+                      value={formData.technologyMonitoring.technicalSupportContact}
+                      onChange={(e) => handleFieldUpdate('technologyMonitoring', 'technicalSupportContact', e.target.value)}
+                      disabled={readOnly}
+                      placeholder="24/7 tech support phone number"
+                    />
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Digital Communication Section */}
+                <div className="space-y-4">
+                  <h4 className="font-medium text-base">Digital Communication Setup</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label htmlFor="secureMessagingSetup">Secure Messaging Setup *</Label>
+                      <Select
+                        value={formData.technologyMonitoring.secureMessagingSetup}
+                        onValueChange={(value) => handleFieldUpdate('technologyMonitoring', 'secureMessagingSetup', value)}
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select messaging status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="enrolled">Enrolled - Account created</SelectItem>
+                          <SelectItem value="training_provided">Training Provided</SelectItem>
+                          <SelectItem value="declined">Declined - Patient prefers phone</SelectItem>
+                          <SelectItem value="not_available">Not Available - No technology access</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="telehealthCapability">Telehealth Capability *</Label>
+                      <Select
+                        value={formData.technologyMonitoring.telehealthCapability}
+                        onValueChange={(value) => handleFieldUpdate('technologyMonitoring', 'telehealthCapability', value)}
+                        disabled={readOnly}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select capability status" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="tested">Tested - Ready for video calls</SelectItem>
+                          <SelectItem value="needs_assistance">Needs Assistance - Setup required</SelectItem>
+                          <SelectItem value="not_available">Not Available - No video capability</SelectItem>
+                          <SelectItem value="declined">Declined - Prefers in-person</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <Label htmlFor="emergencyCommunicationPlan">Emergency Communication Plan *</Label>
+                    <Textarea
+                      id="emergencyCommunicationPlan"
+                      value={formData.technologyMonitoring.emergencyCommunicationPlan}
+                      onChange={(e) => handleFieldUpdate('technologyMonitoring', 'emergencyCommunicationPlan', e.target.value)}
+                      disabled={readOnly}
+                      placeholder="After-hours contact method and escalation procedure"
+                      rows={3}
+                    />
+                  </div>
+                </div>
+
+                {/* Pre-populated Data Display */}
+                {prePopulatedData && (
+                  <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                    <h4 className="font-medium text-sm mb-2">Pre-populated Information</h4>
+                    <div className="grid grid-cols-2 gap-2 text-xs text-muted-foreground">
+                      <div>Patient: {prePopulatedData.patient.fullName}</div>
+                      <div>Phone: {prePopulatedData.patient.phone}</div>
+                      <div>Email: {prePopulatedData.patient.email}</div>
+                      <div>Treatment: {prePopulatedData.treatment.therapyType}</div>
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </TabsContent>
