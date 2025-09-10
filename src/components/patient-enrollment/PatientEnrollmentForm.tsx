@@ -139,6 +139,10 @@ export interface PatientEnrollmentData {
   providerConsentDate?: string;
   providerConsentBy?: string;
   
+  // Provider Contact Information
+  providerPhone?: string;
+  providerEmail?: string;
+  
   // Consent Management
   consentData?: ConsentData;
   
@@ -216,6 +220,9 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     consentData: {
       consentType: 'facility_present',
       providerName: '',
+      providerNpi: '',
+      providerPhone: '',
+      providerEmail: '',
       treatmentCenter: '',
       patientConsentStatus: 'pending'
     },
@@ -1293,6 +1300,16 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         <ConsentManagement
           consentData={formData.consentData}
           onConsentChange={(data) => updateFormData('consentData', { ...formData.consentData!, ...data })}
+          onProviderInfoUpdate={(providerData) => {
+            // Update main form provider information
+            updateFormData('providerName', providerData.providerName);
+            updateFormData('providerNpi', providerData.providerNpi);
+            updateFormData('treatmentCenterName', providerData.treatmentCenterName);
+            updateFormData('treatmentCenterNpi', providerData.treatmentCenterNpi);
+            // Store provider contact info for later use
+            updateFormData('providerPhone', providerData.providerPhone);
+            updateFormData('providerEmail', providerData.providerEmail);
+          }}
           readOnly={readOnly}
         />
       )}

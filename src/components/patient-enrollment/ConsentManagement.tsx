@@ -27,8 +27,11 @@ import { SignatureCapture } from '@/components/signature/SignatureCapture';
 export interface ConsentData {
   consentType: 'facility_present' | 'digital_remote' | 'verbal';
   providerName: string;
-  providerNpi?: string;
+  providerNpi: string;
+  providerPhone: string;
+  providerEmail: string;
   treatmentCenter: string;
+  treatmentCenterNpi?: string;
   patientConsentStatus: 'pending' | 'obtained' | 'declined';
   consentMethod?: string;
   consentDate?: string;
@@ -44,18 +47,41 @@ export interface ConsentData {
 interface ConsentManagementProps {
   consentData: ConsentData;
   onConsentChange: (data: Partial<ConsentData>) => void;
+  onProviderInfoUpdate?: (providerData: {
+    providerName: string;
+    providerNpi: string;
+    providerPhone: string;
+    providerEmail: string;
+    treatmentCenterName: string;
+    treatmentCenterNpi?: string;
+  }) => void;
   readOnly?: boolean;
 }
 
 export const ConsentManagement: React.FC<ConsentManagementProps> = ({
   consentData,
   onConsentChange,
+  onProviderInfoUpdate,
   readOnly = false
 }) => {
   const [providerSignature, setProviderSignature] = useState<string | null>(null);
 
   const handleProviderInfoChange = (field: keyof ConsentData, value: any) => {
-    onConsentChange({ [field]: value });
+    const updatedData = { [field]: value };
+    onConsentChange(updatedData);
+    
+    // Auto-update provider information in the main form
+    if (['providerName', 'providerNpi', 'providerPhone', 'providerEmail', 'treatmentCenter', 'treatmentCenterNpi'].includes(field)) {
+      const updatedConsentData = { ...consentData, ...updatedData };
+      onProviderInfoUpdate?.({
+        providerName: updatedConsentData.providerName,
+        providerNpi: updatedConsentData.providerNpi,
+        providerPhone: updatedConsentData.providerPhone,
+        providerEmail: updatedConsentData.providerEmail,
+        treatmentCenterName: updatedConsentData.treatmentCenter,
+        treatmentCenterNpi: updatedConsentData.treatmentCenterNpi
+      });
+    }
   };
 
   const handleConsentTypeChange = (type: 'facility_present' | 'digital_remote' | 'verbal') => {
@@ -274,34 +300,84 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
         {/* Basic Provider Information */}
         <div>
           <h4 className="font-medium mb-3">Provider Information</h4>
-          <div className="grid md:grid-cols-3 gap-4">
+          <p className="text-sm text-muted-foreground mb-4">
+            Complete provider details that will be used throughout the enrollment process
+          </p>
+          
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <Label htmlFor="providerName">Provider Name</Label>
+              <Label htmlFor="providerName">Provider Name *</Label>
               <Input
                 id="providerName"
                 value={consentData.providerName}
                 onChange={(e) => handleProviderInfoChange('providerName', e.target.value)}
                 disabled={readOnly}
                 required
+                placeholder="Dr. John Smith"
               />
             </div>
             <div>
-              <Label htmlFor="providerNpi">Provider NPI</Label>
+              <Label htmlFor="providerNpi">Provider NPI *</Label>
               <Input
                 id="providerNpi"
-                value={consentData.providerNpi || ''}
+                value={consentData.providerNpi}
                 onChange={(e) => handleProviderInfoChange('providerNpi', e.target.value)}
                 disabled={readOnly}
+                required
+                placeholder="1234567890"
+                maxLength={10}
+              />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label htmlFor="providerPhone">Provider Phone *</Label>
+              <Input
+                id="providerPhone"
+                type="tel"
+                value={consentData.providerPhone}
+                onChange={(e) => handleProviderInfoChange('providerPhone', e.target.value)}
+                disabled={readOnly}
+                required
+                placeholder="+1 (555) 123-4567"
               />
             </div>
             <div>
-              <Label htmlFor="treatmentCenter">Treatment Center</Label>
+              <Label htmlFor="providerEmail">Provider Email *</Label>
+              <Input
+                id="providerEmail"
+                type="email"
+                value={consentData.providerEmail}
+                onChange={(e) => handleProviderInfoChange('providerEmail', e.target.value)}
+                disabled={readOnly}
+                required
+                placeholder="provider@clinic.com"
+              />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="treatmentCenter">Treatment Center *</Label>
               <Input
                 id="treatmentCenter"
                 value={consentData.treatmentCenter}
                 onChange={(e) => handleProviderInfoChange('treatmentCenter', e.target.value)}
                 disabled={readOnly}
                 required
+                placeholder="ABC Medical Center"
+              />
+            </div>
+            <div>
+              <Label htmlFor="treatmentCenterNpi">Treatment Center NPI</Label>
+              <Input
+                id="treatmentCenterNpi"
+                value={consentData.treatmentCenterNpi || ''}
+                onChange={(e) => handleProviderInfoChange('treatmentCenterNpi', e.target.value)}
+                disabled={readOnly}
+                placeholder="1234567890"
+                maxLength={10}
               />
             </div>
           </div>
