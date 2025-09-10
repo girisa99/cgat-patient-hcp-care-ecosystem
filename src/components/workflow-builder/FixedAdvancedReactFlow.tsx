@@ -47,6 +47,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
+import { SaveAsTemplateModal } from './SaveAsTemplateModal';
 
 // Icons
 import { 
@@ -203,6 +204,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   const [showDynamicConfig, setShowDynamicConfig] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
   const [showProcessFlow, setShowProcessFlow] = useState(false);
+  const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
 
   // Layout and Interaction State
   const [snapToGrid, setSnapToGrid] = useState(false);
@@ -830,6 +832,29 @@ Examples:
           </div>
 
           <div className="flex items-center gap-2">
+            {onSave && (
+              <Button 
+                size="sm" 
+                variant="default" 
+                onClick={() => onSave({ nodes: getNodes(), edges: getEdges() })}
+                className="bg-primary hover:bg-primary/90"
+                disabled={nodes.length === 0}
+              >
+                <Save className="h-4 w-4 mr-1" />
+                Save Workflow
+              </Button>
+            )}
+            
+            <Button 
+              size="sm" 
+              variant="outline" 
+              onClick={() => setShowSaveAsTemplate(true)}
+              disabled={nodes.length === 0}
+              title="Save current workflow as a reusable template"
+            >
+              <Database className="h-4 w-4 mr-1" />
+              Save as Template
+            </Button>
             <Select 
               defaultValue={typeof window !== 'undefined' ? (localStorage.getItem('agentBuilder_selectedMode') || 'unified') : 'unified'}
               onValueChange={(val) => {
@@ -964,6 +989,18 @@ Examples:
           onTest={onNodeTest}
         />
       )}
+
+      {/* Save as Template Modal */}
+      <SaveAsTemplateModal
+        isOpen={showSaveAsTemplate}
+        onClose={() => setShowSaveAsTemplate(false)}
+        nodes={getNodes()}
+        edges={getEdges()}
+        onSave={(templateId) => {
+          showSuccess('Workflow saved as template successfully!');
+          setShowSaveAsTemplate(false);
+        }}
+      />
 
       {/* Intelligent Node Recommendations */}
       <IntelligentNodeRecommendations
