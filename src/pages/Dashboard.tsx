@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
@@ -30,11 +30,11 @@ import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { normalizeRoles, hasAnyRole } from '@/utils/roles';
 
 export const Dashboard: React.FC = () => {
+  const navigate = useNavigate();
   const [showPresentation, setShowPresentation] = React.useState(false);
   const { userRoles } = useMasterAuth();
   const normalizedRoles = normalizeRoles(userRoles || []);
   const isHealthcareProvider = hasAnyRole(normalizedRoles, ['healthcareProvider']);
-  
   // Download functions
   const downloadPDF = () => {
     const presentationContent = `AGENTIC AI & AUTOMATION IMPLEMENTATION - Complete Healthcare Onboarding Platform
@@ -217,7 +217,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            <Card onClick={() => (window.location.href = '/order-management')} className="cursor-pointer hover:shadow-sm transition-shadow">
+            <Card onClick={() => navigate('/order-management')} className="cursor-pointer hover:shadow-sm transition-shadow">
               <CardContent className="p-6 flex items-center gap-4">
                 <ShoppingCart className="h-6 w-6" />
                 <div>
@@ -226,7 +226,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 </div>
               </CardContent>
             </Card>
-            <Card onClick={() => (window.location.href = '/patient-onboarding')} className="cursor-pointer hover:shadow-sm transition-shadow">
+            <Card onClick={() => navigate('/patient-onboarding')} className="cursor-pointer hover:shadow-sm transition-shadow">
               <CardContent className="p-6 flex items-center gap-4">
                 <UserCheck className="h-6 w-6" />
                 <div>
@@ -235,7 +235,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 </div>
               </CardContent>
             </Card>
-            <Card onClick={() => (window.location.href = '/api-services')} className="cursor-pointer hover:shadow-sm transition-shadow">
+            <Card onClick={() => navigate('/api-services')} className="cursor-pointer hover:shadow-sm transition-shadow">
               <CardContent className="p-6 flex items-center gap-4">
                 <Activity className="h-6 w-6" />
                 <div>
@@ -244,7 +244,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 </div>
               </CardContent>
             </Card>
-            <Card onClick={() => (window.location.href = '/agents')} className="cursor-pointer hover:shadow-sm transition-shadow">
+            <Card onClick={() => navigate('/agents')} className="cursor-pointer hover:shadow-sm transition-shadow">
               <CardContent className="p-6 flex items-center gap-4">
                 <Bot className="h-6 w-6" />
                 <div>
@@ -253,7 +253,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 </div>
               </CardContent>
             </Card>
-            <Card onClick={() => (window.location.href = '/testing')} className="cursor-pointer hover:shadow-sm transition-shadow">
+            <Card onClick={() => navigate('/testing')} className="cursor-pointer hover:shadow-sm transition-shadow">
               <CardContent className="p-6 flex items-center gap-4">
                 <TestTube className="h-6 w-6" />
                 <div>

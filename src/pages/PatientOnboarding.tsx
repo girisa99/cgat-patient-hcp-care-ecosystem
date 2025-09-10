@@ -17,6 +17,7 @@ import {
   Phone,
   Mail
 } from 'lucide-react';
+import AppLayout from '@/components/layout/AppLayout';
 
 interface PatientOnboarding {
   id: string;
@@ -128,186 +129,188 @@ export default function PatientOnboarding() {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-4 md:p-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Patient Onboarding</h1>
-          <p className="text-muted-foreground">
-            Manage patient enrollment and onboarding processes
-          </p>
-        </div>
-        <Button>
-          <Plus className="mr-2 h-4 w-4" />
-          New Patient Onboarding
-        </Button>
-      </div>
-
-      {/* Stats Cards */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <UserPlus className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{onboardingStats.total}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Initiated</CardTitle>
-            <UserPlus className="h-4 w-4 text-blue-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{onboardingStats.initiated}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">In Progress</CardTitle>
-            <Clock className="h-4 w-4 text-orange-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{onboardingStats.inProgress}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Docs Pending</CardTitle>
-            <FileText className="h-4 w-4 text-yellow-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{onboardingStats.documentsPending}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Completed</CardTitle>
-            <CheckCircle2 className="h-4 w-4 text-green-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{onboardingStats.completed}</div>
-          </CardContent>
-        </Card>
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">On Hold</CardTitle>
-            <AlertCircle className="h-4 w-4 text-red-600" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{onboardingStats.onHold}</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Filters */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filter Onboarding</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex gap-4">
-            <div className="flex-1">
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-                <Input
-                  placeholder="Search by patient name, email, or ID..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-10"
-                />
-              </div>
-            </div>
-            <select 
-              value={statusFilter} 
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="px-3 py-2 border border-input bg-background rounded-md"
-            >
-              <option value="all">All Status</option>
-              <option value="initiated">Initiated</option>
-              <option value="in_progress">In Progress</option>
-              <option value="documents_pending">Documents Pending</option>
-              <option value="completed">Completed</option>
-              <option value="on_hold">On Hold</option>
-            </select>
+    <AppLayout title="Patient Onboarding">
+      <div className="flex-1 space-y-6 p-4 md:p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Patient Onboarding</h1>
+            <p className="text-muted-foreground">
+              Manage patient enrollment and onboarding processes
+            </p>
           </div>
-        </CardContent>
-      </Card>
+          <Button>
+            <Plus className="mr-2 h-4 w-4" />
+            New Patient Onboarding
+          </Button>
+        </div>
 
-      {/* Onboarding List */}
-      <div className="grid gap-4">
-        {filteredOnboarding.map((item) => (
-          <Card key={item.id}>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <div>
-                    <CardTitle className="text-lg">{item.patientName}</CardTitle>
-                    <CardDescription className="flex items-center gap-4 mt-1">
-                      <span className="flex items-center gap-1">
-                        <Mail className="h-3 w-3" />
-                        {item.email}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Phone className="h-3 w-3" />
-                        {item.phone}
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3 w-3" />
-                        Started: {item.startDate}
-                      </span>
-                    </CardDescription>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Badge className={getPriorityColor(item.priority)}>
-                    {item.priority}
-                  </Badge>
-                  <Badge className={`${getStatusColor(item.status)} flex items-center gap-1`}>
-                    {getStatusIcon(item.status)}
-                    {item.status.replace('_', ' ')}
-                  </Badge>
-                </div>
-              </div>
+        {/* Stats Cards */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total</CardTitle>
+              <UserPlus className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div>
-                  <div className="flex items-center justify-between text-sm mb-2">
-                    <span>Progress: {item.completedSteps}/{item.totalSteps} steps</span>
-                    <span>{item.progress}%</span>
-                  </div>
-                  <Progress value={item.progress} className="h-2" />
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <div className="text-sm space-y-1">
-                    <p><span className="font-medium">Assigned Staff:</span> {item.assignedStaff}</p>
-                    <p><span className="font-medium">Next Step:</span> {item.nextStep}</p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm">
-                      <Eye className="h-4 w-4 mr-1" />
-                      View Details
-                    </Button>
-                    <Button size="sm">
-                      Continue Onboarding
-                    </Button>
-                  </div>
-                </div>
-              </div>
+              <div className="text-2xl font-bold">{onboardingStats.total}</div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Initiated</CardTitle>
+              <UserPlus className="h-4 w-4 text-blue-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.initiated}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <Clock className="h-4 w-4 text-orange-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.inProgress}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Docs Pending</CardTitle>
+              <FileText className="h-4 w-4 text-yellow-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.documentsPending}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.completed}</div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">On Hold</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.onHold}</div>
+            </CardContent>
+          </Card>
+        </div>
 
-      {filteredOnboarding.length === 0 && (
+        {/* Filters */}
         <Card>
-          <CardContent className="text-center py-8">
-            <p className="text-muted-foreground">No patient onboarding records found.</p>
+          <CardHeader>
+            <CardTitle>Filter Onboarding</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex gap-4">
+              <div className="flex-1">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+                  <Input
+                    placeholder="Search by patient name, email, or ID..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+              <select 
+                value={statusFilter} 
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="px-3 py-2 border border-input bg-background rounded-md"
+              >
+                <option value="all">All Status</option>
+                <option value="initiated">Initiated</option>
+                <option value="in_progress">In Progress</option>
+                <option value="documents_pending">Documents Pending</option>
+                <option value="completed">Completed</option>
+                <option value="on_hold">On Hold</option>
+              </select>
+            </div>
           </CardContent>
         </Card>
-      )}
-    </div>
+
+        {/* Onboarding List */}
+        <div className="grid gap-4">
+          {filteredOnboarding.map((item) => (
+            <Card key={item.id}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <div>
+                      <CardTitle className="text-lg">{item.patientName}</CardTitle>
+                      <CardDescription className="flex items-center gap-4 mt-1">
+                        <span className="flex items-center gap-1">
+                          <Mail className="h-3 w-3" />
+                          {item.email}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Phone className="h-3 w-3" />
+                          {item.phone}
+                        </span>
+                        <span className="flex items-center gap-1">
+                          <Calendar className="h-3 w-3" />
+                          Started: {item.startDate}
+                        </span>
+                      </CardDescription>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge className={getPriorityColor(item.priority)}>
+                      {item.priority}
+                    </Badge>
+                    <Badge className={`${getStatusColor(item.status)} flex items-center gap-1`}>
+                      {getStatusIcon(item.status)}
+                      {item.status.replace('_', ' ')}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <div className="flex items-center justify-between text-sm mb-2">
+                      <span>Progress: {item.completedSteps}/{item.totalSteps} steps</span>
+                      <span>{item.progress}%</span>
+                    </div>
+                    <Progress value={item.progress} className="h-2" />
+                  </div>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="text-sm space-y-1">
+                      <p><span className="font-medium">Assigned Staff:</span> {item.assignedStaff}</p>
+                      <p><span className="font-medium">Next Step:</span> {item.nextStep}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button variant="outline" size="sm">
+                        <Eye className="h-4 w-4 mr-1" />
+                        View Details
+                      </Button>
+                      <Button size="sm">
+                        Continue Onboarding
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {filteredOnboarding.length === 0 && (
+          <Card>
+            <CardContent className="text-center py-8">
+              <p className="text-muted-foreground">No patient onboarding records found.</p>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    </AppLayout>
   );
 }
