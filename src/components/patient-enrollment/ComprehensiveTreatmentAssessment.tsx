@@ -182,19 +182,6 @@ interface ComprehensiveTreatmentAssessmentData {
     telehealthCapability: string;
     emergencyCommunicationPlan: string;
   };
-  
-  // Tab 7: Treatment Episode Preparation
-  treatmentPreparation: {
-    treatmentSchedulePreferences: string;
-    schedulingConflictsIdentified: boolean;
-    schedulingConflictDetails: string;
-    backupDateOptions: string;
-    preTreatmentAppointmentSchedule: string;
-    allRequirementsMet: boolean;
-    treatmentAuthorizationFinal: boolean;
-    emergencyPreparedness: boolean;
-    nextStepsCommunication: boolean;
-  };
 }
 
 interface ComprehensiveTreatmentAssessmentProps {
@@ -289,7 +276,7 @@ export const ComprehensiveTreatmentAssessment: React.FC<ComprehensiveTreatmentAs
         <PrePopulationStatus />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList level="child" className="grid w-full grid-cols-3 lg:grid-cols-7 text-xs">
+          <TabsList level="child" className="grid w-full grid-cols-3 lg:grid-cols-6 text-xs">
             <TabsTrigger level="child" value="identity-verification" className="flex flex-col items-center gap-1 p-2">
               <UserCheck className="h-3 w-3" />
               <span className="hidden lg:inline">Identity</span>
@@ -313,10 +300,6 @@ export const ComprehensiveTreatmentAssessment: React.FC<ComprehensiveTreatmentAs
             <TabsTrigger level="child" value="technology-monitoring" className="flex flex-col items-center gap-1 p-2">
               <Smartphone className="h-3 w-3" />
               <span className="hidden lg:inline">Tech</span>
-            </TabsTrigger>
-            <TabsTrigger level="child" value="treatment-preparation" className="flex flex-col items-center gap-1 p-2">
-              <Activity className="h-3 w-3" />
-              <span className="hidden lg:inline">Prep</span>
             </TabsTrigger>
           </TabsList>
 
@@ -1262,22 +1245,6 @@ export const ComprehensiveTreatmentAssessment: React.FC<ComprehensiveTreatmentAs
               </CardContent>
             </Card>
           </TabsContent>
-
-          <TabsContent value="treatment-preparation" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Treatment Episode Preparation
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Treatment episode preparation configuration coming soon...
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
 
         {/* Section Navigation */}
@@ -1383,17 +1350,6 @@ export const createEmptyComprehensiveTreatmentAssessmentData = (): Comprehensive
     secureMessagingSetup: '',
     telehealthCapability: '',
     emergencyCommunicationPlan: ''
-  },
-  treatmentPreparation: {
-    treatmentSchedulePreferences: '',
-    schedulingConflictsIdentified: false,
-    schedulingConflictDetails: '',
-    backupDateOptions: '',
-    preTreatmentAppointmentSchedule: '',
-    allRequirementsMet: false,
-    treatmentAuthorizationFinal: false,
-    emergencyPreparedness: false,
-    nextStepsCommunication: false
   }
 });
 
