@@ -1,6 +1,7 @@
 /**
  * COMPREHENSIVE PROVIDER SECTION
  * Complete provider, treatment center, and referral network information with 3 tabs
+ * All sections are collapsible for better navigation
  */
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,9 +13,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
-// import { Calendar } from "@/components/ui/calendar";
-// import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-// import { format } from "date-fns";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 import { 
   Building2, 
@@ -28,7 +27,9 @@ import {
   Shield,
   Stethoscope,
   Building,
-  Network
+  Network,
+  ChevronDown,
+  ChevronRight
 } from 'lucide-react';
 
 interface ComprehensiveProviderData {
@@ -323,9 +324,78 @@ export const ComprehensiveProviderSection: React.FC<ComprehensiveProviderSection
   readOnly = false
 }) => {
   const [activeTab, setActiveTab] = useState("provider");
+  
+  // State for managing collapsible sections
+  const [openSections, setOpenSections] = useState<Record<string, boolean>>({
+    // Provider tab sections (keep essential ones open by default)
+    'basic-demographics': true,
+    'contact-information': false,
+    'licensing-regulatory': false,
+    'professional-experience': false,
+    'insurance-liability': false,
+    'advanced-therapy-certifications': false,
+    
+    // Facility tab sections
+    'basic-facility-information': true,
+    'administrative-contacts': false,
+    'operational-details': false,
+    'advanced-therapy-infrastructure': false,
+    
+    // Referral tab sections
+    'primary-referring-physician': true,
+    'specialist-network': false,
+    'care-coordination-processes': false,
+    'communication-documentation': false,
+    'network-agreements': false
+  });
 
   const handleFieldUpdate = (section: keyof ComprehensiveProviderData, field: string, value: any) => {
     updateFormData(section, field, value);
+  };
+
+  const toggleSection = (sectionId: string) => {
+    setOpenSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
+  };
+
+  // Collapsible Section Component
+  const CollapsibleSection: React.FC<{
+    id: string;
+    title: string;
+    icon?: React.ReactNode;
+    children: React.ReactNode;
+    defaultOpen?: boolean;
+  }> = ({ id, title, icon, children, defaultOpen = false }) => {
+    const isOpen = openSections[id] ?? defaultOpen;
+    
+    return (
+      <Collapsible open={isOpen} onOpenChange={() => toggleSection(id)}>
+        <Card>
+          <CollapsibleTrigger asChild>
+            <CardHeader className="cursor-pointer hover:bg-muted/50 transition-colors">
+              <CardTitle className="text-lg flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  {icon}
+                  {title}
+                </div>
+                {isOpen ? (
+                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                ) : (
+                  <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                )}
+              </CardTitle>
+            </CardHeader>
+          </CollapsibleTrigger>
+          <CollapsibleContent>
+            <CardContent className="space-y-4 pt-0">
+              {children}
+            </CardContent>
+          </CollapsibleContent>
+        </Card>
+      </Collapsible>
+    );
   };
 
   // Temporarily disabled date picker - will be implemented after adding calendar component
@@ -377,1355 +447,1344 @@ export const ComprehensiveProviderSection: React.FC<ComprehensiveProviderSection
           {/* Tab 1: Provider Information */}
           <TabsContent value="provider" className="space-y-6 mt-6">
             {/* Basic Demographics */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Basic Demographics</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="firstName">First Name</Label>
-                    <Input
-                      id="firstName"
-                      value={formData.provider.firstName}
-                      onChange={(e) => handleFieldUpdate('provider', 'firstName', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="middleName">Middle Name</Label>
-                    <Input
-                      id="middleName"
-                      value={formData.provider.middleName}
-                      onChange={(e) => handleFieldUpdate('provider', 'middleName', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="lastName">Last Name</Label>
-                    <Input
-                      id="lastName"
-                      value={formData.provider.lastName}
-                      onChange={(e) => handleFieldUpdate('provider', 'lastName', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="credentials">Professional Credentials</Label>
-                    <Input
-                      id="credentials"
-                      value={formData.provider.credentials}
-                      onChange={(e) => handleFieldUpdate('provider', 'credentials', e.target.value)}
-                      placeholder="MD, DO, NP, PA, PharmD, etc."
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="npi">National Provider Identifier (NPI)</Label>
-                    <Input
-                      id="npi"
-                      value={formData.provider.npi}
-                      onChange={(e) => handleFieldUpdate('provider', 'npi', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="primarySpecialty">Primary Specialty</Label>
-                    <Input
-                      id="primarySpecialty"
-                      value={formData.provider.primarySpecialty}
-                      onChange={(e) => handleFieldUpdate('provider', 'primarySpecialty', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="graduationYear">Medical School Graduation Year</Label>
-                    <Input
-                      id="graduationYear"
-                      value={formData.provider.graduationYear}
-                      onChange={(e) => handleFieldUpdate('provider', 'graduationYear', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
+            <CollapsibleSection
+              id="basic-demographics"
+              title="Basic Demographics"
+              icon={<User className="h-4 w-4" />}
+              defaultOpen={true}
+            >
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="medicalSchool">Medical School</Label>
+                  <Label htmlFor="firstName">First Name</Label>
                   <Input
-                    id="medicalSchool"
-                    value={formData.provider.medicalSchool}
-                    onChange={(e) => handleFieldUpdate('provider', 'medicalSchool', e.target.value)}
+                    id="firstName"
+                    value={formData.provider.firstName}
+                    onChange={(e) => handleFieldUpdate('provider', 'firstName', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="residencyDetails">Residency Details</Label>
-                    <Textarea
-                      id="residencyDetails"
-                      value={formData.provider.residencyDetails}
-                      onChange={(e) => handleFieldUpdate('provider', 'residencyDetails', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="fellowshipDetails">Fellowship Details</Label>
-                    <Textarea
-                      id="fellowshipDetails"
-                      value={formData.provider.fellowshipDetails}
-                      onChange={(e) => handleFieldUpdate('provider', 'fellowshipDetails', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
+                <div>
+                  <Label htmlFor="middleName">Middle Name</Label>
+                  <Input
+                    id="middleName"
+                    value={formData.provider.middleName}
+                    onChange={(e) => handleFieldUpdate('provider', 'middleName', e.target.value)}
+                    disabled={readOnly}
+                  />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <Label htmlFor="lastName">Last Name</Label>
+                  <Input
+                    id="lastName"
+                    value={formData.provider.lastName}
+                    onChange={(e) => handleFieldUpdate('provider', 'lastName', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="credentials">Professional Credentials</Label>
+                  <Input
+                    id="credentials"
+                    value={formData.provider.credentials}
+                    onChange={(e) => handleFieldUpdate('provider', 'credentials', e.target.value)}
+                    placeholder="MD, DO, NP, PA, PharmD, etc."
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="npi">National Provider Identifier (NPI)</Label>
+                  <Input
+                    id="npi"
+                    value={formData.provider.npi}
+                    onChange={(e) => handleFieldUpdate('provider', 'npi', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="primarySpecialty">Primary Specialty</Label>
+                  <Input
+                    id="primarySpecialty"
+                    value={formData.provider.primarySpecialty}
+                    onChange={(e) => handleFieldUpdate('provider', 'primarySpecialty', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="graduationYear">Medical School Graduation Year</Label>
+                  <Input
+                    id="graduationYear"
+                    value={formData.provider.graduationYear}
+                    onChange={(e) => handleFieldUpdate('provider', 'graduationYear', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="medicalSchool">Medical School</Label>
+                <Input
+                  id="medicalSchool"
+                  value={formData.provider.medicalSchool}
+                  onChange={(e) => handleFieldUpdate('provider', 'medicalSchool', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="residencyDetails">Residency Details</Label>
+                  <Textarea
+                    id="residencyDetails"
+                    value={formData.provider.residencyDetails}
+                    onChange={(e) => handleFieldUpdate('provider', 'residencyDetails', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="fellowshipDetails">Fellowship Details</Label>
+                  <Textarea
+                    id="fellowshipDetails"
+                    value={formData.provider.fellowshipDetails}
+                    onChange={(e) => handleFieldUpdate('provider', 'fellowshipDetails', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
 
             {/* Contact Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Contact Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            <CollapsibleSection
+              id="contact-information"
+              title="Contact Information"
+              icon={<Phone className="h-4 w-4" />}
+            >
+              <div>
+                <Label htmlFor="primaryAddress">Primary Practice Address</Label>
+                <Textarea
+                  id="primaryAddress"
+                  value={formData.provider.primaryAddress}
+                  onChange={(e) => handleFieldUpdate('provider', 'primaryAddress', e.target.value)}
+                  placeholder="Street, City, State, ZIP"
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="mailingAddress">Mailing Address (if different)</Label>
+                <Textarea
+                  id="mailingAddress"
+                  value={formData.provider.mailingAddress}
+                  onChange={(e) => handleFieldUpdate('provider', 'mailingAddress', e.target.value)}
+                  placeholder="Street, City, State, ZIP"
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="primaryAddress">Primary Practice Address</Label>
-                  <Textarea
-                    id="primaryAddress"
-                    value={formData.provider.primaryAddress}
-                    onChange={(e) => handleFieldUpdate('provider', 'primaryAddress', e.target.value)}
-                    placeholder="Street, City, State, ZIP"
+                  <Label htmlFor="officePhone">Office Phone</Label>
+                  <Input
+                    id="officePhone"
+                    value={formData.provider.officePhone}
+                    onChange={(e) => handleFieldUpdate('provider', 'officePhone', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
-
                 <div>
-                  <Label htmlFor="mailingAddress">Mailing Address (if different)</Label>
-                  <Textarea
-                    id="mailingAddress"
-                    value={formData.provider.mailingAddress}
-                    onChange={(e) => handleFieldUpdate('provider', 'mailingAddress', e.target.value)}
+                  <Label htmlFor="mobilePhone">Mobile Phone</Label>
+                  <Input
+                    id="mobilePhone"
+                    value={formData.provider.mobilePhone}
+                    onChange={(e) => handleFieldUpdate('provider', 'mobilePhone', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="officePhone">Office Phone</Label>
-                    <Input
-                      id="officePhone"
-                      value={formData.provider.officePhone}
-                      onChange={(e) => handleFieldUpdate('provider', 'officePhone', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="mobilePhone">Mobile Phone</Label>
-                    <Input
-                      id="mobilePhone"
-                      value={formData.provider.mobilePhone}
-                      onChange={(e) => handleFieldUpdate('provider', 'mobilePhone', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="faxNumber">Fax Number</Label>
-                    <Input
-                      id="faxNumber"
-                      value={formData.provider.faxNumber}
-                      onChange={(e) => handleFieldUpdate('provider', 'faxNumber', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="email">Email Address</Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      value={formData.provider.email}
-                      onChange={(e) => handleFieldUpdate('provider', 'email', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="preferredContactMethod">Preferred Contact Method</Label>
+                  <Label htmlFor="faxNumber">Fax Number</Label>
+                  <Input
+                    id="faxNumber"
+                    value={formData.provider.faxNumber}
+                    onChange={(e) => handleFieldUpdate('provider', 'faxNumber', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="email">Email Address</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={formData.provider.email}
+                    onChange={(e) => handleFieldUpdate('provider', 'email', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="preferredContactMethod">Preferred Contact Method</Label>
+                <Select
+                  value={formData.provider.preferredContactMethod}
+                  onValueChange={(value) => handleFieldUpdate('provider', 'preferredContactMethod', value)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select preferred contact method" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="phone">Phone</SelectItem>
+                    <SelectItem value="email">Email</SelectItem>
+                    <SelectItem value="fax">Fax</SelectItem>
+                    <SelectItem value="secure_messaging">Secure Messaging</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CollapsibleSection>
+
+            {/* Licensing & Regulatory */}
+            <CollapsibleSection
+              id="licensing-regulatory"
+              title="Licensing & Regulatory"
+              icon={<Shield className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="deaNumber">DEA Number</Label>
+                  <Input
+                    id="deaNumber"
+                    value={formData.provider.deaNumber}
+                    onChange={(e) => handleFieldUpdate('provider', 'deaNumber', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="controlledSubstanceStatus">Controlled Substance Registration Status</Label>
                   <Select
-                    value={formData.provider.preferredContactMethod}
-                    onValueChange={(value) => handleFieldUpdate('provider', 'preferredContactMethod', value)}
+                    value={formData.provider.controlledSubstanceStatus}
+                    onValueChange={(value) => handleFieldUpdate('provider', 'controlledSubstanceStatus', value)}
                     disabled={readOnly}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select preferred contact method" />
+                      <SelectValue placeholder="Select status" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="phone">Phone</SelectItem>
-                      <SelectItem value="email">Email</SelectItem>
-                      <SelectItem value="fax">Fax</SelectItem>
-                      <SelectItem value="secure_messaging">Secure Messaging</SelectItem>
+                      <SelectItem value="active">Active</SelectItem>
+                      <SelectItem value="pending">Pending</SelectItem>
+                      <SelectItem value="expired">Expired</SelectItem>
+                      <SelectItem value="not_applicable">Not Applicable</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-            </Card>
+              </div>
 
-            {/* Licensing & Regulatory */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Licensing & Regulatory</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="deaNumber">DEA Number</Label>
-                    <Input
-                      id="deaNumber"
-                      value={formData.provider.deaNumber}
-                      onChange={(e) => handleFieldUpdate('provider', 'deaNumber', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="controlledSubstanceStatus">Controlled Substance Registration Status</Label>
-                    <Select
-                      value={formData.provider.controlledSubstanceStatus}
-                      onValueChange={(value) => handleFieldUpdate('provider', 'controlledSubstanceStatus', value)}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select status" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="pending">Pending</SelectItem>
-                        <SelectItem value="expired">Expired</SelectItem>
-                        <SelectItem value="not_applicable">Not Applicable</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
+              <div>
+                <Label htmlFor="pdmpRegistration">PDMP Registration Information</Label>
+                <Input
+                  id="pdmpRegistration"
+                  value={formData.provider.pdmpRegistration}
+                  onChange={(e) => handleFieldUpdate('provider', 'pdmpRegistration', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
 
-                <div>
-                  <Label htmlFor="pdmpRegistration">PDMP Registration Information</Label>
-                  <Input
-                    id="pdmpRegistration"
-                    value={formData.provider.pdmpRegistration}
-                    onChange={(e) => handleFieldUpdate('provider', 'pdmpRegistration', e.target.value)}
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="disciplinaryActions"
+                    checked={formData.provider.disciplinaryActions}
+                    onCheckedChange={(checked) => handleFieldUpdate('provider', 'disciplinaryActions', checked === true)}
                     disabled={readOnly}
                   />
+                  <Label htmlFor="disciplinaryActions">Any Disciplinary Actions or Sanctions</Label>
                 </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="disciplinaryActions"
-                      checked={formData.provider.disciplinaryActions}
-                      onCheckedChange={(checked) => handleFieldUpdate('provider', 'disciplinaryActions', checked === true)}
+                {formData.provider.disciplinaryActions && (
+                  <div>
+                    <Label htmlFor="disciplinaryDetails">Details of Disciplinary Actions</Label>
+                    <Textarea
+                      id="disciplinaryDetails"
+                      value={formData.provider.disciplinaryDetails}
+                      onChange={(e) => handleFieldUpdate('provider', 'disciplinaryDetails', e.target.value)}
                       disabled={readOnly}
                     />
-                    <Label htmlFor="disciplinaryActions">Any Disciplinary Actions or Sanctions</Label>
                   </div>
-                  {formData.provider.disciplinaryActions && (
-                    <div>
-                      <Label htmlFor="disciplinaryDetails">Details of Disciplinary Actions</Label>
-                      <Textarea
-                        id="disciplinaryDetails"
-                        value={formData.provider.disciplinaryDetails}
-                        onChange={(e) => handleFieldUpdate('provider', 'disciplinaryDetails', e.target.value)}
-                        disabled={readOnly}
-                      />
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
+                )}
+              </div>
+            </CollapsibleSection>
 
             {/* Professional Experience */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Professional Experience</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="yearsInPractice">Years in Practice</Label>
-                    <Input
-                      id="yearsInPractice"
-                      value={formData.provider.yearsInPractice}
-                      onChange={(e) => handleFieldUpdate('provider', 'yearsInPractice', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="practiceType">Current Practice Type</Label>
-                    <Select
-                      value={formData.provider.practiceType}
-                      onValueChange={(value) => handleFieldUpdate('provider', 'practiceType', value)}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select practice type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="private">Private Practice</SelectItem>
-                        <SelectItem value="hospital">Hospital</SelectItem>
-                        <SelectItem value="clinic">Clinic</SelectItem>
-                        <SelectItem value="academic">Academic Medical Center</SelectItem>
-                        <SelectItem value="group">Group Practice</SelectItem>
-                        <SelectItem value="other">Other</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="advancedTherapyExperience"
-                      checked={formData.provider.advancedTherapyExperience}
-                      onCheckedChange={(checked) => handleFieldUpdate('provider', 'advancedTherapyExperience', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="advancedTherapyExperience">Previous Experience with Advanced Therapies</Label>
-                  </div>
-                  {formData.provider.advancedTherapyExperience && (
-                    <div>
-                      <Label htmlFor="advancedTherapyDetails">Advanced Therapy Experience Details</Label>
-                      <Textarea
-                        id="advancedTherapyDetails"
-                        value={formData.provider.advancedTherapyDetails}
-                        onChange={(e) => handleFieldUpdate('provider', 'advancedTherapyDetails', e.target.value)}
-                        disabled={readOnly}
-                      />
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Insurance & Liability */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Insurance & Liability</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="malpracticeCarrier">Malpractice Insurance Carrier</Label>
-                    <Input
-                      id="malpracticeCarrier"
-                      value={formData.provider.malpracticeCarrier}
-                      onChange={(e) => handleFieldUpdate('provider', 'malpracticeCarrier', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="policyNumber">Policy Number</Label>
-                    <Input
-                      id="policyNumber"
-                      value={formData.provider.policyNumber}
-                      onChange={(e) => handleFieldUpdate('provider', 'policyNumber', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="coverageLimits">Coverage Limits</Label>
-                    <Input
-                      id="coverageLimits"
-                      value={formData.provider.coverageLimits}
-                      onChange={(e) => handleFieldUpdate('provider', 'coverageLimits', e.target.value)}
-                      placeholder="e.g., $1M/$3M"
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    {renderDatePicker(
-                      "Insurance Expiration Date",
-                      formData.provider.insuranceExpirationDate,
-                      (date) => handleFieldUpdate('provider', 'insuranceExpirationDate', date),
-                      "Select expiration date"
-                    )}
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Advanced Therapy Certifications */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Advanced Therapy Certifications</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cartCertification"
-                      checked={formData.provider.cartCertification}
-                      onCheckedChange={(checked) => handleFieldUpdate('provider', 'cartCertification', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="cartCertification">CAR-T Therapy Certification</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="geneTherapyTraining"
-                      checked={formData.provider.geneTherapyTraining}
-                      onCheckedChange={(checked) => handleFieldUpdate('provider', 'geneTherapyTraining', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="geneTherapyTraining">Gene Therapy Training Completion</Label>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="radioligandCertification"
-                      checked={formData.provider.radioligandCertification}
-                      onCheckedChange={(checked) => handleFieldUpdate('provider', 'radioligandCertification', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="radioligandCertification">Radioligand Therapy Certification</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="crsManagementTraining"
-                      checked={formData.provider.crsManagementTraining}
-                      onCheckedChange={(checked) => handleFieldUpdate('provider', 'crsManagementTraining', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="crsManagementTraining">CRS Management Training</Label>
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="radiationSafetyCert"
-                      checked={formData.provider.radiationSafetyCert}
-                      onCheckedChange={(checked) => handleFieldUpdate('provider', 'radiationSafetyCert', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="radiationSafetyCert">Radiation Safety Certification</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="biomarkerTraining"
-                      checked={formData.provider.biomarkerTraining}
-                      onCheckedChange={(checked) => handleFieldUpdate('provider', 'biomarkerTraining', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="biomarkerTraining">Biomarker Interpretation Training</Label>
-                  </div>
-                </div>
-
+            <CollapsibleSection
+              id="professional-experience"
+              title="Professional Experience"
+              icon={<Stethoscope className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="continuingEducationStatus">Continuing Education Status</Label>
-                  <Textarea
-                    id="continuingEducationStatus"
-                    value={formData.provider.continuingEducationStatus}
-                    onChange={(e) => handleFieldUpdate('provider', 'continuingEducationStatus', e.target.value)}
-                    placeholder="Current CE requirements and completion status"
+                  <Label htmlFor="yearsInPractice">Years in Practice</Label>
+                  <Input
+                    id="yearsInPractice"
+                    value={formData.provider.yearsInPractice}
+                    onChange={(e) => handleFieldUpdate('provider', 'yearsInPractice', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <Label htmlFor="practiceType">Current Practice Type</Label>
+                  <Select
+                    value={formData.provider.practiceType}
+                    onValueChange={(value) => handleFieldUpdate('provider', 'practiceType', value)}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select practice type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="private">Private Practice</SelectItem>
+                      <SelectItem value="hospital">Hospital</SelectItem>
+                      <SelectItem value="clinic">Clinic</SelectItem>
+                      <SelectItem value="academic">Academic Medical Center</SelectItem>
+                      <SelectItem value="group">Group Practice</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="advancedTherapyExperience"
+                    checked={formData.provider.advancedTherapyExperience}
+                    onCheckedChange={(checked) => handleFieldUpdate('provider', 'advancedTherapyExperience', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="advancedTherapyExperience">Previous Experience with Advanced Therapies</Label>
+                </div>
+                {formData.provider.advancedTherapyExperience && (
+                  <div>
+                    <Label htmlFor="advancedTherapyDetails">Advanced Therapy Experience Details</Label>
+                    <Textarea
+                      id="advancedTherapyDetails"
+                      value={formData.provider.advancedTherapyDetails}
+                      onChange={(e) => handleFieldUpdate('provider', 'advancedTherapyDetails', e.target.value)}
+                      disabled={readOnly}
+                    />
+                  </div>
+                )}
+              </div>
+            </CollapsibleSection>
+
+            {/* Insurance & Liability */}
+            <CollapsibleSection
+              id="insurance-liability"
+              title="Insurance & Liability"
+              icon={<Shield className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="malpracticeCarrier">Malpractice Insurance Carrier</Label>
+                  <Input
+                    id="malpracticeCarrier"
+                    value={formData.provider.malpracticeCarrier}
+                    onChange={(e) => handleFieldUpdate('provider', 'malpracticeCarrier', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="policyNumber">Policy Number</Label>
+                  <Input
+                    id="policyNumber"
+                    value={formData.provider.policyNumber}
+                    onChange={(e) => handleFieldUpdate('provider', 'policyNumber', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="coverageLimits">Coverage Limits</Label>
+                  <Input
+                    id="coverageLimits"
+                    value={formData.provider.coverageLimits}
+                    onChange={(e) => handleFieldUpdate('provider', 'coverageLimits', e.target.value)}
+                    placeholder="e.g., $1M/$3M"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  {renderDatePicker(
+                    "Insurance Expiration Date",
+                    formData.provider.insuranceExpirationDate,
+                    (date) => handleFieldUpdate('provider', 'insuranceExpirationDate', date),
+                    "Select expiration date"
+                  )}
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            {/* Advanced Therapy Certifications */}
+            <CollapsibleSection
+              id="advanced-therapy-certifications"
+              title="Advanced Therapy Certifications"
+              icon={<FileText className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="cartCertification"
+                    checked={formData.provider.cartCertification}
+                    onCheckedChange={(checked) => handleFieldUpdate('provider', 'cartCertification', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="cartCertification">CAR-T Therapy Certification</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="geneTherapyTraining"
+                    checked={formData.provider.geneTherapyTraining}
+                    onCheckedChange={(checked) => handleFieldUpdate('provider', 'geneTherapyTraining', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="geneTherapyTraining">Gene Therapy Training Completion</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="radioligandCertification"
+                    checked={formData.provider.radioligandCertification}
+                    onCheckedChange={(checked) => handleFieldUpdate('provider', 'radioligandCertification', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="radioligandCertification">Radioligand Therapy Certification</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="crsManagementTraining"
+                    checked={formData.provider.crsManagementTraining}
+                    onCheckedChange={(checked) => handleFieldUpdate('provider', 'crsManagementTraining', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="crsManagementTraining">CRS Management Training</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="radiationSafetyCert"
+                    checked={formData.provider.radiationSafetyCert}
+                    onCheckedChange={(checked) => handleFieldUpdate('provider', 'radiationSafetyCert', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="radiationSafetyCert">Radiation Safety Certification</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="biomarkerTraining"
+                    checked={formData.provider.biomarkerTraining}
+                    onCheckedChange={(checked) => handleFieldUpdate('provider', 'biomarkerTraining', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="biomarkerTraining">Biomarker Interpretation Training</Label>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="continuingEducationStatus">Continuing Education Status</Label>
+                <Textarea
+                  id="continuingEducationStatus"
+                  value={formData.provider.continuingEducationStatus}
+                  onChange={(e) => handleFieldUpdate('provider', 'continuingEducationStatus', e.target.value)}
+                  placeholder="Current CE requirements and completion status"
+                  disabled={readOnly}
+                />
+              </div>
+            </CollapsibleSection>
           </TabsContent>
 
           {/* Tab 2: Treatment Center/Facility Information */}
           <TabsContent value="facility" className="space-y-6 mt-6">
             {/* Basic Facility Information */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Basic Facility Information</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="facilityName">Facility Name</Label>
-                    <Input
-                      id="facilityName"
-                      value={formData.facility.name}
-                      onChange={(e) => handleFieldUpdate('facility', 'name', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="dbaNames">DBA/Alternate Names</Label>
-                    <Input
-                      id="dbaNames"
-                      value={formData.facility.dbaNames}
-                      onChange={(e) => handleFieldUpdate('facility', 'dbaNames', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="facilityType">Facility Type</Label>
-                    <Select
-                      value={formData.facility.facilityType}
-                      onValueChange={(value) => handleFieldUpdate('facility', 'facilityType', value)}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select facility type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="hospital">Hospital</SelectItem>
-                        <SelectItem value="clinic">Clinic</SelectItem>
-                        <SelectItem value="infusion_center">Infusion Center</SelectItem>
-                        <SelectItem value="cancer_center">Cancer Center</SelectItem>
-                        <SelectItem value="academic_medical_center">Academic Medical Center</SelectItem>
-                        <SelectItem value="outpatient_facility">Outpatient Facility</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="organizationNPI">Organization NPI (Type 2)</Label>
-                    <Input
-                      id="organizationNPI"
-                      value={formData.facility.organizationNPI}
-                      onChange={(e) => handleFieldUpdate('facility', 'organizationNPI', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="taxId">Tax ID/EIN</Label>
-                    <Input
-                      id="taxId"
-                      value={formData.facility.taxId}
-                      onChange={(e) => handleFieldUpdate('facility', 'taxId', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="facilityPhone">Facility Phone</Label>
-                    <Input
-                      id="facilityPhone"
-                      value={formData.facility.phone}
-                      onChange={(e) => handleFieldUpdate('facility', 'phone', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
+            <CollapsibleSection
+              id="basic-facility-information"
+              title="Basic Facility Information"
+              icon={<Building className="h-4 w-4" />}
+              defaultOpen={true}
+            >
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="physicalAddress">Physical Address</Label>
-                  <Textarea
-                    id="physicalAddress"
-                    value={formData.facility.physicalAddress}
-                    onChange={(e) => handleFieldUpdate('facility', 'physicalAddress', e.target.value)}
-                    placeholder="Street, City, State, ZIP"
+                  <Label htmlFor="facilityName">Facility Name</Label>
+                  <Input
+                    id="facilityName"
+                    value={formData.facility.name}
+                    onChange={(e) => handleFieldUpdate('facility', 'name', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
-
                 <div>
-                  <Label htmlFor="facilityMailingAddress">Mailing Address (if different)</Label>
-                  <Textarea
-                    id="facilityMailingAddress"
-                    value={formData.facility.mailingAddress}
-                    onChange={(e) => handleFieldUpdate('facility', 'mailingAddress', e.target.value)}
+                  <Label htmlFor="dbaNames">DBA/Alternate Names</Label>
+                  <Input
+                    id="dbaNames"
+                    value={formData.facility.dbaNames}
+                    onChange={(e) => handleFieldUpdate('facility', 'dbaNames', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="facilityFax">Facility Fax</Label>
-                    <Input
-                      id="facilityFax"
-                      value={formData.facility.fax}
-                      onChange={(e) => handleFieldUpdate('facility', 'fax', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="facilityEmail">Facility Email</Label>
-                    <Input
-                      id="facilityEmail"
-                      type="email"
-                      value={formData.facility.email}
-                      onChange={(e) => handleFieldUpdate('facility', 'email', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="website">Website</Label>
-                    <Input
-                      id="website"
-                      value={formData.facility.website}
-                      onChange={(e) => handleFieldUpdate('facility', 'website', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="facilityType">Facility Type</Label>
+                  <Select
+                    value={formData.facility.facilityType}
+                    onValueChange={(value) => handleFieldUpdate('facility', 'facilityType', value)}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select facility type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="hospital">Hospital</SelectItem>
+                      <SelectItem value="clinic">Clinic</SelectItem>
+                      <SelectItem value="infusion_center">Infusion Center</SelectItem>
+                      <SelectItem value="cancer_center">Cancer Center</SelectItem>
+                      <SelectItem value="academic_medical_center">Academic Medical Center</SelectItem>
+                      <SelectItem value="outpatient_facility">Outpatient Facility</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <Label htmlFor="organizationNPI">Organization NPI (Type 2)</Label>
+                  <Input
+                    id="organizationNPI"
+                    value={formData.facility.organizationNPI}
+                    onChange={(e) => handleFieldUpdate('facility', 'organizationNPI', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="taxId">Tax ID/EIN</Label>
+                  <Input
+                    id="taxId"
+                    value={formData.facility.taxId}
+                    onChange={(e) => handleFieldUpdate('facility', 'taxId', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="facilityPhone">Facility Phone</Label>
+                  <Input
+                    id="facilityPhone"
+                    value={formData.facility.phone}
+                    onChange={(e) => handleFieldUpdate('facility', 'phone', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="physicalAddress">Physical Address</Label>
+                <Textarea
+                  id="physicalAddress"
+                  value={formData.facility.physicalAddress}
+                  onChange={(e) => handleFieldUpdate('facility', 'physicalAddress', e.target.value)}
+                  placeholder="Street, City, State, ZIP"
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="facilityMailingAddress">Mailing Address (if different)</Label>
+                <Textarea
+                  id="facilityMailingAddress"
+                  value={formData.facility.mailingAddress}
+                  onChange={(e) => handleFieldUpdate('facility', 'mailingAddress', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="facilityFax">Facility Fax</Label>
+                  <Input
+                    id="facilityFax"
+                    value={formData.facility.fax}
+                    onChange={(e) => handleFieldUpdate('facility', 'fax', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="facilityEmail">Facility Email</Label>
+                  <Input
+                    id="facilityEmail"
+                    type="email"
+                    value={formData.facility.email}
+                    onChange={(e) => handleFieldUpdate('facility', 'email', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="website">Website</Label>
+                  <Input
+                    id="website"
+                    value={formData.facility.website}
+                    onChange={(e) => handleFieldUpdate('facility', 'website', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
 
             {/* Administrative Contacts */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Administrative Contacts</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="administratorName">Administrator Name</Label>
-                    <Input
-                      id="administratorName"
-                      value={formData.facility.administratorName}
-                      onChange={(e) => handleFieldUpdate('facility', 'administratorName', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="administratorTitle">Administrator Title</Label>
-                    <Input
-                      id="administratorTitle"
-                      value={formData.facility.administratorTitle}
-                      onChange={(e) => handleFieldUpdate('facility', 'administratorTitle', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
+            <CollapsibleSection
+              id="administrative-contacts"
+              title="Administrative Contacts"
+              icon={<Users className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="administratorContact">Administrator Contact Information</Label>
+                  <Label htmlFor="administratorName">Administrator Name</Label>
                   <Input
-                    id="administratorContact"
-                    value={formData.facility.administratorContact}
-                    onChange={(e) => handleFieldUpdate('facility', 'administratorContact', e.target.value)}
-                    placeholder="Phone/Email"
+                    id="administratorName"
+                    value={formData.facility.administratorName}
+                    onChange={(e) => handleFieldUpdate('facility', 'administratorName', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="medicalDirectorName">Medical Director Name</Label>
-                    <Input
-                      id="medicalDirectorName"
-                      value={formData.facility.medicalDirectorName}
-                      onChange={(e) => handleFieldUpdate('facility', 'medicalDirectorName', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="medicalDirectorNPI">Medical Director NPI</Label>
-                    <Input
-                      id="medicalDirectorNPI"
-                      value={formData.facility.medicalDirectorNPI}
-                      onChange={(e) => handleFieldUpdate('facility', 'medicalDirectorNPI', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="billingContactName">Billing Contact Name</Label>
-                    <Input
-                      id="billingContactName"
-                      value={formData.facility.billingContactName}
-                      onChange={(e) => handleFieldUpdate('facility', 'billingContactName', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="billingContactInfo">Billing Contact Information</Label>
-                    <Input
-                      id="billingContactInfo"
-                      value={formData.facility.billingContactInfo}
-                      onChange={(e) => handleFieldUpdate('facility', 'billingContactInfo', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
                 <div>
-                  <Label htmlFor="paSpecialistContact">Prior Authorization Specialist Contact</Label>
+                  <Label htmlFor="administratorTitle">Administrator Title</Label>
                   <Input
-                    id="paSpecialistContact"
-                    value={formData.facility.paSpecialistContact}
-                    onChange={(e) => handleFieldUpdate('facility', 'paSpecialistContact', e.target.value)}
+                    id="administratorTitle"
+                    value={formData.facility.administratorTitle}
+                    onChange={(e) => handleFieldUpdate('facility', 'administratorTitle', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
-              </CardContent>
-            </Card>
+              </div>
+
+              <div>
+                <Label htmlFor="administratorContact">Administrator Contact Information</Label>
+                <Input
+                  id="administratorContact"
+                  value={formData.facility.administratorContact}
+                  onChange={(e) => handleFieldUpdate('facility', 'administratorContact', e.target.value)}
+                  placeholder="Phone/Email"
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="medicalDirectorName">Medical Director Name</Label>
+                  <Input
+                    id="medicalDirectorName"
+                    value={formData.facility.medicalDirectorName}
+                    onChange={(e) => handleFieldUpdate('facility', 'medicalDirectorName', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="medicalDirectorNPI">Medical Director NPI</Label>
+                  <Input
+                    id="medicalDirectorNPI"
+                    value={formData.facility.medicalDirectorNPI}
+                    onChange={(e) => handleFieldUpdate('facility', 'medicalDirectorNPI', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="billingContactName">Billing Contact Name</Label>
+                  <Input
+                    id="billingContactName"
+                    value={formData.facility.billingContactName}
+                    onChange={(e) => handleFieldUpdate('facility', 'billingContactName', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="billingContactInfo">Billing Contact Information</Label>
+                  <Input
+                    id="billingContactInfo"
+                    value={formData.facility.billingContactInfo}
+                    onChange={(e) => handleFieldUpdate('facility', 'billingContactInfo', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="paSpecialistContact">Prior Authorization Specialist Contact</Label>
+                <Input
+                  id="paSpecialistContact"
+                  value={formData.facility.paSpecialistContact}
+                  onChange={(e) => handleFieldUpdate('facility', 'paSpecialistContact', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+            </CollapsibleSection>
 
             {/* Operational Details */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Operational Details</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="hoursOfOperation">Hours of Operation</Label>
-                    <Input
-                      id="hoursOfOperation"
-                      value={formData.facility.hoursOfOperation}
-                      onChange={(e) => handleFieldUpdate('facility', 'hoursOfOperation', e.target.value)}
-                      placeholder="e.g., 8:00 AM - 5:00 PM"
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="emergencyHours">Emergency Hours Coverage</Label>
-                    <Input
-                      id="emergencyHours"
-                      value={formData.facility.emergencyHours}
-                      onChange={(e) => handleFieldUpdate('facility', 'emergencyHours', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
+            <CollapsibleSection
+              id="operational-details"
+              title="Operational Details"
+              icon={<Building className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="hoursOfOperation">Hours of Operation</Label>
+                  <Input
+                    id="hoursOfOperation"
+                    value={formData.facility.hoursOfOperation}
+                    onChange={(e) => handleFieldUpdate('facility', 'hoursOfOperation', e.target.value)}
+                    placeholder="e.g., 8:00 AM - 5:00 PM"
+                    disabled={readOnly}
+                  />
                 </div>
+                <div>
+                  <Label htmlFor="emergencyHours">Emergency Hours Coverage</Label>
+                  <Input
+                    id="emergencyHours"
+                    value={formData.facility.emergencyHours}
+                    onChange={(e) => handleFieldUpdate('facility', 'emergencyHours', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="patientCapacity">Patient Capacity</Label>
-                    <Input
-                      id="patientCapacity"
-                      value={formData.facility.patientCapacity}
-                      onChange={(e) => handleFieldUpdate('facility', 'patientCapacity', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="bedCount">Bed Count (if applicable)</Label>
-                    <Input
-                      id="bedCount"
-                      value={formData.facility.bedCount}
-                      onChange={(e) => handleFieldUpdate('facility', 'bedCount', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="treatmentRooms">Treatment Rooms Available</Label>
-                    <Input
-                      id="treatmentRooms"
-                      value={formData.facility.treatmentRooms}
-                      onChange={(e) => handleFieldUpdate('facility', 'treatmentRooms', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label htmlFor="patientCapacity">Patient Capacity</Label>
+                  <Input
+                    id="patientCapacity"
+                    value={formData.facility.patientCapacity}
+                    onChange={(e) => handleFieldUpdate('facility', 'patientCapacity', e.target.value)}
+                    disabled={readOnly}
+                  />
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <Label htmlFor="bedCount">Bed Count (if applicable)</Label>
+                  <Input
+                    id="bedCount"
+                    value={formData.facility.bedCount}
+                    onChange={(e) => handleFieldUpdate('facility', 'bedCount', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="treatmentRooms">Treatment Rooms Available</Label>
+                  <Input
+                    id="treatmentRooms"
+                    value={formData.facility.treatmentRooms}
+                    onChange={(e) => handleFieldUpdate('facility', 'treatmentRooms', e.target.value)}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
 
             {/* Advanced Therapy Infrastructure */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Advanced Therapy Infrastructure</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cellProcessingLab"
-                      checked={formData.facility.cellProcessingLab}
-                      onCheckedChange={(checked) => handleFieldUpdate('facility', 'cellProcessingLab', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="cellProcessingLab">Cell Processing Laboratory</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cryopreservationCapability"
-                      checked={formData.facility.cryopreservationCapability}
-                      onCheckedChange={(checked) => handleFieldUpdate('facility', 'cryopreservationCapability', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="cryopreservationCapability">Cryopreservation Storage (-150°C to -196°C)</Label>
-                  </div>
+            <CollapsibleSection
+              id="advanced-therapy-infrastructure"
+              title="Advanced Therapy Infrastructure"
+              icon={<FileText className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="cellProcessingLab"
+                    checked={formData.facility.cellProcessingLab}
+                    onCheckedChange={(checked) => handleFieldUpdate('facility', 'cellProcessingLab', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="cellProcessingLab">Cell Processing Laboratory</Label>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="coldChainManagement"
-                      checked={formData.facility.coldChainManagement}
-                      onCheckedChange={(checked) => handleFieldUpdate('facility', 'coldChainManagement', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="coldChainManagement">Cold Chain Management Systems</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="flowCytometryEquipment"
-                      checked={formData.facility.flowCytometryEquipment}
-                      onCheckedChange={(checked) => handleFieldUpdate('facility', 'flowCytometryEquipment', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="flowCytometryEquipment">Flow Cytometry Equipment</Label>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="cryopreservationCapability"
+                    checked={formData.facility.cryopreservationCapability}
+                    onCheckedChange={(checked) => handleFieldUpdate('facility', 'cryopreservationCapability', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="cryopreservationCapability">Cryopreservation Storage (-150°C to -196°C)</Label>
                 </div>
+              </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="pcrCapabilities"
-                      checked={formData.facility.pcrCapabilities}
-                      onCheckedChange={(checked) => handleFieldUpdate('facility', 'pcrCapabilities', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="pcrCapabilities">Real-time PCR Capabilities</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="radiationDetectionEquipment"
-                      checked={formData.facility.radiationDetectionEquipment}
-                      onCheckedChange={(checked) => handleFieldUpdate('facility', 'radiationDetectionEquipment', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="radiationDetectionEquipment">Radiation Detection Equipment</Label>
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="coldChainManagement"
+                    checked={formData.facility.coldChainManagement}
+                    onCheckedChange={(checked) => handleFieldUpdate('facility', 'coldChainManagement', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="coldChainManagement">Cold Chain Management Systems</Label>
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="isolationRooms"
-                      checked={formData.facility.isolationRooms}
-                      onCheckedChange={(checked) => handleFieldUpdate('facility', 'isolationRooms', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="isolationRooms">Isolation Rooms with HEPA Filtration</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="cellCountingAnalyzers"
-                      checked={formData.facility.cellCountingAnalyzers}
-                      onCheckedChange={(checked) => handleFieldUpdate('facility', 'cellCountingAnalyzers', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="cellCountingAnalyzers">Cell Counting and Viability Analyzers</Label>
-                  </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="flowCytometryEquipment"
+                    checked={formData.facility.flowCytometryEquipment}
+                    onCheckedChange={(checked) => handleFieldUpdate('facility', 'flowCytometryEquipment', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="flowCytometryEquipment">Flow Cytometry Equipment</Label>
                 </div>
+              </div>
 
-                {formData.facility.cellProcessingLab && (
-                  <div>
-                    <Label htmlFor="cellProcessingGrade">Cell Processing Laboratory Grade Classification</Label>
-                    <Select
-                      value={formData.facility.cellProcessingGrade}
-                      onValueChange={(value) => handleFieldUpdate('facility', 'cellProcessingGrade', value)}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select grade classification" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="grade_a">Grade A</SelectItem>
-                        <SelectItem value="grade_b">Grade B</SelectItem>
-                        <SelectItem value="grade_c">Grade C</SelectItem>
-                        <SelectItem value="grade_d">Grade D</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="pcrCapabilities"
+                    checked={formData.facility.pcrCapabilities}
+                    onCheckedChange={(checked) => handleFieldUpdate('facility', 'pcrCapabilities', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="pcrCapabilities">Real-time PCR Capabilities</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="radiationDetectionEquipment"
+                    checked={formData.facility.radiationDetectionEquipment}
+                    onCheckedChange={(checked) => handleFieldUpdate('facility', 'radiationDetectionEquipment', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="radiationDetectionEquipment">Radiation Detection Equipment</Label>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="isolationRooms"
+                    checked={formData.facility.isolationRooms}
+                    onCheckedChange={(checked) => handleFieldUpdate('facility', 'isolationRooms', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="isolationRooms">Isolation Rooms with HEPA Filtration</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="cellCountingAnalyzers"
+                    checked={formData.facility.cellCountingAnalyzers}
+                    onCheckedChange={(checked) => handleFieldUpdate('facility', 'cellCountingAnalyzers', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="cellCountingAnalyzers">Cell Counting and Viability Analyzers</Label>
+                </div>
+              </div>
+
+              {formData.facility.cellProcessingLab && (
+                <div>
+                  <Label htmlFor="cellProcessingGrade">Cell Processing Laboratory Grade Classification</Label>
+                  <Select
+                    value={formData.facility.cellProcessingGrade}
+                    onValueChange={(value) => handleFieldUpdate('facility', 'cellProcessingGrade', value)}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select grade classification" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="grade_a">Grade A</SelectItem>
+                      <SelectItem value="grade_b">Grade B</SelectItem>
+                      <SelectItem value="grade_c">Grade C</SelectItem>
+                      <SelectItem value="grade_d">Grade D</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+            </CollapsibleSection>
           </TabsContent>
 
           {/* Tab 3: Referral Network & Care Coordination */}
           <TabsContent value="referral" className="space-y-6 mt-6">
             {/* Primary Referring Physicians */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Primary Referring Physician</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="primaryReferringName">Referring Physician Name</Label>
-                    <Input
-                      id="primaryReferringName"
-                      value={formData.referralNetwork.primaryReferringPhysician.name}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        name: e.target.value
-                      })}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="primaryReferringCredentials">Credentials</Label>
-                    <Input
-                      id="primaryReferringCredentials"
-                      value={formData.referralNetwork.primaryReferringPhysician.credentials}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        credentials: e.target.value
-                      })}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="primaryReferringNPI">NPI</Label>
-                    <Input
-                      id="primaryReferringNPI"
-                      value={formData.referralNetwork.primaryReferringPhysician.npi}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        npi: e.target.value
-                      })}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="primaryReferringSpecialty">Primary Specialty</Label>
-                    <Input
-                      id="primaryReferringSpecialty"
-                      value={formData.referralNetwork.primaryReferringPhysician.specialty}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        specialty: e.target.value
-                      })}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
+            <CollapsibleSection
+              id="primary-referring-physician"
+              title="Primary Referring Physician"
+              icon={<User className="h-4 w-4" />}
+              defaultOpen={true}
+            >
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="primaryReferringPracticeName">Practice Name</Label>
+                  <Label htmlFor="primaryReferringName">Referring Physician Name</Label>
                   <Input
-                    id="primaryReferringPracticeName"
-                    value={formData.referralNetwork.primaryReferringPhysician.practiceName}
+                    id="primaryReferringName"
+                    value={formData.referralNetwork.primaryReferringPhysician.name}
                     onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
                       ...formData.referralNetwork.primaryReferringPhysician,
-                      practiceName: e.target.value
+                      name: e.target.value
                     })}
                     disabled={readOnly}
                   />
                 </div>
-
                 <div>
-                  <Label htmlFor="primaryReferringPracticeAddress">Practice Address</Label>
-                  <Textarea
-                    id="primaryReferringPracticeAddress"
-                    value={formData.referralNetwork.primaryReferringPhysician.practiceAddress}
+                  <Label htmlFor="primaryReferringCredentials">Credentials</Label>
+                  <Input
+                    id="primaryReferringCredentials"
+                    value={formData.referralNetwork.primaryReferringPhysician.credentials}
                     onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
                       ...formData.referralNetwork.primaryReferringPhysician,
-                      practiceAddress: e.target.value
+                      credentials: e.target.value
                     })}
                     disabled={readOnly}
                   />
                 </div>
+              </div>
 
-                <div className="grid grid-cols-3 gap-4">
-                  <div>
-                    <Label htmlFor="primaryReferringOfficePhone">Office Phone</Label>
-                    <Input
-                      id="primaryReferringOfficePhone"
-                      value={formData.referralNetwork.primaryReferringPhysician.officePhone}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        officePhone: e.target.value
-                      })}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="primaryReferringFax">Fax Number</Label>
-                    <Input
-                      id="primaryReferringFax"
-                      value={formData.referralNetwork.primaryReferringPhysician.faxNumber}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        faxNumber: e.target.value
-                      })}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="primaryReferringEmail">Email Address</Label>
-                    <Input
-                      id="primaryReferringEmail"
-                      type="email"
-                      value={formData.referralNetwork.primaryReferringPhysician.email}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        email: e.target.value
-                      })}
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="expectedReferralVolume">Expected Referral Volume</Label>
-                    <Select
-                      value={formData.referralNetwork.primaryReferringPhysician.expectedReferralVolume}
-                      onValueChange={(value) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        expectedReferralVolume: value
-                      })}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select expected volume" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1-5_per_month">1-5 per month</SelectItem>
-                        <SelectItem value="6-10_per_month">6-10 per month</SelectItem>
-                        <SelectItem value="11-20_per_month">11-20 per month</SelectItem>
-                        <SelectItem value="20+_per_month">20+ per month</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="relationshipDuration">Relationship Duration</Label>
-                    <Input
-                      id="relationshipDuration"
-                      value={formData.referralNetwork.primaryReferringPhysician.relationshipDuration}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
-                        ...formData.referralNetwork.primaryReferringPhysician,
-                        relationshipDuration: e.target.value
-                      })}
-                      placeholder="e.g., 5 years"
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Specialist Network */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Specialist Network</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="consultingOncologist">Consulting Oncologist</Label>
-                    <Input
-                      id="consultingOncologist"
-                      value={formData.referralNetwork.consultingOncologist.name}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'consultingOncologist', {
-                        ...formData.referralNetwork.consultingOncologist,
-                        name: e.target.value
-                      })}
-                      placeholder="Name, NPI, Contact"
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="consultingHematologist">Consulting Hematologist</Label>
-                    <Input
-                      id="consultingHematologist"
-                      value={formData.referralNetwork.consultingHematologist.name}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'consultingHematologist', {
-                        ...formData.referralNetwork.consultingHematologist,
-                        name: e.target.value
-                      })}
-                      placeholder="Name, NPI, Contact"
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="pathologist">Pathologist</Label>
-                    <Input
-                      id="pathologist"
-                      value={formData.referralNetwork.pathologist.name}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'pathologist', {
-                        ...formData.referralNetwork.pathologist,
-                        name: e.target.value
-                      })}
-                      placeholder="Name, NPI, Contact"
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="radiologist">Radiologist</Label>
-                    <Input
-                      id="radiologist"
-                      value={formData.referralNetwork.radiologist.name}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'radiologist', {
-                        ...formData.referralNetwork.radiologist,
-                        name: e.target.value
-                      })}
-                      placeholder="Name, NPI, Contact"
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="pharmacogenomicsSpecialist">Pharmacogenomics Specialist</Label>
-                    <Input
-                      id="pharmacogenomicsSpecialist"
-                      value={formData.referralNetwork.pharmacogenomicsSpecialist.name}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'pharmacogenomicsSpecialist', {
-                        ...formData.referralNetwork.pharmacogenomicsSpecialist,
-                        name: e.target.value
-                      })}
-                      placeholder="Name, Certification, Contact"
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="geneticCounselor">Genetic Counselor</Label>
-                    <Input
-                      id="geneticCounselor"
-                      value={formData.referralNetwork.geneticCounselor.name}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'geneticCounselor', {
-                        ...formData.referralNetwork.geneticCounselor,
-                        name: e.target.value
-                      })}
-                      placeholder="Name, Certification, Contact"
-                      disabled={readOnly}
-                    />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Care Coordination Processes */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Care Coordination Processes</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="referralCriteria">Referral Criteria and Protocols</Label>
-                  <Textarea
-                    id="referralCriteria"
-                    value={formData.referralNetwork.referralCriteria}
-                    onChange={(e) => handleFieldUpdate('referralNetwork', 'referralCriteria', e.target.value)}
+                  <Label htmlFor="primaryReferringNPI">NPI</Label>
+                  <Input
+                    id="primaryReferringNPI"
+                    value={formData.referralNetwork.primaryReferringPhysician.npi}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                      ...formData.referralNetwork.primaryReferringPhysician,
+                      npi: e.target.value
+                    })}
                     disabled={readOnly}
                   />
                 </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="referralProcessingTime">Referral Processing Turnaround Time</Label>
-                    <Select
-                      value={formData.referralNetwork.referralProcessingTime}
-                      onValueChange={(value) => handleFieldUpdate('referralNetwork', 'referralProcessingTime', value)}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select turnaround time" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="same_day">Same Day</SelectItem>
-                        <SelectItem value="24_hours">24 Hours</SelectItem>
-                        <SelectItem value="48_hours">48 Hours</SelectItem>
-                        <SelectItem value="3-5_days">3-5 Days</SelectItem>
-                        <SelectItem value="1_week">1 Week</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label htmlFor="patientCommunicationPreferences">Patient Communication Preferences</Label>
-                    <Select
-                      value={formData.referralNetwork.patientCommunicationPreferences}
-                      onValueChange={(value) => handleFieldUpdate('referralNetwork', 'patientCommunicationPreferences', value)}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select communication method" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="phone">Phone</SelectItem>
-                        <SelectItem value="email">Email</SelectItem>
-                        <SelectItem value="patient_portal">Patient Portal</SelectItem>
-                        <SelectItem value="secure_messaging">Secure Messaging</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
                 <div>
-                  <Label htmlFor="emergencyContactProtocols">Emergency Contact Protocols</Label>
-                  <Textarea
-                    id="emergencyContactProtocols"
-                    value={formData.referralNetwork.emergencyContactProtocols}
-                    onChange={(e) => handleFieldUpdate('referralNetwork', 'emergencyContactProtocols', e.target.value)}
+                  <Label htmlFor="primaryReferringSpecialty">Primary Specialty</Label>
+                  <Input
+                    id="primaryReferringSpecialty"
+                    value={formData.referralNetwork.primaryReferringPhysician.specialty}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                      ...formData.referralNetwork.primaryReferringPhysician,
+                      specialty: e.target.value
+                    })}
                     disabled={readOnly}
                   />
                 </div>
+              </div>
 
+              <div>
+                <Label htmlFor="primaryReferringPracticeName">Practice Name</Label>
+                <Input
+                  id="primaryReferringPracticeName"
+                  value={formData.referralNetwork.primaryReferringPhysician.practiceName}
+                  onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                    ...formData.referralNetwork.primaryReferringPhysician,
+                    practiceName: e.target.value
+                  })}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="primaryReferringPracticeAddress">Practice Address</Label>
+                <Textarea
+                  id="primaryReferringPracticeAddress"
+                  value={formData.referralNetwork.primaryReferringPhysician.practiceAddress}
+                  onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                    ...formData.referralNetwork.primaryReferringPhysician,
+                    practiceAddress: e.target.value
+                  })}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div className="grid grid-cols-3 gap-4">
                 <div>
-                  <Label htmlFor="afterHoursCoverage">After-hours Coverage Arrangements</Label>
-                  <Textarea
-                    id="afterHoursCoverage"
-                    value={formData.referralNetwork.afterHoursCoverage}
-                    onChange={(e) => handleFieldUpdate('referralNetwork', 'afterHoursCoverage', e.target.value)}
+                  <Label htmlFor="primaryReferringOfficePhone">Office Phone</Label>
+                  <Input
+                    id="primaryReferringOfficePhone"
+                    value={formData.referralNetwork.primaryReferringPhysician.officePhone}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                      ...formData.referralNetwork.primaryReferringPhysician,
+                      officePhone: e.target.value
+                    })}
                     disabled={readOnly}
                   />
                 </div>
-              </CardContent>
-            </Card>
-
-            {/* Communication & Documentation */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Communication & Documentation</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="ehrIntegration"
-                      checked={formData.referralNetwork.ehrIntegration}
-                      onCheckedChange={(checked) => handleFieldUpdate('referralNetwork', 'ehrIntegration', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="ehrIntegration">EHR Integration Available</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      id="patientPortalAccess"
-                      checked={formData.referralNetwork.patientPortalAccess}
-                      onCheckedChange={(checked) => handleFieldUpdate('referralNetwork', 'patientPortalAccess', checked === true)}
-                      disabled={readOnly}
-                    />
-                    <Label htmlFor="patientPortalAccess">Patient Portal Access for Referring Providers</Label>
-                  </div>
-                </div>
-
-                {formData.referralNetwork.ehrIntegration && (
-                  <div>
-                    <Label htmlFor="ehrSystemName">EHR System Name</Label>
-                    <Input
-                      id="ehrSystemName"
-                      value={formData.referralNetwork.ehrSystemName}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'ehrSystemName', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                )}
-
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="secureMessagingSystem">Secure Messaging System</Label>
-                    <Input
-                      id="secureMessagingSystem"
-                      value={formData.referralNetwork.secureMessagingSystem}
-                      onChange={(e) => handleFieldUpdate('referralNetwork', 'secureMessagingSystem', e.target.value)}
-                      disabled={readOnly}
-                    />
-                  </div>
-                  <div>
-                    <Label htmlFor="preferredReportFormat">Preferred Report Format</Label>
-                    <Select
-                      value={formData.referralNetwork.preferredReportFormat}
-                      onValueChange={(value) => handleFieldUpdate('referralNetwork', 'preferredReportFormat', value)}
-                      disabled={readOnly}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select format" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="pdf">PDF</SelectItem>
-                        <SelectItem value="hl7">HL7</SelectItem>
-                        <SelectItem value="fax">Fax</SelectItem>
-                        <SelectItem value="secure_email">Secure Email</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-
                 <div>
-                  <Label htmlFor="updateFrequency">Frequency of Updates to Referring Physicians</Label>
+                  <Label htmlFor="primaryReferringFax">Fax Number</Label>
+                  <Input
+                    id="primaryReferringFax"
+                    value={formData.referralNetwork.primaryReferringPhysician.faxNumber}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                      ...formData.referralNetwork.primaryReferringPhysician,
+                      faxNumber: e.target.value
+                    })}
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="primaryReferringEmail">Email Address</Label>
+                  <Input
+                    id="primaryReferringEmail"
+                    type="email"
+                    value={formData.referralNetwork.primaryReferringPhysician.email}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                      ...formData.referralNetwork.primaryReferringPhysician,
+                      email: e.target.value
+                    })}
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="expectedReferralVolume">Expected Referral Volume</Label>
                   <Select
-                    value={formData.referralNetwork.updateFrequency}
-                    onValueChange={(value) => handleFieldUpdate('referralNetwork', 'updateFrequency', value)}
+                    value={formData.referralNetwork.primaryReferringPhysician.expectedReferralVolume}
+                    onValueChange={(value) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                      ...formData.referralNetwork.primaryReferringPhysician,
+                      expectedReferralVolume: value
+                    })}
                     disabled={readOnly}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select frequency" />
+                      <SelectValue placeholder="Select expected volume" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="real_time">Real-time</SelectItem>
-                      <SelectItem value="daily">Daily</SelectItem>
-                      <SelectItem value="weekly">Weekly</SelectItem>
-                      <SelectItem value="as_needed">As Needed</SelectItem>
-                      <SelectItem value="milestone_based">Milestone-based</SelectItem>
+                      <SelectItem value="1-5_per_month">1-5 per month</SelectItem>
+                      <SelectItem value="6-10_per_month">6-10 per month</SelectItem>
+                      <SelectItem value="11-20_per_month">11-20 per month</SelectItem>
+                      <SelectItem value="20+_per_month">20+ per month</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-              </CardContent>
-            </Card>
+                <div>
+                  <Label htmlFor="relationshipDuration">Relationship Duration</Label>
+                  <Input
+                    id="relationshipDuration"
+                    value={formData.referralNetwork.primaryReferringPhysician.relationshipDuration}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'primaryReferringPhysician', {
+                      ...formData.referralNetwork.primaryReferringPhysician,
+                      relationshipDuration: e.target.value
+                    })}
+                    placeholder="e.g., 5 years"
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
 
-            {/* Network Agreements */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg">Network Agreements</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
+            {/* Specialist Network */}
+            <CollapsibleSection
+              id="specialist-network"
+              title="Specialist Network"
+              icon={<Network className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="consultingOncologist">Consulting Oncologist</Label>
+                  <Input
+                    id="consultingOncologist"
+                    value={formData.referralNetwork.consultingOncologist.name}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'consultingOncologist', {
+                      ...formData.referralNetwork.consultingOncologist,
+                      name: e.target.value
+                    })}
+                    placeholder="Name, NPI, Contact"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="consultingHematologist">Consulting Hematologist</Label>
+                  <Input
+                    id="consultingHematologist"
+                    value={formData.referralNetwork.consultingHematologist.name}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'consultingHematologist', {
+                      ...formData.referralNetwork.consultingHematologist,
+                      name: e.target.value
+                    })}
+                    placeholder="Name, NPI, Contact"
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="pathologist">Pathologist</Label>
+                  <Input
+                    id="pathologist"
+                    value={formData.referralNetwork.pathologist.name}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'pathologist', {
+                      ...formData.referralNetwork.pathologist,
+                      name: e.target.value
+                    })}
+                    placeholder="Name, NPI, Contact"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="radiologist">Radiologist</Label>
+                  <Input
+                    id="radiologist"
+                    value={formData.referralNetwork.radiologist.name}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'radiologist', {
+                      ...formData.referralNetwork.radiologist,
+                      name: e.target.value
+                    })}
+                    placeholder="Name, NPI, Contact"
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="pharmacogenomicsSpecialist">Pharmacogenomics Specialist</Label>
+                  <Input
+                    id="pharmacogenomicsSpecialist"
+                    value={formData.referralNetwork.pharmacogenomicsSpecialist.name}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'pharmacogenomicsSpecialist', {
+                      ...formData.referralNetwork.pharmacogenomicsSpecialist,
+                      name: e.target.value
+                    })}
+                    placeholder="Name, Certification, Contact"
+                    disabled={readOnly}
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="geneticCounselor">Genetic Counselor</Label>
+                  <Input
+                    id="geneticCounselor"
+                    value={formData.referralNetwork.geneticCounselor.name}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'geneticCounselor', {
+                      ...formData.referralNetwork.geneticCounselor,
+                      name: e.target.value
+                    })}
+                    placeholder="Name, Certification, Contact"
+                    disabled={readOnly}
+                  />
+                </div>
+              </div>
+            </CollapsibleSection>
+
+            {/* Care Coordination Processes */}
+            <CollapsibleSection
+              id="care-coordination-processes"
+              title="Care Coordination Processes"
+              icon={<FileText className="h-4 w-4" />}
+            >
+              <div>
+                <Label htmlFor="referralCriteria">Referral Criteria and Protocols</Label>
+                <Textarea
+                  id="referralCriteria"
+                  value={formData.referralNetwork.referralCriteria}
+                  onChange={(e) => handleFieldUpdate('referralNetwork', 'referralCriteria', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="referralProcessingTime">Referral Processing Turnaround Time</Label>
+                  <Select
+                    value={formData.referralNetwork.referralProcessingTime}
+                    onValueChange={(value) => handleFieldUpdate('referralNetwork', 'referralProcessingTime', value)}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select turnaround time" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="same_day">Same Day</SelectItem>
+                      <SelectItem value="24_hours">24 Hours</SelectItem>
+                      <SelectItem value="48_hours">48 Hours</SelectItem>
+                      <SelectItem value="3-5_days">3-5 Days</SelectItem>
+                      <SelectItem value="1_week">1 Week</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label htmlFor="patientCommunicationPreferences">Patient Communication Preferences</Label>
+                  <Select
+                    value={formData.referralNetwork.patientCommunicationPreferences}
+                    onValueChange={(value) => handleFieldUpdate('referralNetwork', 'patientCommunicationPreferences', value)}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select communication method" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="phone">Phone</SelectItem>
+                      <SelectItem value="email">Email</SelectItem>
+                      <SelectItem value="patient_portal">Patient Portal</SelectItem>
+                      <SelectItem value="secure_messaging">Secure Messaging</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="emergencyContactProtocols">Emergency Contact Protocols</Label>
+                <Textarea
+                  id="emergencyContactProtocols"
+                  value={formData.referralNetwork.emergencyContactProtocols}
+                  onChange={(e) => handleFieldUpdate('referralNetwork', 'emergencyContactProtocols', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="afterHoursCoverage">After-hours Coverage Arrangements</Label>
+                <Textarea
+                  id="afterHoursCoverage"
+                  value={formData.referralNetwork.afterHoursCoverage}
+                  onChange={(e) => handleFieldUpdate('referralNetwork', 'afterHoursCoverage', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+            </CollapsibleSection>
+
+            {/* Communication & Documentation */}
+            <CollapsibleSection
+              id="communication-documentation"
+              title="Communication & Documentation"
+              icon={<Mail className="h-4 w-4" />}
+            >
+              <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center space-x-2">
                   <Checkbox
-                    id="formalReferralAgreements"
-                    checked={formData.referralNetwork.formalReferralAgreements}
-                    onCheckedChange={(checked) => handleFieldUpdate('referralNetwork', 'formalReferralAgreements', checked === true)}
+                    id="ehrIntegration"
+                    checked={formData.referralNetwork.ehrIntegration}
+                    onCheckedChange={(checked) => handleFieldUpdate('referralNetwork', 'ehrIntegration', checked === true)}
                     disabled={readOnly}
                   />
-                  <Label htmlFor="formalReferralAgreements">Formal Referral Agreements in Place</Label>
+                  <Label htmlFor="ehrIntegration">EHR Integration Available</Label>
                 </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="patientPortalAccess"
+                    checked={formData.referralNetwork.patientPortalAccess}
+                    onCheckedChange={(checked) => handleFieldUpdate('referralNetwork', 'patientPortalAccess', checked === true)}
+                    disabled={readOnly}
+                  />
+                  <Label htmlFor="patientPortalAccess">Patient Portal Access for Referring Providers</Label>
+                </div>
+              </div>
 
+              {formData.referralNetwork.ehrIntegration && (
                 <div>
-                  <Label htmlFor="sharedCareProtocols">Shared Care Protocols</Label>
-                  <Textarea
-                    id="sharedCareProtocols"
-                    value={formData.referralNetwork.sharedCareProtocols}
-                    onChange={(e) => handleFieldUpdate('referralNetwork', 'sharedCareProtocols', e.target.value)}
+                  <Label htmlFor="ehrSystemName">EHR System Name</Label>
+                  <Input
+                    id="ehrSystemName"
+                    value={formData.referralNetwork.ehrSystemName}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'ehrSystemName', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
+              )}
 
+              <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="coverageAgreements">Coverage Agreements</Label>
-                  <Textarea
-                    id="coverageAgreements"
-                    value={formData.referralNetwork.coverageAgreements}
-                    onChange={(e) => handleFieldUpdate('referralNetwork', 'coverageAgreements', e.target.value)}
+                  <Label htmlFor="secureMessagingSystem">Secure Messaging System</Label>
+                  <Input
+                    id="secureMessagingSystem"
+                    value={formData.referralNetwork.secureMessagingSystem}
+                    onChange={(e) => handleFieldUpdate('referralNetwork', 'secureMessagingSystem', e.target.value)}
                     disabled={readOnly}
                   />
                 </div>
+                <div>
+                  <Label htmlFor="preferredReportFormat">Preferred Report Format</Label>
+                  <Select
+                    value={formData.referralNetwork.preferredReportFormat}
+                    onValueChange={(value) => handleFieldUpdate('referralNetwork', 'preferredReportFormat', value)}
+                    disabled={readOnly}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select format" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pdf">PDF</SelectItem>
+                      <SelectItem value="hl7">HL7</SelectItem>
+                      <SelectItem value="fax">Fax</SelectItem>
+                      <SelectItem value="secure_email">Secure Email</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
 
-                <div>
-                  <Label htmlFor="continuingEducationCollaboration">Continuing Education Collaboration</Label>
-                  <Textarea
-                    id="continuingEducationCollaboration"
-                    value={formData.referralNetwork.continuingEducationCollaboration}
-                    onChange={(e) => handleFieldUpdate('referralNetwork', 'continuingEducationCollaboration', e.target.value)}
-                    disabled={readOnly}
-                  />
-                </div>
-              </CardContent>
-            </Card>
+              <div>
+                <Label htmlFor="updateFrequency">Frequency of Updates to Referring Physicians</Label>
+                <Select
+                  value={formData.referralNetwork.updateFrequency}
+                  onValueChange={(value) => handleFieldUpdate('referralNetwork', 'updateFrequency', value)}
+                  disabled={readOnly}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select frequency" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="real_time">Real-time</SelectItem>
+                    <SelectItem value="daily">Daily</SelectItem>
+                    <SelectItem value="weekly">Weekly</SelectItem>
+                    <SelectItem value="as_needed">As Needed</SelectItem>
+                    <SelectItem value="milestone_based">Milestone-based</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </CollapsibleSection>
+
+            {/* Network Agreements */}
+            <CollapsibleSection
+              id="network-agreements"
+              title="Network Agreements"
+              icon={<FileText className="h-4 w-4" />}
+            >
+              <div className="flex items-center space-x-2">
+                <Checkbox
+                  id="formalReferralAgreements"
+                  checked={formData.referralNetwork.formalReferralAgreements}
+                  onCheckedChange={(checked) => handleFieldUpdate('referralNetwork', 'formalReferralAgreements', checked === true)}
+                  disabled={readOnly}
+                />
+                <Label htmlFor="formalReferralAgreements">Formal Referral Agreements in Place</Label>
+              </div>
+
+              <div>
+                <Label htmlFor="sharedCareProtocols">Shared Care Protocols</Label>
+                <Textarea
+                  id="sharedCareProtocols"
+                  value={formData.referralNetwork.sharedCareProtocols}
+                  onChange={(e) => handleFieldUpdate('referralNetwork', 'sharedCareProtocols', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="coverageAgreements">Coverage Agreements</Label>
+                <Textarea
+                  id="coverageAgreements"
+                  value={formData.referralNetwork.coverageAgreements}
+                  onChange={(e) => handleFieldUpdate('referralNetwork', 'coverageAgreements', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="continuingEducationCollaboration">Continuing Education Collaboration</Label>
+                <Textarea
+                  id="continuingEducationCollaboration"
+                  value={formData.referralNetwork.continuingEducationCollaboration}
+                  onChange={(e) => handleFieldUpdate('referralNetwork', 'continuingEducationCollaboration', e.target.value)}
+                  disabled={readOnly}
+                />
+              </div>
+            </CollapsibleSection>
           </TabsContent>
         </Tabs>
 
