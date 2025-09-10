@@ -5288,43 +5288,53 @@ export type Database = {
       }
       insurance_coverages: {
         Row: {
-          advanced_therapy_coverage: Json | null
+          annual_deductible: number | null
           annual_deductible_family: string | null
           annual_deductible_individual: string | null
           annual_maximum_benefit: string | null
           benefits_confirmed: boolean | null
           bin_number: string | null
           brand_name_copay: string | null
-          card_images: Json | null
+          car_t_coverage: boolean | null
+          card_back_image_url: string | null
+          card_front_image_url: string | null
+          card_uploaded_date: string | null
+          card_verified: boolean | null
           case_management_required: boolean | null
           category: string
           claims_phone: string | null
           clinical_trial_coverage: boolean | null
+          coinsurance_percentage: number | null
           company_name: string
           compassionate_use_coverage: boolean | null
+          copay_amount: number | null
           coverage_decision_timeline: string | null
-          coverage_details: Json | null
+          coverage_tier: string | null
           created_at: string | null
           customer_service_hours: string | null
           customer_service_hours_insurance: string | null
           date_of_injury: string | null
           deductible_met_to_date: string | null
           diagnostic_test_coinsurance: string | null
+          dual_eligible: boolean | null
           emergency_room_copay: string | null
           employer_name: string | null
           enrollment_instance_id: string | null
           experimental_coverage: boolean | null
           formulary_tier_structure: string | null
           formulary_type: string | null
+          gene_therapy_coverage: boolean | null
           generic_copay: string | null
-          government_insurance_details: Json | null
           group_number: string | null
           high_cost_therapy_coverage: boolean | null
           id: string
+          immunotherapy_coverage: boolean | null
           inpatient_hospital_copay: string | null
           is_active: boolean | null
           lifetime_maximum_benefit: string | null
           mail_order_benefits: boolean | null
+          mail_order_pharmacy: boolean | null
+          medicaid_coverage: boolean | null
           medicaid_id_number: string | null
           medicaid_plan_type: string | null
           medical_vs_pharmacy_benefit: string | null
@@ -5338,20 +5348,22 @@ export type Database = {
           military_branch: string | null
           mobile_app_available: boolean | null
           mobile_app_available_insurance: boolean | null
+          network_status: string | null
           non_preferred_brand_copay: string | null
           office_visit_copay: string | null
           out_of_pocket_max_family: string | null
           out_of_pocket_max_individual: string | null
+          out_of_pocket_maximum: number | null
           out_of_pocket_met_to_date: string | null
           outpatient_surgery_copay: string | null
           patient_id: string | null
           pcn_number: string | null
           pharmacy_benefit_manager: string | null
-          pharmacy_benefits: Json | null
           pharmacy_benefits_active: boolean | null
           pharmacy_deductible: string | null
           pharmacy_group_number: string | null
           pharmacy_id_number: string | null
+          pharmacy_network: string | null
           pharmacy_services_phone: string | null
           plan_name: string | null
           plan_type: string | null
@@ -5365,6 +5377,7 @@ export type Database = {
           precertification_required: boolean | null
           precertification_timeline: string | null
           preferred_brand_copay: string | null
+          preferred_pharmacies: string[] | null
           preventive_care_coverage: string | null
           prior_auth_approval_date: string | null
           prior_auth_expiration_date: string | null
@@ -5374,10 +5387,12 @@ export type Database = {
           prior_auth_required_advanced: boolean | null
           prior_auth_required_meds: boolean | null
           prior_auth_status: string | null
+          prior_authorization_required: boolean | null
           priority: string
           priority_group: string | null
           provider_services_phone: string | null
           quantity_limits: boolean | null
+          radioligand_therapy_coverage: boolean | null
           referral_required: boolean | null
           relationship_to_patient: string | null
           service_connected_rating: string | null
@@ -5386,6 +5401,7 @@ export type Database = {
           specialty_drug_copay: string | null
           specialty_drug_tier_assignment: string | null
           specialty_pharmacy_network: string | null
+          specialty_pharmacy_required: boolean | null
           sponsor_military_id: string | null
           sponsor_status: string | null
           state_medicaid_program: string | null
@@ -5404,43 +5420,53 @@ export type Database = {
           workers_comp_claim_number: string | null
         }
         Insert: {
-          advanced_therapy_coverage?: Json | null
+          annual_deductible?: number | null
           annual_deductible_family?: string | null
           annual_deductible_individual?: string | null
           annual_maximum_benefit?: string | null
           benefits_confirmed?: boolean | null
           bin_number?: string | null
           brand_name_copay?: string | null
-          card_images?: Json | null
+          car_t_coverage?: boolean | null
+          card_back_image_url?: string | null
+          card_front_image_url?: string | null
+          card_uploaded_date?: string | null
+          card_verified?: boolean | null
           case_management_required?: boolean | null
           category: string
           claims_phone?: string | null
           clinical_trial_coverage?: boolean | null
+          coinsurance_percentage?: number | null
           company_name: string
           compassionate_use_coverage?: boolean | null
+          copay_amount?: number | null
           coverage_decision_timeline?: string | null
-          coverage_details?: Json | null
+          coverage_tier?: string | null
           created_at?: string | null
           customer_service_hours?: string | null
           customer_service_hours_insurance?: string | null
           date_of_injury?: string | null
           deductible_met_to_date?: string | null
           diagnostic_test_coinsurance?: string | null
+          dual_eligible?: boolean | null
           emergency_room_copay?: string | null
           employer_name?: string | null
           enrollment_instance_id?: string | null
           experimental_coverage?: boolean | null
           formulary_tier_structure?: string | null
           formulary_type?: string | null
+          gene_therapy_coverage?: boolean | null
           generic_copay?: string | null
-          government_insurance_details?: Json | null
           group_number?: string | null
           high_cost_therapy_coverage?: boolean | null
           id?: string
+          immunotherapy_coverage?: boolean | null
           inpatient_hospital_copay?: string | null
           is_active?: boolean | null
           lifetime_maximum_benefit?: string | null
           mail_order_benefits?: boolean | null
+          mail_order_pharmacy?: boolean | null
+          medicaid_coverage?: boolean | null
           medicaid_id_number?: string | null
           medicaid_plan_type?: string | null
           medical_vs_pharmacy_benefit?: string | null
@@ -5454,20 +5480,22 @@ export type Database = {
           military_branch?: string | null
           mobile_app_available?: boolean | null
           mobile_app_available_insurance?: boolean | null
+          network_status?: string | null
           non_preferred_brand_copay?: string | null
           office_visit_copay?: string | null
           out_of_pocket_max_family?: string | null
           out_of_pocket_max_individual?: string | null
+          out_of_pocket_maximum?: number | null
           out_of_pocket_met_to_date?: string | null
           outpatient_surgery_copay?: string | null
           patient_id?: string | null
           pcn_number?: string | null
           pharmacy_benefit_manager?: string | null
-          pharmacy_benefits?: Json | null
           pharmacy_benefits_active?: boolean | null
           pharmacy_deductible?: string | null
           pharmacy_group_number?: string | null
           pharmacy_id_number?: string | null
+          pharmacy_network?: string | null
           pharmacy_services_phone?: string | null
           plan_name?: string | null
           plan_type?: string | null
@@ -5481,6 +5509,7 @@ export type Database = {
           precertification_required?: boolean | null
           precertification_timeline?: string | null
           preferred_brand_copay?: string | null
+          preferred_pharmacies?: string[] | null
           preventive_care_coverage?: string | null
           prior_auth_approval_date?: string | null
           prior_auth_expiration_date?: string | null
@@ -5490,10 +5519,12 @@ export type Database = {
           prior_auth_required_advanced?: boolean | null
           prior_auth_required_meds?: boolean | null
           prior_auth_status?: string | null
+          prior_authorization_required?: boolean | null
           priority: string
           priority_group?: string | null
           provider_services_phone?: string | null
           quantity_limits?: boolean | null
+          radioligand_therapy_coverage?: boolean | null
           referral_required?: boolean | null
           relationship_to_patient?: string | null
           service_connected_rating?: string | null
@@ -5502,6 +5533,7 @@ export type Database = {
           specialty_drug_copay?: string | null
           specialty_drug_tier_assignment?: string | null
           specialty_pharmacy_network?: string | null
+          specialty_pharmacy_required?: boolean | null
           sponsor_military_id?: string | null
           sponsor_status?: string | null
           state_medicaid_program?: string | null
@@ -5520,43 +5552,53 @@ export type Database = {
           workers_comp_claim_number?: string | null
         }
         Update: {
-          advanced_therapy_coverage?: Json | null
+          annual_deductible?: number | null
           annual_deductible_family?: string | null
           annual_deductible_individual?: string | null
           annual_maximum_benefit?: string | null
           benefits_confirmed?: boolean | null
           bin_number?: string | null
           brand_name_copay?: string | null
-          card_images?: Json | null
+          car_t_coverage?: boolean | null
+          card_back_image_url?: string | null
+          card_front_image_url?: string | null
+          card_uploaded_date?: string | null
+          card_verified?: boolean | null
           case_management_required?: boolean | null
           category?: string
           claims_phone?: string | null
           clinical_trial_coverage?: boolean | null
+          coinsurance_percentage?: number | null
           company_name?: string
           compassionate_use_coverage?: boolean | null
+          copay_amount?: number | null
           coverage_decision_timeline?: string | null
-          coverage_details?: Json | null
+          coverage_tier?: string | null
           created_at?: string | null
           customer_service_hours?: string | null
           customer_service_hours_insurance?: string | null
           date_of_injury?: string | null
           deductible_met_to_date?: string | null
           diagnostic_test_coinsurance?: string | null
+          dual_eligible?: boolean | null
           emergency_room_copay?: string | null
           employer_name?: string | null
           enrollment_instance_id?: string | null
           experimental_coverage?: boolean | null
           formulary_tier_structure?: string | null
           formulary_type?: string | null
+          gene_therapy_coverage?: boolean | null
           generic_copay?: string | null
-          government_insurance_details?: Json | null
           group_number?: string | null
           high_cost_therapy_coverage?: boolean | null
           id?: string
+          immunotherapy_coverage?: boolean | null
           inpatient_hospital_copay?: string | null
           is_active?: boolean | null
           lifetime_maximum_benefit?: string | null
           mail_order_benefits?: boolean | null
+          mail_order_pharmacy?: boolean | null
+          medicaid_coverage?: boolean | null
           medicaid_id_number?: string | null
           medicaid_plan_type?: string | null
           medical_vs_pharmacy_benefit?: string | null
@@ -5570,20 +5612,22 @@ export type Database = {
           military_branch?: string | null
           mobile_app_available?: boolean | null
           mobile_app_available_insurance?: boolean | null
+          network_status?: string | null
           non_preferred_brand_copay?: string | null
           office_visit_copay?: string | null
           out_of_pocket_max_family?: string | null
           out_of_pocket_max_individual?: string | null
+          out_of_pocket_maximum?: number | null
           out_of_pocket_met_to_date?: string | null
           outpatient_surgery_copay?: string | null
           patient_id?: string | null
           pcn_number?: string | null
           pharmacy_benefit_manager?: string | null
-          pharmacy_benefits?: Json | null
           pharmacy_benefits_active?: boolean | null
           pharmacy_deductible?: string | null
           pharmacy_group_number?: string | null
           pharmacy_id_number?: string | null
+          pharmacy_network?: string | null
           pharmacy_services_phone?: string | null
           plan_name?: string | null
           plan_type?: string | null
@@ -5597,6 +5641,7 @@ export type Database = {
           precertification_required?: boolean | null
           precertification_timeline?: string | null
           preferred_brand_copay?: string | null
+          preferred_pharmacies?: string[] | null
           preventive_care_coverage?: string | null
           prior_auth_approval_date?: string | null
           prior_auth_expiration_date?: string | null
@@ -5606,10 +5651,12 @@ export type Database = {
           prior_auth_required_advanced?: boolean | null
           prior_auth_required_meds?: boolean | null
           prior_auth_status?: string | null
+          prior_authorization_required?: boolean | null
           priority?: string
           priority_group?: string | null
           provider_services_phone?: string | null
           quantity_limits?: boolean | null
+          radioligand_therapy_coverage?: boolean | null
           referral_required?: boolean | null
           relationship_to_patient?: string | null
           service_connected_rating?: string | null
@@ -5618,6 +5665,7 @@ export type Database = {
           specialty_drug_copay?: string | null
           specialty_drug_tier_assignment?: string | null
           specialty_pharmacy_network?: string | null
+          specialty_pharmacy_required?: boolean | null
           sponsor_military_id?: string | null
           sponsor_status?: string | null
           state_medicaid_program?: string | null
@@ -9666,56 +9714,72 @@ export type Database = {
         Row: {
           absolute_contraindications: string | null
           active_infections: boolean | null
+          address_verified: boolean | null
           advanced_directive_review: string | null
           assessment_completion_date: string | null
           assessment_status: string | null
+          baseline_assessments_complete: boolean | null
+          biomarker_testing_complete: boolean | null
           biometric_data_available: boolean | null
           capacity_assessment: string | null
           cardiac_clearance: string | null
-          care_coordination: Json | null
           care_coordinator_assigned: string | null
+          care_plan_developed: boolean | null
+          care_team_assigned: boolean | null
           caregiver_support_identified: string | null
           case_manager_assignment: string | null
           clinical_decision: string | null
           clinical_decision_rationale: string | null
-          clinical_readiness: Json | null
           code_status_discussed: boolean | null
           communication_consent: string | null
           consent_date: string | null
           consenting_physician: string | null
+          contraindications_assessed: boolean | null
           created_at: string | null
           current_functional_capacity: boolean | null
           device_distribution: string | null
           disease_status_at_enrollment: string | null
           distance_from_treatment_center: string | null
           drug_interaction_check: boolean | null
+          drug_interactions_reviewed: boolean | null
+          eligibility_confirmed: boolean | null
           emergency_communication_plan: string | null
           emergency_contact_24x7: string | null
           enrollment_instance_id: string | null
+          estimated_out_of_pocket_cost: number | null
           facility_id: string | null
           family_communication_preferences: string | null
-          financial_counseling: Json | null
+          financial_assessment_complete: boolean | null
           financial_counseling_completed: boolean | null
           financial_hardship_identified: boolean | null
+          genetic_testing_required: boolean | null
           healthcare_proxy_confirmed: string | null
+          high_risk_factors: string[] | null
           hipaa_authorization: boolean | null
           home_health_services: string | null
           id: string
           identity_discrepancies_found: boolean | null
           identity_discrepancy_details: string | null
-          identity_verification: Json | null
           identity_verification_date_time: string | null
           identity_verification_witness: string | null
+          identity_verified: boolean | null
           infection_screening: string | null
-          laboratory_diagnostics: Json | null
+          insurance_verification_complete: boolean | null
+          lab_results_complete: boolean | null
           language_interpreter_services: string | null
           lodging_arrangements: string | null
-          medical_review: Json | null
+          medical_clearance_obtained: boolean | null
+          medical_history_reviewed: boolean | null
           medical_review_date: string | null
           medical_reviewer_id: string | null
+          mitigation_strategies: string[] | null
+          mobile_app_onboarded: boolean | null
+          multidisciplinary_team_meeting: string | null
           nutrition_consultation: string | null
           out_of_pocket_amount: string | null
           out_of_pocket_cost_estimate_provided: boolean | null
+          overall_risk_score: number | null
+          patient_assistance_programs: string[] | null
           patient_assistance_programs_applied: string[] | null
           patient_id: string | null
           patient_photo_captured: boolean | null
@@ -9726,88 +9790,113 @@ export type Database = {
           pharmacy_consultation: string | null
           photo_id_type_verified: string | null
           photo_id_verification_completed: boolean | null
+          photo_id_verified: boolean | null
           photography_video_consent: boolean | null
+          physician_approval_obtained: boolean | null
           preferred_contact_method_appointments: string | null
           pregnancy_test: string | null
+          primary_care_coordinator: string | null
           primary_nurse_assignment: string | null
+          prior_authorization_status: string | null
           prior_severe_adverse_reactions: string | null
           provider_id: string | null
           pulmonary_function: string | null
           recent_hospitalizations: boolean | null
           relative_contraindications: string | null
+          remote_monitoring_enabled: boolean | null
           remote_monitoring_required: boolean | null
+          required_lab_tests: string[] | null
           required_pre_treatment_labs: boolean | null
           research_clinical_trial_consent: string | null
-          risk_assessment: Json | null
+          risk_stratification_complete: boolean | null
           secondary_id_cross_verification: boolean | null
           secure_messaging_setup: string | null
+          social_security_verified: boolean | null
           social_worker_consultation: string | null
           specialty_pharmacy_coordination: string | null
           technical_support_contact: string | null
           technology_assessment: string | null
-          technology_monitoring: Json | null
           telehealth_capability: string | null
+          telemedicine_setup_complete: boolean | null
           training_provided: boolean | null
           transportation_plan: string | null
           treatment_consent_status: string | null
           treatment_goals_discussion: string | null
           treatment_readiness_assessment: string | null
+          treatment_readiness_score: number | null
           updated_at: string | null
           vaccination_status: string | null
+          wearable_devices_assigned: string[] | null
         }
         Insert: {
           absolute_contraindications?: string | null
           active_infections?: boolean | null
+          address_verified?: boolean | null
           advanced_directive_review?: string | null
           assessment_completion_date?: string | null
           assessment_status?: string | null
+          baseline_assessments_complete?: boolean | null
+          biomarker_testing_complete?: boolean | null
           biometric_data_available?: boolean | null
           capacity_assessment?: string | null
           cardiac_clearance?: string | null
-          care_coordination?: Json | null
           care_coordinator_assigned?: string | null
+          care_plan_developed?: boolean | null
+          care_team_assigned?: boolean | null
           caregiver_support_identified?: string | null
           case_manager_assignment?: string | null
           clinical_decision?: string | null
           clinical_decision_rationale?: string | null
-          clinical_readiness?: Json | null
           code_status_discussed?: boolean | null
           communication_consent?: string | null
           consent_date?: string | null
           consenting_physician?: string | null
+          contraindications_assessed?: boolean | null
           created_at?: string | null
           current_functional_capacity?: boolean | null
           device_distribution?: string | null
           disease_status_at_enrollment?: string | null
           distance_from_treatment_center?: string | null
           drug_interaction_check?: boolean | null
+          drug_interactions_reviewed?: boolean | null
+          eligibility_confirmed?: boolean | null
           emergency_communication_plan?: string | null
           emergency_contact_24x7?: string | null
           enrollment_instance_id?: string | null
+          estimated_out_of_pocket_cost?: number | null
           facility_id?: string | null
           family_communication_preferences?: string | null
-          financial_counseling?: Json | null
+          financial_assessment_complete?: boolean | null
           financial_counseling_completed?: boolean | null
           financial_hardship_identified?: boolean | null
+          genetic_testing_required?: boolean | null
           healthcare_proxy_confirmed?: string | null
+          high_risk_factors?: string[] | null
           hipaa_authorization?: boolean | null
           home_health_services?: string | null
           id?: string
           identity_discrepancies_found?: boolean | null
           identity_discrepancy_details?: string | null
-          identity_verification?: Json | null
           identity_verification_date_time?: string | null
           identity_verification_witness?: string | null
+          identity_verified?: boolean | null
           infection_screening?: string | null
-          laboratory_diagnostics?: Json | null
+          insurance_verification_complete?: boolean | null
+          lab_results_complete?: boolean | null
           language_interpreter_services?: string | null
           lodging_arrangements?: string | null
-          medical_review?: Json | null
+          medical_clearance_obtained?: boolean | null
+          medical_history_reviewed?: boolean | null
           medical_review_date?: string | null
           medical_reviewer_id?: string | null
+          mitigation_strategies?: string[] | null
+          mobile_app_onboarded?: boolean | null
+          multidisciplinary_team_meeting?: string | null
           nutrition_consultation?: string | null
           out_of_pocket_amount?: string | null
           out_of_pocket_cost_estimate_provided?: boolean | null
+          overall_risk_score?: number | null
+          patient_assistance_programs?: string[] | null
           patient_assistance_programs_applied?: string[] | null
           patient_id?: string | null
           patient_photo_captured?: boolean | null
@@ -9818,88 +9907,113 @@ export type Database = {
           pharmacy_consultation?: string | null
           photo_id_type_verified?: string | null
           photo_id_verification_completed?: boolean | null
+          photo_id_verified?: boolean | null
           photography_video_consent?: boolean | null
+          physician_approval_obtained?: boolean | null
           preferred_contact_method_appointments?: string | null
           pregnancy_test?: string | null
+          primary_care_coordinator?: string | null
           primary_nurse_assignment?: string | null
+          prior_authorization_status?: string | null
           prior_severe_adverse_reactions?: string | null
           provider_id?: string | null
           pulmonary_function?: string | null
           recent_hospitalizations?: boolean | null
           relative_contraindications?: string | null
+          remote_monitoring_enabled?: boolean | null
           remote_monitoring_required?: boolean | null
+          required_lab_tests?: string[] | null
           required_pre_treatment_labs?: boolean | null
           research_clinical_trial_consent?: string | null
-          risk_assessment?: Json | null
+          risk_stratification_complete?: boolean | null
           secondary_id_cross_verification?: boolean | null
           secure_messaging_setup?: string | null
+          social_security_verified?: boolean | null
           social_worker_consultation?: string | null
           specialty_pharmacy_coordination?: string | null
           technical_support_contact?: string | null
           technology_assessment?: string | null
-          technology_monitoring?: Json | null
           telehealth_capability?: string | null
+          telemedicine_setup_complete?: boolean | null
           training_provided?: boolean | null
           transportation_plan?: string | null
           treatment_consent_status?: string | null
           treatment_goals_discussion?: string | null
           treatment_readiness_assessment?: string | null
+          treatment_readiness_score?: number | null
           updated_at?: string | null
           vaccination_status?: string | null
+          wearable_devices_assigned?: string[] | null
         }
         Update: {
           absolute_contraindications?: string | null
           active_infections?: boolean | null
+          address_verified?: boolean | null
           advanced_directive_review?: string | null
           assessment_completion_date?: string | null
           assessment_status?: string | null
+          baseline_assessments_complete?: boolean | null
+          biomarker_testing_complete?: boolean | null
           biometric_data_available?: boolean | null
           capacity_assessment?: string | null
           cardiac_clearance?: string | null
-          care_coordination?: Json | null
           care_coordinator_assigned?: string | null
+          care_plan_developed?: boolean | null
+          care_team_assigned?: boolean | null
           caregiver_support_identified?: string | null
           case_manager_assignment?: string | null
           clinical_decision?: string | null
           clinical_decision_rationale?: string | null
-          clinical_readiness?: Json | null
           code_status_discussed?: boolean | null
           communication_consent?: string | null
           consent_date?: string | null
           consenting_physician?: string | null
+          contraindications_assessed?: boolean | null
           created_at?: string | null
           current_functional_capacity?: boolean | null
           device_distribution?: string | null
           disease_status_at_enrollment?: string | null
           distance_from_treatment_center?: string | null
           drug_interaction_check?: boolean | null
+          drug_interactions_reviewed?: boolean | null
+          eligibility_confirmed?: boolean | null
           emergency_communication_plan?: string | null
           emergency_contact_24x7?: string | null
           enrollment_instance_id?: string | null
+          estimated_out_of_pocket_cost?: number | null
           facility_id?: string | null
           family_communication_preferences?: string | null
-          financial_counseling?: Json | null
+          financial_assessment_complete?: boolean | null
           financial_counseling_completed?: boolean | null
           financial_hardship_identified?: boolean | null
+          genetic_testing_required?: boolean | null
           healthcare_proxy_confirmed?: string | null
+          high_risk_factors?: string[] | null
           hipaa_authorization?: boolean | null
           home_health_services?: string | null
           id?: string
           identity_discrepancies_found?: boolean | null
           identity_discrepancy_details?: string | null
-          identity_verification?: Json | null
           identity_verification_date_time?: string | null
           identity_verification_witness?: string | null
+          identity_verified?: boolean | null
           infection_screening?: string | null
-          laboratory_diagnostics?: Json | null
+          insurance_verification_complete?: boolean | null
+          lab_results_complete?: boolean | null
           language_interpreter_services?: string | null
           lodging_arrangements?: string | null
-          medical_review?: Json | null
+          medical_clearance_obtained?: boolean | null
+          medical_history_reviewed?: boolean | null
           medical_review_date?: string | null
           medical_reviewer_id?: string | null
+          mitigation_strategies?: string[] | null
+          mobile_app_onboarded?: boolean | null
+          multidisciplinary_team_meeting?: string | null
           nutrition_consultation?: string | null
           out_of_pocket_amount?: string | null
           out_of_pocket_cost_estimate_provided?: boolean | null
+          overall_risk_score?: number | null
+          patient_assistance_programs?: string[] | null
           patient_assistance_programs_applied?: string[] | null
           patient_id?: string | null
           patient_photo_captured?: boolean | null
@@ -9910,34 +10024,43 @@ export type Database = {
           pharmacy_consultation?: string | null
           photo_id_type_verified?: string | null
           photo_id_verification_completed?: boolean | null
+          photo_id_verified?: boolean | null
           photography_video_consent?: boolean | null
+          physician_approval_obtained?: boolean | null
           preferred_contact_method_appointments?: string | null
           pregnancy_test?: string | null
+          primary_care_coordinator?: string | null
           primary_nurse_assignment?: string | null
+          prior_authorization_status?: string | null
           prior_severe_adverse_reactions?: string | null
           provider_id?: string | null
           pulmonary_function?: string | null
           recent_hospitalizations?: boolean | null
           relative_contraindications?: string | null
+          remote_monitoring_enabled?: boolean | null
           remote_monitoring_required?: boolean | null
+          required_lab_tests?: string[] | null
           required_pre_treatment_labs?: boolean | null
           research_clinical_trial_consent?: string | null
-          risk_assessment?: Json | null
+          risk_stratification_complete?: boolean | null
           secondary_id_cross_verification?: boolean | null
           secure_messaging_setup?: string | null
+          social_security_verified?: boolean | null
           social_worker_consultation?: string | null
           specialty_pharmacy_coordination?: string | null
           technical_support_contact?: string | null
           technology_assessment?: string | null
-          technology_monitoring?: Json | null
           telehealth_capability?: string | null
+          telemedicine_setup_complete?: boolean | null
           training_provided?: boolean | null
           transportation_plan?: string | null
           treatment_consent_status?: string | null
           treatment_goals_discussion?: string | null
           treatment_readiness_assessment?: string | null
+          treatment_readiness_score?: number | null
           updated_at?: string | null
           vaccination_status?: string | null
+          wearable_devices_assigned?: string[] | null
         }
         Relationships: [
           {
