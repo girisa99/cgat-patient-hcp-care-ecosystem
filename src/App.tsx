@@ -79,6 +79,7 @@ const AppContent = () => {
 
   // Wait for roles to load to avoid dashboard flicker
   if (isAuthenticated && userRoles.length === 0) {
+    console.log('⏳ Waiting for roles to load...');
     return <PageLoading message="Loading your dashboard..." />;
   }
 
@@ -87,9 +88,8 @@ const AppContent = () => {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <div className="min-h-screen bg-background">
-          <Suspense fallback={<PageLoading message="Loading page..." />}>
-            <Routes>
+        <Suspense fallback={<PageLoading message="Loading page..." />}>
+          <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
               
@@ -311,17 +311,23 @@ const AppContent = () => {
               )}
             </Routes>
           </Suspense>
-        </div>
       </BrowserRouter>
     </ErrorBoundary>
   );
 };
 
 const App = () => {
+  console.log('🚀 App component rendering...');
+  
   // Initialize stability framework on app startup
   useEffect(() => {
+    console.log('🔧 Initializing stability framework...');
     initializeStabilityFramework().catch(console.error);
   }, []);
+
+  console.log('🎯 Rendering App providers...');
+
+  console.log('🎯 Rendering App providers...');
 
   return (
     <QueryClientProvider client={queryClient}>
