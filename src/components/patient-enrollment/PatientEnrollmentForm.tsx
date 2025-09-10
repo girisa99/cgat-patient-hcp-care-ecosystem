@@ -336,13 +336,12 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       case 0: // Submission Method
         return !!formData.submissionMethod;
       case 1: // Consent Management
-        return !!(formData.consentData?.providerName && 
-                 formData.consentData?.providerNpi && 
-                 formData.consentData?.consentType);
+        // Allow proceeding when provider basics and a consent method are set; patient consent may remain pending
+        return !!(formData.consentData?.providerName && formData.consentData?.consentType);
       case 2: // Patient Info
         return !!(formData.firstName && formData.lastName && formData.email);
       case 3: // Provider Info
-        return !!(formData.providerName && formData.treatmentCenterName);
+        return !!(formData.providerName);
       default:
         return true;
     }

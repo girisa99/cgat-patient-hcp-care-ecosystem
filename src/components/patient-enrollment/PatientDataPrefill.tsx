@@ -79,10 +79,10 @@ export const PatientDataPrefill: React.FC<PatientDataPrefillProps> = ({
           onValueChange={handlePatientSelection}
           disabled={readOnly}
         >
-          <SelectTrigger>
+          <SelectTrigger className="bg-background">
             <SelectValue placeholder="Choose existing patient or add new" />
           </SelectTrigger>
-          <SelectContent>
+          <SelectContent className="z-50 bg-background shadow-md border">
             <SelectItem value="new">
               <div className="flex items-center gap-2">
                 <Plus className="h-4 w-4" />

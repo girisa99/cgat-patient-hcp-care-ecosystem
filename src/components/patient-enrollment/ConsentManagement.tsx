@@ -394,16 +394,17 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="Dr. John Smith"
+                className={!consentData.providerName ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.providerName}
               />
             </div>
             <div>
-              <Label htmlFor="providerNpi">Provider NPI *</Label>
+              <Label htmlFor="providerNpi">Provider NPI</Label>
               <Input
                 id="providerNpi"
                 value={consentData.providerNpi}
                 onChange={(e) => handleProviderInfoChange('providerNpi', e.target.value)}
                 disabled={readOnly}
-                required
                 placeholder="1234567890"
                 maxLength={10}
               />
@@ -421,6 +422,8 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="+1 (555) 123-4567"
+                className={!consentData.providerPhone ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.providerPhone}
               />
             </div>
             <div>
@@ -433,6 +436,8 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="provider@clinic.com"
+                className={!consentData.providerEmail ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.providerEmail}
               />
             </div>
           </div>
@@ -474,6 +479,8 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly || (selectedTreatmentCenterId && selectedTreatmentCenterId !== 'manual')}
                 required
                 placeholder="ABC Medical Center"
+                className={!consentData.treatmentCenter ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.treatmentCenter}
               />
             </div>
             <div>
