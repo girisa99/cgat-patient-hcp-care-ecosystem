@@ -8,16 +8,26 @@ import { DashboardManagementTable } from '@/components/dashboard/DashboardManage
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, UserCheck, Activity, Bot, TestTube } from 'lucide-react';
+import { normalizeRoles, hasAnyRole } from '@/utils/roles';
 
 const Index: React.FC = () => {
   console.log('🏠 Dashboard/Index page - Using existing working components and relationships');
   
   const { hasAccess, currentRole } = useRoleBasedNavigation();
   const { userRoles } = useMasterAuth();
-  const isHealthcareProvider = userRoles?.includes('healthcareProvider');
-  const isAdmin = userRoles?.includes('superAdmin') || userRoles?.includes('onboardingTeam');
+  const normalizedRoles = normalizeRoles(userRoles || []);
+  const isHealthcareProvider = hasAnyRole(normalizedRoles, ['healthcareProvider']);
+  const isAdmin = hasAnyRole(normalizedRoles, ['superAdmin', 'onboardingTeam']);
   const pageTitle = isHealthcareProvider ? 'Healthcare Provider Dashboard' : 'Healthcare Management Dashboard';
   const navigate = useNavigate();
+
+  console.log('🏠 Dashboard Role Check:', {
+    userRoles,
+    normalizedRoles,
+    isHealthcareProvider,
+    isAdmin,
+    pageTitle
+  });
   
   if (!hasAccess('/dashboard')) {
     return (
