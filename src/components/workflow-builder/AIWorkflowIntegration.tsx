@@ -52,7 +52,12 @@ export const useAIWorkflowIntegration = ({
             description: workflow.description || prompt,
             configuration: workflow.configuration || workflow.config || {},
             aiGenerated: true,
-            originalPrompt: prompt
+            originalPrompt: prompt,
+            type: 'agent',
+            type_key: 'agent',
+            category: 'ai-agents',
+            model: (workflow as any)?.model || (workflow as any)?.llm?.model || (workflow as any)?.settings?.model || (workflow as any)?.configuration?.model,
+            provider: (workflow as any)?.provider || (workflow as any)?.llm?.provider || (workflow as any)?.settings?.provider || (workflow as any)?.configuration?.provider
           }
         };
         
@@ -64,10 +69,15 @@ export const useAIWorkflowIntegration = ({
       // Process and normalize nodes
       const processedNodes = rawNodes.map((node: any, index: number) => {
         const nodeId = node.id || `ai-node-${Date.now()}-${index}`;
-        
+        const inferredType = inferNodeType(node);
+
+        // Map common model/provider fields into data for UI details
+        const model = node.model || node.llm?.model || node.settings?.model || node.configuration?.model || node.config?.model;
+        const provider = node.provider || node.llm?.provider || node.settings?.provider || node.configuration?.provider || node.config?.provider;
+
         return {
           id: nodeId,
-          type: inferNodeType(node),
+          type: inferredType,
           position: node.position || { 
             x: 100 + (index * 250), 
             y: 100 + Math.floor(index / 3) * 150 
@@ -75,10 +85,15 @@ export const useAIWorkflowIntegration = ({
           data: {
             label: node.label || node.name || node.title || `Generated Node ${index + 1}`,
             description: node.description || node.purpose || 'AI-generated workflow node',
-            configuration: node.configuration || node.config || {},
+            configuration: (typeof node.configuration === 'object' ? node.configuration : {}) || node.config || {},
             aiGenerated: true,
             originalPrompt: prompt,
             nodeIndex: index,
+            type: inferredType,
+            type_key: node.type_key || inferredType,
+            category: inferredType === 'agent' ? 'ai-agents' : node.category,
+            model,
+            provider,
             ...node.data
           }
         };
@@ -178,16 +193,28 @@ export const useAIWorkflowIntegration = ({
     const type = String(node.type || '').toLowerCase();
     const name = String(node.name || node.label || '').toLowerCase();
     const category = String(node.category || '').toLowerCase();
-    
+
+    // Strong signals first
     if (type.includes('start') || name.includes('start')) return 'start';
-    if (type.includes('end') || name.includes('end') || name.includes('finish')) return 'end';
+    if (type.includes('end') || name.includes('end') || name.includes('finish') || name.includes('complete')) return 'end';
     if (type.includes('agent') || category.includes('agent') || name.includes('agent')) return 'agent';
-    if (type.includes('api') || name.includes('api')) return 'api';
-    if (type.includes('database') || type.includes('db') || name.includes('database')) return 'database';
-    if (type.includes('condition') || name.includes('condition') || name.includes('decision')) return 'condition';
-    if (type.includes('action') || name.includes('action')) return 'action';
-    
-    return 'enhanced'; // Default to enhanced node
+
+    // Common synonyms / hints
+    const hasLLMConfig = !!(node.model || node.llm || node.settings?.model || node.configuration?.model || node.config?.model || node.tools);
+    if (type.includes('flow')) {
+      // Many providers label generic nodes as "flow"; treat as agent if it looks like an agent
+      return hasLLMConfig ? 'agent' : 'action';
+    }
+    if (type.includes('connector') || name.includes('connector')) return 'api';
+
+    if (type.includes('api') || name.includes('api') || category.includes('integration')) return 'api';
+    if (type.includes('database') || type.includes('db') || name.includes('database') || category.includes('data')) return 'database';
+    if (type.includes('condition') || name.includes('condition') || name.includes('decision') || name.includes('branch')) return 'condition';
+    if (type.includes('action') || name.includes('action') || name.includes('task')) return 'action';
+
+    // Default to agent when LLM signals present; otherwise a safe default
+    if (hasLLMConfig) return 'agent';
+    return 'default';
   };
 
   return {
