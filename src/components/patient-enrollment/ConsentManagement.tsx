@@ -29,10 +29,30 @@ import { useOnboardingDataPrefill } from '@/hooks/useOnboardingDataPrefill';
 
 export interface ConsentData {
   consentType: 'facility_present' | 'digital_remote' | 'verbal';
+  // Prescriber Information
+  prescriberFirstName: string;
+  prescriberLastName: string;
+  practiceName: string;
+  prescriberStreet: string;
+  prescriberSuite?: string;
+  prescriberCity: string;
+  prescriberState: string;
+  prescriberZip: string;
+  prescriberTaxId?: string;
+  prescriberNpi: string;
+  groupNpi?: string;
+  prescriberPhone: string;
+  prescriberContactPhone?: string;
+  // Legacy fields (keeping for backward compatibility)
   providerName: string;
   providerNpi: string;
   providerPhone: string;
   providerEmail: string;
+  // Referral Doctor Information
+  referralDoctorName?: string;
+  referralDoctorNpi?: string;
+  referralDoctorPhone?: string;
+  // Treatment Center
   treatmentCenter: string;
   treatmentCenterId?: string;
   treatmentCenterNpi?: string;
@@ -52,10 +72,30 @@ interface ConsentManagementProps {
   consentData: ConsentData;
   onConsentChange: (data: Partial<ConsentData>) => void;
   onProviderInfoUpdate?: (providerData: {
+    // Prescriber Details
+    prescriberFirstName: string;
+    prescriberLastName: string;
+    practiceName: string;
+    prescriberStreet: string;
+    prescriberSuite?: string;
+    prescriberCity: string;
+    prescriberState: string;
+    prescriberZip: string;
+    prescriberTaxId?: string;
+    prescriberNpi: string;
+    groupNpi?: string;
+    prescriberPhone: string;
+    prescriberContactPhone?: string;
+    // Legacy fields
     providerName: string;
     providerNpi: string;
     providerPhone: string;
     providerEmail: string;
+    // Referral Doctor
+    referralDoctorName?: string;
+    referralDoctorNpi?: string;
+    referralDoctorPhone?: string;
+    // Treatment Center
     treatmentCenterId?: string;
     treatmentCenterName: string;
     treatmentCenterNpi?: string;
@@ -101,9 +141,17 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
 
     const selectedProvider = prefillData.providers.find(p => p.id === providerId);
     if (selectedProvider) {
+      // Split name into first and last name
+      const nameParts = selectedProvider.name.split(' ');
+      const firstName = nameParts[0] || '';
+      const lastName = nameParts.slice(1).join(' ') || '';
+      
+      handleProviderInfoChange('prescriberFirstName', firstName);
+      handleProviderInfoChange('prescriberLastName', lastName);
       handleProviderInfoChange('providerName', selectedProvider.name);
       handleProviderInfoChange('providerEmail', selectedProvider.email || '');
       handleProviderInfoChange('providerPhone', selectedProvider.phone || '');
+      handleProviderInfoChange('prescriberPhone', selectedProvider.phone || '');
       setIsManualEntry(false);
     }
   };
@@ -127,13 +175,31 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
     onConsentChange(updatedData);
     
     // Auto-update provider information in the main form
-    if (['providerName', 'providerNpi', 'providerPhone', 'providerEmail', 'treatmentCenter', 'treatmentCenterNpi', 'treatmentCenterId'].includes(field)) {
+    const presciberFields = ['prescriberFirstName', 'prescriberLastName', 'practiceName', 'prescriberStreet', 'prescriberSuite', 'prescriberCity', 'prescriberState', 'prescriberZip', 'prescriberTaxId', 'prescriberNpi', 'groupNpi', 'prescriberPhone', 'prescriberContactPhone', 'providerName', 'providerNpi', 'providerPhone', 'providerEmail', 'referralDoctorName', 'referralDoctorNpi', 'referralDoctorPhone', 'treatmentCenter', 'treatmentCenterNpi', 'treatmentCenterId'];
+    
+    if (presciberFields.includes(field)) {
       const updatedConsentData = { ...consentData, ...updatedData };
       onProviderInfoUpdate?.({
+        prescriberFirstName: updatedConsentData.prescriberFirstName,
+        prescriberLastName: updatedConsentData.prescriberLastName,
+        practiceName: updatedConsentData.practiceName,
+        prescriberStreet: updatedConsentData.prescriberStreet,
+        prescriberSuite: updatedConsentData.prescriberSuite,
+        prescriberCity: updatedConsentData.prescriberCity,
+        prescriberState: updatedConsentData.prescriberState,
+        prescriberZip: updatedConsentData.prescriberZip,
+        prescriberTaxId: updatedConsentData.prescriberTaxId,
+        prescriberNpi: updatedConsentData.prescriberNpi,
+        groupNpi: updatedConsentData.groupNpi,
+        prescriberPhone: updatedConsentData.prescriberPhone,
+        prescriberContactPhone: updatedConsentData.prescriberContactPhone,
         providerName: updatedConsentData.providerName,
         providerNpi: updatedConsentData.providerNpi,
         providerPhone: updatedConsentData.providerPhone,
         providerEmail: updatedConsentData.providerEmail,
+        referralDoctorName: updatedConsentData.referralDoctorName,
+        referralDoctorNpi: updatedConsentData.referralDoctorNpi,
+        referralDoctorPhone: updatedConsentData.referralDoctorPhone,
         treatmentCenterId: updatedConsentData.treatmentCenterId,
         treatmentCenterName: updatedConsentData.treatmentCenter,
         treatmentCenterNpi: updatedConsentData.treatmentCenterNpi
@@ -354,11 +420,11 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Basic Provider Information */}
+        {/* Prescriber Information */}
         <div>
-          <h4 className="font-medium mb-3">Provider Information</h4>
+          <h4 className="font-medium mb-3">Prescriber Information</h4>
           <p className="text-sm text-muted-foreground mb-4">
-            Complete provider details that will be used throughout the enrollment process
+            Complete prescriber details as required for patient enrollment
           </p>
           
           {/* Provider Selection */}
@@ -388,28 +454,154 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
             </Select>
           </div>
 
-          <div className="grid md:grid-cols-2 gap-4 mb-4">
+          {/* Name and Practice */}
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
             <div>
-              <Label htmlFor="providerName">Provider Name *</Label>
+              <Label htmlFor="prescriberFirstName">First Name *</Label>
               <Input
-                id="providerName"
-                value={consentData.providerName}
-                onChange={(e) => handleProviderInfoChange('providerName', e.target.value)}
+                id="prescriberFirstName"
+                value={consentData.prescriberFirstName || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberFirstName', e.target.value)}
                 disabled={readOnly || isProviderLocked}
                 required
-                placeholder="Dr. John Smith"
-                className={!consentData.providerName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-                aria-invalid={!consentData.providerName?.trim()}
+                placeholder="John"
+                className={!consentData.prescriberFirstName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.prescriberFirstName?.trim()}
               />
             </div>
             <div>
-              <Label htmlFor="providerNpi">Provider NPI</Label>
+              <Label htmlFor="prescriberLastName">Last Name *</Label>
               <Input
-                id="providerNpi"
-                value={consentData.providerNpi}
-                onChange={(e) => handleProviderInfoChange('providerNpi', e.target.value)}
-                disabled={readOnly}
+                id="prescriberLastName"
+                value={consentData.prescriberLastName || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberLastName', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                required
+                placeholder="Smith"
+                className={!consentData.prescriberLastName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.prescriberLastName?.trim()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="practiceName">Practice Name *</Label>
+              <Input
+                id="practiceName"
+                value={consentData.practiceName || ''}
+                onChange={(e) => handleProviderInfoChange('practiceName', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                required
+                placeholder="ABC Medical Practice"
+                className={!consentData.practiceName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.practiceName?.trim()}
+              />
+            </div>
+          </div>
+
+          {/* Address */}
+          <div className="grid md:grid-cols-4 gap-4 mb-4">
+            <div className="md:col-span-2">
+              <Label htmlFor="prescriberStreet">Street *</Label>
+              <Input
+                id="prescriberStreet"
+                value={consentData.prescriberStreet || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberStreet', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                required
+                placeholder="123 Main Street"
+                className={!consentData.prescriberStreet?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.prescriberStreet?.trim()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="prescriberSuite">Suite</Label>
+              <Input
+                id="prescriberSuite"
+                value={consentData.prescriberSuite || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberSuite', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                placeholder="Suite 100"
+              />
+            </div>
+            <div>
+              <Label htmlFor="prescriberCity">City *</Label>
+              <Input
+                id="prescriberCity"
+                value={consentData.prescriberCity || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberCity', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                required
+                placeholder="New York"
+                className={!consentData.prescriberCity?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.prescriberCity?.trim()}
+              />
+            </div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <div>
+              <Label htmlFor="prescriberState">State *</Label>
+              <Input
+                id="prescriberState"
+                value={consentData.prescriberState || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberState', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                required
+                placeholder="NY"
+                maxLength={2}
+                className={!consentData.prescriberState?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.prescriberState?.trim()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="prescriberZip">ZIP *</Label>
+              <Input
+                id="prescriberZip"
+                value={consentData.prescriberZip || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberZip', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                required
+                placeholder="10001"
+                maxLength={10}
+                className={!consentData.prescriberZip?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.prescriberZip?.trim()}
+              />
+            </div>
+          </div>
+
+          {/* IDs and Contact */}
+          <div className="grid md:grid-cols-3 gap-4 mb-4">
+            <div>
+              <Label htmlFor="prescriberTaxId">Prescriber Tax ID #</Label>
+              <Input
+                id="prescriberTaxId"
+                value={consentData.prescriberTaxId || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberTaxId', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                placeholder="12-3456789"
+              />
+            </div>
+            <div>
+              <Label htmlFor="prescriberNpi">Prescriber NPI # *</Label>
+              <Input
+                id="prescriberNpi"
+                value={consentData.prescriberNpi || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberNpi', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                required
                 placeholder="1234567890"
+                maxLength={10}
+                className={!consentData.prescriberNpi?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.prescriberNpi?.trim()}
+              />
+            </div>
+            <div>
+              <Label htmlFor="groupNpi">Group NPI #</Label>
+              <Input
+                id="groupNpi"
+                value={consentData.groupNpi || ''}
+                onChange={(e) => handleProviderInfoChange('groupNpi', e.target.value)}
+                disabled={readOnly || isProviderLocked}
+                placeholder="0987654321"
                 maxLength={10}
               />
             </div>
@@ -417,32 +609,73 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
 
           <div className="grid md:grid-cols-2 gap-4 mb-4">
             <div>
-              <Label htmlFor="providerPhone">Provider Phone *</Label>
+              <Label htmlFor="prescriberPhone">Contact Phone *</Label>
               <Input
-                id="providerPhone"
+                id="prescriberPhone"
                 type="tel"
-                value={consentData.providerPhone}
-                onChange={(e) => handleProviderInfoChange('providerPhone', e.target.value)}
+                value={consentData.prescriberPhone || ''}
+                onChange={(e) => handleProviderInfoChange('prescriberPhone', e.target.value)}
                 disabled={readOnly || isProviderLocked}
                 required
                 placeholder="+1 (555) 123-4567"
-                className={!consentData.providerPhone?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-                aria-invalid={!consentData.providerPhone?.trim()}
+                className={!consentData.prescriberPhone?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.prescriberPhone?.trim()}
               />
             </div>
             <div>
-              <Label htmlFor="providerEmail">Provider Email *</Label>
+              <Label htmlFor="providerEmail">Email *</Label>
               <Input
                 id="providerEmail"
                 type="email"
-                value={consentData.providerEmail}
+                value={consentData.providerEmail || ''}
                 onChange={(e) => handleProviderInfoChange('providerEmail', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || isProviderLocked}
                 required
                 placeholder="provider@clinic.com"
                 className={!consentData.providerEmail?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
                 aria-invalid={!consentData.providerEmail?.trim()}
               />
+            </div>
+          </div>
+
+          <Separator className="my-6" />
+
+          {/* Referral Doctor Section */}
+          <div className="mb-6">
+            <h5 className="font-medium mb-3">Referral Doctor (Optional)</h5>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <Label htmlFor="referralDoctorName">Referral Doctor Name</Label>
+                <Input
+                  id="referralDoctorName"
+                  value={consentData.referralDoctorName || ''}
+                  onChange={(e) => handleProviderInfoChange('referralDoctorName', e.target.value)}
+                  disabled={readOnly}
+                  placeholder="Dr. Jane Doe"
+                />
+              </div>
+              <div>
+                <Label htmlFor="referralDoctorNpi">Referral Doctor NPI</Label>
+                <Input
+                  id="referralDoctorNpi"
+                  value={consentData.referralDoctorNpi || ''}
+                  onChange={(e) => handleProviderInfoChange('referralDoctorNpi', e.target.value)}
+                  disabled={readOnly}
+                  placeholder="1234567890"
+                  maxLength={10}
+                />
+              </div>
+              <div>
+                <Label htmlFor="referralDoctorPhone">Referral Doctor Phone</Label>
+                <Input
+                  id="referralDoctorPhone"
+                  type="tel"
+                  value={consentData.referralDoctorPhone || ''}
+                  onChange={(e) => handleProviderInfoChange('referralDoctorPhone', e.target.value)}
+                  disabled={readOnly}
+                  placeholder="+1 (555) 987-6543"
+                />
+              </div>
             </div>
           </div>
 

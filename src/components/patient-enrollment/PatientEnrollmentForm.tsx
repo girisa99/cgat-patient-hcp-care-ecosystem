@@ -220,11 +220,33 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     collaborators: [],
     consentData: {
       consentType: 'facility_present',
+      // Prescriber Information
+      prescriberFirstName: '',
+      prescriberLastName: '',
+      practiceName: '',
+      prescriberStreet: '',
+      prescriberSuite: '',
+      prescriberCity: '',
+      prescriberState: '',
+      prescriberZip: '',
+      prescriberTaxId: '',
+      prescriberNpi: '',
+      groupNpi: '',
+      prescriberPhone: '',
+      prescriberContactPhone: '',
+      // Legacy fields
       providerName: '',
       providerNpi: '',
       providerPhone: '',
       providerEmail: '',
+      // Referral Doctor
+      referralDoctorName: '',
+      referralDoctorNpi: '',
+      referralDoctorPhone: '',
+      // Treatment Center
       treatmentCenter: '',
+      treatmentCenterId: '',
+      treatmentCenterNpi: '',
       patientConsentStatus: 'pending'
     },
     collaborationStatus: {
