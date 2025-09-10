@@ -99,7 +99,8 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
     const selectedProvider = prefillData.providers.find(p => p.id === providerId);
     if (selectedProvider) {
       handleProviderInfoChange('providerName', selectedProvider.name);
-      handleProviderInfoChange('providerEmail', selectedProvider.email);
+      handleProviderInfoChange('providerEmail', selectedProvider.email || '');
+      handleProviderInfoChange('providerPhone', selectedProvider.phone || '');
       setIsManualEntry(false);
     }
   };
