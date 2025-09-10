@@ -371,6 +371,51 @@ export type Database = {
           },
         ]
       }
+      agent_api_configurations: {
+        Row: {
+          agent_id: string
+          api_service_id: string
+          created_at: string | null
+          data_access_scope: Json | null
+          enabled_endpoints: string[] | null
+          field_access_rules: Json | null
+          id: string
+          rate_limits: Json | null
+          security_policies: Json | null
+          transformation_rules: Json | null
+          updated_at: string | null
+          user_role: Database["public"]["Enums"]["user_role"]
+        }
+        Insert: {
+          agent_id: string
+          api_service_id: string
+          created_at?: string | null
+          data_access_scope?: Json | null
+          enabled_endpoints?: string[] | null
+          field_access_rules?: Json | null
+          id?: string
+          rate_limits?: Json | null
+          security_policies?: Json | null
+          transformation_rules?: Json | null
+          updated_at?: string | null
+          user_role: Database["public"]["Enums"]["user_role"]
+        }
+        Update: {
+          agent_id?: string
+          api_service_id?: string
+          created_at?: string | null
+          data_access_scope?: Json | null
+          enabled_endpoints?: string[] | null
+          field_access_rules?: Json | null
+          id?: string
+          rate_limits?: Json | null
+          security_policies?: Json | null
+          transformation_rules?: Json | null
+          updated_at?: string | null
+          user_role?: Database["public"]["Enums"]["user_role"]
+        }
+        Relationships: []
+      }
       agent_audit_logs: {
         Row: {
           action_description: string
@@ -1995,6 +2040,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      api_field_mappings: {
+        Row: {
+          api_field: string
+          created_at: string | null
+          data_type: string
+          database_column: string
+          id: string
+          is_required: boolean | null
+          role_visibility: Database["public"]["Enums"]["user_role"][] | null
+          table_name: string
+          transformation_rule: string | null
+          updated_at: string | null
+          validation_rule: string | null
+        }
+        Insert: {
+          api_field: string
+          created_at?: string | null
+          data_type: string
+          database_column: string
+          id?: string
+          is_required?: boolean | null
+          role_visibility?: Database["public"]["Enums"]["user_role"][] | null
+          table_name: string
+          transformation_rule?: string | null
+          updated_at?: string | null
+          validation_rule?: string | null
+        }
+        Update: {
+          api_field?: string
+          created_at?: string | null
+          data_type?: string
+          database_column?: string
+          id?: string
+          is_required?: boolean | null
+          role_visibility?: Database["public"]["Enums"]["user_role"][] | null
+          table_name?: string
+          transformation_rule?: string | null
+          updated_at?: string | null
+          validation_rule?: string | null
+        }
+        Relationships: []
       }
       api_integration_registry: {
         Row: {
@@ -8731,6 +8818,57 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      role_api_access: {
+        Row: {
+          access_level: string
+          agent_integration_enabled: boolean | null
+          api_service_id: string
+          created_at: string | null
+          endpoints_allowed: string[] | null
+          field_mappings: Json | null
+          id: string
+          postman_collection_access: boolean | null
+          production_access: boolean | null
+          rate_limit: number | null
+          role: Database["public"]["Enums"]["user_role"]
+          sandbox_access: boolean | null
+          testing_permissions: string[] | null
+          updated_at: string | null
+        }
+        Insert: {
+          access_level: string
+          agent_integration_enabled?: boolean | null
+          api_service_id: string
+          created_at?: string | null
+          endpoints_allowed?: string[] | null
+          field_mappings?: Json | null
+          id?: string
+          postman_collection_access?: boolean | null
+          production_access?: boolean | null
+          rate_limit?: number | null
+          role: Database["public"]["Enums"]["user_role"]
+          sandbox_access?: boolean | null
+          testing_permissions?: string[] | null
+          updated_at?: string | null
+        }
+        Update: {
+          access_level?: string
+          agent_integration_enabled?: boolean | null
+          api_service_id?: string
+          created_at?: string | null
+          endpoints_allowed?: string[] | null
+          field_mappings?: Json | null
+          id?: string
+          postman_collection_access?: boolean | null
+          production_access?: boolean | null
+          rate_limit?: number | null
+          role?: Database["public"]["Enums"]["user_role"]
+          sandbox_access?: boolean | null
+          testing_permissions?: string[] | null
+          updated_at?: string | null
+        }
+        Relationships: []
       }
       role_module_assignments: {
         Row: {

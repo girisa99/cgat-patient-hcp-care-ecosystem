@@ -59,7 +59,20 @@ export const useAgentApiIntegration = (agentId?: string) => {
       const { data, error } = await query;
       
       if (error) throw error;
-      return data || [];
+      return (data as any[])?.map(item => ({
+        id: item.id,
+        agent_id: item.agent_id,
+        api_service_id: item.api_service_id,
+        user_role: item.user_role,
+        enabled_endpoints: item.enabled_endpoints || [],
+        field_access_rules: item.field_access_rules || {},
+        rate_limits: item.rate_limits || { requests_per_minute: 100, requests_per_hour: 1000 },
+        data_access_scope: item.data_access_scope || { tables: [], columns: [], filters: {} },
+        transformation_rules: item.transformation_rules || {},
+        security_policies: item.security_policies || { require_approval: true, audit_all_requests: true, mask_sensitive_data: false },
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      })) || [];
     },
     enabled: !!agentId || agentId === undefined
   });
@@ -69,7 +82,7 @@ export const useAgentApiIntegration = (agentId?: string) => {
     mutationFn: async (config: Omit<AgentApiConfiguration, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('agent_api_configurations')
-        .insert(config)
+        .insert(config as any)
         .select()
         .single();
       
@@ -90,7 +103,7 @@ export const useAgentApiIntegration = (agentId?: string) => {
     mutationFn: async (config: Partial<AgentApiConfiguration> & { id: string }) => {
       const { data, error } = await supabase
         .from('agent_api_configurations')
-        .update(config)
+        .update(config as any)
         .eq('id', config.id)
         .select()
         .single();

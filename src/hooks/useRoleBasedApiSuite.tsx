@@ -55,7 +55,22 @@ export const useRoleBasedApiSuite = () => {
         .order('role, api_service_id');
       
       if (error) throw error;
-      return data || [];
+      return (data as any[])?.map(item => ({
+        id: item.id,
+        role: item.role,
+        api_service_id: item.api_service_id,
+        access_level: item.access_level,
+        field_mappings: item.field_mappings || {},
+        endpoints_allowed: item.endpoints_allowed || [],
+        rate_limit: item.rate_limit,
+        sandbox_access: item.sandbox_access,
+        production_access: item.production_access,
+        agent_integration_enabled: item.agent_integration_enabled,
+        postman_collection_access: item.postman_collection_access,
+        testing_permissions: item.testing_permissions || [],
+        created_at: item.created_at,
+        updated_at: item.updated_at
+      })) || [];
     }
   });
 
@@ -69,7 +84,17 @@ export const useRoleBasedApiSuite = () => {
         .order('table_name, api_field');
       
       if (error) throw error;
-      return data || [];
+      return (data as any[])?.map(item => ({
+        id: item.id,
+        table_name: item.table_name,
+        api_field: item.api_field,
+        database_column: item.database_column,
+        data_type: item.data_type,
+        is_required: item.is_required,
+        transformation_rule: item.transformation_rule,
+        validation_rule: item.validation_rule,
+        role_visibility: item.role_visibility || []
+      })) || [];
     }
   });
 
@@ -78,7 +103,7 @@ export const useRoleBasedApiSuite = () => {
     mutationFn: async (config: Partial<ApiAccessConfig> & { id: string }) => {
       const { data, error } = await supabase
         .from('role_api_access')
-        .update(config)
+        .update(config as any)
         .eq('id', config.id)
         .select()
         .single();
@@ -100,7 +125,7 @@ export const useRoleBasedApiSuite = () => {
     mutationFn: async (mapping: Omit<ApiFieldMapping, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('api_field_mappings')
-        .insert(mapping)
+        .insert(mapping as any)
         .select()
         .single();
       
@@ -165,12 +190,14 @@ export const useRoleBasedApiSuite = () => {
     const mappingUpdates = [];
     
     for (const table of tablesToSync) {
-      // Get current schema info for the table
+    // Get current schema info for the table
       const { data: schemaInfo } = await supabase.rpc('get_complete_schema_info');
-      const tableSchema = schemaInfo?.find((t: any) => t.table_name === table);
+      const parsedSchemaInfo = Array.isArray(schemaInfo) ? schemaInfo : [];
+      const tableSchema = parsedSchemaInfo.find((t: any) => t.table_name === table);
       
-      if (tableSchema?.columns) {
-        for (const column of tableSchema.columns) {
+      if (tableSchema && typeof tableSchema === 'object' && 'columns' in tableSchema) {
+        const columns = Array.isArray((tableSchema as any).columns) ? (tableSchema as any).columns : [];
+        for (const column of columns) {
           // Check if mapping exists
           const existingMapping = fieldMappings.find(
             m => m.table_name === table && m.database_column === column.column_name
