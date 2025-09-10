@@ -318,10 +318,9 @@ const AppContent = () => {
 const App = () => {
   console.log('🚀 App component rendering...');
   
-  // Initialize stability framework on app startup
+  // Initialize stability framework on app startup (temporarily disabled for debugging)
   useEffect(() => {
-    console.log('🔧 Initializing stability framework...');
-    initializeStabilityFramework().catch(console.error);
+    // initializeStabilityFramework().catch(console.error);
   }, []);
 
   console.log('🎯 Rendering App providers...');
@@ -329,27 +328,29 @@ const App = () => {
   console.log('🎯 Rendering App providers...');
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <MasterAuthProvider>
-        <TenantProvider>
-          <StabilityProvider>
-            <GlobalAgentGeneratorProvider>
-              <TooltipProvider>
-                <HelmetProvider>
-                  <BrowserRouter>
-                    <Toaster />
-                    <AppLayoutWithEnrollment>
-                      <AppContent />
-                    </AppLayoutWithEnrollment>
-                    <GlobalAgentGeneratorModal />
-                  </BrowserRouter>
-                </HelmetProvider>
-              </TooltipProvider>
-            </GlobalAgentGeneratorProvider>
-          </StabilityProvider>
-        </TenantProvider>
-      </MasterAuthProvider>
-    </QueryClientProvider>
+    <ErrorBoundary>
+      <QueryClientProvider client={queryClient}>
+        <MasterAuthProvider>
+          <TenantProvider>
+            <StabilityProvider>
+              <GlobalAgentGeneratorProvider>
+                <TooltipProvider>
+                  <HelmetProvider>
+                    <BrowserRouter>
+                      <Toaster />
+                      <AppLayoutWithEnrollment>
+                        <AppContent />
+                      </AppLayoutWithEnrollment>
+                      <GlobalAgentGeneratorModal />
+                    </BrowserRouter>
+                  </HelmetProvider>
+                </TooltipProvider>
+              </GlobalAgentGeneratorProvider>
+            </StabilityProvider>
+          </TenantProvider>
+        </MasterAuthProvider>
+      </QueryClientProvider>
+    </ErrorBoundary>
   );
 };
 
