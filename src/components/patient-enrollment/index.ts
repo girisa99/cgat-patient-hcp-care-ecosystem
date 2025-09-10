@@ -14,7 +14,7 @@ export { ConsentManagement, type ConsentData } from './ConsentManagement';
 export { CollaborationStatus } from './CollaborationStatus';
 export { PatientDataPrefill } from './PatientDataPrefill';
 export { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
-export { EnhancedProviderSection } from './EnhancedProviderSection';
+export { ComprehensiveProviderSection } from './ComprehensiveProviderSection';
 
 // Hooks
 export { useOnboardingDataPrefill } from '@/hooks/useOnboardingDataPrefill';

@@ -37,6 +37,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
 import { EnhancedProviderSection } from './EnhancedProviderSection';
+import { ComprehensiveProviderSection, createEmptyComprehensiveProviderData, type ComprehensiveProviderData } from './ComprehensiveProviderSection';
 import { ConsentManagement, type ConsentData } from './ConsentManagement';
 import { CollaborationStatus } from './CollaborationStatus';
 import { PatientDataPrefill } from './PatientDataPrefill';
@@ -158,6 +159,9 @@ export interface PatientEnrollmentData {
   // Consent Management
   consentData?: ConsentData;
   
+  // Comprehensive Provider Data
+  comprehensiveProviderData?: ComprehensiveProviderData;
+  
   // Collaboration Status
   collaborationStatus?: {
     currentStage: string;
@@ -258,6 +262,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       providerConsentDate: '',
       notes: ''
     },
+    comprehensiveProviderData: createEmptyComprehensiveProviderData(),
     collaborationStatus: {
       currentStage: 'submission_method',
       pendingWith: [],
@@ -290,6 +295,20 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
 
   const updateFormData = (field: keyof PatientEnrollmentData, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handler for comprehensive provider data updates
+  const handleComprehensiveProviderUpdate = (section: keyof ComprehensiveProviderData, field: string, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      comprehensiveProviderData: {
+        ...prev.comprehensiveProviderData!,
+        [section]: {
+          ...prev.comprehensiveProviderData![section],
+          [field]: value
+        }
+      }
+    }));
   };
 
   const handleSubmissionMethodChange = (method: SubmissionMethod) => {
@@ -1684,10 +1703,10 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       )}
 
       {/* Step 3: Provider Information */}
-      {currentStep === 3 && (
-        <EnhancedProviderSection
-          formData={formData}
-          updateFormData={updateFormData}
+      {currentStep === 3 && formData.comprehensiveProviderData && (
+        <ComprehensiveProviderSection
+          formData={formData.comprehensiveProviderData}
+          updateFormData={handleComprehensiveProviderUpdate}
           readOnly={readOnly}
         />
       )}

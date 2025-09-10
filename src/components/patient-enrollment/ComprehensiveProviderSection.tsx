@@ -1957,3 +1957,6 @@ export const createEmptyComprehensiveProviderData = (): ComprehensiveProviderDat
     continuingEducationCollaboration: ''
   }
 });
+
+// Export types
+export type { ComprehensiveProviderData };
