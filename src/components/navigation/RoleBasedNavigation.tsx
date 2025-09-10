@@ -60,37 +60,57 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     return 'User';
   };
 
-  // CONSOLIDATED navigation groups - eliminates redundancy
-  const navigationGroups = {
-    // Core business functions
-    core: availableTabs.filter(tab => 
-      ['/', '/patients'].includes(tab.to)
-    ),
-    // Main agent ecosystem (consolidated)
-    agents: availableTabs.filter(tab => 
-      ['/agents'].includes(tab.to)
-    ),
-    // Business domain - separate from agent tech
-    treatmentCenters: availableTabs.filter(tab => 
-      ['/treatment-centers'].includes(tab.to)
-    ),
-    // Administrative functions
-    management: availableTabs.filter(tab => 
-      ['/users', '/facilities', '/onboarding', '/modules', '/role-management'].includes(tab.to)
-    ),
-    // Technical integration (consolidated from scattered tools)
-    systemIntegration: availableTabs.filter(tab => 
-      ['/api-services', '/system-integration', '/data-import', '/security', '/testing'].includes(tab.to)
-    ),
-    // Compliance & reporting
-    reportsCompliance: availableTabs.filter(tab => 
-      ['/reports', '/governance', '/framework', '/stability', '/active-verification'].includes(tab.to)
-    ),
-    // Specialized tools
-    specialized: availableTabs.filter(tab => 
-      ['/healthcare-ai', '/ngrok'].includes(tab.to)
-    )
+  // ROLE-SPECIFIC navigation groups - eliminates redundancy
+  const getNavigationGroups = () => {
+    // Healthcare Provider gets dedicated primary navigation
+    if (currentRole === 'healthcareProvider') {
+      return {
+        // Healthcare provider primary navigation
+        primary: availableTabs.filter(tab => 
+          ['/', '/order-management', '/patient-onboarding', '/api-services', '/agents', '/testing'].includes(tab.to)
+        ),
+        // Additional features in dropdowns
+        management: [],
+        systemIntegration: [],
+        reportsCompliance: [],
+        specialized: []
+      };
+    }
+
+    // Default navigation for other roles
+    return {
+      // Core business functions
+      primary: availableTabs.filter(tab => 
+        ['/', '/patients'].includes(tab.to)
+      ),
+      // Business domain - separate from agent tech
+      treatmentCenters: availableTabs.filter(tab => 
+        ['/treatment-centers'].includes(tab.to)
+      ),
+      // Main agent ecosystem (consolidated)
+      agents: availableTabs.filter(tab => 
+        ['/agents'].includes(tab.to)
+      ),
+      // Administrative functions
+      management: availableTabs.filter(tab => 
+        ['/users', '/facilities', '/onboarding', '/modules', '/role-management'].includes(tab.to)
+      ),
+      // Technical integration (consolidated from scattered tools)
+      systemIntegration: availableTabs.filter(tab => 
+        ['/api-services', '/system-integration', '/data-import', '/security', '/testing'].includes(tab.to)
+      ),
+      // Compliance & reporting
+      reportsCompliance: availableTabs.filter(tab => 
+        ['/reports', '/governance', '/framework', '/stability', '/active-verification'].includes(tab.to)
+      ),
+      // Specialized tools
+      specialized: availableTabs.filter(tab => 
+        ['/healthcare-ai', '/ngrok'].includes(tab.to)
+      )
+    };
   };
+
+  const navigationGroups = getNavigationGroups();
 
   const renderNavButton = (tab: any, isDropdown = false) => {
     const isActive = location.pathname === tab.to;
@@ -189,22 +209,22 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
                 </Link>
               </div>
 
-              {/* Core Features */}
-              {navigationGroups.core.filter(tab => tab.to !== '/').map(tab => (
+              {/* Primary Navigation Items */}
+              {navigationGroups.primary.filter(tab => tab.to !== '/').map(tab => (
                 <div key={tab.to} className="nav-item">
                   {renderNavButton(tab)}
                 </div>
               ))}
 
               {/* Agents Ecosystem */}
-              {navigationGroups.agents.length > 0 && navigationGroups.agents.map(tab => (
+              {navigationGroups.agents && navigationGroups.agents.length > 0 && navigationGroups.agents.map(tab => (
                 <div key={tab.to} className="nav-item">
                   {renderNavButton(tab)}
                 </div>
               ))}
 
               {/* Treatment Centers - Business Domain */}
-              {navigationGroups.treatmentCenters.length > 0 && navigationGroups.treatmentCenters.map(tab => (
+              {navigationGroups.treatmentCenters && navigationGroups.treatmentCenters.length > 0 && navigationGroups.treatmentCenters.map(tab => (
                 <div key={tab.to} className="nav-item">
                   {renderNavButton(tab)}
                 </div>
