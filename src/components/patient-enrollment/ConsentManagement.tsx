@@ -392,7 +392,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 id="providerName"
                 value={consentData.providerName}
                 onChange={(e) => handleProviderInfoChange('providerName', e.target.value)}
-                disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
+                disabled={readOnly}
                 required
                 placeholder="Dr. John Smith"
                 className={!consentData.providerName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -420,7 +420,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 type="tel"
                 value={consentData.providerPhone}
                 onChange={(e) => handleProviderInfoChange('providerPhone', e.target.value)}
-                disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
+                disabled={readOnly}
                 required
                 placeholder="+1 (555) 123-4567"
                 className={!consentData.providerPhone?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -434,7 +434,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 type="email"
                 value={consentData.providerEmail}
                 onChange={(e) => handleProviderInfoChange('providerEmail', e.target.value)}
-                disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
+                disabled={readOnly}
                 required
                 placeholder="provider@clinic.com"
                 className={!consentData.providerEmail?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -477,7 +477,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 id="treatmentCenter"
                 value={consentData.treatmentCenter}
                 onChange={(e) => handleProviderInfoChange('treatmentCenter', e.target.value)}
-                disabled={readOnly || (selectedTreatmentCenterId && selectedTreatmentCenterId !== 'manual')}
+                disabled={readOnly}
                 required
                 placeholder="ABC Medical Center"
                 className={!consentData.treatmentCenter?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -490,7 +490,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 id="treatmentCenterNpi"
                 value={consentData.treatmentCenterNpi || ''}
                 onChange={(e) => handleProviderInfoChange('treatmentCenterNpi', e.target.value)}
-                disabled={readOnly || (selectedTreatmentCenterId && selectedTreatmentCenterId !== 'manual')}
+                disabled={readOnly}
                 placeholder="1234567890"
                 maxLength={10}
               />
