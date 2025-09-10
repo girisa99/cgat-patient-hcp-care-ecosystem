@@ -3,15 +3,17 @@
  * Provides global access to conversational enrollment from any page
  */
 import { createContext, useContext, useState, ReactNode } from 'react';
+import { usePageAwareEnrollment } from './usePageAwareEnrollment';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
 interface GlobalConversationalEnrollmentContextType {
   isOpen: boolean;
   moduleType: ModuleType | null;
-  openEnrollment: (moduleType: ModuleType) => void;
+  openEnrollment: (moduleType?: ModuleType) => void;
   closeEnrollment: () => void;
   onComplete: (result: { instanceId: string; pdfUrl: string }) => void;
+  pageContext: any;
 }
 
 const GlobalConversationalEnrollmentContext = createContext<GlobalConversationalEnrollmentContextType | undefined>(undefined);
@@ -19,9 +21,14 @@ const GlobalConversationalEnrollmentContext = createContext<GlobalConversational
 export const GlobalConversationalEnrollmentProvider = ({ children }: { children: ReactNode }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [moduleType, setModuleType] = useState<ModuleType | null>(null);
+  const { getPageContext, getAvailableModules } = usePageAwareEnrollment();
 
-  const openEnrollment = (type: ModuleType) => {
-    setModuleType(type);
+  const openEnrollment = (type?: ModuleType) => {
+    // If no type specified, use the first available module for the current page
+    const availableModules = getAvailableModules();
+    const selectedType = type || availableModules[0];
+    
+    setModuleType(selectedType);
     setIsOpen(true);
   };
 
@@ -32,7 +39,6 @@ export const GlobalConversationalEnrollmentProvider = ({ children }: { children:
 
   const onComplete = (result: { instanceId: string; pdfUrl: string }) => {
     console.log('Enrollment completed:', result);
-    // You can add global completion logic here (notifications, analytics, etc.)
     closeEnrollment();
     
     // Show success notification or redirect
@@ -52,7 +58,8 @@ export const GlobalConversationalEnrollmentProvider = ({ children }: { children:
         moduleType,
         openEnrollment,
         closeEnrollment,
-        onComplete
+        onComplete,
+        pageContext: getPageContext()
       }}
     >
       {children}

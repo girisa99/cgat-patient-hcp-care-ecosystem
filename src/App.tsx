@@ -291,6 +291,17 @@ const AppContent = () => {
                       <EnrollmentDemo />
                     </ProtectedRoute>
                   } />
+                  <Route path="/page-demo" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser', 'onboardingTeam']}>
+                      <Suspense fallback={<PageLoading message="Loading page demo..." />}>
+                        {React.createElement(React.lazy(() => 
+                          import('@/components/pages/PageSpecificEnrollmentDemo').then(m => ({ 
+                            default: m.PageSpecificEnrollmentDemo 
+                          }))
+                        ))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                 </>
               ) : (
                 <>
