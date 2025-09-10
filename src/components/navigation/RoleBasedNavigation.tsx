@@ -66,10 +66,10 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     if (userRoles.includes('healthcareProvider')) {
       return {
         primary: availableTabs.filter(tab => 
-          ['/', '/order-management', '/patient-onboarding', '/api-services', '/agents', '/testing'].includes(tab.to)
+          ['/', '/order-management', '/patient-onboarding', '/agents'].includes(tab.to)
         ),
         management: [],
-        systemIntegration: [],
+        systemIntegration: availableTabs.filter(tab => ['/api-services', '/testing'].includes(tab.to)),
         reportsCompliance: [],
         specialized: []
       };
@@ -79,7 +79,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     const primary = availableTabs.filter(tab => ['/', '/patients'].includes(tab.to));
     const treatmentCenters = availableTabs.filter(tab => ['/treatment-centers'].includes(tab.to));
     const agents = availableTabs.filter(tab => ['/agents'].includes(tab.to));
-    
+
     // Group remaining tabs dynamically by category
     const managementTabs = ['/users', '/facilities', '/onboarding', '/modules', '/role-management'];
     const systemTabs = ['/api-services', '/system-integration', '/data-import', '/security', '/testing'];

@@ -18,9 +18,11 @@ import {
   ShoppingCart,
   UserCheck,
   Bot,
-  TestTube
+  TestTube,
+  Zap
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
+import { QuickConnectorCreator } from '@/components/agentic/enhanced-connector/QuickConnectorCreator';
 import { useMasterData } from '@/hooks/useMasterData';
 import { LSDashboardWidget } from '@/components/label-studio';
 import { useQuery } from '@tanstack/react-query';
@@ -32,6 +34,7 @@ import { normalizeRoles, hasAnyRole } from '@/utils/roles';
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const [showPresentation, setShowPresentation] = React.useState(false);
+  const [quickConnectOpen, setQuickConnectOpen] = React.useState(false);
   const { userRoles } = useMasterAuth();
   const normalizedRoles = normalizeRoles(userRoles || []);
   const isHealthcareProvider = hasAnyRole(normalizedRoles, ['healthcareProvider']);
@@ -214,6 +217,7 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               <h1 className="text-3xl font-bold text-foreground">Healthcare Provider Dashboard</h1>
               <p className="text-muted-foreground mt-2">Provider tools and workflows</p>
             </div>
+            <Button variant="outline" onClick={() => setQuickConnectOpen(true)} className="whitespace-nowrap">Quick Connect</Button>
           </div>
 
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
@@ -235,15 +239,6 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 </div>
               </CardContent>
             </Card>
-            <Card onClick={() => navigate('/api-services')} className="cursor-pointer hover:shadow-sm transition-shadow">
-              <CardContent className="p-6 flex items-center gap-4">
-                <Activity className="h-6 w-6" />
-                <div>
-                  <h3 className="font-semibold">API Services</h3>
-                  <p className="text-sm text-muted-foreground">Integration and connectivity tools</p>
-                </div>
-              </CardContent>
-            </Card>
             <Card onClick={() => navigate('/agents')} className="cursor-pointer hover:shadow-sm transition-shadow">
               <CardContent className="p-6 flex items-center gap-4">
                 <Bot className="h-6 w-6" />
@@ -253,16 +248,17 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 </div>
               </CardContent>
             </Card>
-            <Card onClick={() => navigate('/testing')} className="cursor-pointer hover:shadow-sm transition-shadow">
-              <CardContent className="p-6 flex items-center gap-4">
-                <TestTube className="h-6 w-6" />
-                <div>
-                  <h3 className="font-semibold">Testing Suite</h3>
-                  <p className="text-sm text-muted-foreground">Provider-specific validation tools</p>
-                </div>
-              </CardContent>
-            </Card>
           </div>
+
+          {/* Quick Connect Modal */}
+          <QuickConnectorCreator
+            isOpen={quickConnectOpen}
+            onClose={() => setQuickConnectOpen(false)}
+            onConnectorCreated={() => {
+              setQuickConnectOpen(false);
+              navigate('/api-services');
+            }}
+          />
         </div>
       </AppLayout>
     );

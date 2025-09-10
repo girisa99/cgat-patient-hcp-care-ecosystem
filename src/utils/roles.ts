@@ -21,6 +21,7 @@ export const ROLE_ALIASES: Record<string, string> = {
   // Healthcare roles
   'healthcare_provider': 'healthcareProvider',
   'healthcare-provider': 'healthcareProvider',
+  'healthcareprovider': 'healthcareProvider',
   'provider': 'healthcareProvider',
   'case_manager': 'caseManager',
   'case-manager': 'caseManager',
