@@ -49,7 +49,8 @@ export const PatientDataPrefill: React.FC<PatientDataPrefillProps> = ({
       onPatientDataUpdate({
         firstName: selectedPatient.firstName,
         lastName: selectedPatient.lastName,
-        email: selectedPatient.email
+        email: selectedPatient.email,
+        phone: selectedPatient.phone || ''
       });
     }
   };

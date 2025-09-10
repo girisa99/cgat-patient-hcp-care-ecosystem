@@ -18,12 +18,14 @@ export interface PrefillData {
     id: string;
     name: string;
     email?: string;
+    phone?: string;
   }>;
   patients: Array<{
     id: string;
     firstName: string;
     lastName: string;
     email?: string;
+    phone?: string;
   }>;
 }
 
@@ -81,9 +83,9 @@ export const useOnboardingDataPrefill = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email')
-        .order('first_name')
-        .limit(10);
+        .select('id, first_name, last_name, email, phone')
+        .order('last_name', { ascending: true })
+        .limit(50);
 
       if (error) {
         console.warn('No provider data found:', error);
@@ -93,7 +95,8 @@ export const useOnboardingDataPrefill = () => {
       return (data || []).map(provider => ({
         id: provider.id,
         name: `${provider.first_name || ''} ${provider.last_name || ''}`.trim(),
-        email: provider.email || ''
+        email: provider.email || '',
+        phone: provider.phone || ''
       }));
     },
     enabled: !!user
@@ -104,9 +107,9 @@ export const useOnboardingDataPrefill = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('profiles')
-        .select('id, first_name, last_name, email')
-        .order('first_name')
-        .limit(10);
+        .select('id, first_name, last_name, email, phone')
+        .order('last_name', { ascending: true })
+        .limit(50);
 
       if (error) {
         console.warn('No patient data found:', error);
@@ -117,7 +120,8 @@ export const useOnboardingDataPrefill = () => {
         id: patient.id,
         firstName: patient.first_name || '',
         lastName: patient.last_name || '',
-        email: patient.email || ''
+        email: patient.email || '',
+        phone: patient.phone || ''
       }));
     },
     enabled: !!user

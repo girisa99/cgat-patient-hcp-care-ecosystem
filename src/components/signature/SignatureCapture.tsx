@@ -227,18 +227,17 @@ export const SignatureCapture: React.FC<SignatureCaptureProps> = ({
             Clear
           </Button>
           
-          {hasSignature && (
-            <Button
-              type="button"
-              size="sm"
-              onClick={acceptSignature}
-              disabled={disabled}
-              className="flex items-center gap-2"
-            >
-              <Check className="h-4 w-4" />
-              Accept Signature
-            </Button>
-          )}
+          <Button
+            type="button"
+            size="sm"
+            onClick={acceptSignature}
+            disabled={!hasSignature || disabled}
+            className="flex items-center gap-2"
+            aria-disabled={!hasSignature || disabled}
+          >
+            <Check className="h-4 w-4" />
+            Accept Signature
+          </Button>
         </div>
 
         {required && !hasSignature && (
