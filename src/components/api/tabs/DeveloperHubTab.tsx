@@ -22,10 +22,14 @@ import ApiKeyManager from '../ApiKeyManager';
 import PostmanCollectionManager from '../PostmanCollectionManager';
 import RoleBasedApiDocumentation from '../RoleBasedApiDocumentation';
 import { DOMSecurity } from '@/utils/security/domSecurity';
+import { useRealTimeRoleSync } from '@/hooks/useRealTimeRoleSync';
 
 const DeveloperHubTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [activeSubTab, setActiveSubTab] = useState('sandbox');
+  
+  // Real-time sync for developer hub updates
+  const { isConnected, hasUpdates, updateCount } = useRealTimeRoleSync();
   
   const { apiServices, isLoading } = useMasterApiServices();
   const { publishedApis } = useExternalApis();
@@ -74,8 +78,18 @@ const DeveloperHubTab: React.FC = () => {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold">Developer Hub</h2>
-          <p className="text-gray-600">Sandbox, published APIs, endpoints, Postman, API keys, and testing</p>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            Developer Hub
+            {isConnected && hasUpdates && (
+              <Badge variant="destructive" className="text-xs">
+                {updateCount} updates
+              </Badge>
+            )}
+          </h2>
+          <p className="text-gray-600">
+            Sandbox, published APIs, endpoints, Postman, API keys, and testing
+            {isConnected && <span className="text-green-600 ml-2">• Real-time sync active</span>}
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <Button onClick={handleRefresh} variant="outline" disabled={isLoading}>

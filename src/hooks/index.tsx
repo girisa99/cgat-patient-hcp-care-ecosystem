@@ -61,6 +61,9 @@ export { useUserManagementDialogs } from './useUserManagementDialogs';
 export { useSimpleRouting } from './useSimpleRouting';
 export { useIntelligentRouting } from './useIntelligentRouting';
 
+// Real-time sync hooks
+export { useRealTimeRoleSync, useRoleSpecificSync, useApiSuiteSync, useAdminRoleSync } from './useRealTimeRoleSync';
+
 // UI Hooks
 export { useToast } from './use-toast';
 
