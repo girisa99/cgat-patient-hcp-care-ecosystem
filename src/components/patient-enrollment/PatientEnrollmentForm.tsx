@@ -38,6 +38,7 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 import { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
 import { EnhancedProviderSection } from './EnhancedProviderSection';
 import { ComprehensiveProviderSection, createEmptyComprehensiveProviderData, type ComprehensiveProviderData } from './ComprehensiveProviderSection';
+import { ComprehensiveInsuranceSection, createEmptyComprehensiveInsuranceData, type ComprehensiveInsuranceData } from './ComprehensiveInsuranceSection';
 import { ConsentManagement, type ConsentData } from './ConsentManagement';
 import { CollaborationStatus } from './CollaborationStatus';
 import { PatientDataPrefill } from './PatientDataPrefill';
@@ -162,6 +163,9 @@ export interface PatientEnrollmentData {
   // Comprehensive Provider Data
   comprehensiveProviderData?: ComprehensiveProviderData;
   
+  // Comprehensive Insurance Data
+  comprehensiveInsuranceData?: ComprehensiveInsuranceData;
+  
   // Collaboration Status
   collaborationStatus?: {
     currentStage: string;
@@ -263,6 +267,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       notes: ''
     },
     comprehensiveProviderData: createEmptyComprehensiveProviderData(),
+    comprehensiveInsuranceData: createEmptyComprehensiveInsuranceData(),
     collaborationStatus: {
       currentStage: 'submission_method',
       pendingWith: [],
@@ -307,6 +312,17 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
           ...prev.comprehensiveProviderData![section],
           [field]: value
         }
+      }
+    }));
+  };
+
+  // Handler for comprehensive insurance data updates
+  const handleComprehensiveInsuranceUpdate = (field: keyof ComprehensiveInsuranceData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      comprehensiveInsuranceData: {
+        ...prev.comprehensiveInsuranceData!,
+        [field]: value
       }
     }));
   };
@@ -1196,146 +1212,11 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   );
 
   const renderInsuranceInfo = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5" />
-          Insurance Information
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-6">
-        <div>
-          <h4 className="font-medium mb-3">Medical Insurance</h4>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="medicalInsuranceProvider">Insurance Provider</Label>
-              <Input
-                id="medicalInsuranceProvider"
-                value={formData.medicalInsurance.provider}
-                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, provider: e.target.value })}
-              disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label htmlFor="medicalInsuranceType">Insurance Type</Label>
-              <select
-                id="medicalInsuranceType"
-                value={formData.medicalInsurance.type}
-                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, type: e.target.value as 'government' | 'commercial' })}
-                disabled={readOnly}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md"
-              >
-                <option value="commercial">Commercial</option>
-                <option value="government">Government</option>
-              </select>
-            </div>
-          </div>
-          <div className="grid md:grid-cols-3 gap-4">
-            <div>
-              <Label htmlFor="medicalPolicyNumber">Policy Number</Label>
-              <Input
-                id="medicalPolicyNumber"
-                value={formData.medicalInsurance.policyNumber}
-                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, policyNumber: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label htmlFor="medicalGroupNumber">Group Number</Label>
-              <Input
-                id="medicalGroupNumber"
-                value={formData.medicalInsurance.groupNumber}
-                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, groupNumber: e.target.value })}
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label htmlFor="medicalPriority">Priority</Label>
-              <select
-                id="medicalPriority"
-                value={formData.medicalInsurance.priority}
-                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, priority: e.target.value as 'primary' | 'secondary' | 'tertiary' })}
-                disabled={readOnly}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md"
-              >
-                <option value="primary">Primary</option>
-                <option value="secondary">Secondary</option>
-                <option value="tertiary">Tertiary</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <Separator />
-
-        <div>
-          <h4 className="font-medium mb-3">Pharmacy Insurance (Optional)</h4>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <Label htmlFor="pharmacyInsuranceProvider">Insurance Provider</Label>
-              <Input
-                id="pharmacyInsuranceProvider"
-                value={formData.pharmacyInsurance?.provider || ''}
-                onChange={(e) => updateFormData('pharmacyInsurance', { 
-                  ...formData.pharmacyInsurance, 
-                  provider: e.target.value,
-                  policyNumber: formData.pharmacyInsurance?.policyNumber || '',
-                  groupNumber: formData.pharmacyInsurance?.groupNumber || '',
-                  type: formData.pharmacyInsurance?.type || 'commercial',
-                  priority: formData.pharmacyInsurance?.priority || 'primary'
-                })}
-                disabled={readOnly}
-              />
-            </div>
-            <div>
-              <Label htmlFor="pharmacyInsuranceType">Insurance Type</Label>
-              <select
-                id="pharmacyInsuranceType"
-                value={formData.pharmacyInsurance?.type || 'commercial'}
-                onChange={(e) => updateFormData('pharmacyInsurance', { 
-                  ...formData.pharmacyInsurance, 
-                  type: e.target.value as 'government' | 'commercial',
-                  provider: formData.pharmacyInsurance?.provider || '',
-                  policyNumber: formData.pharmacyInsurance?.policyNumber || '',
-                  groupNumber: formData.pharmacyInsurance?.groupNumber || '',
-                  priority: formData.pharmacyInsurance?.priority || 'primary'
-                })}
-                disabled={readOnly}
-                className="w-full px-3 py-2 border border-input bg-background rounded-md"
-              >
-                <option value="commercial">Commercial</option>
-                <option value="government">Government</option>
-              </select>
-            </div>
-          </div>
-        </div>
-
-        <div>
-          <Label>Insurance Documents</Label>
-          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
-            <input
-              type="file"
-              multiple
-              accept=".pdf,.jpg,.jpeg,.png"
-              onChange={(e) => {
-                if (e.target.files) {
-                  updateFormData('insuranceDocuments', Array.from(e.target.files));
-                }
-              }}
-              disabled={readOnly}
-              className="hidden"
-              id="insuranceDocuments"
-            />
-            <label htmlFor="insuranceDocuments" className="cursor-pointer">
-              <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-              <p className="text-sm text-muted-foreground">
-                Click to upload insurance cards and documents
-              </p>
-            </label>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <ComprehensiveInsuranceSection
+      formData={formData.comprehensiveInsuranceData!}
+      updateFormData={handleComprehensiveInsuranceUpdate}
+      readOnly={readOnly}
+    />
   );
 
   const renderTherapyInfo = () => (
