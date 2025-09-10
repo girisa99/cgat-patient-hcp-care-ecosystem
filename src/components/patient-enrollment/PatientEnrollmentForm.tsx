@@ -257,11 +257,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
 
   const handleSubmissionMethodChange = (method: SubmissionMethod) => {
     updateFormData('submissionMethod', method);
-    updateFormData('collaborationStatus', {
-      ...formData.collaborationStatus!,
-      currentStage: 'consent_management',
-      completedStages: ['submission_method']
-    });
+    updateCollaborationStatus('consent_management', ['submission_method']);
     
     // Initialize collaborators based on method
     if (method !== 'online') {
@@ -284,6 +280,87 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         }
       ];
       updateFormData('collaborators', defaultCollaborators);
+    }
+
+    // Auto-advance to next step
+    setCurrentStep(1);
+  };
+
+  const updateCollaborationStatus = (currentStage: string, completedStages: string[]) => {
+    updateFormData('collaborationStatus', {
+      currentStage,
+      pendingWith: [],
+      completedStages
+    });
+  };
+
+  const handleConsentDataChange = (consentData: Partial<ConsentData>) => {
+    updateFormData('consentData', { ...formData.consentData!, ...consentData });
+    
+    // Update collaboration status when consent is obtained
+    if (consentData.patientConsentStatus === 'obtained') {
+      updateCollaborationStatus('patient_info', ['submission_method', 'consent_management']);
+      setCurrentStep(2);
+    }
+  };
+
+  const handleProviderInfoUpdate = (providerData: any) => {
+    // Update multiple fields at once from consent management
+    setFormData(prev => ({
+      ...prev,
+      providerName: providerData.providerName,
+      providerNpi: providerData.providerNpi,
+      providerPhone: providerData.providerPhone,
+      providerEmail: providerData.providerEmail,
+      treatmentCenterName: providerData.treatmentCenterName,
+      treatmentCenterNpi: providerData.treatmentCenterNpi
+    }));
+  };
+
+  const handlePatientDataUpdate = (patientData: Partial<PatientEnrollmentData>) => {
+    setFormData(prev => ({ ...prev, ...patientData }));
+  };
+
+  const handleStepNavigation = (stepIndex: number) => {
+    // Validate current step before allowing navigation
+    if (stepIndex > currentStep && !isStepValid(currentStep)) {
+      showError('Please complete all required fields in the current step');
+      return;
+    }
+    setCurrentStep(stepIndex);
+  };
+
+  const isStepValid = (stepIndex: number): boolean => {
+    switch (stepIndex) {
+      case 0: // Submission Method
+        return !!formData.submissionMethod;
+      case 1: // Consent Management
+        return !!(formData.consentData?.providerName && 
+                 formData.consentData?.providerNpi && 
+                 formData.consentData?.consentType);
+      case 2: // Patient Info
+        return !!(formData.firstName && formData.lastName && formData.email);
+      case 3: // Provider Info
+        return !!(formData.providerName && formData.treatmentCenterName);
+      default:
+        return true;
+    }
+  };
+
+  const handleStepComplete = (stepIndex: number) => {
+    const stepNames = [
+      'submission_method', 'consent_management', 'patient_info', 
+      'provider_info', 'insurance', 'therapy', 'clinical', 
+      'medical_review', 'submit'
+    ];
+    
+    const completedStageNames = stepNames.slice(0, stepIndex + 1);
+    const nextStage = stepIndex < stepNames.length - 1 ? stepNames[stepIndex + 1] : 'submit';
+    
+    updateCollaborationStatus(nextStage, completedStageNames);
+    
+    if (!completedSteps.includes(stepIndex)) {
+      setCompletedSteps(prev => [...prev, stepIndex]);
     }
   };
 
@@ -1289,7 +1366,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       {/* Journey Steps Navigation */}
       <EnrollmentJourneySteps
         currentStep={currentStep}
-        onStepClick={setCurrentStep}
+        onStepClick={handleStepNavigation}
         completedSteps={completedSteps}
       />
 
@@ -1300,23 +1377,23 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       {currentStep === 1 && formData.consentData && (
         <ConsentManagement
           consentData={formData.consentData}
-          onConsentChange={(data) => updateFormData('consentData', { ...formData.consentData!, ...data })}
-          onProviderInfoUpdate={(providerData) => {
-            // Update main form provider information
-            updateFormData('providerName', providerData.providerName);
-            updateFormData('providerNpi', providerData.providerNpi);
-            updateFormData('treatmentCenterName', providerData.treatmentCenterName);
-            updateFormData('treatmentCenterNpi', providerData.treatmentCenterNpi);
-            // Store provider contact info for later use
-            updateFormData('providerPhone', providerData.providerPhone);
-            updateFormData('providerEmail', providerData.providerEmail);
-          }}
+          onConsentChange={handleConsentDataChange}
+          onProviderInfoUpdate={handleProviderInfoUpdate}
           readOnly={readOnly}
         />
       )}
 
       {/* Step 2: Patient Information */}
-      {currentStep === 2 && renderPatientInfo()}
+      {currentStep === 2 && (
+        <>
+          <PatientDataPrefill
+            formData={formData}
+            onPatientDataUpdate={handlePatientDataUpdate}
+            readOnly={readOnly}
+          />
+          {renderPatientInfo()}
+        </>
+      )}
 
       {/* Step 3: Provider Information */}
       {currentStep === 3 && (
@@ -1367,10 +1444,12 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
                   break;
               }
             } else {
-              setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
-              // Mark current step as completed
-              if (!completedSteps.includes(currentStep)) {
-                setCompletedSteps(prev => [...prev, currentStep]);
+              // Validate current step before proceeding
+              if (isStepValid(currentStep)) {
+                handleStepComplete(currentStep);
+                setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
+              } else {
+                showError('Please complete all required fields before proceeding');
               }
             }
           }}
