@@ -394,8 +394,8 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="Dr. John Smith"
-                className={!consentData.providerName ? 'border-destructive focus-visible:ring-destructive' : ''}
-                aria-invalid={!consentData.providerName}
+                className={!consentData.providerName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.providerName?.trim()}
               />
             </div>
             <div>
@@ -422,8 +422,8 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="+1 (555) 123-4567"
-                className={!consentData.providerPhone ? 'border-destructive focus-visible:ring-destructive' : ''}
-                aria-invalid={!consentData.providerPhone}
+                className={!consentData.providerPhone?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.providerPhone?.trim()}
               />
             </div>
             <div>
@@ -436,8 +436,8 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly || (!isManualEntry && selectedProviderId && selectedProviderId !== 'manual')}
                 required
                 placeholder="provider@clinic.com"
-                className={!consentData.providerEmail ? 'border-destructive focus-visible:ring-destructive' : ''}
-                aria-invalid={!consentData.providerEmail}
+                className={!consentData.providerEmail?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.providerEmail?.trim()}
               />
             </div>
           </div>
@@ -479,8 +479,8 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly || (selectedTreatmentCenterId && selectedTreatmentCenterId !== 'manual')}
                 required
                 placeholder="ABC Medical Center"
-                className={!consentData.treatmentCenter ? 'border-destructive focus-visible:ring-destructive' : ''}
-                aria-invalid={!consentData.treatmentCenter}
+                className={!consentData.treatmentCenter?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
+                aria-invalid={!consentData.treatmentCenter?.trim()}
               />
             </div>
             <div>
