@@ -18,5 +18,8 @@ export { ComprehensiveProviderSection } from './ComprehensiveProviderSection';
 export { ComprehensiveInsuranceSection, type ComprehensiveInsuranceData } from './ComprehensiveInsuranceSection';
 export { ComprehensiveTreatmentAssessment, type ComprehensiveTreatmentAssessmentData } from './ComprehensiveTreatmentAssessment';
 
+// Dashboard and workflow components
+export { EnrollmentStatusDashboard, type EnrollmentStatus, type CriticalIssue } from './EnrollmentStatusDashboard';
+
 // Hooks
 export { useOnboardingDataPrefill } from '@/hooks/useOnboardingDataPrefill';

@@ -183,26 +183,7 @@ interface ComprehensiveTreatmentAssessmentData {
     emergencyCommunicationPlan: string;
   };
   
-  // Tab 7: Enrollment Workflow & Status Tracking
-  enrollmentWorkflow: {
-    enrollmentInitiatedDate: string;
-    enrollmentCoordinator: string;
-    enrollmentChecklistCompletion: number;
-    outstandingRequirements: string[];
-    targetEnrollmentCompletionDate: string;
-    providerDataLinked: boolean;
-    insuranceDataLinked: boolean;
-    treatmentPlanLinked: boolean;
-    referralDataLinked: boolean;
-    dataConflictsIdentified: boolean;
-    dataConflictDetails: string;
-    enrollmentReviewCompleted: boolean;
-    dataAccuracyVerified: boolean;
-    missingInformationIdentified: boolean;
-    readyForTreatmentPlanning: boolean;
-  };
-  
-  // Tab 8: Treatment Episode Preparation
+  // Tab 7: Treatment Episode Preparation
   treatmentPreparation: {
     treatmentSchedulePreferences: string;
     schedulingConflictsIdentified: boolean;
@@ -308,7 +289,7 @@ export const ComprehensiveTreatmentAssessment: React.FC<ComprehensiveTreatmentAs
         <PrePopulationStatus />
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList level="child" className="grid w-full grid-cols-4 lg:grid-cols-8 text-xs">
+          <TabsList level="child" className="grid w-full grid-cols-3 lg:grid-cols-7 text-xs">
             <TabsTrigger level="child" value="identity-verification" className="flex flex-col items-center gap-1 p-2">
               <UserCheck className="h-3 w-3" />
               <span className="hidden lg:inline">Identity</span>
@@ -332,10 +313,6 @@ export const ComprehensiveTreatmentAssessment: React.FC<ComprehensiveTreatmentAs
             <TabsTrigger level="child" value="technology-monitoring" className="flex flex-col items-center gap-1 p-2">
               <Smartphone className="h-3 w-3" />
               <span className="hidden lg:inline">Tech</span>
-            </TabsTrigger>
-            <TabsTrigger level="child" value="enrollment-workflow" className="flex flex-col items-center gap-1 p-2">
-              <ClipboardList className="h-3 w-3" />
-              <span className="hidden lg:inline">Workflow</span>
             </TabsTrigger>
             <TabsTrigger level="child" value="treatment-preparation" className="flex flex-col items-center gap-1 p-2">
               <Activity className="h-3 w-3" />
@@ -1286,22 +1263,6 @@ export const ComprehensiveTreatmentAssessment: React.FC<ComprehensiveTreatmentAs
             </Card>
           </TabsContent>
 
-          <TabsContent value="enrollment-workflow" className="space-y-6 mt-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <ClipboardList className="h-5 w-5" />
-                  Enrollment Workflow & Status Tracking
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-8 text-muted-foreground">
-                  Enrollment workflow and status tracking coming soon...
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
           <TabsContent value="treatment-preparation" className="space-y-6 mt-6">
             <Card>
               <CardHeader>
@@ -1422,23 +1383,6 @@ export const createEmptyComprehensiveTreatmentAssessmentData = (): Comprehensive
     secureMessagingSetup: '',
     telehealthCapability: '',
     emergencyCommunicationPlan: ''
-  },
-  enrollmentWorkflow: {
-    enrollmentInitiatedDate: '',
-    enrollmentCoordinator: '',
-    enrollmentChecklistCompletion: 0,
-    outstandingRequirements: [],
-    targetEnrollmentCompletionDate: '',
-    providerDataLinked: false,
-    insuranceDataLinked: false,
-    treatmentPlanLinked: false,
-    referralDataLinked: false,
-    dataConflictsIdentified: false,
-    dataConflictDetails: '',
-    enrollmentReviewCompleted: false,
-    dataAccuracyVerified: false,
-    missingInformationIdentified: false,
-    readyForTreatmentPlanning: false
   },
   treatmentPreparation: {
     treatmentSchedulePreferences: '',
