@@ -74,6 +74,9 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
   const [selectedProviderId, setSelectedProviderId] = useState<string>('');
   const [selectedTreatmentCenterId, setSelectedTreatmentCenterId] = useState<string>('');
   const { prefillData, isLoading, getUserProfileData } = useOnboardingDataPrefill();
+  
+  const isProviderLocked = !!(selectedProviderId && selectedProviderId !== 'manual');
+  const isTreatmentCenterLocked = !!(selectedTreatmentCenterId && selectedTreatmentCenterId !== 'manual');
 
   // Auto-populate from current user data if available
   useEffect(() => {
@@ -392,7 +395,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 id="providerName"
                 value={consentData.providerName}
                 onChange={(e) => handleProviderInfoChange('providerName', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || isProviderLocked}
                 required
                 placeholder="Dr. John Smith"
                 className={!consentData.providerName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -420,7 +423,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 type="tel"
                 value={consentData.providerPhone}
                 onChange={(e) => handleProviderInfoChange('providerPhone', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || isProviderLocked}
                 required
                 placeholder="+1 (555) 123-4567"
                 className={!consentData.providerPhone?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
@@ -477,7 +480,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 id="treatmentCenter"
                 value={consentData.treatmentCenter}
                 onChange={(e) => handleProviderInfoChange('treatmentCenter', e.target.value)}
-                disabled={readOnly}
+                disabled={readOnly || isTreatmentCenterLocked}
                 required
                 placeholder="ABC Medical Center"
                 className={!consentData.treatmentCenter?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
