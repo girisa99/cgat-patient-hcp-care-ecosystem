@@ -16,6 +16,7 @@ export { PatientDataPrefill } from './PatientDataPrefill';
 export { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
 export { ComprehensiveProviderSection } from './ComprehensiveProviderSection';
 export { ComprehensiveInsuranceSection, type ComprehensiveInsuranceData } from './ComprehensiveInsuranceSection';
+export { ComprehensiveTreatmentAssessment, type ComprehensiveTreatmentAssessmentData } from './ComprehensiveTreatmentAssessment';
 
 // Hooks
 export { useOnboardingDataPrefill } from '@/hooks/useOnboardingDataPrefill';

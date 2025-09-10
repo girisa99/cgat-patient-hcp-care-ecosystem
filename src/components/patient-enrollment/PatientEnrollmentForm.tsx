@@ -39,6 +39,7 @@ import { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
 import { EnhancedProviderSection } from './EnhancedProviderSection';
 import { ComprehensiveProviderSection, createEmptyComprehensiveProviderData, type ComprehensiveProviderData } from './ComprehensiveProviderSection';
 import { ComprehensiveInsuranceSection, createEmptyComprehensiveInsuranceData, type ComprehensiveInsuranceData } from './ComprehensiveInsuranceSection';
+import { ComprehensiveTreatmentAssessment, createEmptyComprehensiveTreatmentAssessmentData, type ComprehensiveTreatmentAssessmentData } from './ComprehensiveTreatmentAssessment';
 import { ConsentManagement, type ConsentData } from './ConsentManagement';
 import { CollaborationStatus } from './CollaborationStatus';
 import { PatientDataPrefill } from './PatientDataPrefill';
@@ -166,6 +167,9 @@ export interface PatientEnrollmentData {
   // Comprehensive Insurance Data
   comprehensiveInsuranceData?: ComprehensiveInsuranceData;
   
+  // Comprehensive Treatment Assessment Data
+  comprehensiveTreatmentAssessmentData?: ComprehensiveTreatmentAssessmentData;
+  
   // Collaboration Status
   collaborationStatus?: {
     currentStage: string;
@@ -268,6 +272,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     },
     comprehensiveProviderData: createEmptyComprehensiveProviderData(),
     comprehensiveInsuranceData: createEmptyComprehensiveInsuranceData(),
+    comprehensiveTreatmentAssessmentData: createEmptyComprehensiveTreatmentAssessmentData(),
     collaborationStatus: {
       currentStage: 'submission_method',
       pendingWith: [],
@@ -290,7 +295,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [diseaseEducationConsent, setDiseaseEducationConsent] = useState<boolean>(false);
   const [tcpaConsent, setTcpaConsent] = useState<boolean>(false);
 
-  const totalSteps = 9;
+  const totalSteps = 7;
 
   useEffect(() => {
     if (initialData) {
@@ -322,6 +327,17 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       ...prev,
       comprehensiveInsuranceData: {
         ...prev.comprehensiveInsuranceData!,
+        [field]: value
+      }
+    }));
+  };
+
+  // Handler for comprehensive treatment assessment data updates
+  const handleComprehensiveTreatmentAssessmentUpdate = (field: keyof ComprehensiveTreatmentAssessmentData, value: any) => {
+    setFormData(prev => ({
+      ...prev,
+      comprehensiveTreatmentAssessmentData: {
+        ...prev.comprehensiveTreatmentAssessmentData!,
         [field]: value
       }
     }));
@@ -1595,17 +1611,61 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       {/* Step 4: Insurance Information */}
       {currentStep === 4 && renderInsuranceInfo()}
 
-      {/* Step 5: Therapy Information */}
-      {currentStep === 5 && renderTherapyInfo()}
+      {/* Step 5: Treatment & Clinical Assessment */}
+      {currentStep === 5 && formData.comprehensiveTreatmentAssessmentData && (
+        <ComprehensiveTreatmentAssessment
+          formData={formData.comprehensiveTreatmentAssessmentData}
+          updateFormData={handleComprehensiveTreatmentAssessmentUpdate}
+          prePopulatedData={{
+            treatingPhysician: {
+              name: formData.providerName || '',
+              npi: formData.providerNpi || '',
+              specialty: formData.providerSpecialty || '',
+              phone: formData.providerPhone || '',
+              email: formData.providerEmail || ''
+            },
+            facility: {
+              name: formData.treatmentCenterName || '',
+              address: formData.treatmentCenterAddress || '',
+              phone: formData.providerPhone || '',
+              emergencyContact: ''
+            },
+            coverage: {
+              primaryInsurance: formData.medicalInsurance?.provider || '',
+              policyNumber: formData.medicalInsurance?.policyNumber || '',
+              groupNumber: formData.medicalInsurance?.groupNumber || '',
+              copayAmount: '',
+              deductibleRemaining: '',
+              outOfPocketMax: '',
+              priorAuthStatus: ''
+            },
+            referringPhysician: {
+              name: formData.referralProviderName || '',
+              npi: '',
+              specialty: '',
+              phone: '',
+              practiceName: formData.referralCenterName || ''
+            },
+            treatment: {
+              therapyType: formData.therapyType || '',
+              productName: formData.productDrugInfo || '',
+              ndcCodes: formData.ndcCodes?.map(ndc => ndc.code) || [],
+              distributionMethod: formData.distribution || ''
+            },
+            patient: {
+              fullName: `${formData.firstName} ${formData.lastName}`,
+              dateOfBirth: formData.dateOfBirth || '',
+              phone: formData.cellPhone || '',
+              email: formData.email || '',
+              address: `${formData.address}, ${formData.city}, ${formData.state} ${formData.zipCode}`
+            }
+          }}
+          readOnly={readOnly}
+        />
+      )}
 
-      {/* Step 6: Clinical Information */}
-      {currentStep === 6 && renderClinicalInfo()}
-
-      {/* Step 7: Medical Review */}
-      {currentStep === 7 && renderMedicalInfo()}
-
-      {/* Step 8: Final Review & Submit */}
-      {currentStep === 8 && renderConsentSignatures()}
+      {/* Step 6: Final Review & Submit */}
+      {currentStep === 6 && renderConsentSignatures()}
 
       {/* Navigation */}
       <div className="flex justify-between">
