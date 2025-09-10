@@ -41,7 +41,7 @@ export const useRoleBasedNavigation = () => {
     const roleAccess = {
       dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
       users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
-      patients: ['superAdmin', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+      patients: ['superAdmin', 'caseManager', 'nurse', 'patientCaregiver', 'demoUser'], // Removed healthcareProvider for provider-specific nav
       agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
       // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
       facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
@@ -97,7 +97,7 @@ export const useRoleBasedNavigation = () => {
     const roleAccess = {
       dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
       users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
-      patients: ['superAdmin', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+      patients: ['superAdmin', 'caseManager', 'nurse', 'patientCaregiver', 'demoUser'], // Removed healthcareProvider for provider-specific nav
       agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
       // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
       facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
@@ -147,7 +147,7 @@ export const useRoleBasedNavigation = () => {
         const roleAccess = {
           dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
           users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
-          patients: ['superAdmin', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+          patients: ['superAdmin', 'caseManager', 'nurse', 'patientCaregiver', 'demoUser'], // Removed healthcareProvider for provider-specific nav
           agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
           // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
           facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo

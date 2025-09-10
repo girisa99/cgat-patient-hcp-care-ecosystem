@@ -24,7 +24,7 @@ interface RoleBasedNavigationProps {
 export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ className = '' }) => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, profile, availableTabs, currentRole, isAdmin, isSuperAdmin } = useRoleBasedNavigation();
+  const { user, profile, availableTabs, currentRole, isAdmin, isSuperAdmin, userRoles } = useRoleBasedNavigation();
   const { signOut } = useMasterAuth();
 
   console.log('🚀 Navigation Debug:', {
@@ -63,7 +63,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
   // ROLE-SPECIFIC navigation groups - eliminates redundancy
   const getNavigationGroups = () => {
     // Healthcare Provider gets dedicated primary navigation
-    if (currentRole === 'healthcareProvider') {
+    if (userRoles.includes('healthcareProvider')) {
       return {
         // Healthcare provider primary navigation
         primary: availableTabs.filter(tab => 
