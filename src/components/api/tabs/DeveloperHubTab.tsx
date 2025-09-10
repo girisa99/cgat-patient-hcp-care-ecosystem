@@ -20,6 +20,7 @@ import ApiSandboxEnvironment from '../ApiSandboxEnvironment';
 import ApiEndpointManager from '../ApiEndpointManager';
 import ApiKeyManager from '../ApiKeyManager';
 import PostmanCollectionManager from '../PostmanCollectionManager';
+import RoleBasedApiDocumentation from '../RoleBasedApiDocumentation';
 import { DOMSecurity } from '@/utils/security/domSecurity';
 
 const DeveloperHubTab: React.FC = () => {
@@ -255,6 +256,10 @@ const DeveloperHubTab: React.FC = () => {
 
         <TabsContent value="postman" className="mt-6">
           <PostmanCollectionManager />
+        </TabsContent>
+
+        <TabsContent value="documentation" className="mt-6">
+          <RoleBasedApiDocumentation />
         </TabsContent>
 
         <TabsContent value="keys" className="mt-6">

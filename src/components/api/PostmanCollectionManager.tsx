@@ -7,7 +7,9 @@ import {
   Code, Globe, Settings, Eye
 } from "lucide-react";
 import { useMasterApiServices } from '@/hooks/useMasterApiServices';
+import { useRoleBasedApiSuite } from '@/hooks/useRoleBasedApiSuite';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { PostmanCollectionGenerator } from '@/utils/api/PostmanCollectionGenerator';
 import { DOMSecurity } from '@/utils/security/domSecurity';
 
@@ -27,23 +29,48 @@ const PostmanCollectionManager: React.FC = () => {
   const [collections, setCollections] = useState<PostmanCollection[]>([]);
   
   const { apiServices, isLoading } = useMasterApiServices();
+  const { generatePostmanCollection } = useRoleBasedApiSuite();
+  const { userRoles } = useMasterAuth();
   const { showSuccess, showError } = useMasterToast();
 
-  // Mock collections for demo - would be fetched from database
-  const mockCollections: PostmanCollection[] = apiServices?.map((api, index) => ({
-    id: api.id,
-    name: `${api.name} Collection`,
-    description: api.description || 'API collection for testing',
+  // Generate collections based on user roles and API access
+  const roleBasedCollections: PostmanCollection[] = userRoles.map((role, index) => ({
+    id: `role-${role}-${index}`,
+    name: `${role.replace(/([A-Z])/g, ' $1').trim()} API Collection`,
+    description: `Role-specific API collection for ${role} with appropriate access levels`,
     version: '2.1.0',
-    endpoints: Math.floor(Math.random() * 10) + 1,
+    endpoints: Math.floor(Math.random() * 15) + 5,
     lastUpdated: new Date().toISOString(),
-    size: `${Math.floor(Math.random() * 50) + 10}KB`,
-    apiId: api.id
-  })) || [];
+    size: `${Math.floor(Math.random() * 75) + 25}KB`,
+    apiId: `role-${role}`
+  }));
+
+  // Mock collections for demo - combined with role-based collections
+  const mockCollections: PostmanCollection[] = [
+    ...roleBasedCollections,
+    ...(apiServices?.map((api, index) => ({
+      id: api.id,
+      name: `${api.name} Collection`,
+      description: api.description || 'API collection for testing',
+      version: '2.1.0',
+      endpoints: Math.floor(Math.random() * 10) + 1,
+      lastUpdated: new Date().toISOString(),
+      size: `${Math.floor(Math.random() * 50) + 10}KB`,
+      apiId: api.id
+    })) || [])
+  ];
 
   const generateCollection = async (apiId: string, apiName: string) => {
     setIsGenerating(true);
     try {
+      // Check if this is a role-based collection
+      if (apiId.startsWith('role-')) {
+        const role = apiId.replace('role-', '') as any;
+        const collection = generatePostmanCollection(role);
+        showSuccess(`Role-based collection generated for ${role}`);
+        return collection;
+      }
+
       // Get the actual API service data
       const apiService = apiServices?.find(api => api.id === apiId);
       if (!apiService) {
@@ -302,7 +329,12 @@ const PostmanCollectionManager: React.FC = () => {
             <Download className="h-6 w-6" />
             <span>Postman Collections</span>
           </h2>
-          <p className="text-gray-600">Ready-to-use collections for API testing</p>
+          <p className="text-gray-600">Ready-to-use collections for API testing - includes role-based collections</p>
+          {userRoles.length > 0 && (
+            <p className="text-sm text-blue-600 mt-1">
+              Your roles: {userRoles.join(', ')} - {roleBasedCollections.length} role-specific collections available
+            </p>
+          )}
         </div>
         <div className="flex items-center space-x-2">
           <Button 
