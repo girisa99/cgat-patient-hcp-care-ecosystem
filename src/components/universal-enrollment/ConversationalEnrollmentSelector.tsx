@@ -7,7 +7,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, FileText, Zap, Clock } from 'lucide-react';
-import { ConversationalEnrollmentInterface } from '../conversational-enrollment/ConversationalEnrollmentInterface';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 

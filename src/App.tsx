@@ -8,6 +8,7 @@ import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { PageLoading } from '@/components/ui/LoadingStates';
 import { initializeStabilityFramework } from '@/utils/framework/init';
+import { AppLayoutWithEnrollment } from '@/components/layout/AppLayoutWithEnrollment';
 import { StabilityProvider } from '@/components/stability/StabilityProvider';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { TenantProvider } from '@/contexts/TenantContext';
@@ -46,7 +47,13 @@ import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
 import CreditApplication from '@/pages/CreditApplication';
 import AgentCreationWizard from '@/components/agentic/AgentCreationWizard';
+// Lazy loaded components
 import MCPDemo from '@/pages/MCPDemo';
+const EnrollmentDemo = React.lazy(() => 
+  import('@/components/pages/EnrollmentDemoPage').then(module => ({ 
+    default: module.EnrollmentDemoPage 
+  }))
+);
 import { getDefaultRouteForRoles, normalizeRoles } from '@/utils/roles';
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -279,6 +286,11 @@ const AppContent = () => {
                       <OnboardingDashboard />
                     </ProtectedRoute>
                   } />
+                  <Route path="/enrollment-demo" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser', 'onboardingTeam']}>
+                      <EnrollmentDemo />
+                    </ProtectedRoute>
+                  } />
                 </>
               ) : (
                 <>
@@ -309,7 +321,9 @@ const App = () => {
               <TooltipProvider>
                 <HelmetProvider>
                   <Toaster />
-                  <AppContent />
+                  <AppLayoutWithEnrollment>
+                    <AppContent />
+                  </AppLayoutWithEnrollment>
                   <GlobalAgentGeneratorModal />
                 </HelmetProvider>
               </TooltipProvider>
