@@ -616,31 +616,34 @@ export const ComprehensiveInsuranceSection: React.FC<ComprehensiveInsuranceSecti
           <CreditCard className="h-5 w-5" />
           Comprehensive Insurance Information
         </CardTitle>
+        <div className="text-sm text-muted-foreground">
+          Complete the insurance information across all tabs below, then continue to Therapy section
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-6 text-xs">
-            <TabsTrigger value="coverage-selection" className="flex items-center gap-1 text-xs">
+          <TabsList level="child" className="grid w-full grid-cols-6 text-xs">
+            <TabsTrigger level="child" value="coverage-selection" className="flex items-center gap-1 text-xs">
               <Shield className="h-3 w-3" />
               Coverage
             </TabsTrigger>
-            <TabsTrigger value="insurance-details" className="flex items-center gap-1 text-xs">
+            <TabsTrigger level="child" value="insurance-details" className="flex items-center gap-1 text-xs">
               <CreditCard className="h-3 w-3" />
               Details
             </TabsTrigger>
-            <TabsTrigger value="coordination" className="flex items-center gap-1 text-xs">
+            <TabsTrigger level="child" value="coordination" className="flex items-center gap-1 text-xs">
               <Users className="h-3 w-3" />
               COB
             </TabsTrigger>
-            <TabsTrigger value="verification" className="flex items-center gap-1 text-xs">
+            <TabsTrigger level="child" value="verification" className="flex items-center gap-1 text-xs">
               <CheckCircle2 className="h-3 w-3" />
               Verify
             </TabsTrigger>
-            <TabsTrigger value="assistance" className="flex items-center gap-1 text-xs">
+            <TabsTrigger level="child" value="assistance" className="flex items-center gap-1 text-xs">
               <Heart className="h-3 w-3" />
               Assist
             </TabsTrigger>
-            <TabsTrigger value="financial" className="flex items-center gap-1 text-xs">
+            <TabsTrigger level="child" value="financial" className="flex items-center gap-1 text-xs">
               <DollarSign className="h-3 w-3" />
               Financial
             </TabsTrigger>
@@ -1975,6 +1978,23 @@ export const ComprehensiveInsuranceSection: React.FC<ComprehensiveInsuranceSecti
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Section Navigation */}
+        <div className="mt-8 pt-6 border-t border-border/20">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Insurance Information Section
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                Next: Therapy Information
+              </div>
+              <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">
+                Continue to Therapy →
+              </Button>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );

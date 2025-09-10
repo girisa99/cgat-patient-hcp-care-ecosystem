@@ -353,19 +353,22 @@ export const ComprehensiveProviderSection: React.FC<ComprehensiveProviderSection
           <Building2 className="h-5 w-5" />
           Comprehensive Provider Information
         </CardTitle>
+        <div className="text-sm text-muted-foreground">
+          Complete the provider information across all tabs below, then continue to Insurance section
+        </div>
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="provider" className="flex items-center gap-2">
+          <TabsList level="child" className="grid w-full grid-cols-3">
+            <TabsTrigger level="child" value="provider" className="flex items-center gap-2">
               <User className="h-4 w-4" />
               Provider Info
             </TabsTrigger>
-            <TabsTrigger value="facility" className="flex items-center gap-2">
+            <TabsTrigger level="child" value="facility" className="flex items-center gap-2">
               <Building className="h-4 w-4" />
               Treatment Center
             </TabsTrigger>
-            <TabsTrigger value="referral" className="flex items-center gap-2">
+            <TabsTrigger level="child" value="referral" className="flex items-center gap-2">
               <Network className="h-4 w-4" />
               Referral Network
             </TabsTrigger>
@@ -1725,6 +1728,23 @@ export const ComprehensiveProviderSection: React.FC<ComprehensiveProviderSection
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Section Navigation */}
+        <div className="mt-8 pt-6 border-t border-border/20">
+          <div className="flex items-center justify-between">
+            <div className="text-sm text-muted-foreground">
+              Provider Information Section
+            </div>
+            <div className="flex items-center gap-4">
+              <div className="text-sm text-muted-foreground">
+                Next: Insurance Information
+              </div>
+              <Button size="sm" className="bg-primary/10 text-primary hover:bg-primary/20">
+                Continue to Insurance →
+              </Button>
+            </div>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
