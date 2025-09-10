@@ -141,7 +141,7 @@ export const SignatureCapture: React.FC<SignatureCaptureProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <PenTool className="h-6 w-6" />
-            Digital Signature Required
+            {moduleType === 'patient' ? 'Patient Consent & Signature' : 'Digital Signature Required'}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-6">

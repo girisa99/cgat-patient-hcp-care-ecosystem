@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Separator } from "@/components/ui/separator";
@@ -272,6 +273,12 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [patientSignature, setPatientSignature] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const { showSuccess, showError } = useMasterToast();
+
+  // Optional patient consent extras (no validation for quick testing)
+  const [householdSize, setHouseholdSize] = useState<string>('');
+  const [annualIncome, setAnnualIncome] = useState<string>('');
+  const [diseaseEducationConsent, setDiseaseEducationConsent] = useState<boolean>(false);
+  const [tcpaConsent, setTcpaConsent] = useState<boolean>(false);
 
   const totalSteps = 9;
 
@@ -975,6 +982,67 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Financial Eligibility (optional) */}
+        <div className="p-4 bg-muted rounded-lg space-y-4">
+          <h4 className="font-medium">Financial Eligibility</h4>
+          <p className="text-sm text-muted-foreground">
+            Complete only if you are applying to the Genie Patient Foundation. By completing this section, I am
+            agreeing to the Terms and Conditions of the Genie Patient Foundation outlined on page 2.
+          </p>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="householdSize">Household size (including you)</Label>
+              <Input id="householdSize" type="number" value={householdSize} onChange={(e) => setHouseholdSize(e.target.value)} placeholder="Enter number" />
+            </div>
+            <div>
+              <Label htmlFor="annualIncome">Annual household income</Label>
+              <Input id="annualIncome" value={annualIncome} onChange={(e) => setAnnualIncome(e.target.value)} placeholder="Enter income" />
+            </div>
+          </div>
+        </div>
+
+        {/* Optional Consents */}
+        <div className="p-4 bg-muted rounded-lg space-y-4">
+          <h4 className="font-medium">Optional Consents</h4>
+
+          <div className="flex items-start space-x-2">
+            <Checkbox id="diseaseEducation" checked={diseaseEducationConsent} onCheckedChange={(c) => setDiseaseEducationConsent(c === true)} />
+            <div className="grid gap-1.5 leading-none">
+              <Label htmlFor="diseaseEducation" className="text-sm font-medium">Consent for Patient Resources and Information (OPTIONAL)</Label>
+              <p className="text-xs text-muted-foreground">
+                Genie offers optional and free disease education and other material for patients. This may include information and marketing
+                material about products, services and programs offered by Genie, its partners and their affiliates. If you sign up, you may be
+                contacted using the information you have provided. By checking this box, I agree to receive optional disease education and other
+                material. I understand providing this agreement is voluntary and plays no role in getting Genie Access Solutions services or my
+                medicine and that it may be necessary to use my sensitive personal information to provide me with relevant material. I also
+                understand that I may opt out at any time by calling (888)999-9999 and that this consent will remain active unless I opt out.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-start space-x-2">
+            <Checkbox id="tcpaConsent" checked={tcpaConsent} onCheckedChange={(c) => setTcpaConsent(c === true)} />
+            <div className="grid gap-1.5 leading-none">
+              <Label htmlFor="tcpaConsent" className="text-sm font-medium">Telephone Consumer Protection Act (TCPA) Consent (OPTIONAL)</Label>
+              <p className="text-xs text-muted-foreground">
+                By checking this box, I consent to receive autodialed marketing calls and text messages from and on behalf of Genie at the phone
+                number(s) I have provided. I understand that consent is not a requirement of any purchase or enrollment. Message frequency may
+                vary. Message and data rates may apply. I may opt out at any time by texting STOP or calling (877) Genie/(888)999-9999.
+              </p>
+            </div>
+          </div>
+        </div>
+
+        {/* Final Consent Acknowledgement */}
+        <div className="p-4 bg-muted rounded-lg">
+          <h4 className="font-medium mb-2">Patient Consent and Authorization</h4>
+          <p className="text-sm text-muted-foreground">
+            By signing this form, I acknowledge that I have provided accurate and complete information and understand and agree to the terms of this
+            form. My signature certifies that I have read, understood, and agree to the release and use of my personal information, including sensitive
+            personal information, pursuant to the Authorization to Use and Disclose Personal Information and as otherwise stated on this form.
+          </p>
+        </div>
+
         {/* Patient Signature */}
         <div>
           <SignatureCapture

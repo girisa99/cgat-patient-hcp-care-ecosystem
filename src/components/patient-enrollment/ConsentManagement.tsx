@@ -352,6 +352,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
+        {/* Note: Detailed provider info is in Provider Info step. Keep consent quick. */}
         {/* Basic Provider Information */}
         <div>
           <h4 className="font-medium mb-3">Basic Provider Information</h4>
