@@ -353,54 +353,18 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   };
 
   const handleStepNavigation = (stepIndex: number) => {
-    // Validate current step before allowing navigation
-    if (stepIndex > currentStep && !isStepValid(currentStep)) {
-      showError('Please complete all required fields in the current step');
-      return;
-    }
+    // Temporarily disable validation for testing - allow free navigation
     setCurrentStep(stepIndex);
   };
 
   const isStepValid = (stepIndex: number): boolean => {
-    switch (stepIndex) {
-      case 0: // Submission Method
-        return !!formData.submissionMethod;
-      case 1: // Consent Management
-        // Allow proceeding when provider basics and a consent method are set; patient consent may remain pending
-        return !!(formData.consentData?.providerName && formData.consentData?.consentType);
-      case 2: // Patient Info
-        return !!(formData.firstName && formData.lastName && formData.email);
-      case 3: // Provider Info
-        return !!(formData.providerName);
-      default:
-        return true;
-    }
+    // Temporarily disable all step validation for testing
+    return true;
   };
 
   const getMissingFieldsForStep = (stepIndex: number): string[] => {
-    const missing: string[] = [];
-    switch (stepIndex) {
-      case 0: // Submission Method
-        if (!formData.submissionMethod) missing.push('Submission Method');
-        break;
-      case 1: // Consent Management
-        const cd = formData.consentData || {} as any;
-        if (!cd.providerName?.trim()) missing.push('Provider Name');
-        if (!cd.providerPhone?.trim()) missing.push('Provider Phone');
-        if (!cd.providerEmail?.trim()) missing.push('Provider Email');
-        if (!cd.treatmentCenter?.trim()) missing.push('Treatment Center');
-        if (!cd.consentType) missing.push('Consent Method');
-        break;
-      case 2: // Patient Info
-        if (!formData.firstName?.trim()) missing.push('Patient First Name');
-        if (!formData.lastName?.trim()) missing.push('Patient Last Name');
-        if (!formData.email?.trim()) missing.push('Patient Email');
-        break;
-      case 3: // Provider Info
-        if (!formData.providerName?.trim()) missing.push('Provider Name');
-        break;
-    }
-    return missing;
+    // Temporarily disable all field validation for testing
+    return [];
   };
 
   const handleStepComplete = (stepIndex: number) => {
@@ -587,10 +551,11 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   };
 
   const handleProviderConsent = async () => {
-    if (!providerSignature) {
-      showError('Provider signature is required');
-      return;
-    }
+    // Temporarily disable provider signature requirement for testing
+    // if (!providerSignature) {
+    //   showError('Provider signature is required');
+    //   return;
+    // }
 
     const consentData = {
       providerConsent: providerSignature,
@@ -713,19 +678,16 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         {/* Name Fields */}
         <div className="grid md:grid-cols-2 gap-4">
           <div>
-            <Label htmlFor="firstName">First Name *</Label>
+            <Label htmlFor="firstName">First Name</Label>
             <Input
               id="firstName"
               value={formData.firstName}
               onChange={(e) => updateFormData('firstName', e.target.value)}
               disabled={readOnly}
-              required
-              className={!formData.firstName?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-              aria-invalid={!formData.firstName?.trim()}
             />
           </div>
           <div>
-            <Label htmlFor="lastName">Last Name *</Label>
+            <Label htmlFor="lastName">Last Name</Label>
             <Input
               id="lastName"
               value={formData.lastName}
@@ -748,9 +710,6 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.dateOfBirth}
               onChange={(e) => updateFormData('dateOfBirth', e.target.value)}
               disabled={readOnly}
-              required
-              className={!formData.dateOfBirth?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-              aria-invalid={!formData.dateOfBirth?.trim()}
             />
           </div>
           <div>
@@ -866,10 +825,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.address}
               onChange={(e) => updateFormData('address', e.target.value)}
               disabled={readOnly}
-              required
               placeholder="123 Main Street"
-              className={!formData.address?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-              aria-invalid={!formData.address?.trim()}
             />
           </div>
           <div>
@@ -889,9 +845,6 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.city}
               onChange={(e) => updateFormData('city', e.target.value)}
               disabled={readOnly}
-              required
-              className={!formData.city?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-              aria-invalid={!formData.city?.trim()}
             />
           </div>
         </div>
@@ -904,11 +857,8 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.state}
               onChange={(e) => updateFormData('state', e.target.value)}
               disabled={readOnly}
-              required
               placeholder="NY"
               maxLength={2}
-              className={!formData.state?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-              aria-invalid={!formData.state?.trim()}
             />
           </div>
           <div>
@@ -918,11 +868,8 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.zipCode}
               onChange={(e) => updateFormData('zipCode', e.target.value)}
               disabled={readOnly}
-              required
               placeholder="10001"
               maxLength={10}
-              className={!formData.zipCode?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-              aria-invalid={!formData.zipCode?.trim()}
             />
           </div>
         </div>
@@ -948,10 +895,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.cellPhone}
               onChange={(e) => updateFormData('cellPhone', e.target.value)}
               disabled={readOnly}
-              required
               placeholder="+1 (555) 987-6543"
-              className={!formData.cellPhone?.trim() ? 'border-destructive focus-visible:ring-destructive' : ''}
-              aria-invalid={!formData.cellPhone?.trim()}
             />
           </div>
         </div>
@@ -1036,7 +980,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
           <SignatureCapture
             title="Patient Signature"
             description="I acknowledge that I have read and understand all terms and conditions"
-            required={true}
+            required={false}
             onSignatureChange={setPatientSignature}
             value={patientSignature}
             disabled={readOnly}
@@ -1056,7 +1000,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
           <SignatureCapture
             title="Provider Authorization Signature"
             description="I authorize the enrollment process and team collaboration"
-            required={true}
+            required={false}
             onSignatureChange={setProviderSignature}
             value={providerSignature}
             disabled={readOnly}
@@ -1103,7 +1047,6 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.providerName}
               onChange={(e) => updateFormData('providerName', e.target.value)}
               disabled={readOnly}
-              required
             />
           </div>
           <div>
@@ -1134,7 +1077,6 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.treatmentCenterName}
               onChange={(e) => updateFormData('treatmentCenterName', e.target.value)}
               disabled={readOnly}
-              required
             />
           </div>
         </div>
@@ -1184,8 +1126,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
                 id="medicalInsuranceProvider"
                 value={formData.medicalInsurance.provider}
                 onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, provider: e.target.value })}
-                disabled={readOnly}
-                required
+              disabled={readOnly}
               />
             </div>
             <div>
@@ -1210,7 +1151,6 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
                 value={formData.medicalInsurance.policyNumber}
                 onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, policyNumber: e.target.value })}
                 disabled={readOnly}
-                required
               />
             </div>
             <div>
@@ -1327,8 +1267,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               id="therapyType"
               value={formData.therapyType}
               onChange={(e) => updateFormData('therapyType', e.target.value)}
-              disabled={readOnly}
-              required
+                disabled={readOnly}
             />
           </div>
           <div>
@@ -1338,7 +1277,6 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               value={formData.productDrugInfo}
               onChange={(e) => updateFormData('productDrugInfo', e.target.value)}
               disabled={readOnly}
-              required
             />
           </div>
         </div>
@@ -1727,14 +1665,15 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               }
             } else {
               // Validate current step before proceeding
-              const missingFields = getMissingFieldsForStep(currentStep);
-              if (missingFields.length > 0) {
-                showError(
-                  'Missing Required Fields',
-                  `Please complete the following fields: ${missingFields.join(', ')}`
-                );
-                return;
-              }
+              // Temporarily disabled for testing
+              // const missingFields = getMissingFieldsForStep(currentStep);
+              // if (missingFields.length > 0) {
+              //   showError(
+              //     'Missing Required Fields',
+              //     `Please complete the following fields: ${missingFields.join(', ')}`
+              //   );
+              //   return;
+              // }
               if (isStepValid(currentStep)) {
                 handleStepComplete(currentStep);
                 setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));

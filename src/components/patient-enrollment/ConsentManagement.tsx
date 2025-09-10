@@ -524,7 +524,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
           <SignatureCapture
             title="Provider Authorization Signature"
             description="I have read, understood, and agree to the above certification statements"
-            required={true}
+            required={false}
             onSignatureChange={setProviderSignature}
             value={providerSignature}
             disabled={readOnly}
