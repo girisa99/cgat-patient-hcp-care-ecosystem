@@ -4334,115 +4334,178 @@ export type Database = {
       }
       enrollment_instances: {
         Row: {
+          actual_start_date: string | null
           assigned_to: string | null
-          collaboration_data: Json | null
           collaborators_assigned: string[] | null
+          communication_frequency: string | null
           completed_at: string | null
-          consent_data: Json | null
           consent_date: string | null
           consent_method: string | null
           consent_obtained: boolean | null
           created_at: string
           current_step: string | null
           current_step_assignee: string | null
-          enrollment_data: Json
+          current_step_number: number | null
+          enrollment_priority: string | null
+          enrollment_source: string | null
           enrollment_type: string | null
           estimated_completion_date: string | null
           estimated_completion_hours: number | null
+          estimated_start_date: string | null
           facility_id: string | null
+          financial_consent_date: string | null
+          financial_consent_signed: boolean | null
+          hipaa_consent_date: string | null
+          hipaa_consent_signed: boolean | null
           id: string
+          last_action_by: string | null
+          last_action_date: string | null
           module_type: string
           patient_id: string | null
           patient_signature_captured: boolean | null
+          primary_coordinator_email: string | null
+          primary_coordinator_name: string | null
           priority_level: string | null
           priority_reason: string | null
           progress: number
           provider_id: string | null
           provider_signature_captured: boolean | null
+          referral_physician: string | null
           referral_urgency: string | null
+          research_consent_date: string | null
+          research_consent_signed: boolean | null
+          secondary_coordinator_email: string | null
+          secondary_coordinator_name: string | null
           status: string
           submission_method: string
           submission_method_selected: string | null
           submitted_at: string | null
           submitted_by: string | null
+          team_members: string[] | null
           template_id: string
+          total_steps: number | null
+          treatment_consent_date: string | null
+          treatment_consent_signed: boolean | null
           updated_at: string
-          workflow_metadata: Json | null
+          workflow_notes: string | null
           workflow_step_completed: string[] | null
+          workflow_version: string | null
         }
         Insert: {
+          actual_start_date?: string | null
           assigned_to?: string | null
-          collaboration_data?: Json | null
           collaborators_assigned?: string[] | null
+          communication_frequency?: string | null
           completed_at?: string | null
-          consent_data?: Json | null
           consent_date?: string | null
           consent_method?: string | null
           consent_obtained?: boolean | null
           created_at?: string
           current_step?: string | null
           current_step_assignee?: string | null
-          enrollment_data?: Json
+          current_step_number?: number | null
+          enrollment_priority?: string | null
+          enrollment_source?: string | null
           enrollment_type?: string | null
           estimated_completion_date?: string | null
           estimated_completion_hours?: number | null
+          estimated_start_date?: string | null
           facility_id?: string | null
+          financial_consent_date?: string | null
+          financial_consent_signed?: boolean | null
+          hipaa_consent_date?: string | null
+          hipaa_consent_signed?: boolean | null
           id?: string
+          last_action_by?: string | null
+          last_action_date?: string | null
           module_type: string
           patient_id?: string | null
           patient_signature_captured?: boolean | null
+          primary_coordinator_email?: string | null
+          primary_coordinator_name?: string | null
           priority_level?: string | null
           priority_reason?: string | null
           progress?: number
           provider_id?: string | null
           provider_signature_captured?: boolean | null
+          referral_physician?: string | null
           referral_urgency?: string | null
+          research_consent_date?: string | null
+          research_consent_signed?: boolean | null
+          secondary_coordinator_email?: string | null
+          secondary_coordinator_name?: string | null
           status?: string
           submission_method?: string
           submission_method_selected?: string | null
           submitted_at?: string | null
           submitted_by?: string | null
+          team_members?: string[] | null
           template_id: string
+          total_steps?: number | null
+          treatment_consent_date?: string | null
+          treatment_consent_signed?: boolean | null
           updated_at?: string
-          workflow_metadata?: Json | null
+          workflow_notes?: string | null
           workflow_step_completed?: string[] | null
+          workflow_version?: string | null
         }
         Update: {
+          actual_start_date?: string | null
           assigned_to?: string | null
-          collaboration_data?: Json | null
           collaborators_assigned?: string[] | null
+          communication_frequency?: string | null
           completed_at?: string | null
-          consent_data?: Json | null
           consent_date?: string | null
           consent_method?: string | null
           consent_obtained?: boolean | null
           created_at?: string
           current_step?: string | null
           current_step_assignee?: string | null
-          enrollment_data?: Json
+          current_step_number?: number | null
+          enrollment_priority?: string | null
+          enrollment_source?: string | null
           enrollment_type?: string | null
           estimated_completion_date?: string | null
           estimated_completion_hours?: number | null
+          estimated_start_date?: string | null
           facility_id?: string | null
+          financial_consent_date?: string | null
+          financial_consent_signed?: boolean | null
+          hipaa_consent_date?: string | null
+          hipaa_consent_signed?: boolean | null
           id?: string
+          last_action_by?: string | null
+          last_action_date?: string | null
           module_type?: string
           patient_id?: string | null
           patient_signature_captured?: boolean | null
+          primary_coordinator_email?: string | null
+          primary_coordinator_name?: string | null
           priority_level?: string | null
           priority_reason?: string | null
           progress?: number
           provider_id?: string | null
           provider_signature_captured?: boolean | null
+          referral_physician?: string | null
           referral_urgency?: string | null
+          research_consent_date?: string | null
+          research_consent_signed?: boolean | null
+          secondary_coordinator_email?: string | null
+          secondary_coordinator_name?: string | null
           status?: string
           submission_method?: string
           submission_method_selected?: string | null
           submitted_at?: string | null
           submitted_by?: string | null
+          team_members?: string[] | null
           template_id?: string
+          total_steps?: number | null
+          treatment_consent_date?: string | null
+          treatment_consent_signed?: boolean | null
           updated_at?: string
-          workflow_metadata?: Json | null
+          workflow_notes?: string | null
           workflow_step_completed?: string[] | null
+          workflow_version?: string | null
         }
         Relationships: [
           {
@@ -9917,7 +9980,9 @@ export type Database = {
       treatment_center_onboarding: {
         Row: {
           ach_preference: string | null
-          api_requirements: Json | null
+          api_authentication_method: string | null
+          api_endpoint_url: string | null
+          api_key_required: boolean | null
           assigned_to: string | null
           authorized_signatory_name: string | null
           authorized_signatory_ssn: string | null
@@ -9934,6 +9999,7 @@ export type Database = {
             | null
           created_at: string
           current_step: Database["public"]["Enums"]["onboarding_step"] | null
+          data_format_preference: string | null
           date_signed: string | null
           dba_name: string | null
           dea_number: string | null
@@ -9941,19 +10007,23 @@ export type Database = {
           estimated_monthly_purchases: number | null
           federal_tax_id: string | null
           financial_statements_uploaded: boolean | null
+          friday_close: string | null
+          friday_open: string | null
           gpo_memberships: string[] | null
           guarantor_date: string | null
           guarantor_name: string | null
           guarantor_ssn: string | null
           hin_number: string | null
+          holiday_schedule_notes: string | null
           id: string
           initial_order_amount: number | null
           is_340b_entity: boolean | null
           legal_name: string | null
           medical_license: string | null
           medical_license_copy_uploaded: boolean | null
+          monday_close: string | null
+          monday_open: string | null
           number_of_employees: number | null
-          operational_hours: Json | null
           ownership_type: Database["public"]["Enums"]["ownership_type"] | null
           payment_terms_preference: string | null
           payment_terms_requested: string | null
@@ -9961,6 +10031,8 @@ export type Database = {
           resale_tax_exemption: string | null
           resale_tax_exemption_cert_uploaded: boolean | null
           same_as_legal_address: boolean | null
+          saturday_close: string | null
+          saturday_open: string | null
           selected_distributors:
             | Database["public"]["Enums"]["distributor_type"][]
             | null
@@ -9970,17 +10042,29 @@ export type Database = {
           statement_delivery_preference: string | null
           status: Database["public"]["Enums"]["onboarding_status"]
           submitted_at: string | null
+          sunday_close: string | null
+          sunday_open: string | null
           supplier_statements_uploaded: boolean | null
           terms_accepted: boolean | null
+          thursday_close: string | null
+          thursday_open: string | null
+          timezone: string | null
+          tuesday_close: string | null
+          tuesday_open: string | null
           updated_at: string
           user_id: string
           voided_check_uploaded: boolean | null
+          webhook_url: string | null
           website: string | null
+          wednesday_close: string | null
+          wednesday_open: string | null
           years_in_business: number | null
         }
         Insert: {
           ach_preference?: string | null
-          api_requirements?: Json | null
+          api_authentication_method?: string | null
+          api_endpoint_url?: string | null
+          api_key_required?: boolean | null
           assigned_to?: string | null
           authorized_signatory_name?: string | null
           authorized_signatory_ssn?: string | null
@@ -9997,6 +10081,7 @@ export type Database = {
             | null
           created_at?: string
           current_step?: Database["public"]["Enums"]["onboarding_step"] | null
+          data_format_preference?: string | null
           date_signed?: string | null
           dba_name?: string | null
           dea_number?: string | null
@@ -10004,19 +10089,23 @@ export type Database = {
           estimated_monthly_purchases?: number | null
           federal_tax_id?: string | null
           financial_statements_uploaded?: boolean | null
+          friday_close?: string | null
+          friday_open?: string | null
           gpo_memberships?: string[] | null
           guarantor_date?: string | null
           guarantor_name?: string | null
           guarantor_ssn?: string | null
           hin_number?: string | null
+          holiday_schedule_notes?: string | null
           id?: string
           initial_order_amount?: number | null
           is_340b_entity?: boolean | null
           legal_name?: string | null
           medical_license?: string | null
           medical_license_copy_uploaded?: boolean | null
+          monday_close?: string | null
+          monday_open?: string | null
           number_of_employees?: number | null
-          operational_hours?: Json | null
           ownership_type?: Database["public"]["Enums"]["ownership_type"] | null
           payment_terms_preference?: string | null
           payment_terms_requested?: string | null
@@ -10024,6 +10113,8 @@ export type Database = {
           resale_tax_exemption?: string | null
           resale_tax_exemption_cert_uploaded?: boolean | null
           same_as_legal_address?: boolean | null
+          saturday_close?: string | null
+          saturday_open?: string | null
           selected_distributors?:
             | Database["public"]["Enums"]["distributor_type"][]
             | null
@@ -10033,17 +10124,29 @@ export type Database = {
           statement_delivery_preference?: string | null
           status?: Database["public"]["Enums"]["onboarding_status"]
           submitted_at?: string | null
+          sunday_close?: string | null
+          sunday_open?: string | null
           supplier_statements_uploaded?: boolean | null
           terms_accepted?: boolean | null
+          thursday_close?: string | null
+          thursday_open?: string | null
+          timezone?: string | null
+          tuesday_close?: string | null
+          tuesday_open?: string | null
           updated_at?: string
           user_id: string
           voided_check_uploaded?: boolean | null
+          webhook_url?: string | null
           website?: string | null
+          wednesday_close?: string | null
+          wednesday_open?: string | null
           years_in_business?: number | null
         }
         Update: {
           ach_preference?: string | null
-          api_requirements?: Json | null
+          api_authentication_method?: string | null
+          api_endpoint_url?: string | null
+          api_key_required?: boolean | null
           assigned_to?: string | null
           authorized_signatory_name?: string | null
           authorized_signatory_ssn?: string | null
@@ -10060,6 +10163,7 @@ export type Database = {
             | null
           created_at?: string
           current_step?: Database["public"]["Enums"]["onboarding_step"] | null
+          data_format_preference?: string | null
           date_signed?: string | null
           dba_name?: string | null
           dea_number?: string | null
@@ -10067,19 +10171,23 @@ export type Database = {
           estimated_monthly_purchases?: number | null
           federal_tax_id?: string | null
           financial_statements_uploaded?: boolean | null
+          friday_close?: string | null
+          friday_open?: string | null
           gpo_memberships?: string[] | null
           guarantor_date?: string | null
           guarantor_name?: string | null
           guarantor_ssn?: string | null
           hin_number?: string | null
+          holiday_schedule_notes?: string | null
           id?: string
           initial_order_amount?: number | null
           is_340b_entity?: boolean | null
           legal_name?: string | null
           medical_license?: string | null
           medical_license_copy_uploaded?: boolean | null
+          monday_close?: string | null
+          monday_open?: string | null
           number_of_employees?: number | null
-          operational_hours?: Json | null
           ownership_type?: Database["public"]["Enums"]["ownership_type"] | null
           payment_terms_preference?: string | null
           payment_terms_requested?: string | null
@@ -10087,6 +10195,8 @@ export type Database = {
           resale_tax_exemption?: string | null
           resale_tax_exemption_cert_uploaded?: boolean | null
           same_as_legal_address?: boolean | null
+          saturday_close?: string | null
+          saturday_open?: string | null
           selected_distributors?:
             | Database["public"]["Enums"]["distributor_type"][]
             | null
@@ -10096,12 +10206,22 @@ export type Database = {
           statement_delivery_preference?: string | null
           status?: Database["public"]["Enums"]["onboarding_status"]
           submitted_at?: string | null
+          sunday_close?: string | null
+          sunday_open?: string | null
           supplier_statements_uploaded?: boolean | null
           terms_accepted?: boolean | null
+          thursday_close?: string | null
+          thursday_open?: string | null
+          timezone?: string | null
+          tuesday_close?: string | null
+          tuesday_open?: string | null
           updated_at?: string
           user_id?: string
           voided_check_uploaded?: boolean | null
+          webhook_url?: string | null
           website?: string | null
+          wednesday_close?: string | null
+          wednesday_open?: string | null
           years_in_business?: number | null
         }
         Relationships: []
