@@ -8,7 +8,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useMasterApiServices } from './useMasterApiServices';
 import { useRoles } from './useRoles';
 
-export type UserRole = 'superAdmin' | 'onboardingTeam' | 'patientCaregiver' | 'demoUser';
+export type UserRole = 'superAdmin' | 'healthcareProvider' | 'nurse' | 'caseManager' | 'onboardingTeam' | 'patientCaregiver' | 'financeTeam' | 'contractTeam' | 'workflowManager' | 'demoUser';
 
 export interface ApiAccessConfig {
   id: string;
