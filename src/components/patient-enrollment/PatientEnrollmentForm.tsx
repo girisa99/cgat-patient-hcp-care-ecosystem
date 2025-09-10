@@ -53,18 +53,65 @@ export interface PatientEnrollmentData {
   state: string;
   zipCode: string;
   
-  // Medical Information
+  // Provider Information
+  providerId?: string;
+  providerName: string;
+  providerNpi?: string;
+  providerSpecialty?: string;
+  treatmentCenterId?: string;
+  treatmentCenterName: string;
+  referralProviderId?: string;
+  referralProviderName?: string;
+  referralCenterId?: string;
+  referralCenterName?: string;
+  
+  // Insurance Information
+  medicalInsurance: {
+    provider: string;
+    policyNumber: string;
+    groupNumber: string;
+    type: 'government' | 'commercial';
+    priority: 'primary' | 'secondary' | 'tertiary';
+  };
+  pharmacyInsurance?: {
+    provider: string;
+    policyNumber: string;
+    groupNumber: string;
+    type: 'government' | 'commercial';
+    priority: 'primary' | 'secondary' | 'tertiary';
+  };
+  insuranceDocuments: File[];
+  
+  // Therapy Information
+  therapyType: string;
+  productDrugInfo: string;
+  ndcCodes: Array<{
+    code: string;
+    description: string;
+    dosage: string;
+    strength: string;
+  }>;
+  distribution: '3pl' | 'sd' | 'sp';
+  dateOfApheresis?: string;
+  patientIdInternal?: string;
+  dateOfInfusion?: string;
+  orderIdInternal?: string;
+  
+  // Clinical Information
+  icdCodes: Array<{
+    version: 9 | 10;
+    code: string;
+    description: string;
+  }>;
+  clinicalDocuments: File[];
+  
+  // Medical Information (existing)
   primaryPhysician: string;
   medicalHistory: string;
   currentMedications: string;
   allergies: string;
   
-  // Insurance Information
-  insuranceProvider: string;
-  insurancePolicyNumber: string;
-  insuranceGroupNumber: string;
-  
-  // Treatment Information
+  // Treatment Information (existing)
   treatmentType: string;
   referralSource: string;
   admissionDate?: string;
@@ -117,13 +164,30 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     city: '',
     state: '',
     zipCode: '',
+    providerName: '',
+    providerNpi: '',
+    providerSpecialty: '',
+    treatmentCenterName: '',
+    referralProviderName: '',
+    referralCenterName: '',
+    medicalInsurance: {
+      provider: '',
+      policyNumber: '',
+      groupNumber: '',
+      type: 'commercial',
+      priority: 'primary'
+    },
+    insuranceDocuments: [],
+    therapyType: '',
+    productDrugInfo: '',
+    ndcCodes: [],
+    distribution: '3pl',
+    icdCodes: [],
+    clinicalDocuments: [],
     primaryPhysician: '',
     medicalHistory: '',
     currentMedications: '',
     allergies: '',
-    insuranceProvider: '',
-    insurancePolicyNumber: '',
-    insuranceGroupNumber: '',
     treatmentType: '',
     referralSource: '',
     admissionDate: '',
@@ -142,7 +206,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [patientSignature, setPatientSignature] = useState<string | null>(null);
   const { showSuccess, showError } = useMasterToast();
 
-  const totalSteps = 6;
+  const totalSteps = 8; // Updated to include new sections
 
   useEffect(() => {
     if (initialData) {
@@ -621,6 +685,518 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     </Card>
   );
 
+  const renderProviderInfo = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <User className="h-5 w-5" />
+          Provider Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="providerName">Provider Name</Label>
+            <Input
+              id="providerName"
+              value={formData.providerName}
+              onChange={(e) => updateFormData('providerName', e.target.value)}
+              disabled={readOnly}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="providerNpi">Provider NPI</Label>
+            <Input
+              id="providerNpi"
+              value={formData.providerNpi || ''}
+              onChange={(e) => updateFormData('providerNpi', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="providerSpecialty">Provider Specialty</Label>
+            <Input
+              id="providerSpecialty"
+              value={formData.providerSpecialty || ''}
+              onChange={(e) => updateFormData('providerSpecialty', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+          <div>
+            <Label htmlFor="treatmentCenterName">Treatment Center</Label>
+            <Input
+              id="treatmentCenterName"
+              value={formData.treatmentCenterName}
+              onChange={(e) => updateFormData('treatmentCenterName', e.target.value)}
+              disabled={readOnly}
+              required
+            />
+          </div>
+        </div>
+
+        <Separator />
+        <h4 className="font-medium">Referral Information</h4>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="referralProviderName">Referral Provider Name</Label>
+            <Input
+              id="referralProviderName"
+              value={formData.referralProviderName || ''}
+              onChange={(e) => updateFormData('referralProviderName', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+          <div>
+            <Label htmlFor="referralCenterName">Referral Center</Label>
+            <Input
+              id="referralCenterName"
+              value={formData.referralCenterName || ''}
+              onChange={(e) => updateFormData('referralCenterName', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderInsuranceInfo = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <CreditCard className="h-5 w-5" />
+          Insurance Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <h4 className="font-medium mb-3">Medical Insurance</h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="medicalInsuranceProvider">Insurance Provider</Label>
+              <Input
+                id="medicalInsuranceProvider"
+                value={formData.medicalInsurance.provider}
+                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, provider: e.target.value })}
+                disabled={readOnly}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="medicalInsuranceType">Insurance Type</Label>
+              <select
+                id="medicalInsuranceType"
+                value={formData.medicalInsurance.type}
+                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, type: e.target.value as 'government' | 'commercial' })}
+                disabled={readOnly}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md"
+              >
+                <option value="commercial">Commercial</option>
+                <option value="government">Government</option>
+              </select>
+            </div>
+          </div>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="medicalPolicyNumber">Policy Number</Label>
+              <Input
+                id="medicalPolicyNumber"
+                value={formData.medicalInsurance.policyNumber}
+                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, policyNumber: e.target.value })}
+                disabled={readOnly}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="medicalGroupNumber">Group Number</Label>
+              <Input
+                id="medicalGroupNumber"
+                value={formData.medicalInsurance.groupNumber}
+                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, groupNumber: e.target.value })}
+                disabled={readOnly}
+              />
+            </div>
+            <div>
+              <Label htmlFor="medicalPriority">Priority</Label>
+              <select
+                id="medicalPriority"
+                value={formData.medicalInsurance.priority}
+                onChange={(e) => updateFormData('medicalInsurance', { ...formData.medicalInsurance, priority: e.target.value as 'primary' | 'secondary' | 'tertiary' })}
+                disabled={readOnly}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md"
+              >
+                <option value="primary">Primary</option>
+                <option value="secondary">Secondary</option>
+                <option value="tertiary">Tertiary</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        <div>
+          <h4 className="font-medium mb-3">Pharmacy Insurance (Optional)</h4>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="pharmacyInsuranceProvider">Insurance Provider</Label>
+              <Input
+                id="pharmacyInsuranceProvider"
+                value={formData.pharmacyInsurance?.provider || ''}
+                onChange={(e) => updateFormData('pharmacyInsurance', { 
+                  ...formData.pharmacyInsurance, 
+                  provider: e.target.value,
+                  policyNumber: formData.pharmacyInsurance?.policyNumber || '',
+                  groupNumber: formData.pharmacyInsurance?.groupNumber || '',
+                  type: formData.pharmacyInsurance?.type || 'commercial',
+                  priority: formData.pharmacyInsurance?.priority || 'primary'
+                })}
+                disabled={readOnly}
+              />
+            </div>
+            <div>
+              <Label htmlFor="pharmacyInsuranceType">Insurance Type</Label>
+              <select
+                id="pharmacyInsuranceType"
+                value={formData.pharmacyInsurance?.type || 'commercial'}
+                onChange={(e) => updateFormData('pharmacyInsurance', { 
+                  ...formData.pharmacyInsurance, 
+                  type: e.target.value as 'government' | 'commercial',
+                  provider: formData.pharmacyInsurance?.provider || '',
+                  policyNumber: formData.pharmacyInsurance?.policyNumber || '',
+                  groupNumber: formData.pharmacyInsurance?.groupNumber || '',
+                  priority: formData.pharmacyInsurance?.priority || 'primary'
+                })}
+                disabled={readOnly}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md"
+              >
+                <option value="commercial">Commercial</option>
+                <option value="government">Government</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <Label>Insurance Documents</Label>
+          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png"
+              onChange={(e) => {
+                if (e.target.files) {
+                  updateFormData('insuranceDocuments', Array.from(e.target.files));
+                }
+              }}
+              disabled={readOnly}
+              className="hidden"
+              id="insuranceDocuments"
+            />
+            <label htmlFor="insuranceDocuments" className="cursor-pointer">
+              <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Click to upload insurance cards and documents
+              </p>
+            </label>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderTherapyInfo = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Therapy Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="therapyType">Type of Therapy</Label>
+            <Input
+              id="therapyType"
+              value={formData.therapyType}
+              onChange={(e) => updateFormData('therapyType', e.target.value)}
+              disabled={readOnly}
+              required
+            />
+          </div>
+          <div>
+            <Label htmlFor="productDrugInfo">Product/Drug Information</Label>
+            <Input
+              id="productDrugInfo"
+              value={formData.productDrugInfo}
+              onChange={(e) => updateFormData('productDrugInfo', e.target.value)}
+              disabled={readOnly}
+              required
+            />
+          </div>
+        </div>
+
+        <div>
+          <Label>NDC Codes & Dosage</Label>
+          <div className="space-y-2">
+            {formData.ndcCodes.map((ndc, index) => (
+              <div key={index} className="grid md:grid-cols-4 gap-2 p-3 border rounded">
+                <Input
+                  placeholder="NDC Code"
+                  value={ndc.code}
+                  onChange={(e) => {
+                    const updatedNdcs = [...formData.ndcCodes];
+                    updatedNdcs[index] = { ...ndc, code: e.target.value };
+                    updateFormData('ndcCodes', updatedNdcs);
+                  }}
+                  disabled={readOnly}
+                />
+                <Input
+                  placeholder="Description"
+                  value={ndc.description}
+                  onChange={(e) => {
+                    const updatedNdcs = [...formData.ndcCodes];
+                    updatedNdcs[index] = { ...ndc, description: e.target.value };
+                    updateFormData('ndcCodes', updatedNdcs);
+                  }}
+                  disabled={readOnly}
+                />
+                <Input
+                  placeholder="Dosage"
+                  value={ndc.dosage}
+                  onChange={(e) => {
+                    const updatedNdcs = [...formData.ndcCodes];
+                    updatedNdcs[index] = { ...ndc, dosage: e.target.value };
+                    updateFormData('ndcCodes', updatedNdcs);
+                  }}
+                  disabled={readOnly}
+                />
+                <Input
+                  placeholder="Strength"
+                  value={ndc.strength}
+                  onChange={(e) => {
+                    const updatedNdcs = [...formData.ndcCodes];
+                    updatedNdcs[index] = { ...ndc, strength: e.target.value };
+                    updateFormData('ndcCodes', updatedNdcs);
+                  }}
+                  disabled={readOnly}
+                />
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => updateFormData('ndcCodes', [...formData.ndcCodes, { code: '', description: '', dosage: '', strength: '' }])}
+              disabled={readOnly}
+              className="w-full"
+            >
+              Add NDC Code
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-3 gap-4">
+          <div>
+            <Label htmlFor="distribution">Distribution</Label>
+            <select
+              id="distribution"
+              value={formData.distribution}
+              onChange={(e) => updateFormData('distribution', e.target.value as '3pl' | 'sd' | 'sp')}
+              disabled={readOnly}
+              className="w-full px-3 py-2 border border-input bg-background rounded-md"
+            >
+              <option value="3pl">3PL (Third Party Logistics)</option>
+              <option value="sd">SD (Specialty Distribution)</option>
+              <option value="sp">SP (Specialty Pharmacy)</option>
+            </select>
+          </div>
+          <div>
+            <Label htmlFor="dateOfApheresis">Date of Apheresis</Label>
+            <Input
+              id="dateOfApheresis"
+              type="date"
+              value={formData.dateOfApheresis || ''}
+              onChange={(e) => updateFormData('dateOfApheresis', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+          <div>
+            <Label htmlFor="dateOfInfusion">Date of Infusion</Label>
+            <Input
+              id="dateOfInfusion"
+              type="date"
+              value={formData.dateOfInfusion || ''}
+              onChange={(e) => updateFormData('dateOfInfusion', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+        </div>
+
+        <div className="grid md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="patientIdInternal">Patient ID</Label>
+            <Input
+              id="patientIdInternal"
+              value={formData.patientIdInternal || ''}
+              onChange={(e) => updateFormData('patientIdInternal', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+          <div>
+            <Label htmlFor="orderIdInternal">Order ID</Label>
+            <Input
+              id="orderIdInternal"
+              value={formData.orderIdInternal || ''}
+              onChange={(e) => updateFormData('orderIdInternal', e.target.value)}
+              disabled={readOnly}
+            />
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  const renderClinicalInfo = () => (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <FileText className="h-5 w-5" />
+          Clinical Information
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div>
+          <Label>ICD Codes</Label>
+          <div className="space-y-2">
+            {formData.icdCodes.map((icd, index) => (
+              <div key={index} className="grid md:grid-cols-4 gap-2 p-3 border rounded">
+                <select
+                  value={icd.version}
+                  onChange={(e) => {
+                    const updatedIcds = [...formData.icdCodes];
+                    updatedIcds[index] = { ...icd, version: parseInt(e.target.value) as 9 | 10 };
+                    updateFormData('icdCodes', updatedIcds);
+                  }}
+                  disabled={readOnly}
+                  className="px-3 py-2 border border-input bg-background rounded-md"
+                >
+                  <option value={9}>ICD-9</option>
+                  <option value={10}>ICD-10</option>
+                </select>
+                <Input
+                  placeholder="ICD Code"
+                  value={icd.code}
+                  onChange={(e) => {
+                    const updatedIcds = [...formData.icdCodes];
+                    updatedIcds[index] = { ...icd, code: e.target.value };
+                    updateFormData('icdCodes', updatedIcds);
+                  }}
+                  disabled={readOnly}
+                />
+                <Input
+                  placeholder="Description"
+                  value={icd.description}
+                  onChange={(e) => {
+                    const updatedIcds = [...formData.icdCodes];
+                    updatedIcds[index] = { ...icd, description: e.target.value };
+                    updateFormData('icdCodes', updatedIcds);
+                  }}
+                  disabled={readOnly}
+                  className="col-span-2"
+                />
+              </div>
+            ))}
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => updateFormData('icdCodes', [...formData.icdCodes, { version: 10, code: '', description: '' }])}
+              disabled={readOnly}
+              className="w-full"
+            >
+              Add ICD Code
+            </Button>
+          </div>
+        </div>
+
+        <div>
+          <Label>Clinical Documents</Label>
+          <div className="border-2 border-dashed border-muted-foreground/25 rounded-lg p-6 text-center">
+            <input
+              type="file"
+              multiple
+              accept=".pdf,.jpg,.jpeg,.png,.doc,.docx"
+              onChange={(e) => {
+                if (e.target.files) {
+                  updateFormData('clinicalDocuments', Array.from(e.target.files));
+                }
+              }}
+              disabled={readOnly}
+              className="hidden"
+              id="clinicalDocuments"
+            />
+            <label htmlFor="clinicalDocuments" className="cursor-pointer">
+              <FileText className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+              <p className="text-sm text-muted-foreground">
+                Click to upload clinical documents
+              </p>
+            </label>
+          </div>
+        </div>
+
+        <div>
+          <h4 className="font-medium mb-3">Medical History & Information</h4>
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="primaryPhysician">Primary Physician</Label>
+              <Input
+                id="primaryPhysician"
+                value={formData.primaryPhysician}
+                onChange={(e) => updateFormData('primaryPhysician', e.target.value)}
+                disabled={readOnly}
+              />
+            </div>
+            <div>
+              <Label htmlFor="medicalHistory">Medical History</Label>
+              <Textarea
+                id="medicalHistory"
+                value={formData.medicalHistory}
+                onChange={(e) => updateFormData('medicalHistory', e.target.value)}
+                disabled={readOnly}
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="currentMedications">Current Medications</Label>
+              <Textarea
+                id="currentMedications"
+                value={formData.currentMedications}
+                onChange={(e) => updateFormData('currentMedications', e.target.value)}
+                disabled={readOnly}
+                rows={3}
+              />
+            </div>
+            <div>
+              <Label htmlFor="allergies">Allergies</Label>
+              <Textarea
+                id="allergies"
+                value={formData.allergies}
+                onChange={(e) => updateFormData('allergies', e.target.value)}
+                disabled={readOnly}
+                rows={2}
+              />
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+
   return (
     <div className="space-y-6">
       {/* Progress Indicator */}
@@ -642,11 +1218,23 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       {/* Patient Information */}
       {currentStep === 1 && renderPatientInfo()}
 
+      {/* Provider Information */}
+      {currentStep === 2 && renderProviderInfo()}
+
+      {/* Insurance Information */}
+      {currentStep === 3 && renderInsuranceInfo()}
+
+      {/* Therapy Information */}
+      {currentStep === 4 && renderTherapyInfo()}
+
+      {/* Clinical Information */}
+      {currentStep === 5 && renderClinicalInfo()}
+
       {/* Submission Method Selection */}
-      {currentStep === 2 && renderSubmissionOptions()}
+      {currentStep === 6 && renderSubmissionOptions()}
 
       {/* Consent & Signatures */}
-      {currentStep === 3 && renderConsentSignatures()}
+      {currentStep === 7 && renderConsentSignatures()}
 
       {/* Navigation */}
       <div className="flex justify-between">
