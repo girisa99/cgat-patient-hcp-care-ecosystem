@@ -39,20 +39,20 @@ export const useRoleBasedNavigation = () => {
 
     // Define role-based access - includes demoUser for comprehensive demonstration
     const roleAccess = {
-      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
       users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
-      patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
-      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+      patients: ['superAdmin', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
       // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
       facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
       onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
-      'api-services': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for API services demo
+      'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
       'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
       reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
-      testing: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for testing suite demo
+      testing: ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need testing suite
       'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
       'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
       'governance': ['superAdmin', 'demoUser'], // Add demoUser for governance demo
@@ -61,6 +61,8 @@ export const useRoleBasedNavigation = () => {
       'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
       'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
+      'order-management': ['healthcareProvider'], // Healthcare provider specific
+      'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific
     };
 
     const filteredItems = navItems.filter(item => {
@@ -93,20 +95,20 @@ export const useRoleBasedNavigation = () => {
     
     const cleanPath = path.replace('/', '') || 'dashboard';
     const roleAccess = {
-      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+      dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
       users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
-      patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
-      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+      patients: ['superAdmin', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+      agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
       // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
       facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
       onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
-      'api-services': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for API services demo
+      'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
       'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
       reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
-      testing: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for testing suite demo
+      testing: ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need testing suite
       'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
       'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
       'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
@@ -115,6 +117,8 @@ export const useRoleBasedNavigation = () => {
       'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
       'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
+      'order-management': ['healthcareProvider'], // Healthcare provider specific
+      'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
@@ -141,20 +145,20 @@ export const useRoleBasedNavigation = () => {
       acc[role] = navItems.filter(item => {
         const path = item.url.replace('/', '') || 'dashboard';
         const roleAccess = {
-          dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+          dashboard: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
           users: ['superAdmin', 'demoUser'], // Add demoUser for demo management showcase
-          patients: ['superAdmin', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
-          agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'provider', 'patientCaregiver', 'demoUser'],
+          patients: ['superAdmin', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'], // Add demoUser for patient management demo
+          agents: ['superAdmin', 'onboardingTeam', 'caseManager', 'nurse', 'healthcareProvider', 'patientCaregiver', 'demoUser'],
           // deployment: ['superAdmin', 'onboardingTeam'], // Moved to Agents tab
           facilities: ['superAdmin', 'demoUser'], // Add demoUser for facility management demo
           onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
           modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
-          'api-services': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for API services demo
+          'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
           'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
           ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
           security: ['superAdmin'],
           reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
-          testing: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for testing suite demo
+          testing: ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need testing suite
           'role-management': ['superAdmin', 'demoUser'], // Add demoUser for role management demo
           'data-import': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for data import demo
           'active-verification': ['superAdmin', 'demoUser'], // Add demoUser for verification demo
@@ -163,6 +167,8 @@ export const useRoleBasedNavigation = () => {
           'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
           'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
           'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
+          'order-management': ['healthcareProvider'], // Healthcare provider specific
+          'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific
         };
         
         const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];
@@ -186,7 +192,8 @@ export const useRoleBasedNavigation = () => {
     // Priority order for redirection based on role
     if (userRoles.includes('superAdmin')) return '/';
     if (userRoles.includes('onboardingTeam')) return '/onboarding';
-    if (userRoles.includes('caseManager') || userRoles.includes('nurse') || userRoles.includes('provider')) return '/patients';
+    if (userRoles.includes('caseManager') || userRoles.includes('nurse')) return '/patients';
+    if (userRoles.includes('healthcareProvider')) return '/dashboard';
     if (userRoles.includes('patientCaregiver')) return '/';
     return '/';
   };

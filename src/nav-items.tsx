@@ -19,7 +19,8 @@ import {
   UserCheck,
   Zap,
   Network,
-  Workflow
+  Workflow,
+  ShoppingCart
 } from "lucide-react";
 
 export const navItems = [
@@ -27,6 +28,16 @@ export const navItems = [
     title: "Dashboard",
     url: "/",
     icon: HomeIcon,
+  },
+  {
+    title: "Order Management",
+    url: "/order-management",
+    icon: ShoppingCart,
+  },
+  {
+    title: "Patient Onboarding",
+    url: "/patient-onboarding", 
+    icon: UserCheck,
   },
   {
     title: "Patients",

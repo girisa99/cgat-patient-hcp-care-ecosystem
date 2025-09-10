@@ -54,9 +54,10 @@ export const hasAnyRole = (userRoles: string[] = [], required: string[] = []): b
 export const getDefaultRouteForRoles = (roles: string[] = []): string => {
   const r = normalizeRoles(roles);
 
-  // Priority: superAdmin > onboardingTeam > demoUser > default
+  // Priority: superAdmin > onboardingTeam > healthcareProvider > demoUser > default
   if (r.includes('superAdmin')) return '/dashboard';
   if (r.includes('onboardingTeam')) return '/onboarding';
+  if (r.includes('healthcareProvider')) return '/dashboard';
   if (r.includes('demoUser')) return '/demo-dashboard';
 
   return '/dashboard';

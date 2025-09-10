@@ -146,8 +146,24 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/testing" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
                       <Testing />
+                    </ProtectedRoute>
+                  } />
+                  
+                  {/* Healthcare Provider specific routes */}
+                  <Route path="/order-management" element={
+                    <ProtectedRoute requiredRoles={['healthcareProvider']}>
+                      <Suspense fallback={<PageLoading message="Loading order management..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/OrderManagement').then(m => ({ default: m.default }))))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/patient-onboarding" element={
+                    <ProtectedRoute requiredRoles={['healthcareProvider']}>
+                      <Suspense fallback={<PageLoading message="Loading patient onboarding..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/PatientOnboarding').then(m => ({ default: m.default }))))}
+                      </Suspense>
                     </ProtectedRoute>
                   } />
                   <Route path="/data-import" element={
@@ -186,7 +202,7 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/api-services" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
                       <ApiServices />
                     </ProtectedRoute>
                   } />
