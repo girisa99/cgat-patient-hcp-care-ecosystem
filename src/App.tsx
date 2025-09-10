@@ -318,39 +318,25 @@ const AppContent = () => {
 const App = () => {
   console.log('🚀 App component rendering...');
   
-  // Initialize stability framework on app startup (temporarily disabled for debugging)
-  useEffect(() => {
-    // initializeStabilityFramework().catch(console.error);
-  }, []);
-
-  console.log('🎯 Rendering App providers...');
-
-  console.log('🎯 Rendering App providers...');
-
   return (
-    <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
-        <MasterAuthProvider>
-          <TenantProvider>
-            <StabilityProvider>
-              <GlobalAgentGeneratorProvider>
-                <TooltipProvider>
-                  <HelmetProvider>
-                    <BrowserRouter>
-                      <Toaster />
-                      <AppLayoutWithEnrollment>
-                        <AppContent />
-                      </AppLayoutWithEnrollment>
-                      <GlobalAgentGeneratorModal />
-                    </BrowserRouter>
-                  </HelmetProvider>
-                </TooltipProvider>
-              </GlobalAgentGeneratorProvider>
-            </StabilityProvider>
-          </TenantProvider>
-        </MasterAuthProvider>
-      </QueryClientProvider>
-    </ErrorBoundary>
+    <BrowserRouter>
+      <ErrorBoundary>
+        <QueryClientProvider client={queryClient}>
+          <MasterAuthProvider>
+            <TenantProvider>
+              <TooltipProvider>
+                <HelmetProvider>
+                  <Toaster />
+                  <AppLayoutWithEnrollment>
+                    <AppContent />
+                  </AppLayoutWithEnrollment>
+                </HelmetProvider>
+              </TooltipProvider>
+            </TenantProvider>
+          </MasterAuthProvider>
+        </QueryClientProvider>
+      </ErrorBoundary>
+    </BrowserRouter>
   );
 };
 
