@@ -39,7 +39,8 @@ import Agents from '@/pages/Agents';
 import Login from '@/pages/Login';
 import { PresentationPage } from '@/pages/PresentationPage';
 import SystemIntegration from '@/pages/SystemIntegration';
-
+import OrderManagement from '@/pages/OrderManagement';
+import PatientOnboarding from '@/pages/PatientOnboarding';
 
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
@@ -154,16 +155,12 @@ const AppContent = () => {
                   {/* Healthcare Provider specific routes */}
                   <Route path="/order-management" element={
                     <ProtectedRoute requiredRoles={['healthcareProvider']}>
-                      <Suspense fallback={<PageLoading message="Loading order management..." />}>
-                        {React.createElement(React.lazy(() => import('@/pages/OrderManagement').then(m => ({ default: m.default }))))}
-                      </Suspense>
+                      <OrderManagement />
                     </ProtectedRoute>
                   } />
                   <Route path="/patient-onboarding" element={
                     <ProtectedRoute requiredRoles={['healthcareProvider']}>
-                      <Suspense fallback={<PageLoading message="Loading patient onboarding..." />}>
-                        {React.createElement(React.lazy(() => import('@/pages/PatientOnboarding').then(m => ({ default: m.default }))))}
-                      </Suspense>
+                      <PatientOnboarding />
                     </ProtectedRoute>
                   } />
                   <Route path="/data-import" element={
