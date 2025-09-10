@@ -33,24 +33,43 @@ export const useOnboardingDataPrefill = () => {
   const { data: treatmentCenters = [], isLoading: loadingTreatmentCenters } = useQuery({
     queryKey: ['prefill-treatment-centers'],
     queryFn: async () => {
+      // Try primary source: facilities (approved treatment centers)
+      const { data: facilities, error: facilitiesError } = await supabase
+        .from('facilities')
+        .select('id, name, npi_number, email')
+        .order('name', { ascending: true })
+        .limit(50);
+
+      if (!facilitiesError && facilities && facilities.length > 0) {
+        return facilities.map((f: any) => ({
+          id: f.id,
+          name: f.name || `Facility ${String(f.id).slice(0,8)}`,
+          npi: f.npi_number || '',
+          phone: '',
+          email: f.email || '',
+          address: ''
+        }));
+      }
+
+      // Fallback: treatment_center_onboarding (approved)
       const { data, error } = await supabase
         .from('treatment_center_onboarding')
-        .select('*')
+        .select('id, legal_business_name, npi_number, email')
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
-        .limit(10);
+        .limit(50);
 
       if (error) {
         console.warn('No treatment center data found:', error);
         return [];
       }
 
-      return (data || []).map(center => ({
+      return (data || []).map((center: any) => ({
         id: center.id,
-        name: `Treatment Center ${center.id.substring(0, 8)}`,
-        npi: '',
+        name: center.legal_business_name || `Treatment Center ${String(center.id).slice(0,8)}`,
+        npi: center.npi_number || '',
         phone: '',
-        email: '',
+        email: center.email || '',
         address: ''
       }));
     },

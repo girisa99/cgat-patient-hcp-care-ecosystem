@@ -306,12 +306,13 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
 
   const handleProviderInfoUpdate = (providerData: any) => {
     // Update multiple fields at once from consent management
-    setFormData(prev => ({
+  setFormData(prev => ({
       ...prev,
       providerName: providerData.providerName,
       providerNpi: providerData.providerNpi,
       providerPhone: providerData.providerPhone,
       providerEmail: providerData.providerEmail,
+      treatmentCenterId: providerData.treatmentCenterId || prev.treatmentCenterId,
       treatmentCenterName: providerData.treatmentCenterName,
       treatmentCenterNpi: providerData.treatmentCenterNpi
     }));

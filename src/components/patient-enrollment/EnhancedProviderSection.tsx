@@ -257,10 +257,10 @@ export const EnhancedProviderSection: React.FC<EnhancedProviderSectionProps> = (
                 }}
                 disabled={readOnly}
               >
-                <SelectTrigger>
+                <SelectTrigger className="bg-background">
                   <SelectValue placeholder="Select treatment center..." />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="z-50 bg-background shadow-md border">
                   {facilities.map(facility => (
                     <SelectItem key={facility.id} value={facility.id}>
                       <div className="flex flex-col">

@@ -34,6 +34,7 @@ export interface ConsentData {
   providerPhone: string;
   providerEmail: string;
   treatmentCenter: string;
+  treatmentCenterId?: string;
   treatmentCenterNpi?: string;
   patientConsentStatus: 'pending' | 'obtained' | 'declined';
   consentMethod?: string;
@@ -55,6 +56,7 @@ interface ConsentManagementProps {
     providerNpi: string;
     providerPhone: string;
     providerEmail: string;
+    treatmentCenterId?: string;
     treatmentCenterName: string;
     treatmentCenterNpi?: string;
   }) => void;
@@ -111,22 +113,24 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
     const selectedCenter = prefillData.treatmentCenters.find(c => c.id === centerId);
     if (selectedCenter) {
       handleProviderInfoChange('treatmentCenter', selectedCenter.name);
-      handleProviderInfoChange('treatmentCenterNpi', selectedCenter.npi);
+      handleProviderInfoChange('treatmentCenterNpi', selectedCenter.npi || '');
+      handleProviderInfoChange('treatmentCenterId', selectedCenter.id);
     }
   };
 
   const handleProviderInfoChange = (field: keyof ConsentData, value: any) => {
-    const updatedData = { [field]: value };
+    const updatedData = { [field]: value } as Partial<ConsentData>;
     onConsentChange(updatedData);
     
     // Auto-update provider information in the main form
-    if (['providerName', 'providerNpi', 'providerPhone', 'providerEmail', 'treatmentCenter', 'treatmentCenterNpi'].includes(field)) {
+    if (['providerName', 'providerNpi', 'providerPhone', 'providerEmail', 'treatmentCenter', 'treatmentCenterNpi', 'treatmentCenterId'].includes(field)) {
       const updatedConsentData = { ...consentData, ...updatedData };
       onProviderInfoUpdate?.({
         providerName: updatedConsentData.providerName,
         providerNpi: updatedConsentData.providerNpi,
         providerPhone: updatedConsentData.providerPhone,
         providerEmail: updatedConsentData.providerEmail,
+        treatmentCenterId: updatedConsentData.treatmentCenterId,
         treatmentCenterName: updatedConsentData.treatmentCenter,
         treatmentCenterNpi: updatedConsentData.treatmentCenterNpi
       });
@@ -361,10 +365,10 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
               onValueChange={handleProviderSelection}
               disabled={readOnly}
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Choose existing provider or add new" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-background shadow-md border">
                 {prefillData.providers.map(provider => (
                   <SelectItem key={provider.id} value={provider.id}>
                     {provider.name} {provider.email && `(${provider.email})`}
@@ -441,10 +445,10 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
               onValueChange={handleTreatmentCenterSelection}
               disabled={readOnly}
             >
-              <SelectTrigger>
+              <SelectTrigger className="bg-background">
                 <SelectValue placeholder="Choose existing treatment center or add new" />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="z-50 bg-background shadow-md border">
                 {prefillData.treatmentCenters.map(center => (
                   <SelectItem key={center.id} value={center.id}>
                     {center.name} {center.npi && `(NPI: ${center.npi})`}
