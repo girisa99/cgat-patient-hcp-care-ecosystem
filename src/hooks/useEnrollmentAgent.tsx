@@ -43,22 +43,8 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
       const instanceId = crypto.randomUUID();
       const sections = getSectionsForModule(moduleType);
 
-      // Create database record for tracking
-      const { error: dbError } = await supabase
-        .from('enrollment_sessions')
-        .insert({
-          id: instanceId,
-          module_type: moduleType,
-          status: 'active',
-          current_section: sections[0],
-          form_data: {},
-          created_at: new Date().toISOString()
-        });
-
-      if (dbError) {
-        console.error('Failed to create enrollment session:', dbError);
-        // Continue anyway, just log the error
-      }
+      // TODO: Create database record for tracking once tables are finalized
+      // For now, using local state only
 
       const newSession: EnrollmentSession = {
         instanceId,
@@ -108,18 +94,8 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
         formData: updatedFormData
       } : null);
 
-      // Update database
-      const { error: dbError } = await supabase
-        .from('enrollment_sessions')
-        .update({
-          form_data: updatedFormData,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentSession.instanceId);
-
-      if (dbError) {
-        console.error('Failed to update session data:', dbError);
-      }
+      // TODO: Update database once tables are finalized
+      // For now, using local state only
 
     } catch (err) {
       console.error('Failed to update section:', err);
@@ -143,19 +119,7 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
         currentSection: nextSection || sectionName
       } : null);
 
-      // Update database
-      const { error: dbError } = await supabase
-        .from('enrollment_sessions')
-        .update({
-          current_section: nextSection || sectionName,
-          completed_sections: updatedCompletedSections,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentSession.instanceId);
-
-      if (dbError) {
-        console.error('Failed to update session progress:', dbError);
-      }
+      // TODO: Update database progress once tables are finalized
 
       toast({
         title: "Section Completed",
@@ -186,18 +150,7 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
 
       if (error) throw error;
 
-      // Update session status
-      const { error: dbError } = await supabase
-        .from('enrollment_sessions')
-        .update({
-          status: 'completed',
-          completed_at: new Date().toISOString()
-        })
-        .eq('id', currentSession.instanceId);
-
-      if (dbError) {
-        console.error('Failed to update session status:', dbError);
-      }
+      // TODO: Update session status in database once tables are finalized
 
       toast({
         title: "PDF Generated",
@@ -223,25 +176,10 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
   }, [currentSession, toast]);
 
   const endSession = useCallback(() => {
-    if (currentSession) {
-      // Update database to mark as cancelled
-      supabase
-        .from('enrollment_sessions')
-        .update({
-          status: 'cancelled',
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', currentSession.instanceId)
-        .then(({ error }) => {
-          if (error) {
-            console.error('Failed to update session status:', error);
-          }
-        });
-    }
-
+    // TODO: Mark session as cancelled in database once tables are finalized
     setCurrentSession(null);
     setError(null);
-  }, [currentSession]);
+  }, []);
 
   return {
     currentSession,
