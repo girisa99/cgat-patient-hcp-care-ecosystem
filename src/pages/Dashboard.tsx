@@ -14,7 +14,11 @@ import {
   CheckCircle,
   Plus,
   Settings,
-  Presentation
+  Presentation,
+  ShoppingCart,
+  UserCheck,
+  Bot,
+  TestTube
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterData } from '@/hooks/useMasterData';
@@ -22,9 +26,14 @@ import { LSDashboardWidget } from '@/components/label-studio';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { normalizeRoles, hasAnyRole } from '@/utils/roles';
 
 export const Dashboard: React.FC = () => {
   const [showPresentation, setShowPresentation] = React.useState(false);
+  const { userRoles } = useMasterAuth();
+  const normalizedRoles = normalizeRoles(userRoles || []);
+  const isHealthcareProvider = hasAnyRole(normalizedRoles, ['healthcareProvider']);
   
   // Download functions
   const downloadPDF = () => {
@@ -196,6 +205,69 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
     }
   };
 
+  if (isHealthcareProvider) {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-foreground">Healthcare Provider Dashboard</h1>
+              <p className="text-muted-foreground mt-2">Provider tools and workflows</p>
+            </div>
+          </div>
+
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            <Card onClick={() => (window.location.href = '/order-management')} className="cursor-pointer hover:shadow-sm transition-shadow">
+              <CardContent className="p-6 flex items-center gap-4">
+                <ShoppingCart className="h-6 w-6" />
+                <div>
+                  <h3 className="font-semibold">Order Management</h3>
+                  <p className="text-sm text-muted-foreground">Manage prescriptions and medication orders</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card onClick={() => (window.location.href = '/patient-onboarding')} className="cursor-pointer hover:shadow-sm transition-shadow">
+              <CardContent className="p-6 flex items-center gap-4">
+                <UserCheck className="h-6 w-6" />
+                <div>
+                  <h3 className="font-semibold">Patient Onboarding</h3>
+                  <p className="text-sm text-muted-foreground">Enroll and onboard patients</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card onClick={() => (window.location.href = '/api-services')} className="cursor-pointer hover:shadow-sm transition-shadow">
+              <CardContent className="p-6 flex items-center gap-4">
+                <Activity className="h-6 w-6" />
+                <div>
+                  <h3 className="font-semibold">API Services</h3>
+                  <p className="text-sm text-muted-foreground">Integration and connectivity tools</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card onClick={() => (window.location.href = '/agents')} className="cursor-pointer hover:shadow-sm transition-shadow">
+              <CardContent className="p-6 flex items-center gap-4">
+                <Bot className="h-6 w-6" />
+                <div>
+                  <h3 className="font-semibold">Agents</h3>
+                  <p className="text-sm text-muted-foreground">AI agents for provider workflows</p>
+                </div>
+              </CardContent>
+            </Card>
+            <Card onClick={() => (window.location.href = '/testing')} className="cursor-pointer hover:shadow-sm transition-shadow">
+              <CardContent className="p-6 flex items-center gap-4">
+                <TestTube className="h-6 w-6" />
+                <div>
+                  <h3 className="font-semibold">Testing Suite</h3>
+                  <p className="text-sm text-muted-foreground">Provider-specific validation tools</p>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout>
       <div className="space-y-6">
@@ -216,7 +288,6 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
           </div>
         </div>
 
-        
         {/* Quick Stats with Real Data */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           {/* AI Presentation Card */}
