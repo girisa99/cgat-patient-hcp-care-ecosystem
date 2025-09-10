@@ -18,7 +18,8 @@ import {
   Upload,
   FolderOpen,
   Settings,
-  BarChart3
+  BarChart3,
+  MessageCircle
 } from 'lucide-react';
 import { ModuleEnrollmentForm } from './ModuleEnrollmentForm';
 import { EnrollmentDataImport } from './EnrollmentDataImport';
