@@ -56,7 +56,7 @@ export const useOnboardingDataPrefill = () => {
       // Fallback: treatment_center_onboarding (approved)
       const { data, error } = await supabase
         .from('treatment_center_onboarding')
-        .select('id, legal_business_name, npi_number, email')
+        .select('id, legal_name, npi_number, email')
         .eq('status', 'approved')
         .order('created_at', { ascending: false })
         .limit(50);
@@ -68,7 +68,7 @@ export const useOnboardingDataPrefill = () => {
 
       return (data || []).map((center: any) => ({
         id: center.id,
-        name: center.legal_business_name || `Treatment Center ${String(center.id).slice(0,8)}`,
+        name: center.legal_name || `Treatment Center ${String(center.id).slice(0,8)}`,
         npi: center.npi_number || '',
         phone: '',
         email: center.email || '',
