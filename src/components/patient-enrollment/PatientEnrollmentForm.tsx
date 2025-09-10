@@ -1239,9 +1239,6 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       </CardContent>
     </Card>
   );
-      </CardContent>
-    </Card>
-  );
 
   return (
     <div className="space-y-6">
@@ -1315,9 +1312,6 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
           )}
         </div>
       </div>
-    </div>
-  );
-};
     </div>
   );
 };
