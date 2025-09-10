@@ -49,19 +49,9 @@ export const EnrollmentJourneySteps: React.FC<EnrollmentJourneyStepsProps> = ({
       icon: CreditCard
     },
     {
-      title: "Therapy",
-      description: "Treatment & medication details",
-      icon: FileText
-    },
-    {
-      title: "Clinical",
-      description: "ICD codes & documents",
+      title: "Treatment & Clinical Assessment",
+      description: "Comprehensive clinical readiness & enrollment workflow",
       icon: Activity
-    },
-    {
-      title: "Medical Review",
-      description: "Review medical information",
-      icon: Clipboard
     },
     {
       title: "Submit",
