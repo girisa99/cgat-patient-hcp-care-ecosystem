@@ -347,6 +347,32 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     }
   };
 
+  const getMissingFieldsForStep = (stepIndex: number): string[] => {
+    const missing: string[] = [];
+    switch (stepIndex) {
+      case 0: // Submission Method
+        if (!formData.submissionMethod) missing.push('Submission Method');
+        break;
+      case 1: // Consent Management
+        const cd = formData.consentData || {} as any;
+        if (!cd.providerName?.trim()) missing.push('Provider Name');
+        if (!cd.providerPhone?.trim()) missing.push('Provider Phone');
+        if (!cd.providerEmail?.trim()) missing.push('Provider Email');
+        if (!cd.treatmentCenter?.trim()) missing.push('Treatment Center');
+        if (!cd.consentType) missing.push('Consent Method');
+        break;
+      case 2: // Patient Info
+        if (!formData.firstName?.trim()) missing.push('Patient First Name');
+        if (!formData.lastName?.trim()) missing.push('Patient Last Name');
+        if (!formData.email?.trim()) missing.push('Patient Email');
+        break;
+      case 3: // Provider Info
+        if (!formData.providerName?.trim()) missing.push('Provider Name');
+        break;
+    }
+    return missing;
+  };
+
   const handleStepComplete = (stepIndex: number) => {
     const stepNames = [
       'submission_method', 'consent_management', 'patient_info', 
@@ -1445,11 +1471,17 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
               }
             } else {
               // Validate current step before proceeding
+              const missingFields = getMissingFieldsForStep(currentStep);
+              if (missingFields.length > 0) {
+                showError(
+                  'Missing Required Fields',
+                  `Please complete the following fields: ${missingFields.join(', ')}`
+                );
+                return;
+              }
               if (isStepValid(currentStep)) {
                 handleStepComplete(currentStep);
                 setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
-              } else {
-                showError('Please complete all required fields before proceeding');
               }
             }
           }}
