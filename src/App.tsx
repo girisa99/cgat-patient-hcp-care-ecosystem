@@ -87,8 +87,7 @@ const AppContent = () => {
 
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <Suspense fallback={<PageLoading message="Loading page..." />}>
+      <Suspense fallback={<PageLoading message="Loading page..." />}>
           <Routes>
               {/* Public routes */}
               <Route path="/login" element={<Login />} />
@@ -311,7 +310,7 @@ const AppContent = () => {
               )}
             </Routes>
           </Suspense>
-      </BrowserRouter>
+      
     </ErrorBoundary>
   );
 };
@@ -337,11 +336,13 @@ const App = () => {
             <GlobalAgentGeneratorProvider>
               <TooltipProvider>
                 <HelmetProvider>
-                  <Toaster />
-                  <AppLayoutWithEnrollment>
-                    <AppContent />
-                  </AppLayoutWithEnrollment>
-                  <GlobalAgentGeneratorModal />
+                  <BrowserRouter>
+                    <Toaster />
+                    <AppLayoutWithEnrollment>
+                      <AppContent />
+                    </AppLayoutWithEnrollment>
+                    <GlobalAgentGeneratorModal />
+                  </BrowserRouter>
                 </HelmetProvider>
               </TooltipProvider>
             </GlobalAgentGeneratorProvider>
