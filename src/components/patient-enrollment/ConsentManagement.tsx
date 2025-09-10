@@ -740,13 +740,41 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
         <div>
           <h4 className="font-medium mb-3">Provider Authorization</h4>
           <p className="text-sm text-muted-foreground mb-4">
-            As the healthcare provider, I authorize the initiation of patient enrollment 
-            and consent collection process using the selected method below.
+            As the healthcare provider, please review and acknowledge the following certification before signing.
           </p>
+          
+          {/* Prescriber Consent Language */}
+          <div className="bg-muted/30 border border-muted rounded-lg p-4 mb-6">
+            <h5 className="font-medium mb-3 text-primary">Prescriber Certification</h5>
+            <div className="text-xs leading-relaxed space-y-2">
+              <p className="font-medium">By submitting this form, I certify:</p>
+              <ul className="space-y-1 ml-4">
+                <li><span className="font-medium">(a)</span> The above therapy is medically necessary for this patient and the treatment decision has been made by the prescribing physician;</li>
+                
+                <li><span className="font-medium">(b)</span> If the indication for which I am prescribing a Genie product is not listed in the FDA-approved label, I am prescribing the medication for an "unapproved" use, meaning that the FDA has not approved the efficacy, dosage amount or safety of this medication for such a use;</li>
+                
+                <li><span className="font-medium">(c)</span> I received the authorization to release the information above and other protected health information (as defined by the Health Insurance Portability and Accountability Act of 1996 [HIPAA]) to Genie, Inc., Genie Access Solutions, the contracted dispensing pharmacy, or other contractors for the purpose of requesting reimbursement support, assisting in initiating or continuing therapy, as a break in treatment would negatively impact the patient's therapeutic outcome;</li>
+                
+                <li><span className="font-medium">(d)</span> My patient meets the criteria for the Genie Patient Foundation and to the best of my knowledge, this patient has no prescription insurance coverage (including Medicaid, Medicare, or other public or private programs) for the Genie medicine listed above, or is unable to afford the cost-sharing requirements associated with his/her insurance coverage for this medication. If the patient is enrolled in an insurance plan, the plan does not require the patient's application to the Genie Patient Foundation and/or has not changed or hidden the patient's coverage for the Genie medicine to make them appear to be underinsured and eligible for the Genie Patient Foundation;</li>
+                
+                <li><span className="font-medium">(e)</span> The services I am requesting on behalf of the patient may include benefits investigation (BI), prior authorization support (PA), co-pay card and co-pay assistance foundation referral;</li>
+                
+                <li><span className="font-medium">(f)</span> No action on these services will be taken until the patient consent document has been received;</li>
+                
+                <li><span className="font-medium">(g)</span> I must comply with all state-specific prescription requirements, such as e-prescribing, state-specific prescription form, fax language, etc; I understand that noncompliance with state-specific requirements could result in outreach to me;</li>
+                
+                <li><span className="font-medium">(h)</span> My patient meets the criteria for Genie Patient Foundation (GPF);</li>
+                
+                <li><span className="font-medium">(i)</span> I understand that Genie reserves the right to modify or discontinue the program at any time and to verify the accuracy of information submitted;</li>
+                
+                <li><span className="font-medium">(j)</span> I understand that the GPF does not provide free drug in the instance of an administrative error or a coverage restriction, such as a step edit. For certain products where the step edit may not be medically appropriate, as confirmed by the prescribing physician, the GPF may consider support following 1 level of appeal.</li>
+              </ul>
+            </div>
+          </div>
           
           <SignatureCapture
             title="Provider Authorization Signature"
-            description="I authorize the patient consent collection process"
+            description="I have read, understood, and agree to the above certification statements"
             required={true}
             onSignatureChange={setProviderSignature}
             value={providerSignature}
