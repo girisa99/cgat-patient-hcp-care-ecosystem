@@ -7551,6 +7551,7 @@ export type Database = {
       }
       onboarding_therapy_selections: {
         Row: {
+          clean_room_required: boolean | null
           clinical_trial_id: string | null
           commercial_product_id: string | null
           created_at: string | null
@@ -7558,30 +7559,35 @@ export type Database = {
           date_of_infusion: string | null
           distribution_method: string | null
           enrollment_instance_id: string | null
+          go_live_target_date: string | null
           icd_codes: Json | null
           id: string
-          infrastructure_requirements: Json | null
+          isolation_room_required: boolean | null
           ndc_codes: Json | null
           onboarding_id: string | null
           order_id_internal: string | null
           patient_id: string | null
           patient_id_internal: string | null
+          patient_registry_participation: boolean | null
           patient_volume_estimate: number | null
+          planning_phase_weeks: number | null
           preferred_start_date: string | null
           priority_level: string | null
           product_id: string | null
           provider_id: string | null
+          regulatory_submissions_needed: string[] | null
+          required_certifications: string[] | null
           selected_provider_id: string | null
           selection_rationale: string | null
           service_id: string | null
-          special_requirements: Json | null
-          staff_training_needs: Json | null
+          specialized_equipment: string[] | null
           therapy_id: string | null
-          timeline_considerations: Json | null
+          training_hours_required: number | null
           treatment_readiness_level: string | null
           updated_at: string | null
         }
         Insert: {
+          clean_room_required?: boolean | null
           clinical_trial_id?: string | null
           commercial_product_id?: string | null
           created_at?: string | null
@@ -7589,30 +7595,35 @@ export type Database = {
           date_of_infusion?: string | null
           distribution_method?: string | null
           enrollment_instance_id?: string | null
+          go_live_target_date?: string | null
           icd_codes?: Json | null
           id?: string
-          infrastructure_requirements?: Json | null
+          isolation_room_required?: boolean | null
           ndc_codes?: Json | null
           onboarding_id?: string | null
           order_id_internal?: string | null
           patient_id?: string | null
           patient_id_internal?: string | null
+          patient_registry_participation?: boolean | null
           patient_volume_estimate?: number | null
+          planning_phase_weeks?: number | null
           preferred_start_date?: string | null
           priority_level?: string | null
           product_id?: string | null
           provider_id?: string | null
+          regulatory_submissions_needed?: string[] | null
+          required_certifications?: string[] | null
           selected_provider_id?: string | null
           selection_rationale?: string | null
           service_id?: string | null
-          special_requirements?: Json | null
-          staff_training_needs?: Json | null
+          specialized_equipment?: string[] | null
           therapy_id?: string | null
-          timeline_considerations?: Json | null
+          training_hours_required?: number | null
           treatment_readiness_level?: string | null
           updated_at?: string | null
         }
         Update: {
+          clean_room_required?: boolean | null
           clinical_trial_id?: string | null
           commercial_product_id?: string | null
           created_at?: string | null
@@ -7620,26 +7631,30 @@ export type Database = {
           date_of_infusion?: string | null
           distribution_method?: string | null
           enrollment_instance_id?: string | null
+          go_live_target_date?: string | null
           icd_codes?: Json | null
           id?: string
-          infrastructure_requirements?: Json | null
+          isolation_room_required?: boolean | null
           ndc_codes?: Json | null
           onboarding_id?: string | null
           order_id_internal?: string | null
           patient_id?: string | null
           patient_id_internal?: string | null
+          patient_registry_participation?: boolean | null
           patient_volume_estimate?: number | null
+          planning_phase_weeks?: number | null
           preferred_start_date?: string | null
           priority_level?: string | null
           product_id?: string | null
           provider_id?: string | null
+          regulatory_submissions_needed?: string[] | null
+          required_certifications?: string[] | null
           selected_provider_id?: string | null
           selection_rationale?: string | null
           service_id?: string | null
-          special_requirements?: Json | null
-          staff_training_needs?: Json | null
+          specialized_equipment?: string[] | null
           therapy_id?: string | null
-          timeline_considerations?: Json | null
+          training_hours_required?: number | null
           treatment_readiness_level?: string | null
           updated_at?: string | null
         }
@@ -7977,105 +7992,186 @@ export type Database = {
       }
       profiles: {
         Row: {
+          accessibility_needs: string[] | null
           address: string | null
+          address_line_1: string | null
+          address_line_2: string | null
+          alcohol_use: string | null
+          allergies: string[] | null
           apartment: string | null
           avatar_url: string | null
           cell_phone: string | null
           city: string | null
+          communication_preferences: string[] | null
+          consent_for_communication: boolean | null
+          consent_for_treatment: boolean | null
+          country: string | null
           created_at: string | null
+          current_medications: string[] | null
           date_of_birth: string | null
           department: string | null
           do_not_contact_patient: boolean | null
           email: string | null
+          emergency_contact_email: string | null
           emergency_contact_name: string | null
           emergency_contact_phone: string | null
           emergency_contact_relationship: string | null
           enrollment_progress: number | null
           enrollment_status: string | null
+          ethnicity: string | null
           facility_id: string | null
+          family_medical_history: string | null
           first_name: string | null
           gender: string | null
           has_mfa_enabled: boolean | null
+          hipaa_acknowledgment: boolean | null
           home_phone: string | null
           id: string
           is_email_verified: boolean | null
           last_login: string | null
           last_name: string | null
+          marital_status: string | null
+          medical_conditions: string[] | null
+          medical_record_number: string | null
           middle_name: string | null
+          occupation: string | null
           other_gender: string | null
           other_language: string | null
+          patient_height_feet: number | null
+          patient_height_inches: number | null
+          patient_weight_lbs: number | null
           phone: string | null
           preferred_language: string | null
+          previous_hospitalizations: string[] | null
+          primary_care_physician: string | null
+          race: string | null
+          referring_physician: string | null
+          smoking_status: string | null
+          social_history: string | null
           ssn_encrypted: string | null
           state: string | null
           updated_at: string | null
           zip_code: string | null
         }
         Insert: {
+          accessibility_needs?: string[] | null
           address?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          alcohol_use?: string | null
+          allergies?: string[] | null
           apartment?: string | null
           avatar_url?: string | null
           cell_phone?: string | null
           city?: string | null
+          communication_preferences?: string[] | null
+          consent_for_communication?: boolean | null
+          consent_for_treatment?: boolean | null
+          country?: string | null
           created_at?: string | null
+          current_medications?: string[] | null
           date_of_birth?: string | null
           department?: string | null
           do_not_contact_patient?: boolean | null
           email?: string | null
+          emergency_contact_email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
           enrollment_progress?: number | null
           enrollment_status?: string | null
+          ethnicity?: string | null
           facility_id?: string | null
+          family_medical_history?: string | null
           first_name?: string | null
           gender?: string | null
           has_mfa_enabled?: boolean | null
+          hipaa_acknowledgment?: boolean | null
           home_phone?: string | null
           id: string
           is_email_verified?: boolean | null
           last_login?: string | null
           last_name?: string | null
+          marital_status?: string | null
+          medical_conditions?: string[] | null
+          medical_record_number?: string | null
           middle_name?: string | null
+          occupation?: string | null
           other_gender?: string | null
           other_language?: string | null
+          patient_height_feet?: number | null
+          patient_height_inches?: number | null
+          patient_weight_lbs?: number | null
           phone?: string | null
           preferred_language?: string | null
+          previous_hospitalizations?: string[] | null
+          primary_care_physician?: string | null
+          race?: string | null
+          referring_physician?: string | null
+          smoking_status?: string | null
+          social_history?: string | null
           ssn_encrypted?: string | null
           state?: string | null
           updated_at?: string | null
           zip_code?: string | null
         }
         Update: {
+          accessibility_needs?: string[] | null
           address?: string | null
+          address_line_1?: string | null
+          address_line_2?: string | null
+          alcohol_use?: string | null
+          allergies?: string[] | null
           apartment?: string | null
           avatar_url?: string | null
           cell_phone?: string | null
           city?: string | null
+          communication_preferences?: string[] | null
+          consent_for_communication?: boolean | null
+          consent_for_treatment?: boolean | null
+          country?: string | null
           created_at?: string | null
+          current_medications?: string[] | null
           date_of_birth?: string | null
           department?: string | null
           do_not_contact_patient?: boolean | null
           email?: string | null
+          emergency_contact_email?: string | null
           emergency_contact_name?: string | null
           emergency_contact_phone?: string | null
           emergency_contact_relationship?: string | null
           enrollment_progress?: number | null
           enrollment_status?: string | null
+          ethnicity?: string | null
           facility_id?: string | null
+          family_medical_history?: string | null
           first_name?: string | null
           gender?: string | null
           has_mfa_enabled?: boolean | null
+          hipaa_acknowledgment?: boolean | null
           home_phone?: string | null
           id?: string
           is_email_verified?: boolean | null
           last_login?: string | null
           last_name?: string | null
+          marital_status?: string | null
+          medical_conditions?: string[] | null
+          medical_record_number?: string | null
           middle_name?: string | null
+          occupation?: string | null
           other_gender?: string | null
           other_language?: string | null
+          patient_height_feet?: number | null
+          patient_height_inches?: number | null
+          patient_weight_lbs?: number | null
           phone?: string | null
           preferred_language?: string | null
+          previous_hospitalizations?: string[] | null
+          primary_care_physician?: string | null
+          race?: string | null
+          referring_physician?: string | null
+          smoking_status?: string | null
+          social_history?: string | null
           ssn_encrypted?: string | null
           state?: string | null
           updated_at?: string | null
