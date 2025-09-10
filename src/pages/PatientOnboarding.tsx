@@ -20,6 +20,7 @@ import {
   Mail
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
+import { PageEnrollmentIntegration } from '@/components/page-integration/PageEnrollmentIntegration';
 
 interface PatientOnboarding {
   id: string;
@@ -222,11 +223,16 @@ export default function PatientOnboarding() {
               Manage patient enrollment and onboarding processes with collaborative workflows
             </p>
           </div>
-          <Button onClick={handleNewEnrollment}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Patient Enrollment
-          </Button>
+          <div className="flex gap-3">
+            <Button onClick={handleNewEnrollment}>
+              <Plus className="mr-2 h-4 w-4" />
+              New Patient Enrollment
+            </Button>
+          </div>
         </div>
+
+        {/* AI Enrollment Integration */}
+        <PageEnrollmentIntegration variant="banner" />
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">

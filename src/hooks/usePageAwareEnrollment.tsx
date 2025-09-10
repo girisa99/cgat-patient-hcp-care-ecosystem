@@ -18,72 +18,79 @@ interface PageEnrollmentConfig {
 export const usePageAwareEnrollment = () => {
   const location = useLocation();
   
-  // Route to module mapping
+  // Route to module mapping - specific to each page type
   const pageModuleMap: Record<string, PageEnrollmentConfig> = {
+    // Patient-specific pages - only show patient enrollment
+    '/patient-onboarding': {
+      moduleType: 'patient',
+      title: 'AI Patient Enrollment',
+      description: 'Complete patient enrollment with AI assistance',
+      showFloating: false, // Integrate into page, don't float
+      context: 'patient_onboarding'
+    },
     '/patients': {
       moduleType: 'patient',
       title: 'Patient Enrollment',
       description: 'Complete patient intake and medical information',
-      showFloating: true,
+      showFloating: false,
       context: 'patient_portal'
     },
-    '/patient-onboarding': {
-      moduleType: 'patient',
-      title: 'Patient Onboarding',
-      description: 'Start your patient enrollment process',
-      showFloating: true,
-      context: 'patient_onboarding'
+    
+    // Order Management - only show customer registration
+    '/order-management': {
+      moduleType: 'customer',
+      title: 'AI Customer Registration',
+      description: 'Quick customer registration to place orders',
+      showFloating: false,
+      context: 'order_management'
+    },
+    
+    // Treatment Center pages - only show treatment center enrollment
+    '/onboarding': {
+      moduleType: 'treatment_center',
+      title: 'AI Treatment Center Onboarding',
+      description: 'Complete facility onboarding with AI guidance',
+      showFloating: false,
+      context: 'treatment_center_onboarding'
     },
     '/treatment-centers': {
       moduleType: 'treatment_center',
       title: 'Treatment Center Registration',
       description: 'Register and onboard your treatment facility',
-      showFloating: true,
+      showFloating: false,
       context: 'treatment_center_portal'
     },
     '/facilities': {
       moduleType: 'treatment_center',
       title: 'Facility Onboarding',
       description: 'Complete facility registration and compliance',
-      showFloating: true,
+      showFloating: false,
       context: 'facility_management'
     },
-    '/order-management': {
-      moduleType: 'customer',
-      title: 'Customer Registration',
-      description: 'Register as a customer to place orders',
-      showFloating: true,
-      context: 'order_management'
-    },
-    '/onboarding': {
-      moduleType: 'treatment_center',
-      title: 'General Onboarding',
-      description: 'Complete your onboarding process',
-      showFloating: true,
-      context: 'general_onboarding'
-    },
-    // Manufacturing/vendor pages
+    
+    // Manufacturing/vendor pages - only show manufacturer enrollment
     '/system-integration': {
       moduleType: 'manufacturer',
-      title: 'Vendor Registration',
-      description: 'Register as a system integration partner',
-      showFloating: true,
+      title: 'AI Vendor Registration',
+      description: 'Register as a vendor with AI assistance',
+      showFloating: false,
       context: 'vendor_onboarding'
     },
-    // Dashboard pages - show all options
+    
+    // Dashboard pages - show contextual options
     '/dashboard': {
       moduleType: 'patient',
       title: 'Quick Enrollment',
-      description: 'Access all enrollment options',
-      showFloating: false,
+      description: 'Access enrollment options',
+      showFloating: true,
       context: 'dashboard'
     },
-    '/demo-dashboard': {
+    '/': {
       moduleType: 'patient',
-      title: 'Demo Enrollment',
-      description: 'Try our enrollment system',
-      showFloating: false,
-      context: 'demo'
+      title: 'AI Enrollment',
+      description: 'Choose your enrollment type',
+      showFloating: true,
+      context: 'home'
     }
   };
 
