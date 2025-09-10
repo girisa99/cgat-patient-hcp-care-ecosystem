@@ -36,6 +36,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
 import { EnhancedProviderSection } from './EnhancedProviderSection';
+import { ConsentManagement, type ConsentData } from './ConsentManagement';
+import { CollaborationStatus } from './CollaborationStatus';
 
 export interface PatientEnrollmentData {
   // Patient Information
@@ -136,6 +138,16 @@ export interface PatientEnrollmentData {
   providerConsent?: string;
   providerConsentDate?: string;
   providerConsentBy?: string;
+  
+  // Consent Management
+  consentData?: ConsentData;
+  
+  // Collaboration Status
+  collaborationStatus?: {
+    currentStage: string;
+    pendingWith: string[];
+    completedStages: string[];
+  };
 }
 
 interface PatientEnrollmentFormProps {
@@ -201,6 +213,17 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     financialResponsibility: false,
     submissionMethod: 'online',
     collaborators: [],
+    consentData: {
+      consentType: 'facility_present',
+      providerName: '',
+      treatmentCenter: '',
+      patientConsentStatus: 'pending'
+    },
+    collaborationStatus: {
+      currentStage: 'submission_method',
+      pendingWith: [],
+      completedStages: []
+    },
     ...initialData
   });
 
@@ -212,7 +235,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const { showSuccess, showError } = useMasterToast();
 
-  const totalSteps = 8;
+  const totalSteps = 9;
 
   useEffect(() => {
     if (initialData) {
@@ -226,6 +249,11 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
 
   const handleSubmissionMethodChange = (method: SubmissionMethod) => {
     updateFormData('submissionMethod', method);
+    updateFormData('collaborationStatus', {
+      ...formData.collaborationStatus!,
+      currentStage: 'consent_management',
+      completedStages: ['submission_method']
+    });
     
     // Initialize collaborators based on method
     if (method !== 'online') {
@@ -1242,6 +1270,14 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
 
   return (
     <div className="space-y-6">
+      {/* Collaboration Status */}
+      {formData.collaborationStatus && (
+        <CollaborationStatus
+          collaborationStatus={formData.collaborationStatus}
+          totalSteps={totalSteps}
+        />
+      )}
+
       {/* Journey Steps Navigation */}
       <EnrollmentJourneySteps
         currentStep={currentStep}
@@ -1249,11 +1285,23 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         completedSteps={completedSteps}
       />
 
-      {/* Patient Information */}
-      {currentStep === 0 && renderPatientInfo()}
+      {/* Step 0: Submission Method Selection */}
+      {currentStep === 0 && renderSubmissionOptions()}
 
-      {/* Provider Information */}
-      {currentStep === 1 && (
+      {/* Step 1: Consent Management */}
+      {currentStep === 1 && formData.consentData && (
+        <ConsentManagement
+          consentData={formData.consentData}
+          onConsentChange={(data) => updateFormData('consentData', { ...formData.consentData!, ...data })}
+          readOnly={readOnly}
+        />
+      )}
+
+      {/* Step 2: Patient Information */}
+      {currentStep === 2 && renderPatientInfo()}
+
+      {/* Step 3: Provider Information */}
+      {currentStep === 3 && (
         <EnhancedProviderSection
           formData={formData}
           updateFormData={updateFormData}
@@ -1261,23 +1309,20 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         />
       )}
 
-      {/* Insurance Information */}
-      {currentStep === 2 && renderInsuranceInfo()}
+      {/* Step 4: Insurance Information */}
+      {currentStep === 4 && renderInsuranceInfo()}
 
-      {/* Therapy Information */}
-      {currentStep === 3 && renderTherapyInfo()}
+      {/* Step 5: Therapy Information */}
+      {currentStep === 5 && renderTherapyInfo()}
 
-      {/* Clinical Information */}
-      {currentStep === 4 && renderClinicalInfo()}
+      {/* Step 6: Clinical Information */}
+      {currentStep === 6 && renderClinicalInfo()}
 
-      {/* Medical History (existing) */}
-      {currentStep === 5 && renderMedicalInfo()}
+      {/* Step 7: Medical Review */}
+      {currentStep === 7 && renderMedicalInfo()}
 
-      {/* Consent & Signatures */}
-      {currentStep === 6 && renderConsentSignatures()}
-
-      {/* Submission Method Selection */}
-      {currentStep === 7 && renderSubmissionOptions()}
+      {/* Step 8: Final Review & Submit */}
+      {currentStep === 8 && renderConsentSignatures()}
 
       {/* Navigation */}
       <div className="flex justify-between">
@@ -1288,29 +1333,36 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         >
           Previous
         </Button>
-        
-        <div className="space-x-2">
-          {currentStep < totalSteps - 1 ? (
-            <Button 
-              onClick={() => {
-                // Mark current step as completed
-                if (!completedSteps.includes(currentStep)) {
-                  setCompletedSteps(prev => [...prev, currentStep]);
-                }
-                setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
-              }}
-            >
-              Next
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleOnlineSubmission}
-              disabled={loading || !patientSignature || !formData.providerConsentDate}
-            >
-              {loading ? 'Submitting...' : 'Complete Enrollment'}
-            </Button>
-          )}
-        </div>
+        <Button 
+          onClick={() => {
+            if (currentStep === totalSteps - 1) {
+              // Handle final submission based on selected method
+              switch (formData.submissionMethod) {
+                case 'fax':
+                  handleFaxSubmission();
+                  break;
+                case 'pdf_submit':
+                  handlePDFSubmission();
+                  break;
+                case 'online':
+                  handleOnlineSubmission();
+                  break;
+              }
+            } else {
+              setCurrentStep(prev => Math.min(totalSteps - 1, prev + 1));
+              // Mark current step as completed
+              if (!completedSteps.includes(currentStep)) {
+                setCompletedSteps(prev => [...prev, currentStep]);
+              }
+            }
+          }}
+          disabled={loading || pdfGenerating}
+        >
+          {currentStep === totalSteps - 1 
+            ? (loading || pdfGenerating ? 'Processing...' : 'Submit Enrollment') 
+            : 'Next'
+          }
+        </Button>
       </div>
     </div>
   );

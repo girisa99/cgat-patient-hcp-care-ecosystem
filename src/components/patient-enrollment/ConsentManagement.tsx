@@ -1,0 +1,361 @@
+/**
+ * CONSENT MANAGEMENT COMPONENT
+ * Handles different patient consent options and provider authorization
+ */
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Shield, 
+  CheckCircle2, 
+  AlertTriangle, 
+  Clock,
+  User,
+  Mail,
+  MessageSquare,
+  Phone,
+  Building2
+} from 'lucide-react';
+import { SignatureCapture } from '@/components/signature/SignatureCapture';
+
+export interface ConsentData {
+  consentType: 'facility_present' | 'digital_remote' | 'verbal';
+  providerName: string;
+  providerNpi?: string;
+  treatmentCenter: string;
+  patientConsentStatus: 'pending' | 'obtained' | 'declined';
+  consentMethod?: string;
+  consentDate?: string;
+  consentBy?: string;
+  verbalConsentWitness?: string;
+  digitalConsentEmail?: string;
+  digitalConsentPhone?: string;
+  providerSignature?: string;
+  providerConsentDate?: string;
+  notes?: string;
+}
+
+interface ConsentManagementProps {
+  consentData: ConsentData;
+  onConsentChange: (data: Partial<ConsentData>) => void;
+  readOnly?: boolean;
+}
+
+export const ConsentManagement: React.FC<ConsentManagementProps> = ({
+  consentData,
+  onConsentChange,
+  readOnly = false
+}) => {
+  const [providerSignature, setProviderSignature] = useState<string | null>(null);
+
+  const handleProviderInfoChange = (field: keyof ConsentData, value: any) => {
+    onConsentChange({ [field]: value });
+  };
+
+  const handleConsentTypeChange = (type: 'facility_present' | 'digital_remote' | 'verbal') => {
+    onConsentChange({ 
+      consentType: type,
+      patientConsentStatus: 'pending'
+    });
+  };
+
+  const handleProviderAuthorization = () => {
+    if (!providerSignature) return;
+    
+    onConsentChange({
+      providerSignature: providerSignature,
+      providerConsentDate: new Date().toISOString()
+    });
+  };
+
+  const renderConsentTypeSelection = () => (
+    <div className="space-y-4">
+      <h4 className="font-medium">Select Patient Consent Method</h4>
+      
+      <div className="grid gap-4">
+        {/* Facility Present Option */}
+        <Card className={`cursor-pointer border-2 transition-colors ${
+          consentData.consentType === 'facility_present' 
+            ? 'border-primary bg-primary/5' 
+            : 'border-muted hover:border-primary/50'
+        }`}
+        onClick={() => handleConsentTypeChange('facility_present')}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Building2 className="h-5 w-5 mt-1 text-primary" />
+              <div className="flex-1">
+                <h5 className="font-medium">Patient/Caregiver Present at Facility</h5>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Patient or caregiver is physically present and can sign consent immediately
+                </p>
+                {consentData.consentType === 'facility_present' && (
+                  <Badge className="mt-2" variant="default">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Selected
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Digital Remote Option */}
+        <Card className={`cursor-pointer border-2 transition-colors ${
+          consentData.consentType === 'digital_remote' 
+            ? 'border-primary bg-primary/5' 
+            : 'border-muted hover:border-primary/50'
+        }`}
+        onClick={() => handleConsentTypeChange('digital_remote')}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Mail className="h-5 w-5 mt-1 text-primary" />
+              <div className="flex-1">
+                <h5 className="font-medium">Digital Consent via SMS/Email</h5>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Send consent form to patient/caregiver via SMS or email for digital signature
+                </p>
+                {consentData.consentType === 'digital_remote' && (
+                  <Badge className="mt-2" variant="default">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Selected
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Verbal Consent Option */}
+        <Card className={`cursor-pointer border-2 transition-colors ${
+          consentData.consentType === 'verbal' 
+            ? 'border-primary bg-primary/5' 
+            : 'border-muted hover:border-primary/50'
+        }`}
+        onClick={() => handleConsentTypeChange('verbal')}>
+          <CardContent className="p-4">
+            <div className="flex items-start gap-3">
+              <Phone className="h-5 w-5 mt-1 text-primary" />
+              <div className="flex-1">
+                <h5 className="font-medium">Verbal Consent</h5>
+                <p className="text-sm text-muted-foreground mt-1">
+                  Obtain verbal consent with witness documentation
+                </p>
+                {consentData.consentType === 'verbal' && (
+                  <Badge className="mt-2" variant="default">
+                    <CheckCircle2 className="h-3 w-3 mr-1" />
+                    Selected
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+
+  const renderConsentDetails = () => {
+    if (!consentData.consentType) return null;
+
+    return (
+      <div className="space-y-4">
+        <Separator />
+        
+        {consentData.consentType === 'digital_remote' && (
+          <div>
+            <h5 className="font-medium mb-3">Digital Consent Contact Information</h5>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="digitalConsentEmail">Email Address</Label>
+                <Input
+                  id="digitalConsentEmail"
+                  type="email"
+                  value={consentData.digitalConsentEmail || ''}
+                  onChange={(e) => handleProviderInfoChange('digitalConsentEmail', e.target.value)}
+                  placeholder="patient@example.com"
+                  disabled={readOnly}
+                />
+              </div>
+              <div>
+                <Label htmlFor="digitalConsentPhone">Phone Number (for SMS)</Label>
+                <Input
+                  id="digitalConsentPhone"
+                  type="tel"
+                  value={consentData.digitalConsentPhone || ''}
+                  onChange={(e) => handleProviderInfoChange('digitalConsentPhone', e.target.value)}
+                  placeholder="+1 (555) 123-4567"
+                  disabled={readOnly}
+                />
+              </div>
+            </div>
+          </div>
+        )}
+
+        {consentData.consentType === 'verbal' && (
+          <div>
+            <h5 className="font-medium mb-3">Verbal Consent Documentation</h5>
+            <div>
+              <Label htmlFor="verbalConsentWitness">Witness Name</Label>
+              <Input
+                id="verbalConsentWitness"
+                value={consentData.verbalConsentWitness || ''}
+                onChange={(e) => handleProviderInfoChange('verbalConsentWitness', e.target.value)}
+                placeholder="Name of witness present during verbal consent"
+                disabled={readOnly}
+              />
+            </div>
+          </div>
+        )}
+
+        <div>
+          <Label htmlFor="consentNotes">Additional Notes</Label>
+          <Textarea
+            id="consentNotes"
+            value={consentData.notes || ''}
+            onChange={(e) => handleProviderInfoChange('notes', e.target.value)}
+            placeholder="Any additional notes regarding patient consent..."
+            disabled={readOnly}
+          />
+        </div>
+      </div>
+    );
+  };
+
+  const renderConsentStatus = () => {
+    const getStatusBadge = () => {
+      switch (consentData.patientConsentStatus) {
+        case 'obtained':
+          return (
+            <Badge className="bg-green-500">
+              <CheckCircle2 className="h-3 w-3 mr-1" />
+              Consent Obtained
+            </Badge>
+          );
+        case 'declined':
+          return (
+            <Badge variant="destructive">
+              <AlertTriangle className="h-3 w-3 mr-1" />
+              Consent Declined
+            </Badge>
+          );
+        default:
+          return (
+            <Badge variant="secondary">
+              <Clock className="h-3 w-3 mr-1" />
+              Pending Consent
+            </Badge>
+          );
+      }
+    };
+
+    return (
+      <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
+        <span className="font-medium">Patient Consent Status:</span>
+        {getStatusBadge()}
+      </div>
+    );
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Shield className="h-5 w-5" />
+          Consent Management
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {/* Basic Provider Information */}
+        <div>
+          <h4 className="font-medium mb-3">Provider Information</h4>
+          <div className="grid md:grid-cols-3 gap-4">
+            <div>
+              <Label htmlFor="providerName">Provider Name</Label>
+              <Input
+                id="providerName"
+                value={consentData.providerName}
+                onChange={(e) => handleProviderInfoChange('providerName', e.target.value)}
+                disabled={readOnly}
+                required
+              />
+            </div>
+            <div>
+              <Label htmlFor="providerNpi">Provider NPI</Label>
+              <Input
+                id="providerNpi"
+                value={consentData.providerNpi || ''}
+                onChange={(e) => handleProviderInfoChange('providerNpi', e.target.value)}
+                disabled={readOnly}
+              />
+            </div>
+            <div>
+              <Label htmlFor="treatmentCenter">Treatment Center</Label>
+              <Input
+                id="treatmentCenter"
+                value={consentData.treatmentCenter}
+                onChange={(e) => handleProviderInfoChange('treatmentCenter', e.target.value)}
+                disabled={readOnly}
+                required
+              />
+            </div>
+          </div>
+        </div>
+
+        <Separator />
+
+        {/* Provider Authorization */}
+        <div>
+          <h4 className="font-medium mb-3">Provider Authorization</h4>
+          <p className="text-sm text-muted-foreground mb-4">
+            As the healthcare provider, I authorize the initiation of patient enrollment 
+            and consent collection process using the selected method below.
+          </p>
+          
+          <SignatureCapture
+            title="Provider Authorization Signature"
+            description="I authorize the patient consent collection process"
+            required={true}
+            onSignatureChange={setProviderSignature}
+            value={providerSignature}
+            disabled={readOnly}
+          />
+
+          <Button 
+            onClick={handleProviderAuthorization}
+            disabled={!providerSignature || readOnly}
+            className="w-full mt-4"
+          >
+            <CheckCircle2 className="h-4 w-4 mr-2" />
+            Authorize Consent Process
+          </Button>
+
+          {consentData.providerConsentDate && (
+            <Alert className="mt-4">
+              <CheckCircle2 className="h-4 w-4" />
+              <AlertDescription>
+                Provider authorization recorded on {new Date(consentData.providerConsentDate).toLocaleString()}
+              </AlertDescription>
+            </Alert>
+          )}
+        </div>
+
+        <Separator />
+
+        {/* Patient Consent Method Selection */}
+        {consentData.providerConsentDate && renderConsentTypeSelection()}
+
+        {/* Consent Details Based on Selected Method */}
+        {renderConsentDetails()}
+
+        {/* Consent Status */}
+        {consentData.consentType && renderConsentStatus()}
+      </CardContent>
+    </Card>
+  );
+};

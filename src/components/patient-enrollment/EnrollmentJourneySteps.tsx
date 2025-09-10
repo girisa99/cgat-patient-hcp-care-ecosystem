@@ -24,6 +24,16 @@ export const EnrollmentJourneySteps: React.FC<EnrollmentJourneyStepsProps> = ({
 }) => {
   const steps = [
     {
+      title: "Submission Method",
+      description: "Choose how to complete enrollment",
+      icon: Send
+    },
+    {
+      title: "Consent Management",
+      description: "Patient consent options & provider authorization",
+      icon: Shield
+    },
+    {
       title: "Patient Info",
       description: "Basic patient details",
       icon: User
@@ -49,18 +59,13 @@ export const EnrollmentJourneySteps: React.FC<EnrollmentJourneyStepsProps> = ({
       icon: Activity
     },
     {
-      title: "Medical History",
-      description: "Existing medical information",
+      title: "Medical Review",
+      description: "Review medical information",
       icon: Clipboard
     },
     {
-      title: "Consent",
-      description: "Signatures & authorization",
-      icon: Shield
-    },
-    {
       title: "Submit",
-      description: "Review & submission options",
+      description: "Final review & submission",
       icon: Send
     }
   ];
