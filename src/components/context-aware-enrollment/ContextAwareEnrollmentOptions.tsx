@@ -3,7 +3,7 @@
  * Shows enrollment options based on current page context
  * Integrates AI agents with existing enrollment flows
  */
-import React from 'react';
+import React, { useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -18,8 +18,11 @@ import {
   Users,
   Building2,
   UserCheck,
-  Factory
+  Factory,
+  Database,
+  Settings
 } from 'lucide-react';
+import DataIntegrationPanel from './DataIntegrationPanel';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -85,6 +88,7 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
 }) => {
   const location = useLocation();
   const currentModule = getModuleFromPath(location.pathname);
+  const [showDataIntegration, setShowDataIntegration] = useState(false);
 
   // Don't show if not on a specific module page
   if (!currentModule) {
@@ -202,8 +206,16 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
 
       {/* Progress Sections Preview */}
       <Card>
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-lg">What You'll Complete</CardTitle>
+          <Button 
+            variant="outline" 
+            size="sm"
+            onClick={() => setShowDataIntegration(!showDataIntegration)}
+          >
+            <Database className="h-4 w-4 mr-2" />
+            Data Integration
+          </Button>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -216,6 +228,16 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
           </div>
         </CardContent>
       </Card>
+
+      {/* Data Integration Panel */}
+      {showDataIntegration && (
+        <DataIntegrationPanel 
+          moduleType={currentModule}
+          onDataUpdate={(result) => {
+            console.log('Data integration result:', result);
+          }}
+        />
+      )}
     </div>
   );
 };
