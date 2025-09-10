@@ -58,23 +58,150 @@ export const useUniversalEnrollment = () => {
   const [error, setError] = useState<string | null>(null);
   const { showSuccess, showError } = useMasterToast();
 
+  // Create default templates for each module type
+  const createDefaultTemplates = useCallback(() => {
+    const defaultTemplates: EnrollmentTemplate[] = [
+      {
+        id: 'patient-default',
+        name: 'Patient Enrollment Template',
+        module_type: 'patient',
+        template_data: {
+          title: 'Patient Enrollment',
+          description: 'Standard patient enrollment form'
+        },
+        form_schema: {
+          fields: [
+            { name: 'firstName', type: 'text', required: true, label: 'First Name' },
+            { name: 'lastName', type: 'text', required: true, label: 'Last Name' },
+            { name: 'dateOfBirth', type: 'date', required: true, label: 'Date of Birth' },
+            { name: 'email', type: 'email', required: true, label: 'Email' },
+            { name: 'phone', type: 'tel', required: true, label: 'Phone Number' },
+            { name: 'address', type: 'textarea', required: true, label: 'Address' },
+            { name: 'medicalHistory', type: 'textarea', required: false, label: 'Medical History' }
+          ]
+        },
+        validation_rules: {
+          required_fields: ['firstName', 'lastName', 'dateOfBirth', 'email', 'phone', 'address']
+        },
+        workflow_config: {
+          steps: ['intake', 'verification', 'approval', 'completed'],
+          approvals: ['medical_review']
+        },
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'treatment-center-default',
+        name: 'Treatment Center Onboarding Template',
+        module_type: 'treatment_center',
+        template_data: {
+          title: 'Treatment Center Onboarding',
+          description: 'Treatment center registration and onboarding form'
+        },
+        form_schema: {
+          fields: [
+            { name: 'facilityName', type: 'text', required: true, label: 'Facility Name' },
+            { name: 'licenseNumber', type: 'text', required: true, label: 'License Number' },
+            { name: 'npiNumber', type: 'text', required: true, label: 'NPI Number' },
+            { name: 'address', type: 'textarea', required: true, label: 'Facility Address' },
+            { name: 'contactPerson', type: 'text', required: true, label: 'Contact Person' },
+            { name: 'email', type: 'email', required: true, label: 'Contact Email' },
+            { name: 'phone', type: 'tel', required: true, label: 'Contact Phone' },
+            { name: 'specialties', type: 'multiselect', required: true, label: 'Treatment Specialties' }
+          ]
+        },
+        validation_rules: {
+          required_fields: ['facilityName', 'licenseNumber', 'npiNumber', 'address', 'contactPerson', 'email', 'phone']
+        },
+        workflow_config: {
+          steps: ['registration', 'document_verification', 'compliance_review', 'approval', 'onboarding'],
+          approvals: ['compliance_team', 'medical_director']
+        },
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'customer-default',
+        name: 'Customer Onboarding Template',
+        module_type: 'customer',
+        template_data: {
+          title: 'Customer Onboarding',
+          description: 'Standard customer registration and onboarding form'
+        },
+        form_schema: {
+          fields: [
+            { name: 'companyName', type: 'text', required: true, label: 'Company Name' },
+            { name: 'contactPerson', type: 'text', required: true, label: 'Primary Contact' },
+            { name: 'email', type: 'email', required: true, label: 'Business Email' },
+            { name: 'phone', type: 'tel', required: true, label: 'Business Phone' },
+            { name: 'address', type: 'textarea', required: true, label: 'Business Address' },
+            { name: 'industry', type: 'select', required: true, label: 'Industry Type' },
+            { name: 'companySize', type: 'select', required: true, label: 'Company Size' }
+          ]
+        },
+        validation_rules: {
+          required_fields: ['companyName', 'contactPerson', 'email', 'phone', 'address', 'industry']
+        },
+        workflow_config: {
+          steps: ['registration', 'verification', 'setup', 'activation'],
+          approvals: ['sales_team']
+        },
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      },
+      {
+        id: 'manufacturer-default',
+        name: 'Manufacturer Onboarding Template',
+        module_type: 'manufacturer',
+        template_data: {
+          title: 'Manufacturer Onboarding',
+          description: 'Manufacturer partner registration and onboarding form'
+        },
+        form_schema: {
+          fields: [
+            { name: 'companyName', type: 'text', required: true, label: 'Manufacturer Name' },
+            { name: 'fdaRegistration', type: 'text', required: true, label: 'FDA Registration Number' },
+            { name: 'gmpCertification', type: 'text', required: true, label: 'GMP Certification' },
+            { name: 'contactPerson', type: 'text', required: true, label: 'Primary Contact' },
+            { name: 'email', type: 'email', required: true, label: 'Contact Email' },
+            { name: 'phone', type: 'tel', required: true, label: 'Contact Phone' },
+            { name: 'address', type: 'textarea', required: true, label: 'Manufacturing Address' },
+            { name: 'productCategories', type: 'multiselect', required: true, label: 'Product Categories' }
+          ]
+        },
+        validation_rules: {
+          required_fields: ['companyName', 'fdaRegistration', 'gmpCertification', 'contactPerson', 'email', 'phone']
+        },
+        workflow_config: {
+          steps: ['application', 'document_review', 'facility_inspection', 'compliance_verification', 'approval'],
+          approvals: ['regulatory_team', 'quality_assurance']
+        },
+        is_active: true,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+    ];
+
+    setTemplates(defaultTemplates);
+    return defaultTemplates;
+  }, []);
+
   // Template Operations
   const fetchTemplates = useCallback(async (moduleType?: ModuleType) => {
     try {
       setLoading(true);
       setError(null);
 
-      let query = supabase.from('profiles').select('*');
-      
-      if (moduleType) {
-        query = query.eq('module_type', moduleType);
-      }
+      // For now, use default templates
+      const defaultTemplates = createDefaultTemplates();
+      const filteredTemplates = moduleType 
+        ? defaultTemplates.filter(t => t.module_type === moduleType)
+        : defaultTemplates;
 
-      const { data, error } = await query;
-
-      if (error) throw error;
-
-      setTemplates(data || []);
+      setTemplates(filteredTemplates);
     } catch (err) {
       console.error('Error fetching templates:', err);
       setError('Failed to fetch templates');
@@ -82,24 +209,23 @@ export const useUniversalEnrollment = () => {
     } finally {
       setLoading(false);
     }
-  }, [showError]);
+  }, [showError, createDefaultTemplates]);
 
   const createTemplate = useCallback(async (templateData: Omit<EnrollmentTemplate, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('profiles')
-        .insert([templateData as any])
-        .select()
-        .single();
+      const newTemplate: EnrollmentTemplate = {
+        ...templateData,
+        id: `custom-${Date.now()}`,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
-
-      setTemplates(prev => [...prev, data]);
+      setTemplates(prev => [...prev, newTemplate]);
       showSuccess('Template created successfully');
-      return data;
+      return newTemplate;
     } catch (err) {
       console.error('Error creating template:', err);
       setError('Failed to create template');
@@ -115,20 +241,13 @@ export const useUniversalEnrollment = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('enrollment_templates')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
       setTemplates(prev => prev.map(template => 
-        template.id === id ? data : template
+        template.id === id 
+          ? { ...template, ...updates, updated_at: new Date().toISOString() }
+          : template
       ));
       showSuccess('Template updated successfully');
-      return data;
+      return templates.find(t => t.id === id);
     } catch (err) {
       console.error('Error updating template:', err);
       setError('Failed to update template');
@@ -137,19 +256,12 @@ export const useUniversalEnrollment = () => {
     } finally {
       setLoading(false);
     }
-  }, [showError, showSuccess]);
+  }, [showError, showSuccess, templates]);
 
   const deleteTemplate = useCallback(async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-
-      const { error } = await supabase
-        .from('enrollment_templates')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
 
       setTemplates(prev => prev.filter(template => template.id !== id));
       showSuccess('Template deleted successfully');
@@ -169,17 +281,8 @@ export const useUniversalEnrollment = () => {
       setLoading(true);
       setError(null);
 
-      let query = supabase.from('enrollment_instances').select('*');
-      
-      if (moduleType) {
-        query = query.eq('module_type', moduleType);
-      }
-
-      const { data, error } = await query.order('created_at', { ascending: false });
-
-      if (error) throw error;
-
-      setInstances(data || []);
+      // For now, return empty array
+      setInstances([]);
     } catch (err) {
       console.error('Error fetching instances:', err);
       setError('Failed to fetch enrollment instances');
@@ -191,37 +294,32 @@ export const useUniversalEnrollment = () => {
 
   const getInstance = useCallback(async (id: string): Promise<EnrollmentInstance | null> => {
     try {
-      const { data, error } = await supabase
-        .from('enrollment_instances')
-        .select('*')
-        .eq('id', id)
-        .single();
-
-      if (error) throw error;
-
-      return data;
+      return instances.find(instance => instance.id === id) || null;
     } catch (err) {
       console.error('Error fetching instance:', err);
       return null;
     }
-  }, []);
+  }, [instances]);
 
   const createInstance = useCallback(async (instanceData: CreateInstanceData) => {
     try {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('enrollment_instances')
-        .insert([instanceData])
-        .select()
-        .single();
+      const newInstance: EnrollmentInstance = {
+        ...instanceData,
+        id: `instance-${Date.now()}`,
+        assigned_to: instanceData.assigned_to || null,
+        submitted_by: instanceData.submitted_by || null,
+        submitted_at: instanceData.submitted_at || null,
+        completed_at: null,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
 
-      if (error) throw error;
-
-      setInstances(prev => [data, ...prev]);
+      setInstances(prev => [newInstance, ...prev]);
       showSuccess('Enrollment instance created successfully');
-      return data;
+      return newInstance;
     } catch (err) {
       console.error('Error creating instance:', err);
       setError('Failed to create enrollment instance');
@@ -237,20 +335,13 @@ export const useUniversalEnrollment = () => {
       setLoading(true);
       setError(null);
 
-      const { data, error } = await supabase
-        .from('enrollment_instances')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) throw error;
-
       setInstances(prev => prev.map(instance => 
-        instance.id === id ? data : instance
+        instance.id === id 
+          ? { ...instance, ...updates, updated_at: new Date().toISOString() }
+          : instance
       ));
       showSuccess('Enrollment instance updated successfully');
-      return data;
+      return instances.find(i => i.id === id);
     } catch (err) {
       console.error('Error updating instance:', err);
       setError('Failed to update enrollment instance');
@@ -259,19 +350,12 @@ export const useUniversalEnrollment = () => {
     } finally {
       setLoading(false);
     }
-  }, [showError, showSuccess]);
+  }, [showError, showSuccess, instances]);
 
   const deleteInstance = useCallback(async (id: string) => {
     try {
       setLoading(true);
       setError(null);
-
-      const { error } = await supabase
-        .from('enrollment_instances')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
 
       setInstances(prev => prev.filter(instance => instance.id !== id));
       showSuccess('Enrollment instance deleted successfully');

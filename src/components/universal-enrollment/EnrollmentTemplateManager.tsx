@@ -20,7 +20,6 @@ import {
   CheckCircle2,
   AlertTriangle
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
@@ -42,12 +41,18 @@ interface EnrollmentTemplateManagerProps {
   moduleType: ModuleType;
   templates: EnrollmentTemplate[];
   onTemplateChange: () => void;
+  onTemplateCreate: (templateData: Omit<EnrollmentTemplate, 'id' | 'created_at' | 'updated_at'>) => void;
+  onTemplateUpdate: (id: string, updates: Partial<EnrollmentTemplate>) => void;
+  onTemplateDelete: (id: string) => void;
 }
 
 export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps> = ({
   moduleType,
   templates,
-  onTemplateChange
+  onTemplateChange,
+  onTemplateCreate,
+  onTemplateUpdate,
+  onTemplateDelete
 }) => {
   const [editingTemplate, setEditingTemplate] = useState<EnrollmentTemplate | null>(null);
   const [isCreating, setIsCreating] = useState(false);
@@ -121,20 +126,11 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
 
       if (editingTemplate) {
         // Update existing template
-        const { error } = await supabase
-          .from('enrollment_templates')
-          .update(templateData)
-          .eq('id', editingTemplate.id);
-
-        if (error) throw error;
+        await onTemplateUpdate(editingTemplate.id, templateData);
         showSuccess('Template updated successfully');
       } else {
         // Create new template
-        const { error } = await supabase
-          .from('enrollment_templates')
-          .insert([templateData]);
-
-        if (error) throw error;
+        await onTemplateCreate(templateData);
         showSuccess('Template created successfully');
       }
 
@@ -151,14 +147,7 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
   const handleDelete = async (templateId: string) => {
     try {
       setLoading(true);
-
-      const { error } = await supabase
-        .from('enrollment_templates')
-        .delete()
-        .eq('id', templateId);
-
-      if (error) throw error;
-
+      await onTemplateDelete(templateId);
       showSuccess('Template deleted successfully');
       onTemplateChange();
     } catch (error) {
@@ -172,14 +161,7 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
   const handleToggleActive = async (template: EnrollmentTemplate) => {
     try {
       setLoading(true);
-
-      const { error } = await supabase
-        .from('enrollment_templates')
-        .update({ is_active: !template.is_active })
-        .eq('id', template.id);
-
-      if (error) throw error;
-
+      await onTemplateUpdate(template.id, { is_active: !template.is_active });
       showSuccess(`Template ${template.is_active ? 'deactivated' : 'activated'}`);
       onTemplateChange();
     } catch (error) {
@@ -193,21 +175,18 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
   const handleDuplicate = async (template: EnrollmentTemplate) => {
     try {
       setLoading(true);
+      
+      const duplicateData = {
+        name: `${template.name} (Copy)`,
+        module_type: template.module_type,
+        template_data: template.template_data,
+        form_schema: template.form_schema,
+        validation_rules: template.validation_rules,
+        workflow_config: template.workflow_config,
+        is_active: false
+      };
 
-      const { error } = await supabase
-        .from('enrollment_templates')
-        .insert([{
-          name: `${template.name} (Copy)`,
-          module_type: template.module_type,
-          template_data: template.template_data,
-          form_schema: template.form_schema,
-          validation_rules: template.validation_rules,
-          workflow_config: template.workflow_config,
-          is_active: false
-        }]);
-
-      if (error) throw error;
-
+      await onTemplateCreate(duplicateData);
       showSuccess('Template duplicated successfully');
       onTemplateChange();
     } catch (error) {
@@ -217,6 +196,8 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
       setLoading(false);
     }
   };
+
+  const moduleTemplates = templates.filter(t => t.module_type === moduleType);
 
   return (
     <div className="space-y-6">
@@ -235,7 +216,7 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
 
       {/* Template List */}
       <div className="grid gap-4">
-        {templates.filter(t => t.module_type === moduleType).map((template) => (
+        {moduleTemplates.map((template) => (
           <Card key={template.id}>
             <CardHeader>
               <div className="flex items-center justify-between">
@@ -311,7 +292,7 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
           </Card>
         ))}
 
-        {templates.filter(t => t.module_type === moduleType).length === 0 && (
+        {moduleTemplates.length === 0 && (
           <Card>
             <CardContent className="text-center py-8">
               <FileText className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />

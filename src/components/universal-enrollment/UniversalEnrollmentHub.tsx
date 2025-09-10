@@ -358,6 +358,9 @@ export const UniversalEnrollmentHub: React.FC = () => {
             moduleType={selectedModule}
             templates={templates}
             onTemplateChange={() => fetchTemplates(selectedModule)}
+            onTemplateCreate={createTemplate}
+            onTemplateUpdate={updateTemplate}
+            onTemplateDelete={deleteTemplate}
           />
         </TabsContent>
 
