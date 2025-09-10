@@ -4238,6 +4238,258 @@ export type Database = {
           },
         ]
       }
+      enrollment_collaborations: {
+        Row: {
+          assigned_role: string
+          assigned_user: string | null
+          completed_at: string | null
+          created_at: string
+          enrollment_instance_id: string
+          id: string
+          notes: string | null
+          started_at: string | null
+          status: string
+          step_id: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_role: string
+          assigned_user?: string | null
+          completed_at?: string | null
+          created_at?: string
+          enrollment_instance_id: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          step_id: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_role?: string
+          assigned_user?: string | null
+          completed_at?: string | null
+          created_at?: string
+          enrollment_instance_id?: string
+          id?: string
+          notes?: string | null
+          started_at?: string | null
+          status?: string
+          step_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_collaborations_enrollment_instance_id_fkey"
+            columns: ["enrollment_instance_id"]
+            isOneToOne: false
+            referencedRelation: "enrollment_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_documents: {
+        Row: {
+          document_type: string
+          enrollment_instance_id: string
+          file_name: string
+          file_path: string
+          file_size: number | null
+          id: string
+          mime_type: string | null
+          uploaded_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          document_type: string
+          enrollment_instance_id: string
+          file_name: string
+          file_path: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          document_type?: string
+          enrollment_instance_id?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number | null
+          id?: string
+          mime_type?: string | null
+          uploaded_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_documents_enrollment_instance_id_fkey"
+            columns: ["enrollment_instance_id"]
+            isOneToOne: false
+            referencedRelation: "enrollment_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_instances: {
+        Row: {
+          assigned_to: string | null
+          collaboration_data: Json | null
+          completed_at: string | null
+          consent_data: Json | null
+          created_at: string
+          current_step: string | null
+          enrollment_data: Json
+          enrollment_type: string | null
+          estimated_completion_date: string | null
+          facility_id: string | null
+          id: string
+          insurance_data: Json | null
+          module_type: string
+          patient_id: string | null
+          priority_level: string | null
+          progress: number
+          provider_data: Json | null
+          provider_id: string | null
+          status: string
+          submission_method: string
+          submitted_at: string | null
+          submitted_by: string | null
+          template_id: string
+          treatment_assessment_data: Json | null
+          updated_at: string
+          workflow_metadata: Json | null
+        }
+        Insert: {
+          assigned_to?: string | null
+          collaboration_data?: Json | null
+          completed_at?: string | null
+          consent_data?: Json | null
+          created_at?: string
+          current_step?: string | null
+          enrollment_data?: Json
+          enrollment_type?: string | null
+          estimated_completion_date?: string | null
+          facility_id?: string | null
+          id?: string
+          insurance_data?: Json | null
+          module_type: string
+          patient_id?: string | null
+          priority_level?: string | null
+          progress?: number
+          provider_data?: Json | null
+          provider_id?: string | null
+          status?: string
+          submission_method?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          template_id: string
+          treatment_assessment_data?: Json | null
+          updated_at?: string
+          workflow_metadata?: Json | null
+        }
+        Update: {
+          assigned_to?: string | null
+          collaboration_data?: Json | null
+          completed_at?: string | null
+          consent_data?: Json | null
+          created_at?: string
+          current_step?: string | null
+          enrollment_data?: Json
+          enrollment_type?: string | null
+          estimated_completion_date?: string | null
+          facility_id?: string | null
+          id?: string
+          insurance_data?: Json | null
+          module_type?: string
+          patient_id?: string | null
+          priority_level?: string | null
+          progress?: number
+          provider_data?: Json | null
+          provider_id?: string | null
+          status?: string
+          submission_method?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          template_id?: string
+          treatment_assessment_data?: Json | null
+          updated_at?: string
+          workflow_metadata?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_instances_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_instances_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_instances_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_instances_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "enrollment_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_templates: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          form_schema: Json
+          id: string
+          is_active: boolean
+          module_type: string
+          name: string
+          template_data: Json
+          updated_at: string
+          validation_rules: Json
+          workflow_config: Json
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          form_schema?: Json
+          id?: string
+          is_active?: boolean
+          module_type: string
+          name: string
+          template_data?: Json
+          updated_at?: string
+          validation_rules?: Json
+          workflow_config?: Json
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          form_schema?: Json
+          id?: string
+          is_active?: boolean
+          module_type?: string
+          name?: string
+          template_data?: Json
+          updated_at?: string
+          validation_rules?: Json
+          workflow_config?: Json
+        }
+        Relationships: []
+      }
       external_api_change_logs: {
         Row: {
           affected_endpoints: string[] | null
@@ -4463,42 +4715,120 @@ export type Database = {
       }
       facilities: {
         Row: {
+          accreditation_bodies: string[] | null
+          accreditation_status: string | null
           address: string | null
+          advanced_therapy_certified: boolean | null
+          apheresis_capability: boolean | null
+          cart_center_designation: boolean | null
+          cms_certification_number: string | null
           created_at: string | null
+          dba_names: string | null
           email: string | null
+          emergency_department: boolean | null
           facility_type: Database["public"]["Enums"]["facility_type"]
+          gene_therapy_capability: boolean | null
+          icu_beds: number | null
           id: string
+          infusion_center_beds: number | null
+          insurance_contracts: string[] | null
           is_active: boolean | null
+          isolation_rooms: number | null
+          joint_commission_id: string | null
+          laboratory_services: boolean | null
           license_number: string | null
           name: string
           npi_number: string | null
+          operating_rooms: number | null
+          pathology_services: boolean | null
+          patient_volume_data: Json | null
+          pharmacy_services: boolean | null
           phone: string | null
+          quality_metrics: Json | null
+          radioligand_therapy_capability: boolean | null
+          radiology_services: boolean | null
+          referral_network_partners: string[] | null
+          service_capabilities: string[] | null
+          specialty_designations: string[] | null
+          state_license_numbers: Json | null
           updated_at: string | null
         }
         Insert: {
+          accreditation_bodies?: string[] | null
+          accreditation_status?: string | null
           address?: string | null
+          advanced_therapy_certified?: boolean | null
+          apheresis_capability?: boolean | null
+          cart_center_designation?: boolean | null
+          cms_certification_number?: string | null
           created_at?: string | null
+          dba_names?: string | null
           email?: string | null
+          emergency_department?: boolean | null
           facility_type: Database["public"]["Enums"]["facility_type"]
+          gene_therapy_capability?: boolean | null
+          icu_beds?: number | null
           id?: string
+          infusion_center_beds?: number | null
+          insurance_contracts?: string[] | null
           is_active?: boolean | null
+          isolation_rooms?: number | null
+          joint_commission_id?: string | null
+          laboratory_services?: boolean | null
           license_number?: string | null
           name: string
           npi_number?: string | null
+          operating_rooms?: number | null
+          pathology_services?: boolean | null
+          patient_volume_data?: Json | null
+          pharmacy_services?: boolean | null
           phone?: string | null
+          quality_metrics?: Json | null
+          radioligand_therapy_capability?: boolean | null
+          radiology_services?: boolean | null
+          referral_network_partners?: string[] | null
+          service_capabilities?: string[] | null
+          specialty_designations?: string[] | null
+          state_license_numbers?: Json | null
           updated_at?: string | null
         }
         Update: {
+          accreditation_bodies?: string[] | null
+          accreditation_status?: string | null
           address?: string | null
+          advanced_therapy_certified?: boolean | null
+          apheresis_capability?: boolean | null
+          cart_center_designation?: boolean | null
+          cms_certification_number?: string | null
           created_at?: string | null
+          dba_names?: string | null
           email?: string | null
+          emergency_department?: boolean | null
           facility_type?: Database["public"]["Enums"]["facility_type"]
+          gene_therapy_capability?: boolean | null
+          icu_beds?: number | null
           id?: string
+          infusion_center_beds?: number | null
+          insurance_contracts?: string[] | null
           is_active?: boolean | null
+          isolation_rooms?: number | null
+          joint_commission_id?: string | null
+          laboratory_services?: boolean | null
           license_number?: string | null
           name?: string
           npi_number?: string | null
+          operating_rooms?: number | null
+          pathology_services?: boolean | null
+          patient_volume_data?: Json | null
+          pharmacy_services?: boolean | null
           phone?: string | null
+          quality_metrics?: Json | null
+          radioligand_therapy_capability?: boolean | null
+          radiology_services?: boolean | null
+          referral_network_partners?: string[] | null
+          service_capabilities?: string[] | null
+          specialty_designations?: string[] | null
+          state_license_numbers?: Json | null
           updated_at?: string | null
         }
         Relationships: []
@@ -4633,6 +4963,135 @@ export type Database = {
             columns: ["table_schema_id"]
             isOneToOne: false
             referencedRelation: "dynamic_table_schemas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      insurance_coverages: {
+        Row: {
+          advanced_therapy_coverage: Json | null
+          bin_number: string | null
+          card_images: Json | null
+          category: string
+          claims_phone: string | null
+          company_name: string
+          coverage_details: Json | null
+          created_at: string | null
+          customer_service_hours: string | null
+          enrollment_instance_id: string | null
+          government_insurance_details: Json | null
+          group_number: string | null
+          id: string
+          is_active: boolean | null
+          member_services_phone: string | null
+          mobile_app_available: boolean | null
+          patient_id: string | null
+          pcn_number: string | null
+          pharmacy_benefits: Json | null
+          pharmacy_services_phone: string | null
+          plan_name: string | null
+          plan_type: string | null
+          policy_effective_date: string | null
+          policy_expiration_date: string | null
+          policy_holder_dob: string | null
+          policy_holder_name: string | null
+          policy_holder_ssn_encrypted: string | null
+          policy_id: string
+          policy_status: string | null
+          prior_auth_phone: string | null
+          priority: string
+          provider_services_phone: string | null
+          relationship_to_patient: string | null
+          updated_at: string | null
+          website_url: string | null
+        }
+        Insert: {
+          advanced_therapy_coverage?: Json | null
+          bin_number?: string | null
+          card_images?: Json | null
+          category: string
+          claims_phone?: string | null
+          company_name: string
+          coverage_details?: Json | null
+          created_at?: string | null
+          customer_service_hours?: string | null
+          enrollment_instance_id?: string | null
+          government_insurance_details?: Json | null
+          group_number?: string | null
+          id?: string
+          is_active?: boolean | null
+          member_services_phone?: string | null
+          mobile_app_available?: boolean | null
+          patient_id?: string | null
+          pcn_number?: string | null
+          pharmacy_benefits?: Json | null
+          pharmacy_services_phone?: string | null
+          plan_name?: string | null
+          plan_type?: string | null
+          policy_effective_date?: string | null
+          policy_expiration_date?: string | null
+          policy_holder_dob?: string | null
+          policy_holder_name?: string | null
+          policy_holder_ssn_encrypted?: string | null
+          policy_id: string
+          policy_status?: string | null
+          prior_auth_phone?: string | null
+          priority: string
+          provider_services_phone?: string | null
+          relationship_to_patient?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Update: {
+          advanced_therapy_coverage?: Json | null
+          bin_number?: string | null
+          card_images?: Json | null
+          category?: string
+          claims_phone?: string | null
+          company_name?: string
+          coverage_details?: Json | null
+          created_at?: string | null
+          customer_service_hours?: string | null
+          enrollment_instance_id?: string | null
+          government_insurance_details?: Json | null
+          group_number?: string | null
+          id?: string
+          is_active?: boolean | null
+          member_services_phone?: string | null
+          mobile_app_available?: boolean | null
+          patient_id?: string | null
+          pcn_number?: string | null
+          pharmacy_benefits?: Json | null
+          pharmacy_services_phone?: string | null
+          plan_name?: string | null
+          plan_type?: string | null
+          policy_effective_date?: string | null
+          policy_expiration_date?: string | null
+          policy_holder_dob?: string | null
+          policy_holder_name?: string | null
+          policy_holder_ssn_encrypted?: string | null
+          policy_id?: string
+          policy_status?: string | null
+          prior_auth_phone?: string | null
+          priority?: string
+          provider_services_phone?: string | null
+          relationship_to_patient?: string | null
+          updated_at?: string | null
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "insurance_coverages_enrollment_instance_id_fkey"
+            columns: ["enrollment_instance_id"]
+            isOneToOne: false
+            referencedRelation: "enrollment_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "insurance_coverages_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
         ]
@@ -6602,13 +7061,23 @@ export type Database = {
           clinical_trial_id: string | null
           commercial_product_id: string | null
           created_at: string | null
+          date_of_apheresis: string | null
+          date_of_infusion: string | null
+          distribution_method: string | null
+          enrollment_instance_id: string | null
+          icd_codes: Json | null
           id: string
           infrastructure_requirements: Json | null
+          ndc_codes: Json | null
           onboarding_id: string | null
+          order_id_internal: string | null
+          patient_id: string | null
+          patient_id_internal: string | null
           patient_volume_estimate: number | null
           preferred_start_date: string | null
           priority_level: string | null
           product_id: string | null
+          provider_id: string | null
           selected_provider_id: string | null
           selection_rationale: string | null
           service_id: string | null
@@ -6623,13 +7092,23 @@ export type Database = {
           clinical_trial_id?: string | null
           commercial_product_id?: string | null
           created_at?: string | null
+          date_of_apheresis?: string | null
+          date_of_infusion?: string | null
+          distribution_method?: string | null
+          enrollment_instance_id?: string | null
+          icd_codes?: Json | null
           id?: string
           infrastructure_requirements?: Json | null
+          ndc_codes?: Json | null
           onboarding_id?: string | null
+          order_id_internal?: string | null
+          patient_id?: string | null
+          patient_id_internal?: string | null
           patient_volume_estimate?: number | null
           preferred_start_date?: string | null
           priority_level?: string | null
           product_id?: string | null
+          provider_id?: string | null
           selected_provider_id?: string | null
           selection_rationale?: string | null
           service_id?: string | null
@@ -6644,13 +7123,23 @@ export type Database = {
           clinical_trial_id?: string | null
           commercial_product_id?: string | null
           created_at?: string | null
+          date_of_apheresis?: string | null
+          date_of_infusion?: string | null
+          distribution_method?: string | null
+          enrollment_instance_id?: string | null
+          icd_codes?: Json | null
           id?: string
           infrastructure_requirements?: Json | null
+          ndc_codes?: Json | null
           onboarding_id?: string | null
+          order_id_internal?: string | null
+          patient_id?: string | null
+          patient_id_internal?: string | null
           patient_volume_estimate?: number | null
           preferred_start_date?: string | null
           priority_level?: string | null
           product_id?: string | null
+          provider_id?: string | null
           selected_provider_id?: string | null
           selection_rationale?: string | null
           service_id?: string | null
@@ -6677,6 +7166,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "onboarding_therapy_selections_enrollment_instance_id_fkey"
+            columns: ["enrollment_instance_id"]
+            isOneToOne: false
+            referencedRelation: "enrollment_instances"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "onboarding_therapy_selections_onboarding_id_fkey"
             columns: ["onboarding_id"]
             isOneToOne: false
@@ -6684,10 +7180,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "onboarding_therapy_selections_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "onboarding_therapy_selections_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
             referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "onboarding_therapy_selections_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -6974,49 +7484,109 @@ export type Database = {
       }
       profiles: {
         Row: {
+          address: string | null
+          apartment: string | null
           avatar_url: string | null
+          cell_phone: string | null
+          city: string | null
           created_at: string | null
+          date_of_birth: string | null
           department: string | null
+          do_not_contact_patient: boolean | null
           email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          enrollment_progress: number | null
+          enrollment_status: string | null
           facility_id: string | null
           first_name: string | null
+          gender: string | null
           has_mfa_enabled: boolean | null
+          home_phone: string | null
           id: string
           is_email_verified: boolean | null
           last_login: string | null
           last_name: string | null
+          middle_name: string | null
+          other_gender: string | null
+          other_language: string | null
           phone: string | null
+          preferred_language: string | null
+          ssn_encrypted: string | null
+          state: string | null
           updated_at: string | null
+          zip_code: string | null
         }
         Insert: {
+          address?: string | null
+          apartment?: string | null
           avatar_url?: string | null
+          cell_phone?: string | null
+          city?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           department?: string | null
+          do_not_contact_patient?: boolean | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          enrollment_progress?: number | null
+          enrollment_status?: string | null
           facility_id?: string | null
           first_name?: string | null
+          gender?: string | null
           has_mfa_enabled?: boolean | null
+          home_phone?: string | null
           id: string
           is_email_verified?: boolean | null
           last_login?: string | null
           last_name?: string | null
+          middle_name?: string | null
+          other_gender?: string | null
+          other_language?: string | null
           phone?: string | null
+          preferred_language?: string | null
+          ssn_encrypted?: string | null
+          state?: string | null
           updated_at?: string | null
+          zip_code?: string | null
         }
         Update: {
+          address?: string | null
+          apartment?: string | null
           avatar_url?: string | null
+          cell_phone?: string | null
+          city?: string | null
           created_at?: string | null
+          date_of_birth?: string | null
           department?: string | null
+          do_not_contact_patient?: boolean | null
           email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          enrollment_progress?: number | null
+          enrollment_status?: string | null
           facility_id?: string | null
           first_name?: string | null
+          gender?: string | null
           has_mfa_enabled?: boolean | null
+          home_phone?: string | null
           id?: string
           is_email_verified?: boolean | null
           last_login?: string | null
           last_name?: string | null
+          middle_name?: string | null
+          other_gender?: string | null
+          other_language?: string | null
           phone?: string | null
+          preferred_language?: string | null
+          ssn_encrypted?: string | null
+          state?: string | null
           updated_at?: string | null
+          zip_code?: string | null
         }
         Relationships: [
           {
@@ -7072,6 +7642,180 @@ export type Database = {
           was_blocked?: boolean | null
         }
         Relationships: []
+      }
+      provider_profiles: {
+        Row: {
+          advanced_therapy_details: string | null
+          advanced_therapy_experience: boolean | null
+          biomarker_training: boolean | null
+          board_certifications: string[] | null
+          cart_certification: boolean | null
+          companion_dx_experience: boolean | null
+          continuing_education_status: string | null
+          controlled_substance_status: string | null
+          coverage_limits: string | null
+          created_at: string | null
+          credentials: string | null
+          crs_management_training: boolean | null
+          dea_number: string | null
+          disciplinary_actions: boolean | null
+          disciplinary_details: string | null
+          email: string | null
+          facility_id: string | null
+          fax_number: string | null
+          fda_training_certs: string[] | null
+          fellowship_details: string | null
+          first_name: string
+          gene_therapy_training: boolean | null
+          graduation_year: string | null
+          hospital_affiliations: string[] | null
+          id: string
+          insurance_expiration_date: string | null
+          is_active: boolean | null
+          last_name: string
+          mailing_address: string | null
+          malpractice_carrier: string | null
+          medical_license_numbers: Json | null
+          medical_school: string | null
+          middle_name: string | null
+          mobile_phone: string | null
+          npi: string | null
+          office_phone: string | null
+          pdmp_registration: string | null
+          policy_number: string | null
+          practice_type: string | null
+          preferred_contact_method: string | null
+          primary_address: string | null
+          primary_specialty: string | null
+          radiation_safety_cert: boolean | null
+          radioligand_certification: boolean | null
+          rems: string[] | null
+          residency_details: string | null
+          taxonomy_codes: string[] | null
+          updated_at: string | null
+          user_id: string | null
+          years_in_practice: string | null
+        }
+        Insert: {
+          advanced_therapy_details?: string | null
+          advanced_therapy_experience?: boolean | null
+          biomarker_training?: boolean | null
+          board_certifications?: string[] | null
+          cart_certification?: boolean | null
+          companion_dx_experience?: boolean | null
+          continuing_education_status?: string | null
+          controlled_substance_status?: string | null
+          coverage_limits?: string | null
+          created_at?: string | null
+          credentials?: string | null
+          crs_management_training?: boolean | null
+          dea_number?: string | null
+          disciplinary_actions?: boolean | null
+          disciplinary_details?: string | null
+          email?: string | null
+          facility_id?: string | null
+          fax_number?: string | null
+          fda_training_certs?: string[] | null
+          fellowship_details?: string | null
+          first_name: string
+          gene_therapy_training?: boolean | null
+          graduation_year?: string | null
+          hospital_affiliations?: string[] | null
+          id?: string
+          insurance_expiration_date?: string | null
+          is_active?: boolean | null
+          last_name: string
+          mailing_address?: string | null
+          malpractice_carrier?: string | null
+          medical_license_numbers?: Json | null
+          medical_school?: string | null
+          middle_name?: string | null
+          mobile_phone?: string | null
+          npi?: string | null
+          office_phone?: string | null
+          pdmp_registration?: string | null
+          policy_number?: string | null
+          practice_type?: string | null
+          preferred_contact_method?: string | null
+          primary_address?: string | null
+          primary_specialty?: string | null
+          radiation_safety_cert?: boolean | null
+          radioligand_certification?: boolean | null
+          rems?: string[] | null
+          residency_details?: string | null
+          taxonomy_codes?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          years_in_practice?: string | null
+        }
+        Update: {
+          advanced_therapy_details?: string | null
+          advanced_therapy_experience?: boolean | null
+          biomarker_training?: boolean | null
+          board_certifications?: string[] | null
+          cart_certification?: boolean | null
+          companion_dx_experience?: boolean | null
+          continuing_education_status?: string | null
+          controlled_substance_status?: string | null
+          coverage_limits?: string | null
+          created_at?: string | null
+          credentials?: string | null
+          crs_management_training?: boolean | null
+          dea_number?: string | null
+          disciplinary_actions?: boolean | null
+          disciplinary_details?: string | null
+          email?: string | null
+          facility_id?: string | null
+          fax_number?: string | null
+          fda_training_certs?: string[] | null
+          fellowship_details?: string | null
+          first_name?: string
+          gene_therapy_training?: boolean | null
+          graduation_year?: string | null
+          hospital_affiliations?: string[] | null
+          id?: string
+          insurance_expiration_date?: string | null
+          is_active?: boolean | null
+          last_name?: string
+          mailing_address?: string | null
+          malpractice_carrier?: string | null
+          medical_license_numbers?: Json | null
+          medical_school?: string | null
+          middle_name?: string | null
+          mobile_phone?: string | null
+          npi?: string | null
+          office_phone?: string | null
+          pdmp_registration?: string | null
+          policy_number?: string | null
+          practice_type?: string | null
+          preferred_contact_method?: string | null
+          primary_address?: string | null
+          primary_specialty?: string | null
+          radiation_safety_cert?: boolean | null
+          radioligand_certification?: boolean | null
+          rems?: string[] | null
+          residency_details?: string | null
+          taxonomy_codes?: string[] | null
+          updated_at?: string | null
+          user_id?: string | null
+          years_in_practice?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "provider_profiles_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "provider_profiles_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       provider_test_configs: {
         Row: {
@@ -8211,6 +8955,114 @@ export type Database = {
             columns: ["node_config_id"]
             isOneToOne: false
             referencedRelation: "nodes_config"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      treatment_assessments: {
+        Row: {
+          assessment_completion_date: string | null
+          assessment_status: string | null
+          care_coordination: Json | null
+          clinical_decision: string | null
+          clinical_decision_rationale: string | null
+          clinical_readiness: Json | null
+          created_at: string | null
+          enrollment_instance_id: string | null
+          facility_id: string | null
+          financial_counseling: Json | null
+          id: string
+          identity_verification: Json | null
+          laboratory_diagnostics: Json | null
+          medical_review: Json | null
+          medical_review_date: string | null
+          medical_reviewer_id: string | null
+          patient_id: string | null
+          provider_id: string | null
+          risk_assessment: Json | null
+          technology_monitoring: Json | null
+          updated_at: string | null
+        }
+        Insert: {
+          assessment_completion_date?: string | null
+          assessment_status?: string | null
+          care_coordination?: Json | null
+          clinical_decision?: string | null
+          clinical_decision_rationale?: string | null
+          clinical_readiness?: Json | null
+          created_at?: string | null
+          enrollment_instance_id?: string | null
+          facility_id?: string | null
+          financial_counseling?: Json | null
+          id?: string
+          identity_verification?: Json | null
+          laboratory_diagnostics?: Json | null
+          medical_review?: Json | null
+          medical_review_date?: string | null
+          medical_reviewer_id?: string | null
+          patient_id?: string | null
+          provider_id?: string | null
+          risk_assessment?: Json | null
+          technology_monitoring?: Json | null
+          updated_at?: string | null
+        }
+        Update: {
+          assessment_completion_date?: string | null
+          assessment_status?: string | null
+          care_coordination?: Json | null
+          clinical_decision?: string | null
+          clinical_decision_rationale?: string | null
+          clinical_readiness?: Json | null
+          created_at?: string | null
+          enrollment_instance_id?: string | null
+          facility_id?: string | null
+          financial_counseling?: Json | null
+          id?: string
+          identity_verification?: Json | null
+          laboratory_diagnostics?: Json | null
+          medical_review?: Json | null
+          medical_review_date?: string | null
+          medical_reviewer_id?: string | null
+          patient_id?: string | null
+          provider_id?: string | null
+          risk_assessment?: Json | null
+          technology_monitoring?: Json | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "treatment_assessments_enrollment_instance_id_fkey"
+            columns: ["enrollment_instance_id"]
+            isOneToOne: false
+            referencedRelation: "enrollment_instances"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_assessments_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_assessments_medical_reviewer_id_fkey"
+            columns: ["medical_reviewer_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_assessments_patient_id_fkey"
+            columns: ["patient_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "treatment_assessments_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "provider_profiles"
             referencedColumns: ["id"]
           },
         ]
