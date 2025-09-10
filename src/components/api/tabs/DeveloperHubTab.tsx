@@ -23,6 +23,8 @@ import PostmanCollectionManager from '../PostmanCollectionManager';
 import RoleBasedApiDocumentation from '../RoleBasedApiDocumentation';
 import { DOMSecurity } from '@/utils/security/domSecurity';
 import { useRealTimeRoleSync } from '@/hooks/useRealTimeRoleSync';
+import { useRoleBasedTesting } from '@/hooks/useRoleBasedTesting';
+import { useDocumentationVersioning } from '@/hooks/useDocumentationVersioning';
 
 const DeveloperHubTab: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -30,6 +32,8 @@ const DeveloperHubTab: React.FC = () => {
   
   // Real-time sync for developer hub updates
   const { isConnected, hasUpdates, updateCount } = useRealTimeRoleSync();
+  const roleBasedTesting = useRoleBasedTesting({ role: 'superAdmin' });
+  const versionControl = useDocumentationVersioning({ role: 'superAdmin' });
   
   const { apiServices, isLoading } = useMasterApiServices();
   const { publishedApis } = useExternalApis();
@@ -180,7 +184,7 @@ const DeveloperHubTab: React.FC = () => {
 
       {/* Developer Hub Sub-tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-7">
+        <TabsList className="grid w-full grid-cols-8">
           <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
           <TabsTrigger value="published">Published APIs</TabsTrigger>
           <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
@@ -188,6 +192,7 @@ const DeveloperHubTab: React.FC = () => {
           <TabsTrigger value="documentation">Docs</TabsTrigger>
           <TabsTrigger value="keys">API Keys</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
+          <TabsTrigger value="versions">Versions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="sandbox" className="mt-6">
@@ -282,38 +287,137 @@ const DeveloperHubTab: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="testing" className="mt-6">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <TestTube className="h-5 w-5" />
-                <span>Role-Based Testing Suite</span>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="text-center py-8">
-                <TestTube className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Comprehensive Role-Based Testing</h3>
-                <p className="text-gray-600 mb-6">
-                  Access testing suites, documentation, and architecture docs specific to your role
-                </p>
-                <div className="flex items-center justify-center gap-3">
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TestTube className="h-5 w-5" />
+                  Role-Based Testing Suite
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p className="text-sm font-medium">Total Tests</p>
+                    <p className="text-2xl font-bold text-primary">
+                      {roleBasedTesting.stats?.total_tests || 0}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium">Documentation</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {roleBasedTesting.stats?.total_docs || 0}
+                    </p>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
                   <Button 
-                    onClick={() => {
-                      // Navigate to role-based testing suite
-                      window.open('/testing-suite', '_blank');
-                    }}
+                    onClick={roleBasedTesting.refreshTestingSuite}
+                    variant="outline"
+                    size="sm"
                   >
-                    <TestTube className="h-4 w-4 mr-2" />
-                    Open Testing Suite
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    Refresh Suite
                   </Button>
-                  <Button variant="outline">
+                  <Button 
+                    onClick={roleBasedTesting.exportTestingArtifacts}
+                    variant="outline"
+                    size="sm"
+                  >
                     <Download className="h-4 w-4 mr-2" />
-                    Export Test Results
+                    Export Artifacts
                   </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="versions" className="mt-6">
+          <div className="grid gap-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Documentation Version Control
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-muted-foreground">Current Version</p>
+                    <p className="text-xl font-bold text-primary">
+                      {versionControl.versionStats.current_version}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-muted-foreground">Execution #</p>
+                    <p className="text-xl font-bold text-blue-600">
+                      {versionControl.versionStats.execution_number}
+                    </p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm font-medium text-muted-foreground">CFR Compliance</p>
+                    <p className="text-xl font-bold text-green-600">
+                      {versionControl.versionStats.compliance_score}%
+                    </p>
+                  </div>
+                </div>
+
+                <div className="space-y-3 mb-6">
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">21 CFR Part 11 Compliant</span>
+                    <span className={`text-sm font-bold ${versionControl.isCompliant ? 'text-green-600' : 'text-red-600'}`}>
+                      {versionControl.isCompliant ? '✅ Compliant' : '❌ Non-Compliant'}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                    <span className="text-sm font-medium">Validation Status</span>
+                    <span className={`text-sm font-bold ${versionControl.needsValidation ? 'text-yellow-600' : 'text-green-600'}`}>
+                      {versionControl.complianceStatus.validation_status}
+                    </span>
+                  </div>
+                </div>
+                
+                <div className="flex gap-2">
+                  <Button 
+                    onClick={() => versionControl.trackFunctionalityChange(
+                      'feature_added',
+                      'Manual documentation update',
+                      ['documentation'],
+                      'low'
+                    )}
+                    variant="outline"
+                    size="sm"
+                    disabled={versionControl.isCreatingVersion}
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    New Version
+                  </Button>
+                  <Button 
+                    onClick={versionControl.exportVersionHistory}
+                    variant="outline"
+                    size="sm"
+                  >
+                    <Download className="h-4 w-4 mr-2" />
+                    Export History
+                  </Button>
+                  {versionControl.needsValidation && (
+                    <Button 
+                      onClick={() => versionControl.validateCurrentVersion('admin', 'Manual validation')}
+                      variant="outline"
+                      size="sm"
+                      disabled={versionControl.validationPending}
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Validate
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>

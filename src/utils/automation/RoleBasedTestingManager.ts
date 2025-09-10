@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+import { documentationVersionControl, FunctionalityChange } from './DocumentationVersionControl';
 
 type UserRole = 'superAdmin' | 'healthcareProvider' | 'nurse' | 'caseManager' | 'onboardingTeam' | 'patientCaregiver' | 'financeTeam' | 'contractTeam' | 'workflowManager' | 'demoUser';
 
@@ -78,6 +79,18 @@ export class RoleBasedTestingManager {
    */
   static async generateRoleTestingSuite(role: UserRole, newFunctionality?: any): Promise<RoleTestingUpdate> {
     console.log(`🧪 Generating testing suite for role: ${role}`);
+
+    // Create version control entry for testing suite generation
+    const functionalityChanges: FunctionalityChange[] = [{
+      change_id: `testing_suite_${Date.now()}`,
+      change_type: 'feature_added',
+      description: `Generated comprehensive testing suite for ${role}`,
+      impact_level: 'medium',
+      affected_modules: ['testing', 'documentation', 'validation'],
+      test_coverage_updated: true
+    }];
+
+    await documentationVersionControl.createNewVersion(role, functionalityChanges, 'system');
 
     const testCases = await this.generateRoleSpecificTestCases(role, newFunctionality);
     const documentation = await this.generateRoleSpecificDocumentation(role, newFunctionality);

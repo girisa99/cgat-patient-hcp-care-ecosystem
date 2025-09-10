@@ -66,6 +66,7 @@ export { useRealTimeRoleSync, useRoleSpecificSync, useApiSuiteSync, useAdminRole
 
 // Role-based testing hooks
 export { useRoleBasedTesting, useSuperAdminTesting, useHealthcareProviderTesting, useWorkflowManagerTesting } from './useRoleBasedTesting';
+export { useDocumentationVersioning, useSuperAdminVersioning, useHealthcareProviderVersioning, useFinanceTeamVersioning } from './useDocumentationVersioning';
 
 // Testing hooks
 
