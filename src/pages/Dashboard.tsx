@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AgenticAIPresentation } from '@/components/presentation/AgenticAIPresentation';
 import { 
@@ -31,6 +32,10 @@ import { toast } from '@/hooks/use-toast';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { normalizeRoles, hasAnyRole } from '@/utils/roles';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useAgents } from '@/hooks/useAgents';
+import { useAgentDeployments } from '@/hooks/useAgentDeployments';
+import { usePatients } from '@/hooks/usePatients';
+import { Progress } from '@/components/ui/progress';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -40,6 +45,113 @@ export const Dashboard: React.FC = () => {
   const { userRoles } = useMasterAuth();
   const normalizedRoles = normalizeRoles(userRoles || []);
   const isHealthcareProvider = hasAnyRole(normalizedRoles, ['healthcareProvider']);
+  
+  // Fetch data for healthcare provider dashboard
+  const { agents } = useAgents();
+  const { deployments } = useAgentDeployments();
+  const { patients } = usePatients();
+
+  // Fetch orders data
+  const { data: ordersData } = useQuery({
+    queryKey: ['dashboard-orders'],
+    queryFn: async () => {
+      // Mock order data with process stages
+      return [
+        {
+          id: 'ORD-001',
+          patientId: 'PT-12345',
+          medication: 'Medication A',
+          status: 'processing',
+          stage: 'pharmacy_review',
+          progress: 60,
+          priority: 'high'
+        },
+        {
+          id: 'ORD-002', 
+          patientId: 'PT-12346',
+          medication: 'Medication B',
+          status: 'shipped',
+          stage: 'in_transit',
+          progress: 85,
+          priority: 'medium'
+        },
+        {
+          id: 'ORD-003',
+          patientId: 'PT-12347', 
+          medication: 'Medication C',
+          status: 'delivered',
+          stage: 'completed',
+          progress: 100,
+          priority: 'low'
+        }
+      ];
+    },
+    enabled: isHealthcareProvider
+  });
+
+  // Fetch onboarding data with patient IDs
+  const { data: onboardingData } = useQuery({
+    queryKey: ['dashboard-onboarding'],
+    queryFn: async () => {
+      return [
+        {
+          id: 'ONB-001',
+          patientId: 'PT-54321',
+          status: 'in_progress',
+          stage: 'medical_history',
+          progress: 60,
+          completedSteps: 3,
+          totalSteps: 5,
+          priority: 'high'
+        },
+        {
+          id: 'ONB-002',
+          patientId: 'PT-54322', 
+          status: 'documents_pending',
+          stage: 'insurance_verification',
+          progress: 40,
+          completedSteps: 2,
+          totalSteps: 5,
+          priority: 'medium'
+        },
+        {
+          id: 'ONB-003',
+          patientId: 'PT-54323',
+          status: 'completed',
+          stage: 'treatment_planning',
+          progress: 100,
+          completedSteps: 5,
+          totalSteps: 5,
+          priority: 'low'
+        }
+      ];
+    },
+    enabled: isHealthcareProvider
+  });
+
+  // Process dashboard stats
+  const orderStats = {
+    total: ordersData?.length || 0,
+    processing: ordersData?.filter(o => o.status === 'processing').length || 0,
+    shipped: ordersData?.filter(o => o.status === 'shipped').length || 0,
+    delivered: ordersData?.filter(o => o.status === 'delivered').length || 0,
+    urgent: ordersData?.filter(o => o.priority === 'high').length || 0
+  };
+
+  const onboardingStats = {
+    total: onboardingData?.length || 0,
+    inProgress: onboardingData?.filter(o => o.status === 'in_progress').length || 0,
+    pending: onboardingData?.filter(o => o.status === 'documents_pending').length || 0,
+    completed: onboardingData?.filter(o => o.status === 'completed').length || 0,
+    urgent: onboardingData?.filter(o => o.priority === 'high').length || 0
+  };
+
+  const agentStats = {
+    total: agents?.length || 0,
+    active: deployments?.filter(d => d.deployment_status === 'active').length || 0,
+    deployed: deployments?.length || 0,
+    channels: [...new Set(deployments?.map(d => d.channel_type))].length || 0
+  };
   // Download functions
   const downloadPDF = () => {
     const presentationContent = `AGENTIC AI & AUTOMATION IMPLEMENTATION - Complete Healthcare Onboarding Platform
@@ -234,32 +346,152 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
             </div>
           </div>
 
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-6 sm:grid-cols-1 lg:grid-cols-3">
+            {/* Enhanced Order Management Card */}
             <Card onClick={() => navigate('/order-management')} className="cursor-pointer hover:shadow-sm transition-shadow">
-              <CardContent className="p-6 flex items-center gap-4">
-                <ShoppingCart className="h-6 w-6" />
-                <div>
-                  <h3 className="font-semibold">Order Management</h3>
-                  <p className="text-sm text-muted-foreground">Manage prescriptions and medication orders</p>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5" />
+                    Order Management
+                  </CardTitle>
+                  <Badge variant="secondary">{orderStats.total} Total</Badge>
                 </div>
+                <CardDescription>Manage prescriptions and medication orders</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Processing:</span>
+                    <span className="font-medium text-blue-600">{orderStats.processing}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Shipped:</span>
+                    <span className="font-medium text-purple-600">{orderStats.shipped}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Delivered:</span>
+                    <span className="font-medium text-green-600">{orderStats.delivered}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Urgent:</span>
+                    <span className="font-medium text-red-600">{orderStats.urgent}</span>
+                  </div>
+                </div>
+                {ordersData && ordersData.length > 0 && (
+                  <div className="border-t pt-3">
+                    <div className="text-xs text-muted-foreground mb-2">Recent Order</div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{ordersData[0]?.patientId}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {ordersData[0]?.stage?.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <Progress value={ordersData[0]?.progress || 0} className="h-1 mt-2" />
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Enhanced Patient Onboarding Card */}
             <Card onClick={() => navigate('/patient-onboarding')} className="cursor-pointer hover:shadow-sm transition-shadow">
-              <CardContent className="p-6 flex items-center gap-4">
-                <UserCheck className="h-6 w-6" />
-                <div>
-                  <h3 className="font-semibold">Patient Onboarding</h3>
-                  <p className="text-sm text-muted-foreground">Enroll and onboard patients</p>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <UserCheck className="h-5 w-5" />
+                    Patient Onboarding
+                  </CardTitle>
+                  <Badge variant="secondary">{onboardingStats.total} Total</Badge>
                 </div>
+                <CardDescription>Enroll and onboard patients</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">In Progress:</span>
+                    <span className="font-medium text-orange-600">{onboardingStats.inProgress}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Pending:</span>
+                    <span className="font-medium text-yellow-600">{onboardingStats.pending}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Completed:</span>
+                    <span className="font-medium text-green-600">{onboardingStats.completed}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Urgent:</span>
+                    <span className="font-medium text-red-600">{onboardingStats.urgent}</span>
+                  </div>
+                </div>
+                {onboardingData && onboardingData.length > 0 && (
+                  <div className="border-t pt-3">
+                    <div className="text-xs text-muted-foreground mb-2">Recent Patient</div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{onboardingData[0]?.patientId}</span>
+                      <Badge variant="outline" className="text-xs">
+                        {onboardingData[0]?.stage?.replace('_', ' ')}
+                      </Badge>
+                    </div>
+                    <Progress value={onboardingData[0]?.progress || 0} className="h-1 mt-2" />
+                    <div className="text-xs text-muted-foreground mt-1">
+                      Step {onboardingData[0]?.completedSteps}/{onboardingData[0]?.totalSteps}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
+
+            {/* Enhanced Agents Card */}
             <Card onClick={() => navigate('/agents')} className="cursor-pointer hover:shadow-sm transition-shadow">
-              <CardContent className="p-6 flex items-center gap-4">
-                <Bot className="h-6 w-6" />
-                <div>
-                  <h3 className="font-semibold">Agents</h3>
-                  <p className="text-sm text-muted-foreground">AI agents for provider workflows</p>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    Agents
+                  </CardTitle>
+                  <Badge variant="secondary">{agentStats.total} Total</Badge>
                 </div>
+                <CardDescription>AI agents for provider workflows</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Active:</span>
+                    <span className="font-medium text-green-600">{agentStats.active}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Deployed:</span>
+                    <span className="font-medium text-blue-600">{agentStats.deployed}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Channels:</span>
+                    <span className="font-medium text-purple-600">{agentStats.channels}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Draft:</span>
+                    <span className="font-medium text-gray-600">{agentStats.total - agentStats.deployed}</span>
+                  </div>
+                </div>
+                {deployments && deployments.length > 0 && (
+                  <div className="border-t pt-3">
+                    <div className="text-xs text-muted-foreground mb-2">Recent Deployment</div>
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="font-medium">{deployments[0]?.channel_type}</span>
+                      <Badge variant="outline" className={`text-xs ${
+                        deployments[0]?.deployment_status === 'active' ? 'text-green-600' : 
+                        deployments[0]?.deployment_status === 'pending' ? 'text-yellow-600' : 'text-gray-600'
+                      }`}>
+                        {deployments[0]?.deployment_status}
+                      </Badge>
+                    </div>
+                    {deployments[0]?.health_status && (
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Health: {deployments[0]?.health_status}
+                      </div>
+                    )}
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
