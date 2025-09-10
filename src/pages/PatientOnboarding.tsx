@@ -1,9 +1,11 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
+import { PatientEnrollmentForm } from '@/components/patient-enrollment/PatientEnrollmentForm';
+import { CollaborativeEnrollmentWorkflow } from '@/components/patient-enrollment/CollaborativeEnrollmentWorkflow';
 import { 
   UserPlus, 
   FileText, 
@@ -110,6 +112,8 @@ const getPriorityColor = (priority: PatientOnboarding['priority']) => {
 export default function PatientOnboarding() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
+  const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow'>('list');
+  const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
 
   const filteredOnboarding = mockOnboarding.filter(item => {
     const matchesSearch = item.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -128,6 +132,86 @@ export default function PatientOnboarding() {
     onHold: mockOnboarding.filter(o => o.status === 'on_hold').length
   };
 
+  // Handle view switching
+  const handleNewEnrollment = () => {
+    setCurrentView('new_enrollment');
+    setSelectedPatient(null);
+  };
+
+  const handleViewWorkflow = (patient: PatientOnboarding) => {
+    setSelectedPatient(patient);
+    setCurrentView('workflow');
+  };
+
+  const handleBackToList = () => {
+    setCurrentView('list');
+    setSelectedPatient(null);
+  };
+
+  // Render different views based on current state
+  if (currentView === 'new_enrollment') {
+    return (
+      <AppLayout title="New Patient Enrollment">
+        <div className="flex-1 space-y-6 p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">New Patient Enrollment</h1>
+              <p className="text-muted-foreground">
+                Complete patient enrollment with multiple submission options
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleBackToList}>
+              Back to List
+            </Button>
+          </div>
+
+          <PatientEnrollmentForm
+            onSubmit={(data) => {
+              console.log('Enrollment submitted:', data);
+              handleBackToList();
+            }}
+            onSave={(data) => {
+              console.log('Enrollment saved:', data);
+            }}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (currentView === 'workflow' && selectedPatient) {
+    return (
+      <AppLayout title="Enrollment Workflow">
+        <div className="flex-1 space-y-6 p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Collaborative Enrollment Workflow</h1>
+              <p className="text-muted-foreground">
+                Patient: {selectedPatient.patientName} (ID: {selectedPatient.id})
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleBackToList}>
+              Back to List
+            </Button>
+          </div>
+
+          <CollaborativeEnrollmentWorkflow
+            enrollmentId={selectedPatient.id}
+            patientData={{
+              firstName: selectedPatient.patientName.split(' ')[0],
+              lastName: selectedPatient.patientName.split(' ')[1] || '',
+              email: selectedPatient.email,
+              phone: selectedPatient.phone
+            }}
+            submissionMethod="online"
+            onWorkflowComplete={handleBackToList}
+            currentUserRole="intake_coordinator"
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
   return (
     <AppLayout title="Patient Onboarding">
       <div className="flex-1 space-y-6 p-4 md:p-6">
@@ -135,12 +219,12 @@ export default function PatientOnboarding() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Patient Onboarding</h1>
             <p className="text-muted-foreground">
-              Manage patient enrollment and onboarding processes
+              Manage patient enrollment and onboarding processes with collaborative workflows
             </p>
           </div>
-          <Button>
+          <Button onClick={handleNewEnrollment}>
             <Plus className="mr-2 h-4 w-4" />
-            New Patient Onboarding
+            New Patient Enrollment
           </Button>
         </div>
 
@@ -292,8 +376,8 @@ export default function PatientOnboarding() {
                         <Eye className="h-4 w-4 mr-1" />
                         View Details
                       </Button>
-                      <Button size="sm">
-                        Continue Onboarding
+                      <Button size="sm" onClick={() => handleViewWorkflow(item)}>
+                        Continue Workflow
                       </Button>
                     </div>
                   </div>
