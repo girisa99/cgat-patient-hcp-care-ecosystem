@@ -56,6 +56,7 @@ import { usePatients } from '@/hooks/usePatients';
 import { Progress } from '@/components/ui/progress';
 import { LineChart, Line, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@radix-ui/react-collapsible';
+import { EnrollmentStatusDashboard } from '@/components/patient-enrollment';
 
 export const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -68,6 +69,20 @@ export const Dashboard: React.FC = () => {
     agents: true,
     analytics: false
   });
+  const [enrollmentStatusPayload, setEnrollmentStatusPayload] = React.useState<any | null>(null);
+  React.useEffect(() => {
+    const load = () => {
+      try {
+        const raw = localStorage.getItem('activeEnrollmentStatus');
+        setEnrollmentStatusPayload(raw ? JSON.parse(raw) : null);
+      } catch {
+        setEnrollmentStatusPayload(null);
+      }
+    };
+    load();
+    window.addEventListener('storage', load);
+    return () => window.removeEventListener('storage', load);
+  }, []);
   const [refreshing, setRefreshing] = React.useState(false);
   const { userRoles } = useMasterAuth();
   const normalizedRoles = normalizeRoles(userRoles || []);
@@ -910,6 +925,39 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               </div>
             </CardContent>
           </Card>
+
+          {/* Enrollment Workflow Status */}
+          {enrollmentStatusPayload ? (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Workflow className="h-5 w-5" />
+                  Enrollment Workflow Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <EnrollmentStatusDashboard
+                  enrollmentStatus={enrollmentStatusPayload.enrollmentStatus}
+                  patientName={enrollmentStatusPayload.patientName}
+                  enrollmentId={enrollmentStatusPayload.enrollmentId}
+                />
+              </CardContent>
+            </Card>
+          ) : (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Workflow className="h-5 w-5" />
+                  Enrollment Workflow Status
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-sm text-muted-foreground">
+                  No active enrollment status found. Start or resume an enrollment to see progress here.
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {/* Real System Overview */}
           <Card>

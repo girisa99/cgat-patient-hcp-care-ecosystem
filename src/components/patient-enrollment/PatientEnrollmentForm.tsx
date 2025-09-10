@@ -296,6 +296,15 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [tcpaConsent, setTcpaConsent] = useState<boolean>(false);
 
   const totalSteps = 7;
+  const stepIds = [
+    'submission_method',
+    'consent_management',
+    'patient_info',
+    'provider_info',
+    'insurance',
+    'treatment_assessment',
+    'final_review'
+  ];
 
   useEffect(() => {
     if (initialData) {
@@ -428,8 +437,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const handleStepComplete = (stepIndex: number) => {
     const stepNames = [
       'submission_method', 'consent_management', 'patient_info', 
-      'provider_info', 'insurance', 'therapy', 'clinical', 
-      'medical_review', 'submit'
+      'provider_info', 'insurance', 'treatment_assessment', 'final_review'
     ];
     
     const completedStageNames = stepNames.slice(0, stepIndex + 1);
@@ -441,6 +449,70 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       setCompletedSteps(prev => [...prev, stepIndex]);
     }
   };
+
+  // Sync enrollment status to main dashboard via localStorage
+  useEffect(() => {
+    try {
+      const completedStepIds = stepIds.filter((_, idx) => completedSteps.includes(idx));
+      const pendingStepIds = stepIds.filter((_, idx) => idx >= currentStep && !completedSteps.includes(idx));
+      const criticalIssues: Array<{ id: string; title: string; description: string; severity: 'high' | 'medium' | 'low'; stepAffected: string; }> = [];
+
+      if (formData.consentData?.patientConsentStatus !== 'obtained') {
+        criticalIssues.push({
+          id: 'consent_pending',
+          title: 'Consent pending',
+          description: 'Patient consent not obtained',
+          severity: 'high',
+          stepAffected: 'consent_management'
+        });
+      }
+      if (!formData.medicalInsurance?.provider || !formData.medicalInsurance?.policyNumber) {
+        criticalIssues.push({
+          id: 'insurance_incomplete',
+          title: 'Insurance details incomplete',
+          description: 'Primary insurance provider or policy number missing',
+          severity: 'medium',
+          stepAffected: 'insurance'
+        });
+      }
+      if (!formData.providerName || !formData.treatmentCenterName) {
+        criticalIssues.push({
+          id: 'provider_incomplete',
+          title: 'Provider information incomplete',
+          description: 'Provider or treatment center missing',
+          severity: 'medium',
+          stepAffected: 'provider_info'
+        });
+      }
+      if (!formData.therapyType) {
+        criticalIssues.push({
+          id: 'therapy_missing',
+          title: 'Therapy selection missing',
+          description: 'Select therapy to proceed',
+          severity: 'low',
+          stepAffected: 'treatment_assessment'
+        });
+      }
+
+      const overallProgress = Math.round((completedSteps.length / totalSteps) * 100);
+
+      const payload = {
+        enrollmentStatus: {
+          currentStep,
+          totalSteps,
+          completedSteps: completedStepIds,
+          pendingSteps: pendingStepIds,
+          criticalIssues,
+          overallProgress
+        },
+        patientName: `${formData.firstName} ${formData.lastName}`.trim(),
+        enrollmentId: formData.patientIdInternal || patientId || 'ENR-new'
+      };
+      localStorage.setItem('activeEnrollmentStatus', JSON.stringify(payload));
+    } catch (e) {
+      console.error('Failed to sync enrollment status', e);
+    }
+  }, [currentStep, completedSteps, formData, totalSteps]);
 
   const handleDownloadForm = async () => {
     try {
