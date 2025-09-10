@@ -309,10 +309,10 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       const { data: enrollment, error } = await supabase
         .from('profiles')
         .insert([{
+          id: crypto.randomUUID(),
           email: formData.email,
           first_name: formData.firstName,
-          last_name: formData.lastName,
-          role: 'patientCaregiver'
+          last_name: formData.lastName
         }])
         .select()
         .single();
