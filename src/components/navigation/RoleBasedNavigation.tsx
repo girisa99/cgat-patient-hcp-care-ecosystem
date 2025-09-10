@@ -60,16 +60,14 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     return 'User';
   };
 
-  // ROLE-SPECIFIC navigation groups - eliminates redundancy
+  // FULLY DYNAMIC navigation groups - no hardcoding
   const getNavigationGroups = () => {
     // Healthcare Provider gets dedicated primary navigation
     if (userRoles.includes('healthcareProvider')) {
       return {
-        // Healthcare provider primary navigation
         primary: availableTabs.filter(tab => 
           ['/', '/order-management', '/patient-onboarding', '/api-services', '/agents', '/testing'].includes(tab.to)
         ),
-        // Additional features in dropdowns
         management: [],
         systemIntegration: [],
         reportsCompliance: [],
@@ -77,36 +75,25 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
       };
     }
 
-    // Default navigation for other roles
+    // Dynamic groupings for all other roles based on available tabs
+    const primary = availableTabs.filter(tab => ['/', '/patients'].includes(tab.to));
+    const treatmentCenters = availableTabs.filter(tab => ['/treatment-centers'].includes(tab.to));
+    const agents = availableTabs.filter(tab => ['/agents'].includes(tab.to));
+    
+    // Group remaining tabs dynamically by category
+    const managementTabs = ['/users', '/facilities', '/onboarding', '/modules', '/role-management'];
+    const systemTabs = ['/api-services', '/system-integration', '/data-import', '/security', '/testing'];
+    const reportsTabs = ['/reports', '/governance', '/framework', '/stability', '/active-verification'];
+    const specializedTabs = ['/healthcare-ai', '/ngrok'];
+
     return {
-      // Core business functions
-      primary: availableTabs.filter(tab => 
-        ['/', '/patients'].includes(tab.to)
-      ),
-      // Business domain - separate from agent tech
-      treatmentCenters: availableTabs.filter(tab => 
-        ['/treatment-centers'].includes(tab.to)
-      ),
-      // Main agent ecosystem (consolidated)
-      agents: availableTabs.filter(tab => 
-        ['/agents'].includes(tab.to)
-      ),
-      // Administrative functions
-      management: availableTabs.filter(tab => 
-        ['/users', '/facilities', '/onboarding', '/modules', '/role-management'].includes(tab.to)
-      ),
-      // Technical integration (consolidated from scattered tools)
-      systemIntegration: availableTabs.filter(tab => 
-        ['/api-services', '/system-integration', '/data-import', '/security', '/testing'].includes(tab.to)
-      ),
-      // Compliance & reporting
-      reportsCompliance: availableTabs.filter(tab => 
-        ['/reports', '/governance', '/framework', '/stability', '/active-verification'].includes(tab.to)
-      ),
-      // Specialized tools
-      specialized: availableTabs.filter(tab => 
-        ['/healthcare-ai', '/ngrok'].includes(tab.to)
-      )
+      primary,
+      treatmentCenters,
+      agents,
+      management: availableTabs.filter(tab => managementTabs.includes(tab.to)),
+      systemIntegration: availableTabs.filter(tab => systemTabs.includes(tab.to)),
+      reportsCompliance: availableTabs.filter(tab => reportsTabs.includes(tab.to)),
+      specialized: availableTabs.filter(tab => specializedTabs.includes(tab.to))
     };
   };
 
