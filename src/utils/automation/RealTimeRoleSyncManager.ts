@@ -4,6 +4,7 @@
  */
 
 import { supabase } from '@/integrations/supabase/client';
+
 // Define UserRole enum since it's not exported from types
 type UserRole = 'superAdmin' | 'healthcareProvider' | 'nurse' | 'caseManager' | 'onboardingTeam' | 'patientCaregiver' | 'financeTeam' | 'contractTeam' | 'workflowManager' | 'demoUser';
 
@@ -129,6 +130,11 @@ export class RealTimeRoleSyncManager {
         role: role as UserRole,
         updates
       });
+
+      // Trigger role-based testing suite update
+      // Note: Importing here to avoid circular dependency
+      const { RoleBasedTestingManager } = await import('./RoleBasedTestingManager');
+      await RoleBasedTestingManager.generateRoleTestingSuite(role as UserRole, module);
     }
 
     // Trigger database sync

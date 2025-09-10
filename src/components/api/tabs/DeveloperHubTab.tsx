@@ -180,11 +180,12 @@ const DeveloperHubTab: React.FC = () => {
 
       {/* Developer Hub Sub-tabs */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="sandbox">Sandbox</TabsTrigger>
           <TabsTrigger value="published">Published APIs</TabsTrigger>
           <TabsTrigger value="endpoints">Endpoints</TabsTrigger>
           <TabsTrigger value="postman">Postman</TabsTrigger>
+          <TabsTrigger value="documentation">Docs</TabsTrigger>
           <TabsTrigger value="keys">API Keys</TabsTrigger>
           <TabsTrigger value="testing">Testing</TabsTrigger>
         </TabsList>
@@ -285,22 +286,29 @@ const DeveloperHubTab: React.FC = () => {
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
                 <TestTube className="h-5 w-5" />
-                <span>API Testing Suite</span>
+                <span>Role-Based Testing Suite</span>
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-center py-12">
-                <TestTube className="h-16 w-16 text-red-600 mx-auto mb-4" />
-                <h3 className="text-xl font-semibold mb-2">Comprehensive Testing</h3>
-                <p className="text-gray-600 mb-6">Run automated tests, performance benchmarks, and validation checks</p>
+              <div className="text-center py-8">
+                <TestTube className="h-12 w-12 text-blue-600 mx-auto mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Comprehensive Role-Based Testing</h3>
+                <p className="text-gray-600 mb-6">
+                  Access testing suites, documentation, and architecture docs specific to your role
+                </p>
                 <div className="flex items-center justify-center gap-3">
-                  <Button>
-                    <PlayCircle className="h-4 w-4 mr-2" />
-                    Run Tests
+                  <Button 
+                    onClick={() => {
+                      // Navigate to role-based testing suite
+                      window.open('/testing-suite', '_blank');
+                    }}
+                  >
+                    <TestTube className="h-4 w-4 mr-2" />
+                    Open Testing Suite
                   </Button>
                   <Button variant="outline">
-                    <Settings className="h-4 w-4 mr-2" />
-                    Configure Tests
+                    <Download className="h-4 w-4 mr-2" />
+                    Export Test Results
                   </Button>
                 </div>
               </div>

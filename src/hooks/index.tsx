@@ -64,6 +64,11 @@ export { useIntelligentRouting } from './useIntelligentRouting';
 // Real-time sync hooks
 export { useRealTimeRoleSync, useRoleSpecificSync, useApiSuiteSync, useAdminRoleSync } from './useRealTimeRoleSync';
 
+// Role-based testing hooks
+export { useRoleBasedTesting, useSuperAdminTesting, useHealthcareProviderTesting, useWorkflowManagerTesting } from './useRoleBasedTesting';
+
+// Testing hooks
+
 // UI Hooks
 export { useToast } from './use-toast';
 
