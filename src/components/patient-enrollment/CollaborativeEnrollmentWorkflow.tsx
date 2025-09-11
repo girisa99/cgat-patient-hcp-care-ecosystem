@@ -22,7 +22,8 @@ import {
   Download,
   FileX,
   Globe,
-  RefreshCw
+  RefreshCw,
+  Bot
 } from 'lucide-react';
 import { MultiPartySignature, type Signer } from '@/components/signature/MultiPartySignature';
 import { PDFGenerator } from '@/components/signature/PDFGenerator';
@@ -46,7 +47,7 @@ interface CollaborationStep {
 interface CollaborativeEnrollmentWorkflowProps {
   enrollmentId: string;
   patientData: any;
-  submissionMethod: 'fax' | 'pdf_submit' | 'online';
+  submissionMethod: 'fax' | 'pdf_submit' | 'online' | 'ai_agent';
   onWorkflowComplete?: () => void;
   currentUserRole?: string;
   readOnly?: boolean;
@@ -346,16 +347,19 @@ export const CollaborativeEnrollmentWorkflow: React.FC<CollaborativeEnrollmentWo
             {submissionMethod === 'fax' && <FileX className="h-5 w-5 text-primary" />}
             {submissionMethod === 'pdf_submit' && <FileText className="h-5 w-5 text-primary" />}
             {submissionMethod === 'online' && <Globe className="h-5 w-5 text-primary" />}
+            {submissionMethod === 'ai_agent' && <Bot className="h-5 w-5 text-primary" />}
             <div>
               <h4 className="font-medium">
                 {submissionMethod === 'fax' && 'Fax Submission Workflow'}
                 {submissionMethod === 'pdf_submit' && 'PDF Submission Workflow'}
                 {submissionMethod === 'online' && 'Online Submission Workflow'}
+                {submissionMethod === 'ai_agent' && 'AI Agent Enrollment Workflow'}
               </h4>
               <p className="text-sm text-muted-foreground">
                 {submissionMethod === 'fax' && 'Processing faxed enrollment form with team collaboration'}
                 {submissionMethod === 'pdf_submit' && 'Collaborative review of submitted PDF form'}
                 {submissionMethod === 'online' && 'Real-time collaborative form completion'}
+                {submissionMethod === 'ai_agent' && 'Conversational AI-guided enrollment with intelligent form completion'}
               </p>
             </div>
           </div>

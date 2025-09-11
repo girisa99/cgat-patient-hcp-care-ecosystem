@@ -28,7 +28,8 @@ import {
   Shield,
   CheckCircle2,
   AlertTriangle,
-  Clock
+  Clock,
+  Bot
 } from 'lucide-react';
 import { SignatureCapture } from '@/components/signature/SignatureCapture';
 import { MultiPartySignature, type Signer } from '@/components/signature/MultiPartySignature';
@@ -43,6 +44,7 @@ import { ComprehensiveTreatmentAssessment, createEmptyComprehensiveTreatmentAsse
 import { ConsentManagement, type ConsentData } from './ConsentManagement';
 import { CollaborationStatus } from './CollaborationStatus';
 import { PatientDataPrefill } from './PatientDataPrefill';
+import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 
 export interface PatientEnrollmentData {
   // Patient Information
@@ -144,7 +146,7 @@ export interface PatientEnrollmentData {
   financialResponsibility: boolean;
   
   // Submission Options
-  submissionMethod: 'fax' | 'pdf_submit' | 'online';
+  submissionMethod: 'fax' | 'pdf_submit' | 'online' | 'ai_agent';
   
   // Collaboration
   collaborators: Signer[];
@@ -186,7 +188,7 @@ interface PatientEnrollmentFormProps {
   patientId?: string;
 }
 
-type SubmissionMethod = 'fax' | 'pdf_submit' | 'online';
+type SubmissionMethod = 'fax' | 'pdf_submit' | 'online' | 'ai_agent';
 
 export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   initialData,
@@ -288,6 +290,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [patientSignature, setPatientSignature] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const { showSuccess, showError } = useMasterToast();
+  const { openEnrollment } = useGlobalConversationalEnrollment();
 
   // Optional patient consent extras (no validation for quick testing)
   const [householdSize, setHouseholdSize] = useState<string>('');
@@ -355,6 +358,12 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const handleSubmissionMethodChange = (method: SubmissionMethod) => {
     updateFormData('submissionMethod', method);
     updateCollaborationStatus('consent_management', ['submission_method']);
+    
+    // Launch AI Agent for conversational enrollment
+    if (method === 'ai_agent') {
+      openEnrollment('patient');
+      return;
+    }
     
     // Initialize collaborators based on method
     if (method !== 'online') {
@@ -709,7 +718,29 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid md:grid-cols-3 gap-4">
+        <div className="grid md:grid-cols-4 gap-4">
+          {/* AI Agent Option */}
+          <Card className={`cursor-pointer border-2 transition-colors ${
+            formData.submissionMethod === 'ai_agent' 
+              ? 'border-primary bg-primary/5' 
+              : 'border-muted hover:border-primary/50'
+          }`}
+          onClick={() => handleSubmissionMethodChange('ai_agent')}>
+            <CardContent className="p-4 text-center">
+              <Bot className="h-8 w-8 mx-auto mb-3 text-primary" />
+              <h3 className="font-semibold mb-2">AI Agent</h3>
+              <p className="text-sm text-muted-foreground mb-3">
+                Complete enrollment through conversational AI assistance
+              </p>
+              {formData.submissionMethod === 'ai_agent' && (
+                <Badge variant="default" className="bg-blue-500">
+                  <Bot className="h-3 w-3 mr-1" />
+                  AI Powered
+                </Badge>
+              )}
+            </CardContent>
+          </Card>
+
           {/* Download & Fax Option */}
           <Card className={`cursor-pointer border-2 transition-colors ${
             formData.submissionMethod === 'fax' 
