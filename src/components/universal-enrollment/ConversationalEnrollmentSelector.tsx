@@ -11,6 +11,7 @@ import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
 import { FloatingConversationalAgent } from '../enrollment/FloatingConversationalAgent';
 import { StructuredEnrollmentAgent } from '../enrollment/StructuredEnrollmentAgent';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
+import { EnrollmentErrorBoundary } from '../enrollment/EnrollmentErrorBoundary';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -58,21 +59,25 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
 
   if (selectedMethod === 'conversation') {
     return (
-      <FloatingConversationalAgent
-        moduleType={moduleType}
-        onComplete={onComplete || (() => {})}
-        onCancel={() => setSelectedMethod(null)}
-      />
+      <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
+        <FloatingConversationalAgent
+          moduleType={moduleType}
+          onComplete={onComplete || (() => {})}
+          onCancel={() => setSelectedMethod(null)}
+        />
+      </EnrollmentErrorBoundary>
     );
   }
 
   if (selectedMethod === 'structured') {
     return (
-      <StructuredEnrollmentAgent
-        moduleType={moduleType}
-        onComplete={onComplete || (() => {})}
-        onCancel={() => setSelectedMethod(null)}
-      />
+      <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
+        <StructuredEnrollmentAgent
+          moduleType={moduleType}
+          onComplete={onComplete || (() => {})}
+          onCancel={() => setSelectedMethod(null)}
+        />
+      </EnrollmentErrorBoundary>
     );
   }
 
@@ -95,12 +100,66 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
       </Card>
 
       {/* Method Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* AI Conversation Method */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        {/* Structured AI Method */}
+        <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-colors cursor-pointer group">
+          <div className="absolute top-4 right-4">
+            <Badge variant="default" className="bg-green-500">
+              <Zap className="h-3 w-3 mr-1" />
+              Recommended
+            </Badge>
+          </div>
+          
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-green-500/10 rounded-lg">
+                <Zap className="h-6 w-6 text-green-500" />
+              </div>
+              Structured AI
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Section-by-section AI guidance with specialized assistance for each part
+            </p>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">Benefits:</h4>
+              <ul className="space-y-1">
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  Specialized AI for each section
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  Structured data capture
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  Progress tracking
+                </li>
+              </ul>
+            </div>
+            
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              <span>Estimated time: 8-12 minutes</span>
+            </div>
+            
+            <Button 
+              className="w-full bg-green-500 hover:bg-green-600"
+              onClick={() => setSelectedMethod('structured')}
+            >
+              Start Structured AI
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Conversational AI Method */}
         <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-colors cursor-pointer group">
           <div className="absolute top-4 right-4">
             <Badge variant="default" className="bg-primary">
-              <Zap className="h-3 w-3 mr-1" />
+              <MessageCircle className="h-3 w-3 mr-1" />
               AI Powered
             </Badge>
           </div>
@@ -110,10 +169,10 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               <div className="p-2 bg-primary/10 rounded-lg">
                 <MessageCircle className="h-6 w-6 text-primary" />
               </div>
-              Conversational Enrollment
+              Conversational AI
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Chat with our AI assistant to complete your enrollment naturally and easily
+              Single AI conversation covering all enrollment aspects naturally
             </p>
           </CardHeader>
           
@@ -160,7 +219,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               Traditional Forms
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Complete standard forms at your own pace with familiar interface
+              Use the existing manual form interface you're already familiar with
             </p>
           </CardHeader>
           
@@ -187,7 +246,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               className="w-full"
               onClick={() => setSelectedMethod('traditional')}
             >
-              Use Traditional Forms
+              Use Existing Form
             </Button>
           </CardContent>
         </Card>
@@ -198,10 +257,12 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
         <CardContent className="pt-6">
           <div className="text-center space-y-2">
             <p className="text-sm text-muted-foreground">
-              Both methods collect the same information and provide the same digital signature and PDF generation capabilities.
+              All methods collect the same information and provide digital signature and PDF generation.
             </p>
             <p className="text-xs text-muted-foreground">
-              You can switch methods at any time during the process if needed.
+              • <strong>Structured AI</strong>: Section-by-section with specialized AI assistance (Recommended)<br/>
+              • <strong>Conversational AI</strong>: Natural chat-based enrollment process<br/>
+              • <strong>Traditional Forms</strong>: Use the existing manual form on this page
             </p>
           </div>
         </CardContent>
