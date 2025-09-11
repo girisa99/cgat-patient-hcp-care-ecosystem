@@ -242,28 +242,31 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
           }
         },
         status: 'active',
-        template_id: selectedTemplate.id
+        template_id: null
       };
 
       await createWorkflow(workflowData);
 
       // Save as reusable template
-      const { data: templateData, error: templateError } = await supabase
-        .from('agent_templates')
-        .insert({
-          name: selectedTemplate.name,
-          description: selectedTemplate.description,
-          template_type: 'workflow',
-          category: selectedTemplate.category.toLowerCase(),
-          workflow_data: selectedTemplate.workflow,
-          is_default: false,
-          complexity: selectedTemplate.complexity.toLowerCase(),
-          estimated_setup_time: selectedTemplate.estimatedTime,
-          required_nodes: selectedTemplate.requiredNodes,
-          created_by: (await supabase.auth.getUser()).data.user?.id
-        })
-        .select()
-        .single();
+        const user = (await supabase.auth.getUser()).data.user;
+        const { data: templateData, error: templateError } = await supabase
+          .from('agent_templates')
+          .insert({
+            name: selectedTemplate.name,
+            description: selectedTemplate.description,
+            template_type: 'workflow',
+            is_default: false,
+            created_by: user?.id,
+            configuration: {
+              workflow: selectedTemplate.workflow,
+              category: selectedTemplate.category,
+              complexity: selectedTemplate.complexity,
+              estimated_time: selectedTemplate.estimatedTime,
+              required_nodes: selectedTemplate.requiredNodes
+            }
+          })
+          .select()
+          .single();
 
       if (templateError) throw templateError;
 
