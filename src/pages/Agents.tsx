@@ -64,7 +64,7 @@ import { UnifiedWorkflowExperience } from '@/components/unified-workflow/Unified
 import { AIAssistIntegration } from '@/components/unified-workflow/AIAssistIntegration';
 import { ConfigurableNodePanel } from '@/components/unified-workflow/ConfigurableNodePanel';
 import { TemplateGallery } from '@/components/unified-workflow/TemplateGallery';
-import { EnvironmentChannelManager } from '@/components/unified-workflow/EnvironmentChannelManager';
+import { EnhancedDeploymentManager } from '@/components/deployment/EnhancedDeploymentManager';
 import { DynamicNodeConfiguration } from '@/components/unified-workflow/DynamicNodeConfiguration';
 import { useTemplateIntegration } from '@/components/workflow-builder/TemplateIntegrationManager';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
@@ -917,16 +917,25 @@ const AgentsInner = () => {
           }}
         />
 
-        {/* Deployment Manager */}
-        <EnvironmentChannelManager
-          isOpen={showDeploymentManager}
-          onClose={() => setShowDeploymentManager(false)}
-          onDeploy={(config) => {
-            console.log('[Agents] Deployment config:', config);
-            // Remove duplicate success message - EnvironmentChannelManager should handle it
-            setShowDeploymentManager(false);
-          }}
-        />
+        {/* Enhanced Deployment Manager */}
+        {showDeploymentManager && (
+          <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
+            <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+              <div className="mb-4 flex justify-end">
+                <Button variant="outline" size="sm" onClick={() => setShowDeploymentManager(false)}>
+                  <X className="h-4 w-4 mr-2" />
+                  Close
+                </Button>
+              </div>
+              <EnhancedDeploymentManager
+                onDeploy={(config) => {
+                  console.log('[Agents] Enhanced deployment config:', config);
+                  setShowDeploymentManager(false);
+                }}
+              />
+            </div>
+          </div>
+        )}
 
         {/* Libraries Panel */}
         {showLibrariesPanel && (
