@@ -36,12 +36,62 @@ interface GenieConversationInterfaceProps {
 type ConversationMode = 'system' | 'single' | 'multi';
 
 const availableModels = [
+  // Large Language Models
   'GEMINI',
   'GPT',
   'CLAUDE',
   'LLAMA',
   'MIXTRAL',
   'ANTHROPIC'
+];
+
+const smallLanguageModels = [
+  'PHI-3-MINI',
+  'QWEN-2.5',
+  'LLAMA-3.1-8B',
+  'MISTRAL-7B',
+  'GEMMA-2B',
+  'TINYLLAMA-1.1B'
+];
+
+const visionLanguageModels = [
+  'GPT-4-VISION',
+  'GEMINI-PRO-VISION',
+  'CLAUDE-3-VISION',
+  'LLAVA-1.5',
+  'BLIP-2',
+  'FUYU-8B'
+];
+
+const mcpTools = [
+  {
+    id: 'healthcare-mcp',
+    name: 'Healthcare MCP Server',
+    description: 'Clinical decision support, patient records, compliance tools',
+    capabilities: ['Patient Records', 'Clinical Decision Support', 'Drug Interactions', 'Compliance Audit'],
+    status: 'available'
+  },
+  {
+    id: 'filesystem-mcp',
+    name: 'Filesystem MCP Server', 
+    description: 'File operations, document management, data processing',
+    capabilities: ['File Operations', 'Document Processing', 'Data Analysis', 'Search'],
+    status: 'available'
+  },
+  {
+    id: 'label-studio-mcp',
+    name: 'Label Studio Integration',
+    description: 'Data annotation, labeling workflows, ML dataset creation',
+    capabilities: ['Data Annotation', 'Model Training', 'Quality Control', 'Export Management'],
+    status: 'configurable'
+  },
+  {
+    id: 'web-search-mcp',
+    name: 'Web Search & Research',
+    description: 'Real-time web search, research assistance, fact checking',
+    capabilities: ['Web Search', 'Research', 'Fact Checking', 'Content Analysis'],
+    status: 'available'
+  }
 ];
 
 export const GenieConversationInterface: React.FC<GenieConversationInterfaceProps> = ({
@@ -58,9 +108,33 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [contentQueue, setContentQueue] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
   const [chatStarted, setChatStarted] = useState(false);
+  const [selectedModelType, setSelectedModelType] = useState<'llm' | 'slm' | 'vlm'>('llm');
+  const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([]);
+  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
   
   // Initialize Universal AI hook
   const { generateResponse, isLoading, error } = useUniversalAI();
+
+  const getModelsForType = (type: 'llm' | 'slm' | 'vlm') => {
+    switch (type) {
+      case 'llm':
+        return availableModels;
+      case 'slm':
+        return smallLanguageModels;
+      case 'vlm':
+        return visionLanguageModels;
+      default:
+        return availableModels;
+    }
+  };
+
+  const handleMCPToolToggle = (toolId: string) => {
+    setSelectedMCPTools(prev => 
+      prev.includes(toolId) 
+        ? prev.filter(id => id !== toolId)
+        : [...prev, toolId]
+    );
+  };
 
   const conversationModes = [
     {
@@ -120,7 +194,9 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     // Initialize conversation based on selected mode and enabled features
     const conversationConfig = {
       mode: selectedMode,
+      modelType: selectedModelType,
       enabledFeatures,
+      selectedMCPTools,
       models: selectedMode === 'single' ? [selectedModel] : 
               selectedMode === 'multi' ? [leftModel, rightModel] : 
               ['GEMINI', 'GPT', 'CLAUDE'] // System mode uses all models
@@ -151,13 +227,28 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         else provider = 'openai';
       }
       
-      // Create system prompt based on enabled features
+      // Create system prompt based on enabled features and model type
       let systemPrompt = "You are a helpful AI assistant.";
+      
+      // Add model type specific instructions
+      if (selectedModelType === 'slm') {
+        systemPrompt += " You are optimized for efficiency and speed while maintaining accuracy.";
+      } else if (selectedModelType === 'vlm') {
+        systemPrompt += " You have vision capabilities and can analyze images, charts, and visual content.";
+      }
+      
+      // Add feature-specific context
       if (enabledFeatures.includes('medical')) {
         systemPrompt += " You have access to medical data, FDA information, ICD codes, and HCPCS codes. Provide medical information when relevant.";
       }
       if (enabledFeatures.includes('publication')) {
         systemPrompt += " Generate content suitable for review and publication in knowledge bases.";
+      }
+
+      // Add MCP tools context
+      if (selectedMCPTools.length > 0) {
+        const toolNames = selectedMCPTools.map(id => mcpTools.find(t => t.id === id)?.name).filter(Boolean);
+        systemPrompt += ` You have access to the following external tools and integrations: ${toolNames.join(', ')}. Use these tools when relevant to provide enhanced responses.`;
       }
       
       const response = await generateResponse({
@@ -195,7 +286,34 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     switch (selectedMode) {
       case 'single':
         return (
-          <div className="mt-4">
+          <div className="mt-4 space-y-4">
+            {/* Model Type Selection */}
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Model Type</label>
+              <div className="flex gap-2">
+                {[
+                  { key: 'llm', label: 'Large LM', icon: '🤖' },
+                  { key: 'slm', label: 'Small LM', icon: '⚡' },
+                  { key: 'vlm', label: 'Vision LM', icon: '👁️' }
+                ].map((type) => (
+                  <Button
+                    key={type.key}
+                    variant={selectedModelType === type.key ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedModelType(type.key as 'llm' | 'slm' | 'vlm');
+                      setSelectedModel(getModelsForType(type.key as 'llm' | 'slm' | 'vlm')[0]);
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <span>{type.icon}</span>
+                    {type.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
+            {/* Model Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Select Model</label>
               <Select value={selectedModel} onValueChange={setSelectedModel}>
@@ -203,7 +321,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {availableModels.map((model) => (
+                  {getModelsForType(selectedModelType).map((model) => (
                     <SelectItem key={model} value={model}>
                       {model}
                     </SelectItem>
@@ -216,36 +334,66 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
       case 'multi':
         return (
-          <div className="mt-4 grid grid-cols-2 gap-4">
+          <div className="mt-4 space-y-4">
+            {/* Model Type Selection */}
             <div className="space-y-2">
-              <label className="text-sm font-medium">Left Model</label>
-              <Select value={leftModel} onValueChange={setLeftModel}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <label className="text-sm font-medium">Model Type</label>
+              <div className="flex gap-2">
+                {[
+                  { key: 'llm', label: 'Large LM', icon: '🤖' },
+                  { key: 'slm', label: 'Small LM', icon: '⚡' },
+                  { key: 'vlm', label: 'Vision LM', icon: '👁️' }
+                ].map((type) => (
+                  <Button
+                    key={type.key}
+                    variant={selectedModelType === type.key ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => {
+                      setSelectedModelType(type.key as 'llm' | 'slm' | 'vlm');
+                      const models = getModelsForType(type.key as 'llm' | 'slm' | 'vlm');
+                      setLeftModel(models[0]);
+                      setRightModel(models[1] || models[0]);
+                    }}
+                    className="flex items-center gap-1"
+                  >
+                    <span>{type.icon}</span>
+                    {type.label}
+                  </Button>
+                ))}
+              </div>
             </div>
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Right Model</label>
-              <Select value={rightModel} onValueChange={setRightModel}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {availableModels.map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Left Model</label>
+                <Select value={leftModel} onValueChange={setLeftModel}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getModelsForType(selectedModelType).map((model) => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-medium">Right Model</label>
+                <Select value={rightModel} onValueChange={setRightModel}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {getModelsForType(selectedModelType).map((model) => (
+                      <SelectItem key={model} value={model}>
+                        {model}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
         );
@@ -347,6 +495,84 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
           {/* Mode-specific Content */}
           {renderModeSpecificContent()}
+
+          {/* Advanced Options Toggle */}
+          <div className="mt-6 flex justify-center">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
+              className="text-gray-600 hover:text-gray-800"
+            >
+              {showAdvancedOptions ? 'Hide' : 'Show'} Advanced Options
+              <ChevronRight className={`h-4 w-4 ml-1 transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} />
+            </Button>
+          </div>
+
+          {/* Advanced Options - MCP Tools */}
+          {showAdvancedOptions && (
+            <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
+              <h4 className="font-semibold text-sm text-gray-800 mb-3 flex items-center gap-2">
+                <Bot className="h-4 w-4" />
+                MCP Tools & Integrations
+              </h4>
+              <p className="text-xs text-gray-600 mb-4">
+                Connect to external tools and services through Model Context Protocol
+              </p>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {mcpTools.map((tool) => (
+                  <Card 
+                    key={tool.id} 
+                    className={`cursor-pointer border-2 transition-all ${
+                      selectedMCPTools.includes(tool.id) 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 hover:border-gray-300'
+                    }`}
+                    onClick={() => handleMCPToolToggle(tool.id)}
+                  >
+                    <CardContent className="p-3">
+                      <div className="flex items-start justify-between mb-2">
+                        <h5 className="font-medium text-sm">{tool.name}</h5>
+                        <Badge 
+                          variant={tool.status === 'available' ? 'default' : 'secondary'}
+                          className="text-xs"
+                        >
+                          {tool.status}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-gray-600 mb-2">{tool.description}</p>
+                      <div className="flex flex-wrap gap-1">
+                        {tool.capabilities.map((capability, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
+                            {capability}
+                          </Badge>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+
+              {selectedMCPTools.length > 0 && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                  <p className="text-xs text-green-700 font-medium mb-1">
+                    Selected MCP Tools ({selectedMCPTools.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {selectedMCPTools.map((toolId) => {
+                      const tool = mcpTools.find(t => t.id === toolId);
+                      return (
+                        <Badge key={toolId} variant="secondary" className="text-xs">
+                          {tool?.name}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Feature Status Display */}
           {enabledFeatures.length > 0 && (
