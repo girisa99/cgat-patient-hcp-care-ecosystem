@@ -478,39 +478,98 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
           </CardHeader>
           <CardContent className="space-y-6">
             <div>
-              <h3 className="font-semibold mb-3">Workflow Overview</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {selectedTemplate.workflow.nodes.map((node) => (
-                  <div key={node.id} className="p-3 bg-muted rounded-lg">
-                    <div className="font-medium text-sm">{node.data.label}</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      {node.data.description}
+              <h3 className="font-semibold mb-3">Enrollment Journey Workflow</h3>
+              <div className="space-y-3">
+                {selectedTemplate.workflow.nodes
+                  .filter(node => node.id !== 'start')
+                  .map((node, index) => (
+                  <div key={node.id} className="flex items-center gap-3 p-3 bg-muted/50 rounded-lg border">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-full bg-primary/10 text-primary font-semibold text-sm">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium text-sm flex items-center gap-2">
+                        {node.data.label}
+                        {node.data.mcpConnected && (
+                          <Badge variant="secondary" className="text-xs px-2 py-0">
+                            <Database className="w-3 h-3 mr-1" />
+                            MCP Connected
+                          </Badge>
+                        )}
+                        {node.data.npiTrigger && (
+                          <Badge variant="outline" className="text-xs px-2 py-0">
+                            <ShieldCheck className="w-3 h-3 mr-1" />
+                            NPI Trigger
+                          </Badge>
+                        )}
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {node.data.description}
+                      </div>
+                      {node.data.fields && (
+                        <div className="text-xs text-muted-foreground mt-1">
+                          Fields: {node.data.fields.slice(0, 3).join(', ')}
+                          {node.data.fields.length > 3 && ` +${node.data.fields.length - 3} more`}
+                        </div>
+                      )}
+                    </div>
+                    <div className="text-green-600">
+                      <CheckCircle className="w-5 h-5" />
                     </div>
                   </div>
                 ))}
+              </div>
+              
+              <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <MessageSquare className="w-5 h-5 text-blue-600 mt-0.5" />
+                  <div>
+                    <h4 className="font-semibold text-blue-900">Journey Progress Tracking</h4>
+                    <p className="text-sm text-blue-700 mt-1">
+                      During enrollment, each section will turn green as it's completed. The agent automatically 
+                      progresses through the journey stages, providing real-time feedback to users about their 
+                      completion status.
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             <Separator />
 
             <div>
-              <h3 className="font-semibold mb-3">Required Node Types</h3>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
-                {selectedTemplate.requiredNodes.map((nodeType) => {
-                  const isAvailable = nodeTypes.some(nt => nt.type_key === nodeType);
-                  return (
-                    <div key={nodeType} className="flex items-center gap-2 p-2 bg-muted rounded">
-                      {isAvailable ? (
-                        <CheckCircle className="w-4 h-4 text-green-600" />
-                      ) : (
-                        <Clock className="w-4 h-4 text-yellow-600" />
-                      )}
-                      <span className="text-sm">
-                        {nodeType.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                      </span>
-                    </div>
-                  );
-                })}
+              <h3 className="font-semibold mb-3">Pre-Configured MCP Integrations</h3>
+              <div className="space-y-3">
+                <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <CheckCircle className="w-5 h-5 text-green-600" />
+                    <span className="font-medium text-green-900">All Nodes Pre-Configured</span>
+                  </div>
+                  <p className="text-sm text-green-700">
+                    Every workflow node comes with pre-built database connections, API integrations, 
+                    and business logic through MCP (Model Context Protocol). No configuration required!
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                  {[
+                    { name: 'Database Operations', desc: 'Automatic CRUD operations with Supabase', icon: Database },
+                    { name: 'Form Validation', desc: 'Built-in validation rules and error handling', icon: ShieldCheck },
+                    { name: 'Real-time Updates', desc: 'Live progress tracking and notifications', icon: MessageSquare },
+                    { name: 'Document Generation', desc: 'Auto-generate PDFs and enrollment packets', icon: FileText },
+                  ].map((integration) => {
+                    const IconComponent = integration.icon;
+                    return (
+                      <div key={integration.name} className="flex items-start gap-3 p-3 bg-muted/30 rounded-lg">
+                        <IconComponent className="w-5 h-5 text-primary mt-0.5" />
+                        <div>
+                          <div className="font-medium text-sm">{integration.name}</div>
+                          <div className="text-xs text-muted-foreground">{integration.desc}</div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -606,13 +665,52 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
 
             {selectedChannels.length > 0 && (
               <div className="mt-6 p-4 bg-muted/50 rounded-lg">
-                <h4 className="font-semibold mb-2">Agent Configuration Summary</h4>
-                <div className="space-y-2 text-sm">
-                  <p>• <strong>Template:</strong> {selectedTemplate?.name}</p>
-                  <p>• <strong>Nodes:</strong> {selectedTemplate?.workflow.nodes.length} workflow steps</p>
-                  <p>• <strong>MCP Connections:</strong> Pre-configured database and API integrations</p>
-                  <p>• <strong>Channels:</strong> {selectedChannels.length} selected</p>
-                  <p>• <strong>NPI Integration:</strong> {selectedTemplate?.id === 'patient-enrollment-agent' ? 'Conditional prompt during provider info' : 'Not applicable'}</p>
+                <h4 className="font-semibold mb-3">Deployment Summary & MCP Integration</h4>
+                <div className="space-y-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <p className="text-sm"><strong>Template:</strong> {selectedTemplate?.name}</p>
+                      <p className="text-sm"><strong>Workflow Steps:</strong> {selectedTemplate?.workflow.nodes.length} pre-configured stages</p>
+                      <p className="text-sm"><strong>Deployment Channels:</strong> {selectedChannels.length} selected</p>
+                      <p className="text-sm"><strong>Journey Tracking:</strong> Real-time progress with green completion indicators</p>
+                    </div>
+                    <div className="space-y-2">
+                      <p className="text-sm"><strong>MCP Integration:</strong> All nodes pre-connected to database/API</p>
+                      <p className="text-sm"><strong>User Configuration:</strong> None required - fully automated</p>
+                      <p className="text-sm"><strong>Form Validation:</strong> Built-in validation rules</p>
+                      <p className="text-sm"><strong>Document Generation:</strong> Automatic PDF creation</p>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <CheckCircle className="w-5 h-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h5 className="font-semibold text-blue-900">How It Works</h5>
+                        <p className="text-sm text-blue-700 mt-1">
+                          Each enrollment section automatically connects to your database through MCP. 
+                          As users complete sections, the journey tracker updates in real-time, 
+                          turning completed sections green. No configuration needed - just deploy and use!
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {selectedTemplate?.id === 'patient-enrollment-agent' && (
+                    <div className="mt-3 p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                      <div className="flex items-start gap-3">
+                        <ShieldCheck className="w-5 h-5 text-amber-600 mt-0.5" />
+                        <div>
+                          <h5 className="font-semibold text-amber-900">NPI Verification Integration</h5>
+                          <p className="text-sm text-amber-700 mt-1">
+                            During Provider Information step, system will automatically prompt users to 
+                            launch NPI verification if not initially deployed. This ensures seamless 
+                            credential verification when needed.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             )}
