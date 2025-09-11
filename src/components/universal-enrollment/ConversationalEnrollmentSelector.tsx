@@ -6,12 +6,13 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, FileText, Zap, Clock } from 'lucide-react';
+import { MessageCircle, FileText, Zap, Clock, Workflow } from 'lucide-react';
 import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
 import { FloatingConversationalAgent } from '../enrollment/FloatingConversationalAgent';
 import { StructuredEnrollmentAgent } from '../enrollment/StructuredEnrollmentAgent';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { EnrollmentErrorBoundary } from '../enrollment/EnrollmentErrorBoundary';
+import { EnrollmentAgentWorkflowCreator } from '../enrollment/EnrollmentAgentWorkflowCreator';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -25,7 +26,19 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   onComplete
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<'conversation' | 'structured' | 'traditional' | null>(null);
+  const [showWorkflowCreator, setShowWorkflowCreator] = useState(false);
   const { closeEnrollment } = useGlobalConversationalEnrollment();
+
+  const handleStructuredAI = () => {
+    console.log('Starting Structured AI with Workflow Creation');
+    setShowWorkflowCreator(true);
+  };
+
+  const handleAgentCreated = (agent: any) => {
+    console.log('Agent created:', agent);
+    setShowWorkflowCreator(false);
+    setSelectedMethod('structured');
+  };
 
   const getModuleInfo = (type: ModuleType) => {
     const moduleInfo = {
@@ -147,10 +160,11 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
             </div>
             
             <Button 
-              className="w-full bg-green-500 hover:bg-green-600"
-              onClick={() => setSelectedMethod('structured')}
+              className="w-full bg-green-500 hover:bg-green-600 gap-2"
+              onClick={handleStructuredAI}
             >
-              Start Structured AI
+              <Workflow className="w-4 h-4" />
+              Create AI Agent
             </Button>
           </CardContent>
         </Card>
@@ -267,6 +281,16 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
           </div>
         </CardContent>
       </Card>
+
+      {/* Workflow Creator */}
+      {showWorkflowCreator && (
+        <EnrollmentErrorBoundary onBack={() => setShowWorkflowCreator(false)}>
+          <EnrollmentAgentWorkflowCreator 
+            onAgentCreated={handleAgentCreated}
+            onClose={() => setShowWorkflowCreator(false)}
+          />
+        </EnrollmentErrorBoundary>
+      )}
     </div>
   );
 };
