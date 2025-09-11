@@ -20,9 +20,11 @@ import {
   Stethoscope, 
   FileText, 
   Send,
-  ChevronRight
+  ChevronRight,
+  Loader2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 
 interface GenieConversationInterfaceProps {
   isOpen: boolean;
@@ -55,6 +57,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [message, setMessage] = useState('');
   const [contentQueue, setContentQueue] = useState<any[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [chatStarted, setChatStarted] = useState(false);
+  
+  // Initialize Universal AI hook
+  const { generateResponse, isLoading, error } = useUniversalAI();
 
   const conversationModes = [
     {
@@ -120,6 +126,69 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               ['GEMINI', 'GPT', 'CLAUDE'] // System mode uses all models
     };
     console.log('Starting chat with config:', conversationConfig);
+    setChatStarted(true);
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    
+    const userMessage = { 
+      role: 'user', 
+      content: message.trim(),
+      timestamp: new Date().toISOString()
+    };
+    
+    setMessages(prev => [...prev, userMessage]);
+    const currentMessage = message;
+    setMessage('');
+    
+    try {
+      // Determine provider based on selected mode
+      let provider: 'openai' | 'claude' | 'gemini' = 'openai'; // default
+      if (selectedMode === 'single') {
+        if (selectedModel.toLowerCase().includes('gemini')) provider = 'gemini';
+        else if (selectedModel.toLowerCase().includes('claude')) provider = 'claude';
+        else provider = 'openai';
+      }
+      
+      // Create system prompt based on enabled features
+      let systemPrompt = "You are a helpful AI assistant.";
+      if (enabledFeatures.includes('medical')) {
+        systemPrompt += " You have access to medical data, FDA information, ICD codes, and HCPCS codes. Provide medical information when relevant.";
+      }
+      if (enabledFeatures.includes('publication')) {
+        systemPrompt += " Generate content suitable for review and publication in knowledge bases.";
+      }
+      
+      const response = await generateResponse({
+        prompt: currentMessage,
+        systemPrompt,
+        provider,
+        model: selectedModel,
+        temperature: 0.7,
+        maxTokens: 1000
+      });
+      
+      if (response) {
+        const aiMessage = {
+          role: 'assistant',
+          content: response.content,
+          provider: response.provider,
+          timestamp: new Date().toISOString(),
+          model: response.model
+        };
+        setMessages(prev => [...prev, aiMessage]);
+      }
+    } catch (error) {
+      console.error('Error sending message:', error);
+      const errorMessage = {
+        role: 'assistant', 
+        content: 'Sorry, I encountered an error processing your request.',
+        timestamp: new Date().toISOString(),
+        error: true
+      };
+      setMessages(prev => [...prev, errorMessage]);
+    }
   };
 
   const renderModeSpecificContent = () => {
@@ -318,34 +387,91 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
 
           {/* Start Chat Button */}
-          <div className="mt-6 flex justify-center">
-            <Button 
-              size="lg" 
-              onClick={handleStartChat}
-              className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-lg font-medium"
-            >
-              Start Chat
-            </Button>
-          </div>
-
-          {/* Message Input */}
-          <div className="mt-6">
-            <div className="flex gap-2">
-              <Textarea
-                value={message}
-                onChange={(e) => setMessage(e.target.value)}
-                placeholder="Type your message..."
-                className="flex-1 min-h-[100px] resize-none"
-              />
+          {!chatStarted && (
+            <div className="mt-6 flex justify-center">
               <Button 
-                size="icon" 
-                className="self-end bg-blue-500 hover:bg-blue-600 text-white"
-                disabled={!message.trim()}
+                size="lg" 
+                onClick={handleStartChat}
+                className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-lg font-medium"
               >
-                <Send className="h-4 w-4" />
+                Start Chat
               </Button>
             </div>
-          </div>
+          )}
+
+          {/* Conversation Area */}
+          {chatStarted && (
+            <div className="mt-6">
+              <ScrollArea className="h-96 w-full border rounded-lg p-4">
+                {messages.length === 0 ? (
+                  <div className="text-center text-gray-500 mt-20">
+                    <Bot className="h-12 w-12 mx-auto mb-4 text-gray-400" />
+                    <p>Chat started! Send your first message below.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {messages.map((msg, index) => (
+                      <div 
+                        key={index} 
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                      >
+                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                          msg.role === 'user' 
+                            ? 'bg-blue-500 text-white' 
+                            : msg.error 
+                              ? 'bg-red-100 text-red-800 border border-red-200'
+                              : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          <p className="text-sm">{msg.content}</p>
+                          {msg.model && (
+                            <p className="text-xs opacity-75 mt-1">
+                              {msg.provider?.toUpperCase()} • {msg.model}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <div className="bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2">
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                          <span className="text-sm text-gray-600">Thinking...</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          )}
+
+          {/* Message Input */}
+          {chatStarted && (
+            <div className="mt-6">
+              <div className="flex gap-2">
+                <Textarea
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSendMessage();
+                    }
+                  }}
+                  placeholder="Type your message..."
+                  className="flex-1 min-h-[100px] resize-none"
+                />
+                <Button 
+                  size="icon" 
+                  onClick={handleSendMessage}
+                  className="self-end bg-blue-500 hover:bg-blue-600 text-white"
+                  disabled={!message.trim() || isLoading}
+                >
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
