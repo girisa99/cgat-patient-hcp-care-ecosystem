@@ -83,3 +83,12 @@ verify_jwt = false
 
 [functions.fax-voice-processor]
 verify_jwt = false
+
+[functions.rag-search]
+verify_jwt = false
+
+[functions.label-studio-search]
+verify_jwt = false
+
+[functions.rag-status]
+verify_jwt = false

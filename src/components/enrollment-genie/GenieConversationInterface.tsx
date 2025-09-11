@@ -1,8 +1,8 @@
 /**
- * GENIE CONVERSATION INTERFACE
- * New conversation interface with System, Single, Multi, Medical, and Publication modes
+ * ENHANCED GENIE CONVERSATION INTERFACE
+ * Refactored with proper state management, RAG integration, and dropdown options
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,10 +21,16 @@ import {
   FileText, 
   Send,
   ChevronRight,
-  Loader2
+  Loader2,
+  RefreshCw,
+  Settings,
+  Database,
+  Zap
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
+import { useConversationState, ConversationMessage } from '@/hooks/useConversationState';
+import { ragService } from '@/services/ragService';
 
 interface GenieConversationInterfaceProps {
   isOpen: boolean;
@@ -37,30 +43,15 @@ type ConversationMode = 'system' | 'single' | 'multi';
 
 const availableModels = [
   // Large Language Models
-  'GEMINI',
-  'GPT',
-  'CLAUDE',
-  'LLAMA',
-  'MIXTRAL',
-  'ANTHROPIC'
+  'GEMINI', 'GPT', 'CLAUDE', 'LLAMA', 'MIXTRAL', 'ANTHROPIC'
 ];
 
 const smallLanguageModels = [
-  'PHI-3-MINI',
-  'QWEN-2.5',
-  'LLAMA-3.1-8B',
-  'MISTRAL-7B',
-  'GEMMA-2B',
-  'TINYLLAMA-1.1B'
+  'PHI-3-MINI', 'QWEN-2.5', 'LLAMA-3.1-8B', 'MISTRAL-7B', 'GEMMA-2B', 'TINYLLAMA-1.1B'
 ];
 
 const visionLanguageModels = [
-  'GPT-4-VISION',
-  'GEMINI-PRO-VISION',
-  'CLAUDE-3-VISION',
-  'LLAVA-1.5',
-  'BLIP-2',
-  'FUYU-8B'
+  'GPT-4-VISION', 'GEMINI-PRO-VISION', 'CLAUDE-3-VISION', 'LLAVA-1.5', 'BLIP-2', 'FUYU-8B'
 ];
 
 const mcpTools = [
@@ -81,9 +72,9 @@ const mcpTools = [
   {
     id: 'label-studio-mcp',
     name: 'Label Studio Integration',
-    description: 'Data annotation, labeling workflows, ML dataset creation',
-    capabilities: ['Data Annotation', 'Model Training', 'Quality Control', 'Export Management'],
-    status: 'configurable'
+    description: 'Data annotation, labeling workflows, ML dataset creation, RAG knowledge base',
+    capabilities: ['Data Annotation', 'RAG Search', 'Knowledge Base', 'Model Training', 'Vector Search'],
+    status: 'available'
   },
   {
     id: 'web-search-mcp',
@@ -100,63 +91,43 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   tenantId,
   userId
 }) => {
-  const [selectedMode, setSelectedMode] = useState<ConversationMode>('system');
-  const [selectedModel, setSelectedModel] = useState('GEMINI');
-  const [leftModel, setLeftModel] = useState('GEMINI');
-  const [rightModel, setRightModel] = useState('GPT');
   const [message, setMessage] = useState('');
-  const [contentQueue, setContentQueue] = useState<any[]>([]);
-  const [messages, setMessages] = useState<any[]>([]);
-  const [chatStarted, setChatStarted] = useState(false);
-  const [selectedModelType, setSelectedModelType] = useState<'llm' | 'slm' | 'vlm'>('llm');
-  const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([]);
-  const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
+  const [ragStatus, setRagStatus] = useState({ available: false, documentsCount: 0, labelStudioConnected: false });
+  
+  // Use conversation state management
+  const { state: conversationState, resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = useConversationState();
   
   // Initialize Universal AI hook
   const { generateResponse, isLoading, error } = useUniversalAI();
 
-  const getModelsForType = (type: 'llm' | 'slm' | 'vlm') => {
-    switch (type) {
-      case 'llm':
-        return availableModels;
-      case 'slm':
-        return smallLanguageModels;
-      case 'vlm':
-        return visionLanguageModels;
-      default:
-        return availableModels;
+  // Check RAG status on component mount
+  useEffect(() => {
+    if (isOpen) {
+      ragService.checkRAGStatus().then(setRagStatus);
     }
-  };
-
-  const handleMCPToolToggle = (toolId: string) => {
-    setSelectedMCPTools(prev => 
-      prev.includes(toolId) 
-        ? prev.filter(id => id !== toolId)
-        : [...prev, toolId]
-    );
-  };
+  }, [isOpen]);
 
   const conversationModes = [
     {
       id: 'system',
       label: 'System',
       icon: <Monitor className="h-4 w-4" />,
-      description: 'Utilizes all available models (Gemini, GPT, and Claude) for comprehensive and optimized responses.',
-      active: selectedMode === 'system'
+      description: 'Utilizes all available models (Gemini, GPT, and Claude) with RAG-enhanced responses for comprehensive and optimized answers.',
+      active: conversationState.selectedMode === 'system'
     },
     {
       id: 'single',
       label: 'Single',
       icon: <User className="h-4 w-4" />,
-      description: 'Single model conversation for focused responses.',
-      active: selectedMode === 'single'
+      description: 'Single model conversation with RAG support for focused, context-aware responses.',
+      active: conversationState.selectedMode === 'single'
     },
     {
       id: 'multi',
       label: 'Multi',
       icon: <Users className="h-4 w-4" />,
-      description: 'Split screen with multiple models for comparative analysis.',
-      active: selectedMode === 'multi'
+      description: 'Split screen with multiple models for comparative analysis, both enhanced with RAG context.',
+      active: conversationState.selectedMode === 'multi'
     },
     {
       id: 'medical',
@@ -170,104 +141,118 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       id: 'publication',
       label: 'Publication', 
       icon: <FileText className="h-4 w-4" />,
-      description: 'Generate content for review and publication in the knowledge base.',
+      description: 'Generate content for review and publication in the knowledge base with automatic RAG integration.',
       active: false,
       isFeature: true
     }
   ];
 
-  const handleModeSelect = (mode: ConversationMode) => {
-    setSelectedMode(mode);
+  const getModelsForType = (type: 'llm' | 'slm' | 'vlm') => {
+    switch (type) {
+      case 'llm': return availableModels;
+      case 'slm': return smallLanguageModels;
+      case 'vlm': return visionLanguageModels;
+      default: return availableModels;
+    }
   };
 
-  const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
+  const handleModeSelect = (mode: ConversationMode) => {
+    switchMode(mode);
+  };
 
   const handleFeatureToggle = (featureId: string) => {
-    setEnabledFeatures(prev => 
-      prev.includes(featureId) 
-        ? prev.filter(id => id !== featureId)
-        : [...prev, featureId]
-    );
+    const newFeatures = conversationState.enabledFeatures.includes(featureId) 
+      ? conversationState.enabledFeatures.filter(id => id !== featureId)
+      : [...conversationState.enabledFeatures, featureId];
+    
+    updateConversationConfig({ enabledFeatures: newFeatures });
+  };
+
+  const handleMCPToolToggle = (toolId: string) => {
+    const newTools = conversationState.selectedMCPTools.includes(toolId) 
+      ? conversationState.selectedMCPTools.filter(id => id !== toolId)
+      : [...conversationState.selectedMCPTools, toolId];
+    
+    updateConversationConfig({ selectedMCPTools: newTools });
   };
 
   const handleStartChat = () => {
-    // Initialize conversation based on selected mode and enabled features
-    const conversationConfig = {
-      mode: selectedMode,
-      modelType: selectedModelType,
-      enabledFeatures,
-      selectedMCPTools,
-      models: selectedMode === 'single' ? [selectedModel] : 
-              selectedMode === 'multi' ? [leftModel, rightModel] : 
-              ['GEMINI', 'GPT', 'CLAUDE'] // System mode uses all models
-    };
-    console.log('Starting chat with config:', conversationConfig);
-    setChatStarted(true);
-
+    startConversation();
+    
     // If the user already typed a message, send it immediately
     if (message.trim()) {
       queueMicrotask(() => handleSendMessage());
     }
   };
 
+  const handleResetConversation = () => {
+    resetConversation();
+    setMessage('');
+  };
+
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     
-    if (!chatStarted) setChatStarted(true);
+    if (!conversationState.isActive) startConversation();
     
-    const userMessage = { 
+    const userMessageId = addMessage({ 
       role: 'user', 
       content: message.trim(),
       timestamp: new Date().toISOString()
-    };
+    });
     
-    setMessages(prev => [...prev, userMessage]);
     const currentMessage = message;
     setMessage('');
     
     try {
       // Determine provider based on selected mode
-      let provider: 'openai' | 'claude' | 'gemini' = 'openai'; // default
-      if (selectedMode === 'single' || selectedMode === 'multi') {
-        const targetModel = selectedMode === 'multi' ? leftModel : selectedModel;
+      let provider: 'openai' | 'claude' | 'gemini' = 'openai';
+      if (conversationState.selectedMode === 'single' || conversationState.selectedMode === 'multi') {
+        const targetModel = conversationState.selectedMode === 'multi' ? conversationState.leftModel : conversationState.selectedModel;
         const modelId = targetModel.toLowerCase();
         if (modelId.includes('gemini')) provider = 'gemini';
         else if (modelId.includes('claude') || modelId.includes('anthropic')) provider = 'claude';
         else provider = 'openai';
       }
       
-      // Create system prompt based on enabled features and model type
-      let systemPrompt = "You are a helpful AI assistant.";
+      // Enhanced system prompt with RAG context
+      let systemPrompt = "You are a helpful AI assistant with access to a comprehensive knowledge base.";
       
       // Add model type specific instructions
-      if (selectedModelType === 'slm') {
+      if (conversationState.selectedModelType === 'slm') {
         systemPrompt += " You are optimized for efficiency and speed while maintaining accuracy.";
-      } else if (selectedModelType === 'vlm') {
+      } else if (conversationState.selectedModelType === 'vlm') {
         systemPrompt += " You have vision capabilities and can analyze images, charts, and visual content.";
       }
       
       // Add feature-specific context
-      if (enabledFeatures.includes('medical')) {
+      if (conversationState.enabledFeatures.includes('medical')) {
         systemPrompt += " You have access to medical data, FDA information, ICD codes, and HCPCS codes. Provide medical information when relevant.";
       }
-      if (enabledFeatures.includes('publication')) {
+      if (conversationState.enabledFeatures.includes('publication')) {
         systemPrompt += " Generate content suitable for review and publication in knowledge bases.";
       }
 
       // Add MCP tools context
-      if (selectedMCPTools.length > 0) {
-        const toolNames = selectedMCPTools.map(id => mcpTools.find(t => t.id === id)?.name).filter(Boolean);
+      if (conversationState.selectedMCPTools.length > 0) {
+        const toolNames = conversationState.selectedMCPTools.map(id => mcpTools.find(t => t.id === id)?.name).filter(Boolean);
         systemPrompt += ` You have access to the following external tools and integrations: ${toolNames.join(', ')}. Use these tools when relevant to provide enhanced responses.`;
       }
-      
-      // Build and send request; in System mode, try providers in order
+
+      // Enhance prompt with RAG context
+      const { enhancedPrompt, contextSources } = await ragService.enhancePromptWithRAG(
+        currentMessage, 
+        [...conversationState.enabledFeatures, ...conversationState.selectedMCPTools]
+      );
+
+      // Build and send request with fallback for System mode
       let response: any = null;
-      if (selectedMode === 'system') {
+      if (conversationState.selectedMode === 'system') {
         const providersToTry: Array<'openai' | 'claude' | 'gemini'> = ['openai', 'claude', 'gemini'];
         for (const p of providersToTry) {
           try {
             const r = await generateResponse({
-              prompt: currentMessage,
+              prompt: enhancedPrompt,
               systemPrompt,
               provider: p,
               temperature: 0.7,
@@ -280,10 +265,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         }
       } else {
         const request: any = {
-          prompt: currentMessage,
+          prompt: enhancedPrompt,
           systemPrompt,
           provider,
-          model: selectedMode === 'multi' ? leftModel : selectedModel,
+          model: conversationState.selectedMode === 'multi' ? conversationState.leftModel : conversationState.selectedModel,
           temperature: 0.7,
           maxTokens: 1000
         };
@@ -291,29 +276,37 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       }
       
       if (response) {
-        const aiMessage = {
+        let content = response.content;
+        
+        // Add context sources to response if available
+        if (contextSources.length > 0) {
+          content += `\n\n*Sources: ${contextSources.join(', ')}*`;
+        }
+        
+        addMessage({
           role: 'assistant',
-          content: response.content,
+          content,
           provider: response.provider,
           timestamp: new Date().toISOString(),
-          model: response.model
-        };
-        setMessages(prev => [...prev, aiMessage]);
+          model: response.model,
+          metadata: { contextSources, ragEnhanced: contextSources.length > 0 }
+        });
+      } else {
+        throw new Error('No response from any AI provider');
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      const errorMessage = {
+      addMessage({
         role: 'assistant', 
-        content: 'Sorry, I encountered an error processing your request.',
+        content: 'Sorry, I encountered an error processing your request. Please try again.',
         timestamp: new Date().toISOString(),
         error: true
-      };
-      setMessages(prev => [...prev, errorMessage]);
+      });
     }
   };
 
   const renderModeSpecificContent = () => {
-    switch (selectedMode) {
+    switch (conversationState.selectedMode) {
       case 'single':
         return (
           <div className="mt-4 space-y-4">
@@ -328,11 +321,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 ].map((type) => (
                   <Button
                     key={type.key}
-                    variant={selectedModelType === type.key ? 'default' : 'outline'}
+                    variant={conversationState.selectedModelType === type.key ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
-                      setSelectedModelType(type.key as 'llm' | 'slm' | 'vlm');
-                      setSelectedModel(getModelsForType(type.key as 'llm' | 'slm' | 'vlm')[0]);
+                      const newType = type.key as 'llm' | 'slm' | 'vlm';
+                      updateConversationConfig({
+                        selectedModelType: newType,
+                        selectedModel: getModelsForType(newType)[0]
+                      });
                     }}
                     className="flex items-center gap-1"
                   >
@@ -346,12 +342,15 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             {/* Model Selection */}
             <div className="space-y-2">
               <label className="text-sm font-medium">Select Model</label>
-              <Select value={selectedModel} onValueChange={setSelectedModel}>
+              <Select 
+                value={conversationState.selectedModel} 
+                onValueChange={(value) => updateConversationConfig({ selectedModel: value })}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {getModelsForType(selectedModelType).map((model) => (
+                  {getModelsForType(conversationState.selectedModelType).map((model) => (
                     <SelectItem key={model} value={model}>
                       {model}
                     </SelectItem>
@@ -376,13 +375,16 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 ].map((type) => (
                   <Button
                     key={type.key}
-                    variant={selectedModelType === type.key ? 'default' : 'outline'}
+                    variant={conversationState.selectedModelType === type.key ? 'default' : 'outline'}
                     size="sm"
                     onClick={() => {
-                      setSelectedModelType(type.key as 'llm' | 'slm' | 'vlm');
-                      const models = getModelsForType(type.key as 'llm' | 'slm' | 'vlm');
-                      setLeftModel(models[0]);
-                      setRightModel(models[1] || models[0]);
+                      const newType = type.key as 'llm' | 'slm' | 'vlm';
+                      const models = getModelsForType(newType);
+                      updateConversationConfig({
+                        selectedModelType: newType,
+                        leftModel: models[0],
+                        rightModel: models[1] || models[0]
+                      });
                     }}
                     className="flex items-center gap-1"
                   >
@@ -396,12 +398,15 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             <div className="grid grid-cols-2 gap-4">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Left Model</label>
-                <Select value={leftModel} onValueChange={setLeftModel}>
+                <Select 
+                  value={conversationState.leftModel} 
+                  onValueChange={(value) => updateConversationConfig({ leftModel: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {getModelsForType(selectedModelType).map((model) => (
+                    {getModelsForType(conversationState.selectedModelType).map((model) => (
                       <SelectItem key={model} value={model}>
                         {model}
                       </SelectItem>
@@ -411,12 +416,15 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Right Model</label>
-                <Select value={rightModel} onValueChange={setRightModel}>
+                <Select 
+                  value={conversationState.rightModel} 
+                  onValueChange={(value) => updateConversationConfig({ rightModel: value })}
+                >
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    {getModelsForType(selectedModelType).map((model) => (
+                    {getModelsForType(conversationState.selectedModelType).map((model) => (
                       <SelectItem key={model} value={model}>
                         {model}
                       </SelectItem>
@@ -428,7 +436,6 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
         );
 
-
       case 'system':
       default:
         return (
@@ -436,8 +443,16 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             <Card className="border-green-200 bg-green-50/30">
               <CardContent className="p-4">
                 <div className="text-sm text-green-700 font-medium mb-1">
-                  System Mode: Utilizes all available models (Gemini, GPT, and Claude) for comprehensive and optimized responses.
+                  System Mode: Utilizes all available models (Gemini, GPT, and Claude) with RAG-enhanced knowledge base for comprehensive and optimized responses.
                 </div>
+                {ragStatus.available && (
+                  <div className="flex items-center gap-2 mt-2">
+                    <Database className="h-3 w-3 text-green-600" />
+                    <span className="text-xs text-green-600">
+                      RAG Active: {ragStatus.documentsCount} documents, Label Studio: {ragStatus.labelStudioConnected ? 'Connected' : 'Not Connected'}
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -455,25 +470,63 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               <img 
                 src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
                 alt="Genie" 
-                className="w-full h-full object-cover rounded-full"
+                className="w-full h-full rounded-full object-cover"
               />
             </div>
             <div>
               <h2 className="text-xl font-bold text-gray-900">Genie</h2>
               <p className="text-sm text-gray-600">I am your Technical Navigator</p>
+              {conversationState.isActive && (
+                <Badge variant="secondary" className="mt-1 text-xs">
+                  {conversationState.conversationId}
+                </Badge>
+              )}
             </div>
           </div>
-          <Button variant="ghost" size="sm" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
+          
+          <div className="flex items-center gap-2">
+            {conversationState.isActive && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetConversation}
+                className="flex items-center gap-1"
+              >
+                <RefreshCw className="h-3 w-3" />
+                Reset
+              </Button>
+            )}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
+          </div>
         </div>
 
-        {/* Main Content */}
-        <div className="flex-1 p-6 overflow-auto">
-          {/* Header Text */}
+        <ScrollArea className="flex-1 p-6">
+          {/* Conversation ID and Status */}
+          {conversationState.isActive && (
+            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Zap className="h-4 w-4 text-blue-600" />
+                  <span className="text-sm font-medium text-blue-800">
+                    Active Conversation: {conversationState.selectedMode.toUpperCase()} Mode
+                  </span>
+                </div>
+                <Badge variant="secondary">{conversationState.messages.length} messages</Badge>
+              </div>
+            </div>
+          )}
+
           <div className="text-center mb-6">
-            <h3 className="text-2xl font-semibold mb-2">How can I help you today, Guest?</h3>
-            <p className="text-gray-600">Choose how you'd like me to assist you:</p>
+            <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+              How can I help you today, Guest?
+            </h3>
+            <p className="text-gray-600 mb-4">Choose how you'd like me to assist you:</p>
           </div>
 
           {/* Mode Selection */}
@@ -501,11 +554,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             {conversationModes.filter(mode => mode.isFeature).map((feature) => (
               <Button
                 key={feature.id}
-                variant={enabledFeatures.includes(feature.id) ? 'default' : 'outline'}
+                variant={conversationState.enabledFeatures.includes(feature.id) ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => handleFeatureToggle(feature.id)}
                 className={`flex items-center gap-2 px-4 py-2 h-auto ${
-                  enabledFeatures.includes(feature.id)
+                  conversationState.enabledFeatures.includes(feature.id)
                     ? 'bg-green-500 text-white hover:bg-green-600' 
                     : 'hover:bg-gray-50'
                 }`}
@@ -519,131 +572,118 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Mode Description */}
           <div className="text-center mb-4">
             <p className="text-sm text-gray-600 max-w-2xl mx-auto">
-              {conversationModes.find(mode => mode.id === selectedMode)?.description}
+              {conversationModes.find(mode => mode.id === conversationState.selectedMode)?.description}
             </p>
           </div>
 
           {/* Mode-specific Content */}
           {renderModeSpecificContent()}
 
-          {/* Advanced Options Toggle */}
-          <div className="mt-6 flex justify-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setShowAdvancedOptions(!showAdvancedOptions)}
-              className="text-gray-600 hover:text-gray-800"
-            >
-              {showAdvancedOptions ? 'Hide' : 'Show'} Advanced Options
-              <ChevronRight className={`h-4 w-4 ml-1 transition-transform ${showAdvancedOptions ? 'rotate-90' : ''}`} />
-            </Button>
-          </div>
-
-          {/* Advanced Options - MCP Tools */}
-          {showAdvancedOptions && (
-            <div className="mt-4 p-4 bg-gray-50 border border-gray-200 rounded-lg">
-              <h4 className="font-semibold text-sm text-gray-800 mb-3 flex items-center gap-2">
-                <Bot className="h-4 w-4" />
-                MCP Tools & Integrations
-              </h4>
-              <p className="text-xs text-gray-600 mb-4">
-                Connect to external tools and services through Model Context Protocol
-              </p>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                {mcpTools.map((tool) => (
-                  <Card 
-                    key={tool.id} 
-                    className={`cursor-pointer border-2 transition-all ${
-                      selectedMCPTools.includes(tool.id) 
-                        ? 'border-blue-500 bg-blue-50' 
-                        : 'border-gray-200 hover:border-gray-300'
-                    }`}
-                    onClick={() => handleMCPToolToggle(tool.id)}
-                  >
-                    <CardContent className="p-3">
-                      <div className="flex items-start justify-between mb-2">
+          {/* Advanced Options Dropdown */}
+          <div className="mt-6">
+            <Select onValueChange={(value) => {
+              if (value !== 'none') handleMCPToolToggle(value);
+            }}>
+              <SelectTrigger className="w-full">
+                <div className="flex items-center gap-2">
+                  <Settings className="h-4 w-4" />
+                  <span>Select MCP Tools & Integrations ({conversationState.selectedMCPTools.length} selected)</span>
+                </div>
+              </SelectTrigger>
+              <SelectContent className="w-full">
+                <div className="p-2">
+                  <p className="text-xs text-gray-600 mb-2">
+                    Connect to external tools and services through Model Context Protocol
+                  </p>
+                  {mcpTools.map((tool) => (
+                    <div key={tool.id} className="p-2 border rounded mb-2 last:mb-0">
+                      <div className="flex items-center justify-between mb-1">
                         <h5 className="font-medium text-sm">{tool.name}</h5>
-                        <Badge 
-                          variant={tool.status === 'available' ? 'default' : 'secondary'}
-                          className="text-xs"
-                        >
-                          {tool.status}
-                        </Badge>
+                        <div className="flex items-center gap-2">
+                          <Badge 
+                            variant={tool.status === 'available' ? 'default' : 'secondary'}
+                            className="text-xs"
+                          >
+                            {tool.status}
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
+                            onClick={() => handleMCPToolToggle(tool.id)}
+                          >
+                            {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
+                          </Button>
+                        </div>
                       </div>
-                      <p className="text-xs text-gray-600 mb-2">{tool.description}</p>
+                      <p className="text-xs text-gray-600 mb-1">{tool.description}</p>
                       <div className="flex flex-wrap gap-1">
-                        {tool.capabilities.map((capability, idx) => (
+                        {tool.capabilities.slice(0, 3).map((capability, idx) => (
                           <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
                             {capability}
                           </Badge>
                         ))}
+                        {tool.capabilities.length > 3 && (
+                          <Badge variant="outline" className="text-xs px-1 py-0">
+                            +{tool.capabilities.length - 3} more
+                          </Badge>
+                        )}
                       </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {selectedMCPTools.length > 0 && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-                  <p className="text-xs text-green-700 font-medium mb-1">
-                    Selected MCP Tools ({selectedMCPTools.length}):
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {selectedMCPTools.map((toolId) => {
-                      const tool = mcpTools.find(t => t.id === toolId);
-                      return (
-                        <Badge key={toolId} variant="secondary" className="text-xs">
-                          {tool?.name}
-                        </Badge>
-                      );
-                    })}
-                  </div>
+                    </div>
+                  ))}
                 </div>
-              )}
+              </SelectContent>
+            </Select>
+          </div>
+
+          {/* Selected MCP Tools Display */}
+          {conversationState.selectedMCPTools.length > 0 && (
+            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+              <p className="text-xs text-green-700 font-medium mb-1">
+                Active MCP Tools ({conversationState.selectedMCPTools.length}):
+              </p>
+              <div className="flex flex-wrap gap-1">
+                {conversationState.selectedMCPTools.map((toolId) => {
+                  const tool = mcpTools.find(t => t.id === toolId);
+                  return (
+                    <Badge key={toolId} variant="secondary" className="text-xs">
+                      {tool?.name}
+                    </Badge>
+                  );
+                })}
+              </div>
             </div>
           )}
 
           {/* Feature Status Display */}
-          {enabledFeatures.length > 0 && (
+          {conversationState.enabledFeatures.length > 0 && (
             <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
               <h4 className="font-semibold text-sm text-blue-800 mb-2">Active Features:</h4>
               <div className="flex flex-wrap gap-2">
-                {enabledFeatures.includes('medical') && (
+                {conversationState.enabledFeatures.includes('medical') && (
                   <Badge variant="secondary" className="bg-blue-100 text-blue-800">
                     <Stethoscope className="h-3 w-3 mr-1" />
                     Medical Data Access
                   </Badge>
                 )}
-                {enabledFeatures.includes('publication') && (
+                {conversationState.enabledFeatures.includes('publication') && (
                   <Badge variant="secondary" className="bg-green-100 text-green-800">
                     <FileText className="h-3 w-3 mr-1" />
                     Publication Mode
                   </Badge>
                 )}
               </div>
-              {enabledFeatures.includes('medical') && (
-                <p className="text-xs text-blue-700 mt-2">
-                  Access to FDA data, ICD codes, and HCPCS codes enabled
-                </p>
-              )}
-              {enabledFeatures.includes('publication') && (
-                <p className="text-xs text-green-700 mt-2">
-                  Content will be queued for review and knowledge base publication
-                </p>
-              )}
             </div>
           )}
 
           {/* Disclaimer */}
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <p className="text-sm text-yellow-800">
-              <strong>Disclaimer:</strong> This is an AI assistant for demonstration purposes. The responses generated should not be considered as medical advice. Always consult qualified healthcare professionals for medical decisions.
+              <strong>Disclaimer:</strong> This is an AI assistant with RAG-enhanced knowledge base for demonstration purposes. The responses generated should not be considered as medical advice. Always consult qualified healthcare professionals for medical decisions.
             </p>
           </div>
 
           {/* Start Chat Button */}
-          {!chatStarted && (
+          {!conversationState.isActive && (
             <div className="mt-6 flex justify-center">
               <Button 
                 size="lg" 
@@ -656,19 +696,19 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           )}
 
           {/* Conversation Area */}
-          {chatStarted && (
+          {conversationState.isActive && (
             <div className="mt-6">
               <ScrollArea className="h-96 w-full border rounded-lg p-4">
-                {messages.length === 0 ? (
+                {conversationState.messages.length === 0 ? (
                   <div className="text-center text-gray-500 mt-20">
                     <Bot className="h-12 w-12 mx-auto mb-4 text-gray-400" />
                     <p>Chat started! Send your first message below.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {messages.map((msg, index) => (
+                    {conversationState.messages.map((msg, index) => (
                       <div 
-                        key={index} 
+                        key={msg.id} 
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
@@ -680,9 +720,17 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                         }`}>
                           <p className="text-sm">{msg.content}</p>
                           {msg.model && (
-                            <p className="text-xs opacity-75 mt-1">
-                              {msg.provider?.toUpperCase()} • {msg.model}
-                            </p>
+                            <div className="flex items-center justify-between mt-1">
+                              <p className="text-xs opacity-75">
+                                {msg.provider?.toUpperCase()} • {msg.model}
+                              </p>
+                              {msg.metadata?.ragEnhanced && (
+                                <Badge variant="outline" className="text-xs">
+                                  <Database className="h-2 w-2 mr-1" />
+                                  RAG
+                                </Badge>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
@@ -702,7 +750,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           )}
 
           {/* Message Input */}
-          {chatStarted && (
+          {conversationState.isActive && (
             <div className="mt-6">
               <div className="flex gap-2">
                 <Textarea
@@ -728,7 +776,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               </div>
             </div>
           )}
-        </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );
