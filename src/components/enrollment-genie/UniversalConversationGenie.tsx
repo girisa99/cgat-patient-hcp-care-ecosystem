@@ -115,33 +115,79 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
           whileTap={{ scale: 0.95 }}
           onHoverStart={() => setIsHovered(true)}
           onHoverEnd={() => setIsHovered(false)}
+          className="relative"
         >
+          {/* Magical fumes/smoke effect */}
+          <AnimatePresence>
+            {isHovered && (
+              <>
+                {[...Array(5)].map((_, i) => (
+                  <motion.div
+                    key={i}
+                    className="absolute w-4 h-4 bg-gradient-to-t from-cyan-400/30 to-transparent rounded-full"
+                    style={{
+                      left: `${20 + i * 8}%`,
+                      bottom: '100%',
+                    }}
+                    initial={{ opacity: 0, y: 0, scale: 0 }}
+                    animate={{ 
+                      opacity: [0, 0.7, 0], 
+                      y: [-10, -40, -60], 
+                      scale: [0.5, 1, 1.5],
+                      x: [0, Math.random() * 20 - 10, Math.random() * 30 - 15]
+                    }}
+                    transition={{ 
+                      duration: 2, 
+                      delay: i * 0.2,
+                      repeat: Infinity,
+                      ease: "easeOut"
+                    }}
+                  />
+                ))}
+              </>
+            )}
+          </AnimatePresence>
+
           <Button
             onClick={() => setIsOpen(true)}
             size="lg"
-            className={`h-16 w-16 rounded-full bg-gradient-to-r ${contextInfo.color} hover:scale-105 shadow-lg hover:shadow-xl transition-all duration-300 relative overflow-hidden group`}
+            className="h-20 w-20 rounded-full p-1 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-600 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-700 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300 relative overflow-hidden group border-2 border-cyan-300/30"
           >
-            <motion.div
-              animate={isHovered ? { rotate: 360 } : { rotate: 0 }}
-              transition={{ duration: 0.5 }}
-            >
-              <Bot className="h-8 w-8 text-white" />
-            </motion.div>
+            {/* Genie Logo */}
+            <div className="relative w-full h-full">
+              <img 
+                src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
+                alt="Genie" 
+                className="w-full h-full object-cover rounded-full"
+              />
+              
+              {/* Magical overlay glow */}
+              <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 via-transparent to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+              
+              {/* Pulsing ring */}
+              <motion.div
+                className="absolute inset-0 border-2 border-cyan-400/50 rounded-full"
+                animate={{ 
+                  scale: [1, 1.1, 1],
+                  opacity: [0.5, 0.8, 0.5]
+                }}
+                transition={{ 
+                  duration: 2, 
+                  repeat: Infinity,
+                  ease: "easeInOut"
+                }}
+              />
+            </div>
             
-            {/* Magical sparkles effect */}
+            {/* Sparkles effect */}
             <motion.div
               className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
               initial={false}
             >
-              <Sparkles className="absolute top-1 right-1 h-3 w-3 text-yellow-300" />
-              <Sparkles className="absolute bottom-2 left-2 h-2 w-2 text-pink-300" />
-              <Sparkles className="absolute top-3 left-1 h-2 w-2 text-blue-300" />
+              <Sparkles className="absolute top-1 right-1 h-3 w-3 text-yellow-300 animate-pulse" />
+              <Sparkles className="absolute bottom-2 left-2 h-2 w-2 text-pink-300 animate-pulse" style={{ animationDelay: '0.5s' }} />
+              <Sparkles className="absolute top-3 left-1 h-2 w-2 text-blue-300 animate-pulse" style={{ animationDelay: '1s' }} />
             </motion.div>
-
-            {/* Context indicator */}
-            <div className="absolute -top-1 -right-1 h-6 w-6 bg-white rounded-full flex items-center justify-center shadow-md">
-              {contextInfo.icon}
-            </div>
           </Button>
         </motion.div>
 
@@ -178,66 +224,173 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
 
       {/* Universal Conversation Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-7xl h-[90vh] p-0 overflow-hidden">
-          <div className={`flex items-center justify-between p-6 border-b bg-gradient-to-r ${contextInfo.color.replace('to-', 'to-').replace('from-', 'from-').replace('-600', '-50')}`}>
-            <div className="flex items-center gap-3">
-              <div className={`p-2 bg-gradient-to-r ${contextInfo.color} rounded-lg`}>
-                <Bot className="h-6 w-6 text-white" />
-              </div>
+        <DialogContent className="max-w-7xl h-[90vh] p-0 overflow-hidden bg-gradient-to-br from-slate-50 via-cyan-50/30 to-blue-50/30">
+          {/* Header with Genie Branding */}
+          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-teal-500/10 via-cyan-500/10 to-blue-500/10 backdrop-blur-sm relative overflow-hidden">
+            {/* Animated background elements */}
+            <div className="absolute inset-0 opacity-20">
+              {[...Array(8)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-2 h-2 bg-cyan-300 rounded-full"
+                  style={{
+                    left: `${10 + i * 12}%`,
+                    top: `${20 + (i % 3) * 20}%`,
+                  }}
+                  animate={{
+                    y: [-5, 5, -5],
+                    opacity: [0.3, 0.8, 0.3],
+                    scale: [0.8, 1.2, 0.8]
+                  }}
+                  transition={{
+                    duration: 3,
+                    delay: i * 0.3,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+              ))}
+            </div>
+            
+            <div className="flex items-center gap-4 relative z-10">
+              {/* Genie Avatar */}
+              <motion.div 
+                className="relative"
+                initial={{ scale: 0, rotate: -180 }}
+                animate={{ scale: 1, rotate: 0 }}
+                transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
+              >
+                <div className="w-16 h-16 rounded-full p-1 bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 shadow-lg">
+                  <img 
+                    src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
+                    alt="Genie" 
+                    className="w-full h-full object-cover rounded-full border-2 border-white/50"
+                  />
+                </div>
+                
+                {/* Magical aura */}
+                <motion.div
+                  className="absolute inset-0 rounded-full border-2 border-cyan-300/50"
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    opacity: [0.3, 0.6, 0.3]
+                  }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity 
+                  }}
+                />
+              </motion.div>
+              
               <div>
-                <h2 className="text-xl font-semibold">{contextInfo.title}</h2>
-                <p className="text-sm text-muted-foreground">
+                <motion.h2 
+                  className="text-2xl font-bold bg-gradient-to-r from-teal-600 via-cyan-600 to-blue-600 bg-clip-text text-transparent"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  ✨ I am Genie
+                </motion.h2>
+                <motion.p 
+                  className="text-lg text-slate-600 font-medium"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.6 }}
+                >
+                  How can I help you? 🪄
+                </motion.p>
+                <motion.p 
+                  className="text-sm text-slate-500"
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ delay: 0.8 }}
+                >
                   {contextInfo.description}
-                </p>
+                </motion.p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 relative z-10">
               {/* Mode Toggle for enrollment contexts */}
               {isEnrollmentContext && (
-                <div className="flex bg-muted rounded-lg p-1">
+                <motion.div 
+                  className="flex bg-white/80 backdrop-blur-sm rounded-lg p-1 shadow-lg border border-cyan-200/50"
+                  initial={{ opacity: 0, scale: 0.8 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1 }}
+                >
                   <Button
                     variant={conversationMode === 'enrollment' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setConversationMode('enrollment')}
-                    className="h-8 px-3"
+                    className={`h-8 px-3 ${conversationMode === 'enrollment' ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white' : ''}`}
                   >
-                    Enrollment
+                    📋 Enrollment
                   </Button>
                   <Button
                     variant={conversationMode === 'general' ? 'default' : 'ghost'}
                     size="sm"
                     onClick={() => setConversationMode('general')}
-                    className="h-8 px-3"
+                    className={`h-8 px-3 ${conversationMode === 'general' ? 'bg-gradient-to-r from-teal-500 to-cyan-500 text-white' : ''}`}
                   >
-                    General
+                    💬 General
                   </Button>
-                </div>
+                </motion.div>
               )}
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setIsOpen(false)}
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-red-100 hover:text-red-600 rounded-full"
               >
                 <X className="h-4 w-4" />
               </Button>
             </div>
           </div>
           
-          <div className="flex-1 overflow-y-auto">
+          {/* Conversation Area with Genie Theming */}
+          <div className="flex-1 overflow-y-auto bg-gradient-to-b from-transparent via-cyan-50/20 to-blue-50/30 relative">
+            {/* Floating magical elements */}
+            <div className="absolute inset-0 pointer-events-none overflow-hidden">
+              {[...Array(6)].map((_, i) => (
+                <motion.div
+                  key={i}
+                  className="absolute w-1 h-1 bg-cyan-300/40 rounded-full"
+                  style={{
+                    left: `${Math.random() * 100}%`,
+                    top: `${Math.random() * 100}%`,
+                  }}
+                  animate={{
+                    y: [-10, 10, -10],
+                    x: [-5, 5, -5],
+                    opacity: [0.2, 0.6, 0.2],
+                    scale: [0.5, 1.5, 0.5]
+                  }}
+                  transition={{
+                    duration: 4 + Math.random() * 2,
+                    delay: i * 0.5,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                />
+              ))}
+            </div>
             {conversationMode === 'enrollment' && isEnrollmentContext ? (
-              <EnhancedEnrollmentInterface
-                onSubmit={handleComplete}
-              />
+              <div className="relative z-10">
+                <EnhancedEnrollmentInterface
+                  onSubmit={handleComplete}
+                />
+              </div>
             ) : (
-              <UniversalLLMAssistant
-                context={{
-                  page: currentContext,
-                  route: location.pathname,
-                  tenantId,
-                  userId
-                }}
-              />
+              <div className="relative z-10">
+                <UniversalLLMAssistant
+                  context={{
+                    page: currentContext,
+                    route: location.pathname,
+                    tenantId,
+                    userId
+                  }}
+                />
+              </div>
             )}
           </div>
         </DialogContent>
