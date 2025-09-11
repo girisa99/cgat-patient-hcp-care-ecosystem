@@ -4325,6 +4325,74 @@ export type Database = {
           },
         ]
       }
+      enrollment_clinical_info: {
+        Row: {
+          allergies: Json | null
+          chief_complaint: string | null
+          clinical_notes: string | null
+          created_at: string
+          current_medications: Json | null
+          enrollment_id: string
+          family_history: Json | null
+          id: string
+          imaging_results: Json | null
+          lab_results: Json | null
+          medical_history: Json | null
+          risk_factors: Json | null
+          social_history: Json | null
+          surgical_history: Json | null
+          treatment_goals: Json | null
+          updated_at: string
+          vital_signs: Json | null
+        }
+        Insert: {
+          allergies?: Json | null
+          chief_complaint?: string | null
+          clinical_notes?: string | null
+          created_at?: string
+          current_medications?: Json | null
+          enrollment_id: string
+          family_history?: Json | null
+          id?: string
+          imaging_results?: Json | null
+          lab_results?: Json | null
+          medical_history?: Json | null
+          risk_factors?: Json | null
+          social_history?: Json | null
+          surgical_history?: Json | null
+          treatment_goals?: Json | null
+          updated_at?: string
+          vital_signs?: Json | null
+        }
+        Update: {
+          allergies?: Json | null
+          chief_complaint?: string | null
+          clinical_notes?: string | null
+          created_at?: string
+          current_medications?: Json | null
+          enrollment_id?: string
+          family_history?: Json | null
+          id?: string
+          imaging_results?: Json | null
+          lab_results?: Json | null
+          medical_history?: Json | null
+          risk_factors?: Json | null
+          social_history?: Json | null
+          surgical_history?: Json | null
+          treatment_goals?: Json | null
+          updated_at?: string
+          vital_signs?: Json | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_clinical_info_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollment_collaborations: {
         Row: {
           assigned_role: string
@@ -4371,6 +4439,62 @@ export type Database = {
             columns: ["enrollment_instance_id"]
             isOneToOne: false
             referencedRelation: "enrollment_instances"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_consent: {
+        Row: {
+          communication_consent: boolean | null
+          consent_date: string | null
+          consent_to_treatment: boolean | null
+          created_at: string
+          enrollment_id: string
+          financial_responsibility: boolean | null
+          hipaa_authorization: boolean | null
+          id: string
+          marketing_consent: boolean | null
+          patient_signature: string | null
+          telehealth_consent: boolean | null
+          updated_at: string
+          witness_signature: string | null
+        }
+        Insert: {
+          communication_consent?: boolean | null
+          consent_date?: string | null
+          consent_to_treatment?: boolean | null
+          created_at?: string
+          enrollment_id: string
+          financial_responsibility?: boolean | null
+          hipaa_authorization?: boolean | null
+          id?: string
+          marketing_consent?: boolean | null
+          patient_signature?: string | null
+          telehealth_consent?: boolean | null
+          updated_at?: string
+          witness_signature?: string | null
+        }
+        Update: {
+          communication_consent?: boolean | null
+          consent_date?: string | null
+          consent_to_treatment?: boolean | null
+          created_at?: string
+          enrollment_id?: string
+          financial_responsibility?: boolean | null
+          hipaa_authorization?: boolean | null
+          id?: string
+          marketing_consent?: boolean | null
+          patient_signature?: string | null
+          telehealth_consent?: boolean | null
+          updated_at?: string
+          witness_signature?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_consent_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_enrollments"
             referencedColumns: ["id"]
           },
         ]
@@ -4638,6 +4762,261 @@ export type Database = {
           },
         ]
       }
+      enrollment_insurance_info: {
+        Row: {
+          copay_amount: number | null
+          created_at: string
+          deductible_amount: number | null
+          enrollment_id: string
+          id: string
+          insurance_verification_status: string | null
+          out_of_pocket_max: number | null
+          primary_effective_date: string | null
+          primary_group_number: string | null
+          primary_insurance_name: string | null
+          primary_policy_number: string | null
+          primary_subscriber_dob: string | null
+          primary_subscriber_name: string | null
+          primary_subscriber_relationship: string | null
+          prior_auth_number: string | null
+          prior_authorization_required: boolean | null
+          secondary_effective_date: string | null
+          secondary_group_number: string | null
+          secondary_insurance_name: string | null
+          secondary_policy_number: string | null
+          secondary_subscriber_dob: string | null
+          secondary_subscriber_name: string | null
+          secondary_subscriber_relationship: string | null
+          updated_at: string
+        }
+        Insert: {
+          copay_amount?: number | null
+          created_at?: string
+          deductible_amount?: number | null
+          enrollment_id: string
+          id?: string
+          insurance_verification_status?: string | null
+          out_of_pocket_max?: number | null
+          primary_effective_date?: string | null
+          primary_group_number?: string | null
+          primary_insurance_name?: string | null
+          primary_policy_number?: string | null
+          primary_subscriber_dob?: string | null
+          primary_subscriber_name?: string | null
+          primary_subscriber_relationship?: string | null
+          prior_auth_number?: string | null
+          prior_authorization_required?: boolean | null
+          secondary_effective_date?: string | null
+          secondary_group_number?: string | null
+          secondary_insurance_name?: string | null
+          secondary_policy_number?: string | null
+          secondary_subscriber_dob?: string | null
+          secondary_subscriber_name?: string | null
+          secondary_subscriber_relationship?: string | null
+          updated_at?: string
+        }
+        Update: {
+          copay_amount?: number | null
+          created_at?: string
+          deductible_amount?: number | null
+          enrollment_id?: string
+          id?: string
+          insurance_verification_status?: string | null
+          out_of_pocket_max?: number | null
+          primary_effective_date?: string | null
+          primary_group_number?: string | null
+          primary_insurance_name?: string | null
+          primary_policy_number?: string | null
+          primary_subscriber_dob?: string | null
+          primary_subscriber_name?: string | null
+          primary_subscriber_relationship?: string | null
+          prior_auth_number?: string | null
+          prior_authorization_required?: boolean | null
+          secondary_effective_date?: string | null
+          secondary_group_number?: string | null
+          secondary_insurance_name?: string | null
+          secondary_policy_number?: string | null
+          secondary_subscriber_dob?: string | null
+          secondary_subscriber_name?: string | null
+          secondary_subscriber_relationship?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_insurance_info_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_patient_info: {
+        Row: {
+          address_line1: string | null
+          address_line2: string | null
+          city: string | null
+          created_at: string
+          date_of_birth: string | null
+          email: string | null
+          emergency_contact_name: string | null
+          emergency_contact_phone: string | null
+          emergency_contact_relationship: string | null
+          employer: string | null
+          enrollment_id: string
+          first_name: string | null
+          gender: string | null
+          id: string
+          last_name: string | null
+          marital_status: string | null
+          middle_name: string | null
+          occupation: string | null
+          phone: string | null
+          preferred_language: string | null
+          ssn: string | null
+          state: string | null
+          updated_at: string
+          zip_code: string | null
+        }
+        Insert: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          employer?: string | null
+          enrollment_id: string
+          first_name?: string | null
+          gender?: string | null
+          id?: string
+          last_name?: string | null
+          marital_status?: string | null
+          middle_name?: string | null
+          occupation?: string | null
+          phone?: string | null
+          preferred_language?: string | null
+          ssn?: string | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Update: {
+          address_line1?: string | null
+          address_line2?: string | null
+          city?: string | null
+          created_at?: string
+          date_of_birth?: string | null
+          email?: string | null
+          emergency_contact_name?: string | null
+          emergency_contact_phone?: string | null
+          emergency_contact_relationship?: string | null
+          employer?: string | null
+          enrollment_id?: string
+          first_name?: string | null
+          gender?: string | null
+          id?: string
+          last_name?: string | null
+          marital_status?: string | null
+          middle_name?: string | null
+          occupation?: string | null
+          phone?: string | null
+          preferred_language?: string | null
+          ssn?: string | null
+          state?: string | null
+          updated_at?: string
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_patient_info_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      enrollment_provider_info: {
+        Row: {
+          created_at: string
+          credentialing_notes: string | null
+          credentialing_status: string | null
+          diagnosis_codes: Json | null
+          enrollment_id: string
+          facility_address: string | null
+          facility_npi: string | null
+          id: string
+          npi_verification_status: string | null
+          pcp_npi: string | null
+          pcp_phone: string | null
+          primary_care_physician: string | null
+          referring_provider_name: string | null
+          referring_provider_npi: string | null
+          referring_provider_phone: string | null
+          treatment_facility: string | null
+          treatment_plan: Json | null
+          treatment_start_date: string | null
+          treatment_type: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          credentialing_notes?: string | null
+          credentialing_status?: string | null
+          diagnosis_codes?: Json | null
+          enrollment_id: string
+          facility_address?: string | null
+          facility_npi?: string | null
+          id?: string
+          npi_verification_status?: string | null
+          pcp_npi?: string | null
+          pcp_phone?: string | null
+          primary_care_physician?: string | null
+          referring_provider_name?: string | null
+          referring_provider_npi?: string | null
+          referring_provider_phone?: string | null
+          treatment_facility?: string | null
+          treatment_plan?: Json | null
+          treatment_start_date?: string | null
+          treatment_type?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          credentialing_notes?: string | null
+          credentialing_status?: string | null
+          diagnosis_codes?: Json | null
+          enrollment_id?: string
+          facility_address?: string | null
+          facility_npi?: string | null
+          id?: string
+          npi_verification_status?: string | null
+          pcp_npi?: string | null
+          pcp_phone?: string | null
+          primary_care_physician?: string | null
+          referring_provider_name?: string | null
+          referring_provider_npi?: string | null
+          referring_provider_phone?: string | null
+          treatment_facility?: string | null
+          treatment_plan?: Json | null
+          treatment_start_date?: string | null
+          treatment_type?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_provider_info_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollment_templates: {
         Row: {
           created_at: string
@@ -4679,6 +5058,71 @@ export type Database = {
           workflow_config?: Json
         }
         Relationships: []
+      }
+      enrollment_treatment_plan: {
+        Row: {
+          authorization_status: string | null
+          created_at: string
+          discharge_criteria: Json | null
+          duration: string | null
+          enrollment_id: string
+          estimated_cost: number | null
+          frequency: string | null
+          id: string
+          location: string | null
+          medication_management: Json | null
+          monitoring_plan: Json | null
+          provider_assignments: Json | null
+          therapy_goals: Json | null
+          treatment_modality: string | null
+          treatment_schedule: Json | null
+          updated_at: string
+        }
+        Insert: {
+          authorization_status?: string | null
+          created_at?: string
+          discharge_criteria?: Json | null
+          duration?: string | null
+          enrollment_id: string
+          estimated_cost?: number | null
+          frequency?: string | null
+          id?: string
+          location?: string | null
+          medication_management?: Json | null
+          monitoring_plan?: Json | null
+          provider_assignments?: Json | null
+          therapy_goals?: Json | null
+          treatment_modality?: string | null
+          treatment_schedule?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          authorization_status?: string | null
+          created_at?: string
+          discharge_criteria?: Json | null
+          duration?: string | null
+          enrollment_id?: string
+          estimated_cost?: number | null
+          frequency?: string | null
+          id?: string
+          location?: string | null
+          medication_management?: Json | null
+          monitoring_plan?: Json | null
+          provider_assignments?: Json | null
+          therapy_goals?: Json | null
+          treatment_modality?: string | null
+          treatment_schedule?: Json | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_treatment_plan_enrollment_id_fkey"
+            columns: ["enrollment_id"]
+            isOneToOne: false
+            referencedRelation: "patient_enrollments"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       external_api_change_logs: {
         Row: {
@@ -8076,6 +8520,60 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      patient_enrollments: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          current_section: string
+          enrollment_status: string
+          id: string
+          metadata: Json | null
+          pdf_file_path: string | null
+          pdf_generated: boolean | null
+          progress_percentage: number | null
+          session_id: string
+          signature_data: Json | null
+          signed_at: string | null
+          tenant_id: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          current_section?: string
+          enrollment_status?: string
+          id?: string
+          metadata?: Json | null
+          pdf_file_path?: string | null
+          pdf_generated?: boolean | null
+          progress_percentage?: number | null
+          session_id: string
+          signature_data?: Json | null
+          signed_at?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          current_section?: string
+          enrollment_status?: string
+          id?: string
+          metadata?: Json | null
+          pdf_file_path?: string | null
+          pdf_generated?: boolean | null
+          progress_percentage?: number | null
+          session_id?: string
+          signature_data?: Json | null
+          signed_at?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       permissions: {
         Row: {
@@ -12536,6 +13034,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      calculate_enrollment_progress: {
+        Args: { enrollment_uuid: string }
+        Returns: number
+      }
       calculate_financial_risk_score: {
         Args: {
           p_annual_revenue_range: string
@@ -12661,6 +13163,10 @@ export type Database = {
           table_source: string
           updated_at: string
         }[]
+      }
+      get_prepopulate_data: {
+        Args: { user_uuid: string }
+        Returns: Json
       }
       get_user_accessible_facilities: {
         Args: { user_id: string }
