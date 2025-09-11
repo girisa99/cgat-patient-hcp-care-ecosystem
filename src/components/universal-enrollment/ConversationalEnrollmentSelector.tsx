@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, FileText, Zap, Clock } from 'lucide-react';
+import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -56,9 +57,16 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
       <div className="max-w-4xl mx-auto p-6">
         <Card>
           <CardHeader>
-            <CardTitle>AI Conversation Method</CardTitle>
-            <p className="text-muted-foreground">AI conversational interface coming soon...</p>
+            <CardTitle>Redirecting to Structured AI Method</CardTitle>
+            <p className="text-muted-foreground">Using our enhanced structured AI approach...</p>
           </CardHeader>
+          <CardContent>
+            <SmartEnrollmentLauncher 
+              variant="inline"
+              forceModule={moduleType}
+              showMethodSelection={false}
+            />
+          </CardContent>
         </Card>
       </div>
     );
