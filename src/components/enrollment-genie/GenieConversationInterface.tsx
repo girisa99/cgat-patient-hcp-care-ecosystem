@@ -31,7 +31,7 @@ interface GenieConversationInterfaceProps {
   userId?: string;
 }
 
-type ConversationMode = 'system' | 'single' | 'multi' | 'medical' | 'publication';
+type ConversationMode = 'system' | 'single' | 'multi';
 
 const availableModels = [
   'GEMINI',
@@ -83,14 +83,16 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       label: 'Medical',
       icon: <Stethoscope className="h-4 w-4" />,
       description: 'Access to FDA data, ICD codes, and HCPCS codes. Responses are enriched with medical references and regulatory information.',
-      active: selectedMode === 'medical'
+      active: false,
+      isFeature: true
     },
     {
       id: 'publication',
-      label: 'Publication',
+      label: 'Publication', 
       icon: <FileText className="h-4 w-4" />,
       description: 'Generate content for review and publication in the knowledge base.',
-      active: selectedMode === 'publication'
+      active: false,
+      isFeature: true
     }
   ];
 
@@ -98,9 +100,26 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     setSelectedMode(mode);
   };
 
+  const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
+
+  const handleFeatureToggle = (featureId: string) => {
+    setEnabledFeatures(prev => 
+      prev.includes(featureId) 
+        ? prev.filter(id => id !== featureId)
+        : [...prev, featureId]
+    );
+  };
+
   const handleStartChat = () => {
-    // Initialize conversation based on selected mode
-    console.log('Starting chat with mode:', selectedMode);
+    // Initialize conversation based on selected mode and enabled features
+    const conversationConfig = {
+      mode: selectedMode,
+      enabledFeatures,
+      models: selectedMode === 'single' ? [selectedModel] : 
+              selectedMode === 'multi' ? [leftModel, rightModel] : 
+              ['GEMINI', 'GPT', 'CLAUDE'] // System mode uses all models
+    };
+    console.log('Starting chat with config:', conversationConfig);
   };
 
   const renderModeSpecificContent = () => {
@@ -162,52 +181,6 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
         );
 
-      case 'medical':
-        return (
-          <div className="mt-4">
-            <Card className="border-blue-200 bg-blue-50/30">
-              <CardContent className="p-4">
-                <p className="text-sm text-blue-700">
-                  Search medical information, billing codes, and competitor products.
-                </p>
-                <div className="mt-2 text-xs text-blue-600 font-medium">
-                  Medical Mode: Access to FDA data, ICD codes, and HCPCS codes. Responses are enriched with medical references and regulatory information.
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-        );
-
-      case 'publication':
-        return (
-          <div className="mt-4 space-y-4">
-            <Card className="border-orange-200 bg-orange-50/30">
-              <CardContent className="p-4">
-                <p className="text-sm text-orange-700">
-                  Generate content for review and publication in the knowledge base.
-                </p>
-              </CardContent>
-            </Card>
-            
-            <div>
-              <h4 className="font-semibold mb-2">Content Review Queue</h4>
-              {contentQueue.length === 0 ? (
-                <p className="text-muted-foreground text-center py-8">
-                  No content pending review
-                </p>
-              ) : (
-                <div className="space-y-2">
-                  {contentQueue.map((item, index) => (
-                    <div key={index} className="flex items-center justify-between p-2 border rounded">
-                      <span className="text-sm">{item.title}</span>
-                      <Badge variant="secondary">Pending</Badge>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        );
 
       case 'system':
       default:
@@ -257,8 +230,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
 
           {/* Mode Selection */}
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
-            {conversationModes.map((mode) => (
+          <div className="flex flex-wrap gap-3 justify-center mb-4">
+            {conversationModes.filter(mode => !mode.isFeature).map((mode) => (
               <Button
                 key={mode.id}
                 variant={mode.active ? 'default' : 'outline'}
@@ -276,6 +249,26 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             ))}
           </div>
 
+          {/* Feature Toggles */}
+          <div className="flex flex-wrap gap-3 justify-center mb-6">
+            {conversationModes.filter(mode => mode.isFeature).map((feature) => (
+              <Button
+                key={feature.id}
+                variant={enabledFeatures.includes(feature.id) ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleFeatureToggle(feature.id)}
+                className={`flex items-center gap-2 px-4 py-2 h-auto ${
+                  enabledFeatures.includes(feature.id)
+                    ? 'bg-green-500 text-white hover:bg-green-600' 
+                    : 'hover:bg-gray-50'
+                }`}
+              >
+                {feature.icon}
+                {feature.label}
+              </Button>
+            ))}
+          </div>
+
           {/* Mode Description */}
           <div className="text-center mb-4">
             <p className="text-sm text-gray-600 max-w-2xl mx-auto">
@@ -285,6 +278,37 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
           {/* Mode-specific Content */}
           {renderModeSpecificContent()}
+
+          {/* Feature Status Display */}
+          {enabledFeatures.length > 0 && (
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-sm text-blue-800 mb-2">Active Features:</h4>
+              <div className="flex flex-wrap gap-2">
+                {enabledFeatures.includes('medical') && (
+                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                    <Stethoscope className="h-3 w-3 mr-1" />
+                    Medical Data Access
+                  </Badge>
+                )}
+                {enabledFeatures.includes('publication') && (
+                  <Badge variant="secondary" className="bg-green-100 text-green-800">
+                    <FileText className="h-3 w-3 mr-1" />
+                    Publication Mode
+                  </Badge>
+                )}
+              </div>
+              {enabledFeatures.includes('medical') && (
+                <p className="text-xs text-blue-700 mt-2">
+                  Access to FDA data, ICD codes, and HCPCS codes enabled
+                </p>
+              )}
+              {enabledFeatures.includes('publication') && (
+                <p className="text-xs text-green-700 mt-2">
+                  Content will be queued for review and knowledge base publication
+                </p>
+              )}
+            </div>
+          )}
 
           {/* Disclaimer */}
           <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
