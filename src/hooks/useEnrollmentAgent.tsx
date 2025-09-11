@@ -195,10 +195,10 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
 
 const getSectionsForModule = (moduleType: ModuleType): string[] => {
   const sectionMap = {
-    patient: ['Demographics', 'Medical History', 'Insurance Information', 'Consent & Agreements'],
-    treatment_center: ['Facility Information', 'Licensing & Certifications', 'Staff Credentials', 'Service Agreements'],
-    customer: ['Account Information', 'Service Preferences', 'Billing Setup', 'Account Verification'],
-    manufacturer: ['Company Details', 'Product Catalog', 'Certifications & Compliance', 'Partnership Agreements']
+    patient: ['demographics', 'medical-history', 'insurance', 'consent'],
+    treatment_center: ['facility-info', 'licensing-certifications', 'staff-credentials', 'service-agreements'],
+    customer: ['account-info', 'service-preferences', 'billing-setup', 'account-verification'],
+    manufacturer: ['company-details', 'product-catalog', 'certifications-compliance', 'partnership-agreements']
   };
   return sectionMap[moduleType];
 };

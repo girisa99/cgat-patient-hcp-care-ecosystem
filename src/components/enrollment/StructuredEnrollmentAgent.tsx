@@ -369,37 +369,42 @@ const EnrollmentChatInterface: React.FC<{
   const [isProcessing, setIsProcessing] = useState(false);
   const [collectedData, setCollectedData] = useState<Record<string, any>>({});
 
-  const handleSendMessage = async () => {
-    if (!currentInput.trim() || isProcessing) return;
+const handleSendMessage = async () => {
+  if (!currentInput.trim() || isProcessing) return;
 
-    const userMessage = {
-      role: 'user' as const,
-      content: currentInput,
-      timestamp: new Date()
-    };
-
-    setChatMessages(prev => [...prev, userMessage]);
-    setIsProcessing(true);
-
-    // Extract data from user input (simplified pattern matching)
-    const extractedData = extractDataFromMessage(currentInput, section.id);
-    if (Object.keys(extractedData).length > 0) {
-      setCollectedData(prev => ({ ...prev, ...extractedData }));
-    }
-
-    // Simulate AI response
-    setTimeout(() => {
-      const aiResponse = generateAIResponse(currentInput, section, extractedData);
-      setChatMessages(prev => [...prev, {
-        role: 'assistant',
-        content: aiResponse,
-        timestamp: new Date()
-      }]);
-      setIsProcessing(false);
-    }, 1000);
-
-    setCurrentInput('');
+  const userMessage = {
+    role: 'user' as const,
+    content: currentInput,
+    timestamp: new Date()
   };
+
+  setChatMessages(prev => [...prev, userMessage]);
+  setIsProcessing(true);
+
+  // Extract structured data when possible
+  const extractedData = extractDataFromMessage(currentInput, section.id);
+  if (Object.keys(extractedData).length > 0) {
+    setCollectedData(prev => ({ ...prev, ...extractedData }));
+  }
+
+  // Move to next field sequentially to avoid repetition loops
+  const nextIndex = Math.min(currentFieldIndex + 1, section.requiredFields.length);
+  const nextPrompt = nextIndex < section.requiredFields.length
+    ? `Thank you. Next, please provide: ${section.requiredFields[nextIndex]}.`
+    : "Thanks, that's everything I need for this section. You can click 'Complete Section' when ready.";
+
+  setTimeout(() => {
+    setChatMessages(prev => [...prev, {
+      role: 'assistant',
+      content: nextPrompt,
+      timestamp: new Date()
+    }]);
+    setIsProcessing(false);
+    setCurrentFieldIndex(nextIndex);
+  }, 500);
+
+  setCurrentInput('');
+};
 
   const extractDataFromMessage = (message: string, sectionId: string): Record<string, any> => {
     const data: Record<string, any> = {};
@@ -437,44 +442,12 @@ const EnrollmentChatInterface: React.FC<{
     return data;
   };
 
-  const generateAIResponse = (userInput: string, section: EnrollmentSection, extractedData: Record<string, any>): string => {
-    const responses = {
-      demographics: [
-        "Great! I've captured that information. Now, can you provide your date of birth?",
-        "Perfect! What's your phone number so we can contact you if needed?",
-        "Thanks! What's your email address?",
-        "Excellent! Can you give me your current address?",
-        "Almost done with demographics! Who should we contact in case of emergency?"
-      ],
-      'medical-history': [
-        "Thank you for that information. Are you currently taking any medications?",
-        "I've noted that. Do you have any known allergies I should be aware of?",
-        "Good to know. Have you had any surgeries in the past?",
-        "Thanks! Are there any chronic conditions you're managing?"
-      ],
-      insurance: [
-        "Great! What's your insurance provider?",
-        "Perfect! What's your policy number?",
-        "Thanks! Do you have a group number on your insurance card?",
-        "Excellent! Are you the primary subscriber or a dependent?"
-      ],
-      consent: [
-        "I understand. Do you consent to the proposed treatment?",
-        "Thank you. Do you acknowledge receipt of our privacy notice?",
-        "Noted. Do you understand your financial responsibility?",
-        "Perfect! We'll need your digital signature to complete this section."
-      ]
-    };
+// Deterministic prompting handled in handleSendMessage to avoid loops
 
-    const sectionResponses = responses[section.id] || ["Thank you for that information. What else can you tell me about this section?"];
-    return sectionResponses[Math.floor(Math.random() * sectionResponses.length)];
-  };
-
-  const isDataComplete = () => {
-    const requiredFieldCount = section.requiredFields.length;
-    const collectedFieldCount = Object.keys(collectedData).length;
-    return collectedFieldCount >= Math.min(3, requiredFieldCount); // Complete after collecting at least 3 fields
-  };
+const isDataComplete = () => {
+  const requiredFieldCount = section.requiredFields.length;
+  return currentFieldIndex >= Math.min(3, requiredFieldCount);
+};
 
   return (
     <div className="space-y-4">
