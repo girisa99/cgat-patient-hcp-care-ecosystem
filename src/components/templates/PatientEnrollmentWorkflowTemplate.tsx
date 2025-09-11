@@ -367,7 +367,7 @@ export const PatientEnrollmentWorkflowTemplate: React.FC = () => {
                   </div>
                   <div>
                     <span className="text-sm font-medium">Excel File:</span>
-                    <p className="text-sm text-muted-foreground">patient_enrollments_{date}.xlsx</p>
+                    <p className="text-sm text-muted-foreground">patient_enrollments_{Date.now()}.xlsx</p>
                   </div>
                   <div>
                     <span className="text-sm font-medium">Email Template:</span>
