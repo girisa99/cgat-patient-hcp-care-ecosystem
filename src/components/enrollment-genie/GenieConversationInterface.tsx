@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { 
   Bot, 
@@ -274,7 +275,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             prompt: enhancedPrompt,
             systemPrompt,
             provider,
-            model: conversationState.selectedMode === 'multi' ? conversationState.leftModel : conversationState.selectedModel,
+            // Do not pass a UI label as model; backend will choose provider default
             temperature: 0.7,
             maxTokens: 1000
           };
@@ -360,7 +361,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto">
+                <SelectContent className="max-h-60 overflow-y-auto bg-popover z-50">
                   {getModelsForType(conversationState.selectedModelType).map((model) => (
                     <SelectItem key={model} value={model}>
                       {model}
@@ -416,7 +417,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectContent className="max-h-60 overflow-y-auto bg-popover z-50">
                     {getModelsForType(conversationState.selectedModelType).map((model) => (
                       <SelectItem key={model} value={model}>
                         {model}
@@ -434,7 +435,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto">
+                  <SelectContent className="max-h-60 overflow-y-auto bg-popover z-50">
                     {getModelsForType(conversationState.selectedModelType).map((model) => (
                       <SelectItem key={model} value={model}>
                         {model}
@@ -590,60 +591,64 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Mode-specific Content */}
           {renderModeSpecificContent()}
 
-          {/* Advanced Options Dropdown */}
+          {/* Advanced Options Popover (scrollable, non-transparent) */}
           <div className="mt-6">
-            <Select onValueChange={(value) => {
-              if (value !== 'none') handleMCPToolToggle(value);
-            }}>
-              <SelectTrigger className="w-full">
-                <div className="flex items-center gap-2">
-                  <Settings className="h-4 w-4" />
-                  <span>Select MCP Tools & Integrations ({conversationState.selectedMCPTools.length} selected)</span>
-                </div>
-              </SelectTrigger>
-              <SelectContent className="w-full max-h-60 overflow-y-auto">
-                <div className="p-2">
-                  <p className="text-xs text-gray-600 mb-2">
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="w-full justify-between">
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4" />
+                    <span>Select MCP Tools & Integrations ({conversationState.selectedMCPTools.length} selected)</span>
+                  </div>
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-[min(720px,90vw)] p-0 bg-popover z-50 shadow-lg border">
+                <div className="p-3 border-b">
+                  <p className="text-xs text-muted-foreground">
                     Connect to external tools and services through Model Context Protocol
                   </p>
-                  {mcpTools.map((tool) => (
-                    <div key={tool.id} className="p-2 border rounded mb-2 last:mb-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h5 className="font-medium text-sm">{tool.name}</h5>
-                        <div className="flex items-center gap-2">
-                          <Badge 
-                            variant={tool.status === 'available' ? 'default' : 'secondary'}
-                            className="text-xs"
-                          >
-                            {tool.status}
-                          </Badge>
-                          <Button
-                            size="sm"
-                            variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
-                            onClick={() => handleMCPToolToggle(tool.id)}
-                          >
-                            {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
-                          </Button>
+                </div>
+                <ScrollArea className="max-h-72">
+                  <div className="p-3 space-y-3">
+                    {mcpTools.map((tool) => (
+                      <div key={tool.id} className="p-3 border rounded-md bg-background">
+                        <div className="flex items-center justify-between mb-1">
+                          <h5 className="font-medium text-sm">{tool.name}</h5>
+                          <div className="flex items-center gap-2">
+                            <Badge 
+                              variant={tool.status === 'available' ? 'default' : 'secondary'}
+                              className="text-xs"
+                            >
+                              {tool.status}
+                            </Badge>
+                            <Button
+                              size="sm"
+                              variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
+                              onClick={() => handleMCPToolToggle(tool.id)}
+                            >
+                              {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
+                            </Button>
+                          </div>
+                        </div>
+                        <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {tool.capabilities.slice(0, 3).map((capability, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
+                              {capability}
+                            </Badge>
+                          ))}
+                          {tool.capabilities.length > 3 && (
+                            <Badge variant="outline" className="text-xs px-1 py-0">
+                              +{tool.capabilities.length - 3} more
+                            </Badge>
+                          )}
                         </div>
                       </div>
-                      <p className="text-xs text-gray-600 mb-1">{tool.description}</p>
-                      <div className="flex flex-wrap gap-1">
-                        {tool.capabilities.slice(0, 3).map((capability, idx) => (
-                          <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
-                            {capability}
-                          </Badge>
-                        ))}
-                        {tool.capabilities.length > 3 && (
-                          <Badge variant="outline" className="text-xs px-1 py-0">
-                            +{tool.capabilities.length - 3} more
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </SelectContent>
-            </Select>
+                    ))}
+                  </div>
+                </ScrollArea>
+              </PopoverContent>
+            </Popover>
           </div>
 
           {/* Selected MCP Tools Display */}
