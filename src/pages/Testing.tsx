@@ -12,7 +12,7 @@ import { Progress } from '@/components/ui/progress';
 import { Activity, BarChart3, Database, FileText, Play, RefreshCw, Shield, TestTube, Zap } from 'lucide-react';
 import TestCasesDisplay from '@/components/testing/TestCasesDisplay';
 import { EnhancedArchitectureDocumentation } from '@/components/testing/EnhancedArchitectureDocumentation';
-import { RequirementsDocumentation } from '@/components/testing/RequirementsDocumentation';
+import { AIProviderTest } from '@/components/AIProviderTest';
 
 const Testing: React.FC = () => {
   console.log('🧪 Comprehensive Testing Suite - Full functionality restored');
@@ -241,13 +241,14 @@ const Testing: React.FC = () => {
 
         {/* Comprehensive Testing Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-6">
             <TabsTrigger value="overview">
               {currentRole === 'onboardingTeam' ? 'Onboarding Overview' : 'Overview'}
             </TabsTrigger>
             <TabsTrigger value="test-cases">
               {currentRole === 'onboardingTeam' ? 'Onboarding Tests' : 'Test Cases'}
             </TabsTrigger>
+            <TabsTrigger value="ai-providers">AI Providers</TabsTrigger>
             <TabsTrigger value="reporting">Reports & Analytics</TabsTrigger>
             <TabsTrigger value="documentation">Documentation</TabsTrigger>
             <TabsTrigger value="intelligence">Business Intelligence</TabsTrigger>
@@ -376,6 +377,25 @@ const Testing: React.FC = () => {
             />
           </TabsContent>
 
+          {/* AI Providers Tab */}
+          <TabsContent value="ai-providers" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Zap className="h-5 w-5" />
+                  Universal AI Provider Configuration Test
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Test and verify that your AI API keys (OpenAI, Claude, Gemini) are properly configured 
+                  and working across all features including Genie, conversations, and agents.
+                </p>
+                <AIProviderTest />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Reporting & Analytics Tab */}
           <TabsContent value="reporting" className="space-y-4">
             <Card>
@@ -457,10 +477,12 @@ const Testing: React.FC = () => {
                   </TabsContent>
 
                   <TabsContent value="requirements" className="mt-6">
-                    <RequirementsDocumentation
-                      onDownload={handleRequirementsDownload}
-                      userRole={currentRole}
-                    />
+                    <div className="p-4 border rounded">
+                      <h3 className="font-semibold mb-2">Requirements Documentation</h3>
+                      <p className="text-sm text-muted-foreground">
+                        Requirements documentation features are being updated.
+                      </p>
+                    </div>
                   </TabsContent>
                 </Tabs>
               </CardContent>
