@@ -9,6 +9,8 @@ import { Badge } from '@/components/ui/badge';
 import { MessageCircle, FileText, Zap, Clock } from 'lucide-react';
 import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
 import { FloatingConversationalAgent } from '../enrollment/FloatingConversationalAgent';
+import { StructuredEnrollmentAgent } from '../enrollment/StructuredEnrollmentAgent';
+import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -21,7 +23,8 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   moduleType,
   onComplete
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<'conversation' | 'traditional' | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<'conversation' | 'structured' | 'traditional' | null>(null);
+  const { closeEnrollment } = useGlobalConversationalEnrollment();
 
   const getModuleInfo = (type: ModuleType) => {
     const moduleInfo = {
@@ -63,17 +66,20 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
     );
   }
 
-  if (selectedMethod === 'traditional') {
+  if (selectedMethod === 'structured') {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Traditional Form Method</CardTitle>
-            <p className="text-muted-foreground">Traditional form interface coming soon...</p>
-          </CardHeader>
-        </Card>
-      </div>
+      <StructuredEnrollmentAgent
+        moduleType={moduleType}
+        onComplete={onComplete || (() => {})}
+        onCancel={() => setSelectedMethod(null)}
+      />
     );
+  }
+
+  if (selectedMethod === 'traditional') {
+    // Close modal and let the user continue with the existing form on the page
+    closeEnrollment();
+    return null;
   }
 
   const moduleInfo = getModuleInfo(moduleType);
