@@ -1,7 +1,3 @@
-/**
- * PATIENT ENROLLMENT FORM COMPONENT
- * Comprehensive form with multiple submission options and collaboration
- */
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -45,6 +41,8 @@ import { ConsentManagement, type ConsentData } from './ConsentManagement';
 import { CollaborationStatus } from './CollaborationStatus';
 import { PatientDataPrefill } from './PatientDataPrefill';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
+import { UniversalSaveResumeManager } from '@/components/universal/UniversalSaveResumeManager';
+import { useUniversalSaveResume } from '@/hooks/useUniversalSaveResume';
 
 export interface PatientEnrollmentData {
   // Patient Information
@@ -186,6 +184,7 @@ interface PatientEnrollmentFormProps {
   onSave?: (data: PatientEnrollmentData) => void;
   readOnly?: boolean;
   patientId?: string;
+  channelType?: 'online' | 'ai_agent' | 'fax' | 'voice' | 'chat' | 'sms';
 }
 
 type SubmissionMethod = 'fax' | 'pdf_submit' | 'online' | 'ai_agent';
@@ -195,7 +194,8 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   onSubmit,
   onSave,
   readOnly = false,
-  patientId
+  patientId,
+  channelType = 'online'
 }) => {
   const [formData, setFormData] = useState<PatientEnrollmentData>({
     firstName: '',
@@ -290,6 +290,58 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [patientSignature, setPatientSignature] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const { showSuccess, showError } = useMasterToast();
+
+  // Auto-save and resume functionality
+  const {
+    sessionData,
+    hasExistingSession,
+    saveProgress: autoSaveProgress,
+    resumeSession
+  } = useUniversalSaveResume('patient_enrollment', channelType);
+
+  // Auto-save every time form data changes (debounced in the hook)
+  useEffect(() => {
+    if (Object.keys(formData).length > 0) {
+      const progressPercentage = Math.round((currentStep / (totalSteps - 1)) * 100);
+      autoSaveProgress(
+        getCurrentStepName(currentStep),
+        formData,
+        progressPercentage,
+        { channelType, currentStep, totalSteps }
+      );
+    }
+  }, [formData, currentStep, channelType, autoSaveProgress]);
+
+  // Resume from saved session when component mounts
+  useEffect(() => {
+    if (hasExistingSession && sessionData) {
+      setFormData(prev => ({ ...prev, ...sessionData.form_data }));
+      const stepIndex = getStepIndex(sessionData.current_step);
+      if (stepIndex >= 0) {
+        setCurrentStep(stepIndex);
+      }
+      showSuccess('Session Resumed', 'Your previous progress has been restored.');
+    }
+  }, [hasExistingSession, sessionData, showSuccess]);
+
+  const getCurrentStepName = (stepIndex: number): string => {
+    return stepIds[stepIndex] || stepIds[0];
+  };
+
+  const getStepIndex = (stepName: string): number => {
+    return stepIds.indexOf(stepName);
+  };
+
+  const handleResumeSession = (session: any) => {
+    if (session.form_data) {
+      setFormData(prev => ({ ...prev, ...session.form_data }));
+      const stepIndex = getStepIndex(session.current_step);
+      if (stepIndex >= 0) {
+        setCurrentStep(stepIndex);
+      }
+      showSuccess('Session Resumed', 'Selected session has been loaded successfully.');
+    }
+  };
   const { openEnrollment } = useGlobalConversationalEnrollment();
 
   // Optional patient consent extras (no validation for quick testing)

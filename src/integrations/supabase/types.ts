@@ -10538,6 +10538,45 @@ export type Database = {
         }
         Relationships: []
       }
+      universal_save_sessions: {
+        Row: {
+          channel_type: string
+          created_at: string
+          current_step: string
+          form_data: Json
+          id: string
+          metadata: Json | null
+          progress_percentage: number
+          session_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_type: string
+          created_at?: string
+          current_step: string
+          form_data?: Json
+          id?: string
+          metadata?: Json | null
+          progress_percentage?: number
+          session_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_type?: string
+          created_at?: string
+          current_step?: string
+          form_data?: Json
+          id?: string
+          metadata?: Json | null
+          progress_percentage?: number
+          session_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       use_cases: {
         Row: {
           category: string

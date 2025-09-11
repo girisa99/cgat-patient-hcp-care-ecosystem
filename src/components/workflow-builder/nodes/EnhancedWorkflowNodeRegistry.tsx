@@ -14,7 +14,7 @@ import {
   Rocket, 
   Zap,
   Settings,
-  FlowiseInspired as Flow,
+  Workflow as Flow,
   Brain,
   Users,
   FileText,
@@ -43,13 +43,7 @@ import {
   HumanInputNode,
   AIModelConfigurationNode,
   FlowControlConfigurationNode,
-  HTTPConfigurationNode,
-  VoiceConfigurationNode,
-  HealthcareComplianceConfigurationNode,
-  VectorStoreConfigurationNode,
-  TestingConfigurationNode,
-  DeploymentConfigurationNode,
-  DatabaseConfigurationNode
+  HTTPConfigurationNode
 } from './index';
 
 interface NodeCategory {
@@ -243,18 +237,6 @@ export const EnhancedWorkflowNodeRegistry: React.FC = () => {
       lastUpdated: '2024-01-10'
     },
     {
-      id: 'database-config',
-      name: 'Database Configuration',
-      description: 'Advanced database connectivity and query configuration',
-      component: DatabaseConfigurationNode,
-      category: 'data',
-      isCore: false,
-      isActive: true,
-      healthStatus: 'healthy',
-      integrations: ['supabase', 'postgresql', 'sql'],
-      lastUpdated: '2024-01-10'
-    },
-    {
       id: 'knowledge-base',
       name: 'Knowledge Base',
       description: 'Manage knowledge repositories and information sources',
@@ -264,46 +246,6 @@ export const EnhancedWorkflowNodeRegistry: React.FC = () => {
       isActive: true,
       healthStatus: 'healthy',
       integrations: ['documents', 'search', 'ai'],
-      lastUpdated: '2024-01-10'
-    },
-    {
-      id: 'vector-store',
-      name: 'Vector Store',
-      description: 'Configure vector databases for AI-powered search and retrieval',
-      component: VectorStoreConfigurationNode,
-      category: 'data',
-      isCore: false,
-      isActive: true,
-      healthStatus: 'healthy',
-      integrations: ['vector-db', 'embeddings', 'search'],
-      lastUpdated: '2024-01-10'
-    },
-
-    // Communication & Channels
-    {
-      id: 'voice-config',
-      name: 'Voice Configuration',
-      description: 'Configure voice interactions, speech-to-text, and text-to-speech',
-      component: VoiceConfigurationNode,
-      category: 'communication',
-      isCore: false,
-      isActive: true,
-      healthStatus: 'healthy',
-      integrations: ['voice', 'stt', 'tts'],
-      lastUpdated: '2024-01-10'
-    },
-
-    // Compliance & Security
-    {
-      id: 'healthcare-compliance',
-      name: 'Healthcare Compliance',
-      description: 'Ensure HIPAA, FDA, and healthcare regulatory compliance',
-      component: HealthcareComplianceConfigurationNode,
-      category: 'compliance',
-      isCore: false,
-      isActive: true,
-      healthStatus: 'healthy',
-      integrations: ['hipaa', 'fda', 'audit'],
       lastUpdated: '2024-01-10'
     },
 
@@ -320,18 +262,6 @@ export const EnhancedWorkflowNodeRegistry: React.FC = () => {
       integrations: ['testing', 'validation'],
       lastUpdated: '2024-01-10'
     },
-    {
-      id: 'testing-config',
-      name: 'Testing Configuration',
-      description: 'Advanced testing scenarios and validation rules',
-      component: TestingConfigurationNode,
-      category: 'testing',
-      isCore: false,
-      isActive: true,
-      healthStatus: 'healthy',
-      integrations: ['testing', 'validation', 'qa'],
-      lastUpdated: '2024-01-10'
-    },
 
     // Deployment & Operations
     {
@@ -344,18 +274,6 @@ export const EnhancedWorkflowNodeRegistry: React.FC = () => {
       isActive: true,
       healthStatus: 'healthy',
       integrations: ['deployment', 'cicd'],
-      lastUpdated: '2024-01-10'
-    },
-    {
-      id: 'deployment-config',
-      name: 'Deployment Configuration',
-      description: 'Advanced deployment settings and environment management',
-      component: DeploymentConfigurationNode,
-      category: 'deployment',
-      isCore: false,
-      isActive: true,
-      healthStatus: 'healthy',
-      integrations: ['deployment', 'environments'],
       lastUpdated: '2024-01-10'
     },
 
