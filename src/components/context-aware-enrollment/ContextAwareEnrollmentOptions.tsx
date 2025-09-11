@@ -23,6 +23,7 @@ import {
   Settings
 } from 'lucide-react';
 import DataIntegrationPanel from './DataIntegrationPanel';
+import { UniversalEnrollmentProcessor } from './UniversalEnrollmentProcessor';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -89,6 +90,8 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
   const location = useLocation();
   const currentModule = getModuleFromPath(location.pathname);
   const [showDataIntegration, setShowDataIntegration] = useState(false);
+  const [selectedOption, setSelectedOption] = useState<string | null>(null);
+  const [showProcessor, setShowProcessor] = useState(false);
 
   // Don't show if not on a specific module page
   if (!currentModule) {
@@ -105,31 +108,47 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
       icon: <Bot className="h-5 w-5" />,
       estimatedTime: '5-10 min',
       isAgent: true,
-      action: () => onAgentSelect(currentModule)
+      action: () => {
+        setSelectedOption('agent');
+        setShowProcessor(true);
+        onAgentSelect(currentModule);
+      }
     },
     {
       id: 'online-form',
       title: 'Fill Online Form',
-      description: 'Complete the enrollment using our standard online form',
+      description: 'Complete the enrollment using our standard online form with NPI verification and voice support',
       icon: <Edit3 className="h-5 w-5" />,
       estimatedTime: '10-15 min',
-      action: () => onTraditionalSelect('online-form')
+      action: () => {
+        setSelectedOption('online-form');
+        setShowProcessor(true);
+        onTraditionalSelect('online-form');
+      }
     },
     {
       id: 'pdf-fill',
       title: 'Fill & Submit PDF',
-      description: 'Download, fill the PDF form, and submit electronically',
+      description: 'Generate PDF form with auto-fill, voice review, and AI validation',
       icon: <FileText className="h-5 w-5" />,
       estimatedTime: '15-20 min',
-      action: () => onTraditionalSelect('pdf-fill')
+      action: () => {
+        setSelectedOption('pdf-fill');
+        setShowProcessor(true);
+        onTraditionalSelect('pdf-fill');
+      }
     },
     {
       id: 'download-fax',
-      title: 'Download & Fax',
-      description: 'Download the form to fill and fax manually',
+      title: 'Fill & Fax (OCR)',
+      description: 'Process documents via fax with OCR extraction and voice clarification',
       icon: <Download className="h-5 w-5" />,
       estimatedTime: '20-30 min',
-      action: () => onTraditionalSelect('download-fax')
+      action: () => {
+        setSelectedOption('download-fax');
+        setShowProcessor(true);
+        onTraditionalSelect('download-fax');
+      }
     }
   ];
 
@@ -235,6 +254,19 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
           moduleType={currentModule}
           onDataUpdate={(result) => {
             console.log('Data integration result:', result);
+          }}
+        />
+      )}
+
+      {/* Universal Enrollment Processor */}
+      {showProcessor && selectedOption && (
+        <UniversalEnrollmentProcessor
+          selectedOption={selectedOption}
+          moduleType={currentModule}
+          onComplete={(data) => {
+            console.log('Enrollment completed:', data);
+            setShowProcessor(false);
+            setSelectedOption(null);
           }}
         />
       )}
