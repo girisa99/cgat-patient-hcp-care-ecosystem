@@ -10,7 +10,7 @@ import { PatientEnrollmentTemplateManager } from '@/components/patient-enrollmen
 import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalAgentConfigManager';
 import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoiceManager';
 import { ContextAwareEnrollmentOptions } from '@/components/context-aware-enrollment/ContextAwareEnrollmentOptions';
-import { EnrollmentGenie } from '@/components/enrollment-genie/EnrollmentGenie';
+
 import { 
   UserPlus, 
   FileText, 
@@ -351,13 +351,6 @@ export default function PatientOnboarding() {
           </div>
         </div>
 
-        {/* Enrollment Genie */}
-        <EnrollmentGenie 
-          onEnrollmentComplete={(data) => {
-            console.log('Genie enrollment completed:', data);
-            toast.success('Patient enrollment completed successfully!');
-          }}
-        />
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">

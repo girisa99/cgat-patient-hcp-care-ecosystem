@@ -1,46 +1,44 @@
 /**
- * APP LAYOUT WITH ENROLLMENT
- * Enhanced app layout that includes context-aware conversational enrollment
+ * APP LAYOUT WITH UNIVERSAL CONVERSATION GENIE
+ * Enhanced app layout with global conversational AI available across all pages
+ * Supports multi-user/multi-tenant conversations
  */
 import React from 'react';
 import { GlobalConversationalEnrollmentProvider } from '@/hooks/useGlobalConversationalEnrollment';
 import { GlobalConversationalEnrollmentModal } from '@/components/global/GlobalConversationalEnrollmentModal';
-import { EnrollmentLauncher } from '@/components/global/EnrollmentLauncher';
+import { UniversalConversationGenie } from '@/components/enrollment-genie/UniversalConversationGenie';
 import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
 
 interface AppLayoutWithEnrollmentProps {
   children: React.ReactNode;
-  showFloatingLauncher?: boolean;
-  launcherVariant?: 'floating' | 'inline' | 'menu';
+  showUniversalGenie?: boolean;
+  tenantId?: string;
+  userId?: string;
 }
-
-const FloatingLauncherWrapper: React.FC = () => {
-  const { shouldShowFloatingButton } = usePageAwareEnrollment();
-  
-  // Never show floating launcher - only show when explicitly requested
-  if (!shouldShowFloatingButton()) {
-    return null;
-  }
-  
-  return <EnrollmentLauncher variant="floating" />;
-};
 
 export const AppLayoutWithEnrollment: React.FC<AppLayoutWithEnrollmentProps> = ({
   children,
-  showFloatingLauncher = true,
-  launcherVariant = 'floating'
+  showUniversalGenie = true,
+  tenantId,
+  userId
 }) => {
   return (
     <GlobalConversationalEnrollmentProvider>
       <div className="min-h-screen bg-background">
         {children}
         
-        {/* Global Enrollment Modal */}
+        {/* Global Enrollment Modal (Legacy Support) */}
         <GlobalConversationalEnrollmentModal />
         
-        {/* Context-Aware Floating Launcher */}
-        {showFloatingLauncher && launcherVariant === 'floating' && (
-          <FloatingLauncherWrapper />
+        {/* Universal Conversation Genie - Available Globally */}
+        {showUniversalGenie && (
+          <UniversalConversationGenie 
+            tenantId={tenantId}
+            userId={userId}
+            onConversationComplete={(data) => {
+              console.log('Global conversation completed:', data);
+            }}
+          />
         )}
       </div>
     </GlobalConversationalEnrollmentProvider>

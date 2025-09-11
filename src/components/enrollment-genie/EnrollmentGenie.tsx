@@ -1,30 +1,34 @@
 /**
- * ENROLLMENT GENIE
- * Floating genie button that opens conversational AI enrollment in a popup
+ * UNIVERSAL CONVERSATION GENIE
+ * Global floating genie available across the entire application
+ * Supports multi-user/multi-tenant conversations for any page context
  */
 import React, { useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Sparkles, X } from 'lucide-react';
+import { Bot, Sparkles, X, MessageCircle, Users, Building2 } from 'lucide-react';
 import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { motion, AnimatePresence } from 'framer-motion';
 
-interface EnrollmentGenieProps {
+interface UniversalConversationGenieProps {
   className?: string;
-  onEnrollmentComplete?: (data: any) => void;
+  onConversationComplete?: (data: any) => void;
+  tenantId?: string;
+  userId?: string;
 }
 
-export const EnrollmentGenie: React.FC<EnrollmentGenieProps> = ({
+export const EnrollmentGenie: React.FC<UniversalConversationGenieProps> = ({
   className = '',
-  onEnrollmentComplete
+  onConversationComplete
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
 
   const handleComplete = (data: any) => {
     setIsOpen(false);
-    onEnrollmentComplete?.(data);
+    onConversationComplete?.(data);
   };
 
   return (
