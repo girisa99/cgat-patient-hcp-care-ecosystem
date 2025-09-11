@@ -19,8 +19,8 @@ export const GlobalConversationalEnrollmentModal: React.FC = () => {
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeEnrollment()}>
-      <DialogContent className="max-w-7xl max-h-[90vh] overflow-hidden p-0">
-        <div className="h-full overflow-auto">
+      <DialogContent className="max-w-7xl h-[90vh] overflow-y-auto p-0">
+        <div className="h-full overflow-y-auto">
           <ConversationalEnrollmentSelector
             moduleType={moduleType}
             onComplete={onComplete}
