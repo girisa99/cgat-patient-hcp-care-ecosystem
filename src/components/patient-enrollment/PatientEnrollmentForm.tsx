@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -290,6 +290,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [patientSignature, setPatientSignature] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const { showSuccess, showError } = useMasterToast();
+  const hasInitializedFromResume = useRef(false);
 
   // Auto-save and resume functionality
   const {
@@ -314,12 +315,13 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
 
   // Resume from saved session when component mounts
   useEffect(() => {
-    if (hasExistingSession && sessionData) {
+    if (!hasInitializedFromResume.current && hasExistingSession && sessionData) {
       setFormData(prev => ({ ...prev, ...sessionData.form_data }));
       const stepIndex = getStepIndex(sessionData.current_step);
       if (stepIndex >= 0) {
         setCurrentStep(stepIndex);
       }
+      hasInitializedFromResume.current = true;
       showSuccess('Session Resumed', 'Your previous progress has been restored.');
     }
   }, [hasExistingSession, sessionData, showSuccess]);
@@ -339,6 +341,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       if (stepIndex >= 0) {
         setCurrentStep(stepIndex);
       }
+      hasInitializedFromResume.current = true;
       showSuccess('Session Resumed', 'Selected session has been loaded successfully.');
     }
   };
