@@ -358,16 +358,14 @@ const EnrollmentChatInterface: React.FC<{
     content: string;
     timestamp: Date;
   }>>([
-    {
-      role: 'assistant',
-      content: section.aiPrompt,
-      timestamp: new Date()
-    }
+    { role: 'assistant', content: section.aiPrompt, timestamp: new Date() },
+    { role: 'assistant', content: `To begin, please provide: ${section.requiredFields[0]}.`, timestamp: new Date() }
   ]);
   
   const [currentInput, setCurrentInput] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [collectedData, setCollectedData] = useState<Record<string, any>>({});
+  const [currentFieldIndex, setCurrentFieldIndex] = useState(0);
 
 const handleSendMessage = async () => {
   if (!currentInput.trim() || isProcessing) return;
