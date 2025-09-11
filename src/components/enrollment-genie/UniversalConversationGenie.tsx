@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bot, Sparkles, X, MessageCircle, Users, Building2, FileText, Settings, HelpCircle } from 'lucide-react';
 import { UniversalLLMAssistant } from '@/components/intelligent-assistant/UniversalLLMAssistant';
 import { StructuredEnrollmentForm } from './StructuredEnrollmentForm';
+import { ComprehensiveEnrollmentForm } from './ComprehensiveEnrollmentForm';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface UniversalConversationGenieProps {
@@ -473,7 +474,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
                 {enrollmentOption === 'natural_conversation' && (
                   <div className="space-y-4">
                     {conversationStyle === 'structured_form' ? (
-                      <StructuredEnrollmentForm
+                      <ComprehensiveEnrollmentForm
                         sessionId={`enrollment_${Date.now()}`}
                         userId={userId}
                         tenantId={tenantId}
