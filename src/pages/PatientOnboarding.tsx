@@ -5,11 +5,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { PatientEnrollmentForm } from '@/components/patient-enrollment/PatientEnrollmentForm';
-import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { CollaborativeEnrollmentWorkflow } from '@/components/patient-enrollment/CollaborativeEnrollmentWorkflow';
 import { PatientEnrollmentTemplateManager } from '@/components/patient-enrollment/PatientEnrollmentTemplateManager';
 import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalAgentConfigManager';
 import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoiceManager';
+import { ContextAwareEnrollmentOptions } from '@/components/context-aware-enrollment/ContextAwareEnrollmentOptions';
+import { EnrollmentGenie } from '@/components/enrollment-genie/EnrollmentGenie';
 import { 
   UserPlus, 
   FileText, 
@@ -27,7 +28,6 @@ import {
   Mic
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
-import { PageEnrollmentIntegration } from '@/components/page-integration/PageEnrollmentIntegration';
 import { toast } from 'sonner';
 
 interface PatientOnboarding {
@@ -174,13 +174,13 @@ export default function PatientOnboarding() {
   // Render different views based on current state
   if (currentView === 'new_enrollment') {
     return (
-      <AppLayout title="Enhanced Patient Enrollment">
+      <AppLayout title="Patient Enrollment">
         <div className="flex-1 space-y-6 p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">Enhanced Patient Enrollment</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Patient Enrollment</h1>
               <p className="text-muted-foreground">
-                AI-powered conversational enrollment with automatic data capture and audit trails
+                Choose your preferred enrollment method
               </p>
             </div>
             <Button variant="outline" onClick={handleBackToList}>
@@ -188,11 +188,14 @@ export default function PatientOnboarding() {
             </Button>
           </div>
 
-          <EnhancedEnrollmentInterface
-            onSubmit={(data) => {
-              console.log('Enhanced enrollment submitted:', data);
-              toast.success('Enrollment completed successfully with conversation history stored');
-              handleBackToList();
+          <ContextAwareEnrollmentOptions
+            onAgentSelect={(moduleType) => {
+              console.log('Agent selected for:', moduleType);
+              toast.success('AI assistant ready to help with enrollment');
+            }}
+            onTraditionalSelect={(option) => {
+              console.log('Traditional option selected:', option);
+              toast.success(`${option} enrollment started`);
             }}
           />
         </div>
@@ -348,8 +351,13 @@ export default function PatientOnboarding() {
           </div>
         </div>
 
-        {/* AI Enrollment Integration */}
-        <PageEnrollmentIntegration variant="banner" />
+        {/* Enrollment Genie */}
+        <EnrollmentGenie 
+          onEnrollmentComplete={(data) => {
+            console.log('Genie enrollment completed:', data);
+            toast.success('Patient enrollment completed successfully!');
+          }}
+        />
 
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-6">
