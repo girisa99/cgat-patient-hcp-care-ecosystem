@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { ConversationManager } from '@/components/conversation/ConversationManager';
 import { EnhancedDeploymentManager } from '@/components/deployment/EnhancedDeploymentManager';
+import { UniversalVoiceInterface } from '@/components/voice/UniversalVoiceInterface';
 import { toast } from 'sonner';
 
 interface AgentTypeConfig {
@@ -148,6 +149,7 @@ export const UniversalAgentConfigManager: React.FC<UniversalAgentConfigManagerPr
     selectedAgentType ? AGENT_TYPE_CONFIGS.find(c => c.id === selectedAgentType) || null : null
   );
   const [showConversationDemo, setShowConversationDemo] = useState(false);
+  const [showVoiceDemo, setShowVoiceDemo] = useState(false);
   const [showDeployment, setShowDeployment] = useState(false);
 
   const handleAgentTypeSelect = (config: AgentTypeConfig) => {
@@ -358,6 +360,42 @@ export const UniversalAgentConfigManager: React.FC<UniversalAgentConfigManagerPr
                           onDataCapture={(data) => {
                             console.log('Demo data captured:', data);
                             toast.success('Data captured from conversation');
+                          }}
+                        />
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+              {(selectedConfig.features.voice_support || selectedConfig.id === 'fax' || selectedConfig.id === 'pdf') && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Voice Interface Demo</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex items-center justify-between mb-4">
+                      <p className="text-muted-foreground">
+                        Experience voice-to-text and text-to-voice capabilities optimized for {selectedConfig.name}
+                      </p>
+                      <Button
+                        onClick={() => setShowVoiceDemo(!showVoiceDemo)}
+                        variant="outline"
+                      >
+                        {showVoiceDemo ? 'Hide Voice Demo' : 'Try Voice Demo'}
+                      </Button>
+                    </div>
+                    
+                    {showVoiceDemo && (
+                      <div className="border rounded-lg p-4">
+                        <UniversalVoiceInterface
+                          agentType={selectedConfig.id as any}
+                          channelType="online"
+                          onDataCapture={(data) => {
+                            console.log('Voice demo data captured:', data);
+                            toast.success('Voice data captured successfully');
+                          }}
+                          onStatusChange={(status) => {
+                            console.log('Voice demo status:', status);
                           }}
                         />
                       </div>

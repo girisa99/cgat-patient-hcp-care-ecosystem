@@ -71,3 +71,15 @@ verify_jwt = true
 
 [functions.langwatch-integration] 
 verify_jwt = true
+
+[functions.elevenlabs-voice]
+verify_jwt = false
+
+[functions.huggingface-speech]
+verify_jwt = false
+
+[functions.pdf-voice-processor]
+verify_jwt = false
+
+[functions.fax-voice-processor]
+verify_jwt = false

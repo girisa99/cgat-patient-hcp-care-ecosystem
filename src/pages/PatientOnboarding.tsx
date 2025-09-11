@@ -9,6 +9,7 @@ import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/Enh
 import { CollaborativeEnrollmentWorkflow } from '@/components/patient-enrollment/CollaborativeEnrollmentWorkflow';
 import { PatientEnrollmentTemplateManager } from '@/components/patient-enrollment/PatientEnrollmentTemplateManager';
 import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalAgentConfigManager';
+import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoiceManager';
 import { 
   UserPlus, 
   FileText, 
@@ -22,7 +23,8 @@ import {
   Phone,
   Mail,
   Workflow,
-  Settings
+  Settings,
+  Mic
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { PageEnrollmentIntegration } from '@/components/page-integration/PageEnrollmentIntegration';
@@ -119,9 +121,10 @@ const getPriorityColor = (priority: PatientOnboarding['priority']) => {
 export default function PatientOnboarding() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
-  const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow' | 'templates' | 'agent_config'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow' | 'templates' | 'agent_config' | 'voice_channels'>('list');
   const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
   const [selectedAgentType, setSelectedAgentType] = useState<string>('');
+  const [channelData, setChannelData] = useState<Record<string, any>>({});
 
   const filteredOnboarding = mockOnboarding.filter(item => {
     const matchesSearch = item.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -162,6 +165,10 @@ export default function PatientOnboarding() {
 
   const handleViewAgentConfig = () => {
     setCurrentView('agent_config');
+  };
+
+  const handleViewVoiceChannels = () => {
+    setCurrentView('voice_channels');
   };
 
   // Render different views based on current state
@@ -213,6 +220,36 @@ export default function PatientOnboarding() {
             onTemplateSelect={(template) => {
               console.log('Template selected:', template);
               toast.success('Template ready for deployment');
+            }}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (currentView === 'voice_channels') {
+    return (
+      <AppLayout title="Voice Channel Management">
+        <div className="flex-1 space-y-6 p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Voice Channel Management</h1>
+              <p className="text-muted-foreground">
+                Manage voice interactions across all channels with ElevenLabs and Hugging Face integration
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleBackToList}>
+              Back to List
+            </Button>
+          </div>
+
+          <ChannelVoiceManager
+            onChannelData={(channel, data) => {
+              setChannelData(prev => ({
+                ...prev,
+                [channel]: data
+              }));
+              console.log('Channel data updated:', channel, data);
             }}
           />
         </div>
@@ -299,6 +336,10 @@ export default function PatientOnboarding() {
             <Button variant="outline" onClick={handleViewAgentConfig}>
               <Settings className="mr-2 h-4 w-4" />
               Agent Configuration
+            </Button>
+            <Button variant="outline" onClick={handleViewVoiceChannels}>
+              <Mic className="mr-2 h-4 w-4" />
+              Voice Channels
             </Button>
             <Button onClick={handleNewEnrollment}>
               <Plus className="mr-2 h-4 w-4" />

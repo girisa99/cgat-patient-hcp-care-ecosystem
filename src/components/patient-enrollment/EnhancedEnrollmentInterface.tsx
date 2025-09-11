@@ -11,10 +11,12 @@ import {
   Eye, 
   Settings,
   Brain,
-  Database
+  Database,
+  Mic
 } from 'lucide-react';
 import { ConversationManager } from '@/components/conversation/ConversationManager';
 import { PatientEnrollmentForm } from './PatientEnrollmentForm';
+import { UniversalVoiceInterface } from '@/components/voice/UniversalVoiceInterface';
 import { toast } from 'sonner';
 
 interface EnhancedEnrollmentInterfaceProps {
@@ -27,6 +29,8 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
   const [activeTab, setActiveTab] = useState<'conversation' | 'form'>('conversation');
   const [enrollmentData, setEnrollmentData] = useState<any>({});
   const [conversationHistory, setConversationHistory] = useState<any[]>([]);
+  const [voiceData, setVoiceData] = useState<any>({});
+  const [currentChannel, setCurrentChannel] = useState<'online' | 'pdf' | 'fax' | 'voice'>('online');
 
   const handleDataCapture = (capturedData: any) => {
     setEnrollmentData(prev => ({
@@ -39,12 +43,31 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
     });
   };
 
+  const handleVoiceDataCapture = (capturedData: any) => {
+    setVoiceData(prev => ({
+      ...prev,
+      ...capturedData
+    }));
+    
+    setEnrollmentData(prev => ({
+      ...prev,
+      ...capturedData
+    }));
+    
+    toast.success('Voice data captured', {
+      description: 'Voice input has been processed and added to the form'
+    });
+  };
+
   const handleFormSubmit = (formData: any) => {
     const combinedData = {
       ...enrollmentData,
       ...formData,
+      ...voiceData,
       source: 'enhanced_enrollment',
       conversation_history: conversationHistory,
+      voice_data: voiceData,
+      channel: currentChannel,
       timestamp: new Date().toISOString()
     };
 
@@ -59,12 +82,15 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
     const packageData = {
       enrollment_data: enrollmentData,
       conversation_history: conversationHistory,
+      voice_data: voiceData,
       form_data: enrollmentData,
+      channel: currentChannel,
       metadata: {
-        completion_method: 'conversation_assisted',
+        completion_method: 'multi_channel_assisted',
         completion_date: new Date().toISOString(),
-        data_sources: ['conversation', 'form'],
-        audit_trail: true
+        data_sources: ['conversation', 'voice', 'form'],
+        audit_trail: true,
+        channels_used: [currentChannel]
       }
     };
 
@@ -139,18 +165,32 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
         <div className="flex items-center justify-between">
-          <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsList className="grid w-full max-w-lg grid-cols-3">
             <TabsTrigger value="conversation" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               Conversation
             </TabsTrigger>
+            <TabsTrigger value="voice" className="flex items-center gap-2">
+              <Mic className="h-4 w-4" />
+              Voice
+            </TabsTrigger>
             <TabsTrigger value="form" className="flex items-center gap-2">
               <FileText className="h-4 w-4" />
-              Form View
+              Form
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex gap-2">
+          <div className="flex items-center gap-3">
+            <select
+              value={currentChannel}
+              onChange={(e) => setCurrentChannel(e.target.value as any)}
+              className="px-3 py-2 border border-input bg-background rounded-md"
+            >
+              <option value="online">Online</option>
+              <option value="voice">Voice</option>
+              <option value="pdf">PDF</option>
+              <option value="fax">Fax</option>
+            </select>
             <Button variant="outline" onClick={downloadEnrollmentPackage}>
               <Download className="h-4 w-4 mr-2" />
               Download Package
@@ -179,6 +219,18 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
               ]
             }}
             onDataCapture={handleDataCapture}
+          />
+        </TabsContent>
+
+        <TabsContent value="voice" className="space-y-4">
+          <UniversalVoiceInterface
+            agentType="conversational"
+            channelType={currentChannel}
+            onDataCapture={handleVoiceDataCapture}
+            onStatusChange={(status) => {
+              console.log('Voice status:', status);
+              // You can add status indicators here
+            }}
           />
         </TabsContent>
 
