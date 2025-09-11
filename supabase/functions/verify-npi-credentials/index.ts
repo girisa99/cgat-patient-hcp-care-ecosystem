@@ -8,8 +8,21 @@ const corsHeaders = {
 };
 
 interface NPIVerificationRequest {
-  npi: string;
+  // Primary search methods (one required)
+  npi?: string;                    // Direct NPI lookup (10 digits)
+  providerSearch?: {               // Name-based search
+    firstName?: string;
+    lastName?: string;
+    organizationName?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+  };
+  
+  // Required fields
   providerType: 'individual' | 'organization';
+  
+  // Optional verification fields
   providerName?: string;
   state?: string;
   licenseNumber?: string;
@@ -41,11 +54,15 @@ serve(async (req) => {
     );
 
     const request: NPIVerificationRequest = await req.json();
-    console.log('🔍 Starting NPI verification for:', request.npi);
+    console.log('🔍 Starting provider verification:', request);
 
-    // Validate input
-    if (!request.npi || !/^\d{10}$/.test(request.npi)) {
-      throw new Error('Invalid NPI format. Must be 10 digits.');
+    // Validate input - either NPI or search criteria required
+    if (!request.npi && !request.providerSearch) {
+      throw new Error('Either NPI number or provider search criteria must be provided.');
+    }
+    
+    if (request.npi && !/^\d{10}$/.test(request.npi)) {
+      throw new Error('Invalid NPI format. Must be exactly 10 digits.');
     }
 
     const verificationResult: NPIVerificationResult = {
@@ -56,33 +73,48 @@ serve(async (req) => {
       confidence: 0
     };
 
-    // Step 1: Verify NPI using NPPES API (CMS National Provider Identifier)
-    console.log('📞 Calling NPPES API for NPI verification...');
-    const npiVerification = await verifyNPIWithNPPES(request.npi);
+    // Step 1: Find and verify provider using NPI or name-based search
+    console.log('📞 Searching NPPES database...');
+    const npiLookupResult = request.npi 
+      ? await verifyNPIWithNPPES(request.npi)
+      : await searchProviderByName(request.providerSearch!, request.providerType);
     
-    if (npiVerification.success) {
-      verificationResult.npiData = npiVerification.data;
+    if (npiLookupResult.success) {
+      verificationResult.npiData = npiLookupResult.data;
       verificationResult.confidence += 40;
       
+      // If we found multiple matches, note this
+      if (npiLookupResult.multipleMatches) {
+        verificationResult.issues.push(`Found ${npiLookupResult.matchCount} potential matches. Using best match.`);
+        verificationResult.confidence -= 5;
+      }
+      
       // Validate provider name match if provided
-      if (request.providerName) {
+      if (request.providerName && npiLookupResult.data) {
         const nameMatch = validateProviderName(
           request.providerName, 
-          npiVerification.data
+          npiLookupResult.data
         );
         if (!nameMatch) {
-          verificationResult.issues.push('Provider name does not match NPI records');
+          verificationResult.issues.push('Provider name does not match found records');
           verificationResult.confidence -= 10;
         } else {
           verificationResult.confidence += 20;
         }
       }
     } else {
-      verificationResult.issues.push('NPI not found in NPPES database');
+      verificationResult.issues.push(
+        request.npi 
+          ? 'NPI not found in NPPES database'
+          : `No providers found matching search criteria: ${npiLookupResult.error}`
+      );
     }
 
+    // Get the final NPI for subsequent verifications
+    const finalNPI = verificationResult.npiData?.npi || request.npi;
+
     // Step 2: Verify state license if provided
-    if (request.licenseNumber && request.state) {
+    if (request.licenseNumber && request.state && finalNPI) {
       console.log('🏛️ Verifying state license...');
       const licenseVerification = await verifyStateLicense(
         request.licenseNumber,
@@ -100,9 +132,9 @@ serve(async (req) => {
     }
 
     // Step 3: Verify DEA number if provided
-    if (request.deaNumber) {
+    if (request.deaNumber && finalNPI) {
       console.log('💊 Verifying DEA number...');
-      const deaVerification = await verifyDEANumber(request.deaNumber, request.npi);
+      const deaVerification = await verifyDEANumber(request.deaNumber, finalNPI);
       
       if (deaVerification.success) {
         verificationResult.deaVerification = deaVerification.data;
@@ -180,8 +212,73 @@ serve(async (req) => {
   }
 });
 
-// NPPES API verification
-async function verifyNPIWithNPPES(npi: string) {
+// Enhanced NPPES API search with name-based lookup
+async function searchProviderByName(searchCriteria: any, providerType: string) {
+  try {
+    // Build search URL with name parameters
+    const params = new URLSearchParams({
+      version: '2.1',
+      enumeration_type: providerType === 'individual' ? 'NPI-1' : 'NPI-2',
+      limit: '10' // Get multiple results to find best match
+    });
+
+    if (providerType === 'individual') {
+      if (searchCriteria.firstName) params.append('first_name', searchCriteria.firstName);
+      if (searchCriteria.lastName) params.append('last_name', searchCriteria.lastName);
+    } else {
+      if (searchCriteria.organizationName) params.append('organization_name', searchCriteria.organizationName);
+    }
+
+    if (searchCriteria.city) params.append('city', searchCriteria.city);
+    if (searchCriteria.state) params.append('state', searchCriteria.state);
+    if (searchCriteria.postalCode) params.append('postal_code', searchCriteria.postalCode.substring(0, 5));
+
+    const response = await fetch(
+      `https://npiregistry.cms.hhs.gov/api/?${params.toString()}`,
+      {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/json',
+          'User-Agent': 'Healthcare-Verification-Service/1.0'
+        }
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`NPPES API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    
+    if (data.result_count === 0) {
+      return { success: false, error: 'No providers found matching search criteria' };
+    }
+
+    // Find best match (first result is usually most relevant)
+    const bestMatch = data.results[0];
+    
+    return {
+      success: true,
+      multipleMatches: data.result_count > 1,
+      matchCount: data.result_count,
+      data: {
+        npi: bestMatch.number,
+        providerType: bestMatch.enumeration_type,
+        name: bestMatch.basic?.name || 
+              `${bestMatch.basic?.first_name} ${bestMatch.basic?.last_name}`,
+        organizationName: bestMatch.basic?.organization_name,
+        taxonomies: bestMatch.taxonomies,
+        addresses: bestMatch.addresses,
+        status: bestMatch.basic?.status,
+        lastUpdated: bestMatch.basic?.last_updated,
+        enumerationDate: bestMatch.basic?.enumeration_date,
+        searchMatch: true
+      }
+    };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+}
   try {
     const response = await fetch(
       `https://npiregistry.cms.hhs.gov/api/?number=${npi}&enumeration_type=&taxonomy_description=&name_purpose=&first_name=&use_first_name_alias=&last_name=&organization_name=&address_purpose=&city=&state=&postal_code=&country_code=&limit=&skip=&version=2.1`,
@@ -221,9 +318,8 @@ async function verifyNPIWithNPPES(npi: string) {
       }
     };
   } catch (error) {
-    return { success: false, error: error.message };
-  }
-}
+// Direct NPI lookup (when NPI is known)
+async function verifyNPIWithNPPES(npi: string) {
 
 // State license verification (implementation varies by state)
 async function verifyStateLicense(licenseNumber: string, state: string, providerType: string) {

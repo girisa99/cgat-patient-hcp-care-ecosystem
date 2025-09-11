@@ -7,8 +7,21 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
 interface NPIVerificationData {
-  npi: string;
+  // Search options (one required)
+  npi?: string;                    // Direct NPI entry
+  providerSearch?: {               // Name-based search
+    firstName?: string;
+    lastName?: string; 
+    organizationName?: string;
+    city?: string;
+    state?: string;
+    postalCode?: string;
+  };
+  
+  // Required
   providerType: 'individual' | 'organization';
+  
+  // Optional verification data
   providerName?: string;
   state?: string;
   licenseNumber?: string;
@@ -45,12 +58,12 @@ export const useNPIVerification = () => {
   const [verificationHistory, setVerificationHistory] = useState<VerificationHistory[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
 
-  // Verify NPI and credentials
+  // Verify provider credentials with smart search
   const verifyCredentials = useCallback(async (data: NPIVerificationData): Promise<VerificationResult> => {
     setIsVerifying(true);
     
     try {
-      console.log('🔍 Initiating NPI verification for:', data.npi);
+      console.log('🔍 Initiating provider verification:', data);
       
       const { data: result, error } = await supabase.functions.invoke('verify-npi-credentials', {
         body: data
