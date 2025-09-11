@@ -16,7 +16,8 @@ import {
   Activity,
   Brain,
   Workflow,
-  TestTube
+  TestTube,
+  Shield
 } from 'lucide-react';
 import { ComprehensiveEnrollmentForm } from '../enrollment-genie/ComprehensiveEnrollmentForm';
 
@@ -60,11 +61,12 @@ export const PatientEnrollmentFlow: React.FC<PatientEnrollmentFlowProps> = ({ on
   ];
 
   const clinicalSubtabs = [
-    { id: 'assessment', title: 'Clinical Assessment', icon: Stethoscope },
-    { id: 'treatment-history', title: 'Treatment History', icon: Activity },
-    { id: 'medical-records', title: 'Medical Records', icon: FileText },
-    { id: 'lab-results', title: 'Lab Results', icon: TestTube },
-    { id: 'provider-notes', title: 'Provider Notes', icon: Users }
+    { id: 'identity-verification', title: 'Identity Verification', icon: Shield },
+    { id: 'clinical-readiness', title: 'Clinical Readiness Assessment', icon: Activity },
+    { id: 'care-coordination', title: 'Care Coordination & Logistics', icon: Users },
+    { id: 'financial-counseling', title: 'Financial Counseling & Support', icon: CreditCard },
+    { id: 'consent-legal', title: 'Consent & Legal Documentation', icon: FileText },
+    { id: 'technology-monitoring', title: 'Technology & Monitoring Setup', icon: Settings }
   ];
 
   if (showEnrollmentForm) {
@@ -78,8 +80,7 @@ export const PatientEnrollmentFlow: React.FC<PatientEnrollmentFlowProps> = ({ on
             </Button>
           </div>
           <ComprehensiveEnrollmentForm 
-            mode={selectedMode || 'online-form'}
-            onSubmit={() => {
+            onFormComplete={(_formData) => {
               setShowEnrollmentForm(false);
               onClose?.();
             }}
