@@ -73,25 +73,27 @@ export const useConversationState = () => {
   }, []);
 
   const switchMode = useCallback((newMode: 'system' | 'single' | 'multi') => {
-    console.log(`🔀 Switching conversation mode: ${state.selectedMode} → ${newMode}`);
-    
-    // If switching modes mid-conversation, reset the conversation
-    if (state.isActive && state.messages.length > 0) {
-      const newState = getInitialState();
-      setState({
-        ...newState,
-        selectedMode: newMode,
-        selectedModel: state.selectedModel,
-        leftModel: state.leftModel,
-        rightModel: state.rightModel,
-        selectedModelType: state.selectedModelType,
-        enabledFeatures: state.enabledFeatures,
-        selectedMCPTools: state.selectedMCPTools
-      });
-    } else {
-      setState(prev => ({ ...prev, selectedMode: newMode }));
-    }
-  }, [state.selectedMode, state.isActive, state.messages.length]);
+    setState(prev => {
+      console.log(`🔀 Switching conversation mode: ${prev.selectedMode} → ${newMode}`);
+      
+      // If switching modes mid-conversation, reset the conversation
+      if (prev.isActive && prev.messages.length > 0) {
+        const newState = getInitialState();
+        return {
+          ...newState,
+          selectedMode: newMode,
+          selectedModel: prev.selectedModel,
+          leftModel: prev.leftModel,
+          rightModel: prev.rightModel,
+          selectedModelType: prev.selectedModelType,
+          enabledFeatures: prev.enabledFeatures,
+          selectedMCPTools: prev.selectedMCPTools
+        };
+      } else {
+        return { ...prev, selectedMode: newMode };
+      }
+    });
+  }, []);
 
   return {
     state,

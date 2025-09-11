@@ -70,13 +70,6 @@ const mcpTools = [
     status: 'available'
   },
   {
-    id: 'label-studio-mcp',
-    name: 'Label Studio Integration',
-    description: 'Data annotation, labeling workflows, ML dataset creation, RAG knowledge base',
-    capabilities: ['Data Annotation', 'RAG Search', 'Knowledge Base', 'Model Training', 'Vector Search'],
-    status: 'available'
-  },
-  {
     id: 'web-search-mcp',
     name: 'Web Search & Research',
     description: 'Real-time web search, research assistance, fact checking',
@@ -233,20 +226,27 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         systemPrompt += " Generate content suitable for review and publication in knowledge bases.";
       }
 
-      // Add MCP tools context
-      if (conversationState.selectedMCPTools.length > 0) {
-        const toolNames = conversationState.selectedMCPTools.map(id => mcpTools.find(t => t.id === id)?.name).filter(Boolean);
-        systemPrompt += ` You have access to the following external tools and integrations: ${toolNames.join(', ')}. Use these tools when relevant to provide enhanced responses.`;
+      // Add MCP tools context (Label Studio is always included)
+      const allActiveTools = ['label-studio-mcp', ...conversationState.selectedMCPTools];
+      if (allActiveTools.length > 0) {
+        const labelStudioName = 'Label Studio Integration';
+        const otherToolNames = conversationState.selectedMCPTools.map(id => mcpTools.find(t => t.id === id)?.name).filter(Boolean);
+        const allToolNames = [labelStudioName, ...otherToolNames];
+        systemPrompt += ` You have access to the following external tools and integrations: ${allToolNames.join(', ')}. Label Studio RAG knowledge base is always available. Use these tools when relevant to provide enhanced responses.`;
+      } else {
+        systemPrompt += " You have access to Label Studio RAG knowledge base for enhanced, context-aware responses.";
       }
 
-      // Enhance prompt with RAG context
+      // Enhance prompt with RAG context (Label Studio is always included)
       const { enhancedPrompt, contextSources } = await ragService.enhancePromptWithRAG(
         currentMessage, 
-        [...conversationState.enabledFeatures, ...conversationState.selectedMCPTools]
+        ['label-studio-mcp', ...conversationState.enabledFeatures, ...conversationState.selectedMCPTools]
       );
 
-      // Build and send request with fallback for System mode
+      // Build and send request with robust error handling
       let response: any = null;
+      let lastError: string = '';
+      
       if (conversationState.selectedMode === 'system') {
         const providersToTry: Array<'openai' | 'claude' | 'gemini'> = ['openai', 'claude', 'gemini'];
         for (const p of providersToTry) {
@@ -258,21 +258,31 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               temperature: 0.7,
               maxTokens: 1000
             });
-            if (r) { response = r; break; }
+            if (r && r.content) { 
+              response = r; 
+              break; 
+            }
           } catch (e) {
-            console.warn(`Provider ${p} failed:`, e);
+            const errorMsg = e instanceof Error ? e.message : 'Unknown error';
+            console.warn(`Provider ${p} failed:`, errorMsg);
+            lastError = errorMsg;
           }
         }
       } else {
-        const request: any = {
-          prompt: enhancedPrompt,
-          systemPrompt,
-          provider,
-          model: conversationState.selectedMode === 'multi' ? conversationState.leftModel : conversationState.selectedModel,
-          temperature: 0.7,
-          maxTokens: 1000
-        };
-        response = await generateResponse(request);
+        try {
+          const request: any = {
+            prompt: enhancedPrompt,
+            systemPrompt,
+            provider,
+            model: conversationState.selectedMode === 'multi' ? conversationState.leftModel : conversationState.selectedModel,
+            temperature: 0.7,
+            maxTokens: 1000
+          };
+          response = await generateResponse(request);
+        } catch (e) {
+          lastError = e instanceof Error ? e.message : 'Unknown error';
+          console.error(`Single provider ${provider} failed:`, lastError);
+        }
       }
       
       if (response) {
@@ -292,7 +302,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           metadata: { contextSources, ragEnhanced: contextSources.length > 0 }
         });
       } else {
-        throw new Error('No response from any AI provider');
+        const errorMessage = lastError || 'No response from any AI provider. Please check your API keys and try again.';
+        throw new Error(errorMessage);
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -349,7 +360,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="max-h-60 overflow-y-auto">
                   {getModelsForType(conversationState.selectedModelType).map((model) => (
                     <SelectItem key={model} value={model}>
                       {model}
@@ -405,7 +416,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60 overflow-y-auto">
                     {getModelsForType(conversationState.selectedModelType).map((model) => (
                       <SelectItem key={model} value={model}>
                         {model}
@@ -423,7 +434,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-60 overflow-y-auto">
                     {getModelsForType(conversationState.selectedModelType).map((model) => (
                       <SelectItem key={model} value={model}>
                         {model}
@@ -590,7 +601,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   <span>Select MCP Tools & Integrations ({conversationState.selectedMCPTools.length} selected)</span>
                 </div>
               </SelectTrigger>
-              <SelectContent className="w-full">
+              <SelectContent className="w-full max-h-60 overflow-y-auto">
                 <div className="p-2">
                   <p className="text-xs text-gray-600 mb-2">
                     Connect to external tools and services through Model Context Protocol
