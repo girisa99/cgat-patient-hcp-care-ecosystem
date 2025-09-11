@@ -257,8 +257,118 @@ const EnrollmentChatInterface: React.FC<{
       timestamp: new Date()
     }
   ]);
+  
+  const [currentInput, setCurrentInput] = useState('');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [collectedData, setCollectedData] = useState<Record<string, any>>({});
 
-  // Mock chat interface - would integrate with real AI
+  const handleSendMessage = async () => {
+    if (!currentInput.trim() || isProcessing) return;
+
+    const userMessage = {
+      role: 'user' as const,
+      content: currentInput,
+      timestamp: new Date()
+    };
+
+    setChatMessages(prev => [...prev, userMessage]);
+    setIsProcessing(true);
+
+    // Extract data from user input (simplified pattern matching)
+    const extractedData = extractDataFromMessage(currentInput, section.id);
+    if (Object.keys(extractedData).length > 0) {
+      setCollectedData(prev => ({ ...prev, ...extractedData }));
+    }
+
+    // Simulate AI response
+    setTimeout(() => {
+      const aiResponse = generateAIResponse(currentInput, section, extractedData);
+      setChatMessages(prev => [...prev, {
+        role: 'assistant',
+        content: aiResponse,
+        timestamp: new Date()
+      }]);
+      setIsProcessing(false);
+    }, 1000);
+
+    setCurrentInput('');
+  };
+
+  const extractDataFromMessage = (message: string, sectionId: string): Record<string, any> => {
+    const data: Record<string, any> = {};
+    const lowerMessage = message.toLowerCase();
+
+    if (sectionId === 'demographics') {
+      // Extract name
+      const nameMatch = message.match(/(?:my name is|i'm|i am|call me)\s+([a-zA-Z\s]+)/i);
+      if (nameMatch) {
+        const fullName = nameMatch[1].trim();
+        const nameParts = fullName.split(' ');
+        data.firstName = nameParts[0] || '';
+        data.lastName = nameParts.slice(1).join(' ') || '';
+      }
+
+      // Extract email
+      const emailMatch = message.match(/([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
+      if (emailMatch) {
+        data.email = emailMatch[1];
+      }
+
+      // Extract phone
+      const phoneMatch = message.match(/(\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4})/);
+      if (phoneMatch) {
+        data.homePhone = phoneMatch[1];
+      }
+
+      // Extract date of birth
+      const dobMatch = message.match(/(\d{1,2}\/\d{1,2}\/\d{4}|\d{4}-\d{2}-\d{2})/);
+      if (dobMatch) {
+        data.dateOfBirth = dobMatch[1];
+      }
+    }
+
+    return data;
+  };
+
+  const generateAIResponse = (userInput: string, section: EnrollmentSection, extractedData: Record<string, any>): string => {
+    const responses = {
+      demographics: [
+        "Great! I've captured that information. Now, can you provide your date of birth?",
+        "Perfect! What's your phone number so we can contact you if needed?",
+        "Thanks! What's your email address?",
+        "Excellent! Can you give me your current address?",
+        "Almost done with demographics! Who should we contact in case of emergency?"
+      ],
+      'medical-history': [
+        "Thank you for that information. Are you currently taking any medications?",
+        "I've noted that. Do you have any known allergies I should be aware of?",
+        "Good to know. Have you had any surgeries in the past?",
+        "Thanks! Are there any chronic conditions you're managing?"
+      ],
+      insurance: [
+        "Great! What's your insurance provider?",
+        "Perfect! What's your policy number?",
+        "Thanks! Do you have a group number on your insurance card?",
+        "Excellent! Are you the primary subscriber or a dependent?"
+      ],
+      consent: [
+        "I understand. Do you consent to the proposed treatment?",
+        "Thank you. Do you acknowledge receipt of our privacy notice?",
+        "Noted. Do you understand your financial responsibility?",
+        "Perfect! We'll need your digital signature to complete this section."
+      ]
+    };
+
+    const sectionResponses = responses[section.id] || ["Thank you for that information. What else can you tell me about this section?"];
+    return sectionResponses[Math.floor(Math.random() * sectionResponses.length)];
+  };
+
+  const isDataComplete = () => {
+    const requiredFieldCount = section.requiredFields.length;
+    const collectedFieldCount = Object.keys(collectedData).length;
+    return collectedFieldCount >= Math.min(3, requiredFieldCount); // Complete after collecting at least 3 fields
+  };
+
   return (
     <div className="space-y-4">
       <div className="border rounded-lg p-4 h-96 overflow-y-auto bg-muted/20">
@@ -278,21 +388,76 @@ const EnrollmentChatInterface: React.FC<{
             >
               {message.content}
             </div>
+            <div className="text-xs text-muted-foreground mt-1">
+              {message.timestamp.toLocaleTimeString()}
+            </div>
           </div>
         ))}
+        {isProcessing && (
+          <div className="text-left">
+            <div className="inline-block bg-background border p-3 rounded-lg">
+              <div className="flex items-center gap-2">
+                <Bot className="h-4 w-4 text-primary" />
+                <span>AI is thinking...</span>
+                <div className="flex gap-1">
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse" />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-100" />
+                  <div className="w-2 h-2 bg-primary rounded-full animate-pulse delay-200" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
       
-      <div className="flex gap-2">
-        <Button 
-          onClick={() => onComplete({ sampleData: 'completed' })}
-          className="flex-1"
-        >
-          <CheckCircle className="h-4 w-4 mr-2" />
-          Complete Section
-        </Button>
-        <Button variant="outline" onClick={onCancel}>
-          Back to Overview
-        </Button>
+      {/* Input Section */}
+      <div className="space-y-3">
+        <div className="flex gap-2">
+          <input
+            type="text"
+            value={currentInput}
+            onChange={(e) => setCurrentInput(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+            placeholder="Type your response here..."
+            className="flex-1 px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+            disabled={isProcessing}
+          />
+          <Button
+            onClick={handleSendMessage}
+            disabled={!currentInput.trim() || isProcessing}
+            className="px-4"
+          >
+            <ArrowRight className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Collected Data Preview */}
+        {Object.keys(collectedData).length > 0 && (
+          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+            <h4 className="font-medium text-green-800 mb-2">Collected Information:</h4>
+            <div className="space-y-1">
+              {Object.entries(collectedData).map(([key, value]) => (
+                <div key={key} className="text-sm text-green-700">
+                  <strong>{key}:</strong> {value}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        <div className="flex gap-2">
+          <Button 
+            onClick={() => onComplete(collectedData)}
+            className="flex-1"
+            disabled={!isDataComplete()}
+          >
+            <CheckCircle className="h-4 w-4 mr-2" />
+            Complete Section {isDataComplete() ? '✓' : `(${Object.keys(collectedData).length}/${Math.min(3, section.requiredFields.length)} fields)`}
+          </Button>
+          <Button variant="outline" onClick={onCancel}>
+            Back to Overview
+          </Button>
+        </div>
       </div>
     </div>
   );
@@ -307,7 +472,7 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       description: 'Basic personal information and contact details',
       aiPrompt: "Hi! I'm your AI assistant for collecting your personal information. I'll help you provide your demographics in a conversational way. Let's start with your full name - what would you like me to call you?",
       estimatedTime: '3-5 min',
-      requiredFields: ['Full Name', 'Date of Birth', 'Address', 'Phone', 'Email', 'Emergency Contact'],
+      requiredFields: ['First Name', 'Last Name', 'Date of Birth', 'Home Phone', 'Email', 'Address', 'City', 'State', 'ZIP Code', 'Emergency Contact Name', 'Emergency Contact Phone'],
       validationRules: { name: 'required', dob: 'date', phone: 'phone', email: 'email' }
     },
     {
@@ -317,7 +482,7 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       description: 'Current medications, allergies, and medical conditions',
       aiPrompt: "Now I'll help you document your medical history. This information helps us provide better care. Let's start with any current medications you're taking - you can tell me about them one by one or all at once, whatever feels comfortable.",
       estimatedTime: '5-8 min',
-      requiredFields: ['Current Medications', 'Allergies', 'Past Surgeries', 'Chronic Conditions', 'Family History'],
+      requiredFields: ['Current Medications', 'Allergies', 'Medical History', 'Primary Care Physician', 'Previous Surgeries', 'Family Medical History', 'Current Symptoms'],
       validationRules: { medications: 'array', allergies: 'array' }
     },
     {
@@ -327,7 +492,7 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       description: 'Insurance details and coverage verification',
       aiPrompt: "Let's get your insurance information set up. I'll walk you through this step by step. First, do you have your insurance card handy? If so, I can help you enter the details, or you can tell me what information you have available.",
       estimatedTime: '3-4 min',
-      requiredFields: ['Insurance Provider', 'Policy Number', 'Group Number', 'Subscriber Information'],
+      requiredFields: ['Insurance Provider', 'Primary Insurance', 'Policy Number', 'Group Number', 'Subscriber Name', 'Subscriber DOB', 'Secondary Insurance'],
       validationRules: { policyNumber: 'required', provider: 'required' }
     },
     {
@@ -337,7 +502,7 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       description: 'Legal agreements and consent forms',
       aiPrompt: "Finally, I'll help you understand and complete the necessary consent forms and agreements. I'll explain each one clearly and answer any questions you have. Shall we start with the treatment consent form?",
       estimatedTime: '2-3 min',
-      requiredFields: ['Treatment Consent', 'Privacy Notice', 'Financial Responsibility', 'Digital Signature'],
+      requiredFields: ['Treatment Consent', 'HIPAA Authorization', 'Financial Responsibility', 'Privacy Notice Acknowledgment', 'Digital Signature', 'Patient Rights Acknowledgment'],
       validationRules: { signature: 'required', consents: 'required' }
     }
   ];
