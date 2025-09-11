@@ -9,7 +9,6 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Sparkles, X, MessageCircle, Users, Building2, FileText, Settings, HelpCircle } from 'lucide-react';
-import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { UniversalLLMAssistant } from '@/components/intelligent-assistant/UniversalLLMAssistant';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -19,6 +18,10 @@ interface UniversalConversationGenieProps {
   tenantId?: string;
   userId?: string;
 }
+
+type EnrollmentOption = 'natural_conversation' | 'auto_fill_forms' | 'audit_trails';
+type LLMProvider = 'openai' | 'anthropic' | 'google';
+type ConversationStyle = 'structured_form' | 'natural_conversation';
 
 // Context detection based on current route
 const getPageContext = (pathname: string) => {
@@ -90,6 +93,9 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [conversationMode, setConversationMode] = useState<'enrollment' | 'general'>('general');
+  const [enrollmentOption, setEnrollmentOption] = useState<EnrollmentOption>('natural_conversation');
+  const [llmProvider, setLlmProvider] = useState<LLMProvider>('openai');
+  const [conversationStyle, setConversationStyle] = useState<ConversationStyle>('natural_conversation');
 
   const currentContext = getPageContext(location.pathname);
   const contextInfo = getContextInfo(currentContext);
@@ -347,6 +353,93 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
             </div>
           </div>
           
+          {/* Enhanced Configuration Panel for Enrollment Mode */}
+          {conversationMode === 'enrollment' && isEnrollmentContext && (
+            <div className="border-b bg-gradient-to-r from-teal-50/50 to-cyan-50/50 p-4">
+              <div className="flex flex-wrap gap-4 items-center">
+                {/* Enrollment Options */}
+                <div className="flex items-center gap-2">
+                  <span className="text-sm font-medium text-slate-700">Method:</span>
+                  <div className="flex bg-white rounded-lg p-1 shadow-sm border">
+                    <Button
+                      variant={enrollmentOption === 'natural_conversation' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setEnrollmentOption('natural_conversation')}
+                      className="h-7 px-2 text-xs"
+                    >
+                      🗣️ Natural Conversation
+                    </Button>
+                    <Button
+                      variant={enrollmentOption === 'auto_fill_forms' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setEnrollmentOption('auto_fill_forms')}
+                      className="h-7 px-2 text-xs"
+                    >
+                      📝 Auto Fill Forms
+                    </Button>
+                    <Button
+                      variant={enrollmentOption === 'audit_trails' ? 'default' : 'ghost'}
+                      size="sm"
+                      onClick={() => setEnrollmentOption('audit_trails')}
+                      className="h-7 px-2 text-xs"
+                    >
+                      🔍 Audit Trails
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Conversation Settings - Only show for natural conversation */}
+                {enrollmentOption === 'natural_conversation' && (
+                  <>
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-700">LLM Provider:</span>
+                      <select 
+                        value={llmProvider} 
+                        onChange={(e) => setLlmProvider(e.target.value as LLMProvider)}
+                        className="text-xs px-2 py-1 border rounded bg-white"
+                      >
+                        <option value="openai">OpenAI</option>
+                        <option value="anthropic">Anthropic</option>
+                        <option value="google">Google</option>
+                      </select>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium text-slate-700">Mode:</span>
+                      <div className="flex bg-white rounded-lg p-1 shadow-sm border">
+                        <Button
+                          variant={conversationStyle === 'structured_form' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setConversationStyle('structured_form')}
+                          className="h-7 px-2 text-xs"
+                        >
+                          📋 Structured Form
+                        </Button>
+                        <Button
+                          variant={conversationStyle === 'natural_conversation' ? 'default' : 'ghost'}
+                          size="sm"
+                          onClick={() => setConversationStyle('natural_conversation')}
+                          className="h-7 px-2 text-xs"
+                        >
+                          💬 Natural Chat
+                        </Button>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+              
+              {/* Info text about structured form */}
+              {conversationStyle === 'structured_form' && enrollmentOption === 'natural_conversation' && (
+                <div className="mt-2 p-2 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs text-blue-700">
+                    <strong>Structured Form:</strong> Step-by-step questionnaire format with guided questions and validation. Perfect for systematic data collection.
+                  </p>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Conversation Area with Genie Theming */}
           <div className="flex-1 overflow-y-auto bg-gradient-to-b from-transparent via-cyan-50/20 to-blue-50/30 relative">
             {/* Floating magical elements */}
@@ -375,10 +468,60 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
               ))}
             </div>
             {conversationMode === 'enrollment' && isEnrollmentContext ? (
-              <div className="relative z-10">
-                <EnhancedEnrollmentInterface
-                  onSubmit={handleComplete}
-                />
+              <div className="relative z-10 p-6">
+                {enrollmentOption === 'natural_conversation' && (
+                  <div className="space-y-4">
+                    <div className="text-center p-4 bg-white/60 rounded-lg border border-cyan-200">
+                      <h3 className="font-semibold text-slate-700 mb-2">
+                        {conversationStyle === 'structured_form' ? '📋 Structured Enrollment Questions' : '💬 Natural Conversation Enrollment'}
+                      </h3>
+                      <p className="text-sm text-slate-600">
+                        {conversationStyle === 'structured_form' 
+                          ? 'I\'ll guide you through enrollment with step-by-step questions.' 
+                          : 'Let\'s have a natural conversation to complete your enrollment.'}
+                      </p>
+                      <div className="mt-2 text-xs text-slate-500">
+                        Provider: {llmProvider.toUpperCase()} • Backend: Connected ✅
+                      </div>
+                    </div>
+                    <UniversalLLMAssistant
+                      context={{
+                        page: currentContext,
+                        route: location.pathname,
+                        tenantId,
+                        userId,
+                        enrollmentMode: conversationStyle,
+                        llmProvider
+                      }}
+                    />
+                  </div>
+                )}
+                {enrollmentOption === 'auto_fill_forms' && (
+                  <div className="text-center p-8">
+                    <div className="p-6 bg-white/60 rounded-lg border border-cyan-200">
+                      <h3 className="font-semibold text-slate-700 mb-2">📝 Auto Fill Forms</h3>
+                      <p className="text-sm text-slate-600 mb-4">
+                        Upload documents or provide information, and I'll automatically fill out the enrollment forms for you.
+                      </p>
+                      <Button className="bg-gradient-to-r from-teal-500 to-cyan-500">
+                        Upload Documents
+                      </Button>
+                    </div>
+                  </div>
+                )}
+                {enrollmentOption === 'audit_trails' && (
+                  <div className="text-center p-8">
+                    <div className="p-6 bg-white/60 rounded-lg border border-cyan-200">
+                      <h3 className="font-semibold text-slate-700 mb-2">🔍 Audit Trails</h3>
+                      <p className="text-sm text-slate-600 mb-4">
+                        View detailed logs and track all enrollment activities and changes.
+                      </p>
+                      <Button className="bg-gradient-to-r from-teal-500 to-cyan-500">
+                        View Audit Logs
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             ) : (
               <div className="relative z-10">

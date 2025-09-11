@@ -328,27 +328,13 @@ export default function PatientOnboarding() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Patient Onboarding</h1>
             <p className="text-muted-foreground">
-              Manage patient enrollment and onboarding processes with collaborative workflows
+              Start new patient enrollment process
             </p>
           </div>
-          <div className="flex gap-3">
-            <Button variant="outline" onClick={handleViewTemplates}>
-              <Workflow className="mr-2 h-4 w-4" />
-              Workflow Templates
-            </Button>
-            <Button variant="outline" onClick={handleViewAgentConfig}>
-              <Settings className="mr-2 h-4 w-4" />
-              Agent Configuration
-            </Button>
-            <Button variant="outline" onClick={handleViewVoiceChannels}>
-              <Mic className="mr-2 h-4 w-4" />
-              Voice Channels
-            </Button>
-            <Button onClick={handleNewEnrollment}>
-              <Plus className="mr-2 h-4 w-4" />
-              New Patient Enrollment
-            </Button>
-          </div>
+          <Button onClick={handleNewEnrollment}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Patient Enrollment
+          </Button>
         </div>
 
 
