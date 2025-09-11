@@ -69,12 +69,12 @@ export const RealTimeNPIVerificationProvider: React.FC<RealTimeNPIVerificationPr
         .from('user_preferences')
         .select('npi_verification_settings')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
       if (preferences?.npi_verification_settings) {
         setSettings({
           ...defaultSettings,
-          ...preferences.npi_verification_settings
+          ...(preferences.npi_verification_settings as Partial<RealTimeNPISettings>)
         });
       }
 

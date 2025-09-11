@@ -10758,6 +10758,7 @@ export type Database = {
           default_module: string | null
           id: string
           language: string | null
+          npi_verification_settings: Json | null
           preferred_dashboard: string | null
           theme_preference: string | null
           timezone: string | null
@@ -10770,6 +10771,7 @@ export type Database = {
           default_module?: string | null
           id?: string
           language?: string | null
+          npi_verification_settings?: Json | null
           preferred_dashboard?: string | null
           theme_preference?: string | null
           timezone?: string | null
@@ -10782,6 +10784,7 @@ export type Database = {
           default_module?: string | null
           id?: string
           language?: string | null
+          npi_verification_settings?: Json | null
           preferred_dashboard?: string | null
           theme_preference?: string | null
           timezone?: string | null
