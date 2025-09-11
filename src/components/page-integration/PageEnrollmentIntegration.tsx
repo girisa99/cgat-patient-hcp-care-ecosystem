@@ -66,7 +66,7 @@ export const PageEnrollmentIntegration: React.FC<PageEnrollmentIntegrationProps>
             </Badge>
             <Button onClick={handleStartEnrollment} size="sm">
               <MessageCircle className="h-4 w-4 mr-2" />
-              Start AI Assistant
+              Get AI Support
             </Button>
           </div>
         </div>

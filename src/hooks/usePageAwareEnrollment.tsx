@@ -24,7 +24,7 @@ export const usePageAwareEnrollment = () => {
     '/patient-onboarding': {
       moduleType: 'patient',
       title: 'AI Patient Enrollment',
-      description: 'Complete patient enrollment with AI assistance',
+      description: 'Our AI agents can help and support you to fill the enrollment and NPI verification and validation to reduce some of your overhead',
       showFloating: false, // Integrate into page, don't float
       context: 'patient_onboarding'
     },
