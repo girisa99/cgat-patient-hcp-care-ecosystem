@@ -1,8 +1,8 @@
 /**
  * PROVIDER VERIFICATION INTEGRATION
- * Component that integrates NPI verification into enrollment forms
+ * Component that integrates NPI verification into enrollment forms with real-time capability
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -14,10 +14,12 @@ import {
   User, 
   Building,
   FileText,
-  Clock
+  Clock,
+  Zap
 } from 'lucide-react';
 import { NPIVerificationAgent } from './NPIVerificationAgent';
 import { useNPIVerification } from '@/hooks/useNPIVerification';
+import { useRealTimeNPIVerification } from './RealTimeNPIVerificationProvider';
 import { useToast } from '@/hooks/use-toast';
 
 interface ProviderData {
@@ -50,21 +52,77 @@ export const ProviderVerificationIntegration: React.FC<ProviderVerificationInteg
   const { 
     validateNPIFormat, 
     checkExistingVerification, 
+    verifyCredentials,
     isVerifying 
   } = useNPIVerification();
+  
+  const { settings, isEnabled: realTimeEnabled } = useRealTimeNPIVerification();
   
   const [showVerificationAgent, setShowVerificationAgent] = useState(false);
   const [verificationData, setVerificationData] = useState(null);
   const [validationErrors, setValidationErrors] = useState<string[]>([]);
   const [existingVerification, setExistingVerification] = useState(null);
   const [isCheckingExisting, setIsCheckingExisting] = useState(false);
+  const [isRealTimeVerifying, setIsRealTimeVerifying] = useState(false);
+  const [realTimeResult, setRealTimeResult] = useState(null);
+  
+  const debounceTimerRef = useRef<NodeJS.Timeout>();
 
-  // Validate provider data and check for existing verification
+  // Real-time verification with debouncing
+  const performRealTimeVerification = useCallback(async (npi: string) => {
+    if (!realTimeEnabled || !settings.backgroundVerification) return;
+
+    setIsRealTimeVerifying(true);
+    
+    try {
+      const verificationPayload = {
+        npi,
+        providerType: providerData.providerType || 'individual',
+        providerName: providerData.providerName,
+        state: providerData.state,
+        licenseNumber: providerData.licenseNumber,
+        deaNumber: providerData.deaNumber,
+        enrollmentId,
+        facilityId
+      };
+
+      const result = await verifyCredentials(verificationPayload);
+      setRealTimeResult(result);
+      
+      if (result.isValid && settings.autoVerifyOnComplete) {
+        onVerificationComplete(result.isValid, result);
+      }
+      
+    } catch (error) {
+      console.error('Real-time verification failed:', error);
+    } finally {
+      setIsRealTimeVerifying(false);
+    }
+  }, [realTimeEnabled, settings, providerData, verifyCredentials, onVerificationComplete]);
+
+  // Validate provider data and handle real-time verification
   useEffect(() => {
     if (providerData.npi) {
       validateAndCheckExisting();
+      
+      // Real-time verification with debouncing
+      if (realTimeEnabled && providerData.npi.length === 10) {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+        
+        debounceTimerRef.current = setTimeout(() => {
+          performRealTimeVerification(providerData.npi);
+        }, settings.debounceMs);
+      }
     }
-  }, [providerData.npi]);
+    
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [providerData.npi, realTimeEnabled, settings.debounceMs, performRealTimeVerification]);
 
   // Auto-trigger verification if enabled and data is valid
   useEffect(() => {
@@ -143,6 +201,20 @@ export const ProviderVerificationIntegration: React.FC<ProviderVerificationInteg
   };
 
   const getStatusDisplay = () => {
+    // Real-time verification result takes priority
+    if (realTimeResult?.isValid) {
+      return (
+        <div className="flex items-center gap-2">
+          <CheckCircle className="h-4 w-4 text-green-600" />
+          <span className="text-sm text-green-700">Verified (Real-time)</span>
+          <Badge variant="outline" className="text-xs">
+            {realTimeResult.confidence}% confidence
+          </Badge>
+          <Zap className="h-3 w-3 text-blue-500" />
+        </div>
+      );
+    }
+
     if (existingVerification) {
       return (
         <div className="flex items-center gap-2">
@@ -151,6 +223,15 @@ export const ProviderVerificationIntegration: React.FC<ProviderVerificationInteg
           <Badge variant="outline" className="text-xs">
             {existingVerification.confidence}% confidence
           </Badge>
+        </div>
+      );
+    }
+
+    if (isRealTimeVerifying) {
+      return (
+        <div className="flex items-center gap-2">
+          <Zap className="h-4 w-4 text-blue-600 animate-pulse" />
+          <span className="text-sm text-blue-700">Verifying in background...</span>
         </div>
       );
     }
@@ -177,6 +258,11 @@ export const ProviderVerificationIntegration: React.FC<ProviderVerificationInteg
       <div className="flex items-center gap-2">
         <Shield className="h-4 w-4 text-gray-600" />
         <span className="text-sm text-gray-700">Not Verified</span>
+        {realTimeEnabled && (
+          <Badge variant="secondary" className="text-xs">
+            Real-time enabled
+          </Badge>
+        )}
       </div>
     );
   };
