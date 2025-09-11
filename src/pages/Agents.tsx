@@ -30,6 +30,7 @@ import {
   Network,
   Users
 } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 // Import existing components
 import { ModeSelector, type AgentMode } from '@/components/agent-builder/ModeSelector';
