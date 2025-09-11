@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { MessageCircle, FileText, Zap, Clock } from 'lucide-react';
 import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
+import { FloatingConversationalAgent } from '../enrollment/FloatingConversationalAgent';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -54,21 +55,11 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
 
   if (selectedMethod === 'conversation') {
     return (
-      <div className="max-w-4xl mx-auto p-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>Redirecting to Structured AI Method</CardTitle>
-            <p className="text-muted-foreground">Using our enhanced structured AI approach...</p>
-          </CardHeader>
-          <CardContent>
-            <SmartEnrollmentLauncher 
-              variant="inline"
-              forceModule={moduleType}
-              showMethodSelection={false}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <FloatingConversationalAgent
+        moduleType={moduleType}
+        onComplete={onComplete || (() => {})}
+        onCancel={() => setSelectedMethod(null)}
+      />
     );
   }
 
