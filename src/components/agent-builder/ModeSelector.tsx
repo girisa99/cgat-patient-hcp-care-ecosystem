@@ -536,58 +536,55 @@ export const ModeSelector: React.FC<ModeSelectorProps> = ({
           </CardContent>
       </Card>,
 
-      // Consolidated Management Card
-      {
-        key: 'consolidated',
-        element: <Card 
-          key="consolidated"
-          className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
-            selectedMode === 'consolidated' ? 'ring-2 ring-primary shadow-lg' : ''
-          }`}
-          onClick={() => onModeSelect('consolidated')}
-        >
-          <CardHeader className="pb-3">
-            <CardTitle className="flex items-center gap-2 text-base">
-              <Network className="w-5 h-5 text-blue-600" />
-              Consolidated Management
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0 space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Complete agent lifecycle with structured workflow - consolidates all existing integrations including Patient Enrollment, Healthcare MCP, multi-channel deployment, and real-time monitoring.
-            </p>
+      /* Consolidated Management */
+      <Card 
+        key="consolidated"
+        className={`cursor-pointer transition-all duration-200 hover:shadow-lg ${
+          selectedMode === 'consolidated' ? 'ring-2 ring-primary shadow-lg' : ''
+        }`}
+        onClick={() => onModeSelect('consolidated')}
+      >
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2 text-base">
+            <Network className="w-5 h-5 text-blue-600" />
+            Consolidated Management
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="pt-0 space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Complete agent lifecycle with structured workflow - consolidates all existing integrations including Patient Enrollment, Healthcare MCP, multi-channel deployment, and real-time monitoring.
+          </p>
 
-            <div className="space-y-2">
-              <div className="flex flex-wrap gap-1">
-                <Badge variant="secondary" className="text-xs">Patient Enrollment</Badge>
-                <Badge variant="secondary" className="text-xs">Healthcare MCP</Badge>
-                <Badge variant="secondary" className="text-xs">Multi-Channel</Badge>
-              </div>
-              <div className="flex flex-wrap gap-1">
-                <Badge variant="secondary" className="text-xs">Arize/LangWatch</Badge>
-                <Badge variant="secondary" className="text-xs">Real-time Sync</Badge>
-                <Badge variant="secondary" className="text-xs">Voice Integration</Badge>
-              </div>
+          <div className="space-y-2">
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="secondary" className="text-xs">Patient Enrollment</Badge>
+              <Badge variant="secondary" className="text-xs">Healthcare MCP</Badge>
+              <Badge variant="secondary" className="text-xs">Multi-Channel</Badge>
             </div>
+            <div className="flex flex-wrap gap-1">
+              <Badge variant="secondary" className="text-xs">Arize/LangWatch</Badge>
+              <Badge variant="secondary" className="text-xs">Real-time Sync</Badge>
+              <Badge variant="secondary" className="text-xs">Voice Integration</Badge>
+            </div>
+          </div>
 
-            <div className="pt-4">
-              <Button 
-                onClick={() => onModeSelect('consolidated')}
-                className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
-                variant={selectedMode === 'consolidated' ? 'default' : 'outline'}
-              >
-                <Network className="w-4 h-4" />
-                Consolidated Workflow
-                <ArrowRight className="w-4 h-4" />
-              </Button>
-            </div>
+          <div className="pt-4">
+            <Button 
+              onClick={() => onModeSelect('consolidated')}
+              className="w-full flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700"
+              variant={selectedMode === 'consolidated' ? 'default' : 'outline'}
+            >
+              <Network className="w-4 h-4" />
+              Consolidated Workflow
+              <ArrowRight className="w-4 h-4" />
+            </Button>
+          </div>
 
-            <div className="text-xs text-muted-foreground text-center">
-              Best for: Complete agent lifecycle management with all integrations
-            </div>
-          </CardContent>
+          <div className="text-xs text-muted-foreground text-center">
+            Best for: Complete agent lifecycle management with all integrations
+          </div>
+        </CardContent>
       </Card>
-      }
     ];
 
     return allCards.filter(card => 
