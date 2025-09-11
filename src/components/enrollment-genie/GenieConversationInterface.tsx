@@ -203,10 +203,17 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     };
     console.log('Starting chat with config:', conversationConfig);
     setChatStarted(true);
+
+    // If the user already typed a message, send it immediately
+    if (message.trim()) {
+      queueMicrotask(() => handleSendMessage());
+    }
   };
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
+    
+    if (!chatStarted) setChatStarted(true);
     
     const userMessage = { 
       role: 'user', 
@@ -221,9 +228,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     try {
       // Determine provider based on selected mode
       let provider: 'openai' | 'claude' | 'gemini' = 'openai'; // default
-      if (selectedMode === 'single') {
-        if (selectedModel.toLowerCase().includes('gemini')) provider = 'gemini';
-        else if (selectedModel.toLowerCase().includes('claude')) provider = 'claude';
+      if (selectedMode === 'single' || selectedMode === 'multi') {
+        const targetModel = selectedMode === 'multi' ? leftModel : selectedModel;
+        const modelId = targetModel.toLowerCase();
+        if (modelId.includes('gemini')) provider = 'gemini';
+        else if (modelId.includes('claude') || modelId.includes('anthropic')) provider = 'claude';
         else provider = 'openai';
       }
       
@@ -251,14 +260,19 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         systemPrompt += ` You have access to the following external tools and integrations: ${toolNames.join(', ')}. Use these tools when relevant to provide enhanced responses.`;
       }
       
-      const response = await generateResponse({
+      // Build request; avoid model mismatch in System mode
+      const request: any = {
         prompt: currentMessage,
         systemPrompt,
         provider,
-        model: selectedModel,
         temperature: 0.7,
         maxTokens: 1000
-      });
+      };
+      if (selectedMode !== 'system') {
+        request.model = selectedMode === 'multi' ? leftModel : selectedModel;
+      }
+      
+      const response = await generateResponse(request);
       
       if (response) {
         const aiMessage = {
