@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Sparkles, X, MessageCircle, Users, Building2, FileText, Settings, HelpCircle } from 'lucide-react';
 import { UniversalLLMAssistant } from '@/components/intelligent-assistant/UniversalLLMAssistant';
+import { StructuredEnrollmentForm } from './StructuredEnrollmentForm';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface UniversalConversationGenieProps {
@@ -471,29 +472,44 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
               <div className="relative z-10 p-6">
                 {enrollmentOption === 'natural_conversation' && (
                   <div className="space-y-4">
-                    <div className="text-center p-4 bg-white/60 rounded-lg border border-cyan-200">
-                      <h3 className="font-semibold text-slate-700 mb-2">
-                        {conversationStyle === 'structured_form' ? '📋 Structured Enrollment Questions' : '💬 Natural Conversation Enrollment'}
-                      </h3>
-                      <p className="text-sm text-slate-600">
-                        {conversationStyle === 'structured_form' 
-                          ? 'I\'ll guide you through enrollment with step-by-step questions.' 
-                          : 'Let\'s have a natural conversation to complete your enrollment.'}
-                      </p>
-                      <div className="mt-2 text-xs text-slate-500">
-                        Provider: {llmProvider.toUpperCase()} • Backend: Connected ✅
-                      </div>
-                    </div>
-                    <UniversalLLMAssistant
-                      context={{
-                        page: currentContext,
-                        route: location.pathname,
-                        tenantId,
-                        userId,
-                        enrollmentMode: conversationStyle,
-                        llmProvider
-                      }}
-                    />
+                    {conversationStyle === 'structured_form' ? (
+                      <StructuredEnrollmentForm
+                        sessionId={`enrollment_${Date.now()}`}
+                        userId={userId}
+                        tenantId={tenantId}
+                        onSectionComplete={(sectionId, data) => {
+                          console.log('🎯 Section completed:', sectionId, data);
+                        }}
+                        onFormComplete={(formData) => {
+                          console.log('🎉 Form completed:', formData);
+                          handleComplete(formData);
+                        }}
+                      />
+                    ) : (
+                      <>
+                        <div className="text-center p-4 bg-white/60 rounded-lg border border-cyan-200">
+                          <h3 className="font-semibold text-slate-700 mb-2">
+                            💬 Natural Conversation Enrollment
+                          </h3>
+                          <p className="text-sm text-slate-600">
+                            Let's have a natural conversation to complete your enrollment.
+                          </p>
+                          <div className="mt-2 text-xs text-slate-500">
+                            Provider: {llmProvider.toUpperCase()} • Backend: Connected ✅
+                          </div>
+                        </div>
+                        <UniversalLLMAssistant
+                          context={{
+                            page: currentContext,
+                            route: location.pathname,
+                            tenantId,
+                            userId,
+                            enrollmentMode: conversationStyle,
+                            llmProvider
+                          }}
+                        />
+                      </>
+                    )}
                   </div>
                 )}
                 {enrollmentOption === 'auto_fill_forms' && (
