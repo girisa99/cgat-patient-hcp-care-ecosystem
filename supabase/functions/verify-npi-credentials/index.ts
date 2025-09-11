@@ -1,6 +1,5 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.50.2';
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -78,7 +77,7 @@ serve(async (req) => {
     const npiLookupResult = request.npi 
       ? await verifyNPIWithNPPES(request.npi)
       : await searchProviderByName(request.providerSearch!, request.providerType);
-    
+
     if (npiLookupResult.success) {
       verificationResult.npiData = npiLookupResult.data;
       verificationResult.confidence += 40;
@@ -150,32 +149,40 @@ serve(async (req) => {
     verificationResult.issues.push(...additionalChecks.issues);
 
     // Step 5: Determine final verification status
-    if (verificationResult.confidence >= 70) {
-      verificationResult.isValid = true;
+    if (verificationResult.confidence >= 75) {
       verificationResult.verificationStatus = 'verified';
-    } else if (verificationResult.confidence >= 40) {
+      verificationResult.isValid = true;
+    } else if (verificationResult.confidence >= 50) {
       verificationResult.verificationStatus = 'partial';
+      verificationResult.isValid = false;
     } else {
       verificationResult.verificationStatus = 'failed';
+      verificationResult.isValid = false;
     }
 
-    // Step 6: Store verification results in database
-    const { error: storeError } = await supabase
-      .from('npi_verification_results')
-      .insert({
-        npi: request.npi,
-        provider_type: request.providerType,
-        verification_status: verificationResult.verificationStatus,
-        verification_data: verificationResult,
-        confidence_score: verificationResult.confidence,
-        issues: verificationResult.issues,
-        facility_id: request.facilityId,
-        enrollment_id: request.enrollmentId,
-        verified_at: verificationResult.verifiedAt
-      });
+    // Step 6: Store verification result
+    if (finalNPI) {
+      const { data: verification, error: dbError } = await supabase
+        .from('npi_verification_results')
+        .insert({
+          npi: finalNPI,
+          provider_type: request.providerType,
+          facility_id: request.facilityId,
+          enrollment_id: request.enrollmentId,
+          verification_status: verificationResult.verificationStatus,
+          verification_data: verificationResult,
+          confidence_score: verificationResult.confidence,
+          issues: verificationResult.issues,
+          search_method: request.npi ? 'direct_npi' : 'name_search',
+          search_criteria: request.providerSearch || { npi: request.npi },
+          verified_at: new Date().toISOString()
+        })
+        .select()
+        .single();
 
-    if (storeError) {
-      console.error('❌ Error storing verification results:', storeError);
+      if (dbError) {
+        console.error('❌ Error storing verification results:', dbError);
+      }
     }
 
     // Step 7: Update enrollment/facility status if applicable
@@ -183,8 +190,8 @@ serve(async (req) => {
       await updateEnrollmentVerificationStatus(supabase, request.enrollmentId, 'npi_verified');
     }
 
-    console.log('✅ NPI verification completed:', verificationResult.verificationStatus);
-
+    console.log('✅ Provider verification completed:', verificationResult.verificationStatus);
+    
     return new Response(JSON.stringify({
       success: true,
       verification: verificationResult
@@ -193,7 +200,7 @@ serve(async (req) => {
     });
 
   } catch (error) {
-    console.error('❌ NPI verification error:', error);
+    console.error('❌ Provider verification error:', error);
     
     return new Response(JSON.stringify({
       success: false,
@@ -279,9 +286,12 @@ async function searchProviderByName(searchCriteria: any, providerType: string) {
     return { success: false, error: error.message };
   }
 }
+
+// Direct NPI lookup (when NPI is known)
+async function verifyNPIWithNPPES(npi: string) {
   try {
     const response = await fetch(
-      `https://npiregistry.cms.hhs.gov/api/?number=${npi}&enumeration_type=&taxonomy_description=&name_purpose=&first_name=&use_first_name_alias=&last_name=&organization_name=&address_purpose=&city=&state=&postal_code=&country_code=&limit=&skip=&version=2.1`,
+      `https://npiregistry.cms.hhs.gov/api/?number=${npi}&version=2.1`,
       {
         method: 'GET',
         headers: {
@@ -318,28 +328,24 @@ async function searchProviderByName(searchCriteria: any, providerType: string) {
       }
     };
   } catch (error) {
-// Direct NPI lookup (when NPI is known)
-async function verifyNPIWithNPPES(npi: string) {
+    return { success: false, error: error.message };
+  }
+}
 
-// State license verification (implementation varies by state)
+// State license verification
 async function verifyStateLicense(licenseNumber: string, state: string, providerType: string) {
   try {
-    // This is a simplified implementation
-    // In production, you would integrate with specific state APIs
+    // This would integrate with state medical board APIs
+    // For now, we'll simulate the verification
+    console.log(`Verifying license ${licenseNumber} in state ${state} for ${providerType}`);
     
-    // Example state APIs:
-    // California: https://www.mbc.ca.gov/
-    // Texas: https://www.tmb.state.tx.us/
-    // New York: https://apps.health.ny.gov/
-    
-    console.log(`Verifying ${state} license: ${licenseNumber} for ${providerType}`);
-    
-    // Mock verification for demo (replace with actual state API calls)
+    // Mock verification - in production, this would call real state APIs
     const mockVerification = {
       licenseNumber,
       state,
-      status: 'Active',
-      expirationDate: '2025-12-31',
+      status: 'active',
+      expirationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+      issueDate: new Date(Date.now() - 365 * 24 * 60 * 60 * 1000).toISOString(),
       disciplinaryActions: [],
       verifiedAt: new Date().toISOString()
     };
@@ -414,7 +420,7 @@ function validateProviderName(providedName: string, npiData: any): boolean {
       return true;
     }
   }
-  
+
   return false;
 }
 
@@ -428,32 +434,32 @@ async function performAdditionalValidations(request: NPIVerificationRequest, npi
     issues.push(`NPI status is ${npiData.status}, not active`);
     confidenceAdjustment -= 20;
   } else if (npiData?.status) {
-    confidenceAdjustment += 10;
+    confidenceAdjustment += 5;
   }
 
-  // Check enumeration date (not too old)
+  // Check enumeration date age
   if (npiData?.enumerationDate) {
     const enumerationDate = new Date(npiData.enumerationDate);
-    const yearsOld = (new Date().getTime() - enumerationDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
+    const yearsAgo = (Date.now() - enumerationDate.getTime()) / (1000 * 60 * 60 * 24 * 365);
     
-    if (yearsOld > 20) {
+    if (yearsAgo > 20) {
       issues.push('NPI enumeration is very old (>20 years)');
       confidenceAdjustment -= 5;
     }
   }
 
-  // Check provider type consistency
+  // Check provider type match
   if (request.providerType && npiData?.providerType) {
     const typeMap = {
       'individual': 'NPI-1',
       'organization': 'NPI-2'
     };
-    
+
     if (npiData.providerType !== typeMap[request.providerType]) {
       issues.push('Provider type mismatch between request and NPI data');
       confidenceAdjustment -= 15;
     } else {
-      confidenceAdjustment += 5;
+      confidenceAdjustment += 10;
     }
   }
 
@@ -464,7 +470,7 @@ async function performAdditionalValidations(request: NPIVerificationRequest, npi
 async function updateEnrollmentVerificationStatus(supabase: any, enrollmentId: string, status: string) {
   try {
     const { error } = await supabase
-      .from('enrollment_instances')
+      .from('patient_enrollments')
       .update({
         verification_status: status,
         npi_verified_at: new Date().toISOString(),
