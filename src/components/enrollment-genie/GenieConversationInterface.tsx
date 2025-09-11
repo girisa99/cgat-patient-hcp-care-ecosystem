@@ -260,19 +260,35 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         systemPrompt += ` You have access to the following external tools and integrations: ${toolNames.join(', ')}. Use these tools when relevant to provide enhanced responses.`;
       }
       
-      // Build request; avoid model mismatch in System mode
-      const request: any = {
-        prompt: currentMessage,
-        systemPrompt,
-        provider,
-        temperature: 0.7,
-        maxTokens: 1000
-      };
-      if (selectedMode !== 'system') {
-        request.model = selectedMode === 'multi' ? leftModel : selectedModel;
+      // Build and send request; in System mode, try providers in order
+      let response: any = null;
+      if (selectedMode === 'system') {
+        const providersToTry: Array<'openai' | 'claude' | 'gemini'> = ['openai', 'claude', 'gemini'];
+        for (const p of providersToTry) {
+          try {
+            const r = await generateResponse({
+              prompt: currentMessage,
+              systemPrompt,
+              provider: p,
+              temperature: 0.7,
+              maxTokens: 1000
+            });
+            if (r) { response = r; break; }
+          } catch (e) {
+            console.warn(`Provider ${p} failed:`, e);
+          }
+        }
+      } else {
+        const request: any = {
+          prompt: currentMessage,
+          systemPrompt,
+          provider,
+          model: selectedMode === 'multi' ? leftModel : selectedModel,
+          temperature: 0.7,
+          maxTokens: 1000
+        };
+        response = await generateResponse(request);
       }
-      
-      const response = await generateResponse(request);
       
       if (response) {
         const aiMessage = {
