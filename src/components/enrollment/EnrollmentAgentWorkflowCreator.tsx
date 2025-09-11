@@ -7,13 +7,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { 
   Bot, Workflow, Users, Settings, Play, Save, 
   Eye, ArrowRight, CheckCircle, Clock, Stethoscope,
-  ShieldCheck, FileText, Database, MessageSquare
+  ShieldCheck, FileText, Database, MessageSquare,
+  Phone, Mail, Monitor, Smartphone, Globe
 } from 'lucide-react';
 import { useGlobalAgentGenerator } from '@/hooks/useGlobalAgentGenerator';
 import { useWorkflowManager } from '@/hooks/useWorkflowManager';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { supabase } from '@/integrations/supabase/client';
+import { defaultChannels } from '@/components/deployment/DeploymentChannels';
 
 interface AgentTemplate {
   id: string;
@@ -41,8 +43,10 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
 }) => {
   const [currentStep, setCurrentStep] = useState<'select' | 'configure' | 'preview' | 'deploy'>('select');
   const [selectedTemplate, setSelectedTemplate] = useState<AgentTemplate | null>(null);
+  const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
   const [showWorkflowPreview, setShowWorkflowPreview] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
+  const [showNPIPrompt, setShowNPIPrompt] = useState(false);
   
   const { addGeneratedAgent } = useGlobalAgentGenerator();
   const { createWorkflow } = useWorkflowManager();
@@ -59,86 +63,118 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
       icon: Users,
       estimatedTime: '3-5 minutes',
       complexity: 'Medium',
-      requiredNodes: ['patient_demographics', 'medical_history', 'insurance_verification', 'consent_management', 'npi_validation'],
+      requiredNodes: ['consent_management', 'patient_demographics', 'provider_info', 'treatment_center', 'insurance_verification', 'clinical_assessment', 'npi_validation'],
       workflow: {
         nodes: [
           {
             id: 'start',
             type: 'start_node',
-            position: { x: 100, y: 100 },
+            position: { x: 100, y: 50 },
             data: { 
               label: 'Start Enrollment',
               description: 'Initiate patient enrollment process'
             }
           },
           {
-            id: 'demographics',
+            id: 'consent_management',
+            type: 'consent_management',
+            position: { x: 300, y: 50 },
+            data: { 
+              label: 'Consent Management',
+              description: 'Collect HIPAA consent and enrollment agreements',
+              fields: ['hipaa_consent', 'enrollment_agreement', 'privacy_notice', 'digital_signature'],
+              mcpConnected: true
+            }
+          },
+          {
+            id: 'patient_info',
             type: 'patient_demographics',
-            position: { x: 300, y: 100 },
+            position: { x: 500, y: 50 },
             data: { 
-              label: 'Patient Demographics',
-              description: 'Collect patient basic information',
-              fields: ['first_name', 'last_name', 'date_of_birth', 'gender', 'address', 'phone', 'email']
+              label: 'Patient Information',
+              description: 'Collect comprehensive patient demographics and contact info',
+              fields: ['first_name', 'last_name', 'date_of_birth', 'gender', 'address', 'phone', 'email', 'emergency_contact'],
+              mcpConnected: true
             }
           },
           {
-            id: 'medical_history',
-            type: 'medical_history_collector',
-            position: { x: 500, y: 100 },
+            id: 'provider_info',
+            type: 'provider_collector',
+            position: { x: 700, y: 50 },
             data: { 
-              label: 'Medical History',
-              description: 'Gather comprehensive medical history',
-              fields: ['current_medications', 'allergies', 'medical_conditions', 'previous_treatments']
+              label: 'Provider Information',
+              description: 'Collect referring provider and primary care physician details',
+              fields: ['referring_provider', 'primary_care_physician', 'provider_contact', 'referral_reason'],
+              mcpConnected: true,
+              npiTrigger: true
             }
           },
           {
-            id: 'insurance',
+            id: 'npi_verification_prompt',
+            type: 'conditional_prompt',
+            position: { x: 750, y: 150 },
+            data: { 
+              label: 'NPI Verification Prompt',
+              description: 'Prompt user to launch NPI verification if not initially deployed',
+              condition: 'provider_info_complete && !npi_agent_deployed',
+              promptMessage: 'Would you like to verify provider credentials with NPI verification?'
+            }
+          },
+          {
+            id: 'treatment_center',
+            type: 'treatment_center_collector',
+            position: { x: 300, y: 200 },
+            data: { 
+              label: 'Treatment Center & Providers',
+              description: 'Select treatment facility and assigned care team',
+              fields: ['facility_name', 'facility_address', 'care_team', 'attending_physician', 'care_coordinator'],
+              mcpConnected: true
+            }
+          },
+          {
+            id: 'insurance_verification',
             type: 'insurance_verification',
-            position: { x: 700, y: 100 },
+            position: { x: 500, y: 200 },
             data: { 
               label: 'Insurance Verification',
               description: 'Verify insurance coverage and benefits',
-              fields: ['primary_insurance', 'secondary_insurance', 'member_id', 'group_number']
+              fields: ['primary_insurance', 'secondary_insurance', 'member_id', 'group_number', 'authorization_required'],
+              mcpConnected: true
             }
           },
           {
-            id: 'provider_verification',
-            type: 'npi_validator',
-            position: { x: 300, y: 300 },
+            id: 'clinical_assessment',
+            type: 'clinical_assessment',
+            position: { x: 700, y: 200 },
             data: { 
-              label: 'Provider NPI Verification',
-              description: 'Validate provider credentials and licenses',
-              fields: ['npi_number', 'state_license', 'dea_number', 'specialties']
+              label: 'Treatment & Clinical Assessment',
+              description: 'Comprehensive clinical evaluation and treatment planning',
+              fields: ['medical_history', 'current_medications', 'allergies', 'treatment_goals', 'assessment_scores', 'risk_factors'],
+              mcpConnected: true
             }
           },
           {
-            id: 'consent',
-            type: 'consent_management',
-            position: { x: 500, y: 300 },
-            data: { 
-              label: 'Consent & Signatures',
-              description: 'Manage consent forms and digital signatures',
-              fields: ['hipaa_consent', 'treatment_consent', 'financial_agreement', 'signature']
-            }
-          },
-          {
-            id: 'completion',
+            id: 'submit_enrollment',
             type: 'workflow_completion',
-            position: { x: 700, y: 300 },
+            position: { x: 500, y: 350 },
             data: { 
-              label: 'Enrollment Complete',
-              description: 'Finalize enrollment and generate documentation'
+              label: 'Submit Enrollment',
+              description: 'Finalize enrollment and generate all required documentation',
+              fields: ['enrollment_summary', 'patient_packet', 'provider_notifications'],
+              mcpConnected: true
             }
           }
         ],
         edges: [
-          { id: 'e1', source: 'start', target: 'demographics' },
-          { id: 'e2', source: 'demographics', target: 'medical_history' },
-          { id: 'e3', source: 'medical_history', target: 'insurance' },
-          { id: 'e4', source: 'demographics', target: 'provider_verification' },
-          { id: 'e5', source: 'provider_verification', target: 'consent' },
-          { id: 'e6', source: 'insurance', target: 'completion' },
-          { id: 'e7', source: 'consent', target: 'completion' }
+          { id: 'e1', source: 'start', target: 'consent_management' },
+          { id: 'e2', source: 'consent_management', target: 'patient_info' },
+          { id: 'e3', source: 'patient_info', target: 'provider_info' },
+          { id: 'e4', source: 'provider_info', target: 'npi_verification_prompt' },
+          { id: 'e5', source: 'provider_info', target: 'treatment_center' },
+          { id: 'e6', source: 'treatment_center', target: 'insurance_verification' },
+          { id: 'e7', source: 'insurance_verification', target: 'clinical_assessment' },
+          { id: 'e8', source: 'clinical_assessment', target: 'submit_enrollment' },
+          { id: 'e9', source: 'npi_verification_prompt', target: 'treatment_center', type: 'conditional' }
         ]
       }
     },
@@ -268,7 +304,29 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
           .select()
           .single();
 
-      if (templateError) throw templateError;
+      // Create agent deployment records for selected channels
+      if (selectedChannels.length > 0) {
+        const deploymentPromises = selectedChannels.map(async (channelId) => {
+          const channel = defaultChannels.find(c => c.id === channelId);
+          return supabase
+            .from('agent_channel_deployments')
+            .insert({
+              agent_id: templateData.id,
+              channel_id: channelId,
+              channel_type: channel?.type || 'unknown',
+              deployment_status: 'active',
+              configuration: {
+                template_id: selectedTemplate.id,
+                workflow_nodes: selectedTemplate.workflow.nodes.length,
+                mcp_enabled: true,
+                auto_responses: true
+              },
+              created_by: user?.id
+            });
+        });
+
+        await Promise.all(deploymentPromises);
+      }
 
       // Add to global agent registry
       const generatedAgent = {
@@ -283,7 +341,7 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
 
       addGeneratedAgent(generatedAgent);
       
-      showSuccess(`${selectedTemplate.name} created successfully and saved as reusable template!`);
+      showSuccess(`${selectedTemplate.name} deployed successfully to ${selectedChannels.length} channel(s)!`);
       onAgentCreated(generatedAgent);
       
     } catch (error: any) {
@@ -461,18 +519,9 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
                 <Eye className="w-4 h-4 mr-2" />
                 Preview Workflow
               </Button>
-              <Button onClick={handleCreateAgent} disabled={isCreating} className="flex-1">
-                {isCreating ? (
-                  <>
-                    <Clock className="w-4 h-4 mr-2 animate-spin" />
-                    Creating...
-                  </>
-                ) : (
-                  <>
-                    <Play className="w-4 h-4 mr-2" />
-                    Deploy Agent
-                  </>
-                )}
+              <Button onClick={() => setCurrentStep('deploy')} className="flex-1">
+                <ArrowRight className="w-4 h-4 mr-2" />
+                Continue to Deploy
               </Button>
             </div>
           </CardContent>
@@ -481,12 +530,151 @@ export const EnrollmentAgentWorkflowCreator: React.FC<EnrollmentAgentWorkflowCre
     </div>
   );
 
+  const renderChannelDeployment = () => {
+    const channelIcons = {
+      webchat: MessageSquare,
+      voice: Phone,
+      email: Mail,
+      sms: Smartphone,
+      web: Globe,
+      mobile: Monitor
+    };
+
+    return (
+      <div className="space-y-6">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold">Deploy Your {selectedTemplate?.name}</h2>
+          <p className="text-muted-foreground mt-2">
+            Select communication channels to deploy your agent
+          </p>
+        </div>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Available Deployment Channels</CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Choose one or more channels where your agent will be accessible to users
+            </p>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {defaultChannels.map((channel) => {
+                const IconComponent = channelIcons[channel.type] || MessageSquare;
+                const isSelected = selectedChannels.includes(channel.id);
+                
+                return (
+                  <div
+                    key={channel.id}
+                    className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                      isSelected 
+                        ? 'border-primary bg-primary/5' 
+                        : 'border-border hover:border-primary/50'
+                    }`}
+                    onClick={() => {
+                      setSelectedChannels(prev => 
+                        isSelected 
+                          ? prev.filter(id => id !== channel.id)
+                          : [...prev, channel.id]
+                      );
+                    }}
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className={`p-2 rounded-lg ${isSelected ? 'bg-primary/10' : 'bg-muted'}`}>
+                        <IconComponent className={`w-5 h-5 ${isSelected ? 'text-primary' : 'text-muted-foreground'}`} />
+                      </div>
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-semibold">{channel.name}</h3>
+                          {isSelected && <CheckCircle className="w-4 h-4 text-primary" />}
+                        </div>
+                        <p className="text-sm text-muted-foreground mt-1">
+                          {channel.description}
+                        </p>
+                        {channel.type === 'webchat' && (
+                          <div className="mt-2">
+                            <Badge variant="secondary" className="text-xs">
+                              Pre-configured with MCP database connections
+                            </Badge>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {selectedChannels.length > 0 && (
+              <div className="mt-6 p-4 bg-muted/50 rounded-lg">
+                <h4 className="font-semibold mb-2">Agent Configuration Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <p>• <strong>Template:</strong> {selectedTemplate?.name}</p>
+                  <p>• <strong>Nodes:</strong> {selectedTemplate?.workflow.nodes.length} workflow steps</p>
+                  <p>• <strong>MCP Connections:</strong> Pre-configured database and API integrations</p>
+                  <p>• <strong>Channels:</strong> {selectedChannels.length} selected</p>
+                  <p>• <strong>NPI Integration:</strong> {selectedTemplate?.id === 'patient-enrollment-agent' ? 'Conditional prompt during provider info' : 'Not applicable'}</p>
+                </div>
+              </div>
+            )}
+
+            <div className="flex gap-3 mt-6">
+              <Button 
+                onClick={() => setCurrentStep('configure')} 
+                variant="outline" 
+                className="flex-1"
+              >
+                <ArrowRight className="w-4 h-4 mr-2 rotate-180" />
+                Back to Configure
+              </Button>
+              <Button 
+                onClick={handleCreateAgent} 
+                disabled={isCreating || selectedChannels.length === 0} 
+                className="flex-1"
+              >
+                {isCreating ? (
+                  <>
+                    <Clock className="w-4 h-4 mr-2 animate-spin" />
+                    Deploying...
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4 mr-2" />
+                    Deploy Agent ({selectedChannels.length} channels)
+                  </>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {selectedTemplate?.id === 'patient-enrollment-agent' && (
+          <Card className="border-amber-200 bg-amber-50/50">
+            <CardContent className="p-4">
+              <div className="flex items-start gap-3">
+                <ShieldCheck className="w-5 h-5 text-amber-600 mt-0.5" />
+                <div>
+                  <h4 className="font-semibold text-amber-900">NPI Verification Integration</h4>
+                  <p className="text-sm text-amber-700 mt-1">
+                    During the Provider Information step, users will be prompted to launch NPI verification 
+                    if the NPI Verification Agent wasn't initially deployed. This ensures provider 
+                    credentials can be verified on-demand during enrollment.
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div className="max-w-6xl mx-auto p-6">
       {renderStepIndicator()}
       
       {currentStep === 'select' && renderTemplateSelection()}
       {currentStep === 'configure' && renderWorkflowConfiguration()}
+      {currentStep === 'deploy' && renderChannelDeployment()}
 
       {/* Workflow Preview Dialog */}
       <Dialog open={showWorkflowPreview} onOpenChange={setShowWorkflowPreview}>
