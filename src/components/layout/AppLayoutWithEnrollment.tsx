@@ -17,7 +17,7 @@ interface AppLayoutWithEnrollmentProps {
 const FloatingLauncherWrapper: React.FC = () => {
   const { shouldShowFloatingButton } = usePageAwareEnrollment();
   
-  // Only show floating launcher on pages where it makes sense
+  // Never show floating launcher - only show when explicitly requested
   if (!shouldShowFloatingButton()) {
     return null;
   }

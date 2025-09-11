@@ -77,19 +77,19 @@ export const usePageAwareEnrollment = () => {
       context: 'vendor_onboarding'
     },
     
-    // Dashboard pages - show contextual options
+    // Dashboard pages - NO floating buttons, only show when explicitly requested
     '/dashboard': {
       moduleType: 'patient',
       title: 'Quick Enrollment',
       description: 'Access enrollment options',
-      showFloating: true,
+      showFloating: false,
       context: 'dashboard'
     },
     '/': {
       moduleType: 'patient',
       title: 'AI Enrollment',
       description: 'Choose your enrollment type',
-      showFloating: true,
+      showFloating: false,
       context: 'home'
     }
   };
