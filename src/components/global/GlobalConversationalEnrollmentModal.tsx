@@ -10,7 +10,12 @@ import { ConversationalEnrollmentSelector } from '../universal-enrollment/Conver
 export const GlobalConversationalEnrollmentModal: React.FC = () => {
   const { isOpen, moduleType, closeEnrollment, onComplete } = useGlobalConversationalEnrollment();
 
-  if (!moduleType) return null;
+  console.log('🎭 Modal render - isOpen:', isOpen, 'moduleType:', moduleType);
+
+  if (!moduleType) {
+    console.log('❌ No moduleType, not rendering modal');
+    return null;
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && closeEnrollment()}>

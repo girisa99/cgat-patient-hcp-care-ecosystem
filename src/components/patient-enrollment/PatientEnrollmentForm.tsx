@@ -356,11 +356,13 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   };
 
   const handleSubmissionMethodChange = (method: SubmissionMethod) => {
+    console.log('🎯 Submission method selected:', method);
     updateFormData('submissionMethod', method);
     updateCollaborationStatus('consent_management', ['submission_method']);
     
     // Launch AI Agent for conversational enrollment
     if (method === 'ai_agent') {
+      console.log('🤖 Launching AI Agent enrollment for patient');
       openEnrollment('patient');
       return;
     }

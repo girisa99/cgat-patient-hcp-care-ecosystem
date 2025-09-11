@@ -24,12 +24,15 @@ export const GlobalConversationalEnrollmentProvider = ({ children }: { children:
   const { getPageContext, getAvailableModules } = usePageAwareEnrollment();
 
   const openEnrollment = (type?: ModuleType) => {
+    console.log('🚀 Opening enrollment with type:', type);
     // If no type specified, use the first available module for the current page
     const availableModules = getAvailableModules();
     const selectedType = type || availableModules[0];
     
+    console.log('📝 Selected enrollment type:', selectedType);
     setModuleType(selectedType);
     setIsOpen(true);
+    console.log('✅ Modal should be open now');
   };
 
   const closeEnrollment = () => {
