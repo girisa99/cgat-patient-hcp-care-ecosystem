@@ -15,9 +15,18 @@ import {
   MessageCircle, 
   CheckCircle,
   ArrowRight,
-  Bot
+  Bot,
+  Building2,
+  CreditCard,
+  Activity,
+  Send,
+  Stethoscope,
+  Search,
+  AlertCircle
 } from 'lucide-react';
 import { useEnrollmentAgent } from '@/hooks/useEnrollmentAgent';
+import { useNPIVerification } from '@/hooks/useNPIVerification';
+import { useToast } from '@/hooks/use-toast';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -30,6 +39,8 @@ interface EnrollmentSection {
   estimatedTime: string;
   requiredFields: string[];
   validationRules: Record<string, any>;
+  hasSubsections?: boolean;
+  subsections?: EnrollmentSection[];
 }
 
 interface StructuredEnrollmentAgentProps {
@@ -46,6 +57,10 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
   const [activeChatSection, setActiveChatSection] = useState<string | null>(null);
   const [sectionData, setSectionData] = useState<Record<string, any>>({});
+  const [npiVerificationEnabled, setNpiVerificationEnabled] = useState<boolean | null>(null);
+  const [isNpiVerifying, setIsNpiVerifying] = useState(false);
+  const { toast } = useToast();
+  const { verifyCredentials } = useNPIVerification();
   
   const {
     currentSession,
@@ -75,6 +90,11 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
     await updateSection(sectionId, data);
     await completeSection(sectionId);
     
+    // Run NPI verification in background if enabled and provider data is available
+    if (npiVerificationEnabled && sectionId === 'provider-info' && data.providerNPI) {
+      runNPIVerification(data);
+    }
+    
     if (currentSectionIndex < sections.length - 1) {
       setCurrentSectionIndex(prev => prev + 1);
     } else {
@@ -86,6 +106,87 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
     setActiveChatSection(null);
   };
 
+  const runNPIVerification = async (providerData: any) => {
+    setIsNpiVerifying(true);
+    try {
+      const result = await verifyCredentials({
+        npi: providerData.providerNPI,
+        providerType: 'individual',
+        providerName: `${providerData.providerFirstName} ${providerData.providerLastName}`,
+        state: providerData.providerState,
+        facilityId: providerData.facilityId
+      });
+      
+      if (result.isValid) {
+        toast({
+          title: "NPI Verification Complete",
+          description: "Provider credentials verified successfully",
+        });
+      } else {
+        toast({
+          title: "NPI Verification Issues",
+          description: `Verification completed with ${result.issues?.length || 0} issues`,
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('NPI verification failed:', error);
+      toast({
+        title: "NPI Verification Failed",
+        description: "Unable to verify provider credentials",
+        variant: "destructive"
+      });
+    } finally {
+      setIsNpiVerifying(false);
+    }
+  };
+
+  // Show NPI verification consent first
+  if (npiVerificationEnabled === null) {
+    return (
+      <div className="max-w-4xl mx-auto p-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <Search className="h-6 w-6 text-primary" />
+              NPI & License Verification
+            </CardTitle>
+            <p className="text-muted-foreground">
+              Would you like to enable automatic NPI and license verification for providers?
+            </p>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+              <div className="flex items-start gap-3">
+                <AlertCircle className="h-5 w-5 text-blue-600 mt-0.5" />
+                <div>
+                  <h4 className="font-medium text-blue-900">Background Verification</h4>
+                  <p className="text-blue-700 text-sm mt-1">
+                    When enabled, the system will automatically verify provider NPIs, licenses, and credentials in the background as you enter provider information. This helps ensure data accuracy and compliance.
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            <div className="flex gap-3">
+              <Button onClick={() => setNpiVerificationEnabled(true)} className="flex-1">
+                <CheckCircle className="h-4 w-4 mr-2" />
+                Enable Verification
+              </Button>
+              <Button 
+                variant="outline" 
+                onClick={() => setNpiVerificationEnabled(false)}
+                className="flex-1"
+              >
+                Skip for Now
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   if (activeChatSection) {
     const section = sections.find(s => s.id === activeChatSection);
     return (
@@ -95,6 +196,12 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
             <CardTitle className="flex items-center gap-3">
               {section?.icon && React.createElement(section.icon, { className: "h-6 w-6 text-primary" })}
               AI Assistant: {section?.name}
+              {isNpiVerifying && (
+                <Badge variant="secondary" className="ml-auto">
+                  <Search className="h-3 w-3 mr-1" />
+                  Verifying NPI...
+                </Badge>
+              )}
             </CardTitle>
             <p className="text-muted-foreground">{section?.description}</p>
           </CardHeader>
