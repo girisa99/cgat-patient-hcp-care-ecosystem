@@ -75,6 +75,7 @@ import ConsolidatedFunctionalityAudit from '@/components/assessment/Consolidated
 
 // Import new Agent Ecosystem components
 import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
+import { ConsolidatedAgentDashboard } from '@/components/agent-management';
 
 // Import Observability components
 import { ObservabilityDashboard } from '@/components/observability/ObservabilityDashboard';
@@ -1131,6 +1132,27 @@ const AgentsInner = () => {
               setRightPanelTab('config');
             }}
           />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Consolidated Management mode
+  if (selectedMode === 'consolidated') {
+    return (
+      <AppLayout>
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowModeSelector(true)}
+              className="flex items-center gap-2"
+            >
+              <ArrowLeft className="h-4 w-4" />
+              Back to Mode Selection
+            </Button>
+          </div>
+          <ConsolidatedAgentDashboard />
         </div>
       </AppLayout>
     );
