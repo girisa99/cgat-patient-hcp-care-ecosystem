@@ -1,6 +1,6 @@
 /**
  * ENROLLMENT TEMPLATE MANAGER
- * Manages templates for different enrollment modules
+ * Manages templates for different enrollment modules with workflow visualization
  */
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Settings, 
   Plus, 
@@ -18,8 +19,15 @@ import {
   Copy,
   FileText,
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  Eye,
+  Workflow,
+  Database,
+  FileSpreadsheet,
+  Webhook
 } from 'lucide-react';
+import { WorkflowVisualization } from '@/components/templates/WorkflowVisualization';
+import { EditableWorkflowTemplate } from '@/components/templates/EditableWorkflowTemplate';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
@@ -32,6 +40,15 @@ interface EnrollmentTemplate {
   form_schema: any;
   validation_rules: any;
   workflow_config: any;
+  workflow_nodes?: any[];
+  workflow_edges?: any[];
+  output_options?: {
+    database: boolean;
+    excel: boolean;
+    api: boolean;
+    email: boolean;
+    sms: boolean;
+  };
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -57,6 +74,8 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
   const [editingTemplate, setEditingTemplate] = useState<EnrollmentTemplate | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [editingWorkflow, setEditingWorkflow] = useState<EnrollmentTemplate | null>(null);
+  const [viewingWorkflow, setViewingWorkflow] = useState<EnrollmentTemplate | null>(null);
   const { showSuccess, showError } = useMasterToast();
 
   const [formData, setFormData] = useState({
@@ -237,7 +256,24 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
                     <Button
                       variant="outline"
                       size="sm"
+                      onClick={() => setViewingWorkflow(template)}
+                      title="View Workflow"
+                    >
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setEditingWorkflow(template)}
+                      title="Edit Workflow"
+                    >
+                      <Workflow className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => handleEdit(template)}
+                      title="Edit Template"
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
@@ -245,6 +281,7 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
                       variant="outline"
                       size="sm"
                       onClick={() => handleDuplicate(template)}
+                      title="Duplicate"
                     >
                       <Copy className="h-4 w-4" />
                     </Button>
@@ -252,6 +289,7 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
                       variant={template.is_active ? 'outline' : 'default'}
                       size="sm"
                       onClick={() => handleToggleActive(template)}
+                      title={template.is_active ? 'Deactivate' : 'Activate'}
                     >
                       {template.is_active ? (
                         <AlertTriangle className="h-4 w-4" />
@@ -263,6 +301,7 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
                       variant="destructive"
                       size="sm"
                       onClick={() => handleDelete(template.id)}
+                      title="Delete"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -271,23 +310,91 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-3 gap-4 text-sm">
-                <div>
-                  <span className="font-medium">Created:</span>
-                  <br />
-                  {new Date(template.created_at).toLocaleDateString()}
-                </div>
-                <div>
-                  <span className="font-medium">Updated:</span>
-                  <br />
-                  {new Date(template.updated_at).toLocaleDateString()}
-                </div>
-                <div>
-                  <span className="font-medium">Fields:</span>
-                  <br />
-                  {template.form_schema?.fields?.length || 0} fields
-                </div>
-              </div>
+              <Tabs defaultValue="details" className="space-y-4">
+                <TabsList>
+                  <TabsTrigger value="details">Details</TabsTrigger>
+                  <TabsTrigger value="workflow">Workflow</TabsTrigger>
+                  <TabsTrigger value="outputs">Outputs</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="details">
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium">Created:</span>
+                      <br />
+                      {new Date(template.created_at).toLocaleDateString()}
+                    </div>
+                    <div>
+                      <span className="font-medium">Updated:</span>
+                      <br />
+                      {new Date(template.updated_at).toLocaleDateString()}
+                    </div>
+                    <div>
+                      <span className="font-medium">Fields:</span>
+                      <br />
+                      {template.form_schema?.fields?.length || 0} fields
+                    </div>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="workflow">
+                  {template.workflow_nodes && template.workflow_edges ? (
+                    <WorkflowVisualization
+                      template={{
+                        id: template.id,
+                        name: template.name,
+                        description: template.template_data?.description || '',
+                        category: template.module_type,
+                        nodes: template.workflow_nodes,
+                        edges: template.workflow_edges,
+                        outputOptions: template.output_options || {
+                          database: true,
+                          excel: false,
+                          api: false,
+                          email: false,
+                          sms: false
+                        },
+                        isEditable: true,
+                        isActive: template.is_active
+                      }}
+                      compact={true}
+                      showControls={false}
+                    />
+                  ) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Workflow className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                      <p>No workflow configured</p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-2"
+                        onClick={() => setEditingWorkflow(template)}
+                      >
+                        Configure Workflow
+                      </Button>
+                    </div>
+                  )}
+                </TabsContent>
+
+                <TabsContent value="outputs">
+                  <div className="flex flex-wrap gap-2">
+                    {template.output_options ? (
+                      Object.entries(template.output_options).map(([type, enabled]) => (
+                        enabled && (
+                          <Badge key={type} variant="outline" className="flex items-center gap-1">
+                            {type === 'database' && <Database className="h-3 w-3" />}
+                            {type === 'excel' && <FileSpreadsheet className="h-3 w-3" />}
+                            {type === 'api' && <Webhook className="h-3 w-3" />}
+                            <span className="capitalize">{type}</span>
+                          </Badge>
+                        )
+                      ))
+                    ) : (
+                      <Badge variant="secondary">Database Only</Badge>
+                    )}
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         ))}
@@ -382,6 +489,97 @@ export const EnrollmentTemplateManager: React.FC<EnrollmentTemplateManagerProps>
             </div>
           </CardContent>
         </Card>
+      )}
+
+      {/* Workflow Visualization Modal */}
+      {viewingWorkflow && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-background rounded-lg max-w-6xl w-full max-h-[90vh] overflow-hidden">
+            <div className="p-4 border-b flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Workflow: {viewingWorkflow.name}</h3>
+              <Button variant="outline" onClick={() => setViewingWorkflow(null)}>
+                ✕
+              </Button>
+            </div>
+            <div className="p-4 h-[70vh]">
+              {viewingWorkflow.workflow_nodes && viewingWorkflow.workflow_edges ? (
+                <WorkflowVisualization
+                  template={{
+                    id: viewingWorkflow.id,
+                    name: viewingWorkflow.name,
+                    description: viewingWorkflow.template_data?.description || '',
+                    category: viewingWorkflow.module_type,
+                    nodes: viewingWorkflow.workflow_nodes,
+                    edges: viewingWorkflow.workflow_edges,
+                    outputOptions: viewingWorkflow.output_options || {
+                      database: true,
+                      excel: false,
+                      api: false,
+                      email: false,
+                      sms: false
+                    },
+                    isEditable: true,
+                    isActive: viewingWorkflow.is_active
+                  }}
+                  compact={false}
+                  showControls={true}
+                  onEdit={() => {
+                    setEditingWorkflow(viewingWorkflow);
+                    setViewingWorkflow(null);
+                  }}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <Workflow className="h-16 w-16 mx-auto mb-4 text-muted-foreground" />
+                  <p className="text-muted-foreground mb-4">No workflow configured for this template</p>
+                  <Button onClick={() => {
+                    setEditingWorkflow(viewingWorkflow);
+                    setViewingWorkflow(null);
+                  }}>
+                    Configure Workflow
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Workflow Editor Modal */}
+      {editingWorkflow && (
+        <EditableWorkflowTemplate
+          template={{
+            id: editingWorkflow.id,
+            name: editingWorkflow.name,
+            description: editingWorkflow.template_data?.description || '',
+            category: editingWorkflow.module_type,
+            nodes: editingWorkflow.workflow_nodes || [],
+            edges: editingWorkflow.workflow_edges || [],
+            outputOptions: editingWorkflow.output_options || {
+              database: true,
+              excel: false,
+              api: false,
+              email: false,
+              sms: false
+            },
+            isEditable: true,
+            isActive: editingWorkflow.is_active
+          }}
+          isOpen={true}
+          onClose={() => setEditingWorkflow(null)}
+          onSave={async (updatedTemplate) => {
+            // Save workflow updates back to enrollment template
+            const updates = {
+              workflow_config: updatedTemplate.nodes,
+              workflow_nodes: updatedTemplate.nodes,
+              workflow_edges: updatedTemplate.edges,
+              output_options: updatedTemplate.outputOptions
+            };
+            await onTemplateUpdate(editingWorkflow.id, updates);
+            setEditingWorkflow(null);
+            onTemplateChange();
+          }}
+        />
       )}
     </div>
   );
