@@ -326,10 +326,13 @@ const App = () => {
             <TenantProvider>
               <TooltipProvider>
                 <HelmetProvider>
-                  <Toaster />
-                  <AppLayoutWithEnrollment>
-                    <AppContent />
-                  </AppLayoutWithEnrollment>
+                  <GlobalAgentGeneratorProvider>
+                    <Toaster />
+                    <AppLayoutWithEnrollment>
+                      <AppContent />
+                    </AppLayoutWithEnrollment>
+                    <GlobalAgentGeneratorModal />
+                  </GlobalAgentGeneratorProvider>
                 </HelmetProvider>
               </TooltipProvider>
             </TenantProvider>
