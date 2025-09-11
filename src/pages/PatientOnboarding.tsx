@@ -7,6 +7,8 @@ import { Progress } from '@/components/ui/progress';
 import { PatientEnrollmentForm } from '@/components/patient-enrollment/PatientEnrollmentForm';
 import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { CollaborativeEnrollmentWorkflow } from '@/components/patient-enrollment/CollaborativeEnrollmentWorkflow';
+import { PatientEnrollmentTemplateManager } from '@/components/patient-enrollment/PatientEnrollmentTemplateManager';
+import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalAgentConfigManager';
 import { 
   UserPlus, 
   FileText, 
@@ -18,7 +20,9 @@ import {
   Eye,
   Calendar,
   Phone,
-  Mail
+  Mail,
+  Workflow,
+  Settings
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { PageEnrollmentIntegration } from '@/components/page-integration/PageEnrollmentIntegration';
@@ -115,8 +119,9 @@ const getPriorityColor = (priority: PatientOnboarding['priority']) => {
 export default function PatientOnboarding() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
-  const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow'>('list');
+  const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow' | 'templates' | 'agent_config'>('list');
   const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
+  const [selectedAgentType, setSelectedAgentType] = useState<string>('');
 
   const filteredOnboarding = mockOnboarding.filter(item => {
     const matchesSearch = item.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -151,6 +156,14 @@ export default function PatientOnboarding() {
     setSelectedPatient(null);
   };
 
+  const handleViewTemplates = () => {
+    setCurrentView('templates');
+  };
+
+  const handleViewAgentConfig = () => {
+    setCurrentView('agent_config');
+  };
+
   // Render different views based on current state
   if (currentView === 'new_enrollment') {
     return (
@@ -173,6 +186,61 @@ export default function PatientOnboarding() {
               console.log('Enhanced enrollment submitted:', data);
               toast.success('Enrollment completed successfully with conversation history stored');
               handleBackToList();
+            }}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (currentView === 'templates') {
+    return (
+      <AppLayout title="Enrollment Templates">
+        <div className="flex-1 space-y-6 p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Enrollment Templates & Workflows</h1>
+              <p className="text-muted-foreground">
+                Manage workflow templates with visualization for all agent types
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleBackToList}>
+              Back to List
+            </Button>
+          </div>
+
+          <PatientEnrollmentTemplateManager
+            onTemplateSelect={(template) => {
+              console.log('Template selected:', template);
+              toast.success('Template ready for deployment');
+            }}
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  if (currentView === 'agent_config') {
+    return (
+      <AppLayout title="Agent Configuration">
+        <div className="flex-1 space-y-6 p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Universal Agent Configuration</h1>
+              <p className="text-muted-foreground">
+                Configure conversational AI, audit trails, and deployment for all agent types
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleBackToList}>
+              Back to List
+            </Button>
+          </div>
+
+          <UniversalAgentConfigManager
+            selectedAgentType={selectedAgentType}
+            onAgentTypeSelect={(agentType) => {
+              setSelectedAgentType(agentType.id);
+              console.log('Agent type selected:', agentType);
             }}
           />
         </div>
@@ -224,6 +292,14 @@ export default function PatientOnboarding() {
             </p>
           </div>
           <div className="flex gap-3">
+            <Button variant="outline" onClick={handleViewTemplates}>
+              <Workflow className="mr-2 h-4 w-4" />
+              Workflow Templates
+            </Button>
+            <Button variant="outline" onClick={handleViewAgentConfig}>
+              <Settings className="mr-2 h-4 w-4" />
+              Agent Configuration
+            </Button>
             <Button onClick={handleNewEnrollment}>
               <Plus className="mr-2 h-4 w-4" />
               New Patient Enrollment
