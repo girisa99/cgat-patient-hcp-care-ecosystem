@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Progress } from '@/components/ui/progress';
 import { PatientEnrollmentForm } from '@/components/patient-enrollment/PatientEnrollmentForm';
+import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { CollaborativeEnrollmentWorkflow } from '@/components/patient-enrollment/CollaborativeEnrollmentWorkflow';
 import { 
   UserPlus, 
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { PageEnrollmentIntegration } from '@/components/page-integration/PageEnrollmentIntegration';
+import { toast } from 'sonner';
 
 interface PatientOnboarding {
   id: string;
@@ -152,13 +154,13 @@ export default function PatientOnboarding() {
   // Render different views based on current state
   if (currentView === 'new_enrollment') {
     return (
-      <AppLayout title="New Patient Enrollment">
+      <AppLayout title="Enhanced Patient Enrollment">
         <div className="flex-1 space-y-6 p-4 md:p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight">New Patient Enrollment</h1>
+              <h1 className="text-3xl font-bold tracking-tight">Enhanced Patient Enrollment</h1>
               <p className="text-muted-foreground">
-                Complete patient enrollment with multiple submission options
+                AI-powered conversational enrollment with automatic data capture and audit trails
               </p>
             </div>
             <Button variant="outline" onClick={handleBackToList}>
@@ -166,13 +168,11 @@ export default function PatientOnboarding() {
             </Button>
           </div>
 
-          <PatientEnrollmentForm
+          <EnhancedEnrollmentInterface
             onSubmit={(data) => {
-              console.log('Enrollment submitted:', data);
+              console.log('Enhanced enrollment submitted:', data);
+              toast.success('Enrollment completed successfully with conversation history stored');
               handleBackToList();
-            }}
-            onSave={(data) => {
-              console.log('Enrollment saved:', data);
             }}
           />
         </div>

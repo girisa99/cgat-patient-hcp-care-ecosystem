@@ -37,6 +37,13 @@ interface DeploymentConfig {
   environment: 'dev' | 'test' | 'uat' | 'prod';
   channels: string[];
   agentIds: string[];
+  llmProvider?: string;
+  conversationSettings?: {
+    mode: 'natural' | 'structured';
+    auditEnabled: boolean;
+    labelStudioEnabled: boolean;
+    conversationStorage: boolean;
+  };
   testing: {
     enabled: boolean;
     platforms: string[];
@@ -65,6 +72,13 @@ export const EnhancedDeploymentManager: React.FC<EnhancedDeploymentManagerProps>
     environment: 'dev',
     channels: [],
     agentIds: agentId ? [agentId] : selectedAgents,
+    llmProvider: 'gpt-4.1',
+    conversationSettings: {
+      mode: 'natural',
+      auditEnabled: true,
+      labelStudioEnabled: true,
+      conversationStorage: true
+    },
     testing: {
       enabled: true,
       platforms: [],
@@ -89,6 +103,15 @@ export const EnhancedDeploymentManager: React.FC<EnhancedDeploymentManagerProps>
     { value: 'test', label: 'Testing', description: 'For automated testing and QA', color: 'bg-yellow-500' },
     { value: 'uat', label: 'UAT', description: 'User acceptance testing environment', color: 'bg-orange-500' },
     { value: 'prod', label: 'Production', description: 'Live production environment', color: 'bg-green-500' }
+  ];
+
+  const llmProviders = [
+    { id: 'gpt-5', name: 'GPT-5', model: 'gpt-5-2025-08-07', cost: 'Premium', capabilities: ['Text', 'Vision', 'Function Calling'] },
+    { id: 'gpt-4.1', name: 'GPT-4.1', model: 'gpt-4.1-2025-04-14', cost: 'High', capabilities: ['Text', 'Vision', 'Function Calling'] },
+    { id: 'claude-opus-4', name: 'Claude Opus 4', model: 'claude-opus-4-1-20250805', cost: 'Premium', capabilities: ['Text', 'Vision', 'Superior Reasoning'] },
+    { id: 'claude-sonnet-4', name: 'Claude Sonnet 4', model: 'claude-sonnet-4-20250514', cost: 'High', capabilities: ['Text', 'Vision', 'High Performance'] },
+    { id: 'gpt-5-mini', name: 'GPT-5 Mini', model: 'gpt-5-mini-2025-08-07', cost: 'Medium', capabilities: ['Text', 'Fast Processing'] },
+    { id: 'claude-haiku', name: 'Claude Haiku', model: 'claude-3-5-haiku-20241022', cost: 'Low', capabilities: ['Text', 'Fastest Response'] }
   ];
 
   const channels = [
@@ -411,6 +434,97 @@ export const EnhancedDeploymentManager: React.FC<EnhancedDeploymentManagerProps>
               ))}
             </SelectContent>
           </Select>
+        </div>
+
+        {/* LLM Provider Selection */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold">LLM Provider Selection</h3>
+          <Select 
+            value={deploymentConfig.llmProvider} 
+            onValueChange={(value) => setDeploymentConfig(prev => ({ ...prev, llmProvider: value }))}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select LLM Provider" />
+            </SelectTrigger>
+            <SelectContent>
+              {llmProviders.map((provider) => (
+                <SelectItem key={provider.id} value={provider.id}>
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <div className="font-medium">{provider.name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {provider.capabilities.join(', ')} • {provider.cost} cost
+                      </div>
+                    </div>
+                  </div>
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Conversation Settings */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-semibold">Conversation & Audit Settings</h3>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium">Conversation Mode</label>
+              <Select 
+                value={deploymentConfig.conversationSettings?.mode} 
+                onValueChange={(value: any) => setDeploymentConfig(prev => ({
+                  ...prev,
+                  conversationSettings: { ...prev.conversationSettings!, mode: value }
+                }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="natural">Natural Conversation</SelectItem>
+                  <SelectItem value="structured">Structured Form</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  checked={deploymentConfig.conversationSettings?.auditEnabled}
+                  onCheckedChange={(checked) => 
+                    setDeploymentConfig(prev => ({
+                      ...prev,
+                      conversationSettings: { ...prev.conversationSettings!, auditEnabled: !!checked }
+                    }))
+                  }
+                />
+                <label className="text-sm">Audit Trail</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  checked={deploymentConfig.conversationSettings?.labelStudioEnabled}
+                  onCheckedChange={(checked) => 
+                    setDeploymentConfig(prev => ({
+                      ...prev,
+                      conversationSettings: { ...prev.conversationSettings!, labelStudioEnabled: !!checked }
+                    }))
+                  }
+                />
+                <label className="text-sm">Label Studio Capture</label>
+              </div>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  checked={deploymentConfig.conversationSettings?.conversationStorage}
+                  onCheckedChange={(checked) => 
+                    setDeploymentConfig(prev => ({
+                      ...prev,
+                      conversationSettings: { ...prev.conversationSettings!, conversationStorage: !!checked }
+                    }))
+                  }
+                />
+                <label className="text-sm">Store Conversations</label>
+              </div>
+            </div>
+          </div>
         </div>
 
         {/* Channel Selection */}
