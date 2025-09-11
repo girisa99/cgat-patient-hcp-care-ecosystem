@@ -4448,6 +4448,7 @@ export type Database = {
           last_action_by: string | null
           last_action_date: string | null
           module_type: string
+          npi_verified_at: string | null
           patient_id: string | null
           patient_signature_captured: boolean | null
           primary_coordinator_email: string | null
@@ -4474,6 +4475,7 @@ export type Database = {
           treatment_consent_date: string | null
           treatment_consent_signed: boolean | null
           updated_at: string
+          verification_status: string | null
           workflow_notes: string | null
           workflow_step_completed: string[] | null
           workflow_version: string | null
@@ -4506,6 +4508,7 @@ export type Database = {
           last_action_by?: string | null
           last_action_date?: string | null
           module_type: string
+          npi_verified_at?: string | null
           patient_id?: string | null
           patient_signature_captured?: boolean | null
           primary_coordinator_email?: string | null
@@ -4532,6 +4535,7 @@ export type Database = {
           treatment_consent_date?: string | null
           treatment_consent_signed?: boolean | null
           updated_at?: string
+          verification_status?: string | null
           workflow_notes?: string | null
           workflow_step_completed?: string[] | null
           workflow_version?: string | null
@@ -4564,6 +4568,7 @@ export type Database = {
           last_action_by?: string | null
           last_action_date?: string | null
           module_type?: string
+          npi_verified_at?: string | null
           patient_id?: string | null
           patient_signature_captured?: boolean | null
           primary_coordinator_email?: string | null
@@ -4590,6 +4595,7 @@ export type Database = {
           treatment_consent_date?: string | null
           treatment_consent_signed?: boolean | null
           updated_at?: string
+          verification_status?: string | null
           workflow_notes?: string | null
           workflow_step_completed?: string[] | null
           workflow_version?: string | null
@@ -6723,6 +6729,51 @@ export type Database = {
           system_updates?: boolean | null
           updated_at?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      npi_verification_results: {
+        Row: {
+          confidence_score: number
+          created_at: string
+          enrollment_id: string | null
+          facility_id: string | null
+          id: string
+          issues: string[] | null
+          npi: string
+          provider_type: string
+          updated_at: string
+          verification_data: Json
+          verification_status: string
+          verified_at: string
+        }
+        Insert: {
+          confidence_score?: number
+          created_at?: string
+          enrollment_id?: string | null
+          facility_id?: string | null
+          id?: string
+          issues?: string[] | null
+          npi: string
+          provider_type: string
+          updated_at?: string
+          verification_data?: Json
+          verification_status: string
+          verified_at?: string
+        }
+        Update: {
+          confidence_score?: number
+          created_at?: string
+          enrollment_id?: string | null
+          facility_id?: string | null
+          id?: string
+          issues?: string[] | null
+          npi?: string
+          provider_type?: string
+          updated_at?: string
+          verification_data?: Json
+          verification_status?: string
+          verified_at?: string
         }
         Relationships: []
       }
