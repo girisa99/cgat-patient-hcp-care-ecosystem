@@ -34,16 +34,23 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
+
+// Core AI and conversation hooks
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationState } from '@/hooks/useConversationState';
+import { useLabelStudio } from '@/hooks/useLabelStudio';
+
+// Genie-specific hooks and services
+import { ragService } from '@/services/ragService';
+import { useGenieState } from '@/hooks/useGenieState';
+
+// UI Components
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { UniversalModelSelector, SelectedModelConfig } from '@/components/ai';
-import { useLabelStudio } from '@/hooks/useLabelStudio';
-import { useGenieConfiguration } from '@/hooks/useGenieConfiguration';
-import { useGenieConversation } from '@/hooks/useGenieConversation';
-import { ragService } from '@/services/ragService';
 import { AnimatedGenieResponse } from './AnimatedGenieResponse';
+
+// Assets
 import genieLogoImg from '@/assets/genie-logo.png';
 import genieAnimatedImg from '@/assets/genie-animated.png';
 
@@ -81,8 +88,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { generateResponse } = useUniversalAI();
   const { state, addMessage, updateConversationConfig, switchMode, resetConversation } = useConversationState();
   const { listProjects } = useLabelStudio();
-  const { currentConfig, saveConfiguration, updateConfiguration } = useGenieConfiguration();
-  const { currentSession, saveSession, updateSession, createNewSession } = useGenieConversation();
+  const { currentConfig, saveConfiguration, currentSession, updateSession, createNewSession } = useGenieState();
 
   // Auto-detect medical context
   useEffect(() => {
@@ -225,18 +231,18 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       let responses: any[] = [];
 
       if (mode === 'multi' && selectedModels.length > 1) {
-        // Multi-model mode - get responses from multiple models
+        // Multi-model mode - get responses from multiple models using universalAI
         responses = await Promise.all(
-          selectedModels.map(model =>
-            generateResponse({
+          selectedModels.map(async model => {
+            return await generateResponse({
               provider: (model.provider as 'openai' | 'claude' | 'gemini') || 'openai',
               model: model.model,
               prompt: enhancedPrompt,
               systemPrompt: buildSystemPrompt(),
               temperature: 0.7,
               maxTokens: 1000
-            })
-          )
+            });
+          })
         );
         
         // Add each response
@@ -252,11 +258,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           }
         });
       } else {
-        // Single model response
+        // Single model response using universalAI
         const primaryModel = selectedModels.find(m => m.role === 'primary') || selectedModels[0];
         const resp = await generateResponse({
           provider: (primaryModel?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
-          model: primaryModel?.model || 'gpt-4',
+          model: primaryModel?.model || 'gpt-4o-mini',
           prompt: enhancedPrompt,
           systemPrompt: buildSystemPrompt(),
           temperature: 0.7,
@@ -269,7 +275,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             content: resp.content,
             timestamp: new Date().toISOString(),
             provider: (primaryModel?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
-            model: primaryModel?.model || 'gpt-4'
+            model: primaryModel?.model || 'gpt-4o-mini'
           });
         }
       }
