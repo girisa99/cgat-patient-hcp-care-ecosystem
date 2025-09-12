@@ -35,6 +35,7 @@ import {
   Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationState, ConversationMessage } from '@/hooks/useConversationState';
 import { ragService } from '@/services/ragService';
@@ -351,7 +352,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <Button
                   variant={mode === 'general' ? 'secondary' : 'ghost'}
                   size="sm"
-                  onClick={() => onModeChange?.('general')}
+                  onClick={() => {
+                    console.log('🟢 Mode toggle clicked: general');
+                    try { toast({ title: 'Genie mode', description: 'Switched to General' }); } catch {}
+                    onModeChange?.('general');
+                  }}
                   className="px-3 py-1.5 h-8 text-xs font-medium"
                 >
                   General
@@ -359,7 +364,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <Button
                   variant={mode === 'enrollment' ? 'secondary' : 'ghost'}
                   size="sm"
-                  onClick={() => onModeChange?.('enrollment')}
+                  onClick={() => {
+                    console.log('🟠 Mode toggle clicked: enrollment');
+                    try { toast({ title: 'Genie mode', description: 'Switched to Enrollment' }); } catch {}
+                    onModeChange?.('enrollment');
+                  }}
                   className="px-3 py-1.5 h-8 text-xs font-medium"
                 >
                   Enrollment

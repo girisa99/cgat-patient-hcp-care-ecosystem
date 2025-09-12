@@ -100,6 +100,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   // Track if user manually changed mode to avoid auto-overrides
   const userOverrodeModeRef = React.useRef(false);
   const handleModeChange = (m: 'general' | 'enrollment') => {
+    console.log('🟣 Genie mode change requested:', m);
     userOverrodeModeRef.current = true;
     setGenieMode(m);
   };
@@ -111,6 +112,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   // Auto-set enrollment mode on enrollment pages only if user hasn't toggled manually
   useEffect(() => {
     if (isEnrollmentContext && genieMode === 'general' && !userOverrodeModeRef.current) {
+      console.log('🔁 Auto-switching to enrollment mode based on context');
       setGenieMode('enrollment');
     }
   }, [isEnrollmentContext, genieMode]);
