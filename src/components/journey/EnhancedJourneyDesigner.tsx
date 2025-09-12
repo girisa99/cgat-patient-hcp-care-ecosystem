@@ -60,9 +60,7 @@ interface EnhancedJourneyDesignerProps {
 // AI Models are now managed by the universal AI system
 // Use useUniversalAI() hook to get available providers and models
 
-const mockAIModels: AIModel[] = [
-  // AI Models are now managed by the universal AI system via useUniversalAI() hook
-];
+// AI Models are now managed by the universal AI system via useUniversalAI() hook
 
 export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = ({
   steps,

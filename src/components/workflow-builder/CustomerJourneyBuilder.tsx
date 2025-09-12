@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { NodeConfigurationPanel } from './NodeConfigurationPanel';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { AIGuidancePanel } from './AIGuidancePanel';
 import { NodeTemplateLibrary } from './NodeTemplateLibrary';
 import { EnhancedWorkflowNode, EnhancedNodeData } from './EnhancedWorkflowNode';
@@ -216,6 +217,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
   journeyStages,
   sessionId
 }) => {
+  const { availableProviders } = useUniversalAI();
   // Generate enhanced initial nodes from unified builder context
   const generateContextualNodes = (): Node<EnhancedNodeData>[] => {
     if (!capturedRequirements && !journeyStages) {
@@ -750,7 +752,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
                   setSelectedNode(null);
                 }}
                 availableConnectors={availableConnectors}
-                aiModels={[]} // AI models now managed by useUniversalAI()
+                aiModels={availableProviders.map(p => p.name)} // Real AI provider names from useUniversalAI()
               />
             </div>
           )}

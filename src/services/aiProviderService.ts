@@ -5,6 +5,8 @@ export interface AIProvider {
   name: string;
   models: string[];
   capabilities: string[];
+  description?: string;
+  icon?: React.ComponentType<{ className?: string }>;
 }
 
 export interface AIRequest {

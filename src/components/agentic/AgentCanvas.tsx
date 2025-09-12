@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { toast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 
 interface ComponentType {
   id: string;
@@ -143,6 +144,7 @@ const agentCategories = [
 ];
 
 export const AgentCanvas = () => {
+  const { availableProviders } = useUniversalAI();
   const [formData, setFormData] = useState<AgentFormData>({
     name: '',
     brand: '',
@@ -484,31 +486,31 @@ export const AgentCanvas = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {mockAIModels.map((model) => {
-                const isSelected = formData.selectedModels.includes(model.id);
-                const IconComponent = model.icon;
+               {availableProviders.map((provider) => {
+                const isSelected = formData.selectedModels.includes(provider.id);
+                const IconComponent = provider.icon || Bot;
                 
                 return (
                   <Card 
-                    key={model.id}
+                    key={provider.id}
                     className={`cursor-pointer transition-all hover:shadow-md ${
                       isSelected ? 'ring-2 ring-primary bg-primary/5' : ''
                     }`}
-                    onClick={() => handleMultiSelect('selectedModels', model.id)}
+                    onClick={() => handleMultiSelect('selectedModels', provider.id)}
                   >
                     <CardContent className="p-4">
                       <div className="flex items-start gap-3">
                         <IconComponent className="h-6 w-6 text-primary mt-1" />
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between">
-                            <h4 className="font-medium text-sm">{model.name}</h4>
+                            <h4 className="font-medium text-sm">{provider.name}</h4>
                             <Checkbox checked={isSelected} disabled />
                           </div>
                           <Badge variant="outline" className="text-xs mt-1">
-                            {model.category}
+                            {provider.capabilities?.join(', ') || 'AI Provider'}
                           </Badge>
                           <p className="text-xs text-muted-foreground mt-2">
-                            {model.description}
+                            {provider.description}
                           </p>
                         </div>
                       </div>
