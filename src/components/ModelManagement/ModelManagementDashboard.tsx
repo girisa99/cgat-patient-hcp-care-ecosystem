@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ModelSelector } from './ModelSelector';
+import { UniversalModelSelector, SelectedModelConfig } from '@/components/ai';
 import { useModelRouting } from '@/hooks/useModelRouting';
 import { ModelRequest } from '@/services/ModelRoutingService';
 import { UserModelPreferences, ModelCapability } from '@/types/ModelTypes';
@@ -130,10 +130,32 @@ export const ModelManagementDashboard: React.FC<ModelManagementDashboardProps> =
         </TabsList>
 
         <TabsContent value="model-selection">
-          <ModelSelector
-            onPreferencesChange={handlePreferencesChange}
-            currentPreferences={preferences || undefined}
-            selectedTemplate={selectedTemplate}
+          <UniversalModelSelector
+            onModelsSelect={(models) => {
+              // Convert to the proper UserModelPreferences format
+              const newPreferences: UserModelPreferences = {
+                userId: preferences?.userId || 'current-user',
+                preferredModels: {
+                  chat: models.find(m => m.category === 'llm')?.model || preferences?.preferredModels?.chat || 'auto',
+                  code: models.find(m => m.category === 'small')?.model || preferences?.preferredModels?.code || 'auto',
+                  medical: models.find(m => m.role === 'specialized')?.model || preferences?.preferredModels?.medical || 'auto',
+                  embeddings: preferences?.preferredModels?.embeddings || 'auto',
+                  classification: preferences?.preferredModels?.classification || 'auto'
+                },
+                fallbackStrategy: preferences?.fallbackStrategy || 'api-first',
+                maxCostPerRequest: preferences?.maxCostPerRequest || 0.1,
+                allowLocalModels: preferences?.allowLocalModels || false,
+                performancePreference: preferences?.performancePreference || 'accuracy',
+                autoDownloadModels: preferences?.autoDownloadModels || false,
+                createdAt: preferences?.createdAt || new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+              };
+              handlePreferencesChange(newPreferences);
+            }}
+            selectedModels={[]}
+            mode="single"
+            allowModeSwitch={true}
+            maxSelections={5}
           />
         </TabsContent>
 

@@ -9,7 +9,7 @@ import { EnhancedKnowledgeBase } from '@/components/rag/EnhancedKnowledgeBase';
 import { AgentTemplates } from './AgentTemplates';
 import { AgentDeployment } from './AgentDeployment';
 import { RAGComplianceWorkflow } from '@/components/rag/RAGComplianceWorkflow';
-import { AIModelSelector } from './AIModelSelector';
+import { UniversalModelSelector, SelectedModelConfig } from '@/components/ai';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -126,7 +126,7 @@ export const AgentCreationWizard = () => {
   const [isSaving, setIsSaving] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [showAIModelSelector, setShowAIModelSelector] = useState(false);
-  const [selectedAIModels, setSelectedAIModels] = useState<string[]>([]);
+  const [selectedAIModels, setSelectedAIModels] = useState<SelectedModelConfig[]>([]);
   const { listProjectTasks, listTaskAnnotations, loading: lsLoading } = useLabelStudio();
   const { saveAgentSession, saveDeployment } = useAgentPersistence(state.sessionId || undefined);
   
@@ -450,7 +450,13 @@ export const AgentCreationWizard = () => {
             primaryColor: state.primaryColor,
             secondaryColor: state.secondaryColor,
             accentColor: state.accentColor,
-            aiModels: selectedAIModels,
+            aiModels: selectedAIModels.map(model => ({
+              provider: model.provider,
+              model: model.model,
+              category: model.category,
+              role: model.role,
+              weight: model.weight
+            })),
             labelStudioBinding: state.labelStudio ? ({ ...state.labelStudio } as any) : undefined,
           },
           deployment_config: state.deploymentConfig,
@@ -941,23 +947,79 @@ export const AgentCreationWizard = () => {
             <h4 className="font-medium">Select AI Models</h4>
             <p className="text-sm text-muted-foreground">Choose the AI models that will power your agent</p>
           </div>
-          <div className="text-center py-8">
-            <Button onClick={() => setShowAIModelSelector(true)}>
-              Configure AI Models
-            </Button>
-          </div>
-          <AIModelSelector 
-            isOpen={showAIModelSelector}
-            onClose={() => setShowAIModelSelector(false)}
-            onSelect={(model, config) => {
-              setSelectedAIModels([...selectedAIModels, model.id]);
-              toast({
-                title: "AI Model Added",
-                description: `${model.name} has been configured for your agent.`,
-              });
-            }}
-            selectedModels={selectedAIModels}
-          />
+          {selectedAIModels.length === 0 ? (
+            <div className="text-center py-8">
+              <Button onClick={() => setShowAIModelSelector(true)}>
+                Configure AI Models
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium">
+                  {selectedAIModels.length} model{selectedAIModels.length !== 1 ? 's' : ''} configured
+                </span>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setShowAIModelSelector(true)}
+                >
+                  Modify Selection
+                </Button>
+              </div>
+              <div className="grid gap-2">
+                {selectedAIModels.map((model, index) => (
+                  <div key={`${model.provider}-${model.model}`} className="flex items-center justify-between p-2 border rounded">
+                    <div>
+                      <span className="font-medium text-sm">{model.name}</span>
+                      <div className="text-xs text-muted-foreground">
+                        {model.provider} • {model.category} • {model.role}
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const newModels = [...selectedAIModels];
+                        newModels.splice(index, 1);
+                        setSelectedAIModels(newModels);
+                      }}
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {showAIModelSelector && (
+            <Dialog open={showAIModelSelector} onOpenChange={setShowAIModelSelector}>
+              <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+                <DialogHeader>
+                  <DialogTitle>Configure AI Models</DialogTitle>
+                </DialogHeader>
+                <div className="overflow-y-auto">
+                  <UniversalModelSelector
+                    onModelsSelect={(models) => {
+                      setSelectedAIModels(models);
+                      if (models.length > 0) {
+                        toast({
+                          title: "AI Models Configured",
+                          description: `${models.length} model${models.length !== 1 ? 's' : ''} configured for your agent.`,
+                        });
+                      }
+                    }}
+                    selectedModels={selectedAIModels}
+                    mode="single"
+                    enabledFeatures={state.agentType === 'single' ? [] : ['medical']}
+                    allowModeSwitch={true}
+                    maxSelections={6}
+                  />
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </TabsContent>
       </Tabs>
     </div>,
