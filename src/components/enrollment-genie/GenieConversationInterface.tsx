@@ -40,6 +40,12 @@ import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { UniversalModelSelector, SelectedModelConfig } from '@/components/ai';
 import { useLabelStudio } from '@/hooks/useLabelStudio';
+import { useGenieConfiguration } from '@/hooks/useGenieConfiguration';
+import { useGenieConversation } from '@/hooks/useGenieConversation';
+import { ragService } from '@/services/ragService';
+import { AnimatedGenieResponse } from './AnimatedGenieResponse';
+import genieLogoImg from '@/assets/genie-logo.png';
+import genieAnimatedImg from '@/assets/genie-animated.png';
 
 interface GenieConversationInterfaceProps {
   isOpen: boolean;
@@ -85,6 +91,51 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       setEnabledFeatures(prev => prev.includes('medical') ? prev : [...prev, 'medical']);
     }
   }, [context]);
+
+  // Auto-save configuration changes
+  useEffect(() => {
+    if (currentConfig && saveConfiguration) {
+      const configToSave = {
+        configuration_name: 'auto_save',
+        selected_mode: mode as 'system' | 'single' | 'multi',
+        selected_models: selectedModels.map(m => m.model),
+        left_model: selectedModels.find(m => m.role === 'primary')?.model || 'GEMINI',
+        right_model: selectedModels.find(m => m.role === 'secondary')?.model || 'GPT',
+        selected_model_type: selectedModels[0]?.category as 'llm' | 'slm' | 'vlm' || 'llm',
+        enabled_features: enabledFeatures,
+        selected_mcp_tools: selectedMCPTools,
+        knowledge_base: knowledgeBase,
+        medical_context: medicalContext,
+        is_default: true
+      };
+      
+      // Debounce the save to avoid too many calls
+      const timeoutId = setTimeout(() => {
+        saveConfiguration(configToSave);
+      }, 1000);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [mode, selectedModels, enabledFeatures, selectedMCPTools, knowledgeBase, medicalContext, currentConfig, saveConfiguration]);
+
+  // Auto-save conversation messages
+  useEffect(() => {
+    if (currentSession && updateSession && state.messages.length > 0) {
+      const timeoutId = setTimeout(() => {
+        updateSession(state.conversationId, {
+          messages: state.messages,
+          configuration_snapshot: {
+            mode,
+            selectedModels,
+            enabledFeatures,
+            selectedMCPTools
+          }
+        });
+      }, 2000);
+      
+      return () => clearTimeout(timeoutId);
+    }
+  }, [state.messages, currentSession, updateSession, state.conversationId, mode, selectedModels, enabledFeatures, selectedMCPTools]);
 
   // Update conversation state when mode or models change
   useEffect(() => {
@@ -157,6 +208,20 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         model: selectedModels[0]?.model || 'gpt-4'
       });
 
+      // Enhance prompt with RAG if enabled
+      let enhancedPrompt = userMessage;
+      let contextSources: string[] = [];
+      
+      if (enabledFeatures.length > 0) {
+        try {
+          const ragResult = await ragService.enhancePromptWithRAG(userMessage, enabledFeatures);
+          enhancedPrompt = ragResult.enhancedPrompt;
+          contextSources = ragResult.contextSources;
+        } catch (error) {
+          console.warn('RAG enhancement failed, proceeding with original prompt:', error);
+        }
+      }
+
       let responses: any[] = [];
 
       if (mode === 'multi' && selectedModels.length > 1) {
@@ -166,7 +231,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             generateResponse({
               provider: (model.provider as 'openai' | 'claude' | 'gemini') || 'openai',
               model: model.model,
-              prompt: userMessage,
+              prompt: enhancedPrompt,
               systemPrompt: buildSystemPrompt(),
               temperature: 0.7,
               maxTokens: 1000
@@ -192,7 +257,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         const resp = await generateResponse({
           provider: (primaryModel?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
           model: primaryModel?.model || 'gpt-4',
-          prompt: userMessage,
+          prompt: enhancedPrompt,
           systemPrompt: buildSystemPrompt(),
           temperature: 0.7,
           maxTokens: 1000
@@ -240,11 +305,13 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                <img src="/lovable-uploads/7b3ce1dc-c275-46ae-a0ca-f70f73094f01.png" alt="GENIE Logo" className="h-6 w-6 rounded" />
+                <img src={genieLogoImg} alt="GENIE Logo" className="h-8 w-8 rounded-full" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">GENIE</h3>
-                <p className="text-xs text-muted-foreground">Cell, Gene Technology Navigator</p>
+                <h3 className="font-semibold text-lg bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                  GENIE
+                </h3>
+                <p className="text-xs text-muted-foreground font-medium">I am your technology navigator</p>
                 <p className="text-xs text-muted-foreground">
                   {mode === 'multi' ? 'Multi-Model Chat' : medicalContext ? 'Medical AI' : 'AI Assistant'}
                 </p>
@@ -386,10 +453,18 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   </p>
                 </div>
                 
-                {/* Conversation Display */}
+                 {/* Conversation Display */}
                 <div className="flex-1 space-y-3 p-3 overflow-y-auto">
                   {state.messages.map((msg, index) => (
-                    <MessageComponent key={index} message={msg} />
+                    msg.role === 'assistant' ? (
+                      <AnimatedGenieResponse 
+                        key={index} 
+                        isVisible={true} 
+                        message={msg.content}
+                      />
+                    ) : (
+                      <MessageComponent key={index} message={msg} />
+                    )
                   ))}
                   
                   <AnimatePresence>
@@ -399,7 +474,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                         animate={{ opacity: 1, y: 0 }}
                         exit={{ opacity: 0, y: -10 }}
                       >
-                        <TypingIndicator />
+                        <AnimatedGenieResponse isVisible={true} />
                       </motion.div>
                     )}
                   </AnimatePresence>
