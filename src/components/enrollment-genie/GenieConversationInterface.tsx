@@ -1,40 +1,52 @@
 /**
  * ENHANCED GENIE CONVERSATION INTERFACE
- * Fully integrated with enrollment form backend and AI Assistant Configuration
+ * Refactored with proper state management, RAG integration, and dropdown options
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
+import { NonModalDialogRoot as Dialog, NonModalDialogContent as DialogContent } from '@/components/ui/non-modal-dialog';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Textarea } from '@/components/ui/textarea';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Separator } from '@/components/ui/separator';
 import { 
-  MessageSquare, 
-  Settings, 
-  Sparkles, 
-  Brain, 
+  Bot, 
+  X, 
+  Monitor, 
+  User, 
   Users, 
-  Globe, 
-  Monitor,
-  FileText,
-  CheckCircle,
-  ArrowRight,
+  Stethoscope, 
+  FileText, 
+  Send,
+  ChevronRight,
+  Loader2,
   RefreshCw,
-  Plus,
-  Bot,
-  Scan,
-  MousePointer,
-  Play,
-  TestTube,
-  Shield,
-  X
+  Settings,
+  Database,
+  Zap,
+  MessageSquare,
+  Download,
+  AlertTriangle,
+  Mic
 } from 'lucide-react';
-import { toast } from 'sonner';
-import { motion } from 'framer-motion';
-import { ConversationManager } from '@/components/conversation/ConversationManager';
+import { Maximize2, Minimize2 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from '@/hooks/use-toast';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
+import { useConversationState, ConversationMessage } from '@/hooks/useConversationState';
+import { ragService } from '@/services/ragService';
+import { EnhancedModelSelector } from '@/components/ai/EnhancedModelSelector';
+import { CrossCategoryModelSelector, SelectedModelConfig } from '@/components/ai/CrossCategoryModelSelector';
+import { ConversationMessage as MessageComponent } from './ConversationMessage';
+import { TypingIndicator } from './TypingIndicator';
 import { EnrollmentJourneySteps } from '@/components/patient-enrollment/EnrollmentJourneySteps';
-import { PatientEnrollmentFlow } from '@/components/patient-enrollment/PatientEnrollmentFlow';
-import { ComprehensiveEnrollmentForm } from './ComprehensiveEnrollmentForm';
-import { supabase } from '@/integrations/supabase/client';
+import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
+import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
 
 interface GenieConversationInterfaceProps {
   isOpen: boolean;
@@ -46,667 +58,740 @@ interface GenieConversationInterfaceProps {
   onModeChange?: (mode: 'general' | 'enrollment') => void;
 }
 
+const mcpTools = [
+  {
+    id: 'filesystem-mcp',
+    name: 'File System Access',
+    description: 'Read, write, and manage files and directories',
+    capabilities: ['File Operations', 'Directory Listing', 'File Search', 'Content Analysis'],
+    status: 'available'
+  },
+  {
+    id: 'memory-mcp',
+    name: 'Memory & Context',
+    description: 'Long-term memory and context management',
+    capabilities: ['Context Storage', 'Memory Retrieval', 'Session Management', 'Pattern Recognition'],
+    status: 'available'
+  },
+  {
+    id: 'web-search-mcp',
+    name: 'Web Search & Research',
+    description: 'Real-time web search, research assistance, fact checking',
+    capabilities: ['Web Search', 'Research', 'Fact Checking', 'Content Analysis'],
+    status: 'available'
+  }
+];
+
 export const GenieConversationInterface: React.FC<GenieConversationInterfaceProps> = ({
   isOpen,
   onClose,
   tenantId,
   userId,
   context = 'general',
-  mode = 'enrollment',
+  mode = 'general',
   onModeChange
 }) => {
-  const [activeTab, setActiveTab] = useState<'general' | 'enrollment'>('enrollment');
-  const [currentStep, setCurrentStep] = useState(0);
-  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
-  const [enrollmentData, setEnrollmentData] = useState<any>({});
-  const [conversationHistory, setConversationHistory] = useState<any[]>([]);
-  const [sectionsData, setSectionsData] = useState<Record<string, any>>({});
-  const [showAIAssistantConfig, setShowAIAssistantConfig] = useState(false);
-  const [selectedSubmissionMethod, setSelectedSubmissionMethod] = useState<string | null>(null);
-  const [showEnrollmentFlow, setShowEnrollmentFlow] = useState(false);
-  const [sessionId, setSessionId] = useState(`enrollment_${Date.now()}`);
-  const [enrollmentId, setEnrollmentId] = useState<string>('');
-  const [isStartingSession, setIsStartingSession] = useState(false);
-  
-  // Simplified AI configuration for enrollment mode
-  const [selectedLLM, setSelectedLLM] = useState('openai/gpt-4o-mini');
-  const [conversationMode, setConversationMode] = useState<'single' | 'multi-model'>('single');
-  
-  console.log('🎭 GenieConversationInterface render', { 
-    isOpen, 
-    activeTab, 
-    currentStep,
-    showAIAssistantConfig,
-    selectedSubmissionMethod
+  const [message, setMessage] = useState('');
+  const [modelSelectionMode, setModelSelectionMode] = useState<'enhanced' | 'cross-category'>('enhanced');
+  const [selectedCrossModels, setSelectedCrossModels] = useState<SelectedModelConfig[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const [singleModel, setSingleModel] = useState<{ provider: string; model: string; category: 'llm' | 'small' | 'vision' | 'mcp' }>({
+    provider: 'openai',
+    model: 'o4-mini-2025-04-16',
+    category: 'llm'
   });
+  const [resetCounter, setResetCounter] = useState(0);
 
-  const enrollmentSteps = [
-    { title: 'Submission Method', section: 'submission_method' },
-    { title: 'Consent Management', section: 'consent' },
-    { title: 'Patient Info', section: 'patient' },
-    { title: 'Provider Info', section: 'provider' },
-    { title: 'Insurance', section: 'insurance' },
-    { title: 'Treatment & Clinical Assessment', section: 'clinical' },
-    { title: 'Submit', section: 'submit' }
-  ];
+  // Page awareness integration
+  const pageAware = usePageAwareEnrollment();
 
-  const submissionMethods = [
-    {
-      id: 'ai_agent',
-      title: 'AI Agent',
-      description: 'Conversational AI-guided enrollment with intelligent form completion',
-      icon: Bot,
-      features: ['Create AI Agent', 'Structured AI', 'NPI Verification', 'Credentialing Agent'],
-      hasSubOptions: true
-    },
-    {
-      id: 'fill_fax',
-      title: 'Download Form Fill & Fax (OCR)',
-      description: 'Download, fill manually, and fax with OCR processing',
-      icon: Scan,
-      features: ['OCR Processing', 'Auto-populate fields', 'Validation checks', 'Digital conversion']
-    },
-    {
-      id: 'online_pdf',
-      title: 'Online PDF Download & Submit',
-      description: 'Digital PDF form completion with signature capture',
-      icon: FileText,
-      features: ['Interactive PDF', 'Digital signatures', 'Progress saving', 'Export options']
-    },
-    {
-      id: 'online_form',
-      title: 'Online Form Without Assistance',
-      description: 'Self-service web-based enrollment form',
-      icon: MousePointer,
-      features: ['Real-time validation', 'Section-based progress', 'Mobile responsive', 'No assistance']
-    }
-  ];
+  // Determine if enrollment toggle should be visible
+  const shouldShowEnrollmentToggle = () => {
+    const pageContext = pageAware.getPageContext();
+    return pageContext.isPageSpecific && pageContext.config?.moduleType === 'patient';
+  };
 
-  const handleNewSession = useCallback(() => {
-    setIsStartingSession(true);
-    // Reset all states
-    setCurrentStep(0);
-    setCompletedSteps([]);
-    setEnrollmentData({});
-    setConversationHistory([]);
-    setSectionsData({});
-    setSelectedSubmissionMethod(null);
-    setShowAIAssistantConfig(false);
-    setShowEnrollmentFlow(false);
-    setSessionId(`enrollment_${Date.now()}`);
-    setEnrollmentId('');
-    
-    setTimeout(() => {
-      setIsStartingSession(false);
-      toast.success('New Session Started', { 
-        description: 'Ready for fresh enrollment conversation'
-      });
-    }, 500);
-  }, []);
+  // Keep user's chosen mode; do not auto-switch based on page context
 
-  const saveToBackend = useCallback(async (sectionId: string, data: any) => {
-    if (!enrollmentId) return;
-    
-    try {
-      console.log('💾 Saving to backend:', sectionId, data);
-      
-      // Save based on section type using the same logic as ComprehensiveEnrollmentForm
-      switch (sectionId) {
-        case 'consent':
-          await supabase.from('enrollment_consent').upsert({
-            enrollment_id: enrollmentId,
-            consent_to_treatment: data.consent_to_treatment || false,
-            hipaa_authorization: data.hipaa_authorization || false,
-            financial_responsibility: data.financial_responsibility || false,
-            communication_consent: data.communication_consent || false,
-            telehealth_consent: data.telehealth_consent || false,
-            marketing_consent: data.marketing_consent || false,
-            consent_date: new Date().toISOString(),
-            patient_signature: data.patient_signature || ''
-          });
-          break;
-          
-        case 'patient':
-          await supabase.from('enrollment_patient_info').upsert({
-            enrollment_id: enrollmentId,
-            first_name: data.first_name || data.firstName || '',
-            last_name: data.last_name || data.lastName || '',
-            middle_name: data.middle_name || data.middleName || '',
-            date_of_birth: data.date_of_birth || data.dateOfBirth || null,
-            ssn: data.ssn || '',
-            gender: data.gender || '',
-            phone: data.phone || data.phoneNumber || '',
-            email: data.email || '',
-            address_line1: data.address_line1 || data.address || '',
-            address_line2: data.address_line2 || '',
-            city: data.city || '',
-            state: data.state || '',
-            zip_code: data.zip_code || data.zipCode || '',
-            emergency_contact_name: data.emergency_contact_name || data.emergencyContactName || '',
-            emergency_contact_phone: data.emergency_contact_phone || data.emergencyContactPhone || '',
-            emergency_contact_relationship: data.emergency_contact_relationship || data.emergencyContactRelationship || '',
-            preferred_language: data.preferred_language || 'English',
-            marital_status: data.marital_status || data.maritalStatus || '',
-            occupation: data.occupation || '',
-            employer: data.employer || ''
-          });
-          break;
-          
-        case 'provider':
-          await supabase.from('enrollment_provider_info').upsert({
-            enrollment_id: enrollmentId,
-            referring_provider_name: data.referring_provider_name || data.providerName || '',
-            referring_provider_npi: data.referring_provider_npi || data.npi || '',
-            referring_provider_phone: data.referring_provider_phone || data.providerPhone || '',
-            primary_care_physician: data.primary_care_physician || data.pcpName || '',
-            pcp_npi: data.pcp_npi || '',
-            pcp_phone: data.pcp_phone || '',
-            treatment_facility: data.treatment_facility || data.facilityName || '',
-            facility_npi: data.facility_npi || '',
-            facility_address: data.facility_address || '',
-            treatment_type: data.treatment_type || '',
-            treatment_start_date: data.treatment_start_date || null,
-            diagnosis_codes: data.diagnosis_codes || [],
-            treatment_plan: data.treatment_plan || {},
-            npi_verification_status: 'pending',
-            credentialing_status: 'pending'
-          });
-          break;
-          
-        case 'insurance':
-          await supabase.from('enrollment_insurance_info').upsert({
-            enrollment_id: enrollmentId,
-            primary_insurance_name: data.primary_insurance_name || data.insuranceName || '',
-            primary_policy_number: data.primary_policy_number || data.policyNumber || '',
-            primary_group_number: data.primary_group_number || data.groupNumber || '',
-            primary_subscriber_name: data.primary_subscriber_name || data.subscriberName || '',
-            primary_subscriber_dob: data.primary_subscriber_dob || null,
-            primary_subscriber_relationship: data.primary_subscriber_relationship || 'self',
-            primary_effective_date: data.primary_effective_date || null,
-            secondary_insurance_name: data.secondary_insurance_name || '',
-            secondary_policy_number: data.secondary_policy_number || '',
-            copay_amount: parseFloat(data.copay_amount || data.copay || '0') || 0,
-            deductible_amount: parseFloat(data.deductible_amount || data.deductible || '0') || 0,
-            prior_authorization_required: data.prior_authorization_required || false
-          });
-          break;
-          
-        case 'clinical':
-          await supabase.from('enrollment_clinical_info').upsert({
-            enrollment_id: enrollmentId,
-            chief_complaint: data.chief_complaint || data.chiefComplaint || '',
-            current_medications: data.current_medications || data.medications || [],
-            medical_history: data.medical_history || data.medicalHistory || [],
-            allergies: data.allergies || [],
-            vital_signs: data.vital_signs || {},
-            clinical_notes: data.clinical_notes || ''
-          });
-          break;
-      }
-      
-      // Update main enrollment progress
-      const progress = Math.round(((currentStep + 1) / enrollmentSteps.length) * 100);
-      await supabase.from('patient_enrollments').upsert({
-        id: enrollmentId,
-        session_id: sessionId,
-        user_id: userId || null,
-        tenant_id: tenantId,
-        current_section: sectionId,
-        progress_percentage: progress,
-        updated_at: new Date().toISOString()
-      });
-      
-      console.log('✅ Successfully saved to backend:', sectionId);
-      
-    } catch (error) {
-      console.error('❌ Failed to save to backend:', error);
-      toast.error('Failed to save data to backend');
-    }
-  }, [enrollmentId, sessionId, userId, tenantId, currentStep, enrollmentSteps.length]);
 
-  const handleDataCapture = useCallback((capturedData: any) => {
-    const currentSection = enrollmentSteps[currentStep]?.section || 'general';
-    
-    console.log('📊 Data captured for section:', currentSection, capturedData);
-    
-    // Update sections data
-    setSectionsData(prev => ({
-      ...prev,
-      [currentSection]: {
-        ...prev[currentSection],
-        ...capturedData
-      }
-    }));
-    
-    // Update enrollment data
-    setEnrollmentData(prev => ({
-      ...prev,
-      ...capturedData
-    }));
-    
-    // Update conversation history
-    setConversationHistory(prev => [...prev, {
-      timestamp: new Date().toISOString(),
-      section: currentSection,
-      data: capturedData
-    }]);
-    
-    // Save to backend (non-blocking)
-    saveToBackend(currentSection, capturedData);
-    
-    // Mark step as completed if it has data
-    if (Object.keys(capturedData).length > 0) {
-      if (!completedSteps.includes(currentStep)) {
-        setCompletedSteps(prev => [...prev, currentStep]);
-      }
-      
-      // Auto-advance to next step after a delay
-      setTimeout(() => {
-        if (currentStep < enrollmentSteps.length - 1) {
-          setCurrentStep(prev => prev + 1);
-          toast.success(`${enrollmentSteps[currentStep].title} completed!`, {
-            description: `Moving to ${enrollmentSteps[currentStep + 1]?.title}`
-          });
-        }
-      }, 2000);
-    }
-    
-    toast.success('Information captured', {
-      description: `Data saved to ${enrollmentSteps[currentStep]?.title} section`
-    });
-  }, [currentStep, enrollmentSteps, completedSteps, saveToBackend]);
+  // Use conversation state management
+  const conv = useConversationState();
+  const conversationState = conv.state;
 
-  // Initialize enrollment session
+  // Initialize Universal AI hooks
+  const { generateResponse } = useUniversalAI();
+
+  const { resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = conv;
+
+  // Debug render and mode changes
   useEffect(() => {
-    if (!enrollmentId && isOpen) {
-      const initEnrollment = async () => {
-        try {
-          const { data, error } = await supabase
-            .from('patient_enrollments')
-            .insert({
-              session_id: sessionId,
-              user_id: userId || null,
-              tenant_id: tenantId,
-              current_section: 'submission_method',
-              progress_percentage: 0
-            })
-            .select()
-            .single();
+    console.log('GenieConversationInterface render', { uiMode: mode, convMode: conversationState.selectedMode });
+  }, [mode, conversationState.selectedMode]);
 
-          if (error) throw error;
-          setEnrollmentId(data.id);
-          console.log('✅ Enrollment session initialized:', data.id);
-        } catch (error) {
-          console.error('❌ Failed to initialize enrollment session:', error);
-        }
-      };
-      
-      initEnrollment();
+  // Auto-reset conversation when popup opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔄 Genie popup opened - auto-resetting conversation');
+      handleResetConversation();
     }
-  }, [enrollmentId, sessionId, userId, tenantId, isOpen]);
+  }, [isOpen]);
 
-  // Show AI Assistant Configuration for submission method selection
-  if (currentStep === 0 && !selectedSubmissionMethod && activeTab === 'enrollment') {
-    return (
-      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 ${!isOpen ? 'hidden' : ''}`}>
-        <div className="bg-background rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] mx-4 flex flex-col">
-          <div className="flex-shrink-0 border-b bg-background/80 backdrop-blur-sm">
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <Settings className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-semibold">AI Assistant Configuration</h2>
-                  <p className="text-xs text-muted-foreground">Choose your enrollment submission method</p>
-                </div>
-              </div>
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+  const handleResetConversation = () => {
+    console.log('🔄 Starting new session - resetting all states');
+    resetConversation();
+    setMessage('');
+    setResetCounter((c) => c + 1);
+    setIsLoading(false);
+    
+    // Show confirmation
+    toast({
+      title: "New Session Started",
+      description: "Ready for a fresh conversation"
+    });
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    
+    console.log('🚀 Sending message:', message);
+    
+    if (!conversationState.isActive) {
+      console.log('🔥 Starting conversation');
+      startConversation();
+    }
+    
+    const userMessage = { 
+      role: 'user' as const, 
+      content: message,
+      timestamp: new Date().toISOString()
+    };
+    
+    addMessage(userMessage);
+    setMessage('');
+    setIsLoading(true);
+
+    try {
+      console.log('🤖 Processing with mode:', conversationState.selectedMode);
+      
+      if (conversationState.selectedMode === 'single') {
+        // Single model response
+        console.log('📡 Calling AI with:', { provider: singleModel.provider, model: singleModel.model });
+        
+        const systemPrompt = mode === 'enrollment' 
+          ? 'You are an AI enrollment assistant. Help users through patient enrollment by asking relevant questions and guiding them through the process. Extract structured data from their responses and provide helpful guidance.'
+          : 'You are a helpful AI assistant.';
           
-          <div className="flex-1 p-6 space-y-6 overflow-y-auto">
-            <div className="text-center space-y-2">
-              <h3 className="text-xl font-bold">Patient Enrollment</h3>
-              <p className="text-muted-foreground">
-                Choose how you'd like to complete the enrollment process
-              </p>
+        const resp = await generateResponse({
+          provider: singleModel.provider as any,
+          model: singleModel.model,
+          prompt: message,
+          systemPrompt,
+          temperature: 0.7,
+          maxTokens: 1000
+        });
+        
+        console.log('✅ AI Response received:', resp);
+        
+        addMessage({ 
+          role: 'assistant', 
+          content: resp?.content || 'I apologize, but I didn\'t receive a proper response. Please try again.',
+          timestamp: new Date().toISOString(),
+          provider: singleModel.provider,
+          model: singleModel.model
+        });
+      } else if (conversationState.selectedMode === 'multi') {
+        // Multi-model responses
+        const models = selectedCrossModels.length > 0 ? selectedCrossModels : [
+          { provider: 'openai', model: 'gpt-4.1-2025-04-14', category: 'llm', name: 'OpenAI GPT', role: 'primary' as const, weight: 1 },
+          { provider: 'claude', model: 'claude-sonnet-4-20250514', category: 'llm', name: 'Claude Sonnet', role: 'secondary' as const, weight: 1 }
+        ];
+
+        console.log('🔀 Multi-model request with:', models);
+
+        const systemPrompt = mode === 'enrollment' 
+          ? 'You are an AI enrollment assistant. Help users through patient enrollment by asking relevant questions and guiding them through the process.'
+          : 'You are a helpful AI assistant.';
+
+        const results = await Promise.allSettled(models.map(async (m) => {
+          const r = await generateResponse({
+            provider: m.provider as any,
+            model: m.model,
+            prompt: message,
+            systemPrompt,
+            temperature: 0.7,
+            maxTokens: 1000
+          });
+          return { r, m };
+        }));
+
+        results.forEach((res, index) => {
+          if (res.status === 'fulfilled' && res.value.r) {
+            addMessage({
+              role: 'assistant',
+              content: res.value.r.content || 'No response received',
+              timestamp: new Date().toISOString(),
+              provider: res.value.m.provider,
+              model: res.value.m.model
+            });
+          } else {
+            console.error(`Model ${models[index].name} failed:`, res.status === 'rejected' ? res.reason : 'Unknown error');
+          }
+        });
+      }
+    } catch (error) {
+      console.error('❌ Error generating response:', error);
+      toast({
+        title: "Message Failed",
+        description: "Unable to send message. Please check your connection and try again.",
+        variant: "destructive"
+      });
+      
+      addMessage({
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error while processing your request. Please try again or contact support if the issue persists.',
+        timestamp: new Date().toISOString(),
+        error: true
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleStartChat = () => {
+    startConversation();
+  };
+
+  const handleMCPToolToggle = (toolId: string) => {
+    const current = conversationState.selectedMCPTools || [];
+    const updated = current.includes(toolId)
+      ? current.filter((id) => id !== toolId)
+      : [...current, toolId];
+    updateConversationConfig({ selectedMCPTools: updated });
+  };
+
+  const renderModelSelectionContent = () => {
+    switch (conversationState.selectedMode) {
+      case 'single':
+        return (
+          <div className="mt-4 space-y-4">
+            <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Selection Mode:</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={modelSelectionMode === 'enhanced' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('enhanced')}
+                >
+                  Enhanced
+                </Button>
+                <Button
+                  variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('cross-category')}
+                >
+                  Cross-Category
+                </Button>
+              </div>
             </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {submissionMethods.map((method) => {
-                const IconComponent = method.icon;
-                return (
-                  <Card 
-                    key={method.id}
-                    className="cursor-pointer transition-all duration-200 hover:shadow-lg hover:border-primary/50"
-                    onClick={() => {
-                      setSelectedSubmissionMethod(method.id);
-                      if (method.id === 'ai_agent') {
-                        setShowAIAssistantConfig(true);
-                      } else {
-                        // For other methods, proceed directly to next step
-                        setCurrentStep(1);
-                        toast.success(`Selected: ${method.title}`);
-                      }
-                    }}
-                  >
-                    <CardHeader className="pb-4">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-primary/10">
-                          <IconComponent className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                          <CardTitle className="text-base">{method.title}</CardTitle>
-                          <p className="text-xs text-muted-foreground">{method.description}</p>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="flex flex-wrap gap-1">
-                        {method.features.map((feature, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {feature}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                );
-              })}
-            </div>
-            
-            {/* AI Agent Sub-options */}
-            {selectedSubmissionMethod === 'ai_agent' && showAIAssistantConfig && (
-              <Card className="border-primary/20">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Bot className="h-5 w-5" />
-                    AI Agent Configuration
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Configure your AI-powered enrollment workflow
-                  </p>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Card 
-                      className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => {
-                        setShowEnrollmentFlow(true);
-                        setShowAIAssistantConfig(false);
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Brain className="h-5 w-5 text-green-600" />
-                        <div>
-                          <h4 className="font-medium">Create AI Agent</h4>
-                          <p className="text-xs text-muted-foreground">Build custom workflow templates</p>
-                        </div>
-                      </div>
-                    </Card>
-                    
-                    <Card 
-                      className="p-4 cursor-pointer hover:bg-muted/50 transition-colors"
-                      onClick={() => {
-                        setCurrentStep(1);
-                        setShowAIAssistantConfig(false);
-                        toast.success('Starting Structured AI enrollment');
-                      }}
-                    >
-                      <div className="flex items-center gap-3">
-                        <Sparkles className="h-5 w-5 text-blue-600" />
-                        <div>
-                          <h4 className="font-medium">Structured AI</h4>
-                          <p className="text-xs text-muted-foreground">Pre-configured enrollment flow</p>
-                        </div>
-                      </div>
-                    </Card>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-                    <Card className="p-3">
-                      <div className="flex items-center gap-2">
-                        <Shield className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium">NPI Verification</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">Automated provider verification</p>
-                    </Card>
-                    
-                    <Card className="p-3">
-                      <div className="flex items-center gap-2">
-                        <Users className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium">Credentialing Agent</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">AI-powered credentialing</p>
-                    </Card>
-                    
-                    <Card className="p-3">
-                      <div className="flex items-center gap-2">
-                        <Monitor className="h-4 w-4 text-primary" />
-                        <span className="text-sm font-medium">Deployment Ready</span>
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-1">Environment & channel setup</p>
-                    </Card>
-                  </div>
-                </CardContent>
-              </Card>
+
+            {modelSelectionMode === 'enhanced' && (
+              <EnhancedModelSelector
+                onModelSelect={(provider, model, category) =>
+                  setSingleModel({ provider, model, category: category as any })
+                }
+                selectedModel={singleModel}
+              />
+            )}
+
+            {modelSelectionMode === 'cross-category' && (
+              <CrossCategoryModelSelector 
+                selectedModels={selectedCrossModels}
+                onModelsSelect={setSelectedCrossModels}
+                mode={conversationState.selectedMode}
+              />
             )}
           </div>
-        </div>
-      </div>
-    );
-  }
+        );
 
-  // Show PatientEnrollmentFlow for Create AI Agent
-  if (showEnrollmentFlow) {
-    return (
-      <div className={`fixed inset-0 bg-black/50 flex items-center justify-center z-50 ${!isOpen ? 'hidden' : ''}`}>
-        <div className="bg-background rounded-lg shadow-2xl max-w-7xl w-full max-h-[95vh] mx-4 overflow-hidden">
-          <PatientEnrollmentFlow 
-            onClose={() => {
-              setShowEnrollmentFlow(false);
-              setSelectedSubmissionMethod(null);
-              setShowAIAssistantConfig(false);
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-background rounded-lg shadow-2xl max-w-6xl w-full max-h-[90vh] mx-4 flex flex-col">
-        {/* Header */}
-        <div className="flex-shrink-0 border-b bg-background/80 backdrop-blur-sm">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-3">
+      case 'multi':
+        return (
+          <div className="mt-4 space-y-4">
+            <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Selection Mode:</span>
               <div className="flex items-center gap-2">
-                <div className="p-2 bg-primary/10 rounded-lg">
-                  <MessageSquare className="h-5 w-5 text-primary" />
-                </div>
-                <div>
-                  <h2 className="font-semibold">Genie</h2>
-                  <p className="text-xs text-muted-foreground">AI Technical Navigator</p>
-                </div>
+                <Button
+                  variant={modelSelectionMode === 'enhanced' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('enhanced')}
+                >
+                  Enhanced
+                </Button>
+                <Button
+                  variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('cross-category')}
+                >
+                  Cross-Category
+                </Button>
               </div>
             </div>
-            
-            <div className="flex items-center gap-2">
-              <Tabs value={activeTab} onValueChange={(tab) => setActiveTab(tab as 'general' | 'enrollment')}>
-                <TabsList className="grid w-full grid-cols-2 h-8">
-                  <TabsTrigger value="general" className="text-xs">General</TabsTrigger>
-                  <TabsTrigger value="enrollment" className="text-xs">Enrollment</TabsTrigger>
-                </TabsList>
-              </Tabs>
-              
-              <Button 
-                variant="ghost" 
-                size="sm"
-                onClick={handleNewSession}
-                disabled={isStartingSession}
-                className="text-xs"
-              >
-                {isStartingSession ? (
-                  <>
-                    <RefreshCw className="h-3 w-3 mr-1 animate-spin" />
-                    Starting...
-                  </>
-                ) : (
-                  <>
-                    <Plus className="h-3 w-3 mr-1" />
-                    New Session
-                  </>
-                )}
-              </Button>
-              
-              <Button variant="ghost" size="sm" onClick={onClose}>
-                <X className="h-4 w-4" />
-              </Button>
+
+            {modelSelectionMode === 'cross-category' && (
+              <CrossCategoryModelSelector 
+                selectedModels={selectedCrossModels}
+                onModelsSelect={setSelectedCrossModels}
+                mode={conversationState.selectedMode}
+                maxSelections={6}
+              />
+            )}
+          </div>
+        );
+
+      default:
+        return (
+          <div className="mt-4 space-y-4">
+            <div className="flex items-center gap-4 p-3 bg-green-50 rounded-lg border border-green-200">
+              <span className="text-sm font-medium text-green-700">System Mode Selection:</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={modelSelectionMode === 'enhanced' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('enhanced')}
+                >
+                  Enhanced
+                </Button>
+                <Button
+                  variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('cross-category')}
+                >
+                  Cross-Category
+                </Button>
+              </div>
             </div>
+          </div>
+        );
+    }
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent className={`${isExpanded ? 'max-w-[95vw] h-[95vh]' : 'max-w-3xl sm:max-w-5xl md:max-w-6xl h-[85vh] sm:h-[90vh]'} p-0 overflow-hidden transition-all duration-300`}>
+        {/* Header with Page-Aware Toggle */}
+        <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-teal-50 to-blue-50">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 p-0.5">
+              <img 
+                src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
+                alt="Genie" 
+                className="w-full h-full rounded-full object-cover"
+              />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-gray-900">Genie</h2>
+              <p className="text-sm text-gray-600">I am your Technical Navigator</p>
+              {conversationState.isActive && (
+                <Badge variant="secondary" className="mt-1 text-xs">
+                  {conversationState.conversationId}
+                </Badge>
+              )}
+            </div>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            {/* Mode Toggle - Only show on patient enrollment pages */}
+            {shouldShowEnrollmentToggle() && (
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <Button
+                  variant={mode === 'general' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    console.log('🟢 Mode toggle clicked: general');
+                    try { toast({ title: 'Genie mode', description: 'Switched to General' }); } catch {}
+                    onModeChange?.('general');
+                  }}
+                  className="px-3 py-1.5 h-8 text-xs font-medium"
+                >
+                  General
+                </Button>
+                <Button
+                  variant={mode === 'enrollment' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => {
+                    console.log('🟠 Mode toggle clicked: enrollment');
+                    try { toast({ title: 'Genie mode', description: 'Switched to Enrollment' }); } catch {}
+                    onModeChange?.('enrollment');
+                  }}
+                  className="px-3 py-1.5 h-8 text-xs font-medium"
+                >
+                  Enrollment
+                </Button>
+              </div>
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetConversation}
+              className="flex items-center gap-1"
+              title="Start new conversation"
+            >
+              <RefreshCw className="h-3 w-3" />
+              New Session
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setIsExpanded(!isExpanded)}
+              title={isExpanded ? 'Minimize' : 'Expand'}
+            >
+              {isExpanded ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+            >
+              <X className="h-5 w-5" />
+            </Button>
           </div>
         </div>
 
-        {/* Content */}
-        <div className="flex-1 flex overflow-hidden">
-          <Tabs value={activeTab} className="flex-1 flex flex-col">
-            <TabsContent value="general" className="flex-1 p-4">
-              <Card className="h-full">
-                <CardContent className="p-4">
-                  <div className="text-center py-8">
-                    <MessageSquare className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                    <h3 className="text-lg font-medium mb-2">General AI Assistant</h3>
-                    <p className="text-muted-foreground">
-                      General purpose AI conversation interface
-                    </p>
+        <ScrollArea className="flex-1 min-h-0">
+          {/* Enhanced Context Banner */}
+          <div className="p-4 border-b border-border/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                <span className="font-medium">AI Assistant</span>
+                {mode === 'enrollment' && (
+                  <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                    🎯 Enrollment Mode
+                  </Badge>
+                )}
+              </div>
+              <div className="flex items-center gap-2">
+                {mode === 'enrollment' && (
+                  <>
+                    <Badge variant="outline" className="text-xs">Real-time DB</Badge>
+                    <Badge variant="outline" className="text-xs">GenAI Guided</Badge>
+                    <Badge variant="outline" className="text-xs">RAG Enhanced</Badge>
+                  </>
+                )}
+              </div>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              {mode === 'enrollment' 
+                ? 'AI-guided enrollment with structured workflow sequence: Consent → Patient → Provider & Treatment → NPI/Credentialing → Insurance → Clinical & Treatment → Submit'
+                : 'General AI assistance with comprehensive knowledge base and multi-model support'
+              }
+            </p>
+          </div>
+
+          {/* Main Content Based on Mode */}
+          {mode === 'enrollment' ? (
+            <div className="p-6">
+              {/* Simple LLM Provider Selection for Enrollment */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    <CardTitle>AI Configuration</CardTitle>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Select AI provider and conversation mode</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Conversation Mode</Label>
+                      <div className="flex gap-2 mt-2">
+                        {(['single','multi'] as const).map((m) => (
+                          <Button
+                            key={m}
+                            variant={conversationState.selectedMode === m ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => switchMode(m)}
+                            className="flex-1"
+                          >
+                            {m === 'single' ? 'Single AI' : 'Multi AI'}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium">AI Provider</Label>
+                      {conversationState.selectedMode === 'single' && (
+                        <Select 
+                          value={singleModel.provider} 
+                          onValueChange={(provider) => setSingleModel(prev => ({ 
+                            ...prev, 
+                            provider,
+                            model: provider === 'openai' ? 'gpt-4.1-2025-04-14' : 
+                                   provider === 'claude' ? 'claude-sonnet-4-20250514' : 
+                                   'gemini-1.5-pro'
+                          }))}
+                        >
+                          <SelectTrigger className="mt-2">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="openai">OpenAI GPT</SelectItem>
+                            <SelectItem value="claude">Claude</SelectItem>
+                            <SelectItem value="gemini">Google Gemini</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {conversationState.selectedMode === 'multi' && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          Multiple AI providers will respond
+                        </div>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
-            </TabsContent>
 
-            <TabsContent value="enrollment" className="flex-1 flex flex-col overflow-hidden">
-              {/* Enrollment Progress */}
-              <div className="flex-shrink-0 p-4 border-b">
-                <div className="flex items-center justify-between mb-3">
+              {/* Enhanced Patient Enrollment Header */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
-                    <CheckCircle className="h-4 w-4 text-primary" />
-                    <span className="text-sm font-medium">Enrollment Progress</span>
+                    <User className="h-6 w-6 text-primary" />
+                    <h2 className="text-2xl font-semibold">Enhanced Patient Enrollment</h2>
                   </div>
-                  <Badge variant="outline">
-                    {completedSteps.length} of {enrollmentSteps.length} completed
-                  </Badge>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Bot className="h-3 w-3" />
+                      AI-Powered
+                    </Badge>
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Database className="h-3 w-3" />
+                      Data Captured
+                    </Badge>
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Monitor className="h-3 w-3" />
+                      Audit Ready
+                    </Badge>
+                  </div>
                 </div>
-                <EnrollmentJourneySteps
-                  currentStep={currentStep}
-                  onStepClick={(step) => {
-                    setCurrentStep(step);
-                    toast.info(`Switched to ${enrollmentSteps[step]?.title}`);
-                  }}
-                  completedSteps={completedSteps}
-                />
               </div>
 
-              {/* Conversation Area */}
-              <div className="flex-1 flex overflow-hidden">
-                {/* Chat */}
-                <div className="flex-1 flex flex-col">
-                  <div className="p-4 border-b">
-                    <h3 className="font-medium flex items-center gap-2">
-                      <MessageSquare className="h-4 w-4" />
-                      AI Enrollment Assistant
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Currently working on: <strong>{enrollmentSteps[currentStep]?.title}</strong>
-                    </p>
-                  </div>
-                  
-                  <div className="flex-1 overflow-hidden">
-                    <ConversationManager
-                      agentId="enrollment-agent"
-                      enrollmentContext={{
-                        process_type: 'patient_enrollment',
-                        current_section: enrollmentSteps[currentStep]?.section || 'general',
-                        step: currentStep,
-                        total_steps: enrollmentSteps.length,
-                        capture_fields: [
-                          'personal_information',
-                          'medical_history', 
-                          'insurance_details',
-                          'contact_information',
-                          'emergency_contacts',
-                          'preferences'
-                        ]
-                      }}
-                      onDataCapture={handleDataCapture}
-                    />
-                  </div>
+              {/* Current Step Content */}
+              {/* Enrollment Interface */}
+              <div className="mt-6">
+                <EnhancedEnrollmentInterface key={resetCounter} isInModal showSectionSummary={false} />
+              </div>
+
+              {/* Audit Notice */}
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-yellow-700">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Audit mode enabled - All interactions are being logged for compliance. Label Studio is capturing structured data from your responses.</span>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6">
+              {/* General AI Chat Interface */}
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                  How can I help you today?
+                </h3>
+                <p className="text-gray-600 mb-4">Choose how you'd like me to assist you:</p>
+              </div>
+
+              {/* Mode Selection */}
+              <div className="flex flex-wrap gap-3 justify-center mb-4">
+                {(['system','single','multi'] as const).map((m) => (
+                  <Button
+                    key={m}
+                    variant={conversationState.selectedMode === m ? 'default' : 'outline'}
+                    size="lg"
+                    onClick={() => switchMode(m)}
+                    className={`flex items-center gap-2 px-6 py-3 h-auto ${
+                      conversationState.selectedMode === m 
+                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    <div className="text-left">
+                      <div className="font-medium">{m.toUpperCase()}</div>
+                      <div className="text-xs opacity-75">{m === 'system' ? 'System guidance' : m === 'single' ? 'Single model' : 'Multi-model'}</div>
+                    </div>
+                  </Button>
+                ))}
+              </div>
+
+              {/* Model Selection Interface */}
+              {renderModelSelectionContent()}
+
+              {/* MCP Tools Selection */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+                <h4 className="text-sm font-medium mb-3 text-gray-700">MCP Tools & Capabilities</h4>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {mcpTools.map((tool) => (
+                    <Card 
+                      key={tool.id} 
+                      className={`cursor-pointer transition-all ${
+                        conversationState.selectedMCPTools.includes(tool.id)
+                          ? 'ring-2 ring-blue-500 bg-blue-50' 
+                          : 'hover:shadow-md'
+                      }`}
+                      onClick={() => handleMCPToolToggle(tool.id)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <h5 className="font-medium text-sm text-gray-900">{tool.name}</h5>
+                          <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">
+                            {tool.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">{tool.description}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {tool.capabilities.slice(0, 2).map((cap, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {cap}
+                            </Badge>
+                          ))}
+                          {tool.capabilities.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{tool.capabilities.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
 
-                {/* Section Summary */}
-                <div className="w-80 border-l flex flex-col">
-                  <div className="p-4 border-b">
-                    <h3 className="font-medium flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      {enrollmentSteps[currentStep]?.title}
-                    </h3>
-                    <p className="text-xs text-muted-foreground">
-                      Section {currentStep + 1} of {enrollmentSteps.length}
+                {conversationState.selectedMCPTools.length > 0 && (
+                  <div className="mt-3 p-3 bg-white rounded border border-blue-200">
+                    <p className="text-xs font-medium text-blue-700 mb-1">
+                      Active MCP Tools ({conversationState.selectedMCPTools.length}):
                     </p>
+                    <div className="flex flex-wrap gap-1">
+                      {conversationState.selectedMCPTools.map((toolId) => {
+                        const tool = mcpTools.find(t => t.id === toolId);
+                        return (
+                          <Badge key={toolId} variant="secondary" className="text-xs">
+                            {tool?.name}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Start Chat Button */}
+              {!conversationState.isActive && (
+                <div className="mt-6 flex justify-center">
+                  <Button 
+                    size="lg" 
+                    onClick={handleStartChat}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-lg font-medium"
+                  >
+                    Start Chat
+                  </Button>
+                </div>
+              )}
+
+              {/* Conversation Area */}
+              {conversationState.isActive && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Conversation</h3>
+                    {conversationState.selectedMode === 'multi' && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 
+                            ? `${selectedCrossModels.length} Models` 
+                            : 'Split View'}
+                        </Badge>
+                        <Button size="sm" variant="ghost" onClick={handleResetConversation}>
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Reset
+                        </Button>
+                      </div>
+                    )}
                   </div>
                   
-                  <div className="flex-1 p-4 overflow-y-auto">
-                    {sectionsData[enrollmentSteps[currentStep]?.section] ? (
-                      <div className="space-y-3">
-                        <Badge 
-                          variant={completedSteps.includes(currentStep) ? "default" : "outline"}
-                          className="w-full justify-center"
-                        >
-                          {completedSteps.includes(currentStep) ? "Complete" : "In Progress"}
-                        </Badge>
-                        
-                        <div className="space-y-2">
-                          <h4 className="text-sm font-medium">Captured Information:</h4>
-                          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-                            {Object.entries(sectionsData[enrollmentSteps[currentStep]?.section] || {}).map(([key, value]) => (
-                              <div key={key} className="flex justify-between items-center py-1">
-                                <span className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
-                                <span className="text-xs font-medium">{typeof value === 'string' ? value : JSON.stringify(value)}</span>
-                              </div>
-                            ))}
-                          </div>
+                  <ScrollArea className="h-96 w-full border rounded-lg p-4 bg-gray-50">
+                    {conversationState.messages.length === 0 ? (
+                      <div className="text-center text-gray-500 mt-20">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 p-1 mx-auto mb-4">
+                          <img 
+                            src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
+                            alt="Genie" 
+                            className="w-full h-full rounded-full object-cover"
+                          />
                         </div>
-
-                        {currentStep < enrollmentSteps.length - 1 && (
-                          <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-                            <div className="flex items-center gap-2">
-                              <ArrowRight className="h-4 w-4 text-blue-600" />
-                              <span className="text-sm font-medium text-blue-900">
-                                Next: {enrollmentSteps[currentStep + 1]?.title}
-                              </span>
-                            </div>
+                        <p className="text-lg font-medium text-gray-700 mb-2">Hello! I'm Genie, your Technical Navigator</p>
+                        <p className="text-sm text-gray-500">
+                          Send me a message and I'll provide you with comprehensive, context-aware responses.
+                        </p>
+                        {conversationState.selectedMode === 'multi' && modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 && (
+                          <div className="mt-3 flex flex-wrap justify-center gap-1">
+                            {selectedCrossModels.slice(0, 3).map((model, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {model.name || `${model.provider} ${model.model}`}
+                              </Badge>
+                            ))}
+                            {selectedCrossModels.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{selectedCrossModels.length - 3} more
+                              </Badge>
+                            )}
                           </div>
                         )}
                       </div>
                     ) : (
-                      <div className="text-center py-8">
-                        <MessageSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
-                        <p className="text-sm text-muted-foreground">
-                          Start the conversation to capture information for this section
-                        </p>
+                      <div className="space-y-1">
+                        {conversationState.messages.map((msg, index) => (
+                          <MessageComponent
+                            key={msg.id}
+                            message={msg}
+                            isLast={index === conversationState.messages.length - 1}
+                          />
+                        ))}
+                        {isLoading && <TypingIndicator />}
                       </div>
                     )}
+                  </ScrollArea>
+                </div>
+              )}
+
+              {/* Message Input */}
+              {conversationState.isActive && (
+                <div className="mt-6">
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="Type your message..."
+                      className="flex-1 min-h-[100px] resize-none"
+                    />
+                    <Button 
+                      size="icon" 
+                      onClick={handleSendMessage}
+                      className="self-end bg-blue-500 hover:bg-blue-600 text-white"
+                      disabled={!message.trim() || isLoading}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              </div>
-            </TabsContent>
-          </Tabs>
-        </div>
-      </div>
-    </div>
+              )}
+            </div>
+          )}
+        </ScrollArea>
+      </DialogContent>
+    </Dialog>
   );
 };
