@@ -317,7 +317,7 @@ export const CrossCategoryModelSelector: React.FC<CrossCategoryModelSelectorProp
                   <div key={modelKey} className="flex items-center justify-between p-2 bg-background rounded border">
                     <div className="flex items-center gap-2">
                       <Icon className="h-4 w-4 text-primary" />
-                      <span className="font-medium text-sm">{model.name}</span>
+                      <span className="font-medium text-sm">{model.name || model.model || 'Unknown Model'}</span>
                       <Badge variant="outline" className="text-xs">
                         {model.category.toUpperCase()}
                       </Badge>
