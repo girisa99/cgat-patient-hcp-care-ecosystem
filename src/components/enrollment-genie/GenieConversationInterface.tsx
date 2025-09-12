@@ -150,10 +150,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         
         addMessage({ 
           role: 'assistant', 
-          content: resp?.content || '',
+          content: resp?.content || 'No response received',
           timestamp: new Date().toISOString(),
-          provider: resp?.provider,
-          model: resp?.model
+          provider: singleModel.provider,
+          model: singleModel.model
         });
       } else if (conversationState.selectedMode === 'multi') {
         // Multi-model responses
@@ -177,10 +177,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           if (res.status === 'fulfilled' && res.value.r) {
             addMessage({
               role: 'assistant',
-              content: res.value.r.content,
+              content: res.value.r.content || 'No response received',
               timestamp: new Date().toISOString(),
-              provider: res.value.r.provider,
-              model: res.value.r.model
+              provider: res.value.m.provider,
+              model: res.value.m.model
             });
           }
         });
@@ -245,8 +245,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
             {modelSelectionMode === 'cross-category' && (
               <CrossCategoryModelSelector 
-                onModelsSelect={setSelectedCrossModels}
                 selectedModels={selectedCrossModels}
+                onModelsSelect={setSelectedCrossModels}
                 mode={conversationState.selectedMode}
               />
             )}
@@ -278,8 +278,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
             {modelSelectionMode === 'cross-category' && (
               <CrossCategoryModelSelector 
-                onModelsSelect={setSelectedCrossModels}
                 selectedModels={selectedCrossModels}
+                onModelsSelect={setSelectedCrossModels}
                 mode={conversationState.selectedMode}
                 maxSelections={6}
               />
