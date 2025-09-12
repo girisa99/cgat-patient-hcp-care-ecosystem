@@ -484,7 +484,7 @@ export const AgentCanvas = () => {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {aiModels.map((model) => {
+              {mockAIModels.map((model) => {
                 const isSelected = formData.selectedModels.includes(model.id);
                 const IconComponent = model.icon;
                 
@@ -522,7 +522,7 @@ export const AgentCanvas = () => {
                 <Label>Selected Models ({formData.selectedModels.length})</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {formData.selectedModels.map((modelId) => {
-                    const model = aiModels.find(m => m.id === modelId);
+                    const model = mockAIModels.find(m => m.id === modelId);
                     return (
                       <Badge key={modelId} variant="default" className="gap-1">
                         {model?.name}

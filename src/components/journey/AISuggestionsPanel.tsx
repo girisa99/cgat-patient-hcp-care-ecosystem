@@ -67,12 +67,9 @@ const mockAIModels: AIModel[] = [
     id: 'gpt-4', 
     name: 'GPT-4.1 (OpenAI)', 
     provider: 'openai',
-    type: 'large',
+    model: 'gpt-4.1-2025-04-14',
+    icon: <Sparkles className="w-4 h-4" />,
     description: 'Powerful reasoning and complex tasks',
-    capabilities: ['reasoning', 'coding', 'analysis'],
-    context: 128000,
-    cost: 0.03,
-    speed: 'medium',
     bestFor: ['complex analysis', 'coding'],
     pricing: '$0.03/1K tokens'
   }
@@ -184,7 +181,7 @@ export const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({
         <div className="space-y-3">
           <h4 className="font-medium text-sm">Select AI Model for Suggestions</h4>
           <div className="grid grid-cols-1 gap-2">
-            {aiModels.map(model => (
+            {mockAIModels.map(model => (
               <Button
                 key={model.id}
                 variant={selectedModel?.id === model.id ? "default" : "outline"}

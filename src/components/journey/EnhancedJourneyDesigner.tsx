@@ -61,7 +61,7 @@ interface EnhancedJourneyDesignerProps {
 // Use useUniversalAI() hook to get available providers and models
 
 const mockAIModels: AIModel[] = [
-  { id: 'label-studio', name: 'Label Studio', type: 'label-studio', icon: <Tags className="w-4 h-4" /> },
+  // AI Models are now managed by the universal AI system via useUniversalAI() hook
 ];
 
 export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = ({

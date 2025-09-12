@@ -750,7 +750,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
                   setSelectedNode(null);
                 }}
                 availableConnectors={availableConnectors}
-                aiModels={aiModels}
+                aiModels={[]} // AI models now managed by useUniversalAI()
               />
             </div>
           )}
