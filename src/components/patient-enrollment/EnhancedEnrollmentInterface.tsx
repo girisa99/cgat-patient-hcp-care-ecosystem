@@ -26,7 +26,7 @@ interface EnhancedEnrollmentInterfaceProps {
 export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfaceProps> = ({
   onSubmit
 }) => {
-  const [activeTab, setActiveTab] = useState<'conversation' | 'form'>('conversation');
+  const [activeTab, setActiveTab] = useState<'conversation' | 'form'>('form');
   const [enrollmentData, setEnrollmentData] = useState<any>({});
   const [conversationHistory, setConversationHistory] = useState<any[]>([]);
   const [voiceData, setVoiceData] = useState<any>({});
