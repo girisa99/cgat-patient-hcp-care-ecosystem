@@ -17,7 +17,8 @@ export interface UseUniversalAIOptions {
 }
 
 export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
-  const { defaultProvider = 'openai', autoLoadProviders = true } = options;
+  // Disable provider probing by default to avoid noisy network errors
+  const { defaultProvider = 'openai', autoLoadProviders = false } = options;
   const { showError, showSuccess } = useMasterToast();
 
   // Enhanced categorized AI models with healthcare/biotech specialized models
@@ -80,28 +81,11 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     availableProviders: defaultProviders
   });
 
-  // Load available providers - now uses default providers with real models
+  // Load available providers safely (no edge calls by default)
   const loadAvailableProviders = useCallback(async () => {
     try {
-      // Check which providers are actually available by testing edge function access
-      const testResults = await Promise.allSettled(
-        defaultProviders.map(async (provider) => {
-          try {
-            const { data } = await supabase.functions.invoke('ai-universal-processor', {
-              body: { provider: provider.id, model: provider.models[0], prompt: 'test', action: 'generate' }
-            });
-            return data ? provider : null;
-          } catch {
-            return null;
-          }
-        })
-      );
-      
-      const available = testResults
-        .map(result => result.status === 'fulfilled' ? result.value : null)
-        .filter(Boolean) as AIProvider[];
-      
-      setState(prev => ({ ...prev, availableProviders: available.length > 0 ? available : defaultProviders }));
+      // Optimistic: expose defaults without probing to avoid repeated fetch failures
+      setState(prev => ({ ...prev, availableProviders: defaultProviders }));
     } catch (error) {
       console.error('Failed to load available providers:', error);
       setState(prev => ({ ...prev, availableProviders: defaultProviders }));
@@ -119,6 +103,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
           model: request.model,
           prompt: request.prompt,
           systemPrompt: request.systemPrompt,
+          // Note: Let the Edge Function map parameters per-model to avoid API param mismatches
           temperature: request.temperature,
           maxTokens: request.maxTokens,
           context: request.context,
@@ -138,10 +123,13 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
 
       setState(prev => ({ ...prev, response, isLoading: false }));
       return response;
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'AI generation failed';
-      setState(prev => ({ ...prev, error: errorMessage, isLoading: false }));
-      showError(errorMessage);
+    } catch (error: any) {
+      const raw = error?.message || String(error);
+      const friendly = raw.includes('Failed to fetch')
+        ? 'AI service is not reachable. Please ensure the Supabase Edge Function "ai-universal-processor" is deployed and API keys are configured.'
+        : (error instanceof Error ? error.message : 'AI generation failed');
+      setState(prev => ({ ...prev, error: friendly, isLoading: false }));
+      showError('AI request failed', friendly);
       return null;
     }
   }, [showError]);

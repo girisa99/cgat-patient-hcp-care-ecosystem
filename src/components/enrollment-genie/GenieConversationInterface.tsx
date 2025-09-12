@@ -33,7 +33,7 @@ import {
   RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { toast } from '@/hooks/use-toast';
+import { useMasterToast } from '@/hooks/useMasterToast';
 
 // Core AI and conversation hooks
 import { useUniversalAI } from '@/hooks/useUniversalAI';
@@ -89,6 +89,18 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { state, addMessage, updateConversationConfig, switchMode, resetConversation } = useConversationState();
   const { listProjects } = useLabelStudio();
   const { currentConfig, saveConfiguration, currentSession, updateSession, createNewSession } = useGenieState();
+  const { showError, showSuccess } = useMasterToast();
+
+  // Load any locally saved model selection
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('genie_selected_models');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed)) setSelectedModels(parsed);
+      }
+    } catch {}
+  }, []);
 
   // Auto-detect medical context
   useEffect(() => {
@@ -284,12 +296,20 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           });
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error generating response:', error);
-      toast({ 
-        title: 'Error', 
-        description: `Failed to generate response: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        variant: 'destructive'
+      const raw = error?.message || String(error);
+      const friendly = raw.includes('Failed to fetch')
+        ? 'AI service is not reachable. Please check Edge Functions configuration.'
+        : (error instanceof Error ? error.message : 'Unknown error');
+      showError('Failed to generate response', friendly);
+      // Also add an assistant message so the chat shows feedback
+      addMessage({
+        role: 'assistant',
+        content: `Unable to generate a response: ${friendly}`,
+        timestamp: new Date().toISOString(),
+        provider: selectedModels[0]?.provider as any,
+        model: selectedModels[0]?.model
       });
     } finally {
       setIsLoading(false);
@@ -334,6 +354,9 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <p className="text-xs text-muted-foreground font-medium">I am your technology navigator</p>
                 <p className="text-xs text-muted-foreground">
                   {mode === 'multi' ? 'Multi-Model Chat' : medicalContext ? 'Medical AI' : 'AI Assistant'}
+                </p>
+                <p className="text-[11px] text-muted-foreground mt-1">
+                  Selected: {selectedModels.length > 0 ? selectedModels.map(m => `${m.provider}:${m.model}`).join(', ') : 'None'}
                 </p>
               </div>
             </div>
@@ -554,7 +577,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               <UniversalModelSelector
                 onModelsSelect={(models) => {
                   setSelectedModels(models);
-                  toast({ title: 'Models Updated', description: `Selected ${models.length} models` });
+                  try { localStorage.setItem('genie_selected_models', JSON.stringify(models)); } catch {}
+                  showSuccess('Models updated', `Selected ${models.length} models`);
                 }}
                 selectedModels={selectedModels}
                 mode={mode === 'general' ? 'single' : (mode as any)}
@@ -679,6 +703,35 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               </div>
             </TabsContent>
           </Tabs>
+
+          {/* Actions */}
+          <div className="mt-4 flex justify-end gap-2">
+            <Button variant="outline" onClick={() => setShowModelSelector(false)}>Close</Button>
+            <Button
+              onClick={async () => {
+                const configToSave = {
+                  configuration_name: 'genie_user_config',
+                  selected_mode: mode as 'system' | 'single' | 'multi',
+                  selected_models: selectedModels.map(m => m.model),
+                  left_model: selectedModels.find(m => m.role === 'primary')?.model || selectedModels[0]?.model || '',
+                  right_model: selectedModels.find(m => m.role === 'secondary')?.model || '',
+                  selected_model_type: (selectedModels[0]?.category === 'small' ? 'slm' : selectedModels[0]?.category === 'vision' ? 'vlm' : 'llm') as 'llm' | 'slm' | 'vlm',
+                  enabled_features: enabledFeatures,
+                  selected_mcp_tools: selectedMCPTools,
+                  knowledge_base: knowledgeBase,
+                  medical_context: medicalContext,
+                  is_default: true
+                };
+                const saved = await saveConfiguration(configToSave as any);
+                if (saved) {
+                  showSuccess('Configuration saved');
+                  setShowModelSelector(false);
+                }
+              }}
+            >
+              Save & Apply
+            </Button>
+          </div>
         </DialogContent>
       </Dialog>
     </>

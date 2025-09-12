@@ -246,11 +246,13 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
                     alt="GENIE - Cell & Gene Technology Navigator" 
                     className="w-16 h-16 object-contain rounded-full"
                     onError={(e) => {
-                      // Fallback to Bot icon if logo fails to load
-                      console.warn('GENIE logo failed to load, using fallback icon');
+                      console.warn('GENIE logo failed to load, showing text fallback');
                       const target = e.target as HTMLImageElement;
                       target.style.display = 'none';
-                      target.parentElement!.innerHTML = '<div class="text-white text-2xl"><Bot className=\"h-8 w-8\" /></div>';
+                      const fallback = document.createElement('div');
+                      fallback.className = 'text-white text-xs';
+                      fallback.textContent = 'GENIE';
+                      target.parentElement?.appendChild(fallback);
                     }}
                   />
                 </div>
