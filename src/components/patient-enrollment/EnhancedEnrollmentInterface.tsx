@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Progress } from '@/components/ui/progress';
 import { 
   MessageSquare, 
   FileText, 
@@ -12,11 +12,14 @@ import {
   Settings,
   Brain,
   Database,
-  Mic
+  Mic,
+  ChevronRight,
+  CheckCircle
 } from 'lucide-react';
 import { ConversationManager } from '@/components/conversation/ConversationManager';
 import { PatientEnrollmentForm } from './PatientEnrollmentForm';
 import { UniversalVoiceInterface } from '@/components/voice/UniversalVoiceInterface';
+import { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
 import { toast } from 'sonner';
 
 interface EnhancedEnrollmentInterfaceProps {
@@ -28,17 +31,58 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
   onSubmit,
   isInModal = false
 }) => {
-  const [activeTab, setActiveTab] = useState<'conversation' | 'form'>('form');
+  const [activeTab, setActiveTab] = useState<'conversation' | 'form'>('conversation');
   const [enrollmentData, setEnrollmentData] = useState<any>({});
   const [conversationHistory, setConversationHistory] = useState<any[]>([]);
   const [voiceData, setVoiceData] = useState<any>({});
   const [currentChannel, setCurrentChannel] = useState<'online' | 'pdf' | 'fax' | 'voice'>('online');
+  const [currentStep, setCurrentStep] = useState(0);
+  const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [sectionsData, setSectionsData] = useState<Record<string, any>>({});
+
+  const enrollmentSteps = [
+    { title: 'Consent & Agreement', section: 'consent' },
+    { title: 'Patient Information', section: 'patient' },
+    { title: 'Provider & Treatment', section: 'provider' },
+    { title: 'NPI & Credentialing', section: 'npi' },
+    { title: 'Insurance Details', section: 'insurance' },
+    { title: 'Clinical & Treatment', section: 'clinical' },
+    { title: 'Review & Submit', section: 'submit' }
+  ];
 
   const handleDataCapture = (capturedData: any) => {
+    // Determine which section this data belongs to
+    const currentSection = enrollmentSteps[currentStep]?.section || 'general';
+    
+    setSectionsData(prev => ({
+      ...prev,
+      [currentSection]: {
+        ...prev[currentSection],
+        ...capturedData
+      }
+    }));
+    
     setEnrollmentData(prev => ({
       ...prev,
       ...capturedData
     }));
+    
+    // Check if current section is complete and advance
+    if (Object.keys(capturedData).length > 0) {
+      if (!completedSteps.includes(currentStep)) {
+        setCompletedSteps(prev => [...prev, currentStep]);
+      }
+      
+      // Auto-advance to next step if current section has sufficient data
+      if (currentStep < enrollmentSteps.length - 1) {
+        setTimeout(() => {
+          setCurrentStep(prev => prev + 1);
+          toast.success(`${enrollmentSteps[currentStep].title} completed!`, {
+            description: `Moving to ${enrollmentSteps[currentStep + 1]?.title}`
+          });
+        }, 1500);
+      }
+    }
     
     toast.success('Information captured from conversation', {
       description: 'Data has been automatically filled in the enrollment form'
@@ -191,7 +235,41 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
             </Button>
           </div>
 
-          {/* Combined Chat + Form layout for modal */}
+          {/* Progress Tracker */}
+          <Card className="mb-4">
+            <CardHeader className="pb-2">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-sm">
+                  <CheckCircle className="h-4 w-4" />
+                  Enrollment Progress
+                </CardTitle>
+                <Badge variant="outline">{completedSteps.length} of {enrollmentSteps.length} completed</Badge>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                <Progress value={(completedSteps.length / enrollmentSteps.length) * 100} className="h-2" />
+                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <ChevronRight className="h-3 w-3" />
+                  Current: {enrollmentSteps[currentStep]?.title}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Journey Steps Navigation */}
+          <div className="mb-4">
+            <EnrollmentJourneySteps
+              currentStep={currentStep}
+              onStepClick={(step) => {
+                setCurrentStep(step);
+                toast.info(`Switched to ${enrollmentSteps[step]?.title}`);
+              }}
+              completedSteps={completedSteps}
+            />
+          </div>
+
+          {/* Combined Chat + Current Section Form layout for modal */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
             {/* Chat */}
             <Card>
@@ -201,15 +279,18 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
                   AI Enrollment Assistant
                 </CardTitle>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Chat naturally; captured details will auto-fill the form on the right.
+                  Currently working on: <strong>{enrollmentSteps[currentStep]?.title}</strong>
                 </p>
               </CardHeader>
               <CardContent className="p-0">
-                <div className="h-[42vh] sm:h-[50vh] md:h-[56vh] overflow-hidden">
+                <div className="h-[35vh] sm:h-[42vh] md:h-[48vh] overflow-hidden">
                   <ConversationManager
                     agentId="enrollment-agent"
                     enrollmentContext={{
                       process_type: 'patient_enrollment',
+                      current_section: enrollmentSteps[currentStep]?.section || 'general',
+                      step: currentStep,
+                      total_steps: enrollmentSteps.length,
                       capture_fields: [
                         'personal_information',
                         'medical_history', 
@@ -225,183 +306,70 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
               </CardContent>
             </Card>
 
-            {/* Form */}
+            {/* Current Section Progress */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
-                  Enrollment Form
+                  {enrollmentSteps[currentStep]?.title}
                 </CardTitle>
                 <p className="text-xs sm:text-sm text-muted-foreground">
-                  Review and complete information captured from the conversation.
+                  Section {currentStep + 1} of {enrollmentSteps.length} - Information captured via conversation
                 </p>
               </CardHeader>
-              <CardContent className="p-0">
-                <div className="h-[42vh] sm:h-[50vh] md:h-[56vh] overflow-y-auto p-2 sm:p-4">
-                  <PatientEnrollmentForm
-                    key={Object.keys(enrollmentData).join(',')}
-                    initialData={enrollmentData}
-                    onSubmit={handleFormSubmit}
-                  />
+              <CardContent className="p-2 sm:p-4">
+                <div className="h-[35vh] sm:h-[42vh] md:h-[48vh] overflow-y-auto">
+                  {/* Current Section Data Display */}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between p-2 bg-muted/50 rounded-lg">
+                      <span className="text-sm font-medium">Current Section</span>
+                      <Badge variant={completedSteps.includes(currentStep) ? "default" : "outline"}>
+                        {completedSteps.includes(currentStep) ? "Complete" : "In Progress"}
+                      </Badge>
+                    </div>
+                    
+                    {sectionsData[enrollmentSteps[currentStep]?.section] ? (
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Captured Information:</h4>
+                        <div className="bg-green-50 border border-green-200 rounded-lg p-3">
+                          {Object.entries(sectionsData[enrollmentSteps[currentStep]?.section] || {}).map(([key, value]) => (
+                            <div key={key} className="flex justify-between items-center py-1">
+                              <span className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
+                              <span className="text-xs font-medium">{typeof value === 'string' ? value : JSON.stringify(value)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8">
+                        <MessageSquare className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground">Start the conversation to capture information for this section</p>
+                      </div>
+                    )}
+
+                    {/* Next Steps */}
+                    {currentStep < enrollmentSteps.length - 1 && (
+                      <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <ChevronRight className="h-4 w-4 text-blue-600" />
+                          <span className="text-sm font-medium text-blue-900">Next: {enrollmentSteps[currentStep + 1]?.title}</span>
+                        </div>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </CardContent>
             </Card>
           </div>
         </>
       ) : (
-        <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
-          <div className="flex flex-col space-y-2 sm:space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-              <TabsList className={`grid w-full ${isInModal ? 'max-w-full' : 'max-w-lg'} grid-cols-3`}>
-                <TabsTrigger value="conversation" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                  <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
-                  {isInModal ? "Chat" : "Conversation"}
-                </TabsTrigger>
-                <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                  <Mic className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Voice
-                </TabsTrigger>
-                <TabsTrigger value="form" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                  <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                  Form
-                </TabsTrigger>
-              </TabsList>
-
-              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-                {!isInModal && (
-                  <select
-                    value={currentChannel}
-                    onChange={(e) => setCurrentChannel(e.target.value as any)}
-                    className="px-2 sm:px-3 py-1.5 sm:py-2 border border-input bg-background rounded-md text-xs sm:text-sm"
-                  >
-                    <option value="online">Online</option>
-                    <option value="voice">Voice</option>
-                    <option value="pdf">PDF</option>
-                    <option value="fax">Fax</option>
-                  </select>
-                )}
-                <Button 
-                  variant="outline" 
-                  size={isInModal ? "sm" : "default"}
-                  onClick={downloadEnrollmentPackage}
-                  className="w-full sm:w-auto"
-                >
-                  <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                  <span className="text-xs sm:text-sm">{isInModal ? "Export" : "Download Package"}</span>
-                </Button>
-                <Button 
-                  size={isInModal ? "sm" : "default"}
-                  onClick={() => handleFormSubmit(enrollmentData)}
-                  disabled={Object.keys(enrollmentData).length === 0}
-                  className="w-full sm:w-auto"
-                >
-                  <span className="text-xs sm:text-sm">Complete Enrollment</span>
-                </Button>
-              </div>
-            </div>
-          </div>
-
-          <TabsContent value="conversation" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <MessageSquare className="h-5 w-5" />
-                  AI Enrollment Assistant
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Chat naturally about your enrollment needs. The AI will ask questions and extract information automatically.
-                </p>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className={`${isInModal ? 'h-[300px] sm:h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
-                  <ConversationManager
-                    agentId="enrollment-agent"
-                    enrollmentContext={{
-                      process_type: 'patient_enrollment',
-                      capture_fields: [
-                        'personal_information',
-                        'medical_history', 
-                        'insurance_details',
-                        'contact_information',
-                        'emergency_contacts',
-                        'preferences'
-                      ]
-                    }}
-                    onDataCapture={handleDataCapture}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="voice" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <Mic className="h-5 w-5" />
-                  Voice Interface
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Use voice commands and speech to complete your enrollment
-                </p>
-              </CardHeader>
-              <CardContent className="p-0">
-                <div className={`${isInModal ? 'h-[300px] sm:h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
-                  <UniversalVoiceInterface
-                    agentType="conversational"
-                    channelType={currentChannel}
-                    onDataCapture={handleVoiceDataCapture}
-                    onStatusChange={(status) => {
-                      console.log('Voice status:', status);
-                    }}
-                  />
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="form" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg">
-                  <FileText className="h-5 w-5" />
-                  Enrollment Form
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  Review and complete the information captured from your conversation
-                </p>
-              </CardHeader>
-              <CardContent className={`${isInModal ? 'max-h-[300px] sm:max-h-[450px] overflow-y-auto p-2 sm:p-6' : ''}`}>
-                <PatientEnrollmentForm
-                  initialData={enrollmentData}
-                  onSubmit={handleFormSubmit}
-                />
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
-      )}
-
-
-      {/* Status Panel - Only show when not in modal to save space */}
-      {!isInModal && Object.keys(enrollmentData).length > 0 && (
+        // Full screen version with form
         <Card>
-          <CardHeader>
-            <CardTitle className="text-sm">Captured Information</CardTitle>
-          </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              {Object.entries(enrollmentData).map(([key, value]) => (
-                <div key={key} className="text-center">
-                  <Badge variant="secondary" className="mb-1">
-                    {key.replace(/_/g, ' ').toUpperCase()}
-                  </Badge>
-                  <p className="text-xs text-muted-foreground">
-                    {typeof value === 'object' ? 'Complex Data' : String(value).substring(0, 20)}
-                  </p>
-                </div>
-              ))}
-            </div>
+            <PatientEnrollmentForm
+              initialData={enrollmentData}
+              onSubmit={handleFormSubmit}
+            />
           </CardContent>
         </Card>
       )}

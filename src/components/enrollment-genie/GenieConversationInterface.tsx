@@ -448,6 +448,41 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Main Content Based on Mode */}
           {mode === 'enrollment' ? (
             <div className="p-6">
+              {/* AI Provider Selection for Enrollment */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    <CardTitle>AI Assistant Configuration</CardTitle>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Select your preferred AI model</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex flex-wrap gap-2 justify-center mb-4">
+                    {(['system','single','multi'] as const).map((m) => (
+                      <Button
+                        key={m}
+                        variant={conversationState.selectedMode === m ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => switchMode(m)}
+                        className={`flex items-center gap-1 ${
+                          conversationState.selectedMode === m 
+                            ? 'bg-primary text-primary-foreground' 
+                            : ''
+                        }`}
+                      >
+                        <div className="text-center">
+                          <div className="text-xs font-medium">{m.toUpperCase()}</div>
+                        </div>
+                      </Button>
+                    ))}
+                  </div>
+
+                  {/* Model Selection Interface */}
+                  {renderModelSelectionContent()}
+                </CardContent>
+              </Card>
+
               {/* Enhanced Patient Enrollment Header */}
               <div className="mb-6">
                 <div className="flex items-center justify-between mb-4">
@@ -470,52 +505,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                     </Badge>
                   </div>
                 </div>
-
-                {/* Feature Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-                  <Card className="text-center p-4">
-                    <MessageSquare className="h-8 w-8 mx-auto mb-2 text-primary" />
-                    <h3 className="font-medium mb-1">Natural Conversation</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Speak naturally about your needs and let AI extract the structured data
-                    </p>
-                  </Card>
-                  <Card className="text-center p-4">
-                    <FileText className="h-8 w-8 mx-auto mb-2 text-primary" />
-                    <h3 className="font-medium mb-1">Auto-Fill Forms</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Information from conversations automatically populates enrollment forms
-                    </p>
-                  </Card>
-                </div>
               </div>
-
-              {/* Workflow Status */}
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    <CardTitle>Workflow Status</CardTitle>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Enrollment Progress</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="bg-muted p-4 rounded-lg mb-4">
-                    <div className="flex items-center gap-2 mb-2">
-                      <ChevronRight className="h-4 w-4" />
-                      <span className="font-medium">Current Stage: Submission Method</span>
-                    </div>
-                    <p className="text-sm text-muted-foreground">Ready to proceed</p>
-                  </div>
-
-                  {/* Enrollment Journey Steps */}
-                  <EnrollmentJourneySteps 
-                    currentStep={0}
-                    onStepClick={(step) => console.log('Step clicked:', step)}
-                    completedSteps={[]}
-                  />
-                </CardContent>
-              </Card>
 
               {/* Current Step Content */}
               {/* Enrollment Interface */}
