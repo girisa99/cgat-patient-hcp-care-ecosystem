@@ -168,137 +168,220 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
       
 
       {/* Main Interface */}
-      <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
-        <div className="flex flex-col space-y-2 sm:space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
-            <TabsList className={`grid w-full ${isInModal ? 'max-w-full' : 'max-w-lg'} grid-cols-3`}>
-              <TabsTrigger value="conversation" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
-                {isInModal ? "Chat" : "Conversation"}
-              </TabsTrigger>
-              <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                <Mic className="h-3 w-3 sm:h-4 sm:w-4" />
-                Voice
-              </TabsTrigger>
-              <TabsTrigger value="form" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
-                <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
-                Form
-              </TabsTrigger>
-            </TabsList>
+      {isInModal ? (
+        <>
+          {/* Actions */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-end gap-2 sm:gap-3 mb-2 sm:mb-4">
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={downloadEnrollmentPackage}
+              className="w-full sm:w-auto"
+            >
+              <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="text-xs sm:text-sm">Export</span>
+            </Button>
+            <Button 
+              size="sm"
+              onClick={() => handleFormSubmit(enrollmentData)}
+              disabled={Object.keys(enrollmentData).length === 0}
+              className="w-full sm:w-auto"
+            >
+              <span className="text-xs sm:text-sm">Complete Enrollment</span>
+            </Button>
+          </div>
 
-            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
-              {!isInModal && (
-                <select
-                  value={currentChannel}
-                  onChange={(e) => setCurrentChannel(e.target.value as any)}
-                  className="px-2 sm:px-3 py-1.5 sm:py-2 border border-input bg-background rounded-md text-xs sm:text-sm"
+          {/* Combined Chat + Form layout for modal */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+            {/* Chat */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
+                  AI Enrollment Assistant
+                </CardTitle>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Chat naturally; captured details will auto-fill the form on the right.
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="h-[42vh] sm:h-[50vh] md:h-[56vh] overflow-hidden">
+                  <ConversationManager
+                    agentId="enrollment-agent"
+                    enrollmentContext={{
+                      process_type: 'patient_enrollment',
+                      capture_fields: [
+                        'personal_information',
+                        'medical_history', 
+                        'insurance_details',
+                        'contact_information',
+                        'emergency_contacts',
+                        'preferences'
+                      ]
+                    }}
+                    onDataCapture={handleDataCapture}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Form */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
+                  <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
+                  Enrollment Form
+                </CardTitle>
+                <p className="text-xs sm:text-sm text-muted-foreground">
+                  Review and complete information captured from the conversation.
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="h-[42vh] sm:h-[50vh] md:h-[56vh] overflow-y-auto p-2 sm:p-4">
+                  <PatientEnrollmentForm
+                    key={Object.keys(enrollmentData).join(',')}
+                    initialData={enrollmentData}
+                    onSubmit={handleFormSubmit}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </>
+      ) : (
+        <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
+          <div className="flex flex-col space-y-2 sm:space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+              <TabsList className={`grid w-full ${isInModal ? 'max-w-full' : 'max-w-lg'} grid-cols-3`}>
+                <TabsTrigger value="conversation" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
+                  {isInModal ? "Chat" : "Conversation"}
+                </TabsTrigger>
+                <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <Mic className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Voice
+                </TabsTrigger>
+                <TabsTrigger value="form" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                  <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
+                  Form
+                </TabsTrigger>
+              </TabsList>
+
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
+                {!isInModal && (
+                  <select
+                    value={currentChannel}
+                    onChange={(e) => setCurrentChannel(e.target.value as any)}
+                    className="px-2 sm:px-3 py-1.5 sm:py-2 border border-input bg-background rounded-md text-xs sm:text-sm"
+                  >
+                    <option value="online">Online</option>
+                    <option value="voice">Voice</option>
+                    <option value="pdf">PDF</option>
+                    <option value="fax">Fax</option>
+                  </select>
+                )}
+                <Button 
+                  variant="outline" 
+                  size={isInModal ? "sm" : "default"}
+                  onClick={downloadEnrollmentPackage}
+                  className="w-full sm:w-auto"
                 >
-                  <option value="online">Online</option>
-                  <option value="voice">Voice</option>
-                  <option value="pdf">PDF</option>
-                  <option value="fax">Fax</option>
-                </select>
-              )}
-              <Button 
-                variant="outline" 
-                size={isInModal ? "sm" : "default"}
-                onClick={downloadEnrollmentPackage}
-                className="w-full sm:w-auto"
-              >
-                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-                <span className="text-xs sm:text-sm">{isInModal ? "Export" : "Download Package"}</span>
-              </Button>
-              <Button 
-                size={isInModal ? "sm" : "default"}
-                onClick={() => handleFormSubmit(enrollmentData)}
-                disabled={Object.keys(enrollmentData).length === 0}
-                className="w-full sm:w-auto"
-              >
-                <span className="text-xs sm:text-sm">Complete Enrollment</span>
-              </Button>
+                  <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                  <span className="text-xs sm:text-sm">{isInModal ? "Export" : "Download Package"}</span>
+                </Button>
+                <Button 
+                  size={isInModal ? "sm" : "default"}
+                  onClick={() => handleFormSubmit(enrollmentData)}
+                  disabled={Object.keys(enrollmentData).length === 0}
+                  className="w-full sm:w-auto"
+                >
+                  <span className="text-xs sm:text-sm">Complete Enrollment</span>
+                </Button>
+              </div>
             </div>
           </div>
-        </div>
 
-        <TabsContent value="conversation" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <MessageSquare className="h-5 w-5" />
-                AI Enrollment Assistant
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Chat naturally about your enrollment needs. The AI will ask questions and extract information automatically.
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className={`${isInModal ? 'h-[300px] sm:h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
-                <ConversationManager
-                  agentId="enrollment-agent"
-                  enrollmentContext={{
-                    process_type: 'patient_enrollment',
-                    capture_fields: [
-                      'personal_information',
-                      'medical_history', 
-                      'insurance_details',
-                      'contact_information',
-                      'emergency_contacts',
-                      'preferences'
-                    ]
-                  }}
-                  onDataCapture={handleDataCapture}
+          <TabsContent value="conversation" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <MessageSquare className="h-5 w-5" />
+                  AI Enrollment Assistant
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Chat naturally about your enrollment needs. The AI will ask questions and extract information automatically.
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className={`${isInModal ? 'h-[300px] sm:h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
+                  <ConversationManager
+                    agentId="enrollment-agent"
+                    enrollmentContext={{
+                      process_type: 'patient_enrollment',
+                      capture_fields: [
+                        'personal_information',
+                        'medical_history', 
+                        'insurance_details',
+                        'contact_information',
+                        'emergency_contacts',
+                        'preferences'
+                      ]
+                    }}
+                    onDataCapture={handleDataCapture}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="voice" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <Mic className="h-5 w-5" />
+                  Voice Interface
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Use voice commands and speech to complete your enrollment
+                </p>
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className={`${isInModal ? 'h-[300px] sm:h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
+                  <UniversalVoiceInterface
+                    agentType="conversational"
+                    channelType={currentChannel}
+                    onDataCapture={handleVoiceDataCapture}
+                    onStatusChange={(status) => {
+                      console.log('Voice status:', status);
+                    }}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="form" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <FileText className="h-5 w-5" />
+                  Enrollment Form
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  Review and complete the information captured from your conversation
+                </p>
+              </CardHeader>
+              <CardContent className={`${isInModal ? 'max-h-[300px] sm:max-h-[450px] overflow-y-auto p-2 sm:p-6' : ''}`}>
+                <PatientEnrollmentForm
+                  initialData={enrollmentData}
+                  onSubmit={handleFormSubmit}
                 />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+      )}
 
-        <TabsContent value="voice" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <Mic className="h-5 w-5" />
-                Voice Interface
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Use voice commands and speech to complete your enrollment
-              </p>
-            </CardHeader>
-            <CardContent className="p-0">
-              <div className={`${isInModal ? 'h-[300px] sm:h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
-                <UniversalVoiceInterface
-                  agentType="conversational"
-                  channelType={currentChannel}
-                  onDataCapture={handleVoiceDataCapture}
-                  onStatusChange={(status) => {
-                    console.log('Voice status:', status);
-                  }}
-                />
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="form" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-lg">
-                <FileText className="h-5 w-5" />
-                Enrollment Form
-              </CardTitle>
-              <p className="text-sm text-muted-foreground">
-                Review and complete the information captured from your conversation
-              </p>
-            </CardHeader>
-            <CardContent className={`${isInModal ? 'max-h-[300px] sm:max-h-[450px] overflow-y-auto p-2 sm:p-6' : ''}`}>
-              <PatientEnrollmentForm
-                initialData={enrollmentData}
-                onSubmit={handleFormSubmit}
-              />
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
 
       {/* Status Panel - Only show when not in modal to save space */}
       {!isInModal && Object.keys(enrollmentData).length > 0 && (
