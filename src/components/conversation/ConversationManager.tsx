@@ -229,9 +229,19 @@ Let's begin with your basic information. Could you please provide your full name
   };
 
   const getAIResponse = async (userInput: string, conversationHistory: Message[]) => {
+    // Map LLM selection to provider and model
+    const id = selectedLLM.toLowerCase();
+    let provider: 'openai' | 'claude' | 'gemini' = 'openai';
+    if (id.includes('claude')) provider = 'claude';
+    else if (id.includes('gemini')) provider = 'gemini';
+
+    const selected = llmProviders.find(p => p.id === selectedLLM);
+    const model = selected?.model || (provider === 'openai' ? 'gpt-4.1-2025-04-14' : provider === 'claude' ? 'claude-sonnet-4-20250514' : 'gemini-1.5-pro');
+
     const response = await generateResponse({
       prompt: userInput,
-      provider: selectedLLM as "openai" | "claude" | "gemini",
+      provider,
+      model,
       context: {
         conversation_mode: conversationMode,
         enrollment_context: enrollmentContext,

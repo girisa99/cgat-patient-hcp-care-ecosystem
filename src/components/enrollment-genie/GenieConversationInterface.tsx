@@ -101,6 +101,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     model: 'o4-mini-2025-04-16',
     category: 'llm'
   });
+  const [resetCounter, setResetCounter] = useState(0);
 
   // Page awareness integration
   const pageAware = usePageAwareEnrollment();
@@ -139,6 +140,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const handleResetConversation = () => {
     resetConversation();
     setMessage('');
+    setResetCounter((c) => c + 1);
   };
 
   const handleSendMessage = async () => {
@@ -510,7 +512,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               {/* Current Step Content */}
               {/* Enrollment Interface */}
               <div className="mt-6">
-                <EnhancedEnrollmentInterface isInModal />
+                <EnhancedEnrollmentInterface key={resetCounter} isInModal showSectionSummary={false} />
               </div>
 
               {/* Audit Notice */}

@@ -25,11 +25,13 @@ import { toast } from 'sonner';
 interface EnhancedEnrollmentInterfaceProps {
   onSubmit?: (data: any) => void;
   isInModal?: boolean;
+  showSectionSummary?: boolean;
 }
 
 export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfaceProps> = ({
   onSubmit,
-  isInModal = false
+  isInModal = false,
+  showSectionSummary = true
 }) => {
   const [activeTab, setActiveTab] = useState<'conversation' | 'form'>('conversation');
   const [enrollmentData, setEnrollmentData] = useState<any>({});
@@ -270,7 +272,7 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
           </div>
 
           {/* Combined Chat + Current Section Form layout for modal */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-2 sm:gap-4">
+          <div className={`grid grid-cols-1 ${showSectionSummary ? 'md:grid-cols-2' : ''} gap-2 sm:gap-4`}>
             {/* Chat */}
             <Card>
               <CardHeader>
@@ -307,7 +309,7 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
             </Card>
 
             {/* Current Section Progress */}
-            <Card>
+            <Card className={!showSectionSummary ? 'hidden' : ''}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-base sm:text-lg">
                   <FileText className="h-4 w-4 sm:h-5 sm:w-5" />
