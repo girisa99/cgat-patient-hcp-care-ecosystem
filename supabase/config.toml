@@ -92,3 +92,10 @@ verify_jwt = false
 
 [functions.rag-status]
 verify_jwt = false
+
+# Newly added public functions
+[functions.ai-image-generator]
+verify_jwt = false
+
+[functions.visual-content-search]
+verify_jwt = false

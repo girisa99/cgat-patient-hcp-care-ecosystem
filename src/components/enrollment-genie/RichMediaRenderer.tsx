@@ -25,6 +25,7 @@ import {
 import { motion } from 'framer-motion';
 import { VisualContentDisplay } from '../search/VisualContentDisplay';
 import { externalVisualContentService, VisualContentSource } from '@/services/externalVisualContentService';
+import { toast } from 'sonner';
 
 interface RichMediaRendererProps {
   content: string;
@@ -205,6 +206,11 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
       setImagePrompt('');
     } catch (error) {
       console.error('Error generating image:', error);
+      toast.error('Image generation failed. Showing related visual content instead.');
+      if (imagePrompt.trim()) {
+        searchVisualContent(imagePrompt);
+        setShowVisualContent(true);
+      }
     } finally {
       setIsGenerating(false);
     }
@@ -220,6 +226,11 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
       setVideoPrompt('');
     } catch (error) {
       console.error('Error generating video:', error);
+      toast.error('Video generation failed. Showing related visual content instead.');
+      if (videoPrompt.trim()) {
+        searchVisualContent(videoPrompt);
+        setShowVisualContent(true);
+      }
     } finally {
       setIsGenerating(false);
     }
