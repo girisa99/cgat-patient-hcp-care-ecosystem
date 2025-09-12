@@ -133,18 +133,13 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
 
       switch (activeMode) {
         case 'build':
-          // Generate complete workflow using edge function
-          const { data: workflowData, error: workflowError } = await supabase.functions.invoke('generate-agent-from-prompt', {
-            body: {
-              prompt: prompt.trim(),
-              provider: selectedProvider,
-              context,
-              generateConnections: true,
-              includeTemplates: true
-            }
-          });
-
-          if (workflowError) throw workflowError;
+          // Generate complete workflow using universal AI
+          const workflowData = await generateAgent(prompt.trim(), selectedProvider as "openai" | "claude" | "gemini");
+          
+          if (!workflowData) {
+            throw new Error('No workflow data generated');
+          }
+          
           onWorkflowGenerated(workflowData);
           onClose();
           break;
@@ -279,11 +274,13 @@ ${activeMode === 'configure' ? '• Configure this medication manager node with 
             <SelectTrigger className="w-32">
               <SelectValue />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="openai">OpenAI</SelectItem>
-              <SelectItem value="claude">Claude</SelectItem>
-              <SelectItem value="gemini">Gemini</SelectItem>
-            </SelectContent>
+                <SelectContent>
+                  {providers.map(provider => (
+                    <SelectItem key={provider.id} value={provider.id}>
+                      {provider.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
           </Select>
 
           <Button 
