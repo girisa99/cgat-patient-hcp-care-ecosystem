@@ -32,8 +32,8 @@ import {
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { useRealAIIntegration } from '@/hooks/useRealAIIntegration';
 import { useApiServices } from '@/hooks/useApiServices';
-import { useClaudeIntegration } from '@/hooks/useClaudeIntegration';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 
 interface AIWorkflowPromptProps {
   onWorkflowGenerated: (workflow: any) => void;
@@ -64,11 +64,6 @@ const EXAMPLE_PROMPTS = [
   }
 ];
 
-const AI_PROVIDERS = [
-  { id: 'openai', name: 'OpenAI', models: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14'] },
-  { id: 'claude', name: 'Claude', models: ['claude-sonnet-4-20250514', 'claude-opus-4-20250514'] },
-  { id: 'gemini', name: 'Gemini', models: ['gemini-pro'] }
-];
 
 export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
   onWorkflowGenerated,
@@ -101,16 +96,16 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
     isGenerating, 
     enhancePromptWithContext 
   } = useRealAIIntegration();
-  const { generateWorkflowWithClaude, isLoading: isClaudeLoading } = useClaudeIntegration();
+  const { generateAgent, isLoading: isUniversalLoading, providers } = useUniversalAI();
   const { showSuccess, showError, showInfo } = useMasterToast();
 
   // Update model when provider changes
   useEffect(() => {
-    const provider = AI_PROVIDERS.find(p => p.id === selectedProvider);
+    const provider = providers.find(p => p.id === selectedProvider);
     if (provider && provider.models.length > 0) {
       setSelectedModel(provider.models[0]);
     }
-  }, [selectedProvider]);
+  }, [selectedProvider, providers]);
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -119,11 +114,11 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
     }
 
     try {
-      if (selectedProvider === 'claude') {
-        // Use Claude integration
-        const workflow = await generateWorkflowWithClaude(prompt);
+      if (selectedProvider === 'claude' || selectedProvider === 'openai' || selectedProvider === 'gemini') {
+        // Use universal AI integration
+        const workflow = await generateAgent(prompt, selectedProvider as "openai" | "claude" | "gemini");
         if (workflow) {
-          showSuccess('Workflow generated successfully with Claude!');
+          showSuccess('Workflow generated successfully!');
           onWorkflowGenerated(workflow);
           setPrompt('');
         }
@@ -208,7 +203,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
     setPrompt(examplePrompt);
   };
 
-  const selectedProviderData = AI_PROVIDERS.find(p => p.id === selectedProvider);
+  const selectedProviderData = providers.find(p => p.id === selectedProvider);
 
   return (
     <div className={`h-full flex flex-col ${className}`}>
@@ -287,7 +282,7 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
                       <SelectValue placeholder="Select Provider" />
                     </SelectTrigger>
                     <SelectContent className="z-[150] bg-popover border shadow-lg">
-                      {AI_PROVIDERS.map(provider => (
+                      {providers.map(provider => (
                         <SelectItem key={provider.id} value={provider.id} className="cursor-pointer hover:bg-accent">
                           {provider.name}
                         </SelectItem>
@@ -313,11 +308,11 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
               {/* Generate Button */}
               <Button 
                 onClick={handleGenerate} 
-                disabled={isGenerating || isClaudeLoading || !prompt.trim()}
+                disabled={isGenerating || isUniversalLoading || !prompt.trim()}
                 className="w-full h-8"
                 size="sm"
               >
-                {(isGenerating || isClaudeLoading) ? (
+                {(isGenerating || isUniversalLoading) ? (
                   <>
                     <Loader2 className="h-3 w-3 mr-2 animate-spin" />
                     Generating...

@@ -57,11 +57,10 @@ interface EnhancedJourneyDesignerProps {
   onGenerateEcosystem?: () => void;
 }
 
-const aiModels: AIModel[] = [
-  { id: 'mcp', name: 'MCP Models', type: 'mcp', icon: <Bot className="w-4 h-4" /> },
-  { id: 'sml', name: 'Small Language Models', type: 'sml', icon: <Brain className="w-4 h-4" /> },
-  { id: 'llm', name: 'Large Language Models', type: 'llm', icon: <Sparkles className="w-4 h-4" /> },
-  { id: 'vision', name: 'Vision Models', type: 'vision', icon: <Eye className="w-4 h-4" /> },
+// AI Models are now managed by the universal AI system
+// Use useUniversalAI() hook to get available providers and models
+
+const mockAIModels: AIModel[] = [
   { id: 'label-studio', name: 'Label Studio', type: 'label-studio', icon: <Tags className="w-4 h-4" /> },
 ];
 

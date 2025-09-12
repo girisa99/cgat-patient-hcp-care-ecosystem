@@ -427,7 +427,7 @@ export const CustomerJourneyBuilder: React.FC<CustomerJourneyBuilderProps> = ({
 
   // Available connectors and AI models for configuration
   const availableConnectors = ['Supabase', 'OpenAI', 'Stripe', 'Twilio', 'SendGrid', 'Zoom'];
-  const aiModels = ['gpt-4o-mini', 'gpt-4o', 'claude-3-haiku', 'claude-3-sonnet'];
+  // AI models are now managed by useUniversalAI() hook
 
   const onConnect = useCallback(
     (params: Edge | Connection) => setEdges((eds) => addEdge(params, eds)),

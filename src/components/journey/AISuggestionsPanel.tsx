@@ -59,47 +59,23 @@ interface AIModel {
   pricing: string;
 }
 
-const aiModels: AIModel[] = [
+// AI Models are now managed by the universal AI system
+// Use useUniversalAI() hook to get available providers and models
+
+const mockAIModels: AIModel[] = [
   { 
     id: 'gpt-4', 
     name: 'GPT-4.1 (OpenAI)', 
     provider: 'openai',
-    model: 'gpt-4.1-2025-04-14',
-    icon: <Sparkles className="w-4 h-4" />,
-    description: 'Most capable model for complex reasoning and workflow design',
-    bestFor: ['Complex Workflows', 'Healthcare Compliance', 'Detailed Analysis'],
-    pricing: 'Premium'
-  },
-  { 
-    id: 'gpt-5-mini', 
-    name: 'GPT-5 Mini (OpenAI)', 
-    provider: 'openai',
-    model: 'gpt-5-mini-2025-08-07',
-    icon: <Zap className="w-4 h-4" />,
-    description: 'Fast and efficient for well-defined healthcare workflows',
-    bestFor: ['Quick Generation', 'Standard Processes', 'Cost-Effective'],
-    pricing: 'Low Cost'
-  },
-  { 
-    id: 'claude-sonnet', 
-    name: 'Claude Sonnet 4 (Anthropic)', 
-    provider: 'anthropic',
-    model: 'claude-sonnet-4-20250514',
-    icon: <Brain className="w-4 h-4" />,
-    description: 'Excellent reasoning for healthcare workflow optimization',
-    bestFor: ['Medical Logic', 'Safety Protocols', 'Compliance'],
-    pricing: 'Standard'
-  },
-  { 
-    id: 'perplexity-large', 
-    name: 'Sonar Large (Perplexity)', 
-    provider: 'perplexity',
-    model: 'llama-3.1-sonar-large-128k-online',
-    icon: <Eye className="w-4 h-4" />,
-    description: 'Real-time data access for current healthcare standards',
-    bestFor: ['Current Guidelines', 'Research-Based', 'Live Data'],
-    pricing: 'Standard'
-  },
+    type: 'large',
+    description: 'Powerful reasoning and complex tasks',
+    capabilities: ['reasoning', 'coding', 'analysis'],
+    context: 128000,
+    cost: 0.03,
+    speed: 'medium',
+    bestFor: ['complex analysis', 'coding'],
+    pricing: '$0.03/1K tokens'
+  }
 ];
 
 export const AISuggestionsPanel: React.FC<AISuggestionsPanelProps> = ({

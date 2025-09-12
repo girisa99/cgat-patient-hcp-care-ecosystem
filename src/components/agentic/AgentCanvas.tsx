@@ -47,16 +47,11 @@ interface AgentFormData {
   category: string;
 }
 
-// AI Models
-const aiModels = [
-  { id: 'gpt-4o', name: 'GPT-4o', category: 'OpenAI', icon: Brain, description: 'Latest OpenAI model with vision', configurable: true },
-  { id: 'gpt-4-turbo', name: 'GPT-4 Turbo', category: 'OpenAI', icon: Brain, description: 'Fast GPT-4 variant', configurable: true },
-  { id: 'claude-3-opus', name: 'Claude 3 Opus', category: 'Anthropic', icon: Brain, description: 'Most capable Claude model', configurable: true },
-  { id: 'claude-3-sonnet', name: 'Claude 3 Sonnet', category: 'Anthropic', icon: Brain, description: 'Balanced Claude model', configurable: true },
-  { id: 'gemini-pro', name: 'Gemini Pro', category: 'Google', icon: Brain, description: 'Google advanced AI model', configurable: true },
-  { id: 'gemini-ultra', name: 'Gemini Ultra', category: 'Google', icon: Brain, description: 'Google most capable model', configurable: true },
-  { id: 'deepseek-coder', name: 'DeepSeek Coder', category: 'DeepSeek', icon: Cpu, description: 'Code-specialized model', configurable: true },
-  { id: 'perplexity-online', name: 'Perplexity Online', category: 'Perplexity', icon: Globe, description: 'Real-time web search AI', configurable: true },
+// AI Models are now managed by the universal AI system
+// Use useUniversalAI() hook to get available providers and models
+
+const mockAIModels = [
+  { id: 'gpt-4o', name: 'GPT-4o', category: 'OpenAI', icon: Brain, description: 'Latest OpenAI model with vision', configurable: true }
 ];
 
 // System Components

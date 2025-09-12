@@ -37,6 +37,7 @@ export const AIIntelligenceNode: React.FC<AIIntelligenceNodeProps> = ({ id, data
     active: data.active !== false,
   });
 
+  // AI models are now managed by useUniversalAI() hook
   const aiModels = [
     { value: 'gpt-5-2025-08-07', label: 'GPT-5 (Latest)', description: 'Flagship model' },
     { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini', description: 'Faster, cost-efficient' },

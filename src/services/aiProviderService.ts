@@ -29,26 +29,8 @@ export interface AIResponse {
   metadata?: any;
 }
 
-export const AI_PROVIDERS: AIProvider[] = [
-  {
-    id: 'openai',
-    name: 'OpenAI',
-    models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4'],
-    capabilities: ['text-generation', 'conversation', 'code', 'analysis']
-  },
-  {
-    id: 'claude',
-    name: 'Claude (Anthropic)',
-    models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'],
-    capabilities: ['text-generation', 'conversation', 'analysis', 'reasoning']
-  },
-  {
-    id: 'gemini',
-    name: 'Gemini (Google)',
-    models: ['gemini-pro', 'gemini-pro-vision'],
-    capabilities: ['text-generation', 'conversation', 'vision', 'multimodal']
-  }
-];
+// AI providers are now managed by the universal AI system via useUniversalAI()
+// This service provides the implementation layer only
 
 export class AIProviderService {
   private static instance: AIProviderService;
@@ -61,17 +43,19 @@ export class AIProviderService {
   }
 
   /**
+   * @deprecated Use useUniversalAI() hook instead
    * Get all available AI providers
    */
   getProviders(): AIProvider[] {
-    return AI_PROVIDERS;
+    return [];
   }
 
   /**
+   * @deprecated Use useUniversalAI() hook instead
    * Get a specific provider by ID
    */
   getProvider(providerId: string): AIProvider | undefined {
-    return AI_PROVIDERS.find(p => p.id === providerId);
+    return undefined;
   }
 
   /**
@@ -250,19 +234,12 @@ Provide a comprehensive analysis of this workflow.`;
   }
 
   /**
+   * @deprecated Use useUniversalAI() hook instead
    * Get available providers (only those with API keys configured)
    */
   async getAvailableProviders(): Promise<AIProvider[]> {
-    const availabilityChecks = await Promise.all(
-      AI_PROVIDERS.map(async (provider) => ({
-        provider,
-        available: await this.checkProviderAvailability(provider.id)
-      }))
-    );
-
-    return availabilityChecks
-      .filter(check => check.available)
-      .map(check => check.provider);
+    // This method is deprecated - use useUniversalAI() hook instead
+    return [];
   }
 }
 
