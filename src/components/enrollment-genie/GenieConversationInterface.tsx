@@ -128,6 +128,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     console.log('GenieConversationInterface render', { uiMode: mode, convMode: conversationState.selectedMode });
   }, [mode, conversationState.selectedMode]);
 
+  // Auto-reset conversation when popup opens
+  useEffect(() => {
+    if (isOpen) {
+      console.log('🔄 Genie popup opened - auto-resetting conversation');
+      handleResetConversation();
+    }
+  }, [isOpen]);
+
   const handleResetConversation = () => {
     resetConversation();
     setMessage('');
@@ -378,17 +386,16 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 </Button>
               </div>
             )}
-            {conversationState.isActive && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleResetConversation}
-                className="flex items-center gap-1"
-              >
-                <RefreshCw className="h-3 w-3" />
-                Reset
-              </Button>
-            )}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleResetConversation}
+              className="flex items-center gap-1"
+              title="Start new conversation"
+            >
+              <RefreshCw className="h-3 w-3" />
+              New Session
+            </Button>
             <Button
               variant="ghost"
               size="icon"
