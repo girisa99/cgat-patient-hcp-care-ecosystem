@@ -181,6 +181,8 @@ Let's begin with your basic information. Could you please provide your full name
   const sendMessage = async () => {
     if (!currentMessage.trim() || isLoading) return;
 
+    console.log('📤 ConversationManager sending message:', currentMessage);
+
     const userMessage: Message = {
       id: `msg_${Date.now()}`,
       role: 'user',
@@ -190,15 +192,21 @@ Let's begin with your basic information. Could you please provide your full name
     };
 
     setMessages(prev => [...prev, userMessage]);
+    const messageToProcess = currentMessage;
     setCurrentMessage('');
     setIsLoading(true);
 
     try {
-      // Store message in database
-      await updateConversationInDB([...messages, userMessage]);
+      // Store message in database (non-blocking)
+      try {
+        await updateConversationInDB([...messages, userMessage]);
+      } catch (dbError) {
+        console.warn('Non-blocking: DB update failed', dbError);
+      }
 
       // Get AI response
-      const aiResponse = await getAIResponse(currentMessage, [...messages, userMessage]);
+      console.log('🤖 Getting AI response...');
+      const aiResponse = await getAIResponse(messageToProcess, [...messages, userMessage]);
       
       const assistantMessage: Message = {
         id: `msg_${Date.now()}_ai`,
@@ -213,7 +221,13 @@ Let's begin with your basic information. Could you please provide your full name
       };
 
       setMessages(prev => [...prev, assistantMessage]);
-      await updateConversationInDB([...messages, userMessage, assistantMessage]);
+      
+      // Store updated conversation (non-blocking)
+      try {
+        await updateConversationInDB([...messages, userMessage, assistantMessage]);
+      } catch (dbError) {
+        console.warn('Non-blocking: DB update failed', dbError);
+      }
 
       // Trigger data capture if enrollment data was extracted
       if (aiResponse.extractedData && onDataCapture) {
@@ -221,8 +235,18 @@ Let's begin with your basic information. Could you please provide your full name
       }
 
     } catch (error) {
-      console.error('Error sending message:', error);
-      toast.error('Failed to send message');
+      console.error('❌ Error sending message:', error);
+      toast.error(`Failed to send message: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      
+      // Add error message to conversation
+      const errorMessage: Message = {
+        id: `msg_${Date.now()}_error`,
+        role: 'assistant',
+        content: 'I apologize, but I encountered an error processing your message. Please try again.',
+        timestamp: new Date(),
+        metadata: { error: true, llm_provider: selectedLLM }
+      };
+      setMessages(prev => [...prev, errorMessage]);
     } finally {
       setIsLoading(false);
     }

@@ -138,39 +138,64 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   }, [isOpen]);
 
   const handleResetConversation = () => {
+    console.log('🔄 Starting new session - resetting all states');
     resetConversation();
     setMessage('');
     setResetCounter((c) => c + 1);
+    setIsLoading(false);
+    
+    // Show confirmation
+    toast({
+      title: "New Session Started",
+      description: "Ready for a fresh conversation"
+    });
   };
 
   const handleSendMessage = async () => {
     if (!message.trim()) return;
     
-    if (!conversationState.isActive) startConversation();
+    console.log('🚀 Sending message:', message);
     
-    addMessage({ 
-      role: 'user', 
+    if (!conversationState.isActive) {
+      console.log('🔥 Starting conversation');
+      startConversation();
+    }
+    
+    const userMessage = { 
+      role: 'user' as const, 
       content: message,
       timestamp: new Date().toISOString()
-    });
+    };
     
+    addMessage(userMessage);
     setMessage('');
     setIsLoading(true);
 
     try {
+      console.log('🤖 Processing with mode:', conversationState.selectedMode);
+      
       if (conversationState.selectedMode === 'single') {
         // Single model response
+        console.log('📡 Calling AI with:', { provider: singleModel.provider, model: singleModel.model });
+        
+        const systemPrompt = mode === 'enrollment' 
+          ? 'You are an AI enrollment assistant. Help users through patient enrollment by asking relevant questions and guiding them through the process. Extract structured data from their responses and provide helpful guidance.'
+          : 'You are a helpful AI assistant.';
+          
         const resp = await generateResponse({
           provider: singleModel.provider as any,
           model: singleModel.model,
           prompt: message,
+          systemPrompt,
           temperature: 0.7,
           maxTokens: 1000
         });
         
+        console.log('✅ AI Response received:', resp);
+        
         addMessage({ 
           role: 'assistant', 
-          content: resp?.content || 'No response received',
+          content: resp?.content || 'I apologize, but I didn\'t receive a proper response. Please try again.',
           timestamp: new Date().toISOString(),
           provider: singleModel.provider,
           model: singleModel.model
@@ -178,22 +203,29 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       } else if (conversationState.selectedMode === 'multi') {
         // Multi-model responses
         const models = selectedCrossModels.length > 0 ? selectedCrossModels : [
-          { provider: 'openai', model: 'o4-mini-2025-04-16', category: 'llm', name: 'OpenAI o4-mini', role: 'primary' as const, weight: 1 },
-          { provider: 'claude', model: 'claude-3-5-sonnet-20241022', category: 'llm', name: 'Claude 3.5 Sonnet', role: 'secondary' as const, weight: 1 }
+          { provider: 'openai', model: 'gpt-4.1-2025-04-14', category: 'llm', name: 'OpenAI GPT', role: 'primary' as const, weight: 1 },
+          { provider: 'claude', model: 'claude-sonnet-4-20250514', category: 'llm', name: 'Claude Sonnet', role: 'secondary' as const, weight: 1 }
         ];
+
+        console.log('🔀 Multi-model request with:', models);
+
+        const systemPrompt = mode === 'enrollment' 
+          ? 'You are an AI enrollment assistant. Help users through patient enrollment by asking relevant questions and guiding them through the process.'
+          : 'You are a helpful AI assistant.';
 
         const results = await Promise.allSettled(models.map(async (m) => {
           const r = await generateResponse({
             provider: m.provider as any,
             model: m.model,
             prompt: message,
+            systemPrompt,
             temperature: 0.7,
             maxTokens: 1000
           });
           return { r, m };
         }));
 
-        results.forEach((res) => {
+        results.forEach((res, index) => {
           if (res.status === 'fulfilled' && res.value.r) {
             addMessage({
               role: 'assistant',
@@ -202,15 +234,24 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               provider: res.value.m.provider,
               model: res.value.m.model
             });
+          } else {
+            console.error(`Model ${models[index].name} failed:`, res.status === 'rejected' ? res.reason : 'Unknown error');
           }
         });
       }
     } catch (error) {
-      console.error('Error generating response:', error);
+      console.error('❌ Error generating response:', error);
+      toast({
+        title: "Message Failed",
+        description: "Unable to send message. Please check your connection and try again.",
+        variant: "destructive"
+      });
+      
       addMessage({
         role: 'assistant',
-        content: 'I apologize, but I encountered an error while processing your request. Please try again.',
-        timestamp: new Date().toISOString()
+        content: 'I apologize, but I encountered an error while processing your request. Please try again or contact support if the issue persists.',
+        timestamp: new Date().toISOString(),
+        error: true
       });
     } finally {
       setIsLoading(false);
@@ -450,8 +491,66 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Main Content Based on Mode */}
           {mode === 'enrollment' ? (
             <div className="p-6">
-              {/* Enrollment Mode uses ConversationManager controls; hide advanced AI config */}
-              {/* Removed AI Assistant Configuration card for enrollment to avoid confusion */}
+              {/* Simple LLM Provider Selection for Enrollment */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Bot className="h-5 w-5" />
+                    <CardTitle>AI Configuration</CardTitle>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Select AI provider and conversation mode</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <Label className="text-sm font-medium">Conversation Mode</Label>
+                      <div className="flex gap-2 mt-2">
+                        {(['single','multi'] as const).map((m) => (
+                          <Button
+                            key={m}
+                            variant={conversationState.selectedMode === m ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => switchMode(m)}
+                            className="flex-1"
+                          >
+                            {m === 'single' ? 'Single AI' : 'Multi AI'}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    <div>
+                      <Label className="text-sm font-medium">AI Provider</Label>
+                      {conversationState.selectedMode === 'single' && (
+                        <Select 
+                          value={singleModel.provider} 
+                          onValueChange={(provider) => setSingleModel(prev => ({ 
+                            ...prev, 
+                            provider,
+                            model: provider === 'openai' ? 'gpt-4.1-2025-04-14' : 
+                                   provider === 'claude' ? 'claude-sonnet-4-20250514' : 
+                                   'gemini-1.5-pro'
+                          }))}
+                        >
+                          <SelectTrigger className="mt-2">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="openai">OpenAI GPT</SelectItem>
+                            <SelectItem value="claude">Claude</SelectItem>
+                            <SelectItem value="gemini">Google Gemini</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      )}
+                      {conversationState.selectedMode === 'multi' && (
+                        <div className="mt-2 text-sm text-muted-foreground">
+                          Multiple AI providers will respond
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
 
               {/* Enhanced Patient Enrollment Header */}
               <div className="mb-6">
