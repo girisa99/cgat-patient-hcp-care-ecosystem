@@ -8,7 +8,7 @@ import { useLocation } from 'react-router-dom';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Sparkles, X, MessageCircle, Users, Building2 } from 'lucide-react';
+import { Bot, Sparkles, X, MessageCircle, Users, Building2, Maximize2, Minimize2 } from 'lucide-react';
 import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -25,6 +25,7 @@ export const EnrollmentGenie: React.FC<UniversalConversationGenieProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
 
   const handleComplete = (data: any) => {
     setIsOpen(false);
@@ -98,33 +99,47 @@ export const EnrollmentGenie: React.FC<UniversalConversationGenieProps> = ({
 
       {/* Genie Dialog */}
       <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="max-w-7xl h-[90vh] p-0 overflow-hidden">
-          <div className="flex items-center justify-between p-6 border-b bg-gradient-to-r from-purple-50 via-blue-50 to-cyan-50">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-r from-purple-600 via-blue-600 to-cyan-600 rounded-lg">
-                <Bot className="h-6 w-6 text-white" />
+        <DialogContent className={`${isExpanded ? 'max-w-[95vw] h-[95vh]' : 'max-w-6xl h-[85vh]'} overflow-hidden p-0 transition-all duration-300`}>
+          <div className="flex flex-col h-full">
+            <div className="flex items-center justify-between p-4 border-b bg-background/95 backdrop-blur">
+              <div className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-gradient-to-r from-primary to-primary/80">
+                  <Bot className="h-5 w-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">Patient Enrollment Genie</h3>
+                  <p className="text-sm text-muted-foreground">Complete your enrollment with AI assistance</p>
+                </div>
               </div>
-              <div>
-                <h2 className="text-xl font-semibold">AI Enrollment Genie</h2>
-                <p className="text-sm text-muted-foreground">
-                  Your intelligent assistant for patient enrollment
-                </p>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="h-8 w-8 p-0"
+                  title={isExpanded ? "Minimize" : "Expand"}
+                >
+                  {isExpanded ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
+                </Button>
+                <Button
+                  variant="ghost" 
+                  size="sm"
+                  onClick={() => setIsOpen(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
               </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setIsOpen(false)}
-              className="h-8 w-8 p-0"
-            >
-              <X className="h-4 w-4" />
-            </Button>
-          </div>
-          
-          <div className="flex-1 overflow-y-auto">
-            <EnhancedEnrollmentInterface
-              onSubmit={handleComplete}
-            />
+            
+            <div className="flex-1 overflow-hidden">
+              <div className="h-full overflow-y-auto">
+                <EnhancedEnrollmentInterface
+                  onSubmit={handleComplete}
+                  isInModal={true}
+                />
+              </div>
+            </div>
           </div>
         </DialogContent>
       </Dialog>
