@@ -75,6 +75,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { generateResponse } = useUniversalAI();
   const { state, addMessage, updateConversationConfig, switchMode, resetConversation } = useConversationState();
   const { listProjects } = useLabelStudio();
+  const { currentConfig, saveConfiguration, updateConfiguration } = useGenieConfiguration();
+  const { currentSession, saveSession, updateSession, createNewSession } = useGenieConversation();
 
   // Auto-detect medical context
   useEffect(() => {
@@ -250,7 +252,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
             
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={() => resetConversation()}>
+              <Button variant="outline" size="sm" onClick={() => {
+                resetConversation();
+                createNewSession();
+              }}>
                 <RotateCcw className="h-4 w-4 mr-1" />
                 New
               </Button>

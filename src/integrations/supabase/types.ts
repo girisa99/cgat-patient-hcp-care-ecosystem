@@ -5772,6 +5772,96 @@ export type Database = {
           },
         ]
       }
+      genie_configurations: {
+        Row: {
+          configuration_name: string | null
+          created_at: string
+          enabled_features: Json | null
+          id: string
+          is_default: boolean | null
+          knowledge_base: string | null
+          left_model: string | null
+          medical_context: boolean | null
+          right_model: string | null
+          selected_mcp_tools: Json | null
+          selected_mode: string | null
+          selected_model_type: string | null
+          selected_models: Json | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          configuration_name?: string | null
+          created_at?: string
+          enabled_features?: Json | null
+          id?: string
+          is_default?: boolean | null
+          knowledge_base?: string | null
+          left_model?: string | null
+          medical_context?: boolean | null
+          right_model?: string | null
+          selected_mcp_tools?: Json | null
+          selected_mode?: string | null
+          selected_model_type?: string | null
+          selected_models?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          configuration_name?: string | null
+          created_at?: string
+          enabled_features?: Json | null
+          id?: string
+          is_default?: boolean | null
+          knowledge_base?: string | null
+          left_model?: string | null
+          medical_context?: boolean | null
+          right_model?: string | null
+          selected_mcp_tools?: Json | null
+          selected_mode?: string | null
+          selected_model_type?: string | null
+          selected_models?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      genie_conversations: {
+        Row: {
+          configuration_snapshot: Json | null
+          conversation_id: string
+          created_at: string
+          id: string
+          is_active: boolean | null
+          messages: Json | null
+          session_name: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          configuration_snapshot?: Json | null
+          conversation_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          messages?: Json | null
+          session_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          configuration_snapshot?: Json | null
+          conversation_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean | null
+          messages?: Json | null
+          session_name?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       imported_data: {
         Row: {
           created_at: string

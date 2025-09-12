@@ -1,10 +1,12 @@
-import { corsHeaders } from '../_shared/cors.ts';
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.7.1';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 
-const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
 
-Deno.serve(async (req) => {
+serve(async (req) => {
+  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
   }
@@ -13,78 +15,108 @@ Deno.serve(async (req) => {
     const { query, limit = 5 } = await req.json();
     
     if (!query) {
-      throw new Error('Query is required');
+      return new Response(
+        JSON.stringify({ error: 'Query is required' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
     }
 
-    console.log('RAG Search Request:', { query, limit });
+    // Mock RAG search functionality with healthcare/biotech knowledge
+    const mockKnowledgeBase = {
+      medical: [
+        { title: "Cell Therapy Guidelines", content: "CAR-T cell therapy protocols and safety considerations", similarity: 0.85 },
+        { title: "Gene Editing Standards", content: "CRISPR-Cas9 therapeutic applications and regulatory framework", similarity: 0.80 },
+        { title: "Clinical Trial Design", content: "Phase I/II/III protocols for gene and cell therapies", similarity: 0.75 }
+      ],
+      general: [
+        { title: "Healthcare Regulations", content: "FDA guidelines for biotechnology products", similarity: 0.70 },
+        { title: "Research Protocols", content: "Best practices for clinical research documentation", similarity: 0.68 },
+        { title: "Safety Monitoring", content: "Adverse event reporting and pharmacovigilance", similarity: 0.65 }
+      ]
+    };
 
-    // Initialize Supabase client with service role
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-
-    // For now, simulate RAG search with mock data
-    // In production, this would use vector embeddings and similarity search
-    const mockResults = [
-      {
-        document: {
-          id: 'doc_1',
-          title: 'CAR-T Cell Therapy Guidelines',
-          content: 'CAR-T (Chimeric Antigen Receptor T-cell) therapy is a breakthrough immunotherapy treatment...',
-          metadata: { category: 'medical', source: 'FDA Guidelines' },
-          source: 'knowledge_base',
-          created_at: new Date().toISOString()
-        },
-        similarity: 0.95,
-        relevantChunks: [
-          'CAR-T therapy involves genetically modifying a patient\'s T-cells to better fight cancer.',
-          'Commercial CAR-T products include Kymriah, Yescarta, and Tecartus.',
-          'CAR-T therapy is FDA-approved for certain blood cancers and lymphomas.'
-        ]
-      },
-      {
-        document: {
-          id: 'doc_2',
-          title: 'Commercial CAR-T Products Overview',
-          content: 'Currently FDA-approved CAR-T cell therapies include multiple commercial products...',
-          metadata: { category: 'commercial', source: 'Product Database' },
-          source: 'label_studio',
-          created_at: new Date().toISOString()
-        },
-        similarity: 0.88,
-        relevantChunks: [
-          'Kymriah (tisagenlecleucel) - First FDA-approved CAR-T therapy',
-          'Yescarta (axicabtagene ciloleucel) - Approved for large B-cell lymphoma',
-          'Tecartus (brexucabtagene autoleucel) - Approved for mantle cell lymphoma'
-        ]
+    // Simple keyword matching for mock results
+    const searchTerms = query.toLowerCase().split(' ');
+    const results = [];
+    
+    // Search medical knowledge base
+    for (const doc of mockKnowledgeBase.medical) {
+      const matchScore = searchTerms.reduce((score, term) => {
+        return score + (doc.content.toLowerCase().includes(term) ? 0.1 : 0) +
+                      (doc.title.toLowerCase().includes(term) ? 0.2 : 0);
+      }, doc.similarity);
+      
+      if (matchScore > 0.7) {
+        results.push({
+          document: {
+            id: `med_${Math.random().toString(36).substr(2, 9)}`,
+            title: doc.title,
+            content: doc.content,
+            source: 'knowledge_base' as const,
+            created_at: new Date().toISOString(),
+            metadata: { category: 'medical', relevance: 'high' }
+          },
+          similarity: matchScore,
+          relevantChunks: [doc.content]
+        });
       }
-    ];
+    }
 
-    // Filter results based on query relevance (simple keyword matching for demo)
-    const filteredResults = mockResults.filter(result => 
-      result.document.title.toLowerCase().includes(query.toLowerCase()) ||
-      result.document.content.toLowerCase().includes(query.toLowerCase()) ||
-      result.relevantChunks.some(chunk => 
-        chunk.toLowerCase().includes(query.toLowerCase())
-      )
-    ).slice(0, limit);
+    // Search general knowledge base if medical results are insufficient
+    if (results.length < limit) {
+      for (const doc of mockKnowledgeBase.general) {
+        const matchScore = searchTerms.reduce((score, term) => {
+          return score + (doc.content.toLowerCase().includes(term) ? 0.1 : 0) +
+                        (doc.title.toLowerCase().includes(term) ? 0.2 : 0);
+        }, doc.similarity);
+        
+        if (matchScore > 0.6 && results.length < limit) {
+          results.push({
+            document: {
+              id: `gen_${Math.random().toString(36).substr(2, 9)}`,
+              title: doc.title,
+              content: doc.content,
+              source: 'knowledge_base' as const,
+              created_at: new Date().toISOString(),
+              metadata: { category: 'general', relevance: 'medium' }
+            },
+            similarity: matchScore,
+            relevantChunks: [doc.content]
+          });
+        }
+      }
+    }
 
-    console.log('RAG Search Results:', { count: filteredResults.length });
+    // Sort by similarity and limit results
+    results.sort((a, b) => b.similarity - a.similarity);
+    const limitedResults = results.slice(0, limit);
 
-    return new Response(JSON.stringify({ 
-      results: filteredResults,
-      query,
-      totalFound: filteredResults.length
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.log(`RAG search for "${query}" found ${limitedResults.length} results`);
+
+    return new Response(
+      JSON.stringify({ 
+        results: limitedResults,
+        query,
+        total: limitedResults.length,
+        timestamp: new Date().toISOString()
+      }),
+      { 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200 
+      }
+    );
 
   } catch (error) {
-    console.error('RAG Search Error:', error);
-    return new Response(JSON.stringify({ 
-      error: error.message || 'RAG search failed',
-      results: []
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-    });
+    console.error('RAG search error:', error);
+    return new Response(
+      JSON.stringify({ 
+        error: error.message || 'Internal server error',
+        results: [] 
+      }),
+      { 
+        status: 500, 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 });
