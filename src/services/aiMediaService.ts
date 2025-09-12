@@ -85,6 +85,18 @@ export class AIMediaService {
     }
   }
 
+  // Fallback: Generate static image when video generation fails
+  static async generateImageAsVideoFallback(prompt: string): Promise<string> {
+    try {
+      console.log('Video generation not available, generating static image instead');
+      const imagePrompt = `Static image representation of: ${prompt}. Make it cinematic and dynamic.`;
+      return await this.generateImage(imagePrompt);
+    } catch (error) {
+      console.error('Error generating fallback image:', error);
+      throw new Error('Both video and image generation failed');
+    }
+  }
+
   // Auto-select best available provider for image generation
   static async generateImage(prompt: string): Promise<string> {
     // Try providers in order of preference
@@ -108,8 +120,14 @@ export class AIMediaService {
 
   // Auto-select best available provider for video generation
   static async generateVideo(prompt: string): Promise<string> {
-    // Currently only Replicate supports video generation
-    return this.generateVideoWithReplicate(prompt);
+    try {
+      // Try Replicate first for video generation
+      return await this.generateVideoWithReplicate(prompt);
+    } catch (error) {
+      console.warn('Video generation with Replicate failed, falling back to static image:', error);
+      // Fallback to generating a static image when video generation fails
+      return await this.generateImageAsVideoFallback(prompt);
+    }
   }
 
   // Upload generated media to Supabase Storage
