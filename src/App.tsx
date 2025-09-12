@@ -329,10 +329,14 @@ const App = () => {
                 <HelmetProvider>
                   <GlobalAgentGeneratorProvider>
                     
-                    <Toaster />
-                    <AppLayoutWithEnrollment>
-                      <AppContent />
-                    </AppLayoutWithEnrollment>
+                     <Toaster />
+                     <AppLayoutWithEnrollment 
+                       showUniversalGenie={true}
+                       tenantId="default-tenant"
+                       userId="current-user"
+                     >
+                       <AppContent />
+                     </AppLayoutWithEnrollment>
                     <GlobalAgentGeneratorModal />
                   </GlobalAgentGeneratorProvider>
                 </HelmetProvider>

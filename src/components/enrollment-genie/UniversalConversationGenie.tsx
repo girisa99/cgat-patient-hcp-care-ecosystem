@@ -175,7 +175,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
     <>
       {/* Floating Genie Button with Smart Positioning */}
       <motion.div
-        className={`fixed z-[102] ${className}`}
+        className={`fixed z-[1000] ${className}`}
         style={{ bottom: `${position.bottom}px`, right: `${position.right}px` }}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
@@ -237,11 +237,9 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
           >
             {/* Genie Logo */}
             <div className="relative w-full h-full">
-              <img 
-                src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
-                alt="Genie" 
-                className="w-full h-full object-cover rounded-full"
-              />
+              <div className="w-full h-full rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
+                <Bot className="h-8 w-8 text-white" />
+              </div>
               
               {/* Magical overlay glow */}
               <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 via-transparent to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
