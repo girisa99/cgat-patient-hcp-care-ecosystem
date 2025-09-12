@@ -94,6 +94,11 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
 
   // Smart positioning to avoid content overlap
   useEffect(() => {
+    const saved = (() => { try { return JSON.parse(localStorage.getItem('genie_position') || 'null'); } catch { return null; } })();
+    if (saved && typeof saved.bottom === 'number' && typeof saved.right === 'number') {
+      setPosition(saved);
+    }
+
     const checkForOverlap = () => {
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
@@ -107,7 +112,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
       
       // Adjust for bottom elements
       bottomElements.forEach(el => {
-        const rect = el.getBoundingClientRect();
+        const rect = (el as HTMLElement).getBoundingClientRect();
         if (rect.top < viewportHeight && rect.bottom > viewportHeight * 0.8) {
           newBottom = Math.max(newBottom, viewportHeight - rect.top + 16);
         }
@@ -115,7 +120,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
       
       // Adjust for right elements
       rightElements.forEach(el => {
-        const rect = el.getBoundingClientRect();
+        const rect = (el as HTMLElement).getBoundingClientRect();
         if (rect.left < viewportWidth && rect.right > viewportWidth * 0.8) {
           newRight = Math.max(newRight, viewportWidth - rect.left + 16);
         }
@@ -147,11 +152,22 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
     <>
       {/* Floating Genie Button with Smart Positioning */}
       <motion.div
-        className={`fixed z-50 ${className}`}
+        className={`fixed z-[102] ${className}`}
         style={{ bottom: `${position.bottom}px`, right: `${position.right}px` }}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+        drag
+        dragMomentum={false}
+        dragElastic={0.1}
+        onDragEnd={(e, info) => {
+          const viewportWidth = window.innerWidth;
+          const viewportHeight = window.innerHeight;
+          const newRight = Math.max(12, Math.min(viewportWidth - info.point.x - 40, viewportWidth - 100));
+          const newBottom = Math.max(12, Math.min(viewportHeight - info.point.y - 40, viewportHeight - 100));
+          setPosition({ bottom: newBottom, right: newRight });
+          try { localStorage.setItem('genie_position', JSON.stringify({ bottom: newBottom, right: newRight })); } catch {}
+        }}
       >
         <motion.div
           whileHover={{ scale: 1.05 }}

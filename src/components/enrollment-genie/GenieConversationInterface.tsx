@@ -3,7 +3,7 @@
  * Refactored with proper state management, RAG integration, and dropdown options
  */
 import React, { useState, useEffect } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { NonModalDialogRoot as Dialog, NonModalDialogContent as DialogContent } from '@/components/ui/non-modal-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
