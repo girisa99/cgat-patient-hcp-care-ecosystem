@@ -38,6 +38,7 @@ import { CrossCategoryModelSelector, SelectedModelConfig } from '@/components/ai
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
+import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
 
 interface GenieConversationInterfaceProps {
   isOpen: boolean;
@@ -49,21 +50,19 @@ interface GenieConversationInterfaceProps {
   onModeChange?: (mode: 'general' | 'enrollment') => void;
 }
 
-type ConversationMode = 'system' | 'single' | 'multi';
-
 const mcpTools = [
   {
-    id: 'healthcare-mcp',
-    name: 'Healthcare MCP Server',
-    description: 'Clinical decision support, patient records, compliance tools',
-    capabilities: ['Patient Records', 'Clinical Decision Support', 'Drug Interactions', 'Compliance Audit'],
+    id: 'filesystem-mcp',
+    name: 'File System Access',
+    description: 'Read, write, and manage files and directories',
+    capabilities: ['File Operations', 'Directory Listing', 'File Search', 'Content Analysis'],
     status: 'available'
   },
   {
-    id: 'filesystem-mcp',
-    name: 'Filesystem MCP Server', 
-    description: 'File operations, document management, data processing',
-    capabilities: ['File Operations', 'Document Processing', 'Data Analysis', 'Search'],
+    id: 'memory-mcp',
+    name: 'Memory & Context',
+    description: 'Long-term memory and context management',
+    capabilities: ['Context Storage', 'Memory Retrieval', 'Session Management', 'Pattern Recognition'],
     status: 'available'
   },
   {
@@ -85,211 +84,44 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   onModeChange
 }) => {
   const [message, setMessage] = useState('');
-  const [ragStatus, setRagStatus] = useState({ available: false, documentsCount: 0, labelStudioConnected: false });
-  const [modelSelectionMode, setModelSelectionMode] = useState<'single' | 'cross-category'>('single'); // New selection mode
-  
-  // Single model selection (existing functionality)
-  const [selectedModel, setSelectedModel] = useState<{ provider: string; model: string; category: string }>({
-    provider: 'claude',
-    model: 'claude-3-5-haiku-20241022',
-    category: 'llm'
-  });
-  
-  // Multi-model selections for split view
-  const [selectedModelLeft, setSelectedModelLeft] = useState<{ provider: string; model: string; category: string }>({
-    provider: 'openai',
-    model: 'gpt-5-2025-08-07',
-    category: 'llm'
-  });
-  const [selectedModelRight, setSelectedModelRight] = useState<{ provider: string; model: string; category: string }>({
-    provider: 'claude',
-    model: 'claude-opus-4-1-20250805',
-    category: 'llm'
-  });
-  
-  // Cross-category model selection (new functionality)
+  const [modelSelectionMode, setModelSelectionMode] = useState<'enhanced' | 'cross-category'>('enhanced');
   const [selectedCrossModels, setSelectedCrossModels] = useState<SelectedModelConfig[]>([]);
-  
-  // Use conversation state management
-  const { state: conversationState, resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = useConversationState();
-  
-  // Initialize Universal AI hooks
-  const { generateResponse, isLoading, error, getModelsByCategory, isProviderAvailable } = useUniversalAI();
+  const [isLoading, setIsLoading] = useState(false);
 
-  // Check RAG status on component mount
+  // Page awareness integration
+  const pageAware = usePageAwareEnrollment();
+
+  // Determine if enrollment toggle should be visible
+  const shouldShowEnrollmentToggle = () => {
+    const pageContext = pageAware.getPageContext();
+    return pageContext.isPageSpecific && pageContext.config?.moduleType === 'patient';
+  };
+
+  // Auto-set mode based on page context  
   useEffect(() => {
-    if (isOpen) {
-      ragService.checkRAGStatus().then(setRagStatus);
+    if (shouldShowEnrollmentToggle() && mode === 'general' && onModeChange) {
+      onModeChange('enrollment');
     }
-  }, [isOpen]);
+  }, [mode, onModeChange, pageAware]);
 
-  const conversationModes = [
-    {
-      id: 'system',
-      label: 'System',
-      icon: <Monitor className="h-4 w-4" />,
-      description: 'Utilizes all available models (Gemini, GPT, and Claude) with RAG-enhanced responses for comprehensive and optimized answers.',
-      active: conversationState.selectedMode === 'system'
-    },
-    {
-      id: 'single',
-      label: 'Single',
-      icon: <User className="h-4 w-4" />,
-      description: 'Single model conversation with choice of traditional category selection or cross-category intelligence for specialized tasks.',
-      active: conversationState.selectedMode === 'single'
-    },
-    {
-      id: 'multi',
-      label: 'Multi',
-      icon: <Users className="h-4 w-4" />,
-      description: 'Compare models side-by-side or use multi-category intelligent merging for comprehensive analysis.',
-      active: conversationState.selectedMode === 'multi'
-    },
-    {
-      id: 'medical',
-      label: 'Medical',
-      icon: <Stethoscope className="h-4 w-4" />,
-      description: 'Access to FDA data, ICD codes, and HCPCS codes. Responses are enriched with medical references and regulatory information.',
-      active: false,
-      isFeature: true
-    },
-    {
-      id: 'publication',
-      label: 'Publication', 
-      icon: <FileText className="h-4 w-4" />,
-      description: 'Generate content for review and publication in the knowledge base with automatic RAG integration.',
-      active: false,
-      isFeature: true
-    }
-  ];
+  // Use conversation state management
+  const conversationState = useConversationState({
+    tenantId,
+    userId,
+    context
+  });
 
-  const handleModelSelect = (provider: string, model: string, category: string) => {
-    setSelectedModel({ provider, model, category });
-  };
-  const handleModelSelectLeft = (provider: string, model: string, category: string) => {
-    setSelectedModelLeft({ provider, model, category });
-  };
-  const handleModelSelectRight = (provider: string, model: string, category: string) => {
-    setSelectedModelRight({ provider, model, category });
-  };
+  // Initialize Universal AI hooks
+  const { generateResponse } = useUniversalAI();
 
-  const handleModeSelect = (mode: ConversationMode) => {
-    switchMode(mode);
-  };
-
-  const handleFeatureToggle = (featureId: string) => {
-    const newFeatures = conversationState.enabledFeatures.includes(featureId) 
-      ? conversationState.enabledFeatures.filter(id => id !== featureId)
-      : [...conversationState.enabledFeatures, featureId];
-    
-    updateConversationConfig({ enabledFeatures: newFeatures });
-    
-    // Auto-suggest models for medical and publication features
-    if (newFeatures.includes(featureId) && modelSelectionMode === 'cross-category') {
-      autoSuggestModelsForFeature(featureId);
-    }
-  };
-
-  const autoSuggestModelsForFeature = (featureId: string) => {
-    let suggestedModels: SelectedModelConfig[] = [];
-    
-    switch (featureId) {
-      case 'medical':
-        suggestedModels = [
-          {
-            provider: 'claude',
-            model: 'claude-opus-4-1-20250805',
-            category: 'llm',
-            name: 'Claude Opus (Medical Reasoning)',
-            role: 'primary',
-            weight: 0.4
-          },
-          {
-            provider: 'openai',
-            model: 'gpt-5-2025-08-07',
-            category: 'llm',
-            name: 'GPT-5 (Medical Knowledge)',
-            role: 'secondary',
-            weight: 0.3
-          },
-          {
-            provider: 'openai',
-            model: 'gpt-4o',
-            category: 'vision',
-            name: 'GPT-4 Vision (Medical Imaging)',
-            role: 'specialized',
-            weight: 0.2
-          },
-          {
-            provider: 'huggingface',
-            model: 'biobert',
-            category: 'small',
-            name: 'BioBERT (Medical NLP)',
-            role: 'specialized',
-            weight: 0.1
-          }
-        ];
-        break;
-        
-      case 'publication':
-        suggestedModels = [
-          {
-            provider: 'claude',
-            model: 'claude-sonnet-4-20250514',
-            category: 'llm',
-            name: 'Claude Sonnet (Writing & Structure)',
-            role: 'primary',
-            weight: 0.5
-          },
-          {
-            provider: 'openai',
-            model: 'gpt-5-2025-08-07',
-            category: 'llm',
-            name: 'GPT-5 (Research & Content)',
-            role: 'secondary',
-            weight: 0.3
-          },
-          {
-            provider: 'openai',
-            model: 'gpt-5-mini-2025-08-07',
-            category: 'small',
-            name: 'GPT-5 Mini (Quick Editing)',
-            role: 'specialized',
-            weight: 0.2
-          }
-        ];
-        break;
-    }
-    
-    if (suggestedModels.length > 0) {
-      setSelectedCrossModels(prev => {
-        // Merge with existing selections, avoiding duplicates
-        const existing = prev.filter(model => 
-          !suggestedModels.some(suggested => 
-            suggested.provider === model.provider && suggested.model === model.model
-          )
-        );
-        return [...existing, ...suggestedModels];
-      });
-    }
-  };
-
-  const handleMCPToolToggle = (toolId: string) => {
-    const newTools = conversationState.selectedMCPTools.includes(toolId) 
-      ? conversationState.selectedMCPTools.filter(id => id !== toolId)
-      : [...conversationState.selectedMCPTools, toolId];
-    
-    updateConversationConfig({ selectedMCPTools: newTools });
-  };
-
-  const handleStartChat = () => {
-    startConversation();
-    
-    // If the user already typed a message, send it immediately
-    if (message.trim()) {
-      queueMicrotask(() => handleSendMessage());
-    }
-  };
+  const {
+    conversationModes,
+    handleModeSelect,
+    addMessage,
+    resetConversation,
+    updateMessage,
+    startConversation
+  } = conversationState;
 
   const handleResetConversation = () => {
     resetConversation();
@@ -303,178 +135,73 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     
     const userMessageId = addMessage({ 
       role: 'user', 
-      content: message.trim(),
-      timestamp: new Date().toISOString()
+      content: message,
+      timestamp: new Date()
     });
     
-    const currentMessage = message;
     setMessage('');
-    
+    setIsLoading(true);
+
     try {
-      // Enhanced system prompt with context and mode awareness
-      let systemPrompt = `You are Genie, a helpful and intelligent Technical Navigator AI assistant. You have access to a comprehensive knowledge base and should provide responses that are:
-- Well-structured and easy to read
-- Conversational and friendly in tone
-- Detailed but not overwhelming
-- Use bullet points, numbered lists, and paragraphs for clarity
-- Always maintain a helpful, professional demeanor
-- Reference relevant context when available`;
+      if (conversationState.selectedMode === 'single') {
+        // Single model response
+        const response = await generateResponse({
+          messages: [...conversationState.messages, { role: 'user', content: message }],
+          model: 'gpt-4',
+          temperature: 0.7,
+          maxTokens: 1000
+        });
+        
+        addMessage({ 
+          role: 'assistant', 
+          content: response,
+          modelInfo: { provider: 'openai', model: 'gpt-4' }
+        });
+      } else if (conversationState.selectedMode === 'multi') {
+        // Multi-model responses
+        const models = selectedCrossModels.length > 0 ? selectedCrossModels : [
+          { provider: 'openai', model: 'gpt-4', name: 'GPT-4' },
+          { provider: 'anthropic', model: 'claude-3-sonnet', name: 'Claude 3 Sonnet' }
+        ];
 
-      // Add context-specific instructions
-      if (context === 'patient-enrollment' && mode === 'enrollment') {
-        systemPrompt += `
-
-You are in PATIENT ENROLLMENT mode. You specialize in helping with:
-- Patient enrollment forms and data collection
-- Medical history gathering and documentation
-- Insurance verification and eligibility
-- Emergency contact information
-- Consent forms and HIPAA compliance
-- Step-by-step enrollment process guidance
-- Document upload assistance
-- Appointment scheduling
-
-When helping with enrollment forms, ask specific questions about:
-1. Personal Information (name, DOB, address, contact details)
-2. Insurance Information (provider, policy numbers, group numbers)
-3. Medical History (conditions, medications, allergies, surgeries)
-4. Emergency Contacts (relationships, contact information)
-5. Primary Care Physician details
-6. Preferred pharmacy information
-7. Language preferences and accessibility needs
-
-Always guide users through forms step-by-step and offer to help complete specific sections.`;
-      } else if (context === 'patient-enrollment') {
-        systemPrompt += " You are on the Patient Onboarding page. You can switch to Enrollment mode to help with patient forms and enrollment processes.";
-      }
-      
-      // Add model category specific instructions based on selection mode
-      if (modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0) {
-        systemPrompt += " You are working with multiple AI models with different capabilities - provide comprehensive responses leveraging each model's strengths.";
-      } else if (selectedModel.category === 'small') {
-        systemPrompt += " You are optimized for efficiency and speed while maintaining accuracy.";
-      } else if (selectedModel.category === 'vision') {
-        systemPrompt += " You have vision capabilities and can analyze images, charts, and visual content.";
-      }
-      
-      // Add feature-specific context
-      if (conversationState.enabledFeatures.includes('medical')) {
-        systemPrompt += " You have access to medical data, FDA information, ICD codes, and HCPCS codes. Provide medical information when relevant.";
-      }
-      if (conversationState.enabledFeatures.includes('publication')) {
-        systemPrompt += " Generate content suitable for review and publication in knowledge bases.";
-      }
-
-      // Add MCP tools context (Label Studio is always included)
-      const allActiveTools = ['label-studio-mcp', ...conversationState.selectedMCPTools];
-      if (allActiveTools.length > 0) {
-        const labelStudioName = 'Label Studio Integration';
-        const otherToolNames = conversationState.selectedMCPTools.map(id => mcpTools.find(t => t.id === id)?.name).filter(Boolean);
-        const allToolNames = [labelStudioName, ...otherToolNames];
-        systemPrompt += ` You have access to the following external tools and integrations: ${allToolNames.join(', ')}. Label Studio RAG knowledge base is always available. Use these tools when relevant to provide enhanced responses.`;
-      } else {
-        systemPrompt += " You have access to Label Studio RAG knowledge base for enhanced, context-aware responses.";
-      }
-
-      // Enhance prompt with RAG context (Label Studio is always included)
-      const { enhancedPrompt, contextSources } = await ragService.enhancePromptWithRAG(
-        currentMessage, 
-        ['label-studio-mcp', ...conversationState.enabledFeatures, ...conversationState.selectedMCPTools]
-      );
-
-      // Build and send request(s) based on mode and selection
-      let targets = [];
-      
-      if (conversationState.selectedMode === 'multi') {
-        if (modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0) {
-          // Use cross-category selected models
-          targets = selectedCrossModels.map(model => ({
-            provider: model.provider,
-            model: model.model,
-            category: model.category,
-            name: model.name
-          }));
-        } else {
-          // Use traditional split models
-          targets = [selectedModelLeft, selectedModelRight];
-        }
-      } else {
-        // Single model mode or system mode
-        if (modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0) {
-          // Use primary model from cross-category selection
-          const primaryModel = selectedCrossModels.find(m => m.role === 'primary') || selectedCrossModels[0];
-          targets = [{ provider: primaryModel.provider, model: primaryModel.model, category: primaryModel.category }];
-        } else {
-          targets = [selectedModel];
-        }
-      }
-
-      const results = await Promise.allSettled(targets.map(async (m) => {
-        try {
-          const request: any = {
-            prompt: enhancedPrompt,
-            systemPrompt,
-            provider: m.provider,
+        const responses = await Promise.allSettled(models.map(async (m) => {
+          const response = await generateResponse({
+            messages: [...conversationState.messages, { role: 'user', content: message }],
             model: m.model,
             temperature: 0.7,
             maxTokens: 1000
-          };
-          const res = await generateResponse(request);
-          return { ok: true as const, res, modelInfo: m };
-        } catch (e: any) {
-          console.error(`Provider ${m.provider} with model ${m.model} failed:`, e?.message || e);
-          return { ok: false as const, err: e, modelInfo: m };
-        }
-      }));
-
-      // Add messages for all successful responses
-      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
-      results.forEach((result, index) => {
-        if (result.status === 'fulfilled' && result.value.ok) {
-          const r = result.value;
-          let content = (r.res as any).content;
-          if (contextSources.length > 0) {
-            content += `\n\n*Sources: ${contextSources.join(', ')}*`;
-          }
-          
-          // Add model info for multi-model responses
-          const modelName = r.modelInfo.name || `${r.modelInfo.provider} ${r.modelInfo.model}`;
-          if (targets.length > 1) {
-            content = `**${modelName}:**\n\n${content}`;
-          }
-          
-          addMessage({
-            role: 'assistant',
-            content,
-            provider: (r.res as any).provider,
-            model: (r.res as any).model,
-            timestamp: new Date().toISOString(),
-            metadata: { 
-              contextSources, 
-              ragEnhanced: contextSources.length > 0,
-              modelName: modelName,
-              isMultiModel: targets.length > 1
-            }
           });
-        } else if (result.status === 'fulfilled' && !result.value.ok) {
-          console.error('Model failed:', result.value.err);
-        }
-      });
+          return { response, modelInfo: m };
+        }));
 
-      if (successCount === 0) {
-        throw new Error('All model calls failed. Please check providers and try again.');
+        responses.forEach((result) => {
+          if (result.status === 'fulfilled') {
+            addMessage({
+              role: 'assistant',
+              content: result.value.response,
+              modelInfo: result.value.modelInfo
+            });
+          }
+        });
       }
     } catch (error) {
-      console.error('Error in handleSendMessage:', error);
+      console.error('Error generating response:', error);
       addMessage({
         role: 'assistant',
-        content: `Sorry, I encountered an error: ${error.message}. Please try again or select different models.`,
-        provider: 'system',
-        model: 'error',
-        timestamp: new Date().toISOString(),
-        metadata: { isError: true }
+        content: 'I apologize, but I encountered an error while processing your request. Please try again.',
+        modelInfo: { provider: 'error', model: 'error' }
       });
+    } finally {
+      setIsLoading(false);
     }
+  };
+
+  const handleStartChat = () => {
+    startConversation();
+  };
+
+  const handleMCPToolToggle = (toolId: string) => {
+    conversationState.toggleMCPTool(toolId);
   };
 
   const renderModelSelectionContent = () => {
@@ -482,16 +209,15 @@ Always guide users through forms step-by-step and offer to help complete specifi
       case 'single':
         return (
           <div className="mt-4 space-y-4">
-            {/* Model Selection Mode Picker */}
             <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
               <span className="text-sm font-medium">Selection Mode:</span>
               <div className="flex items-center gap-2">
                 <Button
-                  variant={modelSelectionMode === 'single' ? 'default' : 'outline'}
+                  variant={modelSelectionMode === 'enhanced' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setModelSelectionMode('single')}
+                  onClick={() => setModelSelectionMode('enhanced')}
                 >
-                  Single Model
+                  Enhanced
                 </Button>
                 <Button
                   variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
@@ -502,26 +228,15 @@ Always guide users through forms step-by-step and offer to help complete specifi
                 </Button>
               </div>
             </div>
-            
-            {/* Render appropriate selector based on mode */}
-            {modelSelectionMode === 'single' ? (
-              <EnhancedModelSelector
-                onModelSelect={handleModelSelect}
-                selectedModel={selectedModel}
-              />
-            ) : (
-              <CrossCategoryModelSelector
-                onModelsSelect={(models) => {
-                  setSelectedCrossModels(models);
-                  // Set the primary model for conversation state
-                  const primaryModel = models.find(m => m.role === 'primary') || models[0];
-                  if (primaryModel) {
-                    handleModelSelect(primaryModel.provider, primaryModel.model, primaryModel.category);
-                  }
-                }}
+
+            {modelSelectionMode === 'enhanced' && (
+              <EnhancedModelSelector />
+            )}
+
+            {modelSelectionMode === 'cross-category' && (
+              <CrossCategoryModelSelector 
                 selectedModels={selectedCrossModels}
-                mode="single"
-                maxSelections={4}
+                onSelectionChange={setSelectedCrossModels}
               />
             )}
           </div>
@@ -530,123 +245,58 @@ Always guide users through forms step-by-step and offer to help complete specifi
       case 'multi':
         return (
           <div className="mt-4 space-y-4">
-            {/* Model Selection Mode Picker */}
             <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
               <span className="text-sm font-medium">Selection Mode:</span>
               <div className="flex items-center gap-2">
                 <Button
-                  variant={modelSelectionMode === 'single' ? 'default' : 'outline'}
+                  variant={modelSelectionMode === 'enhanced' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setModelSelectionMode('single')}
+                  onClick={() => setModelSelectionMode('enhanced')}
                 >
-                  Traditional Split
+                  Enhanced
                 </Button>
                 <Button
                   variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setModelSelectionMode('cross-category')}
                 >
-                  Multi-Category
+                  Cross-Category
                 </Button>
               </div>
             </div>
-            
-            {modelSelectionMode === 'single' ? (
-              <>
-                <p className="text-sm text-muted-foreground">Select models for side-by-side comparison</p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-xs font-medium mb-2">Left Panel Model</p>
-                    <EnhancedModelSelector
-                      onModelSelect={handleModelSelectLeft}
-                      selectedModel={selectedModelLeft}
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-medium mb-2">Right Panel Model</p>
-                    <EnhancedModelSelector
-                      onModelSelect={handleModelSelectRight}
-                      selectedModel={selectedModelRight}
-                    />
-                  </div>
-                </div>
-                <p className="text-xs text-muted-foreground">You can compare outputs from different providers/models in a split view.</p>
-              </>
-            ) : (
-              <>
-                <p className="text-sm text-muted-foreground">Select multiple models across categories for intelligent comparison</p>
-                <CrossCategoryModelSelector
-                  onModelsSelect={setSelectedCrossModels}
-                  selectedModels={selectedCrossModels}
-                  mode="multi"
-                  maxSelections={6}
-                />
-                <p className="text-xs text-muted-foreground">Models will be processed in parallel and results intelligently merged.</p>
-              </>
+
+            {modelSelectionMode === 'cross-category' && (
+              <CrossCategoryModelSelector 
+                selectedModels={selectedCrossModels}
+                onSelectionChange={setSelectedCrossModels}
+                multiSelect={true}
+              />
             )}
           </div>
         );
 
-      case 'system':
       default:
         return (
           <div className="mt-4 space-y-4">
-            {/* Model Selection Mode Picker for System */}
             <div className="flex items-center gap-4 p-3 bg-green-50 rounded-lg border border-green-200">
               <span className="text-sm font-medium text-green-700">System Mode Selection:</span>
               <div className="flex items-center gap-2">
                 <Button
-                  variant={modelSelectionMode === 'single' ? 'default' : 'outline'}
+                  variant={modelSelectionMode === 'enhanced' ? 'default' : 'outline'}
                   size="sm"
-                  onClick={() => setModelSelectionMode('single')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
+                  onClick={() => setModelSelectionMode('enhanced')}
                 >
-                  Auto-System
+                  Enhanced
                 </Button>
                 <Button
                   variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
                   size="sm"
                   onClick={() => setModelSelectionMode('cross-category')}
-                  className="bg-green-600 hover:bg-green-700 text-white"
                 >
-                  Custom System
+                  Cross-Category
                 </Button>
               </div>
             </div>
-            
-            {modelSelectionMode === 'single' ? (
-              <Card className="border-green-200 bg-green-50/30">
-                <CardContent className="p-4">
-                  <div className="text-sm text-green-700 font-medium mb-1">
-                    Auto-System Mode: Utilizes all available models (Gemini, GPT, and Claude) with RAG-enhanced knowledge base for comprehensive and optimized responses.
-                  </div>
-                  {ragStatus.available && (
-                    <div className="flex items-center gap-2 mt-2">
-                      <Database className="h-3 w-3 text-green-600" />
-                      <span className="text-xs text-green-600">
-                        RAG Active: {ragStatus.documentsCount} documents, Label Studio: {ragStatus.labelStudioConnected ? 'Connected' : 'Not Connected'}
-                      </span>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="space-y-3">
-                <Card className="border-green-200 bg-green-50/30">
-                  <CardContent className="p-4">
-                    <div className="text-sm text-green-700 font-medium mb-1">
-                      Custom System Mode: Select and configure your own multi-model system with intelligent merging.
-                    </div>
-                  </CardContent>
-                </Card>
-                <CrossCategoryModelSelector
-                  onModelsSelect={setSelectedCrossModels}
-                  selectedModels={selectedCrossModels}
-                  mode="system"
-                  maxSelections={8}
-                />
-              </div>
-            )}
           </div>
         );
     }
@@ -655,7 +305,7 @@ Always guide users through forms step-by-step and offer to help complete specifi
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
-        {/* Header with Always-Visible Toggle */}
+        {/* Header with Page-Aware Toggle */}
         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-teal-50 to-blue-50">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 p-0.5">
@@ -677,25 +327,27 @@ Always guide users through forms step-by-step and offer to help complete specifi
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Always-Visible Mode Toggle */}
-            <div className="flex items-center bg-muted rounded-lg p-1">
-              <Button
-                variant={mode === 'general' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => onModeChange?.('general')}
-                className="px-3 py-1.5 h-8 text-xs font-medium"
-              >
-                General
-              </Button>
-              <Button
-                variant={mode === 'enrollment' ? 'secondary' : 'ghost'}
-                size="sm"
-                onClick={() => onModeChange?.('enrollment')}
-                className="px-3 py-1.5 h-8 text-xs font-medium"
-              >
-                Enrollment
-              </Button>
-            </div>
+            {/* Page-Aware Mode Toggle */}
+            {shouldShowEnrollmentToggle() && (
+              <div className="flex items-center bg-muted rounded-lg p-1">
+                <Button
+                  variant={mode === 'general' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => onModeChange?.('general')}
+                  className="px-3 py-1.5 h-8 text-xs font-medium"
+                >
+                  General
+                </Button>
+                <Button
+                  variant={mode === 'enrollment' ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => onModeChange?.('enrollment')}
+                  className="px-3 py-1.5 h-8 text-xs font-medium"
+                >
+                  Enrollment
+                </Button>
+              </div>
+            )}
             
             {conversationState.isActive && (
               <Button
@@ -719,7 +371,7 @@ Always guide users through forms step-by-step and offer to help complete specifi
         </div>
 
         <ScrollArea className="flex-1">
-          {/* Enhanced Context Banner - Always Visible */}
+          {/* Enhanced Context Banner */}
           <div className="p-4 border-b border-border/20">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center gap-2">
@@ -755,7 +407,7 @@ Always guide users through forms step-by-step and offer to help complete specifi
               <EnhancedEnrollmentInterface 
                 onSubmit={(data) => {
                   console.log('📋 Enrollment completed via Genie:', data);
-                  // Handle enrollment completion
+                  // Handle enrollment completion with real-time DB updates
                 }}
               />
             </div>
@@ -764,7 +416,7 @@ Always guide users through forms step-by-step and offer to help complete specifi
               {/* General AI Chat Interface */}
               <div className="text-center mb-6">
                 <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-                  How can I help you today, Guest?
+                  How can I help you today?
                 </h3>
                 <p className="text-gray-600 mb-4">Choose how you'd like me to assist you:</p>
               </div>
@@ -776,7 +428,7 @@ Always guide users through forms step-by-step and offer to help complete specifi
                     key={mode.id}
                     variant={mode.active ? 'default' : 'outline'}
                     size="lg"
-                    onClick={() => handleModeSelect(mode.id as ConversationMode)}
+                    onClick={() => handleModeSelect(mode.id as any)}
                     className={`flex items-center gap-2 px-6 py-3 h-auto ${
                       mode.active 
                         ? 'bg-blue-500 text-white hover:bg-blue-600' 
@@ -784,408 +436,73 @@ Always guide users through forms step-by-step and offer to help complete specifi
                     }`}
                   >
                     {mode.icon}
-                    {mode.label}
-                  </Button>
-                ))}
-              </div>
-
-              {renderModelSelection()}
-            </div>
-          )}
-
-          <div className="text-center mb-6">
-            <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-              How can I help you today, Guest?
-            </h3>
-            <p className="text-gray-600 mb-4">Choose how you'd like me to assist you:</p>
-          </div>
-
-          {/* Mode Selection */}
-          <div className="flex flex-wrap gap-3 justify-center mb-4">
-            {conversationModes.filter(mode => !mode.isFeature).map((mode) => (
-              <Button
-                key={mode.id}
-                variant={mode.active ? 'default' : 'outline'}
-                size="lg"
-                onClick={() => handleModeSelect(mode.id as ConversationMode)}
-                className={`flex items-center gap-2 px-6 py-3 h-auto ${
-                  mode.active 
-                    ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                    : 'hover:bg-gray-50'
-                }`}
-              >
-                {mode.icon}
-                {mode.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* Feature Toggles */}
-          <div className="flex flex-wrap gap-3 justify-center mb-6">
-            {conversationModes.filter(mode => mode.isFeature).map((feature) => (
-              <Button
-                key={feature.id}
-                variant={conversationState.enabledFeatures.includes(feature.id) ? 'default' : 'outline'}
-                size="sm"
-                onClick={() => handleFeatureToggle(feature.id)}
-                className={`flex items-center gap-2 px-4 py-2 h-auto ${
-                  conversationState.enabledFeatures.includes(feature.id)
-                    ? 'bg-green-500 text-white hover:bg-green-600' 
-                    : 'hover:bg-gray-50'
-                }`}
-              >
-                {feature.icon}
-                {feature.label}
-              </Button>
-            ))}
-          </div>
-
-          {/* Mode Description */}
-          <div className="text-center mb-4">
-            <p className="text-sm text-gray-600 max-w-2xl mx-auto">
-              {conversationModes.find(mode => mode.id === conversationState.selectedMode)?.description}
-            </p>
-          </div>
-
-          {/* Mode-specific Content */}
-          {renderModelSelectionContent()}
-
-          {/* Enhanced API Configuration Section */}
-          <div className="mt-6">
-            <div className="space-y-3">
-              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
-                <div className="flex items-center gap-2">
-                  <Database className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <span className="font-medium text-blue-900">API Configuration</span>
-                    <p className="text-xs text-blue-700">Configure external integrations and tools</p>
-                  </div>
-                </div>
-                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                  {conversationState.selectedMCPTools.length + 1} Active
-                </Badge>
-              </div>
-              
-              <Popover>
-                <PopoverTrigger asChild>
-                  <Button variant="outline" className="w-full justify-between hover:bg-blue-50">
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-4 w-4" />
-                      <span>MCP Tools & Integrations ({conversationState.selectedMCPTools.length} selected)</span>
+                    <div className="text-left">
+                      <div className="font-medium">{mode.title}</div>
+                      <div className="text-xs opacity-75">{mode.subtitle}</div>
                     </div>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </PopoverTrigger>
-              <PopoverContent className="w-[min(720px,90vw)] p-0 bg-popover z-[100] shadow-lg border">
-                <div className="p-3 border-b sticky top-0 bg-popover z-10">
-                  <p className="text-xs text-muted-foreground">
-                    Connect to external tools and services through Model Context Protocol
-                  </p>
-                </div>
-                {/* Tabbed, scrollable content to prevent background scroll and ensure interactivity */}
-                <Tabs defaultValue="all" className="w-full">
-                  <TabsList level="child">
-                    <TabsTrigger value="all" level="child">All</TabsTrigger>
-                    <TabsTrigger value="healthcare" level="child">Healthcare</TabsTrigger>
-                    <TabsTrigger value="filesystem" level="child">Filesystem</TabsTrigger>
-                    <TabsTrigger value="research" level="child">Research</TabsTrigger>
-                  </TabsList>
-
-                  {/* All */}
-                  <TabsContent value="all" level="child" className="p-0">
-                    <ScrollArea className="h-72 md:h-80 pointer-events-auto">
-                      <div className="p-3 space-y-3">
-                        {mcpTools.map((tool) => (
-                          <div key={tool.id} className="p-3 border rounded-md bg-background">
-                            <div className="flex items-center justify-between mb-1">
-                              <h5 className="font-medium text-sm">{tool.name}</h5>
-                              <div className="flex items-center gap-2">
-                                <Badge 
-                                  variant={tool.status === 'available' ? 'default' : 'secondary'}
-                                  className="text-xs"
-                                >
-                                  {tool.status}
-                                </Badge>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
-                                  onClick={(e) => { e.stopPropagation(); handleMCPToolToggle(tool.id); }}
-                                >
-                                  {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {tool.capabilities.slice(0, 3).map((capability, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
-                                  {capability}
-                                </Badge>
-                              ))}
-                              {tool.capabilities.length > 3 && (
-                                <Badge variant="outline" className="text-xs px-1 py-0">
-                                  +{tool.capabilities.length - 3} more
-                                </Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-
-                  {/* Healthcare */}
-                  <TabsContent value="healthcare" level="child" className="p-0">
-                    <ScrollArea className="h-72 md:h-80 pointer-events-auto">
-                      <div className="p-3 space-y-3">
-                        {mcpTools.filter(t => t.id.includes('healthcare')).map((tool) => (
-                          <div key={tool.id} className="p-3 border rounded-md bg-background">
-                            <div className="flex items-center justify-between mb-1">
-                              <h5 className="font-medium text-sm">{tool.name}</h5>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">{tool.status}</Badge>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
-                                  onClick={(e) => { e.stopPropagation(); handleMCPToolToggle(tool.id); }}
-                                >
-                                  {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {tool.capabilities.slice(0, 3).map((capability, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs px-1 py-0">{capability}</Badge>
-                              ))}
-                              {tool.capabilities.length > 3 && (
-                                <Badge variant="outline" className="text-xs px-1 py-0">+{tool.capabilities.length - 3} more</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-
-                  {/* Filesystem */}
-                  <TabsContent value="filesystem" level="child" className="p-0">
-                    <ScrollArea className="h-72 md:h-80 pointer-events-auto">
-                      <div className="p-3 space-y-3">
-                        {mcpTools.filter(t => t.id.includes('filesystem')).map((tool) => (
-                          <div key={tool.id} className="p-3 border rounded-md bg-background">
-                            <div className="flex items-center justify-between mb-1">
-                              <h5 className="font-medium text-sm">{tool.name}</h5>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">{tool.status}</Badge>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
-                                  onClick={(e) => { e.stopPropagation(); handleMCPToolToggle(tool.id); }}
-                                >
-                                  {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {tool.capabilities.slice(0, 3).map((capability, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs px-1 py-0">{capability}</Badge>
-                              ))}
-                              {tool.capabilities.length > 3 && (
-                                <Badge variant="outline" className="text-xs px-1 py-0">+{tool.capabilities.length - 3} more</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-
-                  {/* Research */}
-                  <TabsContent value="research" level="child" className="p-0">
-                    <ScrollArea className="h-72 md:h-80 pointer-events-auto">
-                      <div className="p-3 space-y-3">
-                        {mcpTools.filter(t => t.id.includes('web')).map((tool) => (
-                          <div key={tool.id} className="p-3 border rounded-md bg-background">
-                            <div className="flex items-center justify-between mb-1">
-                              <h5 className="font-medium text-sm">{tool.name}</h5>
-                              <div className="flex items-center gap-2">
-                                <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">{tool.status}</Badge>
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onMouseDown={(e) => e.preventDefault()}
-                                  variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
-                                  onClick={(e) => { e.stopPropagation(); handleMCPToolToggle(tool.id); }}
-                                >
-                                  {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
-                            <div className="flex flex-wrap gap-1">
-                              {tool.capabilities.slice(0, 3).map((capability, idx) => (
-                                <Badge key={idx} variant="outline" className="text-xs px-1 py-0">{capability}</Badge>
-                              ))}
-                              {tool.capabilities.length > 3 && (
-                                <Badge variant="outline" className="text-xs px-1 py-0">+{tool.capabilities.length - 3} more</Badge>
-                              )}
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </ScrollArea>
-                  </TabsContent>
-                </Tabs>
-              </PopoverContent>
-            </Popover>
-            </div>
-          </div>
-
-          {/* Selected MCP Tools Display */}
-          {conversationState.selectedMCPTools.length > 0 && (
-            <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-              <p className="text-xs text-green-700 font-medium mb-1">
-                Active MCP Tools ({conversationState.selectedMCPTools.length}):
-              </p>
-              <div className="flex flex-wrap gap-1">
-                {conversationState.selectedMCPTools.map((toolId) => {
-                  const tool = mcpTools.find(t => t.id === toolId);
-                  return (
-                    <Badge key={toolId} variant="secondary" className="text-xs">
-                      {tool?.name}
-                    </Badge>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Feature Status Display */}
-          {conversationState.enabledFeatures.length > 0 && (
-            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-              <h4 className="font-semibold text-sm text-blue-800 mb-2">Active Features:</h4>
-              <div className="flex flex-wrap gap-2">
-                {conversationState.enabledFeatures.includes('medical') && (
-                  <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                    <Stethoscope className="h-3 w-3 mr-1" />
-                    Medical Data Access
-                  </Badge>
-                )}
-                {conversationState.enabledFeatures.includes('publication') && (
-                  <Badge variant="secondary" className="bg-green-100 text-green-800">
-                    <FileText className="h-3 w-3 mr-1" />
-                    Publication Mode
-                  </Badge>
-                )}
-              </div>
-            </div>
-          )}
-
-            {/* General AI Chat Mode */}
-            <div className="p-6">
-              <div className="text-center mb-6">
-                <h3 className="text-2xl font-semibold text-gray-900 mb-2">
-                  How can I help you today, Guest?
-                </h3>
-                <p className="text-gray-600 mb-4">Choose how you'd like me to assist you:</p>
-              </div>
-
-              {/* Mode Selection */}
-              <div className="flex flex-wrap gap-3 justify-center mb-4">
-                {conversationModes.filter(mode => !mode.isFeature).map((mode) => (
-                  <Button
-                    key={mode.id}
-                    variant={mode.active ? 'default' : 'outline'}
-                    size="lg"
-                    onClick={() => handleModeSelect(mode.id as ConversationMode)}
-                    className={`flex items-center gap-2 px-6 py-3 h-auto ${
-                      mode.active 
-                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {mode.icon}
-                    {mode.label}
-                  </Button>
-                ))}
-              </div>
-
-              {/* Feature Toggles */}
-              <div className="flex flex-wrap gap-3 justify-center mb-6">
-                {conversationModes.filter(mode => mode.isFeature).map((feature) => (
-                  <Button
-                    key={feature.id}
-                    variant={conversationState.enabledFeatures.includes(feature.id) ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => handleFeatureToggle(feature.id)}
-                    className={`flex items-center gap-2 px-4 py-2 h-auto ${
-                      conversationState.enabledFeatures.includes(feature.id)
-                        ? 'bg-green-500 text-white hover:bg-green-600' 
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {feature.icon}
-                    {feature.label}
                   </Button>
                 ))}
               </div>
 
               {/* Model Selection Interface */}
-              {renderModelSelection()}
+              {renderModelSelectionContent()}
 
-              {/* Selected MCP Tools Display */}
-              {conversationState.selectedMCPTools.length > 0 && (
-                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
-                  <p className="text-xs text-green-700 font-medium mb-1">
-                    Active MCP Tools ({conversationState.selectedMCPTools.length}):
-                  </p>
-                  <div className="flex flex-wrap gap-1">
-                    {conversationState.selectedMCPTools.map((toolId) => {
-                      const tool = mcpTools.find(t => t.id === toolId);
-                      return (
-                        <Badge key={toolId} variant="secondary" className="text-xs">
-                          {tool?.name}
-                        </Badge>
-                      );
-                    })}
-                  </div>
+              {/* MCP Tools Selection */}
+              <div className="mt-6 p-4 bg-gray-50 rounded-lg border">
+                <h4 className="text-sm font-medium mb-3 text-gray-700">MCP Tools & Capabilities</h4>
+                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+                  {mcpTools.map((tool) => (
+                    <Card 
+                      key={tool.id} 
+                      className={`cursor-pointer transition-all ${
+                        conversationState.selectedMCPTools.includes(tool.id)
+                          ? 'ring-2 ring-blue-500 bg-blue-50' 
+                          : 'hover:shadow-md'
+                      }`}
+                      onClick={() => handleMCPToolToggle(tool.id)}
+                    >
+                      <CardContent className="p-3">
+                        <div className="flex items-start justify-between mb-2">
+                          <h5 className="font-medium text-sm text-gray-900">{tool.name}</h5>
+                          <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">
+                            {tool.status}
+                          </Badge>
+                        </div>
+                        <p className="text-xs text-gray-600 mb-2">{tool.description}</p>
+                        <div className="flex flex-wrap gap-1">
+                          {tool.capabilities.slice(0, 2).map((cap, index) => (
+                            <Badge key={index} variant="outline" className="text-xs">
+                              {cap}
+                            </Badge>
+                          ))}
+                          {tool.capabilities.length > 2 && (
+                            <Badge variant="outline" className="text-xs">
+                              +{tool.capabilities.length - 2}
+                            </Badge>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ))}
                 </div>
-              )}
 
-              {/* Feature Status Display */}
-              {conversationState.enabledFeatures.length > 0 && (
-                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h4 className="font-semibold text-sm text-blue-800 mb-2">Active Features:</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {conversationState.enabledFeatures.includes('medical') && (
-                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
-                        <Stethoscope className="h-3 w-3 mr-1" />
-                        Medical Data Access
-                      </Badge>
-                    )}
-                    {conversationState.enabledFeatures.includes('publication') && (
-                      <Badge variant="secondary" className="bg-green-100 text-green-800">
-                        <FileText className="h-3 w-3 mr-1" />
-                        Publication Mode
-                      </Badge>
-                    )}
+                {conversationState.selectedMCPTools.length > 0 && (
+                  <div className="mt-3 p-3 bg-white rounded border border-blue-200">
+                    <p className="text-xs font-medium text-blue-700 mb-1">
+                      Active MCP Tools ({conversationState.selectedMCPTools.length}):
+                    </p>
+                    <div className="flex flex-wrap gap-1">
+                      {conversationState.selectedMCPTools.map((toolId) => {
+                        const tool = mcpTools.find(t => t.id === toolId);
+                        return (
+                          <Badge key={toolId} variant="secondary" className="text-xs">
+                            {tool?.name}
+                          </Badge>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              )}
-
-              {/* Disclaimer */}
-              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                <p className="text-sm text-yellow-800">
-                  <strong>Disclaimer:</strong> This is an AI assistant with RAG-enhanced knowledge base for demonstration purposes. The responses generated should not be considered as medical advice. Always consult qualified healthcare professionals for medical decisions.
-                </p>
+                )}
               </div>
 
               {/* Start Chat Button */}
@@ -1201,7 +518,7 @@ Always guide users through forms step-by-step and offer to help complete specifi
                 </div>
               )}
 
-              {/* Conversation Area with Enhanced Multi-Model Display */}
+              {/* Conversation Area */}
               {conversationState.isActive && (
                 <div className="mt-6">
                   <div className="flex items-center justify-between mb-2">
