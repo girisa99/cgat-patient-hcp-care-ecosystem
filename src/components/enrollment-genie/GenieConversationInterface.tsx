@@ -6,11 +6,12 @@ import React, { useState, useEffect } from 'react';
 import { NonModalDialogRoot as Dialog, NonModalDialogContent as DialogContent } from '@/components/ui/non-modal-dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { Label } from '@/components/ui/label';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -27,7 +28,11 @@ import {
   RefreshCw,
   Settings,
   Database,
-  Zap
+  Zap,
+  MessageSquare,
+  Download,
+  AlertTriangle,
+  Mic
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
@@ -37,7 +42,7 @@ import { EnhancedModelSelector } from '@/components/ai/EnhancedModelSelector';
 import { CrossCategoryModelSelector, SelectedModelConfig } from '@/components/ai/CrossCategoryModelSelector';
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
-import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
+import { EnrollmentJourneySteps } from '@/components/patient-enrollment/EnrollmentJourneySteps';
 import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
 
 interface GenieConversationInterfaceProps {
@@ -412,12 +417,147 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Main Content Based on Mode */}
           {mode === 'enrollment' ? (
             <div className="p-6">
-              <EnhancedEnrollmentInterface 
-                onSubmit={(data) => {
-                  console.log('📋 Enrollment completed via Genie:', data);
-                  // Handle enrollment completion with real-time DB updates
-                }}
-              />
+              {/* Enhanced Patient Enrollment Header */}
+              <div className="mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <User className="h-6 w-6 text-primary" />
+                    <h2 className="text-2xl font-semibold">Enhanced Patient Enrollment</h2>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Bot className="h-3 w-3" />
+                      AI-Powered
+                    </Badge>
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Database className="h-3 w-3" />
+                      Data Captured
+                    </Badge>
+                    <Badge variant="outline" className="flex items-center gap-1">
+                      <Monitor className="h-3 w-3" />
+                      Audit Ready
+                    </Badge>
+                  </div>
+                </div>
+
+                {/* Feature Cards */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <Card className="text-center p-4">
+                    <MessageSquare className="h-8 w-8 mx-auto mb-2 text-primary" />
+                    <h3 className="font-medium mb-1">Natural Conversation</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Speak naturally about your needs and let AI extract the structured data
+                    </p>
+                  </Card>
+                  <Card className="text-center p-4">
+                    <FileText className="h-8 w-8 mx-auto mb-2 text-primary" />
+                    <h3 className="font-medium mb-1">Auto-Fill Forms</h3>
+                    <p className="text-sm text-muted-foreground">
+                      Information from conversations automatically populates enrollment forms
+                    </p>
+                  </Card>
+                </div>
+              </div>
+
+              {/* Workflow Status */}
+              <Card className="mb-6">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Users className="h-5 w-5" />
+                    <CardTitle>Workflow Status</CardTitle>
+                  </div>
+                  <p className="text-sm text-muted-foreground">Enrollment Progress</p>
+                </CardHeader>
+                <CardContent>
+                  <div className="bg-muted p-4 rounded-lg mb-4">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ChevronRight className="h-4 w-4" />
+                      <span className="font-medium">Current Stage: Submission Method</span>
+                    </div>
+                    <p className="text-sm text-muted-foreground">Ready to proceed</p>
+                  </div>
+
+                  {/* Enrollment Journey Steps */}
+                  <EnrollmentJourneySteps 
+                    currentStep={0}
+                    onStepClick={(step) => console.log('Step clicked:', step)}
+                    completedSteps={[]}
+                  />
+                </CardContent>
+              </Card>
+
+              {/* Current Step Content */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Send className="h-5 w-5" />
+                    Submission Method
+                  </CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Choose how to complete enrollment
+                  </p>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2">
+                      <MessageSquare className="h-6 w-6" />
+                      <div>
+                        <div className="font-medium">Conversation</div>
+                        <div className="text-sm text-muted-foreground">AI-guided chat</div>
+                      </div>
+                    </Button>
+                    <Button variant="default" className="h-auto p-4 flex flex-col items-start gap-2">
+                      <FileText className="h-6 w-6" />
+                      <div>
+                        <div className="font-medium">Form</div>
+                        <div className="text-sm text-muted-foreground">Traditional form</div>
+                      </div>
+                    </Button>
+                    <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2">
+                      <Mic className="h-6 w-6" />
+                      <div>
+                        <div className="font-medium">Voice</div>
+                        <div className="text-sm text-muted-foreground">Voice-guided</div>
+                      </div>
+                    </Button>
+                  </div>
+
+                  {/* Channel Selection */}
+                  <div className="mt-6">
+                    <Label className="text-sm font-medium mb-2 block">Channel</Label>
+                    <select className="w-full px-3 py-2 border border-input bg-background rounded-md">
+                      <option value="online">Online</option>
+                      <option value="voice">Voice</option>
+                      <option value="pdf">PDF</option>
+                      <option value="fax">Fax</option>
+                    </select>
+                  </div>
+
+                  {/* Action Buttons */}
+                  <div className="flex items-center justify-between mt-6">
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="sm">
+                        <Download className="h-4 w-4 mr-2" />
+                        Download
+                      </Button>
+                      <Button variant="outline" size="sm">
+                        Save Draft
+                      </Button>
+                    </div>
+                    <Button>
+                      Complete Enrollment
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* Audit Notice */}
+              <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <div className="flex items-center gap-2 text-sm text-yellow-700">
+                  <AlertTriangle className="h-4 w-4" />
+                  <span>Audit mode enabled - All interactions are being logged for compliance. Label Studio is capturing structured data from your responses.</span>
+                </div>
+              </div>
             </div>
           ) : (
             <div className="p-6">
