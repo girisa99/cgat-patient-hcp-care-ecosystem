@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationState, ConversationMessage } from '@/hooks/useConversationState';
 import { ragService } from '@/services/ragService';
+import { ModelCategorySelector } from '@/components/ai/ModelCategorySelector';
 
 interface GenieConversationInterfaceProps {
   isOpen: boolean;
@@ -43,18 +44,8 @@ interface GenieConversationInterfaceProps {
 
 type ConversationMode = 'system' | 'single' | 'multi';
 
-const availableModels = [
-  // Large Language Models
-  'GEMINI', 'GPT', 'CLAUDE', 'LLAMA', 'MIXTRAL', 'ANTHROPIC'
-];
-
-const smallLanguageModels = [
-  'PHI-3-MINI', 'QWEN-2.5', 'LLAMA-3.1-8B', 'MISTRAL-7B', 'GEMMA-2B', 'TINYLLAMA-1.1B'
-];
-
-const visionLanguageModels = [
-  'GPT-4-VISION', 'GEMINI-PRO-VISION', 'CLAUDE-3-VISION', 'LLAVA-1.5', 'BLIP-2', 'FUYU-8B'
-];
+// Use the Universal AI system for model management
+const { getModelsByCategory, isProviderAvailable } = useUniversalAI();
 
 const mcpTools = [
   {
@@ -88,6 +79,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 }) => {
   const [message, setMessage] = useState('');
   const [ragStatus, setRagStatus] = useState({ available: false, documentsCount: 0, labelStudioConnected: false });
+  const [selectedModel, setSelectedModel] = useState<{ provider: string; model: string; category: string }>({
+    provider: 'claude',
+    model: 'claude-3-5-haiku-20241022',
+    category: 'llm'
+  });
   
   // Use conversation state management
   const { state: conversationState, resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = useConversationState();
@@ -142,13 +138,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     }
   ];
 
-  const getModelsForType = (type: 'llm' | 'slm' | 'vlm') => {
-    switch (type) {
-      case 'llm': return availableModels;
-      case 'slm': return smallLanguageModels;
-      case 'vlm': return visionLanguageModels;
-      default: return availableModels;
-    }
+  const handleModelSelect = (provider: string, model: string, category: string) => {
+    setSelectedModel({ provider, model, category });
   };
 
   const handleModeSelect = (mode: ConversationMode) => {
@@ -200,23 +191,16 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     setMessage('');
     
     try {
-      // Determine provider based on selected mode
-      let provider: 'openai' | 'claude' | 'gemini' = 'openai';
-      if (conversationState.selectedMode === 'single' || conversationState.selectedMode === 'multi') {
-        const targetModel = conversationState.selectedMode === 'multi' ? conversationState.leftModel : conversationState.selectedModel;
-        const modelId = targetModel.toLowerCase();
-        if (modelId.includes('gemini')) provider = 'gemini';
-        else if (modelId.includes('claude') || modelId.includes('anthropic')) provider = 'claude';
-        else provider = 'openai';
-      }
+      // Use the selected model from the ModelCategorySelector
+      const provider = selectedModel.provider as 'openai' | 'claude' | 'gemini';
       
       // Enhanced system prompt with RAG context
       let systemPrompt = "You are a helpful AI assistant with access to a comprehensive knowledge base.";
       
-      // Add model type specific instructions
-      if (conversationState.selectedModelType === 'slm') {
+      // Add model category specific instructions
+      if (selectedModel.category === 'small') {
         systemPrompt += " You are optimized for efficiency and speed while maintaining accuracy.";
-      } else if (conversationState.selectedModelType === 'vlm') {
+      } else if (selectedModel.category === 'vision') {
         systemPrompt += " You have vision capabilities and can analyze images, charts, and visual content.";
       }
       
@@ -249,42 +233,20 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       let response: any = null;
       let lastError: string = '';
       
-      if (conversationState.selectedMode === 'system') {
-        const providersToTry: Array<'openai' | 'claude' | 'gemini'> = ['openai', 'claude', 'gemini'];
-        for (const p of providersToTry) {
-          try {
-            const r = await generateResponse({
-              prompt: enhancedPrompt,
-              systemPrompt,
-              provider: p,
-              temperature: 0.7,
-              maxTokens: 1000
-            });
-            if (r && r.content) { 
-              response = r; 
-              break; 
-            }
-          } catch (e) {
-            const errorMsg = e instanceof Error ? e.message : 'Unknown error';
-            console.warn(`Provider ${p} failed:`, errorMsg);
-            lastError = errorMsg;
-          }
-        }
-      } else {
-        try {
-          const request: any = {
-            prompt: enhancedPrompt,
-            systemPrompt,
-            provider,
-            // Do not pass a UI label as model; backend will choose provider default
-            temperature: 0.7,
-            maxTokens: 1000
-          };
-          response = await generateResponse(request);
-        } catch (e) {
-          lastError = e instanceof Error ? e.message : 'Unknown error';
-          console.error(`Single provider ${provider} failed:`, lastError);
-        }
+      // Always use the selected model for all modes
+      try {
+        const request: any = {
+          prompt: enhancedPrompt,
+          systemPrompt,
+          provider: selectedModel.provider,
+          model: selectedModel.model,
+          temperature: 0.7,
+          maxTokens: 1000
+        };
+        response = await generateResponse(request);
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : 'Unknown error';
+        console.error(`Provider ${selectedModel.provider} with model ${selectedModel.model} failed:`, lastError);
       }
       
       if (response) {
@@ -323,129 +285,24 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       case 'single':
         return (
           <div className="mt-4 space-y-4">
-            {/* Model Type Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Model Type</label>
-              <div className="flex gap-2">
-                {[
-                  { key: 'llm', label: 'Large LM', icon: '🤖' },
-                  { key: 'slm', label: 'Small LM', icon: '⚡' },
-                  { key: 'vlm', label: 'Vision LM', icon: '👁️' }
-                ].map((type) => (
-                  <Button
-                    key={type.key}
-                    variant={conversationState.selectedModelType === type.key ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      const newType = type.key as 'llm' | 'slm' | 'vlm';
-                      updateConversationConfig({
-                        selectedModelType: newType,
-                        selectedModel: getModelsForType(newType)[0]
-                      });
-                    }}
-                    className="flex items-center gap-1"
-                  >
-                    <span>{type.icon}</span>
-                    {type.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            {/* Model Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Select Model</label>
-              <Select 
-                value={conversationState.selectedModel} 
-                onValueChange={(value) => updateConversationConfig({ selectedModel: value })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="max-h-60 overflow-y-auto bg-popover z-50">
-                  {getModelsForType(conversationState.selectedModelType).map((model) => (
-                    <SelectItem key={model} value={model}>
-                      {model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <ModelCategorySelector
+              onModelSelect={handleModelSelect}
+              selectedModel={selectedModel}
+            />
           </div>
         );
 
       case 'multi':
         return (
           <div className="mt-4 space-y-4">
-            {/* Model Type Selection */}
-            <div className="space-y-2">
-              <label className="text-sm font-medium">Model Type</label>
-              <div className="flex gap-2">
-                {[
-                  { key: 'llm', label: 'Large LM', icon: '🤖' },
-                  { key: 'slm', label: 'Small LM', icon: '⚡' },
-                  { key: 'vlm', label: 'Vision LM', icon: '👁️' }
-                ].map((type) => (
-                  <Button
-                    key={type.key}
-                    variant={conversationState.selectedModelType === type.key ? 'default' : 'outline'}
-                    size="sm"
-                    onClick={() => {
-                      const newType = type.key as 'llm' | 'slm' | 'vlm';
-                      const models = getModelsForType(newType);
-                      updateConversationConfig({
-                        selectedModelType: newType,
-                        leftModel: models[0],
-                        rightModel: models[1] || models[0]
-                      });
-                    }}
-                    className="flex items-center gap-1"
-                  >
-                    <span>{type.icon}</span>
-                    {type.label}
-                  </Button>
-                ))}
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Left Model</label>
-                <Select 
-                  value={conversationState.leftModel} 
-                  onValueChange={(value) => updateConversationConfig({ leftModel: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto bg-popover z-50">
-                    {getModelsForType(conversationState.selectedModelType).map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-2">
-                <label className="text-sm font-medium">Right Model</label>
-                <Select 
-                  value={conversationState.rightModel} 
-                  onValueChange={(value) => updateConversationConfig({ rightModel: value })}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent className="max-h-60 overflow-y-auto bg-popover z-50">
-                    {getModelsForType(conversationState.selectedModelType).map((model) => (
-                      <SelectItem key={model} value={model}>
-                        {model}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
+            <p className="text-sm text-muted-foreground">Select model for side-by-side comparison</p>
+            <ModelCategorySelector
+              onModelSelect={handleModelSelect}
+              selectedModel={selectedModel}
+            />
+            <p className="text-xs text-muted-foreground">
+              Note: Multi-mode currently uses the selected model. Full side-by-side comparison coming soon.
+            </p>
           </div>
         );
 

@@ -261,11 +261,11 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
 }
 
 function getDefaultModel(provider: string): string {
-  // Updated defaults with model category fallbacks
+  // Updated defaults with working models 
   const modelHierarchy = {
-    openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'gpt-5-mini-2025-08-07', 'gpt-4o-mini'],
-    claude: ['claude-sonnet-4-20250514', 'claude-opus-4-1-20250805', 'claude-3-5-haiku-20241022'],
-    gemini: ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-pro']
+    openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-5-2025-08-07', 'gpt-4.1-2025-04-14'],
+    claude: ['claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022', 'claude-sonnet-4-20250514'],
+    gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-2.0-flash']
   };
 
   switch (provider) {
@@ -278,9 +278,9 @@ function getDefaultModel(provider: string): string {
 
 function getModelFallbacks(provider: string, failedModel: string): string[] {
   const modelHierarchy = {
-    openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'gpt-5-mini-2025-08-07', 'gpt-4o-mini', 'gpt-4o'],
-    claude: ['claude-sonnet-4-20250514', 'claude-opus-4-1-20250805', 'claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022'],
-    gemini: ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-pro', 'gemini-pro-vision']
+    openai: ['gpt-4o-mini', 'gpt-4o', 'gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'gpt-5-mini-2025-08-07'],
+    claude: ['claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022', 'claude-sonnet-4-20250514', 'claude-opus-4-1-20250805'],
+    gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-2.0-flash', 'gemini-pro-vision']
   };
 
   const hierarchy = modelHierarchy[provider as keyof typeof modelHierarchy] || [];
