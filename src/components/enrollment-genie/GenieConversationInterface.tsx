@@ -346,8 +346,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Mode Toggle */}
-            
+            {/* Mode Toggle - Only show on patient enrollment pages */}
+            {shouldShowEnrollmentToggle() && (
               <div className="flex items-center bg-muted rounded-lg p-1">
                 <Button
                   variant={mode === 'general' ? 'secondary' : 'ghost'}
@@ -374,7 +374,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   Enrollment
                 </Button>
               </div>
-            
+            )}
             {conversationState.isActive && (
               <Button
                 variant="outline"
