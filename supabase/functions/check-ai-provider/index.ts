@@ -3,6 +3,7 @@ import { corsHeaders } from '../_shared/cors.ts';
 const OPENAI_API_KEY = Deno.env.get('OPENAI_API_KEY');
 const CLAUDE_API_KEY = Deno.env.get('CLAUDE_API_KEY');
 const GEMINI_API_KEY = Deno.env.get('GEMINI_API_KEY');
+const HUGGING_FACE_TOKEN = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -25,6 +26,9 @@ Deno.serve(async (req) => {
         break;
       case 'gemini':
         apiKey = GEMINI_API_KEY;
+        break;
+      case 'huggingface':
+        apiKey = HUGGING_FACE_TOKEN;
         break;
       default:
         throw new Error(`Unknown provider: ${provider}`);

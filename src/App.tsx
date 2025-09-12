@@ -25,6 +25,7 @@ import Patients from '@/pages/Patients';
 import Facilities from '@/pages/Facilities';
 import PackageResearch from '@/components/PackageResearch';
 import DataImport from '@/pages/DataImport';
+import APIKeyVerificationFloating from '@/components/verification/APIKeyVerificationFloating';
 
 import Modules from '@/pages/Modules';
 import ApiServices from '@/pages/ApiServices';
@@ -327,6 +328,7 @@ const App = () => {
               <TooltipProvider>
                 <HelmetProvider>
                   <GlobalAgentGeneratorProvider>
+                    <APIKeyVerificationFloating />
                     <Toaster />
                     <AppLayoutWithEnrollment>
                       <AppContent />
