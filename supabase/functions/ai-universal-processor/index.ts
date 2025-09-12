@@ -71,7 +71,7 @@ Return a JSON object with deployment settings, environment requirements, and set
         if (!GEMINI_API_KEY) {
           throw new Error('Gemini API key not configured');
         }
-        response = await callGemini(model || 'gemini-pro', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
+        response = await callGemini(model || 'gemini-2.0-flash-exp', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
         break;
 
       default:
@@ -132,18 +132,30 @@ async function callOpenAI(model: string, prompt: string, systemPrompt?: string, 
   
   messages.push({ role: 'user', content: prompt });
 
+  // Check if it's a newer model that requires max_completion_tokens
+  const isNewerModel = model.includes('gpt-5') || model.includes('gpt-4.1') || model.includes('o3') || model.includes('o4');
+  
+  const requestBody: any = {
+    model,
+    messages,
+  };
+
+  // Add token limit parameter based on model
+  if (isNewerModel) {
+    requestBody.max_completion_tokens = maxTokens;
+    // Newer models don't support temperature parameter
+  } else {
+    requestBody.max_tokens = maxTokens;
+    requestBody.temperature = temperature;
+  }
+
   const response = await fetch('https://api.openai.com/v1/chat/completions', {
     method: 'POST',
     headers: {
       'Authorization': `Bearer ${OPENAI_API_KEY}`,
       'Content-Type': 'application/json',
     },
-    body: JSON.stringify({
-      model,
-      messages,
-      temperature,
-      max_tokens: maxTokens,
-    }),
+    body: JSON.stringify(requestBody),
   });
 
   if (!response.ok) {
@@ -230,7 +242,7 @@ function getDefaultModel(provider: string): string {
   switch (provider) {
     case 'openai': return 'gpt-4o-mini';
     case 'claude': return 'claude-3-haiku';
-    case 'gemini': return 'gemini-pro';
+    case 'gemini': return 'gemini-2.0-flash-exp';
     default: return 'gpt-4o-mini';
   }
 }
