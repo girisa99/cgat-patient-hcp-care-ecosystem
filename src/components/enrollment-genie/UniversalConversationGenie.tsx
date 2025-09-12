@@ -97,14 +97,20 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ bottom: 24, right: 24 }); // Dynamic positioning
   const [genieMode, setGenieMode] = useState<'general' | 'enrollment'>('general'); // Toggle between modes
+  // Track if user manually changed mode to avoid auto-overrides
+  const userOverrodeModeRef = React.useRef(false);
+  const handleModeChange = (m: 'general' | 'enrollment') => {
+    userOverrodeModeRef.current = true;
+    setGenieMode(m);
+  };
 
   const currentContext = getPageContext(location.pathname);
   const contextInfo = getContextInfo(currentContext);
   const isEnrollmentContext = currentContext === 'patient-enrollment';
   
-  // Auto-set enrollment mode when on patient-onboarding page
+  // Auto-set enrollment mode on enrollment pages only if user hasn't toggled manually
   useEffect(() => {
-    if (isEnrollmentContext && genieMode === 'general') {
+    if (isEnrollmentContext && genieMode === 'general' && !userOverrodeModeRef.current) {
       setGenieMode('enrollment');
     }
   }, [isEnrollmentContext, genieMode]);
@@ -328,7 +334,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
         userId={userId}
         context={currentContext}
         mode={genieMode}
-        onModeChange={setGenieMode}
+        onModeChange={handleModeChange}
       />
     </>
   );
