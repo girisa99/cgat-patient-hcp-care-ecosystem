@@ -45,7 +45,7 @@ export const AIAssistIntegration: React.FC<AIAssistIntegrationProps> = ({
   initialPrompt = '',
 }) => {
   const { nodeTypes, categories } = useWorkflowNodes();
-  const { generateAgent, testNode, analyzeWorkflow, isLoading } = useUniversalAI();
+  const { generateAgent, testNode, analyzeWorkflow, isLoading, providers } = useUniversalAI();
   const { showSuccess, showError } = useMasterToast();
   
   const [activeMode, setActiveMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>(initialMode);
