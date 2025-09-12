@@ -319,7 +319,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <img 
                   src={genieLogoImg} 
                   alt="GENIE - Cell & Gene Technology Navigator" 
-                  className="h-12 w-12 object-contain rounded-lg"
+                  className="h-12 w-auto object-contain rounded-lg"
+                  loading="eager"
                   onError={(e) => {
                     console.warn('GENIE logo failed to load');
                     (e.target as HTMLImageElement).style.display = 'none';

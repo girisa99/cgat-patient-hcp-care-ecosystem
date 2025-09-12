@@ -73,6 +73,9 @@ export const useGenieState = () => {
   const [currentSession, setCurrentSession] = useState<GenieConversationSession | null>(null);
   
   const { showError, showSuccess } = useMasterToast();
+  // Prevent repeated 'Failed to fetch' toasts
+  const fetchErrorShownRef = (globalThis as any).__genieFetchErrorShownRef || { current: false };
+  ;(globalThis as any).__genieFetchErrorShownRef = fetchErrorShownRef;
 
   // Configuration methods
   const loadConfigurations = useCallback(async () => {

@@ -175,172 +175,177 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   return (
     <>
       {/* Floating Genie Button with Smart Positioning */}
-      <motion.div
-        className={`fixed z-[1000] ${className}`}
-        style={{ bottom: `${position.bottom}px`, right: `${position.right}px` }}
-        initial={{ scale: 0, opacity: 0 }}
-        animate={{ scale: 1, opacity: 1 }}
-        transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
-        drag
-        dragMomentum={false}
-        dragElastic={0.1}
-        onDragEnd={(e, info) => {
-          const viewportWidth = window.innerWidth;
-          const viewportHeight = window.innerHeight;
-          const newRight = Math.max(12, Math.min(viewportWidth - info.point.x - 40, viewportWidth - 100));
-          const newBottom = Math.max(12, Math.min(viewportHeight - info.point.y - 40, viewportHeight - 100));
-          setPosition({ bottom: newBottom, right: newRight });
-          try { localStorage.setItem('genie_position', JSON.stringify({ bottom: newBottom, right: newRight })); } catch {}
-        }}
-      >
+      {/* Floating button is hidden while the Genie window is open */}
+      {!isOpen && (
         <motion.div
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          onHoverStart={() => setIsHovered(true)}
-          onHoverEnd={() => setIsHovered(false)}
-          className="relative"
+          className={`fixed z-[1000] ${className}`}
+          style={{ bottom: `${position.bottom}px`, right: `${position.right}px` }}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.5, type: "spring", stiffness: 200 }}
+          drag
+          dragMomentum={false}
+          dragElastic={0.1}
+          onDragEnd={(e, info) => {
+            const viewportWidth = window.innerWidth;
+            const viewportHeight = window.innerHeight;
+            const newRight = Math.max(12, Math.min(viewportWidth - info.point.x - 40, viewportWidth - 100));
+            const newBottom = Math.max(12, Math.min(viewportHeight - info.point.y - 40, viewportHeight - 100));
+            setPosition({ bottom: newBottom, right: newRight });
+            try { localStorage.setItem('genie_position', JSON.stringify({ bottom: newBottom, right: newRight })); } catch {}
+          }}
         >
-          {/* Magical fumes/smoke effect */}
-          <AnimatePresence>
-            {isHovered && (
-              <>
-                {[...Array(5)].map((_, i) => (
-                  <motion.div
-                    key={i}
-                    className="absolute w-4 h-4 bg-gradient-to-t from-cyan-400/30 to-transparent rounded-full"
-                    style={{
-                      left: `${20 + i * 8}%`,
-                      bottom: '100%',
-                    }}
-                    initial={{ opacity: 0, y: 0, scale: 0 }}
-                    animate={{ 
-                      opacity: [0, 0.7, 0], 
-                      y: [-10, -40, -60], 
-                      scale: [0.5, 1, 1.5],
-                      x: [0, Math.random() * 20 - 10, Math.random() * 30 - 15]
-                    }}
-                    transition={{ 
-                      duration: 2, 
-                      delay: i * 0.2,
-                      repeat: Infinity,
-                      ease: "easeOut"
+          <motion.div
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            onHoverStart={() => setIsHovered(true)}
+            onHoverEnd={() => setIsHovered(false)}
+            className="relative"
+          >
+            {/* Magical fumes/smoke effect */}
+            <AnimatePresence>
+              {isHovered && (
+                <>
+                  {[...Array(5)].map((_, i) => (
+                    <motion.div
+                      key={i}
+                      className="absolute w-4 h-4 bg-gradient-to-t from-cyan-400/30 to-transparent rounded-full"
+                      style={{
+                        left: `${20 + i * 8}%`,
+                        bottom: '100%',
+                      }}
+                      initial={{ opacity: 0, y: 0, scale: 0 }}
+                      animate={{ 
+                        opacity: [0, 0.7, 0], 
+                        y: [-10, -40, -60], 
+                        scale: [0.5, 1, 1.5],
+                        x: [0, Math.random() * 20 - 10, Math.random() * 30 - 15]
+                      }}
+                      transition={{ 
+                        duration: 2, 
+                        delay: i * 0.2,
+                        repeat: Infinity,
+                        ease: "easeOut"
+                      }}
+                    />
+                  ))}
+                </>
+              )}
+            </AnimatePresence>
+  
+            <Button
+              onClick={() => setIsOpen(true)}
+              size="lg"
+              className="h-20 w-20 rounded-full p-1 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-600 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-700 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300 relative overflow-hidden group border-2 border-cyan-300/30"
+            >
+              {/* Genie Logo */}
+              <div className="relative w-full h-full">
+                <div className="w-full h-full rounded-full bg-gradient-to-br from-purple-500/20 to-blue-600/20 flex items-center justify-center border-2 border-cyan-300/50">
+                  <img 
+                    src={genieLogoImg} 
+                    alt="GENIE - Cell & Gene Technology Navigator" 
+                    className="w-16 h-16 object-contain rounded-full"
+                    onError={(e) => {
+                      // Fallback to Bot icon if logo fails to load
+                      console.warn('GENIE logo failed to load, using fallback icon');
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                      target.parentElement!.innerHTML = '<div class="text-white text-2xl"><Bot className=\"h-8 w-8\" /></div>';
                     }}
                   />
-                ))}
-              </>
-            )}
-          </AnimatePresence>
-
-          <Button
-            onClick={() => setIsOpen(true)}
-            size="lg"
-            className="h-20 w-20 rounded-full p-1 bg-gradient-to-br from-teal-500 via-cyan-500 to-blue-600 hover:from-teal-600 hover:via-cyan-600 hover:to-blue-700 shadow-2xl hover:shadow-cyan-500/25 transition-all duration-300 relative overflow-hidden group border-2 border-cyan-300/30"
-          >
-            {/* Genie Logo */}
-            <div className="relative w-full h-full">
-              <div className="w-full h-full rounded-full bg-gradient-to-br from-purple-500/20 to-blue-600/20 flex items-center justify-center border-2 border-cyan-300/50">
-                <img 
-                  src={genieLogoImg} 
-                  alt="GENIE - Cell & Gene Technology Navigator" 
-                  className="w-16 h-16 object-contain rounded-full"
-                  onError={(e) => {
-                    // Fallback to Bot icon if logo fails to load
-                    console.warn('GENIE logo failed to load, using fallback icon');
-                    const target = e.target as HTMLImageElement;
-                    target.style.display = 'none';
-                    target.parentElement!.innerHTML = '<div class="text-white text-2xl"><Bot className="h-8 w-8" /></div>';
+                </div>
+                
+                {/* Magical overlay glow */}
+                <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 via-transparent to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                
+                {/* Pulsing ring */}
+                <motion.div
+                  className="absolute inset-0 border-2 border-cyan-400/50 rounded-full"
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    opacity: [0.5, 0.8, 0.5]
+                  }}
+                  transition={{ 
+                    duration: 2, 
+                    repeat: Infinity,
+                    ease: "easeInOut"
                   }}
                 />
               </div>
               
-              {/* Magical overlay glow */}
-              <div className="absolute inset-0 bg-gradient-to-t from-cyan-500/20 via-transparent to-transparent rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-              
-              {/* Pulsing ring */}
+              {/* Sparkles effect */}
               <motion.div
-                className="absolute inset-0 border-2 border-cyan-400/50 rounded-full"
-                animate={{ 
-                  scale: [1, 1.1, 1],
-                  opacity: [0.5, 0.8, 0.5]
-                }}
-                transition={{ 
-                  duration: 2, 
-                  repeat: Infinity,
-                  ease: "easeInOut"
-                }}
-              />
-            </div>
-            
-            {/* Sparkles effect */}
-            <motion.div
-              className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-              initial={false}
-            >
-              <Sparkles className="absolute top-1 right-1 h-3 w-3 text-yellow-300 animate-pulse" />
-              <Sparkles className="absolute bottom-2 left-2 h-2 w-2 text-pink-300 animate-pulse" style={{ animationDelay: '0.5s' }} />
-              <Sparkles className="absolute top-3 left-1 h-2 w-2 text-blue-300 animate-pulse" style={{ animationDelay: '1s' }} />
-            </motion.div>
-          </Button>
+                className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                initial={false}
+              >
+                <Sparkles className="absolute top-1 right-1 h-3 w-3 text-yellow-300 animate-pulse" />
+                <Sparkles className="absolute bottom-2 left-2 h-2 w-2 text-pink-300 animate-pulse" style={{ animationDelay: '0.5s' }} />
+                <Sparkles className="absolute top-3 left-1 h-2 w-2 text-blue-300 animate-pulse" style={{ animationDelay: '1s' }} />
+              </motion.div>
+            </Button>
+          </motion.div>
+  
+          {/* Tooltip */}
+          <AnimatePresence>
+            {isHovered && (
+              <motion.div
+                initial={{ opacity: 0, x: 10, scale: 0.8 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 10, scale: 0.8 }}
+                className="absolute right-20 top-1/2 -translate-y-1/2"
+              >
+                <div className="bg-popover border rounded-lg p-3 shadow-lg max-w-64">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Bot className="h-4 w-4 text-primary" />
+                    <span className="font-semibold text-sm">
+                      {contextInfo.title}
+                    </span>
+                  </div>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    {contextInfo.description}
+                  </p>
+                  <div className="flex gap-1 mb-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {tenantId ? 'Multi-tenant' : 'Single'}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {genieMode.toUpperCase()} Mode
+                    </Badge>
+                  </div>
+                  {isEnrollmentContext && (
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="w-full mt-2"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        // Direct to enrollment workspace instead of toggling mode
+                        window.location.href = '/enrollment-workspace';
+                      }}
+                    >
+                      Open Enrollment Workspace
+                    </Button>
+                  )}
+                  <p className="text-xs text-muted-foreground mt-2">Click to start</p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </motion.div>
-
-        {/* Tooltip */}
-        <AnimatePresence>
-          {isHovered && (
-            <motion.div
-              initial={{ opacity: 0, x: 10, scale: 0.8 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 10, scale: 0.8 }}
-              className="absolute right-20 top-1/2 -translate-y-1/2"
-            >
-              <div className="bg-popover border rounded-lg p-3 shadow-lg max-w-64">
-                <div className="flex items-center gap-2 mb-1">
-                  <Bot className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-sm">
-                    {contextInfo.title}
-                  </span>
-                </div>
-                <p className="text-xs text-muted-foreground mb-2">
-                  {contextInfo.description}
-                </p>
-                <div className="flex gap-1 mb-2">
-                  <Badge variant="secondary" className="text-xs">
-                    {tenantId ? 'Multi-tenant' : 'Single'}
-                  </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    {genieMode.toUpperCase()} Mode
-                  </Badge>
-                </div>
-                {isEnrollmentContext && (
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="w-full mt-2"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      // Direct to enrollment workspace instead of toggling mode
-                      window.location.href = '/enrollment-workspace';
-                    }}
-                  >
-                    Open Enrollment Workspace
-                  </Button>
-                )}
-                <p className="text-xs text-muted-foreground mt-2">Click to start</p>
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </motion.div>
+      )}
 
       {/* Genie Conversation Interface */}
-      <GenieConversationInterface
-        isOpen={isOpen}
-        onClose={() => setIsOpen(false)}
-        tenantId={tenantId}
-        userId={userId}
-        context={currentContext}
-        mode={genieMode}
-        onModeChange={handleModeChange}
-      />
+      {isOpen && (
+        <GenieConversationInterface
+          isOpen={true}
+          onClose={() => setIsOpen(false)}
+          tenantId={tenantId}
+          userId={userId}
+          context={currentContext}
+          mode={genieMode}
+          onModeChange={handleModeChange}
+        />
+      )}
     </>
   );
 };
