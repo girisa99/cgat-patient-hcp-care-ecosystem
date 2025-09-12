@@ -34,6 +34,7 @@ import {
   AlertTriangle,
   Mic
 } from 'lucide-react';
+import { Maximize2, Minimize2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
@@ -44,6 +45,7 @@ import { CrossCategoryModelSelector, SelectedModelConfig } from '@/components/ai
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { EnrollmentJourneySteps } from '@/components/patient-enrollment/EnrollmentJourneySteps';
+import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { usePageAwareEnrollment } from '@/hooks/usePageAwareEnrollment';
 
 interface GenieConversationInterfaceProps {
@@ -93,6 +95,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [modelSelectionMode, setModelSelectionMode] = useState<'enhanced' | 'cross-category'>('enhanced');
   const [selectedCrossModels, setSelectedCrossModels] = useState<SelectedModelConfig[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [singleModel, setSingleModel] = useState<{ provider: string; model: string; category: 'llm' | 'small' | 'vision' | 'mcp' }>({
     provider: 'openai',
     model: 'o4-mini-2025-04-16',
@@ -323,7 +326,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
+      <DialogContent className={`${isExpanded ? 'max-w-[95vw] h-[95vh]' : 'max-w-5xl md:max-w-6xl h-[85vh]'} p-0 overflow-hidden transition-all duration-300`}>
         {/* Header with Page-Aware Toggle */}
         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-teal-50 to-blue-50">
           <div className="flex items-center gap-3">
@@ -389,6 +392,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             <Button
               variant="ghost"
               size="icon"
+              onClick={() => setIsExpanded(!isExpanded)}
+              title={isExpanded ? 'Minimize' : 'Expand'}
+            >
+              {isExpanded ? <Minimize2 className="h-5 w-5" /> : <Maximize2 className="h-5 w-5" />}
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               onClick={onClose}
             >
               <X className="h-5 w-5" />
@@ -396,7 +407,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
         </div>
 
-        <ScrollArea className="flex-1">
+        <ScrollArea className="flex-1 min-h-0">
           {/* Enhanced Context Banner */}
           <div className="p-4 border-b border-border/20">
             <div className="flex items-center justify-between mb-3">
@@ -500,69 +511,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               </Card>
 
               {/* Current Step Content */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Send className="h-5 w-5" />
-                    Submission Method
-                  </CardTitle>
-                  <p className="text-sm text-muted-foreground">
-                    Choose how to complete enrollment
-                  </p>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2">
-                      <MessageSquare className="h-6 w-6" />
-                      <div>
-                        <div className="font-medium">Conversation</div>
-                        <div className="text-sm text-muted-foreground">AI-guided chat</div>
-                      </div>
-                    </Button>
-                    <Button variant="default" className="h-auto p-4 flex flex-col items-start gap-2">
-                      <FileText className="h-6 w-6" />
-                      <div>
-                        <div className="font-medium">Form</div>
-                        <div className="text-sm text-muted-foreground">Traditional form</div>
-                      </div>
-                    </Button>
-                    <Button variant="outline" className="h-auto p-4 flex flex-col items-start gap-2">
-                      <Mic className="h-6 w-6" />
-                      <div>
-                        <div className="font-medium">Voice</div>
-                        <div className="text-sm text-muted-foreground">Voice-guided</div>
-                      </div>
-                    </Button>
-                  </div>
-
-                  {/* Channel Selection */}
-                  <div className="mt-6">
-                    <Label className="text-sm font-medium mb-2 block">Channel</Label>
-                    <select className="w-full px-3 py-2 border border-input bg-background rounded-md">
-                      <option value="online">Online</option>
-                      <option value="voice">Voice</option>
-                      <option value="pdf">PDF</option>
-                      <option value="fax">Fax</option>
-                    </select>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div className="flex items-center justify-between mt-6">
-                    <div className="flex items-center gap-2">
-                      <Button variant="outline" size="sm">
-                        <Download className="h-4 w-4 mr-2" />
-                        Download
-                      </Button>
-                      <Button variant="outline" size="sm">
-                        Save Draft
-                      </Button>
-                    </div>
-                    <Button>
-                      Complete Enrollment
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Enrollment Interface */}
+              <div className="mt-6">
+                <EnhancedEnrollmentInterface isInModal />
+              </div>
 
               {/* Audit Notice */}
               <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
