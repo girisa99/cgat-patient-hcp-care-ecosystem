@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bot, Sparkles } from 'lucide-react';
 import { GenieConversationInterface } from './GenieConversationInterface';
 import { motion, AnimatePresence } from 'framer-motion';
+import genieLogoImg from '@/assets/genie-logo.png';
 
 interface UniversalConversationGenieProps {
   className?: string;
@@ -237,8 +238,19 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
           >
             {/* Genie Logo */}
             <div className="relative w-full h-full">
-              <div className="w-full h-full rounded-full bg-gradient-to-br from-purple-500 to-blue-600 flex items-center justify-center">
-                <Bot className="h-8 w-8 text-white" />
+              <div className="w-full h-full rounded-full bg-gradient-to-br from-purple-500/20 to-blue-600/20 flex items-center justify-center border-2 border-cyan-300/50">
+                <img 
+                  src={genieLogoImg} 
+                  alt="GENIE - Cell & Gene Technology Navigator" 
+                  className="w-16 h-16 object-contain rounded-full"
+                  onError={(e) => {
+                    // Fallback to Bot icon if logo fails to load
+                    console.warn('GENIE logo failed to load, using fallback icon');
+                    const target = e.target as HTMLImageElement;
+                    target.style.display = 'none';
+                    target.parentElement!.innerHTML = '<div class="text-white text-2xl"><Bot className="h-8 w-8" /></div>';
+                  }}
+                />
               </div>
               
               {/* Magical overlay glow */}

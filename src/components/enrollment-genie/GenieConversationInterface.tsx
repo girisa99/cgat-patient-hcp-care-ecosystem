@@ -98,7 +98,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     }
   }, [context]);
 
-  // Auto-save configuration changes
+  // Auto-save configuration changes (disabled to prevent continuous API calls)
+  /*
   useEffect(() => {
     if (currentConfig && saveConfiguration) {
       const configToSave = {
@@ -124,7 +125,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     }
   }, [mode, selectedModels, enabledFeatures, selectedMCPTools, knowledgeBase, medicalContext, currentConfig, saveConfiguration]);
 
-  // Auto-save conversation messages
+  // Auto-save conversation messages (disabled to prevent continuous API calls)
   useEffect(() => {
     if (currentSession && updateSession && state.messages.length > 0) {
       const timeoutId = setTimeout(() => {
@@ -142,6 +143,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       return () => clearTimeout(timeoutId);
     }
   }, [state.messages, currentSession, updateSession, state.conversationId, mode, selectedModels, enabledFeatures, selectedMCPTools]);
+  */
 
   // Update conversation state when mode or models change
   useEffect(() => {
@@ -214,17 +216,20 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         model: selectedModels[0]?.model || 'gpt-4'
       });
 
-      // Enhance prompt with RAG if enabled
+      // Enhance prompt with RAG if enabled (with error handling to prevent fetch errors)
       let enhancedPrompt = userMessage;
       let contextSources: string[] = [];
       
       if (enabledFeatures.length > 0) {
         try {
+          console.log('Enhancing prompt with RAG features:', enabledFeatures);
           const ragResult = await ragService.enhancePromptWithRAG(userMessage, enabledFeatures);
           enhancedPrompt = ragResult.enhancedPrompt;
           contextSources = ragResult.contextSources;
+          console.log('RAG enhancement successful, sources:', contextSources);
         } catch (error) {
           console.warn('RAG enhancement failed, proceeding with original prompt:', error);
+          // Don't throw error, just continue with original prompt
         }
       }
 
@@ -283,7 +288,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       console.error('Error generating response:', error);
       toast({ 
         title: 'Error', 
-        description: 'Failed to generate response',
+        description: `Failed to generate response: ${error instanceof Error ? error.message : 'Unknown error'}`,
         variant: 'destructive'
       });
     } finally {
@@ -310,8 +315,16 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-primary/10 rounded-lg">
-                <img src={genieLogoImg} alt="GENIE Logo" className="h-8 w-8 rounded-full" />
+              <div className="p-1 bg-primary/10 rounded-lg">
+                <img 
+                  src={genieLogoImg} 
+                  alt="GENIE - Cell & Gene Technology Navigator" 
+                  className="h-12 w-12 object-contain rounded-lg"
+                  onError={(e) => {
+                    console.warn('GENIE logo failed to load');
+                    (e.target as HTMLImageElement).style.display = 'none';
+                  }}
+                />
               </div>
               <div>
                 <h3 className="font-semibold text-lg bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
