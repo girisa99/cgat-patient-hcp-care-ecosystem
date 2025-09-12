@@ -238,17 +238,18 @@ export const MODEL_REGISTRY: Record<string, ModelInfo> = {
     speed: 'fast',
     context_window: 128000
   },
-  'gemini-pro-vision': {
-    id: 'gemini-pro-vision',
-    name: 'Gemini Pro Vision',
+  'gemini-1.5-pro-latest': {
+    id: 'gemini-1.5-pro-latest',
+    name: 'Gemini 1.5 Pro (Latest)',
     provider: 'gemini',
     category: 'vision',
-    description: 'Gemini model with advanced vision capabilities',
-    capabilities: ['vision', 'multimodal', 'image-analysis'],
+    description: 'Latest Gemini Pro model with vision capabilities and multimodal understanding',
+    capabilities: ['vision', 'multimodal', 'large-context'],
     available: true,
-    pricing: 'medium',
+    fallbackModels: ['gemini-2.0-flash-exp', 'gpt-4o'],
+    pricing: 'high',
     speed: 'medium',
-    context_window: 100000
+    context_window: 2097152
   },
 
   // === Healthcare Vision Models ===

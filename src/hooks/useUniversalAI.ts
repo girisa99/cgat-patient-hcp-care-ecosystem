@@ -36,7 +36,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     vision: {
       openai: ['gpt-4o', 'o4-mini-2025-04-16', 'gpt-4-vision-preview'],
       claude: ['claude-3-5-sonnet-20241022'],
-      gemini: ['gemini-pro-vision', 'gemini-1.5-pro'],
+      gemini: ['gemini-1.5-pro-latest', 'gemini-2.0-flash-exp'],
       healthcare: ['medical-imaging-vision', 'radiology-ai-vision', 'pathology-vision-pro']
     },
     mcp: {

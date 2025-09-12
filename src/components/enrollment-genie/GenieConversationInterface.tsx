@@ -304,9 +304,6 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     setMessage('');
     
     try {
-      // Use the selected model from the ModelCategorySelector
-      const provider = selectedModel.provider as 'openai' | 'claude' | 'gemini';
-      
       // Enhanced system prompt with RAG context for natural conversation
       let systemPrompt = `You are Genie, a helpful and intelligent Technical Navigator AI assistant. You have access to a comprehensive knowledge base and should provide responses that are:
 - Well-structured and easy to read
@@ -316,8 +313,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 - Always maintain a helpful, professional demeanor
 - Reference relevant context when available`;
       
-      // Add model category specific instructions
-      if (selectedModel.category === 'small') {
+      // Add model category specific instructions based on selection mode
+      if (modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0) {
+        systemPrompt += " You are working with multiple AI models with different capabilities - provide comprehensive responses leveraging each model's strengths.";
+      } else if (selectedModel.category === 'small') {
         systemPrompt += " You are optimized for efficiency and speed while maintaining accuracy.";
       } else if (selectedModel.category === 'vision') {
         systemPrompt += " You have vision capabilities and can analyze images, charts, and visual content.";
@@ -348,12 +347,34 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         ['label-studio-mcp', ...conversationState.enabledFeatures, ...conversationState.selectedMCPTools]
       );
 
-      // Build and send request(s)
-      const targets = conversationState.selectedMode === 'multi'
-        ? [selectedModelLeft, selectedModelRight]
-        : [selectedModel];
+      // Build and send request(s) based on mode and selection
+      let targets = [];
+      
+      if (conversationState.selectedMode === 'multi') {
+        if (modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0) {
+          // Use cross-category selected models
+          targets = selectedCrossModels.map(model => ({
+            provider: model.provider,
+            model: model.model,
+            category: model.category,
+            name: model.name
+          }));
+        } else {
+          // Use traditional split models
+          targets = [selectedModelLeft, selectedModelRight];
+        }
+      } else {
+        // Single model mode or system mode
+        if (modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0) {
+          // Use primary model from cross-category selection
+          const primaryModel = selectedCrossModels.find(m => m.role === 'primary') || selectedCrossModels[0];
+          targets = [{ provider: primaryModel.provider, model: primaryModel.model, category: primaryModel.category }];
+        } else {
+          targets = [selectedModel];
+        }
+      }
 
-      const results = await Promise.all(targets.map(async (m) => {
+      const results = await Promise.allSettled(targets.map(async (m) => {
         try {
           const request: any = {
             prompt: enhancedPrompt,
@@ -364,29 +385,44 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             maxTokens: 1000
           };
           const res = await generateResponse(request);
-          return { ok: true as const, res };
+          return { ok: true as const, res, modelInfo: m };
         } catch (e: any) {
           console.error(`Provider ${m.provider} with model ${m.model} failed:`, e?.message || e);
-          return { ok: false as const, err: e, m };
+          return { ok: false as const, err: e, modelInfo: m };
         }
       }));
 
       // Add messages for all successful responses
-      const successCount = results.reduce((acc, r) => acc + (r.ok ? 1 : 0), 0);
-      results.forEach(r => {
-        if (r.ok) {
+      const successCount = results.filter(r => r.status === 'fulfilled' && r.value.ok).length;
+      results.forEach((result, index) => {
+        if (result.status === 'fulfilled' && result.value.ok) {
+          const r = result.value;
           let content = (r.res as any).content;
           if (contextSources.length > 0) {
             content += `\n\n*Sources: ${contextSources.join(', ')}*`;
           }
+          
+          // Add model info for multi-model responses
+          const modelName = r.modelInfo.name || `${r.modelInfo.provider} ${r.modelInfo.model}`;
+          if (targets.length > 1) {
+            content = `**${modelName}:**\n\n${content}`;
+          }
+          
           addMessage({
             role: 'assistant',
             content,
             provider: (r.res as any).provider,
             model: (r.res as any).model,
             timestamp: new Date().toISOString(),
-            metadata: { contextSources, ragEnhanced: contextSources.length > 0 }
+            metadata: { 
+              contextSources, 
+              ragEnhanced: contextSources.length > 0,
+              modelName: modelName,
+              isMultiModel: targets.length > 1
+            }
           });
+        } else if (result.status === 'fulfilled' && !result.value.ok) {
+          console.error('Model failed:', result.value.err);
         }
       });
 
@@ -395,7 +431,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       }
     } catch (error) {
       console.error('Error in handleSendMessage:', error);
-      // Show error message to user
+      addMessage({
+        role: 'assistant',
+        content: `Sorry, I encountered an error: ${error.message}. Please try again or select different models.`,
+        provider: 'system',
+        model: 'error',
+        timestamp: new Date().toISOString(),
+        metadata: { isError: true }
+      });
     }
   };
 
@@ -952,9 +995,26 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
           )}
 
-          {/* Conversation Area */}
+          {/* Conversation Area with Enhanced Multi-Model Display */}
           {conversationState.isActive && (
             <div className="mt-6">
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-sm font-medium">Conversation</h3>
+                {conversationState.selectedMode === 'multi' && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="text-xs">
+                      {modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 
+                        ? `${selectedCrossModels.length} Models` 
+                        : 'Split View'}
+                    </Badge>
+                    <Button size="sm" variant="ghost" onClick={handleResetConversation}>
+                      <RefreshCw className="h-3 w-3 mr-1" />
+                      Reset
+                    </Button>
+                  </div>
+                )}
+              </div>
+              
               <ScrollArea className="h-96 w-full border rounded-lg p-4 bg-gray-50">
                 {conversationState.messages.length === 0 ? (
                   <div className="text-center text-gray-500 mt-20">
@@ -966,7 +1026,26 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                       />
                     </div>
                     <p className="text-lg font-medium text-gray-700 mb-2">Hello! I'm Genie, your Technical Navigator</p>
-                    <p className="text-sm text-gray-500">Send me a message and I'll provide you with comprehensive, context-aware responses.</p>
+                    <p className="text-sm text-gray-500">
+                      {conversationState.selectedMode === 'multi' 
+                        ? "Send me a message and I'll provide responses from multiple models for comparison."
+                        : "Send me a message and I'll provide you with comprehensive, context-aware responses."
+                      }
+                    </p>
+                    {conversationState.selectedMode === 'multi' && modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 && (
+                      <div className="mt-3 flex flex-wrap justify-center gap-1">
+                        {selectedCrossModels.slice(0, 3).map((model, index) => (
+                          <Badge key={index} variant="outline" className="text-xs">
+                            {model.name || `${model.provider} ${model.model}`}
+                          </Badge>
+                        ))}
+                        {selectedCrossModels.length > 3 && (
+                          <Badge variant="outline" className="text-xs">
+                            +{selectedCrossModels.length - 3} more
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-1">

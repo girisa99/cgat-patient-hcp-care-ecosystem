@@ -118,7 +118,7 @@ export const useAIModelManager = () => {
       chat: ['gpt-4o-mini', 'gpt-4o', 'claude-3-haiku', 'claude-3-sonnet'],
       completion: ['gpt-4o-mini', 'claude-3-haiku', 'gemini-pro'],
       embedding: ['text-embedding-3-small', 'text-embedding-ada-002'],
-      vision: ['gpt-4o', 'claude-3-sonnet', 'gemini-pro-vision'],
+      vision: ['gpt-4o', 'claude-3-sonnet', 'gemini-1.5-pro-latest'],
       code: ['gpt-4o', 'claude-3-sonnet', 'codellama']
     };
 
