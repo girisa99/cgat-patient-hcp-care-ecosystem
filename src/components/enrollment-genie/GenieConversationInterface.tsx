@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Separator } from '@/components/ui/separator';
 import { 
@@ -602,51 +603,174 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   </div>
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-[min(720px,90vw)] p-0 bg-popover z-50 shadow-lg border">
-                <div className="p-3 border-b">
+              <PopoverContent className="w-[min(720px,90vw)] p-0 bg-popover z-[100] shadow-lg border">
+                <div className="p-3 border-b sticky top-0 bg-popover z-10">
                   <p className="text-xs text-muted-foreground">
                     Connect to external tools and services through Model Context Protocol
                   </p>
                 </div>
-                <ScrollArea className="max-h-72">
-                  <div className="p-3 space-y-3">
-                    {mcpTools.map((tool) => (
-                      <div key={tool.id} className="p-3 border rounded-md bg-background">
-                        <div className="flex items-center justify-between mb-1">
-                          <h5 className="font-medium text-sm">{tool.name}</h5>
-                          <div className="flex items-center gap-2">
-                            <Badge 
-                              variant={tool.status === 'available' ? 'default' : 'secondary'}
-                              className="text-xs"
-                            >
-                              {tool.status}
-                            </Badge>
-                            <Button
-                              size="sm"
-                              variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
-                              onClick={() => handleMCPToolToggle(tool.id)}
-                            >
-                              {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
-                            </Button>
+                {/* Tabbed, scrollable content to prevent background scroll and ensure interactivity */}
+                <Tabs defaultValue="all" className="w-full">
+                  <TabsList level="child">
+                    <TabsTrigger value="all" level="child">All</TabsTrigger>
+                    <TabsTrigger value="healthcare" level="child">Healthcare</TabsTrigger>
+                    <TabsTrigger value="filesystem" level="child">Filesystem</TabsTrigger>
+                    <TabsTrigger value="research" level="child">Research</TabsTrigger>
+                  </TabsList>
+
+                  {/* All */}
+                  <TabsContent value="all" level="child" className="p-0">
+                    <ScrollArea className="h-72 md:h-80 pointer-events-auto">
+                      <div className="p-3 space-y-3">
+                        {mcpTools.map((tool) => (
+                          <div key={tool.id} className="p-3 border rounded-md bg-background">
+                            <div className="flex items-center justify-between mb-1">
+                              <h5 className="font-medium text-sm">{tool.name}</h5>
+                              <div className="flex items-center gap-2">
+                                <Badge 
+                                  variant={tool.status === 'available' ? 'default' : 'secondary'}
+                                  className="text-xs"
+                                >
+                                  {tool.status}
+                                </Badge>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
+                                  onClick={(e) => { e.stopPropagation(); handleMCPToolToggle(tool.id); }}
+                                >
+                                  {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
+                                </Button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {tool.capabilities.slice(0, 3).map((capability, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
+                                  {capability}
+                                </Badge>
+                              ))}
+                              {tool.capabilities.length > 3 && (
+                                <Badge variant="outline" className="text-xs px-1 py-0">
+                                  +{tool.capabilities.length - 3} more
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
-                        <div className="flex flex-wrap gap-1">
-                          {tool.capabilities.slice(0, 3).map((capability, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs px-1 py-0">
-                              {capability}
-                            </Badge>
-                          ))}
-                          {tool.capabilities.length > 3 && (
-                            <Badge variant="outline" className="text-xs px-1 py-0">
-                              +{tool.capabilities.length - 3} more
-                            </Badge>
-                          )}
-                        </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
-                </ScrollArea>
+                    </ScrollArea>
+                  </TabsContent>
+
+                  {/* Healthcare */}
+                  <TabsContent value="healthcare" level="child" className="p-0">
+                    <ScrollArea className="h-72 md:h-80 pointer-events-auto">
+                      <div className="p-3 space-y-3">
+                        {mcpTools.filter(t => t.id.includes('healthcare')).map((tool) => (
+                          <div key={tool.id} className="p-3 border rounded-md bg-background">
+                            <div className="flex items-center justify-between mb-1">
+                              <h5 className="font-medium text-sm">{tool.name}</h5>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">{tool.status}</Badge>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
+                                  onClick={(e) => { e.stopPropagation(); handleMCPToolToggle(tool.id); }}
+                                >
+                                  {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
+                                </Button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {tool.capabilities.slice(0, 3).map((capability, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs px-1 py-0">{capability}</Badge>
+                              ))}
+                              {tool.capabilities.length > 3 && (
+                                <Badge variant="outline" className="text-xs px-1 py-0">+{tool.capabilities.length - 3} more</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+
+                  {/* Filesystem */}
+                  <TabsContent value="filesystem" level="child" className="p-0">
+                    <ScrollArea className="h-72 md:h-80 pointer-events-auto">
+                      <div className="p-3 space-y-3">
+                        {mcpTools.filter(t => t.id.includes('filesystem')).map((tool) => (
+                          <div key={tool.id} className="p-3 border rounded-md bg-background">
+                            <div className="flex items-center justify-between mb-1">
+                              <h5 className="font-medium text-sm">{tool.name}</h5>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">{tool.status}</Badge>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
+                                  onClick={(e) => { e.stopPropagation(); handleMCPToolToggle(tool.id); }}
+                                >
+                                  {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
+                                </Button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {tool.capabilities.slice(0, 3).map((capability, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs px-1 py-0">{capability}</Badge>
+                              ))}
+                              {tool.capabilities.length > 3 && (
+                                <Badge variant="outline" className="text-xs px-1 py-0">+{tool.capabilities.length - 3} more</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+
+                  {/* Research */}
+                  <TabsContent value="research" level="child" className="p-0">
+                    <ScrollArea className="h-72 md:h-80 pointer-events-auto">
+                      <div className="p-3 space-y-3">
+                        {mcpTools.filter(t => t.id.includes('web')).map((tool) => (
+                          <div key={tool.id} className="p-3 border rounded-md bg-background">
+                            <div className="flex items-center justify-between mb-1">
+                              <h5 className="font-medium text-sm">{tool.name}</h5>
+                              <div className="flex items-center gap-2">
+                                <Badge variant={tool.status === 'available' ? 'default' : 'secondary'} className="text-xs">{tool.status}</Badge>
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  onMouseDown={(e) => e.preventDefault()}
+                                  variant={conversationState.selectedMCPTools.includes(tool.id) ? 'default' : 'outline'}
+                                  onClick={(e) => { e.stopPropagation(); handleMCPToolToggle(tool.id); }}
+                                >
+                                  {conversationState.selectedMCPTools.includes(tool.id) ? 'Remove' : 'Add'}
+                                </Button>
+                              </div>
+                            </div>
+                            <p className="text-xs text-muted-foreground mb-1">{tool.description}</p>
+                            <div className="flex flex-wrap gap-1">
+                              {tool.capabilities.slice(0, 3).map((capability, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs px-1 py-0">{capability}</Badge>
+                              ))}
+                              {tool.capabilities.length > 3 && (
+                                <Badge variant="outline" className="text-xs px-1 py-0">+{tool.capabilities.length - 3} more</Badge>
+                              )}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </TabsContent>
+                </Tabs>
               </PopoverContent>
             </Popover>
           </div>
