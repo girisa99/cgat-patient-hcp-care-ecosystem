@@ -87,6 +87,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [modelSelectionMode, setModelSelectionMode] = useState<'enhanced' | 'cross-category'>('enhanced');
   const [selectedCrossModels, setSelectedCrossModels] = useState<SelectedModelConfig[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [singleModel, setSingleModel] = useState<{ provider: string; model: string; category: 'llm' | 'small' | 'vision' | 'mcp' }>({
+    provider: 'openai',
+    model: 'o4-mini-2025-04-16',
+    category: 'llm'
+  });
 
   // Page awareness integration
   const pageAware = usePageAwareEnrollment();
@@ -105,23 +110,13 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   }, [mode, onModeChange, pageAware]);
 
   // Use conversation state management
-  const conversationState = useConversationState({
-    tenantId,
-    userId,
-    context
-  });
+  const conv = useConversationState();
+  const conversationState = conv.state;
 
   // Initialize Universal AI hooks
   const { generateResponse } = useUniversalAI();
 
-  const {
-    conversationModes,
-    handleModeSelect,
-    addMessage,
-    resetConversation,
-    updateMessage,
-    startConversation
-  } = conversationState;
+  const { resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = conv;
 
   const handleResetConversation = () => {
     resetConversation();
@@ -133,10 +128,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     
     if (!conversationState.isActive) startConversation();
     
-    const userMessageId = addMessage({ 
+    addMessage({ 
       role: 'user', 
       content: message,
-      timestamp: new Date()
+      timestamp: new Date().toISOString()
     });
     
     setMessage('');
@@ -145,41 +140,47 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     try {
       if (conversationState.selectedMode === 'single') {
         // Single model response
-        const response = await generateResponse({
-          messages: [...conversationState.messages, { role: 'user', content: message }],
-          model: 'gpt-4',
+        const resp = await generateResponse({
+          provider: singleModel.provider as any,
+          model: singleModel.model,
+          prompt: message,
           temperature: 0.7,
           maxTokens: 1000
         });
         
         addMessage({ 
           role: 'assistant', 
-          content: response,
-          modelInfo: { provider: 'openai', model: 'gpt-4' }
+          content: resp?.content || '',
+          timestamp: new Date().toISOString(),
+          provider: resp?.provider,
+          model: resp?.model
         });
       } else if (conversationState.selectedMode === 'multi') {
         // Multi-model responses
         const models = selectedCrossModels.length > 0 ? selectedCrossModels : [
-          { provider: 'openai', model: 'gpt-4', name: 'GPT-4' },
-          { provider: 'anthropic', model: 'claude-3-sonnet', name: 'Claude 3 Sonnet' }
+          { provider: 'openai', model: 'o4-mini-2025-04-16', category: 'llm', name: 'OpenAI o4-mini', role: 'primary' as const, weight: 1 },
+          { provider: 'claude', model: 'claude-3-5-sonnet-20241022', category: 'llm', name: 'Claude 3.5 Sonnet', role: 'secondary' as const, weight: 1 }
         ];
 
-        const responses = await Promise.allSettled(models.map(async (m) => {
-          const response = await generateResponse({
-            messages: [...conversationState.messages, { role: 'user', content: message }],
+        const results = await Promise.allSettled(models.map(async (m) => {
+          const r = await generateResponse({
+            provider: m.provider as any,
             model: m.model,
+            prompt: message,
             temperature: 0.7,
             maxTokens: 1000
           });
-          return { response, modelInfo: m };
+          return { r, m };
         }));
 
-        responses.forEach((result) => {
-          if (result.status === 'fulfilled') {
+        results.forEach((res) => {
+          if (res.status === 'fulfilled' && res.value.r) {
             addMessage({
               role: 'assistant',
-              content: result.value.response,
-              modelInfo: result.value.modelInfo
+              content: res.value.r.content,
+              timestamp: new Date().toISOString(),
+              provider: res.value.r.provider,
+              model: res.value.r.model
             });
           }
         });
@@ -189,7 +190,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       addMessage({
         role: 'assistant',
         content: 'I apologize, but I encountered an error while processing your request. Please try again.',
-        modelInfo: { provider: 'error', model: 'error' }
+        timestamp: new Date().toISOString()
       });
     } finally {
       setIsLoading(false);
@@ -201,7 +202,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   };
 
   const handleMCPToolToggle = (toolId: string) => {
-    conversationState.toggleMCPTool(toolId);
+    const current = conversationState.selectedMCPTools || [];
+    const updated = current.includes(toolId)
+      ? current.filter((id) => id !== toolId)
+      : [...current, toolId];
+    updateConversationConfig({ selectedMCPTools: updated });
   };
 
   const renderModelSelectionContent = () => {
@@ -230,13 +235,19 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
 
             {modelSelectionMode === 'enhanced' && (
-              <EnhancedModelSelector />
+              <EnhancedModelSelector
+                onModelSelect={(provider, model, category) =>
+                  setSingleModel({ provider, model, category: category as any })
+                }
+                selectedModel={singleModel}
+              />
             )}
 
             {modelSelectionMode === 'cross-category' && (
               <CrossCategoryModelSelector 
+                onModelsSelect={setSelectedCrossModels}
                 selectedModels={selectedCrossModels}
-                onSelectionChange={setSelectedCrossModels}
+                mode={conversationState.selectedMode}
               />
             )}
           </div>
@@ -267,9 +278,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
             {modelSelectionMode === 'cross-category' && (
               <CrossCategoryModelSelector 
+                onModelsSelect={setSelectedCrossModels}
                 selectedModels={selectedCrossModels}
-                onSelectionChange={setSelectedCrossModels}
-                multiSelect={true}
+                mode={conversationState.selectedMode}
+                maxSelections={6}
               />
             )}
           </div>
@@ -423,22 +435,21 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
               {/* Mode Selection */}
               <div className="flex flex-wrap gap-3 justify-center mb-4">
-                {conversationModes.filter(mode => !mode.isFeature).map((mode) => (
+                {(['system','single','multi'] as const).map((m) => (
                   <Button
-                    key={mode.id}
-                    variant={mode.active ? 'default' : 'outline'}
+                    key={m}
+                    variant={conversationState.selectedMode === m ? 'default' : 'outline'}
                     size="lg"
-                    onClick={() => handleModeSelect(mode.id as any)}
+                    onClick={() => switchMode(m)}
                     className={`flex items-center gap-2 px-6 py-3 h-auto ${
-                      mode.active 
+                      conversationState.selectedMode === m 
                         ? 'bg-blue-500 text-white hover:bg-blue-600' 
                         : 'hover:bg-gray-50'
                     }`}
                   >
-                    {mode.icon}
                     <div className="text-left">
-                      <div className="font-medium">{mode.title}</div>
-                      <div className="text-xs opacity-75">{mode.subtitle}</div>
+                      <div className="font-medium">{m.toUpperCase()}</div>
+                      <div className="text-xs opacity-75">{m === 'system' ? 'System guidance' : m === 'single' ? 'Single model' : 'Multi-model'}</div>
                     </div>
                   </Button>
                 ))}
