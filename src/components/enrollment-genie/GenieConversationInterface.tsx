@@ -345,8 +345,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
           
           <div className="flex items-center gap-2">
-            {/* Page-Aware Mode Toggle */}
-            {shouldShowEnrollmentToggle() && (
+            {/* Mode Toggle */}
+            
               <div className="flex items-center bg-muted rounded-lg p-1">
                 <Button
                   variant={mode === 'general' ? 'secondary' : 'ghost'}
@@ -365,7 +365,6 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   Enrollment
                 </Button>
               </div>
-            )}
             
             {conversationState.isActive && (
               <Button
