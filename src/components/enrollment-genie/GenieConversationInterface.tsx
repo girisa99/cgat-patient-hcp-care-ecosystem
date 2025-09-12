@@ -655,7 +655,7 @@ Always guide users through forms step-by-step and offer to help complete specifi
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl h-[90vh] p-0 overflow-hidden">
-        {/* Header */}
+        {/* Header with Always-Visible Toggle */}
         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-teal-50 to-blue-50">
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 p-0.5">
@@ -677,6 +677,26 @@ Always guide users through forms step-by-step and offer to help complete specifi
           </div>
           
           <div className="flex items-center gap-2">
+            {/* Always-Visible Mode Toggle */}
+            <div className="flex items-center bg-muted rounded-lg p-1">
+              <Button
+                variant={mode === 'general' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => onModeChange?.('general')}
+                className="px-3 py-1.5 h-8 text-xs font-medium"
+              >
+                General
+              </Button>
+              <Button
+                variant={mode === 'enrollment' ? 'secondary' : 'ghost'}
+                size="sm"
+                onClick={() => onModeChange?.('enrollment')}
+                className="px-3 py-1.5 h-8 text-xs font-medium"
+              >
+                Enrollment
+              </Button>
+            </div>
+            
             {conversationState.isActive && (
               <Button
                 variant="outline"
@@ -698,65 +718,78 @@ Always guide users through forms step-by-step and offer to help complete specifi
           </div>
         </div>
 
-        <ScrollArea className="flex-1 p-6">
-          {/* Context and Mode Toggle */}
-          {context === 'patient-enrollment' && (
-            <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
-              <div className="flex items-center justify-between mb-3">
-                <div className="flex items-center gap-2">
-                  <Bot className="h-5 w-5 text-purple-600" />
-                  <span className="font-medium text-purple-900">Patient Enrollment Assistant</span>
-                </div>
-                <div className="flex gap-1">
-                  <Button
-                    size="sm"
-                    variant={mode === 'general' ? 'default' : 'outline'}
-                    onClick={() => onModeChange?.('general')}
-                    className="text-xs h-7"
-                  >
-                    General Help
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant={mode === 'enrollment' ? 'default' : 'outline'}
-                    onClick={() => onModeChange?.('enrollment')}
-                    className="text-xs h-7"
-                  >
-                    Enrollment Forms
-                  </Button>
-                </div>
+        <ScrollArea className="flex-1">
+          {/* Enhanced Context Banner - Always Visible */}
+          <div className="p-4 border-b border-border/20">
+            <div className="flex items-center justify-between mb-3">
+              <div className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                <span className="font-medium">AI Assistant</span>
+                {mode === 'enrollment' && (
+                  <Badge variant="default" className="text-xs bg-primary/20 text-primary border-primary/30">
+                    🎯 Enrollment Mode
+                  </Badge>
+                )}
               </div>
-              <p className="text-sm text-purple-700">
-                {mode === 'enrollment' 
-                  ? 'I can help you fill out patient enrollment forms, gather medical history, verify insurance, and guide you through each step of the onboarding process.'
-                  : 'I can provide general assistance with any questions or help you navigate the platform.'
-                }
-              </p>
-              {mode === 'enrollment' && (
-                <div className="mt-3 flex flex-wrap gap-2">
-                  <Badge variant="secondary" className="text-xs">Personal Information</Badge>
-                  <Badge variant="secondary" className="text-xs">Medical History</Badge>
-                  <Badge variant="secondary" className="text-xs">Insurance Details</Badge>
-                  <Badge variant="secondary" className="text-xs">Emergency Contacts</Badge>
-                  <Badge variant="secondary" className="text-xs">Consent Forms</Badge>
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {mode === 'enrollment' && (
+                  <>
+                    <Badge variant="outline" className="text-xs">Real-time DB</Badge>
+                    <Badge variant="outline" className="text-xs">GenAI Guided</Badge>
+                    <Badge variant="outline" className="text-xs">RAG Enhanced</Badge>
+                  </>
+                )}
+              </div>
             </div>
-          )}
+            <p className="text-sm text-muted-foreground">
+              {mode === 'enrollment' 
+                ? 'AI-guided enrollment with structured workflow sequence: Consent → Patient → Provider & Treatment → NPI/Credentialing → Insurance → Clinical & Treatment → Submit'
+                : 'General AI assistance with comprehensive knowledge base and multi-model support'
+              }
+            </p>
+          </div>
 
-          {/* Conversation ID and Status */}
-          {conversationState.isActive && (
-            <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Zap className="h-4 w-4 text-blue-600" />
-                  <span className="text-sm font-medium text-blue-800">
-                    Active Conversation: {conversationState.selectedMode.toUpperCase()} Mode
-                    {mode === 'enrollment' && context === 'patient-enrollment' && ' - Enrollment Assistant'}
-                  </span>
-                </div>
-                <Badge variant="secondary">{conversationState.messages.length} messages</Badge>
+          {/* Main Content Based on Mode */}
+          {mode === 'enrollment' ? (
+            <div className="p-6">
+              <EnhancedEnrollmentInterface 
+                onSubmit={(data) => {
+                  console.log('📋 Enrollment completed via Genie:', data);
+                  // Handle enrollment completion
+                }}
+              />
+            </div>
+          ) : (
+            <div className="p-6">
+              {/* General AI Chat Interface */}
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                  How can I help you today, Guest?
+                </h3>
+                <p className="text-gray-600 mb-4">Choose how you'd like me to assist you:</p>
               </div>
+
+              {/* Mode Selection */}
+              <div className="flex flex-wrap gap-3 justify-center mb-4">
+                {conversationModes.filter(mode => !mode.isFeature).map((mode) => (
+                  <Button
+                    key={mode.id}
+                    variant={mode.active ? 'default' : 'outline'}
+                    size="lg"
+                    onClick={() => handleModeSelect(mode.id as ConversationMode)}
+                    className={`flex items-center gap-2 px-6 py-3 h-auto ${
+                      mode.active 
+                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {mode.icon}
+                    {mode.label}
+                  </Button>
+                ))}
+              </div>
+
+              {renderModelSelection()}
             </div>
           )}
 
@@ -1056,135 +1089,210 @@ Always guide users through forms step-by-step and offer to help complete specifi
             </div>
           )}
 
-          {/* Disclaimer */}
-          <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-            <p className="text-sm text-yellow-800">
-              <strong>Disclaimer:</strong> This is an AI assistant with RAG-enhanced knowledge base for demonstration purposes. The responses generated should not be considered as medical advice. Always consult qualified healthcare professionals for medical decisions.
-            </p>
-          </div>
-
-          {/* Start Chat Button */}
-          {!conversationState.isActive && (
-            <div className="mt-6 flex justify-center">
-              <Button 
-                size="lg" 
-                onClick={handleStartChat}
-                className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-lg font-medium"
-              >
-                Start Chat
-              </Button>
-            </div>
-          )}
-
-          {/* Conversation Area with Enhanced Multi-Model Display */}
-          {conversationState.isActive && (
-            <div className="mt-6">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium">Conversation</h3>
-                {conversationState.selectedMode === 'multi' && (
-                  <div className="flex items-center gap-2">
-                    <Badge variant="secondary" className="text-xs">
-                      {modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 
-                        ? `${selectedCrossModels.length} Models` 
-                        : 'Split View'}
-                    </Badge>
-                    <Button size="sm" variant="ghost" onClick={handleResetConversation}>
-                      <RefreshCw className="h-3 w-3 mr-1" />
-                      Reset
-                    </Button>
-                  </div>
-                )}
+            {/* General AI Chat Mode */}
+            <div className="p-6">
+              <div className="text-center mb-6">
+                <h3 className="text-2xl font-semibold text-gray-900 mb-2">
+                  How can I help you today, Guest?
+                </h3>
+                <p className="text-gray-600 mb-4">Choose how you'd like me to assist you:</p>
               </div>
-              
-              <ScrollArea className="h-96 w-full border rounded-lg p-4 bg-gray-50">
-                {conversationState.messages.length === 0 ? (
-                  <div className="text-center text-gray-500 mt-20">
-                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 p-1 mx-auto mb-4">
-                      <img 
-                        src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
-                        alt="Genie" 
-                        className="w-full h-full rounded-full object-cover"
-                      />
-                    </div>
-                    <p className="text-lg font-medium text-gray-700 mb-2">Hello! I'm Genie, your Technical Navigator</p>
-                    <p className="text-sm text-gray-500">
-                      {conversationState.selectedMode === 'multi' 
-                        ? "Send me a message and I'll provide responses from multiple models for comparison."
-                        : mode === 'enrollment' && context === 'patient-enrollment'
-                        ? "I'm here to help you with patient enrollment forms, medical history, insurance verification, and step-by-step guidance through the onboarding process."
-                        : "Send me a message and I'll provide you with comprehensive, context-aware responses."
-                      }
-                    </p>
-                    {mode === 'enrollment' && context === 'patient-enrollment' && (
-                      <div className="mt-3 p-3 bg-purple-50 rounded-lg">
-                        <p className="text-sm font-medium text-purple-900 mb-2">I can help you with:</p>
-                        <div className="flex flex-wrap gap-2">
-                          <Badge variant="outline" className="text-xs">Personal Information</Badge>
-                          <Badge variant="outline" className="text-xs">Medical History</Badge>
-                          <Badge variant="outline" className="text-xs">Insurance Details</Badge>
-                          <Badge variant="outline" className="text-xs">Emergency Contacts</Badge>
-                        </div>
-                        <p className="text-xs text-purple-700 mt-2">
-                          Try asking: "Help me fill out the personal information section" or "What insurance information do I need?"
-                        </p>
+
+              {/* Mode Selection */}
+              <div className="flex flex-wrap gap-3 justify-center mb-4">
+                {conversationModes.filter(mode => !mode.isFeature).map((mode) => (
+                  <Button
+                    key={mode.id}
+                    variant={mode.active ? 'default' : 'outline'}
+                    size="lg"
+                    onClick={() => handleModeSelect(mode.id as ConversationMode)}
+                    className={`flex items-center gap-2 px-6 py-3 h-auto ${
+                      mode.active 
+                        ? 'bg-blue-500 text-white hover:bg-blue-600' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {mode.icon}
+                    {mode.label}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Feature Toggles */}
+              <div className="flex flex-wrap gap-3 justify-center mb-6">
+                {conversationModes.filter(mode => mode.isFeature).map((feature) => (
+                  <Button
+                    key={feature.id}
+                    variant={conversationState.enabledFeatures.includes(feature.id) ? 'default' : 'outline'}
+                    size="sm"
+                    onClick={() => handleFeatureToggle(feature.id)}
+                    className={`flex items-center gap-2 px-4 py-2 h-auto ${
+                      conversationState.enabledFeatures.includes(feature.id)
+                        ? 'bg-green-500 text-white hover:bg-green-600' 
+                        : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {feature.icon}
+                    {feature.label}
+                  </Button>
+                ))}
+              </div>
+
+              {/* Model Selection Interface */}
+              {renderModelSelection()}
+
+              {/* Selected MCP Tools Display */}
+              {conversationState.selectedMCPTools.length > 0 && (
+                <div className="mt-3 p-3 bg-green-50 border border-green-200 rounded">
+                  <p className="text-xs text-green-700 font-medium mb-1">
+                    Active MCP Tools ({conversationState.selectedMCPTools.length}):
+                  </p>
+                  <div className="flex flex-wrap gap-1">
+                    {conversationState.selectedMCPTools.map((toolId) => {
+                      const tool = mcpTools.find(t => t.id === toolId);
+                      return (
+                        <Badge key={toolId} variant="secondary" className="text-xs">
+                          {tool?.name}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              {/* Feature Status Display */}
+              {conversationState.enabledFeatures.length > 0 && (
+                <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h4 className="font-semibold text-sm text-blue-800 mb-2">Active Features:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {conversationState.enabledFeatures.includes('medical') && (
+                      <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                        <Stethoscope className="h-3 w-3 mr-1" />
+                        Medical Data Access
+                      </Badge>
+                    )}
+                    {conversationState.enabledFeatures.includes('publication') && (
+                      <Badge variant="secondary" className="bg-green-100 text-green-800">
+                        <FileText className="h-3 w-3 mr-1" />
+                        Publication Mode
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Disclaimer */}
+              <div className="mt-6 p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                <p className="text-sm text-yellow-800">
+                  <strong>Disclaimer:</strong> This is an AI assistant with RAG-enhanced knowledge base for demonstration purposes. The responses generated should not be considered as medical advice. Always consult qualified healthcare professionals for medical decisions.
+                </p>
+              </div>
+
+              {/* Start Chat Button */}
+              {!conversationState.isActive && (
+                <div className="mt-6 flex justify-center">
+                  <Button 
+                    size="lg" 
+                    onClick={handleStartChat}
+                    className="bg-blue-500 hover:bg-blue-600 text-white px-8 py-3 text-lg font-medium"
+                  >
+                    Start Chat
+                  </Button>
+                </div>
+              )}
+
+              {/* Conversation Area with Enhanced Multi-Model Display */}
+              {conversationState.isActive && (
+                <div className="mt-6">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-sm font-medium">Conversation</h3>
+                    {conversationState.selectedMode === 'multi' && (
+                      <div className="flex items-center gap-2">
+                        <Badge variant="secondary" className="text-xs">
+                          {modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 
+                            ? `${selectedCrossModels.length} Models` 
+                            : 'Split View'}
+                        </Badge>
+                        <Button size="sm" variant="ghost" onClick={handleResetConversation}>
+                          <RefreshCw className="h-3 w-3 mr-1" />
+                          Reset
+                        </Button>
                       </div>
                     )}
-                    {conversationState.selectedMode === 'multi' && modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 && (
-                      <div className="mt-3 flex flex-wrap justify-center gap-1">
-                        {selectedCrossModels.slice(0, 3).map((model, index) => (
-                          <Badge key={index} variant="outline" className="text-xs">
-                            {model.name || `${model.provider} ${model.model}`}
-                          </Badge>
-                        ))}
-                        {selectedCrossModels.length > 3 && (
-                          <Badge variant="outline" className="text-xs">
-                            +{selectedCrossModels.length - 3} more
-                          </Badge>
+                  </div>
+                  
+                  <ScrollArea className="h-96 w-full border rounded-lg p-4 bg-gray-50">
+                    {conversationState.messages.length === 0 ? (
+                      <div className="text-center text-gray-500 mt-20">
+                        <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 p-1 mx-auto mb-4">
+                          <img 
+                            src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
+                            alt="Genie" 
+                            className="w-full h-full rounded-full object-cover"
+                          />
+                        </div>
+                        <p className="text-lg font-medium text-gray-700 mb-2">Hello! I'm Genie, your Technical Navigator</p>
+                        <p className="text-sm text-gray-500">
+                          Send me a message and I'll provide you with comprehensive, context-aware responses.
+                        </p>
+                        {conversationState.selectedMode === 'multi' && modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 && (
+                          <div className="mt-3 flex flex-wrap justify-center gap-1">
+                            {selectedCrossModels.slice(0, 3).map((model, index) => (
+                              <Badge key={index} variant="outline" className="text-xs">
+                                {model.name || `${model.provider} ${model.model}`}
+                              </Badge>
+                            ))}
+                            {selectedCrossModels.length > 3 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{selectedCrossModels.length - 3} more
+                              </Badge>
+                            )}
+                          </div>
                         )}
                       </div>
+                    ) : (
+                      <div className="space-y-1">
+                        {conversationState.messages.map((msg, index) => (
+                          <MessageComponent
+                            key={msg.id}
+                            message={msg}
+                            isLast={index === conversationState.messages.length - 1}
+                          />
+                        ))}
+                        {isLoading && <TypingIndicator />}
+                      </div>
                     )}
-                  </div>
-                ) : (
-                  <div className="space-y-1">
-                    {conversationState.messages.map((msg, index) => (
-                      <MessageComponent
-                        key={msg.id}
-                        message={msg}
-                        isLast={index === conversationState.messages.length - 1}
-                      />
-                    ))}
-                    {isLoading && <TypingIndicator />}
-                  </div>
-                )}
-              </ScrollArea>
-            </div>
-          )}
+                  </ScrollArea>
+                </div>
+              )}
 
-          {/* Message Input */}
-          {conversationState.isActive && (
-            <div className="mt-6">
-              <div className="flex gap-2">
-                <Textarea
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' && !e.shiftKey) {
-                      e.preventDefault();
-                      handleSendMessage();
-                    }
-                  }}
-                  placeholder="Type your message..."
-                  className="flex-1 min-h-[100px] resize-none"
-                />
-                <Button 
-                  size="icon" 
-                  onClick={handleSendMessage}
-                  className="self-end bg-blue-500 hover:bg-blue-600 text-white"
-                  disabled={!message.trim() || isLoading}
-                >
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
+              {/* Message Input */}
+              {conversationState.isActive && (
+                <div className="mt-6">
+                  <div className="flex gap-2">
+                    <Textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSendMessage();
+                        }
+                      }}
+                      placeholder="Type your message..."
+                      className="flex-1 min-h-[100px] resize-none"
+                    />
+                    <Button 
+                      size="icon" 
+                      onClick={handleSendMessage}
+                      className="self-end bg-blue-500 hover:bg-blue-600 text-white"
+                      disabled={!message.trim() || isLoading}
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </ScrollArea>
