@@ -83,6 +83,17 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     model: 'claude-3-5-haiku-20241022',
     category: 'llm'
   });
+  // Multi-model selections for split view
+  const [selectedModelLeft, setSelectedModelLeft] = useState<{ provider: string; model: string; category: string }>({
+    provider: 'openai',
+    model: 'gpt-5-2025-08-07',
+    category: 'llm'
+  });
+  const [selectedModelRight, setSelectedModelRight] = useState<{ provider: string; model: string; category: string }>({
+    provider: 'claude',
+    model: 'claude-opus-4-1-20250805',
+    category: 'llm'
+  });
   
   // Use conversation state management
   const { state: conversationState, resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = useConversationState();
@@ -139,6 +150,12 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
   const handleModelSelect = (provider: string, model: string, category: string) => {
     setSelectedModel({ provider, model, category });
+  };
+  const handleModelSelectLeft = (provider: string, model: string, category: string) => {
+    setSelectedModelLeft({ provider, model, category });
+  };
+  const handleModelSelectRight = (provider: string, model: string, category: string) => {
+    setSelectedModelRight({ provider, model, category });
   };
 
   const handleModeSelect = (mode: ConversationMode) => {
@@ -234,58 +251,52 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         ['label-studio-mcp', ...conversationState.enabledFeatures, ...conversationState.selectedMCPTools]
       );
 
-      // Build and send request with robust error handling
-      let response: any = null;
-      let lastError: string = '';
-      
-      // Always use the selected model for all modes
-      try {
-        const request: any = {
-          prompt: enhancedPrompt,
-          systemPrompt,
-          provider: selectedModel.provider,
-          model: selectedModel.model,
-          temperature: 0.7,
-          maxTokens: 1000
-        };
-        response = await generateResponse(request);
-      } catch (e) {
-        lastError = e instanceof Error ? e.message : 'Unknown error';
-        console.error(`Provider ${selectedModel.provider} with model ${selectedModel.model} failed:`, lastError);
-      }
-      
-      if (response) {
-        let content = response.content;
-        
-        // Add context sources to response if available
-        if (contextSources.length > 0) {
-          content += `\n\n*Sources: ${contextSources.join(', ')}*`;
-        }
-        
-        addMessage({
-          role: 'assistant',
-          content,
-          provider: response.provider,
-          timestamp: new Date().toISOString(),
-          model: response.model,
-          metadata: { contextSources, ragEnhanced: contextSources.length > 0 }
-        });
-      } else {
-        const errorMessage = lastError || 'No response from any AI provider. Please check your API keys and try again.';
-        throw new Error(errorMessage);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      addMessage({
-        role: 'assistant', 
-        content: 'Sorry, I encountered an error processing your request. Please try again.',
-        timestamp: new Date().toISOString(),
-        error: true
-      });
-    }
-  };
+      // Build and send request(s)
+      const targets = conversationState.selectedMode === 'multi'
+        ? [selectedModelLeft, selectedModelRight]
+        : [selectedModel];
 
-  const renderModeSpecificContent = () => {
+      const results = await Promise.all(targets.map(async (m) => {
+        try {
+          const request: any = {
+            prompt: enhancedPrompt,
+            systemPrompt,
+            provider: m.provider,
+            model: m.model,
+            temperature: 0.7,
+            maxTokens: 1000
+          };
+          const res = await generateResponse(request);
+          return { ok: true as const, res };
+        } catch (e: any) {
+          console.error(`Provider ${m.provider} with model ${m.model} failed:`, e?.message || e);
+          return { ok: false as const, err: e, m };
+        }
+      }));
+
+      // Add messages for all successful responses
+      const successCount = results.reduce((acc, r) => acc + (r.ok ? 1 : 0), 0);
+      results.forEach(r => {
+        if (r.ok) {
+          let content = (r.res as any).content;
+          if (contextSources.length > 0) {
+            content += `\n\n*Sources: ${contextSources.join(', ')}*`;
+          }
+          addMessage({
+            role: 'assistant',
+            content,
+            provider: (r.res as any).provider,
+            model: (r.res as any).model,
+            timestamp: new Date().toISOString(),
+            metadata: { contextSources, ragEnhanced: contextSources.length > 0 }
+          });
+        }
+      });
+
+      if (successCount === 0) {
+        throw new Error('All model calls failed. Please check providers and try again.');
+      }
+
     switch (conversationState.selectedMode) {
       case 'single':
         return (
@@ -300,14 +311,24 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       case 'multi':
         return (
           <div className="mt-4 space-y-4">
-            <p className="text-sm text-muted-foreground">Select model for side-by-side comparison</p>
-            <EnhancedModelSelector
-              onModelSelect={handleModelSelect}
-              selectedModel={selectedModel}
-            />
-            <p className="text-xs text-muted-foreground">
-              Note: Multi-mode currently uses the selected model. Full side-by-side comparison coming soon.
-            </p>
+            <p className="text-sm text-muted-foreground">Select models for side-by-side comparison</p>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <p className="text-xs font-medium mb-2">Left Panel Model</p>
+                <EnhancedModelSelector
+                  onModelSelect={handleModelSelectLeft}
+                  selectedModel={selectedModelLeft}
+                />
+              </div>
+              <div>
+                <p className="text-xs font-medium mb-2">Right Panel Model</p>
+                <EnhancedModelSelector
+                  onModelSelect={handleModelSelectRight}
+                  selectedModel={selectedModelRight}
+                />
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">You can compare outputs from different providers/models in a split view.</p>
           </div>
         );
 
