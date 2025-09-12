@@ -20,22 +20,30 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   const { defaultProvider = 'openai', autoLoadProviders = true } = options;
   const { showError, showSuccess } = useMasterToast();
 
-  // Categorized AI models by capability and size
+  // Enhanced categorized AI models with healthcare/biotech specialized models
   const modelCategories = {
     llm: {
-      openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16'],
-      claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514'],
-      gemini: ['gemini-2.0-flash-exp', 'gemini-pro']
+      openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16'],
+      claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-sonnet-20241022'],
+      gemini: ['gemini-2.0-flash-exp', 'gemini-pro', 'gemini-1.5-pro']
     },
     small: {
       openai: ['gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4o-mini'],
       claude: ['claude-3-5-haiku-20241022'],
-      gemini: ['gemini-2.0-flash']
+      gemini: ['gemini-2.0-flash'],
+      specialized: ['biomed-llama-7b', 'clinical-bert', 'pubmed-gpt', 'pharma-t5', 'biotech-mistral-7b']
     },
     vision: {
-      openai: ['gpt-4o', 'o4-mini-2025-04-16'],
+      openai: ['gpt-4o', 'o4-mini-2025-04-16', 'gpt-4-vision-preview'],
       claude: ['claude-3-5-sonnet-20241022'],
-      gemini: ['gemini-pro-vision']
+      gemini: ['gemini-pro-vision', 'gemini-1.5-pro'],
+      healthcare: ['medical-imaging-vision', 'radiology-ai-vision', 'pathology-vision-pro']
+    },
+    mcp: {
+      healthcare: ['healthcare-ai-mcp-server', 'biomcp-biotech-pharma-server', 'adk-healthcare-agent-server', 'healthcare-database-mcp-server'],
+      biotech: ['genomics-mcp-server', 'clinical-trials-mcp', 'regulatory-compliance-mcp', 'adverse-events-mcp'],
+      pharma: ['drug-discovery-mcp', 'pharmacovigilance-mcp', 'regulatory-affairs-mcp', 'manufacturing-mcp'],
+      general: ['filesystem-mcp-server', 'web-search-mcp', 'database-mcp-toolbox', 'email-automation-mcp']
     }
   };
 
@@ -292,8 +300,8 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     return response?.content || null;
   }, [generateResponse, defaultProvider]);
 
-  // Get models for provider by category
-  const getModelsForProvider = useCallback((providerId: string, category?: 'llm' | 'small' | 'vision') => {
+  // Get models for provider by category (including MCP)
+  const getModelsForProvider = useCallback((providerId: string, category?: 'llm' | 'small' | 'vision' | 'mcp') => {
     if (category && modelCategories[category] && modelCategories[category][providerId as keyof typeof modelCategories.llm]) {
       return modelCategories[category][providerId as keyof typeof modelCategories.llm];
     }
@@ -301,9 +309,11 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     return provider?.models || [];
   }, [state.providers]);
 
-  // Get models by category across all providers
-  const getModelsByCategory = useCallback((category: 'llm' | 'small' | 'vision') => {
+  // Get models by category across all providers (including MCP)
+  const getModelsByCategory = useCallback((category: 'llm' | 'small' | 'vision' | 'mcp') => {
     const categoryModels = modelCategories[category];
+    if (!categoryModels) return {};
+    
     return Object.entries(categoryModels).reduce((acc, [provider, models]) => {
       acc[provider] = models;
       return acc;

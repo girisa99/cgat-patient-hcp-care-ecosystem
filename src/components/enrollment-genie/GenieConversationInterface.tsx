@@ -33,7 +33,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationState, ConversationMessage } from '@/hooks/useConversationState';
 import { ragService } from '@/services/ragService';
-import { ModelCategorySelector } from '@/components/ai/ModelCategorySelector';
+import { EnhancedModelSelector } from '@/components/ai/EnhancedModelSelector';
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
 
@@ -290,7 +290,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       case 'single':
         return (
           <div className="mt-4 space-y-4">
-            <ModelCategorySelector
+            <EnhancedModelSelector
               onModelSelect={handleModelSelect}
               selectedModel={selectedModel}
             />
@@ -301,7 +301,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         return (
           <div className="mt-4 space-y-4">
             <p className="text-sm text-muted-foreground">Select model for side-by-side comparison</p>
-            <ModelCategorySelector
+            <EnhancedModelSelector
               onModelSelect={handleModelSelect}
               selectedModel={selectedModel}
             />
