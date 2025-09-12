@@ -39,7 +39,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     {
       id: 'gemini',
       name: 'Google Gemini',
-      models: ['gemini-2.0-flash', 'gemini-pro', 'gemini-pro-vision'],
+      models: ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-pro', 'gemini-pro-vision'],
       capabilities: ['text', 'vision', 'multimodal'],
       description: 'Google Gemini models'
     }

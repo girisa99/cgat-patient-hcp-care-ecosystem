@@ -209,8 +209,8 @@ Provide a comprehensive analysis of this workflow.`;
   private getDefaultModel(provider: string): string {
     switch (provider) {
       case 'openai': return 'gpt-4o-mini';
-      case 'claude': return 'claude-3-haiku';
-      case 'gemini': return 'gemini-pro';
+      case 'claude': return 'claude-3-5-haiku-20241022';
+      case 'gemini': return 'gemini-2.0-flash-exp';
       default: return 'gpt-4o-mini';
     }
   }

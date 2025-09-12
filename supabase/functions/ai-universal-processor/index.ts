@@ -64,7 +64,12 @@ Return a JSON object with deployment settings, environment requirements, and set
         if (!CLAUDE_API_KEY) {
           throw new Error('Claude API key not configured');
         }
-        response = await callClaude(model || 'claude-3-haiku', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
+        try {
+          response = await callClaude(model || 'claude-3-5-haiku-20241022', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
+        } catch (err) {
+          console.warn('Claude model failed, falling back to claude-sonnet-4-20250514:', err?.message || err);
+          response = await callClaude('claude-sonnet-4-20250514', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
+        }
         break;
 
       case 'gemini':
@@ -241,7 +246,7 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
 function getDefaultModel(provider: string): string {
   switch (provider) {
     case 'openai': return 'gpt-4o-mini';
-    case 'claude': return 'claude-3-haiku';
+    case 'claude': return 'claude-3-5-haiku-20241022';
     case 'gemini': return 'gemini-2.0-flash-exp';
     default: return 'gpt-4o-mini';
   }
