@@ -1,8 +1,8 @@
 /**
  * RICH MEDIA MESSAGE RENDERER
- * Supports HTML, tables, images, videos, PDFs, documents, and AI generation
+ * Supports HTML, tables, images, videos, PDFs, documents, AI generation, and external visual content
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,27 +19,35 @@ import {
   Loader2,
   Table,
   Code,
-  ExternalLink
+  ExternalLink,
+  Search
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { VisualContentDisplay } from '../search/VisualContentDisplay';
+import { externalVisualContentService, VisualContentSource } from '@/services/externalVisualContentService';
 
 interface RichMediaRendererProps {
   content: string;
   metadata?: any;
   onGenerateImage?: (prompt: string) => Promise<string>;
   onGenerateVideo?: (prompt: string) => Promise<string>;
+  enableVisualSearch?: boolean;
 }
 
 export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({ 
   content, 
   metadata,
   onGenerateImage,
-  onGenerateVideo
+  onGenerateVideo,
+  enableVisualSearch = true
 }) => {
   const [imagePrompt, setImagePrompt] = useState('');
   const [videoPrompt, setVideoPrompt] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [generatedMedia, setGeneratedMedia] = useState<{ type: 'image' | 'video'; url: string }[]>([]);
+  const [visualContent, setVisualContent] = useState<VisualContentSource[]>([]);
+  const [isLoadingVisual, setIsLoadingVisual] = useState(false);
+  const [showVisualContent, setShowVisualContent] = useState(false);
 
   // Parse content for different media types
   const parseContent = () => {
@@ -217,6 +225,55 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
     }
   };
 
+  // Auto-search for visual content based on message content
+  useEffect(() => {
+    if (enableVisualSearch && content) {
+      const searchTerms = extractSearchTerms(content);
+      if (searchTerms.length > 0) {
+        searchVisualContent(searchTerms.join(' '));
+      }
+    }
+  }, [content, enableVisualSearch]);
+
+  const extractSearchTerms = (text: string): string[] => {
+    // Extract medical/scientific terms for visual search
+    const medicalTerms = [
+      'CAR-T', 'immunotherapy', 'cancer', 'FDA', 'clinical trial',
+      'cell therapy', 'biotech', 'pharmaceutical', 'treatment'
+    ];
+    
+    const foundTerms = medicalTerms.filter(term => 
+      text.toLowerCase().includes(term.toLowerCase())
+    );
+    
+    return foundTerms.slice(0, 3); // Limit to 3 terms
+  };
+
+  const searchVisualContent = async (query: string) => {
+    if (!query.trim()) return;
+    
+    setIsLoadingVisual(true);
+    try {
+      const result = await externalVisualContentService.searchVisualContent(query, 6);
+      setVisualContent(result.sources);
+      setShowVisualContent(result.sources.length > 0);
+    } catch (error) {
+      console.error('Error searching visual content:', error);
+    } finally {
+      setIsLoadingVisual(false);
+    }
+  };
+
+  const handleVisualSearch = (query: string) => {
+    searchVisualContent(query);
+  };
+
+  const handleVisualCategoryFilter = (category: string) => {
+    // For now, just filter existing results
+    // In a full implementation, this would trigger a new search
+    console.log('Category filter:', category);
+  };
+
   const sections = parseContent();
 
   return (
@@ -267,6 +324,26 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
             ))}
           </div>
         </div>
+      )}
+
+      {/* External Visual Content */}
+      {enableVisualSearch && (showVisualContent || isLoadingVisual) && (
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-sm flex items-center gap-2">
+              <Search className="h-4 w-4" />
+              Related Visual Content
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <VisualContentDisplay
+              sources={visualContent}
+              isLoading={isLoadingVisual}
+              onSearch={handleVisualSearch}
+              onCategoryFilter={handleVisualCategoryFilter}
+            />
+          </CardContent>
+        </Card>
       )}
 
       {/* Media Generation Tools */}

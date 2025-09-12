@@ -45,16 +45,18 @@ export class RAGService {
   }
 
   /**
-   * Enhance prompt with RAG context - with improved Label Studio fallback
+   * Enhance prompt with RAG context - with improved Label Studio fallback and visual content
    */
   async enhancePromptWithRAG(prompt: string, enabledFeatures: string[]): Promise<{
     enhancedPrompt: string;
     contextSources: string[];
     hasContext: boolean;
+    visualContent?: any[];
   }> {
     let enhancedPrompt = prompt;
     let contextSources: string[] = [];
     let hasContext = false;
+    let visualContent: any[] = [];
 
     try {
       // Search for relevant documents
@@ -94,6 +96,25 @@ User question: ${prompt}`;
         }
       }
 
+      // Add visual content references if available
+      if (enabledFeatures.includes('visual_search')) {
+        try {
+          const { externalVisualContentService } = await import('./externalVisualContentService');
+          const visualResult = await externalVisualContentService.searchVisualContent(prompt, 5);
+          if (visualResult.sources.length > 0) {
+            visualContent = visualResult.sources;
+            const visualRefs = visualResult.sources
+              .map(source => `- ${source.title} (${source.sourceName}): ${source.description}`)
+              .join('\n');
+            enhancedPrompt += `\n\nRelevant visual resources:\n${visualRefs}`;
+            contextSources.push('External Visual Content');
+            hasContext = true;
+          }
+        } catch (visualError) {
+          console.warn('Visual content search unavailable:', visualError);
+        }
+      }
+
       // If no context is found, add helpful instruction to LLM
       if (!hasContext) {
         enhancedPrompt = `${prompt}
@@ -112,7 +133,8 @@ Note: Knowledge base temporarily unavailable. Responding based on training data.
     return {
       enhancedPrompt,
       contextSources,
-      hasContext
+      hasContext,
+      visualContent
     };
   }
 
