@@ -34,6 +34,8 @@ import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationState, ConversationMessage } from '@/hooks/useConversationState';
 import { ragService } from '@/services/ragService';
 import { ModelCategorySelector } from '@/components/ai/ModelCategorySelector';
+import { ConversationMessage as MessageComponent } from './ConversationMessage';
+import { TypingIndicator } from './TypingIndicator';
 
 interface GenieConversationInterfaceProps {
   isOpen: boolean;
@@ -194,8 +196,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       // Use the selected model from the ModelCategorySelector
       const provider = selectedModel.provider as 'openai' | 'claude' | 'gemini';
       
-      // Enhanced system prompt with RAG context
-      let systemPrompt = "You are a helpful AI assistant with access to a comprehensive knowledge base.";
+      // Enhanced system prompt with RAG context for natural conversation
+      let systemPrompt = `You are Genie, a helpful and intelligent Technical Navigator AI assistant. You have access to a comprehensive knowledge base and should provide responses that are:
+- Well-structured and easy to read
+- Conversational and friendly in tone
+- Detailed but not overwhelming
+- Use bullet points, numbered lists, and paragraphs for clarity
+- Always maintain a helpful, professional demeanor
+- Reference relevant context when available`;
       
       // Add model category specific instructions
       if (selectedModel.category === 'small') {
@@ -695,51 +703,29 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Conversation Area */}
           {conversationState.isActive && (
             <div className="mt-6">
-              <ScrollArea className="h-96 w-full border rounded-lg p-4">
+              <ScrollArea className="h-96 w-full border rounded-lg p-4 bg-gray-50">
                 {conversationState.messages.length === 0 ? (
                   <div className="text-center text-gray-500 mt-20">
-                    <Bot className="h-12 w-12 mx-auto mb-4 text-gray-400" />
-                    <p>Chat started! Send your first message below.</p>
+                    <div className="w-16 h-16 rounded-full bg-gradient-to-br from-teal-400 via-cyan-400 to-blue-500 p-1 mx-auto mb-4">
+                      <img 
+                        src="/lovable-uploads/f995d61d-e4c0-44c3-bdcb-8ff8e2c93448.png" 
+                        alt="Genie" 
+                        className="w-full h-full rounded-full object-cover"
+                      />
+                    </div>
+                    <p className="text-lg font-medium text-gray-700 mb-2">Hello! I'm Genie, your Technical Navigator</p>
+                    <p className="text-sm text-gray-500">Send me a message and I'll provide you with comprehensive, context-aware responses.</p>
                   </div>
                 ) : (
-                  <div className="space-y-4">
+                  <div className="space-y-1">
                     {conversationState.messages.map((msg, index) => (
-                      <div 
-                        key={msg.id} 
-                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                      >
-                        <div className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
-                          msg.role === 'user' 
-                            ? 'bg-blue-500 text-white' 
-                            : msg.error 
-                              ? 'bg-red-100 text-red-800 border border-red-200'
-                              : 'bg-gray-100 text-gray-800'
-                        }`}>
-                          <p className="text-sm">{msg.content}</p>
-                          {msg.model && (
-                            <div className="flex items-center justify-between mt-1">
-                              <p className="text-xs opacity-75">
-                                {msg.provider?.toUpperCase()} • {msg.model}
-                              </p>
-                              {msg.metadata?.ragEnhanced && (
-                                <Badge variant="outline" className="text-xs">
-                                  <Database className="h-2 w-2 mr-1" />
-                                  RAG
-                                </Badge>
-                              )}
-                            </div>
-                          )}
-                        </div>
-                      </div>
+                      <MessageComponent
+                        key={msg.id}
+                        message={msg}
+                        isLast={index === conversationState.messages.length - 1}
+                      />
                     ))}
-                    {isLoading && (
-                      <div className="flex justify-start">
-                        <div className="bg-gray-100 px-4 py-2 rounded-lg flex items-center gap-2">
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                          <span className="text-sm text-gray-600">Thinking...</span>
-                        </div>
-                      </div>
-                    )}
+                    {isLoading && <TypingIndicator />}
                   </div>
                 )}
               </ScrollArea>
