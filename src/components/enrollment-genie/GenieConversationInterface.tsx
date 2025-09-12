@@ -176,6 +176,95 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       : [...conversationState.enabledFeatures, featureId];
     
     updateConversationConfig({ enabledFeatures: newFeatures });
+    
+    // Auto-suggest models for medical and publication features
+    if (newFeatures.includes(featureId) && modelSelectionMode === 'cross-category') {
+      autoSuggestModelsForFeature(featureId);
+    }
+  };
+
+  const autoSuggestModelsForFeature = (featureId: string) => {
+    let suggestedModels: SelectedModelConfig[] = [];
+    
+    switch (featureId) {
+      case 'medical':
+        suggestedModels = [
+          {
+            provider: 'claude',
+            model: 'claude-opus-4-1-20250805',
+            category: 'llm',
+            name: 'Claude Opus (Medical Reasoning)',
+            role: 'primary',
+            weight: 0.4
+          },
+          {
+            provider: 'openai',
+            model: 'gpt-5-2025-08-07',
+            category: 'llm',
+            name: 'GPT-5 (Medical Knowledge)',
+            role: 'secondary',
+            weight: 0.3
+          },
+          {
+            provider: 'openai',
+            model: 'gpt-4o',
+            category: 'vision',
+            name: 'GPT-4 Vision (Medical Imaging)',
+            role: 'specialized',
+            weight: 0.2
+          },
+          {
+            provider: 'huggingface',
+            model: 'biobert',
+            category: 'small',
+            name: 'BioBERT (Medical NLP)',
+            role: 'specialized',
+            weight: 0.1
+          }
+        ];
+        break;
+        
+      case 'publication':
+        suggestedModels = [
+          {
+            provider: 'claude',
+            model: 'claude-sonnet-4-20250514',
+            category: 'llm',
+            name: 'Claude Sonnet (Writing & Structure)',
+            role: 'primary',
+            weight: 0.5
+          },
+          {
+            provider: 'openai',
+            model: 'gpt-5-2025-08-07',
+            category: 'llm',
+            name: 'GPT-5 (Research & Content)',
+            role: 'secondary',
+            weight: 0.3
+          },
+          {
+            provider: 'openai',
+            model: 'gpt-5-mini-2025-08-07',
+            category: 'small',
+            name: 'GPT-5 Mini (Quick Editing)',
+            role: 'specialized',
+            weight: 0.2
+          }
+        ];
+        break;
+    }
+    
+    if (suggestedModels.length > 0) {
+      setSelectedCrossModels(prev => {
+        // Merge with existing selections, avoiding duplicates
+        const existing = prev.filter(model => 
+          !suggestedModels.some(suggested => 
+            suggested.provider === model.provider && suggested.model === model.model
+          )
+        );
+        return [...existing, ...suggestedModels];
+      });
+    }
   };
 
   const handleMCPToolToggle = (toolId: string) => {
@@ -423,22 +512,63 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       case 'system':
       default:
         return (
-          <div className="mt-4">
-            <Card className="border-green-200 bg-green-50/30">
-              <CardContent className="p-4">
-                <div className="text-sm text-green-700 font-medium mb-1">
-                  System Mode: Utilizes all available models (Gemini, GPT, and Claude) with RAG-enhanced knowledge base for comprehensive and optimized responses.
-                </div>
-                {ragStatus.available && (
-                  <div className="flex items-center gap-2 mt-2">
-                    <Database className="h-3 w-3 text-green-600" />
-                    <span className="text-xs text-green-600">
-                      RAG Active: {ragStatus.documentsCount} documents, Label Studio: {ragStatus.labelStudioConnected ? 'Connected' : 'Not Connected'}
-                    </span>
+          <div className="mt-4 space-y-4">
+            {/* Model Selection Mode Picker for System */}
+            <div className="flex items-center gap-4 p-3 bg-green-50 rounded-lg border border-green-200">
+              <span className="text-sm font-medium text-green-700">System Mode Selection:</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={modelSelectionMode === 'single' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('single')}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Auto-System
+                </Button>
+                <Button
+                  variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('cross-category')}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  Custom System
+                </Button>
+              </div>
+            </div>
+            
+            {modelSelectionMode === 'single' ? (
+              <Card className="border-green-200 bg-green-50/30">
+                <CardContent className="p-4">
+                  <div className="text-sm text-green-700 font-medium mb-1">
+                    Auto-System Mode: Utilizes all available models (Gemini, GPT, and Claude) with RAG-enhanced knowledge base for comprehensive and optimized responses.
                   </div>
-                )}
-              </CardContent>
-            </Card>
+                  {ragStatus.available && (
+                    <div className="flex items-center gap-2 mt-2">
+                      <Database className="h-3 w-3 text-green-600" />
+                      <span className="text-xs text-green-600">
+                        RAG Active: {ragStatus.documentsCount} documents, Label Studio: {ragStatus.labelStudioConnected ? 'Connected' : 'Not Connected'}
+                      </span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <div className="space-y-3">
+                <Card className="border-green-200 bg-green-50/30">
+                  <CardContent className="p-4">
+                    <div className="text-sm text-green-700 font-medium mb-1">
+                      Custom System Mode: Select and configure your own multi-model system with intelligent merging.
+                    </div>
+                  </CardContent>
+                </Card>
+                <CrossCategoryModelSelector
+                  onModelsSelect={setSelectedCrossModels}
+                  selectedModels={selectedCrossModels}
+                  mode="system"
+                  maxSelections={8}
+                />
+              </div>
+            )}
           </div>
         );
     }
