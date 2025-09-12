@@ -333,7 +333,7 @@ export const EnhancedJourneyDesigner: React.FC<EnhancedJourneyDesignerProps> = (
               <div className="overflow-y-auto">
                 <AISuggestionsPanel
                   useCase={useCase}
-                  onAddStep={(step, position) => addAISuggestion(step, position || steps.length)}
+                  onAddStep={(step) => addAISuggestion(step, steps.length)}
                   onAddAllSteps={(suggestedSteps) => {
                     suggestedSteps.forEach((step, index) => {
                       addAISuggestion(step, steps.length + index);
