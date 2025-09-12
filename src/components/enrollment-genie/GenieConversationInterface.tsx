@@ -119,6 +119,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
   const { resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = conv;
 
+  // Debug render and mode changes
+  useEffect(() => {
+    console.log('GenieConversationInterface render', { uiMode: mode, convMode: conversationState.selectedMode });
+  }, [mode, conversationState.selectedMode]);
+
   const handleResetConversation = () => {
     resetConversation();
     setMessage('');
