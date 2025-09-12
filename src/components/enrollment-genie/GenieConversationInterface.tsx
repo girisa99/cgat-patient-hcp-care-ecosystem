@@ -227,30 +227,30 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, scale: 0.95, y: 20 }}
-        animate={{ opacity: 1, scale: 1, y: 0 }}
-        exit={{ opacity: 0, scale: 0.95, y: 20 }}
-        className="fixed inset-4 z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg shadow-lg flex flex-col"
+        initial={{ opacity: 0, x: 400 }}
+        animate={{ opacity: 1, x: 0 }}
+        exit={{ opacity: 0, x: 400 }}
+        className="fixed top-0 right-0 h-full w-[450px] z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-l rounded-l-lg shadow-xl flex flex-col"
       >
         <div className="flex flex-col h-full">
           {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b">
+          <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
                 <Bot className="h-5 w-5 text-primary" />
               </div>
               <div>
-                <h3 className="font-semibold">Genie AI Assistant</h3>
+                <h3 className="font-semibold text-lg">Genie Assistant</h3>
                 <p className="text-sm text-muted-foreground">
-                  {medicalContext ? 'Medical AI Assistant' : 'Comprehensive AI Assistant'}
+                  {mode === 'multi' ? 'Multi-Model Chat' : medicalContext ? 'Medical AI' : 'AI Assistant'}
                 </p>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => setShowModelSelector(true)}>
-                <Settings className="h-4 w-4" />
-                Configure
+                <Settings className="h-4 w-4 mr-1" />
+                Config
               </Button>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 <X className="h-4 w-4" />
@@ -258,127 +258,125 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
           </div>
 
-          {/* Mode Selector */}
-          <div className="p-4 border-b bg-muted/30">
-            <div className="flex items-center justify-between mb-3">
-              <div className="flex items-center gap-2">
-                <Bot className="h-5 w-5 text-primary" />
-                <span className="font-medium">Operation Mode</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <Select value={mode} onValueChange={handleModeChange}>
-                  <SelectTrigger className="w-36">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="system">
-                      <div className="flex items-center gap-2">
-                        <Workflow className="h-4 w-4" />
-                        System
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="single">
-                      <div className="flex items-center gap-2">
-                        <MessageSquare className="h-4 w-4" />
-                        Single
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="multi">
-                      <div className="flex items-center gap-2">
-                        <GitBranch className="h-4 w-4" />
-                        Multi
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="publish">
-                      <div className="flex items-center gap-2">
-                        <Target className="h-4 w-4" />
-                        Publish
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
+          {/* Mode Selector & Quick Actions */}
+          <div className="p-3 border-b bg-muted/20">
+            <div className="flex items-center justify-between mb-2">
+              <Select value={mode} onValueChange={handleModeChange}>
+                <SelectTrigger className="w-32 h-8">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="system">
+                    <div className="flex items-center gap-2">
+                      <Workflow className="h-3 w-3" />
+                      System
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="single">
+                    <div className="flex items-center gap-2">
+                      <MessageSquare className="h-3 w-3" />
+                      Single
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="multi">
+                    <div className="flex items-center gap-2">
+                      <GitBranch className="h-3 w-3" />
+                      Multi
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="publish">
+                    <div className="flex items-center gap-2">
+                      <Target className="h-3 w-3" />
+                      Publish
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+              
+              <div className="flex items-center gap-1">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.location.href = '/enrollment-workspace'}
+                  className="h-8 px-2 text-xs"
+                >
+                  <User className="h-3 w-3 mr-1" />
+                  Enroll
+                </Button>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => window.location.href = '/gen-ai'}
+                  className="h-8 px-2 text-xs"
+                >
+                  <Zap className="h-3 w-3 mr-1" />
+                  Gen AI
+                </Button>
               </div>
             </div>
             
-            {/* Feature Badges */}
-            <div className="flex gap-2 flex-wrap">
-              <Badge variant={medicalContext ? "default" : "outline"} className="text-xs">
-                <Microscope className="h-3 w-3 mr-1" />
-                Medical Context
-              </Badge>
-              <Badge variant={ragEnabled ? "default" : "outline"} className="text-xs">
-                <Database className="h-3 w-3 mr-1" />
-                RAG System
-              </Badge>
-              <Badge variant={labelStudioEnabled ? "default" : "outline"} className="text-xs">
-                <FileText className="h-3 w-3 mr-1" />
-                Label Studio
-              </Badge>
-              <Badge variant={selectedMCPTools.length > 0 ? "default" : "outline"} className="text-xs">
-                <Wrench className="h-3 w-3 mr-1" />
-                MCP Tools ({selectedMCPTools.length})
-              </Badge>
-              <Badge variant={selectedModels.length > 0 ? "default" : "outline"} className="text-xs">
-                <Brain className="h-3 w-3 mr-1" />
-                Models ({selectedModels.length})
-              </Badge>
+            {/* Active Features */}
+            <div className="flex gap-1 flex-wrap">
+              {medicalContext && <Badge variant="secondary" className="text-xs h-5"><Microscope className="h-2 w-2 mr-1" />Medical</Badge>}
+              {ragEnabled && <Badge variant="secondary" className="text-xs h-5"><Database className="h-2 w-2 mr-1" />RAG</Badge>}
+              {labelStudioEnabled && <Badge variant="secondary" className="text-xs h-5"><FileText className="h-2 w-2 mr-1" />Label</Badge>}
+              {selectedMCPTools.length > 0 && <Badge variant="secondary" className="text-xs h-5"><Wrench className="h-2 w-2 mr-1" />Tools({selectedMCPTools.length})</Badge>}
+              {selectedModels.length > 0 && <Badge variant="secondary" className="text-xs h-5"><Brain className="h-2 w-2 mr-1" />Models({selectedModels.length})</Badge>}
             </div>
           </div>
 
-          {/* Content Area - Tabbed Interface */}
-          <div className="flex-1 overflow-hidden">
-            <Tabs defaultValue="conversation" className="h-full flex flex-col">
-              <TabsList className="grid w-full grid-cols-4 mx-4 mt-2">
-                <TabsTrigger value="conversation" className="text-xs">
-                  <MessageSquare className="h-3 w-3 mr-1" />
-                  Chat
-                </TabsTrigger>
-                <TabsTrigger value="context" className="text-xs">
-                  <Brain className="h-3 w-3 mr-1" />
-                  Context
-                </TabsTrigger>
-                <TabsTrigger value="rag" className="text-xs">
-                  <Database className="h-3 w-3 mr-1" />
-                  RAG/KB
-                </TabsTrigger>
-                <TabsTrigger value="tools" className="text-xs">
-                  <Wrench className="h-3 w-3 mr-1" />
-                  Tools
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="conversation" className="flex-1 flex flex-col mt-0">
-                {/* Mode-specific header */}
-                <div className="p-4 border-b bg-muted/20">
-                  <p className="text-sm text-muted-foreground">
-                    {mode === 'system' && 'System mode: Auto-configured with all available models and capabilities'}
-                    {mode === 'single' && 'Single mode: Focused conversation with selected model'}
-                    {mode === 'multi' && 'Multi mode: Parallel processing with multiple models'}
-                    {mode === 'publish' && 'Publish mode: Optimized for content creation and publication'}
-                  </p>
-                  
-                  <div className="flex items-center gap-2 mt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => window.location.href = '/enrollment-workspace'}
-                    >
-                      <User className="h-3 w-3 mr-1" />
-                      Enrollment Workspace
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => window.location.href = '/gen-ai'}
-                    >
-                      <Zap className="h-3 w-3 mr-1" />
-                      Gen AI Studio
-                    </Button>
-                  </div>
+          {/* Main Chat Area */}
+          <div className="flex-1 flex flex-col overflow-hidden">
+            {mode === 'multi' && selectedModels.length > 1 ? (
+              /* Split Screen for Multi-Model */
+              <div className="flex-1 flex flex-col">
+                <div className="p-2 border-b bg-muted/10">
+                  <p className="text-xs text-muted-foreground text-center">Multi-Model Conversation</p>
                 </div>
-
+                
+                <div className="flex-1 grid grid-cols-2 gap-1">
+                  {selectedModels.slice(0, 2).map((model, index) => (
+                    <div key={index} className="flex flex-col border-r last:border-r-0">
+                      {/* Model Header */}
+                      <div className="p-2 border-b bg-muted/5">
+                        <div className="flex items-center gap-1">
+                          {model.category === 'llm' && <Brain className="h-3 w-3" />}
+                          {model.category === 'small' && <Zap className="h-3 w-3" />}
+                          {model.category === 'vision' && <Eye className="h-3 w-3" />}
+                          {model.category === 'mcp' && <Wrench className="h-3 w-3" />}
+                          <span className="text-xs font-medium">{model.name}</span>
+                        </div>
+                      </div>
+                      
+                      {/* Model Conversation */}
+                      <div className="flex-1 p-2 overflow-y-auto max-h-[300px]">
+                        {state.messages
+                          .filter(msg => msg.role === 'user' || msg.model === model.model)
+                          .map((msg, msgIndex) => (
+                            <div key={msgIndex} className={`mb-2 text-xs ${msg.role === 'user' ? 'text-blue-600' : 'text-foreground'}`}>
+                              <div className={`p-2 rounded ${msg.role === 'user' ? 'bg-blue-50 ml-4' : 'bg-muted/50 mr-4'}`}>
+                                {msg.content}
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              /* Single Model Conversation */
+              <div className="flex-1 flex flex-col">
+                <div className="p-2 border-b bg-muted/10">
+                  <p className="text-xs text-muted-foreground">
+                    {mode === 'system' && 'System mode: Auto-configured capabilities'}
+                    {mode === 'single' && 'Single model conversation'}
+                    {mode === 'publish' && 'Publishing mode: Content creation optimized'}
+                  </p>
+                </div>
+                
                 {/* Conversation Display */}
-                <div className="flex-1 space-y-4 p-4 max-h-[400px] overflow-y-auto">
+                <div className="flex-1 space-y-3 p-3 overflow-y-auto">
                   {state.messages.map((msg, index) => (
                     <MessageComponent key={index} message={msg} />
                   ))}
@@ -395,177 +393,185 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                     )}
                   </AnimatePresence>
                 </div>
-
-                {/* Message Input */}
-                <div className="p-4 border-t">
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      placeholder={medicalContext ? "Ask about medical topics..." : "Ask me anything..."}
-                      className="flex-1 px-3 py-2 border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                      onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSend()}
-                      disabled={isLoading}
-                    />
-                    <Button 
-                      onClick={handleSend} 
-                      disabled={!message.trim() || isLoading}
-                      size="sm"
-                    >
-                      {isLoading ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Send className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="context" className="flex-1 p-4 space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Medical Context</label>
-                    <Switch checked={medicalContext} onCheckedChange={setMedicalContext} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Enabled Features</label>
-                    <div className="grid grid-cols-2 gap-2">
-                      {['medical', 'publication', 'research', 'analysis'].map(feature => (
-                        <div key={feature} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={enabledFeatures.includes(feature)}
-                            onChange={() => handleFeatureToggle(feature)}
-                            className="rounded"
-                          />
-                          <label className="text-sm capitalize">{feature}</label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Current Context: {context}</label>
-                    <p className="text-xs text-muted-foreground">
-                      Context is auto-detected based on the current page and can influence AI responses
-                    </p>
-                  </div>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="rag" className="flex-1 p-4 space-y-4">
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">RAG System</label>
-                    <Switch checked={ragEnabled} onCheckedChange={setRAGEnabled} />
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Knowledge Base</label>
-                    <Select value={knowledgeBase} onValueChange={setKnowledgeBase}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select knowledge base" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="medical">Medical Knowledge Base</SelectItem>
-                        <SelectItem value="general">General Knowledge Base</SelectItem>
-                        <SelectItem value="research">Research Papers</SelectItem>
-                        <SelectItem value="custom">Custom Documents</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium">Label Studio Integration</label>
-                    <Switch checked={labelStudioEnabled} onCheckedChange={setLabelStudioEnabled} />
-                  </div>
-                  
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => window.location.href = '/label-studio'}
-                  >
-                    <FileText className="h-4 w-4 mr-2" />
-                    Open Label Studio
-                  </Button>
-                </div>
-              </TabsContent>
-
-              <TabsContent value="tools" className="flex-1 p-4 space-y-4">
-                <div className="space-y-4">
-                  <div>
-                    <label className="text-sm font-medium">MCP Tools</label>
-                    <p className="text-xs text-muted-foreground mb-2">
-                      Model Context Protocol tools for external integrations
-                    </p>
-                    <div className="grid grid-cols-2 gap-2">
-                      {availableMCPTools.map(tool => (
-                        <div key={tool} className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={selectedMCPTools.includes(tool)}
-                            onChange={() => handleMCPToolToggle(tool)}
-                            className="rounded"
-                          />
-                          <label className="text-sm capitalize">{tool.replace('-', ' ')}</label>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <label className="text-sm font-medium">Selected Models</label>
-                    {selectedModels.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">No models selected</p>
-                    ) : (
-                      <div className="space-y-1">
-                        {selectedModels.map((model, index) => (
-                          <div key={index} className="flex items-center gap-2 text-xs">
-                            {model.category === 'llm' && <Brain className="h-3 w-3" />}
-                            {model.category === 'small' && <Zap className="h-3 w-3" />}
-                            {model.category === 'vision' && <Eye className="h-3 w-3" />}
-                            {model.category === 'mcp' && <Wrench className="h-3 w-3" />}
-                            <span>{model.name}</span>
-                            <Badge variant="outline" className="text-xs">{model.role}</Badge>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setShowModelSelector(true)}
-                      className="w-full"
-                    >
-                      Configure Models
-                    </Button>
-                  </div>
-                </div>
-              </TabsContent>
-            </Tabs>
+              </div>
+            )}
+            
+            {/* Message Input */}
+            <div className="p-3 border-t bg-background/50">
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={message}
+                  onChange={(e) => setMessage(e.target.value)}
+                  placeholder={medicalContext ? "Ask about medical topics..." : "Ask me anything..."}
+                  className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
+                  onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSend()}
+                  disabled={isLoading}
+                />
+                <Button 
+                  onClick={handleSend} 
+                  disabled={!message.trim() || isLoading}
+                  size="sm"
+                >
+                  {isLoading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+            </div>
           </div>
+
         </div>
       </motion.div>
 
-      {/* Model Selector Dialog */}
+      {/* Configuration Dialog */}
       <Dialog open={showModelSelector} onOpenChange={setShowModelSelector}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Configure AI Models</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              Genie Configuration
+            </DialogTitle>
           </DialogHeader>
-          <UniversalModelSelector
-            onModelsSelect={(models) => {
-              setSelectedModels(models);
-              toast({ title: 'Models Updated', description: `Selected ${models.length} models` });
-            }}
-            selectedModels={selectedModels}
-            mode={mode === 'general' ? 'single' : mode as any}
-            enabledFeatures={enabledFeatures}
-            maxSelections={mode === 'multi' ? 6 : 3}
-          />
+          
+          <Tabs defaultValue="models" className="w-full">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="models">Models</TabsTrigger>
+              <TabsTrigger value="context">Context</TabsTrigger>
+              <TabsTrigger value="rag">RAG/KB</TabsTrigger>
+              <TabsTrigger value="tools">Tools</TabsTrigger>
+            </TabsList>
+            
+            <TabsContent value="models" className="mt-4">
+              <UniversalModelSelector
+                onModelsSelect={(models) => {
+                  setSelectedModels(models);
+                  toast({ title: 'Models Updated', description: `Selected ${models.length} models` });
+                }}
+                selectedModels={selectedModels}
+                mode={mode === 'general' ? 'single' : mode as any}
+                enabledFeatures={enabledFeatures}
+                maxSelections={mode === 'multi' ? 6 : 3}
+              />
+            </TabsContent>
+            
+            <TabsContent value="context" className="mt-4 space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Medical Context</label>
+                  <Switch checked={medicalContext} onCheckedChange={setMedicalContext} />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Enabled Features</label>
+                  <div className="grid grid-cols-3 gap-2">
+                    {['medical', 'publication', 'research', 'analysis', 'coding', 'creative'].map(feature => (
+                      <div key={feature} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={enabledFeatures.includes(feature)}
+                          onChange={() => handleFeatureToggle(feature)}
+                          className="rounded"
+                        />
+                        <label className="text-sm capitalize">{feature}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Current Context: {context}</label>
+                  <p className="text-xs text-muted-foreground">
+                    Context is auto-detected based on the current page and influences AI responses
+                  </p>
+                </div>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="rag" className="mt-4 space-y-4">
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">RAG System</label>
+                  <Switch checked={ragEnabled} onCheckedChange={setRAGEnabled} />
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Knowledge Base</label>
+                  <Select value={knowledgeBase} onValueChange={setKnowledgeBase}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select knowledge base" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="medical">Medical Knowledge Base</SelectItem>
+                      <SelectItem value="general">General Knowledge Base</SelectItem>
+                      <SelectItem value="research">Research Papers</SelectItem>
+                      <SelectItem value="custom">Custom Documents</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">Label Studio Integration</label>
+                  <Switch checked={labelStudioEnabled} onCheckedChange={setLabelStudioEnabled} />
+                </div>
+                
+                <Button 
+                  variant="outline" 
+                  className="w-full"
+                  onClick={() => window.location.href = '/label-studio'}
+                >
+                  <FileText className="h-4 w-4 mr-2" />
+                  Open Label Studio
+                </Button>
+              </div>
+            </TabsContent>
+            
+            <TabsContent value="tools" className="mt-4 space-y-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="text-sm font-medium">MCP Tools</label>
+                  <p className="text-xs text-muted-foreground mb-2">
+                    Model Context Protocol tools for external integrations
+                  </p>
+                  <div className="grid grid-cols-3 gap-2">
+                    {availableMCPTools.map(tool => (
+                      <div key={tool} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          checked={selectedMCPTools.includes(tool)}
+                          onChange={() => handleMCPToolToggle(tool)}
+                          className="rounded"
+                        />
+                        <label className="text-sm capitalize">{tool.replace('-', ' ')}</label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+                
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">Selected Models Summary</label>
+                  {selectedModels.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No models selected</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {selectedModels.map((model, index) => (
+                        <div key={index} className="flex items-center gap-2 text-xs p-2 border rounded">
+                          {model.category === 'llm' && <Brain className="h-3 w-3" />}
+                          {model.category === 'small' && <Zap className="h-3 w-3" />}
+                          {model.category === 'vision' && <Eye className="h-3 w-3" />}
+                          {model.category === 'mcp' && <Wrench className="h-3 w-3" />}
+                          <span>{model.name}</span>
+                          <Badge variant="outline" className="text-xs">{model.role}</Badge>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+          </Tabs>
         </DialogContent>
       </Dialog>
     </>
