@@ -96,26 +96,14 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ bottom: 24, right: 24 }); // Dynamic positioning
-  const [genieMode, setGenieMode] = useState<'general' | 'enrollment'>('general'); // Toggle between modes
-  // Track if user manually changed mode to avoid auto-overrides
-  const userOverrodeModeRef = React.useRef(false);
-  const handleModeChange = (m: 'general' | 'enrollment') => {
-    console.log('🟣 Genie mode change requested:', m);
-    userOverrodeModeRef.current = true;
-    setGenieMode(m);
-  };
+  // Genie is now general-purpose only, no enrollment mode
 
   const currentContext = getPageContext(location.pathname);
   const contextInfo = getContextInfo(currentContext);
   const isEnrollmentContext = currentContext === 'patient-enrollment';
   
-  // Auto-set enrollment mode on enrollment pages only if user hasn't toggled manually
-  useEffect(() => {
-    if (isEnrollmentContext && genieMode === 'general' && !userOverrodeModeRef.current) {
-      console.log('🔁 Auto-switching to enrollment mode based on context');
-      setGenieMode('enrollment');
-    }
-  }, [isEnrollmentContext, genieMode]);
+  // Auto-detect context but don't change Genie mode
+  // Genie stays general purpose for all contexts
 
   // Smart positioning to avoid content overlap
   useEffect(() => {
@@ -301,25 +289,23 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
                   <Badge variant="secondary" className="text-xs">
                     {tenantId ? 'Multi-tenant' : 'Single'}
                   </Badge>
-                  <Badge variant={genieMode === 'enrollment' ? 'default' : 'outline'} className="text-xs">
-                    {genieMode === 'enrollment' ? 'Enrollment' : 'General'}
+                  <Badge variant="outline" className="text-xs">
+                    General Assistant
                   </Badge>
                 </div>
                 {isEnrollmentContext && (
-                  <div className="flex gap-1 mt-2">
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setGenieMode('general'); }}
-                      className={`px-2 py-1 text-xs rounded ${genieMode === 'general' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-                    >
-                      General
-                    </button>
-                    <button
-                      onClick={(e) => { e.stopPropagation(); setGenieMode('enrollment'); }}
-                      className={`px-2 py-1 text-xs rounded ${genieMode === 'enrollment' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
-                    >
-                      Enrollment
-                    </button>
-                  </div>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="w-full mt-2"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      // Direct to enrollment workspace instead of toggling mode
+                      window.location.href = '/enrollment-workspace';
+                    }}
+                  >
+                    Open Enrollment Workspace
+                  </Button>
                 )}
                 <p className="text-xs text-muted-foreground mt-2">Click to start</p>
               </div>

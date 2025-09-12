@@ -101,10 +101,10 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showProcessor, setShowProcessor] = useState(false);
   const [currentWorkflowStep, setCurrentWorkflowStep] = useState<WorkflowStep>('submission_mode');
-  const [selectedAgentType, setSelectedAgentType] = useState<string>('');
+  const [selectedAgentType, setSelectedAgentType] = useState<string>('structured');
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [environmentConfig, setEnvironmentConfig] = useState<any>(null);
-  const { openEnrollment } = useGlobalConversationalEnrollment();
+  const [agentDeployed, setAgentDeployed] = useState(false);
 
   // Don't show if not on a specific module page
   if (!currentModule) {
@@ -400,14 +400,19 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
                   <Button 
                     size="lg"
                     onClick={() => {
+                      // Since we connect directly to Supabase, deployment is automatic
+                      setAgentDeployed(true);
                       toast.success('Agent deployed successfully!', {
-                        description: 'Your AI enrollment agent is now live and ready for use'
+                        description: 'Your AI enrollment agent is now live and connected to Supabase DB'
                       });
-                      setCurrentWorkflowStep('submission_mode');
+                      // Start using the deployed agent
+                      setSelectedOption('online-form');
+                      setShowProcessor(true);
+                      onTraditionalSelect('online-form');
                     }}
                   >
                     <CheckCircle className="h-4 w-4 mr-2" />
-                    Deploy Agent
+                    Deploy & Use Agent
                   </Button>
                 </div>
                 
