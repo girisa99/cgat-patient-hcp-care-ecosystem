@@ -46,9 +46,6 @@ interface GenieConversationInterfaceProps {
 
 type ConversationMode = 'system' | 'single' | 'multi';
 
-// Use the Universal AI system for model management
-const { getModelsByCategory, isProviderAvailable } = useUniversalAI();
-
 const mcpTools = [
   {
     id: 'healthcare-mcp',
@@ -90,8 +87,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   // Use conversation state management
   const { state: conversationState, resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = useConversationState();
   
-  // Initialize Universal AI hook
-  const { generateResponse, isLoading, error } = useUniversalAI();
+  // Initialize Universal AI hooks
+  const { generateResponse, isLoading, error, getModelsByCategory, isProviderAvailable } = useUniversalAI();
 
   // Check RAG status on component mount
   useEffect(() => {
