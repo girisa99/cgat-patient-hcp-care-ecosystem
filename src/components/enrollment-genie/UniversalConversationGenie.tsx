@@ -20,6 +20,7 @@ interface UniversalConversationGenieProps {
 
 // Context detection based on current route
 const getPageContext = (pathname: string) => {
+  if (pathname.includes('/patient-onboarding')) return 'patient-enrollment';
   if (pathname.includes('/patient')) return 'patient';
   if (pathname.includes('/treatment-center') || pathname.includes('/facilities')) return 'treatment-center';
   if (pathname.includes('/customer')) return 'customer';
@@ -31,6 +32,13 @@ const getPageContext = (pathname: string) => {
 
 const getContextInfo = (context: string) => {
   const contextConfig = {
+    'patient-enrollment': {
+      title: 'Patient Enrollment Assistant',
+      description: 'Specialized help for patient enrollment, forms, medical history, insurance verification, and onboarding workflows',
+      icon: <Bot className="h-4 w-4" />,
+      color: 'from-purple-600 to-blue-600',
+      features: ['Form Assistance', 'Medical History', 'Insurance Verification', 'Document Upload', 'Step-by-Step Guidance']
+    },
     patient: {
       title: 'Patient Assistant',
       description: 'Get help with patient enrollment, medical forms, and healthcare processes',
@@ -88,9 +96,18 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ bottom: 24, right: 24 }); // Dynamic positioning
+  const [genieMode, setGenieMode] = useState<'general' | 'enrollment'>('general'); // Toggle between modes
 
   const currentContext = getPageContext(location.pathname);
   const contextInfo = getContextInfo(currentContext);
+  const isEnrollmentContext = currentContext === 'patient-enrollment';
+  
+  // Auto-set enrollment mode when on patient-onboarding page
+  useEffect(() => {
+    if (isEnrollmentContext && genieMode === 'general') {
+      setGenieMode('enrollment');
+    }
+  }, [isEnrollmentContext, genieMode]);
 
   // Smart positioning to avoid content overlap
   useEffect(() => {
@@ -262,19 +279,41 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
               <div className="bg-popover border rounded-lg p-3 shadow-lg max-w-64">
                 <div className="flex items-center gap-2 mb-1">
                   <Bot className="h-4 w-4 text-primary" />
-                  <span className="font-semibold text-sm">{contextInfo.title}</span>
+                  <span className="font-semibold text-sm">
+                    {genieMode === 'enrollment' && isEnrollmentContext ? 'Enrollment Assistant' : contextInfo.title}
+                  </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  {contextInfo.description}
+                  {genieMode === 'enrollment' && isEnrollmentContext 
+                    ? 'Help with patient enrollment forms, medical history, and step-by-step guidance'
+                    : contextInfo.description
+                  }
                 </p>
-                <div className="flex gap-1">
+                <div className="flex gap-1 mb-2">
                   <Badge variant="secondary" className="text-xs">
                     {tenantId ? 'Multi-tenant' : 'Single'}
                   </Badge>
-                  <Badge variant="outline" className="text-xs">
-                    Click to start
+                  <Badge variant={genieMode === 'enrollment' ? 'default' : 'outline'} className="text-xs">
+                    {genieMode === 'enrollment' ? 'Enrollment' : 'General'}
                   </Badge>
                 </div>
+                {isEnrollmentContext && (
+                  <div className="flex gap-1 mt-2">
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setGenieMode('general'); }}
+                      className={`px-2 py-1 text-xs rounded ${genieMode === 'general' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    >
+                      General
+                    </button>
+                    <button
+                      onClick={(e) => { e.stopPropagation(); setGenieMode('enrollment'); }}
+                      className={`px-2 py-1 text-xs rounded ${genieMode === 'enrollment' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}
+                    >
+                      Enrollment
+                    </button>
+                  </div>
+                )}
+                <p className="text-xs text-muted-foreground mt-2">Click to start</p>
               </div>
             </motion.div>
           )}
@@ -287,6 +326,9 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
         onClose={() => setIsOpen(false)}
         tenantId={tenantId}
         userId={userId}
+        context={currentContext}
+        mode={genieMode}
+        onModeChange={setGenieMode}
       />
     </>
   );

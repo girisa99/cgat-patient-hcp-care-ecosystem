@@ -43,6 +43,9 @@ interface GenieConversationInterfaceProps {
   onClose: () => void;
   tenantId?: string;
   userId?: string;
+  context?: string;
+  mode?: 'general' | 'enrollment';
+  onModeChange?: (mode: 'general' | 'enrollment') => void;
 }
 
 type ConversationMode = 'system' | 'single' | 'multi';
@@ -75,7 +78,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   isOpen,
   onClose,
   tenantId,
-  userId
+  userId,
+  context = 'general',
+  mode = 'general',
+  onModeChange
 }) => {
   const [message, setMessage] = useState('');
   const [ragStatus, setRagStatus] = useState({ available: false, documentsCount: 0, labelStudioConnected: false });
@@ -304,7 +310,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     setMessage('');
     
     try {
-      // Enhanced system prompt with RAG context for natural conversation
+      // Enhanced system prompt with context and mode awareness
       let systemPrompt = `You are Genie, a helpful and intelligent Technical Navigator AI assistant. You have access to a comprehensive knowledge base and should provide responses that are:
 - Well-structured and easy to read
 - Conversational and friendly in tone
@@ -312,6 +318,34 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 - Use bullet points, numbered lists, and paragraphs for clarity
 - Always maintain a helpful, professional demeanor
 - Reference relevant context when available`;
+
+      // Add context-specific instructions
+      if (context === 'patient-enrollment' && mode === 'enrollment') {
+        systemPrompt += `
+
+You are in PATIENT ENROLLMENT mode. You specialize in helping with:
+- Patient enrollment forms and data collection
+- Medical history gathering and documentation
+- Insurance verification and eligibility
+- Emergency contact information
+- Consent forms and HIPAA compliance
+- Step-by-step enrollment process guidance
+- Document upload assistance
+- Appointment scheduling
+
+When helping with enrollment forms, ask specific questions about:
+1. Personal Information (name, DOB, address, contact details)
+2. Insurance Information (provider, policy numbers, group numbers)
+3. Medical History (conditions, medications, allergies, surgeries)
+4. Emergency Contacts (relationships, contact information)
+5. Primary Care Physician details
+6. Preferred pharmacy information
+7. Language preferences and accessibility needs
+
+Always guide users through forms step-by-step and offer to help complete specific sections.`;
+      } else if (context === 'patient-enrollment') {
+        systemPrompt += " You are on the Patient Onboarding page. You can switch to Enrollment mode to help with patient forms and enrollment processes.";
+      }
       
       // Add model category specific instructions based on selection mode
       if (modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0) {
@@ -664,6 +698,51 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         </div>
 
         <ScrollArea className="flex-1 p-6">
+          {/* Context and Mode Toggle */}
+          {context === 'patient-enrollment' && (
+            <div className="mb-4 p-4 bg-purple-50 border border-purple-200 rounded-lg">
+              <div className="flex items-center justify-between mb-3">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-purple-600" />
+                  <span className="font-medium text-purple-900">Patient Enrollment Assistant</span>
+                </div>
+                <div className="flex gap-1">
+                  <Button
+                    size="sm"
+                    variant={mode === 'general' ? 'default' : 'outline'}
+                    onClick={() => onModeChange?.('general')}
+                    className="text-xs h-7"
+                  >
+                    General Help
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant={mode === 'enrollment' ? 'default' : 'outline'}
+                    onClick={() => onModeChange?.('enrollment')}
+                    className="text-xs h-7"
+                  >
+                    Enrollment Forms
+                  </Button>
+                </div>
+              </div>
+              <p className="text-sm text-purple-700">
+                {mode === 'enrollment' 
+                  ? 'I can help you fill out patient enrollment forms, gather medical history, verify insurance, and guide you through each step of the onboarding process.'
+                  : 'I can provide general assistance with any questions or help you navigate the platform.'
+                }
+              </p>
+              {mode === 'enrollment' && (
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <Badge variant="secondary" className="text-xs">Personal Information</Badge>
+                  <Badge variant="secondary" className="text-xs">Medical History</Badge>
+                  <Badge variant="secondary" className="text-xs">Insurance Details</Badge>
+                  <Badge variant="secondary" className="text-xs">Emergency Contacts</Badge>
+                  <Badge variant="secondary" className="text-xs">Consent Forms</Badge>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Conversation ID and Status */}
           {conversationState.isActive && (
             <div className="mb-4 p-3 bg-blue-50 border border-blue-200 rounded-lg">
@@ -672,6 +751,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   <Zap className="h-4 w-4 text-blue-600" />
                   <span className="text-sm font-medium text-blue-800">
                     Active Conversation: {conversationState.selectedMode.toUpperCase()} Mode
+                    {mode === 'enrollment' && context === 'patient-enrollment' && ' - Enrollment Assistant'}
                   </span>
                 </div>
                 <Badge variant="secondary">{conversationState.messages.length} messages</Badge>
@@ -1029,9 +1109,25 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                     <p className="text-sm text-gray-500">
                       {conversationState.selectedMode === 'multi' 
                         ? "Send me a message and I'll provide responses from multiple models for comparison."
+                        : mode === 'enrollment' && context === 'patient-enrollment'
+                        ? "I'm here to help you with patient enrollment forms, medical history, insurance verification, and step-by-step guidance through the onboarding process."
                         : "Send me a message and I'll provide you with comprehensive, context-aware responses."
                       }
                     </p>
+                    {mode === 'enrollment' && context === 'patient-enrollment' && (
+                      <div className="mt-3 p-3 bg-purple-50 rounded-lg">
+                        <p className="text-sm font-medium text-purple-900 mb-2">I can help you with:</p>
+                        <div className="flex flex-wrap gap-2">
+                          <Badge variant="outline" className="text-xs">Personal Information</Badge>
+                          <Badge variant="outline" className="text-xs">Medical History</Badge>
+                          <Badge variant="outline" className="text-xs">Insurance Details</Badge>
+                          <Badge variant="outline" className="text-xs">Emergency Contacts</Badge>
+                        </div>
+                        <p className="text-xs text-purple-700 mt-2">
+                          Try asking: "Help me fill out the personal information section" or "What insurance information do I need?"
+                        </p>
+                      </div>
+                    )}
                     {conversationState.selectedMode === 'multi' && modelSelectionMode === 'cross-category' && selectedCrossModels.length > 0 && (
                       <div className="mt-3 flex flex-wrap justify-center gap-1">
                         {selectedCrossModels.slice(0, 3).map((model, index) => (
