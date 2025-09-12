@@ -37,6 +37,7 @@ import { EnhancedModelSelector } from '@/components/ai/EnhancedModelSelector';
 import { CrossCategoryModelSelector, SelectedModelConfig } from '@/components/ai/CrossCategoryModelSelector';
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
+import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 
 interface GenieConversationInterfaceProps {
   isOpen: boolean;
