@@ -3,7 +3,7 @@
  * Global floating genie available across the entire application
  * Supports multi-user/multi-tenant conversations for any page context
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -96,14 +96,24 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ bottom: 24, right: 24 }); // Dynamic positioning
-  // Genie is now general-purpose only, no enrollment mode
+  const [genieMode, setGenieMode] = useState<'system' | 'single' | 'multi' | 'publish' | 'general'>('system');
 
   const currentContext = getPageContext(location.pathname);
   const contextInfo = getContextInfo(currentContext);
   const isEnrollmentContext = currentContext === 'patient-enrollment';
   
-  // Auto-detect context but don't change Genie mode
-  // Genie stays general purpose for all contexts
+  // Auto-detect context and suggest appropriate mode
+  useEffect(() => {
+    if (isEnrollmentContext) {
+      setGenieMode('system'); // System mode for enrollment workflows
+    } else if (currentContext === 'general') {
+      setGenieMode('single'); // Single mode for general assistance
+    }
+  }, [currentContext, isEnrollmentContext]);
+
+  const handleModeChange = useCallback((newMode: 'system' | 'single' | 'multi' | 'publish' | 'general') => {
+    setGenieMode(newMode);
+  }, []);
 
   // Smart positioning to avoid content overlap
   useEffect(() => {
@@ -287,7 +297,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
                     {tenantId ? 'Multi-tenant' : 'Single'}
                   </Badge>
                   <Badge variant="outline" className="text-xs">
-                    General Assistant
+                    {genieMode.toUpperCase()} Mode
                   </Badge>
                 </div>
                 {isEnrollmentContext && (
@@ -318,7 +328,8 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
         tenantId={tenantId}
         userId={userId}
         context={currentContext}
-        mode="general"
+        mode={genieMode}
+        onModeChange={handleModeChange}
       />
     </>
   );
