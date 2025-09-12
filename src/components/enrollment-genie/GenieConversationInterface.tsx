@@ -450,40 +450,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Main Content Based on Mode */}
           {mode === 'enrollment' ? (
             <div className="p-6">
-              {/* AI Provider Selection for Enrollment */}
-              <Card className="mb-6">
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Bot className="h-5 w-5" />
-                    <CardTitle>AI Assistant Configuration</CardTitle>
-                  </div>
-                  <p className="text-sm text-muted-foreground">Select your preferred AI model</p>
-                </CardHeader>
-                <CardContent>
-                  <div className="flex flex-wrap gap-2 justify-center mb-4">
-                    {(['system','single','multi'] as const).map((m) => (
-                      <Button
-                        key={m}
-                        variant={conversationState.selectedMode === m ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => switchMode(m)}
-                        className={`flex items-center gap-1 ${
-                          conversationState.selectedMode === m 
-                            ? 'bg-primary text-primary-foreground' 
-                            : ''
-                        }`}
-                      >
-                        <div className="text-center">
-                          <div className="text-xs font-medium">{m.toUpperCase()}</div>
-                        </div>
-                      </Button>
-                    ))}
-                  </div>
-
-                  {/* Model Selection Interface */}
-                  {renderModelSelectionContent()}
-                </CardContent>
-              </Card>
+              {/* Enrollment Mode uses ConversationManager controls; hide advanced AI config */}
+              {/* Removed AI Assistant Configuration card for enrollment to avoid confusion */}
 
               {/* Enhanced Patient Enrollment Header */}
               <div className="mb-6">
