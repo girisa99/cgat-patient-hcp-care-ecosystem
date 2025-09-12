@@ -29,7 +29,8 @@ import {
   Target,
   MessageSquare,
   GitBranch,
-  Workflow
+  Workflow,
+  RotateCcw
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from '@/hooks/use-toast';
@@ -72,7 +73,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [knowledgeBase, setKnowledgeBase] = useState<string>('');
   
   const { generateResponse } = useUniversalAI();
-  const { state, addMessage, updateConversationConfig, switchMode } = useConversationState();
+  const { state, addMessage, updateConversationConfig, switchMode, resetConversation } = useConversationState();
   const { listProjects } = useLabelStudio();
 
   // Auto-detect medical context
@@ -237,17 +238,22 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-primary/10 rounded-lg">
-                <Bot className="h-5 w-5 text-primary" />
+                <img src="/lovable-uploads/7b3ce1dc-c275-46ae-a0ca-f70f73094f01.png" alt="GENIE Logo" className="h-6 w-6 rounded" />
               </div>
               <div>
-                <h3 className="font-semibold text-lg">Genie Assistant</h3>
-                <p className="text-sm text-muted-foreground">
+                <h3 className="font-semibold text-lg">GENIE</h3>
+                <p className="text-xs text-muted-foreground">Cell, Gene Technology Navigator</p>
+                <p className="text-xs text-muted-foreground">
                   {mode === 'multi' ? 'Multi-Model Chat' : medicalContext ? 'Medical AI' : 'AI Assistant'}
                 </p>
               </div>
             </div>
             
             <div className="flex items-center gap-2">
+              <Button variant="outline" size="sm" onClick={() => resetConversation()}>
+                <RotateCcw className="h-4 w-4 mr-1" />
+                New
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowModelSelector(true)}>
                 <Settings className="h-4 w-4 mr-1" />
                 Config
@@ -451,9 +457,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   toast({ title: 'Models Updated', description: `Selected ${models.length} models` });
                 }}
                 selectedModels={selectedModels}
-                mode={mode === 'general' ? 'single' : mode as any}
+                mode={mode === 'general' ? 'single' : (mode as any)}
                 enabledFeatures={enabledFeatures}
-                maxSelections={mode === 'multi' ? 6 : 3}
+                maxSelections={mode === 'multi' ? 6 : 1}
+                defaultSelectionMode={mode === 'multi' ? 'cross-category' : 'single'}
               />
             </TabsContent>
             
