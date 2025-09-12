@@ -190,12 +190,16 @@ export default function PatientOnboarding() {
 
           <ContextAwareEnrollmentOptions
             onAgentSelect={(moduleType) => {
-              console.log('Agent selected for:', moduleType);
-              toast.success('AI assistant ready to help with enrollment');
+              console.log('🚀 AI Agent selected for module:', moduleType);
+              toast.success('AI Assistant Configuration Loaded', {
+                description: 'Template dashboard, workflows, NPI verification, and credentialing agents are ready'
+              });
             }}
             onTraditionalSelect={(option) => {
-              console.log('Traditional option selected:', option);
-              toast.success(`${option} enrollment started`);
+              console.log('📝 Traditional option selected:', option);
+              toast.success(`${option} enrollment workflow initiated`, {
+                description: 'Choose from online form, PDF download, or fax submission with OCR'
+              });
             }}
           />
         </div>

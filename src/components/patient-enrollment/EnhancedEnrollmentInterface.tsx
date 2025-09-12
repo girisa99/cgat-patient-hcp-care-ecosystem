@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -21,6 +21,8 @@ import { PatientEnrollmentForm } from './PatientEnrollmentForm';
 import { UniversalVoiceInterface } from '@/components/voice/UniversalVoiceInterface';
 import { EnrollmentJourneySteps } from './EnrollmentJourneySteps';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useEnrollmentAgent } from '@/hooks/useEnrollmentAgent';
 
 interface EnhancedEnrollmentInterfaceProps {
   onSubmit?: (data: any) => void;
@@ -41,21 +43,52 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
   const [sectionsData, setSectionsData] = useState<Record<string, any>>({});
+  const [enrollmentId, setEnrollmentId] = useState<string>('');
+  const [isLoading, setIsLoading] = useState(false);
+  
+  const { startEnrollment, updateSection, completeSection } = useEnrollmentAgent();
 
   const enrollmentSteps = [
-    { title: 'Consent & Agreement', section: 'consent' },
-    { title: 'Patient Information', section: 'patient' },
-    { title: 'Provider & Treatment', section: 'provider' },
-    { title: 'NPI & Credentialing', section: 'npi' },
-    { title: 'Insurance Details', section: 'insurance' },
-    { title: 'Clinical & Treatment', section: 'clinical' },
-    { title: 'Review & Submit', section: 'submit' }
+    { title: 'Consent & Agreement', section: 'consent', table: 'enrollment_consent' },
+    { title: 'Patient Information', section: 'patient', table: 'enrollment_patient_info' },
+    { title: 'Provider & Treatment', section: 'provider', table: 'enrollment_provider_info' },
+    { title: 'NPI & Credentialing', section: 'npi', table: 'enrollment_provider_info' },
+    { title: 'Insurance Details', section: 'insurance', table: 'enrollment_insurance_info' },
+    { title: 'Clinical & Treatment', section: 'clinical', table: 'enrollment_clinical_info' },
+    { title: 'Review & Submit', section: 'submit', table: null }
   ];
 
-  const handleDataCapture = (capturedData: any) => {
-    // Determine which section this data belongs to
+  // Initialize enrollment session
+  useEffect(() => {
+    const initializeEnrollment = async () => {
+      try {
+        const sessionId = await startEnrollment('patient');
+        setEnrollmentId(sessionId);
+        console.log('✅ Enrollment session started:', sessionId);
+      } catch (error) {
+        console.error('❌ Failed to initialize enrollment:', error);
+        toast.error('Failed to initialize enrollment session');
+      }
+    };
+
+    if (!enrollmentId) {
+      initializeEnrollment();
+    }
+  }, []);
+
+  const handleDataCapture = async (capturedData: any) => {
+    if (!enrollmentId) {
+      console.warn('⚠️ No enrollment ID available');
+      return;
+    }
+
     const currentSection = enrollmentSteps[currentStep]?.section || 'general';
+    const currentTable = enrollmentSteps[currentStep]?.table;
     
+    console.log('📝 Capturing data for section:', currentSection, 'Table:', currentTable);
+    console.log('📊 Captured data:', capturedData);
+    
+    // Update local state
     setSectionsData(prev => ({
       ...prev,
       [currentSection]: {
@@ -68,27 +101,70 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
       ...prev,
       ...capturedData
     }));
-    
-    // Check if current section is complete and advance
-    if (Object.keys(capturedData).length > 0) {
-      if (!completedSteps.includes(currentStep)) {
-        setCompletedSteps(prev => [...prev, currentStep]);
+
+    // Save to backend if we have a table for this section
+    if (currentTable && Object.keys(capturedData).length > 0) {
+      try {
+        setIsLoading(true);
+        
+        // Update section data in backend
+        await updateSection(currentSection, {
+          ...capturedData,
+          enrollment_id: enrollmentId,
+          section_completed_at: new Date().toISOString(),
+          updated_by: 'ai_conversation'
+        });
+
+        // Save to specific enrollment table
+        if (currentTable) {
+          const { error: tableError } = await supabase
+            .from(currentTable as any)
+            .upsert({
+              enrollment_id: enrollmentId,
+              ...capturedData,
+              updated_at: new Date().toISOString()
+            }, {
+              onConflict: 'enrollment_id'
+            });
+
+          if (tableError) {
+            console.error(`❌ Failed to save to ${currentTable}:`, tableError);
+          } else {
+            console.log(`✅ Data saved to ${currentTable}`);
+          }
+        }
+
+        // Mark section as completed
+        if (!completedSteps.includes(currentStep)) {
+          await completeSection(currentSection);
+          setCompletedSteps(prev => [...prev, currentStep]);
+          
+          // Auto-advance to next step
+          if (currentStep < enrollmentSteps.length - 1) {
+            setTimeout(() => {
+              setCurrentStep(prev => prev + 1);
+              toast.success(`${enrollmentSteps[currentStep].title} completed!`, {
+                description: `Moving to ${enrollmentSteps[currentStep + 1]?.title}`
+              });
+            }, 2000);
+          }
+        }
+
+        toast.success('Information captured and saved', {
+          description: `${currentSection} data saved to enrollment record`
+        });
+
+      } catch (error) {
+        console.error('❌ Failed to save enrollment data:', error);
+        toast.error('Failed to save enrollment data', {
+          description: 'Data captured locally but not saved to backend'
+        });
+      } finally {
+        setIsLoading(false);
       }
-      
-      // Auto-advance to next step if current section has sufficient data
-      if (currentStep < enrollmentSteps.length - 1) {
-        setTimeout(() => {
-          setCurrentStep(prev => prev + 1);
-          toast.success(`${enrollmentSteps[currentStep].title} completed!`, {
-            description: `Moving to ${enrollmentSteps[currentStep + 1]?.title}`
-          });
-        }, 1500);
-      }
+    } else {
+      console.log('💾 No table specified for section:', currentSection);
     }
-    
-    toast.success('Information captured from conversation', {
-      description: 'Data has been automatically filled in the enrollment form'
-    });
   };
 
   const handleVoiceDataCapture = (capturedData: any) => {
@@ -245,7 +321,11 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
                   <CheckCircle className="h-4 w-4" />
                   Enrollment Progress
                 </CardTitle>
-                <Badge variant="outline">{completedSteps.length} of {enrollmentSteps.length} completed</Badge>
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline">{completedSteps.length} of {enrollmentSteps.length} completed</Badge>
+                  {isLoading && <Badge variant="secondary">Saving...</Badge>}
+                  {enrollmentId && <Badge variant="outline" className="text-xs">ID: {enrollmentId.slice(-8)}</Badge>}
+                </div>
               </div>
             </CardHeader>
             <CardContent>
@@ -280,9 +360,25 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
                   <MessageSquare className="h-4 w-4 sm:h-5 sm:w-5" />
                   AI Enrollment Assistant
                 </CardTitle>
-                <p className="text-xs sm:text-sm text-muted-foreground">
-                  Currently working on: <strong>{enrollmentSteps[currentStep]?.title}</strong>
-                </p>
+                <div className="space-y-1">
+                  <p className="text-xs sm:text-sm text-muted-foreground">
+                    Currently working on: <strong>{enrollmentSteps[currentStep]?.title}</strong>
+                  </p>
+                  <div className="flex items-center gap-2">
+                    {enrollmentSteps[currentStep]?.table && (
+                      <Badge variant="outline" className="text-xs">
+                        <Database className="h-3 w-3 mr-1" />
+                        {enrollmentSteps[currentStep].table}
+                      </Badge>
+                    )}
+                    {isLoading && (
+                      <Badge variant="secondary" className="text-xs">
+                        <Settings className="h-3 w-3 mr-1 animate-spin" />
+                        Saving to backend...
+                      </Badge>
+                    )}
+                  </div>
+                </div>
               </CardHeader>
               <CardContent className="p-0">
                 <div className="h-[35vh] sm:h-[42vh] md:h-[48vh] overflow-hidden">

@@ -24,6 +24,8 @@ import {
 } from 'lucide-react';
 import DataIntegrationPanel from './DataIntegrationPanel';
 import { UniversalEnrollmentProcessor } from './UniversalEnrollmentProcessor';
+import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
+import { toast } from 'sonner';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -92,6 +94,7 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
   const [showDataIntegration, setShowDataIntegration] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showProcessor, setShowProcessor] = useState(false);
+  const { openEnrollment } = useGlobalConversationalEnrollment();
 
   // Don't show if not on a specific module page
   if (!currentModule) {
@@ -109,8 +112,11 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
       estimatedTime: '5-10 min',
       isAgent: true,
       action: () => {
-        setSelectedOption('agent');
-        setShowProcessor(true);
+        console.log('🤖 Launching AI Agent for module:', currentModule);
+        openEnrollment(currentModule);
+        toast.success('AI Agent launched successfully', {
+          description: 'Advanced enrollment workflow with templates and dashboard'
+        });
         onAgentSelect(currentModule);
       }
     },
