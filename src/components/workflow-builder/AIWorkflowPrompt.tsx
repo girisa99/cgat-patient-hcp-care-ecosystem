@@ -30,7 +30,7 @@ import {
   Cloud
 } from 'lucide-react';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
-import { useRealAIIntegration } from '@/hooks/useRealAIIntegration';
+
 import { useApiServices } from '@/hooks/useApiServices';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
@@ -91,11 +91,6 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
 
   const { categories, nodeTypesByCategory, isLoading: nodesLoading } = useWorkflowNodes();
   const { apiServices, isLoading: apisLoading } = useApiServices();
-  const { 
-    generateWorkflowFromPrompt, 
-    isGenerating, 
-    enhancePromptWithContext 
-  } = useRealAIIntegration();
   const { generateAgent, isLoading: isUniversalLoading, providers } = useUniversalAI();
   const { showSuccess, showError, showInfo } = useMasterToast();
 
@@ -123,25 +118,13 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
           setPrompt('');
         }
       } else {
-        // Use existing OpenAI/Gemini integration
-        const enhancedPrompt = await enhancePromptWithContext(prompt, {
-          categories,
-          nodeTypes: nodeTypesByCategory
-        });
+        // Use Universal AI integration (fallback)
+        const enhancedPrompt = `${prompt}\n\nContext: Available node types: ${Object.keys(nodeTypesByCategory).join(', ')}`;
 
-        const workflow = await generateWorkflowFromPrompt({
-          prompt: enhancedPrompt,
-          context: {
-            existingNodes: Object.values(nodeTypesByCategory).flat()
-          },
-          config: {
-            provider: selectedProvider as 'openai' | 'claude' | 'gemini',
-            model: selectedModel
-          }
-        });
-
+        const workflow = await generateAgent(enhancedPrompt, selectedProvider as 'openai' | 'claude' | 'gemini');
+        
         if (workflow) {
-          showSuccess('Workflow generated successfully!');
+          showSuccess(`Workflow generated successfully using ${selectedProvider.toUpperCase()}!`);
           onWorkflowGenerated(workflow);
           setPrompt('');
         }
@@ -308,11 +291,11 @@ export const AIWorkflowPrompt: React.FC<AIWorkflowPromptProps> = ({
               {/* Generate Button */}
               <Button 
                 onClick={handleGenerate} 
-                disabled={isGenerating || isUniversalLoading || !prompt.trim()}
+                disabled={isUniversalLoading || !prompt.trim()}
                 className="w-full h-8"
                 size="sm"
               >
-                {(isGenerating || isUniversalLoading) ? (
+                {isUniversalLoading ? (
                   <>
                     <Loader2 className="h-3 w-3 mr-2 animate-spin" />
                     Generating...

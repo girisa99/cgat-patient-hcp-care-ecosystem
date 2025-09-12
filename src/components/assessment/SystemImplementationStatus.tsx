@@ -42,7 +42,7 @@ export const SystemImplementationStatus: React.FC = () => {
       component: 'Real AI Integration',
       status: 'IMPLEMENTED',
       progress: 90,
-      details: 'useRealAIIntegration hook with OpenAI/Claude/Gemini support, edge function integration',
+      details: 'useUniversalAI hook with OpenAI/Claude/Gemini support, edge function integration',
       remaining: ['Advanced prompt templates', 'Usage analytics dashboard']
     },
     {

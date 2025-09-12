@@ -126,7 +126,7 @@ class ComprehensiveGapAnalyzer {
         component: 'Real AI Integration',
         status: 'IMPLEMENTED',
         description: 'Real AI integration with Supabase edge functions and multiple providers',
-        implementation_details: 'useRealAIIntegration hook with OpenAI, Claude, Gemini support, context enhancement, and validation',
+        implementation_details: 'useUniversalAI hook with OpenAI, Claude, Gemini support, context enhancement, and validation',
         gaps: [
           'AI Model Selection UI needs workflow integration',
           'Advanced prompt templates missing',
