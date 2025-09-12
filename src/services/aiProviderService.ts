@@ -45,27 +45,22 @@ export class AIProviderService {
   }
 
   /**
-   * @deprecated Use useUniversalAI() hook instead
-   * Get all available AI providers
+   * @deprecated All provider methods are deprecated - use useUniversalAI() hook instead
+   * These methods are kept for backwards compatibility but return empty results
    */
   getProviders(): AIProvider[] {
+    console.warn('AIProviderService.getProviders() is deprecated - use useUniversalAI() hook instead');
     return [];
   }
 
-  /**
-   * @deprecated Use useUniversalAI() hook instead
-   * Get a specific provider by ID
-   */
   getProvider(providerId: string): AIProvider | undefined {
+    console.warn('AIProviderService.getProvider() is deprecated - use useUniversalAI() hook instead');
     return undefined;
   }
 
-  /**
-   * Get models for a specific provider
-   */
   getModelsForProvider(providerId: string): string[] {
-    const provider = this.getProvider(providerId);
-    return provider?.models || [];
+    console.warn('AIProviderService.getModelsForProvider() is deprecated - use useUniversalAI() hook instead');
+    return [];
   }
 
   /**

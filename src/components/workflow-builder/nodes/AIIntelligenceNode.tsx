@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { Handle, Position } from '@xyflow/react';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -38,17 +39,16 @@ export const AIIntelligenceNode: React.FC<AIIntelligenceNodeProps> = ({ id, data
   });
 
   // AI models are now managed by useUniversalAI() hook
-  const aiModels = [
-    { value: 'gpt-5-2025-08-07', label: 'GPT-5 (Latest)', description: 'Flagship model' },
-    { value: 'gpt-5-mini-2025-08-07', label: 'GPT-5 Mini', description: 'Faster, cost-efficient' },
-    { value: 'gpt-5-nano-2025-08-07', label: 'GPT-5 Nano', description: 'Fastest, cheapest' },
-    { value: 'gpt-4.1-2025-04-14', label: 'GPT-4.1', description: 'Reliable flagship' },
-    { value: 'o3-2025-04-16', label: 'O3', description: 'Powerful reasoning' },
-    { value: 'o4-mini-2025-04-16', label: 'O4 Mini', description: 'Fast reasoning' },
-    { value: 'claude-3-opus', label: 'Claude 3 Opus', description: 'Advanced reasoning' },
-    { value: 'claude-3-sonnet', label: 'Claude 3 Sonnet', description: 'Balanced performance' },
-    { value: 'gemini-2.0-flash', label: 'Gemini 2.0 Flash', description: 'Google\'s latest' }
-  ];
+  const { availableProviders } = useUniversalAI();
+  
+  // Flatten all models from all providers for selection
+  const aiModels = availableProviders.flatMap(provider => 
+    (provider.models || []).map(model => ({
+      value: model,
+      label: `${model} (${provider.name})`,
+      description: `${provider.name} model`
+    }))
+  );
 
   const availableConnectors = [
     'REST API', 'GraphQL', 'WebSocket', 'Database', 'Email', 'SMS', 

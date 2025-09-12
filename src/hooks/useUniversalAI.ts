@@ -1,5 +1,6 @@
-import { useState, useCallback, useMemo } from 'react';
-import { aiProviderService, AIProvider, AIRequest, AIResponse } from '@/services/aiProviderService';
+import { useState, useCallback, useEffect, useMemo } from 'react';
+import { supabase } from '@/integrations/supabase/client';
+import { AIProvider, AIRequest, AIResponse } from '@/services/aiProviderService';
 import { useMasterToast } from '@/hooks/useMasterToast';
 
 export interface UniversalAIState {
@@ -19,21 +20,64 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   const { defaultProvider = 'openai', autoLoadProviders = true } = options;
   const { showError, showSuccess } = useMasterToast();
 
+  // Default providers with real AI models
+  const defaultProviders: AIProvider[] = [
+    {
+      id: 'openai',
+      name: 'OpenAI',
+      models: ['gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'gpt-4o', 'gpt-4o-mini'],
+      capabilities: ['text', 'vision', 'reasoning'],
+      description: 'OpenAI GPT models'
+    },
+    {
+      id: 'claude',
+      name: 'Anthropic Claude',
+      models: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
+      capabilities: ['text', 'vision', 'reasoning'],
+      description: 'Anthropic Claude models'
+    },
+    {
+      id: 'gemini',
+      name: 'Google Gemini',
+      models: ['gemini-2.0-flash', 'gemini-pro', 'gemini-pro-vision'],
+      capabilities: ['text', 'vision', 'multimodal'],
+      description: 'Google Gemini models'
+    }
+  ];
+
   const [state, setState] = useState<UniversalAIState>({
     isLoading: false,
     error: null,
     response: null,
-    providers: aiProviderService.getProviders(),
-    availableProviders: []
+    providers: defaultProviders,
+    availableProviders: defaultProviders
   });
 
-  // Load available providers on mount
+  // Load available providers - now uses default providers with real models
   const loadAvailableProviders = useCallback(async () => {
     try {
-      const available = await aiProviderService.getAvailableProviders();
-      setState(prev => ({ ...prev, availableProviders: available }));
+      // Check which providers are actually available by testing edge function access
+      const testResults = await Promise.allSettled(
+        defaultProviders.map(async (provider) => {
+          try {
+            const { data } = await supabase.functions.invoke('ai-universal-processor', {
+              body: { provider: provider.id, model: provider.models[0], prompt: 'test', action: 'generate' }
+            });
+            return data ? provider : null;
+          } catch {
+            return null;
+          }
+        })
+      );
+      
+      const available = testResults
+        .map(result => result.status === 'fulfilled' ? result.value : null)
+        .filter(Boolean) as AIProvider[];
+      
+      setState(prev => ({ ...prev, availableProviders: available.length > 0 ? available : defaultProviders }));
     } catch (error) {
       console.error('Failed to load available providers:', error);
+      setState(prev => ({ ...prev, availableProviders: defaultProviders }));
     }
   }, []);
 
@@ -42,7 +86,29 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await aiProviderService.generateResponse(request);
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider: request.provider,
+          model: request.model,
+          prompt: request.prompt,
+          systemPrompt: request.systemPrompt,
+          temperature: request.temperature,
+          maxTokens: request.maxTokens,
+          context: request.context,
+          action: 'generate'
+        }
+      });
+
+      if (error) throw new Error(error.message);
+
+      const response: AIResponse = {
+        content: data.content,
+        provider: data.provider,
+        model: data.model,
+        usage: data.usage,
+        metadata: data.metadata
+      };
+
       setState(prev => ({ ...prev, response, isLoading: false }));
       return response;
     } catch (error) {
@@ -61,7 +127,12 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const agent = await aiProviderService.generateAgent(prompt, provider);
+      const { data, error } = await supabase.functions.invoke('generate-agent-from-prompt', {
+        body: { prompt, provider }
+      });
+
+      if (error) throw new Error(error.message);
+      const agent = data;
       setState(prev => ({ ...prev, isLoading: false }));
       showSuccess(`Agent generated successfully using ${provider.toUpperCase()}!`);
       return agent;
@@ -82,7 +153,19 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await aiProviderService.testWorkflowNode(nodeData, inputData, provider);
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider,
+          prompt: `Test this workflow node: ${JSON.stringify(nodeData)} with input: ${JSON.stringify(inputData)}`,
+          systemPrompt: 'You are testing a workflow node. Provide a JSON response with test results.',
+          action: 'test_node',
+          context: { nodeData, inputData }
+        }
+      });
+
+      if (error) throw new Error(error.message);
+      
+      const response = { content: data.content || '{}' };
       
       // Parse the JSON response
       let nodeResult;
@@ -128,7 +211,19 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const response = await aiProviderService.analyzeWorkflow(nodes, edges, provider);
+      const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+        body: {
+          provider,
+          prompt: `Analyze this workflow: ${JSON.stringify({ nodes, edges })}`,
+          systemPrompt: 'You are analyzing a workflow. Provide detailed analysis including complexity, suggestions, and potential issues.',
+          action: 'analyze_workflow',
+          context: { nodes, edges }
+        }
+      });
+
+      if (error) throw new Error(error.message);
+      
+      const response = { content: data.content || '{}' };
       
       // Parse the analysis response
       let analysis;
@@ -180,8 +275,9 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
 
   // Get models for provider
   const getModelsForProvider = useCallback((providerId: string) => {
-    return aiProviderService.getModelsForProvider(providerId);
-  }, []);
+    const provider = state.providers.find(p => p.id === providerId);
+    return provider?.models || [];
+  }, [state.providers]);
 
   // Check if provider is available
   const isProviderAvailable = useCallback((providerId: 'openai' | 'claude' | 'gemini') => {

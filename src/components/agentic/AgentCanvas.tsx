@@ -48,12 +48,7 @@ interface AgentFormData {
   category: string;
 }
 
-// AI Models are now managed by the universal AI system
-// Use useUniversalAI() hook to get available providers and models
-
-const mockAIModels = [
-  { id: 'gpt-4o', name: 'GPT-4o', category: 'OpenAI', icon: Brain, description: 'Latest OpenAI model with vision', configurable: true }
-];
+// AI Models are now managed by the universal AI system via useUniversalAI() hook
 
 // System Components
 const systemComponents: ComponentType[] = [
@@ -524,10 +519,10 @@ export const AgentCanvas = () => {
                 <Label>Selected Models ({formData.selectedModels.length})</Label>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {formData.selectedModels.map((modelId) => {
-                    const model = mockAIModels.find(m => m.id === modelId);
+                    const provider = availableProviders.find(p => p.models?.includes(modelId));
                     return (
                       <Badge key={modelId} variant="default" className="gap-1">
-                        {model?.name}
+                        {modelId}
                         <button
                           onClick={() => handleMultiSelect('selectedModels', modelId)}
                           className="ml-1 hover:bg-primary-foreground rounded-full"
