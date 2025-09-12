@@ -24,6 +24,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { toast } from 'sonner';
 
 interface ConversationManagerProps {
@@ -99,6 +100,7 @@ export const ConversationManager: React.FC<ConversationManagerProps> = ({
   enrollmentContext,
   onDataCapture
 }) => {
+  const { generateResponse } = useUniversalAI();
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentMessage, setCurrentMessage] = useState('');
   const [selectedLLM, setSelectedLLM] = useState('gpt-4.1');
@@ -221,22 +223,26 @@ Let's begin with your basic information. Could you please provide your full name
   };
 
   const getAIResponse = async (userInput: string, conversationHistory: Message[]) => {
-    const response = await supabase.functions.invoke('claude-ai-chat', {
-      body: {
-        message: userInput,
-        model: selectedLLM,
-        context: {
-          conversation_mode: conversationMode,
-          enrollment_context: enrollmentContext,
-          conversation_history: conversationHistory.slice(-10), // Last 10 messages for context
-          label_studio_enabled: labelStudioEnabled,
-          extract_enrollment_data: true
-        }
-      }
+    const response = await generateResponse({
+      prompt: userInput,
+      provider: selectedLLM as "openai" | "claude" | "gemini",
+      context: {
+        conversation_mode: conversationMode,
+        enrollment_context: enrollmentContext,
+        conversation_history: conversationHistory.slice(-10), // Last 10 messages for context
+        label_studio_enabled: labelStudioEnabled,
+        extract_enrollment_data: true
+      },
+      temperature: 0.7,
+      maxTokens: 1000
     });
 
-    if (response.error) throw new Error(response.error.message);
-    return response.data;
+    if (!response?.content) throw new Error('No response from AI');
+    return { 
+      content: response.content,
+      extractedData: null,
+      labelStudioData: null
+    };
   };
 
   const updateConversationInDB = async (updatedMessages: Message[]) => {

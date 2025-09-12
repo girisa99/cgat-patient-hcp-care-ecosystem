@@ -8,6 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ModelConfig, UserModelPreferences, ModelCapability, ALL_MODELS } from '@/types/ModelTypes';
 import { useToast } from '@/hooks/use-toast';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { Cpu, Zap, DollarSign, Shield, Cloud, HardDrive, Wand2 } from 'lucide-react';
 
 interface ModelSelectorProps {
@@ -22,6 +23,7 @@ export const ModelSelector: React.FC<ModelSelectorProps> = ({
   selectedTemplate
 }) => {
   const { toast } = useToast();
+  const { providers, isProviderAvailable } = useUniversalAI();
   const [preferences, setPreferences] = useState<UserModelPreferences>(
     currentPreferences || {
       userId: 'current-user',

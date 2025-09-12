@@ -1,61 +1,64 @@
-import { supabase } from "@/integrations/supabase/client";
+import React from 'react';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 
-// Component to research npm packages using Claude AI
+// Component to research npm packages using Universal AI
 const PackageResearch = () => {
+  const { generateResponse, isLoading } = useUniversalAI();
+
   const researchPackages = async () => {
     try {
-      const { data, error } = await supabase.functions.invoke('claude-ai-chat', {
-        body: {
-          message: `I need to find the correct npm package names for Model Context Protocol packages. I'm looking for:
+      const response = await generateResponse({
+        prompt: `I need to find the correct npm package names for Model Context Protocol packages. I'm looking for:
 1. @modelcontextprotocol/server
 2. @modelcontextprotocol/client  
 3. eslint-plugin-duplicate-prevention
 
 Can you help me find the correct package names that exist on npm? Please provide the exact package names I should use for npm install.`,
-          model: "claude-sonnet-4-20250514",
-          systemPrompt: "You are a helpful npm package expert. Provide accurate package names that exist on the public npm registry.",
-          maxTokens: 1000,
-          temperature: 0.1
-        }
+        provider: 'claude',
+        systemPrompt: "You are a helpful npm package expert. Provide accurate package names that exist on the public npm registry.",
+        temperature: 0.3,
+        maxTokens: 1000
       });
 
-      if (error) {
-        console.error('Error calling Claude AI:', error);
-        return;
+      if (!response?.content) {
+        throw new Error('No response from AI');
       }
 
-      console.log('Claude AI Response:', data.response);
-      
-      // Display the response safely (no XSS risk)
-      const responseDiv = document.createElement('div');
-      
-      const heading = document.createElement('h3');
-      heading.textContent = 'Claude AI Package Research Results:';
-      
-      const pre = document.createElement('pre');
-      pre.style.background = '#f5f5f5';
-      pre.style.padding = '15px';
-      pre.style.borderRadius = '5px';
-      pre.style.whiteSpace = 'pre-wrap';
-      pre.textContent = data.response; // Safe text content, no HTML injection
-      
-      responseDiv.appendChild(heading);
-      responseDiv.appendChild(pre);
-      document.body.appendChild(responseDiv);
-      
-    } catch (err) {
-      console.error('Failed to research packages:', err);
+      console.log('AI Response:', response.content);
+
+      // Update the page content with AI response
+      const container = document.getElementById('research-results');
+      if (container) {
+        const heading = document.createElement('h3');
+        heading.textContent = 'AI Package Research Results:';
+        
+        const content = document.createElement('div');
+        content.innerHTML = `<pre style="white-space: pre-wrap; background: #f5f5f5; padding: 15px; border-radius: 5px;">${response.content}</pre>`;
+        
+        container.appendChild(heading);
+        container.appendChild(content);
+      }
+
+    } catch (error) {
+      console.error('Error researching packages:', error);
+      const container = document.getElementById('research-results');
+      if (container) {
+        container.innerHTML = `<div style="color: red;">Error: ${error.message || 'Failed to research packages'}</div>`;
+      }
     }
   };
 
-  // Auto-run the research
-  researchPackages();
+  // Auto-run research when component mounts
+  React.useEffect(() => {
+    researchPackages();
+  }, []);
 
   return (
     <div style={{ padding: '20px' }}>
       <h2>Package Research in Progress...</h2>
-      <p>Using Claude AI to research correct npm package names...</p>
+      <p>{isLoading ? 'Using Universal AI to research correct npm package names...' : 'Research completed!'}</p>
       <p>Check the console and page for results.</p>
+      <div id="research-results"></div>
     </div>
   );
 };

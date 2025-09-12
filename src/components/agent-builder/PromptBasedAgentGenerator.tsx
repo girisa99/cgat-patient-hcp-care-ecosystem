@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Sparkles, Play, Users, FileText, MessageSquare, Search, Brain } from 'lucide-react';
 import { useMasterToast } from '@/hooks/useMasterToast';
-import { supabase } from '@/integrations/supabase/client';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { getErrorMessage } from '@/utils/errorHandling';
 
 interface PromptBasedAgentGeneratorProps {
@@ -42,11 +42,6 @@ const SUGGESTED_PROMPTS = [
   }
 ];
 
-const AI_PROVIDERS = [
-  { id: 'openai', name: 'OpenAI', models: ['gpt-4o', 'gpt-4o-mini', 'gpt-4'] },
-  { id: 'claude', name: 'Claude', models: ['claude-3-opus', 'claude-3-sonnet', 'claude-3-haiku'] },
-  { id: 'gemini', name: 'Gemini', models: ['gemini-pro', 'gemini-pro-vision'] }
-];
 
 export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps> = ({
   onGenerate,
@@ -54,7 +49,7 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
   prefillPrompt = ""
 }) => {
   const [prompt, setPrompt] = useState(prefillPrompt);
-  const [isGenerating, setIsGenerating] = useState(false);
+  const { generateAgent, isLoading, providers } = useUniversalAI();
   const [selectedProvider, setSelectedProvider] = useState('openai');
   const { showSuccess, showError, showInfo } = useMasterToast();
 
@@ -64,29 +59,8 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
       return;
     }
 
-    setIsGenerating(true);
     try {
-      // Call the Supabase edge function for agent generation
-      const { data: agentData, error } = await supabase.functions.invoke('generate-agent-from-prompt', {
-        body: {
-          prompt: prompt.trim(),
-          provider: selectedProvider,
-          generateConnections: true,
-          includeTemplates: true,
-          // Pass agent properties to AI generation
-          agentConfig: {
-            categories: [],
-            business_units: [],
-            topics: [],
-            agent_type: 'single'
-          }
-        }
-      });
-
-      if (error) {
-        console.error('Edge function error:', error);
-        throw new Error(`Generation failed: ${error.message || 'Unknown error'}`);
-      }
+      const agentData = await generateAgent(prompt.trim(), selectedProvider as "openai" | "claude" | "gemini");
       
       if (!agentData) {
         throw new Error('No data returned from AI generation');
@@ -118,8 +92,6 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
     } catch (error) {
       console.error('Error generating agent:', error);
       showError(getErrorMessage(error));
-    } finally {
-      setIsGenerating(false);
     }
   };
 
@@ -181,7 +153,7 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {AI_PROVIDERS.map(provider => (
+                  {providers.map(provider => (
                     <SelectItem key={provider.id} value={provider.id}>
                       {provider.name}
                     </SelectItem>
@@ -192,11 +164,11 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
 
             <Button 
               onClick={handleGenerate} 
-              disabled={isGenerating || !prompt.trim()}
+              disabled={isLoading || !prompt.trim()}
               className="w-full"
               size="lg"
             >
-              {isGenerating ? (
+              {isLoading ? (
                 <>
                   <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                   Generating your Agent...
@@ -211,7 +183,7 @@ export const PromptBasedAgentGenerator: React.FC<PromptBasedAgentGeneratorProps>
           </div>
 
           {/* Generation Progress */}
-          {isGenerating && (
+          {isLoading && (
             <div className="space-y-2">
               <div className="flex justify-center">
                 <Sparkles className="h-8 w-8 text-primary animate-pulse" />

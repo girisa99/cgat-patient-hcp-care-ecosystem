@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { toast } from '@/hooks/use-toast';
+import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { 
   Bot, 
   Brain, 
@@ -38,86 +39,6 @@ interface AIModel {
   icon: React.ComponentType<{ className?: string }>;
 }
 
-const aiModels: AIModel[] = [
-  {
-    id: 'gpt-4-turbo',
-    name: 'GPT-4 Turbo',
-    provider: 'OpenAI',
-    type: 'language',
-    description: 'Most capable GPT-4 model with improved instruction following',
-    capabilities: ['Text Generation', 'Analysis', 'Code Generation', 'Reasoning'],
-    maxTokens: 128000,
-    costPer1kTokens: 0.01,
-    responseTime: '2-5s',
-    availability: 'available',
-    icon: Bot
-  },
-  {
-    id: 'claude-3-opus',
-    name: 'Claude 3 Opus',
-    provider: 'Anthropic',
-    type: 'language',
-    description: 'Most intelligent Claude model for complex reasoning tasks',
-    capabilities: ['Complex Reasoning', 'Analysis', 'Writing', 'Code Review'],
-    maxTokens: 200000,
-    costPer1kTokens: 0.015,
-    responseTime: '3-6s',
-    availability: 'available',
-    icon: Brain
-  },
-  {
-    id: 'gemini-pro',
-    name: 'Gemini Pro',
-    provider: 'Google',
-    type: 'multimodal',
-    description: 'Google\'s advanced multimodal AI model',
-    capabilities: ['Text Generation', 'Vision', 'Code Generation', 'Multimodal'],
-    maxTokens: 30000,
-    costPer1kTokens: 0.005,
-    responseTime: '1-3s',
-    availability: 'available',
-    icon: Target
-  },
-  {
-    id: 'gpt-4-vision',
-    name: 'GPT-4 Vision',
-    provider: 'OpenAI',
-    type: 'vision',
-    description: 'GPT-4 with vision capabilities for image analysis',
-    capabilities: ['Text Generation', 'Image Analysis', 'Visual Reasoning'],
-    maxTokens: 128000,
-    costPer1kTokens: 0.01,
-    responseTime: '3-7s',
-    availability: 'available',
-    icon: Image
-  },
-  {
-    id: 'codellama-70b',
-    name: 'Code Llama 70B',
-    provider: 'Meta',
-    type: 'code',
-    description: 'Specialized model for code generation and programming tasks',
-    capabilities: ['Code Generation', 'Code Completion', 'Debugging', 'Code Review'],
-    maxTokens: 4096,
-    costPer1kTokens: 0.003,
-    responseTime: '2-4s',
-    availability: 'available',
-    icon: Code
-  },
-  {
-    id: 'whisper-large',
-    name: 'Whisper Large',
-    provider: 'OpenAI',
-    type: 'speech',
-    description: 'Advanced speech recognition and transcription model',
-    capabilities: ['Speech Recognition', 'Transcription', 'Translation'],
-    maxTokens: 448,
-    costPer1kTokens: 0.006,
-    responseTime: '1-2s',
-    availability: 'available',
-    icon: Mic
-  }
-];
 
 interface AIModelSelectorProps {
   isOpen: boolean;
@@ -132,6 +53,7 @@ export const AIModelSelector: React.FC<AIModelSelectorProps> = ({
   onSelect,
   selectedModels = []
 }) => {
+  const { providers } = useUniversalAI();
   const [selectedModel, setSelectedModel] = useState<AIModel | null>(null);
   const [modelConfig, setModelConfig] = useState({
     temperature: 0.7,
@@ -147,6 +69,23 @@ export const AIModelSelector: React.FC<AIModelSelectorProps> = ({
   });
   const [filterType, setFilterType] = useState<string>('all');
   const [isConfiguring, setIsConfiguring] = useState(false);
+
+  // Convert universal AI providers to AI models format
+  const aiModels: AIModel[] = providers.flatMap(provider => 
+    provider.models.map(model => ({
+      id: model,
+      name: model,
+      provider: provider.name,
+      type: 'language' as const,
+      description: `${provider.name} model: ${model}`,
+      capabilities: provider.capabilities,
+      maxTokens: 4000,
+      costPer1kTokens: 0.01,
+      responseTime: '2-5s',
+      availability: 'available' as const,
+      icon: Bot
+    }))
+  );
 
   const filteredModels = filterType === 'all' 
     ? aiModels 
