@@ -276,14 +276,11 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
                 <div className="flex items-center gap-2 mb-1">
                   <Bot className="h-4 w-4 text-primary" />
                   <span className="font-semibold text-sm">
-                    {genieMode === 'enrollment' && isEnrollmentContext ? 'Enrollment Assistant' : contextInfo.title}
+                    {contextInfo.title}
                   </span>
                 </div>
                 <p className="text-xs text-muted-foreground mb-2">
-                  {genieMode === 'enrollment' && isEnrollmentContext 
-                    ? 'Help with patient enrollment forms, medical history, and step-by-step guidance'
-                    : contextInfo.description
-                  }
+                  {contextInfo.description}
                 </p>
                 <div className="flex gap-1 mb-2">
                   <Badge variant="secondary" className="text-xs">
@@ -321,8 +318,7 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
         tenantId={tenantId}
         userId={userId}
         context={currentContext}
-        mode={genieMode}
-        onModeChange={handleModeChange}
+        mode="general"
       />
     </>
   );

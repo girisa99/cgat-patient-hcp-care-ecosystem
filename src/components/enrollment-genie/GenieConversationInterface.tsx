@@ -42,7 +42,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [isExpanded, setIsExpanded] = useState(false);
   
   const { generateResponse } = useUniversalAI();
-  const { messages, addMessage, updateLastMessage, clearMessages } = useConversationState();
+  const { state, addMessage } = useConversationState();
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -53,10 +53,9 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
     try {
       addMessage({
-        id: Date.now().toString(),
+        role: 'user',
         content: userMessage,
-        timestamp: new Date().toISOString(),
-        type: 'user'
+        timestamp: new Date().toISOString()
       });
 
       const resp = await generateResponse({
@@ -68,12 +67,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         maxTokens: 1000
       });
 
-      if (resp.success && resp.data) {
+      if (resp && resp.content) {
         addMessage({
-          id: (Date.now() + 1).toString(),
-          content: resp.data,
-          timestamp: new Date().toISOString(),
-          type: 'assistant'
+          role: 'assistant',
+          content: resp.content,
+          timestamp: new Date().toISOString()
         });
       }
     } catch (error) {
@@ -156,9 +154,9 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
               {/* Conversation Display */}
               <div className="flex-1 space-y-4 mb-4 max-h-[400px] overflow-y-auto">
-                {messages.map((msg, index) => (
-                  <MessageComponent key={index} message={msg} />
-                ))}
+              {state.messages.map((msg, index) => (
+                <MessageComponent key={index} message={msg} />
+              ))}
                 
                 <AnimatePresence>
                   {isLoading && (
