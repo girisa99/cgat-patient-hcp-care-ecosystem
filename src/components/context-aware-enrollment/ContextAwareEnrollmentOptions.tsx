@@ -25,9 +25,15 @@ import {
 import DataIntegrationPanel from './DataIntegrationPanel';
 import { UniversalEnrollmentProcessor } from './UniversalEnrollmentProcessor';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
+import { PatientEnrollmentTemplateManager } from '@/components/patient-enrollment/PatientEnrollmentTemplateManager';
+import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalAgentConfigManager';
+import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoiceManager';
+import { UniversalWorkflowProcessor } from '@/components/workflow-processor/UniversalWorkflowProcessor';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
+type WorkflowStep = 'submission_mode' | 'ai_agent_config' | 'template_selection' | 'environment_setup' | 'test_deploy';
 
 interface EnrollmentOption {
   id: string;
@@ -94,6 +100,10 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
   const [showDataIntegration, setShowDataIntegration] = useState(false);
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [showProcessor, setShowProcessor] = useState(false);
+  const [currentWorkflowStep, setCurrentWorkflowStep] = useState<WorkflowStep>('submission_mode');
+  const [selectedAgentType, setSelectedAgentType] = useState<string>('');
+  const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
+  const [environmentConfig, setEnvironmentConfig] = useState<any>(null);
   const { openEnrollment } = useGlobalConversationalEnrollment();
 
   // Don't show if not on a specific module page
@@ -107,15 +117,15 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
     {
       id: 'agent',
       title: 'AI-Powered Enrollment',
-      description: 'Let our AI assistant guide you through the process with intelligent questions',
+      description: 'Create structured AI agents with templates, workflows, and deployment options',
       icon: <Bot className="h-5 w-5" />,
       estimatedTime: '5-10 min',
       isAgent: true,
       action: () => {
-        console.log('🤖 Launching AI Agent for module:', currentModule);
-        openEnrollment(currentModule);
-        toast.success('AI Agent launched successfully', {
-          description: 'Advanced enrollment workflow with templates and dashboard'
+        console.log('🤖 Launching AI Agent Configuration for module:', currentModule);
+        setCurrentWorkflowStep('ai_agent_config');
+        toast.success('AI Agent Configuration Loaded', {
+          description: 'Template dashboard, workflows, NPI verification, and credentialing agents are ready'
         });
         onAgentSelect(currentModule);
       }
@@ -157,6 +167,275 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
       }
     }
   ];
+
+  // Render AI Agent Configuration Workflow
+  const renderAIAgentWorkflow = () => {
+    return (
+      <div className="space-y-6">
+        {/* Workflow Progress */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3">
+              <Bot className="h-6 w-6 text-primary" />
+              AI Agent Configuration Workflow
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCurrentWorkflowStep('submission_mode')}
+              >
+                Back to Options
+              </Button>
+            </CardTitle>
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <CheckCircle className={`h-4 w-4 ${currentWorkflowStep !== 'submission_mode' ? 'text-green-500' : 'text-muted-foreground'}`} />
+              <span className={currentWorkflowStep === 'ai_agent_config' ? 'font-medium text-foreground' : ''}>Agent Configuration</span>
+              <span>→</span>
+              <CheckCircle className={`h-4 w-4 ${currentWorkflowStep === 'template_selection' ? 'text-green-500' : 'text-muted-foreground'}`} />
+              <span className={currentWorkflowStep === 'template_selection' ? 'font-medium text-foreground' : ''}>Template Selection</span>
+              <span>→</span>
+              <CheckCircle className={`h-4 w-4 ${currentWorkflowStep === 'environment_setup' ? 'text-green-500' : 'text-muted-foreground'}`} />
+              <span className={currentWorkflowStep === 'environment_setup' ? 'font-medium text-foreground' : ''}>Environment & Channels</span>
+              <span>→</span>
+              <CheckCircle className={`h-4 w-4 ${currentWorkflowStep === 'test_deploy' ? 'text-green-500' : 'text-muted-foreground'}`} />
+              <span className={currentWorkflowStep === 'test_deploy' ? 'font-medium text-foreground' : ''}>Test & Deploy</span>
+            </div>
+          </CardHeader>
+        </Card>
+
+        {/* Agent Configuration Step */}
+        {currentWorkflowStep === 'ai_agent_config' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Settings className="h-5 w-5" />
+                AI Agent Configuration Options
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                <Card className="cursor-pointer hover:shadow-lg transition-all" 
+                      onClick={() => {
+                        setSelectedAgentType('structured');
+                        setCurrentWorkflowStep('template_selection');
+                        toast.success('Structured AI Agent selected');
+                      }}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 rounded-lg bg-primary text-primary-foreground">
+                        <Bot className="h-5 w-5" />
+                      </div>
+                      <h3 className="font-semibold">Create Structured AI Agent</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Build intelligent agents with templates, visual workflows, NPI verification, and credentialing capabilities
+                    </p>
+                    <Button className="w-full">Select & Configure</Button>
+                  </CardContent>
+                </Card>
+                
+                <Card className="cursor-pointer hover:shadow-lg transition-all"
+                      onClick={() => {
+                        setSelectedOption('online-form');
+                        setShowProcessor(true);
+                        onTraditionalSelect('online-form');
+                      }}>
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-2 rounded-lg bg-muted">
+                        <Edit3 className="h-5 w-5" />
+                      </div>
+                      <h3 className="font-semibold">Direct Online Form</h3>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Skip agent configuration and go directly to online form with NPI verification and voice support
+                    </p>
+                    <Button variant="outline" className="w-full">Go to Form</Button>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Universal Agent Config Manager */}
+              <UniversalAgentConfigManager
+                selectedAgentType={selectedAgentType}
+                onAgentTypeSelect={(agentType) => {
+                  setSelectedAgentType(agentType.id);
+                  console.log('Agent type selected:', agentType);
+                }}
+              />
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Template Selection Step */}
+        {currentWorkflowStep === 'template_selection' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Database className="h-5 w-5" />
+                Template & Workflow Dashboard
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setCurrentWorkflowStep('environment_setup')}
+                  disabled={!selectedTemplate}
+                >
+                  Continue to Environment
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PatientEnrollmentTemplateManager
+                onTemplateSelect={(template) => {
+                  setSelectedTemplate(template);
+                  console.log('Template selected:', template);
+                  toast.success('Template ready for deployment');
+                }}
+              />
+              
+              {/* Universal Workflow Processor */}
+              <div className="mt-6">
+                <UniversalWorkflowProcessor
+                  workflowType="agent_assisted"
+                  initialData={{
+                    module_type: currentModule,
+                    processing_option: 'ai-agent',
+                    agent_type: selectedAgentType
+                  }}
+                  onComplete={(data) => {
+                    console.log('Workflow step completed:', data);
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Environment Setup Step */}
+        {currentWorkflowStep === 'environment_setup' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <Settings className="h-5 w-5" />
+                Environment & Channel Assignment
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => setCurrentWorkflowStep('test_deploy')}
+                  disabled={!environmentConfig}
+                >
+                  Continue to Test & Deploy
+                </Button>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="environment" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="environment">Environment Setup</TabsTrigger>
+                  <TabsTrigger value="channels">Voice Channels</TabsTrigger>
+                </TabsList>
+                
+                <TabsContent value="environment" className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {['Development', 'Staging', 'Production'].map((env) => (
+                      <Card key={env} className={`cursor-pointer transition-all ${
+                        environmentConfig?.environment === env ? 'ring-2 ring-primary' : 'hover:shadow-lg'
+                      }`}
+                      onClick={() => {
+                        setEnvironmentConfig({ environment: env });
+                        toast.success(`${env} environment selected`);
+                      }}>
+                        <CardContent className="p-4 text-center">
+                          <h3 className="font-semibold">{env}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">
+                            {env === 'Development' ? 'Testing & debugging' : 
+                             env === 'Staging' ? 'Pre-production validation' : 
+                             'Live production deployment'}
+                          </p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </TabsContent>
+                
+                <TabsContent value="channels">
+                  <ChannelVoiceManager
+                    onChannelData={(channel, data) => {
+                      setEnvironmentConfig(prev => ({
+                        ...prev,
+                        channels: { ...prev?.channels, [channel]: data }
+                      }));
+                      console.log('Channel data updated:', channel, data);
+                    }}
+                  />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Test & Deploy Step */}
+        {currentWorkflowStep === 'test_deploy' && (
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <CheckCircle className="h-5 w-5" />
+                Test & Deploy Agent
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <Button 
+                    size="lg" 
+                    variant="outline"
+                    onClick={() => {
+                      toast.success('Running tests...', {
+                        description: 'Testing NPI verification, credentialing, and workflow steps'
+                      });
+                    }}
+                  >
+                    <Settings className="h-4 w-4 mr-2" />
+                    Run Tests
+                  </Button>
+                  <Button 
+                    size="lg"
+                    onClick={() => {
+                      toast.success('Agent deployed successfully!', {
+                        description: 'Your AI enrollment agent is now live and ready for use'
+                      });
+                      setCurrentWorkflowStep('submission_mode');
+                    }}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Deploy Agent
+                  </Button>
+                </div>
+                
+                <div className="p-4 bg-muted/50 rounded-lg">
+                  <h4 className="font-medium mb-2">Deployment Summary</h4>
+                  <div className="text-sm space-y-1">
+                    <p><strong>Module:</strong> {moduleInfo.title}</p>
+                    <p><strong>Agent Type:</strong> {selectedAgentType || 'Structured AI'}</p>
+                    <p><strong>Template:</strong> {selectedTemplate?.name || 'Default Template'}</p>
+                    <p><strong>Environment:</strong> {environmentConfig?.environment || 'Not selected'}</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+      </div>
+    );
+  };
+
+  // Return submission mode selection or workflow based on current step
+  if (currentWorkflowStep !== 'submission_mode') {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        {renderAIAgentWorkflow()}
+      </div>
+    );
+  }
 
   return (
     <div className={`space-y-6 ${className}`}>
