@@ -102,12 +102,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     return pageContext.isPageSpecific && pageContext.config?.moduleType === 'patient';
   };
 
-  // Auto-set mode based on page context  
-  useEffect(() => {
-    if (shouldShowEnrollmentToggle() && mode === 'general' && onModeChange) {
-      onModeChange('enrollment');
-    }
-  }, [mode, onModeChange, pageAware]);
+  // Keep user's chosen mode; do not auto-switch based on page context
+
 
   // Use conversation state management
   const conv = useConversationState();

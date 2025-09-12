@@ -119,15 +119,32 @@ export const ConversationManager: React.FC<ConversationManagerProps> = ({
 
   const initializeConversation = async () => {
     try {
+      // Always create a local session so UI is ready even if DB is unavailable
+      const localId = `conv_${Date.now()}`;
+      setConversationId(localId);
+
+      const welcomeMessage: Message = {
+        id: 'welcome',
+        role: 'assistant',
+        content: getWelcomeMessage(),
+        timestamp: new Date(),
+        metadata: { type: 'welcome' }
+      };
+      setMessages([welcomeMessage]);
+
+      // Try to persist to Supabase if authenticated
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
+      if (!user) {
+        console.log('No authenticated user; running local-only conversation');
+        return;
+      }
 
       const { data, error } = await supabase
         .from('agent_conversations')
         .insert({
           agent_id: agentId || 'default',
           user_id: user.id,
-          session_id: `conv_${Date.now()}`,
+          session_id: localId,
           title: `Enrollment Conversation ${new Date().toLocaleString()}`,
           conversation_data: [],
           metadata: {
@@ -144,22 +161,11 @@ export const ConversationManager: React.FC<ConversationManagerProps> = ({
       if (error) throw error;
       setConversationId(data.id);
 
-      // Add welcome message
-      const welcomeMessage: Message = {
-        id: 'welcome',
-        role: 'assistant',
-        content: getWelcomeMessage(),
-        timestamp: new Date(),
-        metadata: { type: 'welcome' }
-      };
-      setMessages([welcomeMessage]);
-
     } catch (error) {
-      console.error('Error initializing conversation:', error);
-      toast.error('Failed to initialize conversation');
+      console.warn('Non-blocking: failed to persist conversation to DB', error);
+      // Do not block UI or show error toast here
     }
   };
-
   const getWelcomeMessage = () => {
     if (conversationMode === 'natural') {
       return `Hi there! I'm here to help you with your enrollment process. I'll make this as natural and conversational as possible. 
