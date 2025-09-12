@@ -33,6 +33,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationState, ConversationMessage } from '@/hooks/useConversationState';
 import { ragService } from '@/services/ragService';
+import { EnhancedModelSelector } from '@/components/ai/EnhancedModelSelector';
 import { CrossCategoryModelSelector, SelectedModelConfig } from '@/components/ai/CrossCategoryModelSelector';
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
@@ -78,11 +79,15 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 }) => {
   const [message, setMessage] = useState('');
   const [ragStatus, setRagStatus] = useState({ available: false, documentsCount: 0, labelStudioConnected: false });
+  const [modelSelectionMode, setModelSelectionMode] = useState<'single' | 'cross-category'>('single'); // New selection mode
+  
+  // Single model selection (existing functionality)
   const [selectedModel, setSelectedModel] = useState<{ provider: string; model: string; category: string }>({
     provider: 'claude',
     model: 'claude-3-5-haiku-20241022',
     category: 'llm'
   });
+  
   // Multi-model selections for split view
   const [selectedModelLeft, setSelectedModelLeft] = useState<{ provider: string; model: string; category: string }>({
     provider: 'openai',
@@ -94,6 +99,9 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     model: 'claude-opus-4-1-20250805',
     category: 'llm'
   });
+  
+  // Cross-category model selection (new functionality)
+  const [selectedCrossModels, setSelectedCrossModels] = useState<SelectedModelConfig[]>([]);
   
   // Use conversation state management
   const { state: conversationState, resetConversation, startConversation, addMessage, updateConversationConfig, switchMode } = useConversationState();
@@ -120,14 +128,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       id: 'single',
       label: 'Single',
       icon: <User className="h-4 w-4" />,
-      description: 'Single model conversation with RAG support for focused, context-aware responses.',
+      description: 'Single model conversation with choice of traditional category selection or cross-category intelligence for specialized tasks.',
       active: conversationState.selectedMode === 'single'
     },
     {
       id: 'multi',
       label: 'Multi',
       icon: <Users className="h-4 w-4" />,
-      description: 'Split screen with multiple models for comparative analysis, both enhanced with RAG context.',
+      description: 'Compare models side-by-side or use multi-category intelligent merging for comprehensive analysis.',
       active: conversationState.selectedMode === 'multi'
     },
     {
@@ -307,46 +315,108 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       case 'single':
         return (
           <div className="mt-4 space-y-4">
-            <CrossCategoryModelSelector
-              onModelsSelect={(models) => {
-                if (models.length > 0) {
-                  const model = models[0];
-                  handleModelSelect(model.provider, model.model, model.category);
-                }
-              }}
-              selectedModels={selectedModel ? [{
-                provider: selectedModel.provider,
-                model: selectedModel.model,
-                category: selectedModel.category as any,
-                name: selectedModel.model,
-                role: 'primary' as const,
-                weight: 1
-              }] : []}
-              mode="single"
-              maxSelections={1}
-            />
+            {/* Model Selection Mode Picker */}
+            <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Selection Mode:</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={modelSelectionMode === 'single' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('single')}
+                >
+                  Single Model
+                </Button>
+                <Button
+                  variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('cross-category')}
+                >
+                  Cross-Category
+                </Button>
+              </div>
+            </div>
+            
+            {/* Render appropriate selector based on mode */}
+            {modelSelectionMode === 'single' ? (
+              <EnhancedModelSelector
+                onModelSelect={handleModelSelect}
+                selectedModel={selectedModel}
+              />
+            ) : (
+              <CrossCategoryModelSelector
+                onModelsSelect={(models) => {
+                  setSelectedCrossModels(models);
+                  // Set the primary model for conversation state
+                  const primaryModel = models.find(m => m.role === 'primary') || models[0];
+                  if (primaryModel) {
+                    handleModelSelect(primaryModel.provider, primaryModel.model, primaryModel.category);
+                  }
+                }}
+                selectedModels={selectedCrossModels}
+                mode="single"
+                maxSelections={4}
+              />
+            )}
           </div>
         );
 
       case 'multi':
         return (
           <div className="mt-4 space-y-4">
-            <p className="text-sm text-muted-foreground">Select models for side-by-side comparison</p>
-            <CrossCategoryModelSelector
-              onModelsSelect={(models) => {
-                // Handle multi-model selection for split view
-                if (models.length >= 2) {
-                  const leftModel = models[0];
-                  const rightModel = models[1];
-                  handleModelSelectLeft(leftModel.provider, leftModel.model, leftModel.category);
-                  handleModelSelectRight(rightModel.provider, rightModel.model, rightModel.category);
-                }
-              }}
-              selectedModels={[]}
-              mode="multi"
-              maxSelections={2}
-            />
-            <p className="text-xs text-muted-foreground">You can compare outputs from different providers/models in a split view.</p>
+            {/* Model Selection Mode Picker */}
+            <div className="flex items-center gap-4 p-3 bg-muted rounded-lg">
+              <span className="text-sm font-medium">Selection Mode:</span>
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={modelSelectionMode === 'single' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('single')}
+                >
+                  Traditional Split
+                </Button>
+                <Button
+                  variant={modelSelectionMode === 'cross-category' ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => setModelSelectionMode('cross-category')}
+                >
+                  Multi-Category
+                </Button>
+              </div>
+            </div>
+            
+            {modelSelectionMode === 'single' ? (
+              <>
+                <p className="text-sm text-muted-foreground">Select models for side-by-side comparison</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-xs font-medium mb-2">Left Panel Model</p>
+                    <EnhancedModelSelector
+                      onModelSelect={handleModelSelectLeft}
+                      selectedModel={selectedModelLeft}
+                    />
+                  </div>
+                  <div>
+                    <p className="text-xs font-medium mb-2">Right Panel Model</p>
+                    <EnhancedModelSelector
+                      onModelSelect={handleModelSelectRight}
+                      selectedModel={selectedModelRight}
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">You can compare outputs from different providers/models in a split view.</p>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">Select multiple models across categories for intelligent comparison</p>
+                <CrossCategoryModelSelector
+                  onModelsSelect={setSelectedCrossModels}
+                  selectedModels={selectedCrossModels}
+                  mode="multi"
+                  maxSelections={6}
+                />
+                <p className="text-xs text-muted-foreground">Models will be processed in parallel and results intelligently merged.</p>
+              </>
+            )}
           </div>
         );
 
