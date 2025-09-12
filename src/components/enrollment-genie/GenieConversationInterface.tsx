@@ -326,7 +326,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${isExpanded ? 'max-w-[95vw] h-[95vh]' : 'max-w-5xl md:max-w-6xl h-[85vh]'} p-0 overflow-hidden transition-all duration-300`}>
+      <DialogContent className={`${isExpanded ? 'max-w-[95vw] h-[95vh]' : 'max-w-3xl sm:max-w-5xl md:max-w-6xl h-[85vh] sm:h-[90vh]'} p-0 overflow-hidden transition-all duration-300`}>
         {/* Header with Page-Aware Toggle */}
         <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-teal-50 to-blue-50">
           <div className="flex items-center gap-3">

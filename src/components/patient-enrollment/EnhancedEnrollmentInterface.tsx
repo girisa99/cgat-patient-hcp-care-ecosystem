@@ -112,7 +112,7 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
   };
 
   return (
-    <div className={`w-full ${isInModal ? 'p-4' : 'max-w-7xl mx-auto'} space-y-4`}>
+    <div className={`w-full ${isInModal ? 'p-2 sm:p-4' : 'max-w-7xl mx-auto'} space-y-2 sm:space-y-4`}>
       {/* Header - Simplified for modal */}
       {!isInModal && (
         <Card>
@@ -166,51 +166,32 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
         </Card>
       )}
       
-      {/* Modal Header */}
-      {isInModal && (
-        <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-4 mb-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
-            <div>
-              <MessageSquare className="h-6 w-6 mx-auto mb-1 text-primary" />
-              <p className="text-xs font-medium">AI Conversation</p>
-            </div>
-            <div>
-              <FileText className="h-6 w-6 mx-auto mb-1 text-primary" />
-              <p className="text-xs font-medium">Smart Forms</p>
-            </div>
-            <div>
-              <Download className="h-6 w-6 mx-auto mb-1 text-primary" />
-              <p className="text-xs font-medium">Complete Package</p>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* Main Interface */}
       <Tabs value={activeTab} onValueChange={(value: any) => setActiveTab(value)}>
-        <div className="flex flex-col space-y-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <TabsList className="grid w-full max-w-lg grid-cols-3">
-              <TabsTrigger value="conversation" className="flex items-center gap-2">
-                <MessageSquare className="h-4 w-4" />
+        <div className="flex flex-col space-y-2 sm:space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-4">
+            <TabsList className={`grid w-full ${isInModal ? 'max-w-full' : 'max-w-lg'} grid-cols-3`}>
+              <TabsTrigger value="conversation" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <MessageSquare className="h-3 w-3 sm:h-4 sm:w-4" />
                 {isInModal ? "Chat" : "Conversation"}
               </TabsTrigger>
-              <TabsTrigger value="voice" className="flex items-center gap-2">
-                <Mic className="h-4 w-4" />
+              <TabsTrigger value="voice" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <Mic className="h-3 w-3 sm:h-4 sm:w-4" />
                 Voice
               </TabsTrigger>
-              <TabsTrigger value="form" className="flex items-center gap-2">
-                <FileText className="h-4 w-4" />
+              <TabsTrigger value="form" className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm">
+                <FileText className="h-3 w-3 sm:h-4 sm:w-4" />
                 Form
               </TabsTrigger>
             </TabsList>
 
-            <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3 w-full sm:w-auto">
               {!isInModal && (
                 <select
                   value={currentChannel}
                   onChange={(e) => setCurrentChannel(e.target.value as any)}
-                  className="px-3 py-2 border border-input bg-background rounded-md text-sm"
+                  className="px-2 sm:px-3 py-1.5 sm:py-2 border border-input bg-background rounded-md text-xs sm:text-sm"
                 >
                   <option value="online">Online</option>
                   <option value="voice">Voice</option>
@@ -222,16 +203,18 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
                 variant="outline" 
                 size={isInModal ? "sm" : "default"}
                 onClick={downloadEnrollmentPackage}
+                className="w-full sm:w-auto"
               >
-                <Download className="h-4 w-4 mr-2" />
-                {isInModal ? "Export" : "Download Package"}
+                <Download className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                <span className="text-xs sm:text-sm">{isInModal ? "Export" : "Download Package"}</span>
               </Button>
               <Button 
                 size={isInModal ? "sm" : "default"}
                 onClick={() => handleFormSubmit(enrollmentData)}
                 disabled={Object.keys(enrollmentData).length === 0}
+                className="w-full sm:w-auto"
               >
-                Complete Enrollment
+                <span className="text-xs sm:text-sm">Complete Enrollment</span>
               </Button>
             </div>
           </div>
@@ -249,7 +232,7 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
               </p>
             </CardHeader>
             <CardContent className="p-0">
-              <div className={`${isInModal ? 'h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
+              <div className={`${isInModal ? 'h-[300px] sm:h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
                 <ConversationManager
                   agentId="enrollment-agent"
                   enrollmentContext={{
@@ -282,7 +265,7 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
               </p>
             </CardHeader>
             <CardContent className="p-0">
-              <div className={`${isInModal ? 'h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
+              <div className={`${isInModal ? 'h-[300px] sm:h-[400px]' : 'min-h-[500px]'} overflow-hidden`}>
                 <UniversalVoiceInterface
                   agentType="conversational"
                   channelType={currentChannel}
@@ -307,7 +290,7 @@ export const EnhancedEnrollmentInterface: React.FC<EnhancedEnrollmentInterfacePr
                 Review and complete the information captured from your conversation
               </p>
             </CardHeader>
-            <CardContent className={`${isInModal ? 'max-h-[450px] overflow-y-auto' : ''}`}>
+            <CardContent className={`${isInModal ? 'max-h-[300px] sm:max-h-[450px] overflow-y-auto p-2 sm:p-6' : ''}`}>
               <PatientEnrollmentForm
                 initialData={enrollmentData}
                 onSubmit={handleFormSubmit}
