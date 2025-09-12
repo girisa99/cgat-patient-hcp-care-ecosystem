@@ -45,14 +45,16 @@ export class RAGService {
   }
 
   /**
-   * Enhance prompt with RAG context
+   * Enhance prompt with RAG context - with improved Label Studio fallback
    */
   async enhancePromptWithRAG(prompt: string, enabledFeatures: string[]): Promise<{
     enhancedPrompt: string;
     contextSources: string[];
+    hasContext: boolean;
   }> {
     let enhancedPrompt = prompt;
     let contextSources: string[] = [];
+    let hasContext = false;
 
     try {
       // Search for relevant documents
@@ -71,25 +73,46 @@ ${contextChunks}
 User question: ${prompt}`;
 
           contextSources = searchResults.map(r => r.document.title);
+          hasContext = true;
         }
       }
 
       // Add Label Studio annotations if available
       if (enabledFeatures.includes('label_studio')) {
-        const annotations = await this.getLabelStudioAnnotations(prompt);
-        if (annotations.length > 0) {
-          enhancedPrompt += `\n\nRelevant annotations:\n${annotations.join('\n')}`;
-          contextSources.push('Label Studio Annotations');
+        try {
+          const annotations = await this.getLabelStudioAnnotations(prompt);
+          if (annotations.length > 0) {
+            enhancedPrompt += `\n\nRelevant annotations:\n${annotations.join('\n')}`;
+            contextSources.push('Label Studio Annotations');
+            hasContext = true;
+          } else {
+            console.log('Label Studio: No relevant annotations found for query, proceeding with LLM generation');
+          }
+        } catch (labelStudioError) {
+          console.warn('Label Studio unavailable, proceeding with LLM generation:', labelStudioError);
+          // Don't throw error - just continue without Label Studio data
         }
       }
 
+      // If no context is found, add helpful instruction to LLM
+      if (!hasContext) {
+        enhancedPrompt = `${prompt}
+
+Note: No specific context found in knowledge base. Please provide a helpful response based on your training data.`;
+      }
+
     } catch (error) {
-      console.error('Error enhancing prompt with RAG:', error);
+      console.error('Error enhancing prompt with RAG, proceeding with original prompt:', error);
+      // Ensure we always return a valid prompt even if RAG fails
+      enhancedPrompt = `${prompt}
+
+Note: Knowledge base temporarily unavailable. Responding based on training data.`;
     }
 
     return {
       enhancedPrompt,
-      contextSources
+      contextSources,
+      hasContext
     };
   }
 

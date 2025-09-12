@@ -20,28 +20,47 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   const { defaultProvider = 'openai', autoLoadProviders = true } = options;
   const { showError, showSuccess } = useMasterToast();
 
-  // Default providers with real AI models
+  // Categorized AI models by capability and size
+  const modelCategories = {
+    llm: {
+      openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16'],
+      claude: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514'],
+      gemini: ['gemini-2.0-flash-exp', 'gemini-pro']
+    },
+    small: {
+      openai: ['gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4o-mini'],
+      claude: ['claude-3-5-haiku-20241022'],
+      gemini: ['gemini-2.0-flash']
+    },
+    vision: {
+      openai: ['gpt-4o', 'o4-mini-2025-04-16'],
+      claude: ['claude-3-5-sonnet-20241022'],
+      gemini: ['gemini-pro-vision']
+    }
+  };
+
+  // Default providers with categorized models
   const defaultProviders: AIProvider[] = [
     {
       id: 'openai',
       name: 'OpenAI',
-      models: ['gpt-5-2025-08-07', 'gpt-5-mini-2025-08-07', 'gpt-5-nano-2025-08-07', 'gpt-4.1-2025-04-14', 'o3-2025-04-16', 'o4-mini-2025-04-16', 'gpt-4o', 'gpt-4o-mini'],
+      models: [...modelCategories.llm.openai, ...modelCategories.small.openai, ...modelCategories.vision.openai],
       capabilities: ['text', 'vision', 'reasoning'],
-      description: 'OpenAI GPT models'
+      description: 'OpenAI GPT models - LLM, Small, and Vision variants'
     },
     {
       id: 'claude',
       name: 'Anthropic Claude',
-      models: ['claude-opus-4-1-20250805', 'claude-sonnet-4-20250514', 'claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022', 'claude-3-opus-20240229'],
+      models: [...modelCategories.llm.claude, ...modelCategories.small.claude, ...modelCategories.vision.claude],
       capabilities: ['text', 'vision', 'reasoning'],
-      description: 'Anthropic Claude models'
+      description: 'Anthropic Claude models - LLM, Small, and Vision variants'
     },
     {
       id: 'gemini',
       name: 'Google Gemini',
-      models: ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-pro', 'gemini-pro-vision'],
+      models: [...modelCategories.llm.gemini, ...modelCategories.small.gemini, ...modelCategories.vision.gemini],
       capabilities: ['text', 'vision', 'multimodal'],
-      description: 'Google Gemini models'
+      description: 'Google Gemini models - LLM, Small, and Vision variants'
     }
   ];
 
@@ -273,11 +292,23 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     return response?.content || null;
   }, [generateResponse, defaultProvider]);
 
-  // Get models for provider
-  const getModelsForProvider = useCallback((providerId: string) => {
+  // Get models for provider by category
+  const getModelsForProvider = useCallback((providerId: string, category?: 'llm' | 'small' | 'vision') => {
+    if (category && modelCategories[category] && modelCategories[category][providerId as keyof typeof modelCategories.llm]) {
+      return modelCategories[category][providerId as keyof typeof modelCategories.llm];
+    }
     const provider = state.providers.find(p => p.id === providerId);
     return provider?.models || [];
   }, [state.providers]);
+
+  // Get models by category across all providers
+  const getModelsByCategory = useCallback((category: 'llm' | 'small' | 'vision') => {
+    const categoryModels = modelCategories[category];
+    return Object.entries(categoryModels).reduce((acc, [provider, models]) => {
+      acc[provider] = models;
+      return acc;
+    }, {} as Record<string, string[]>);
+  }, []);
 
   // Check if provider is available
   const isProviderAvailable = useCallback((providerId: 'openai' | 'claude' | 'gemini') => {
@@ -309,6 +340,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     
     // Utilities
     getModelsForProvider,
+    getModelsByCategory,
     isProviderAvailable,
     loadAvailableProviders,
     clearError,

@@ -64,11 +64,28 @@ Return a JSON object with deployment settings, environment requirements, and set
         if (!CLAUDE_API_KEY) {
           throw new Error('Claude API key not configured');
         }
+        const claudeModel = model || getDefaultModel('claude');
         try {
-          response = await callClaude(model || 'claude-3-5-haiku-20241022', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
+          response = await callClaude(claudeModel, enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
         } catch (err) {
-          console.warn('Claude model failed, falling back to claude-sonnet-4-20250514:', err?.message || err);
-          response = await callClaude('claude-sonnet-4-20250514', enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
+          console.warn(`Claude model ${claudeModel} failed, trying fallbacks:`, err?.message || err);
+          const fallbacks = getModelFallbacks('claude', claudeModel);
+          let lastError = err;
+          
+          for (const fallbackModel of fallbacks) {
+            try {
+              console.log(`Trying Claude fallback: ${fallbackModel}`);
+              response = await callClaude(fallbackModel, enhancedPrompt, enhancedSystemPrompt, temperature, maxTokens);
+              break;
+            } catch (fallbackErr) {
+              console.warn(`Claude fallback ${fallbackModel} failed:`, fallbackErr?.message || fallbackErr);
+              lastError = fallbackErr;
+            }
+          }
+          
+          if (!response) {
+            throw lastError;
+          }
         }
         break;
 
@@ -244,10 +261,28 @@ async function callGemini(model: string, prompt: string, systemPrompt?: string, 
 }
 
 function getDefaultModel(provider: string): string {
+  // Updated defaults with model category fallbacks
+  const modelHierarchy = {
+    openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'gpt-5-mini-2025-08-07', 'gpt-4o-mini'],
+    claude: ['claude-sonnet-4-20250514', 'claude-opus-4-1-20250805', 'claude-3-5-haiku-20241022'],
+    gemini: ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-pro']
+  };
+
   switch (provider) {
-    case 'openai': return 'gpt-4o-mini';
-    case 'claude': return 'claude-3-5-haiku-20241022';
-    case 'gemini': return 'gemini-2.0-flash-exp';
+    case 'openai': return modelHierarchy.openai[0];
+    case 'claude': return modelHierarchy.claude[0];
+    case 'gemini': return modelHierarchy.gemini[0];
     default: return 'gpt-4o-mini';
   }
+}
+
+function getModelFallbacks(provider: string, failedModel: string): string[] {
+  const modelHierarchy = {
+    openai: ['gpt-5-2025-08-07', 'gpt-4.1-2025-04-14', 'gpt-5-mini-2025-08-07', 'gpt-4o-mini', 'gpt-4o'],
+    claude: ['claude-sonnet-4-20250514', 'claude-opus-4-1-20250805', 'claude-3-5-haiku-20241022', 'claude-3-5-sonnet-20241022'],
+    gemini: ['gemini-2.0-flash-exp', 'gemini-2.0-flash', 'gemini-pro', 'gemini-pro-vision']
+  };
+
+  const hierarchy = modelHierarchy[provider as keyof typeof modelHierarchy] || [];
+  return hierarchy.filter(model => model !== failedModel);
 }

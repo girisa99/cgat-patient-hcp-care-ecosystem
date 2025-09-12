@@ -214,13 +214,20 @@ const AppContent = () => {
                       <SystemIntegration />
                     </ProtectedRoute>
                   } />
-                  <Route path="/ai-testing" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
-                      <Suspense fallback={<PageLoading message="Loading AI testing..." />}>
-                        {React.createElement(React.lazy(() => import('@/components/ai-testing/AIModelTestingInterface').then(m => ({ default: m.AIModelTestingInterface }))))}
-                      </Suspense>
-                    </ProtectedRoute>
-                  } />
+                   <Route path="/ai-testing" element={
+                     <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
+                       <Suspense fallback={<PageLoading message="Loading AI testing..." />}>
+                         {React.createElement(React.lazy(() => import('@/components/ai-testing/AIModelTestingInterface').then(m => ({ default: m.AIModelTestingInterface }))))}
+                       </Suspense>
+                     </ProtectedRoute>
+                   } />
+                   <Route path="/ai-models" element={
+                     <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam', 'demoUser']}>
+                       <Suspense fallback={<PageLoading message="Loading AI models..." />}>
+                         {React.createElement(React.lazy(() => import('@/components/ai/AIModelDemo').then(m => ({ default: m.AIModelDemo }))))}
+                       </Suspense>
+                     </ProtectedRoute>
+                   } />
                   <Route path="/ngrok" element={
                     <ProtectedRoute requiredRoles={['superAdmin']}>
                       <NgrokIntegration />
