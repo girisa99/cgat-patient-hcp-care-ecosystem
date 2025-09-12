@@ -296,7 +296,13 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       if (successCount === 0) {
         throw new Error('All model calls failed. Please check providers and try again.');
       }
+    } catch (error) {
+      console.error('Error in handleSendMessage:', error);
+      // Show error message to user
+    }
+  };
 
+  const renderModelSelectionContent = () => {
     switch (conversationState.selectedMode) {
       case 'single':
         return (
@@ -473,7 +479,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
 
           {/* Mode-specific Content */}
-          {renderModeSpecificContent()}
+          {renderModelSelectionContent()}
 
           {/* Advanced Options Popover (scrollable, non-transparent) */}
           <div className="mt-6">
