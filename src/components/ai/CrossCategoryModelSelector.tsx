@@ -70,7 +70,7 @@ export const CrossCategoryModelSelector: React.FC<CrossCategoryModelSelectorProp
     const providers = new Set<string>();
     ['llm', 'small', 'vision', 'mcp'].forEach(category => {
       const models = getModelsByCategory(category as any);
-      Object.keys(models).forEach(provider => providers.add(provider));
+      models.forEach(model => providers.add(model.provider));
     });
     return ['all', ...Array.from(providers).sort()];
   }, []);
@@ -86,33 +86,30 @@ export const CrossCategoryModelSelector: React.FC<CrossCategoryModelSelectorProp
 
     ['llm', 'small', 'vision', 'mcp'].forEach(category => {
       const categoryModels = getModelsByCategory(category as any);
-      Object.entries(categoryModels).forEach(([provider, models]) => {
+      
+      // Group models by provider
+      categoryModels.forEach(model => {
+        const provider = model.provider;
+        
         if (selectedProvider === 'all' || selectedProvider === provider) {
           if (!organized[category][provider]) {
             organized[category][provider] = [];
           }
           
-          // Handle models array properly
-          const modelArray = Array.isArray(models) ? models : [models];
-          modelArray.forEach(model => {
-            const modelDetails = MODEL_REGISTRY[model] || {
-              name: model,
-              description: `${category} model from ${provider}`,
-              provider,
-              category,
-              id: model
-            };
-            
-            if (!searchTerm || 
-                modelDetails.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                provider.toLowerCase().includes(searchTerm.toLowerCase())) {
-              organized[category][provider].push(modelDetails);
-            }
-          });
-
-          if (organized[category][provider].length === 0) {
-            delete organized[category][provider];
+          // Filter by search term
+          if (!searchTerm || 
+              model.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              provider.toLowerCase().includes(searchTerm.toLowerCase()) ||
+              model.description.toLowerCase().includes(searchTerm.toLowerCase())) {
+            organized[category][provider].push(model);
           }
+        }
+      });
+      
+      // Remove empty provider groups
+      Object.keys(organized[category]).forEach(provider => {
+        if (organized[category][provider].length === 0) {
+          delete organized[category][provider];
         }
       });
     });
@@ -241,7 +238,7 @@ export const CrossCategoryModelSelector: React.FC<CrossCategoryModelSelectorProp
     const selectedCategories = new Set(selectedModels.map(m => m.category));
     
     ['llm', 'small', 'vision', 'mcp'].forEach(category => {
-      if (!selectedCategories.has(category as any) && organizedModels[category][selectedProvider]) {
+      if (!selectedCategories.has(category as any) && organizedModels[category]?.[selectedProvider]) {
         const models = organizedModels[category][selectedProvider].slice(0, 2);
         if (models.length > 0) {
           suggestions.push({ category, models });
@@ -388,7 +385,7 @@ export const CrossCategoryModelSelector: React.FC<CrossCategoryModelSelectorProp
                       onClick={() => handleModelToggle(model, category)}
                     >
                       <Plus className="h-3 w-3 mr-1" />
-                      {model.name}
+                      {model.name || model.id}
                     </Button>
                   ))}
                 </div>
@@ -460,12 +457,12 @@ export const CrossCategoryModelSelector: React.FC<CrossCategoryModelSelectorProp
                                     checked={isSelected}
                                     disabled={!isProviderAvailable(provider as any)}
                                   />
-                                  <div className="flex-1">
-                                    <div className="font-medium text-sm">{model.name}</div>
-                                    <div className="text-xs text-muted-foreground">
-                                      {model.description}
-                                    </div>
-                                  </div>
+                                   <div className="flex-1">
+                                     <div className="font-medium text-sm">{model.name || model.id || 'Unknown Model'}</div>
+                                     <div className="text-xs text-muted-foreground">
+                                       {model.description || `${category} model from ${provider}`}
+                                     </div>
+                                   </div>
                                   {isSelected && (
                                     <Badge variant="secondary" className="text-xs">
                                       Selected
