@@ -33,7 +33,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationState, ConversationMessage } from '@/hooks/useConversationState';
 import { ragService } from '@/services/ragService';
-import { EnhancedModelSelector } from '@/components/ai/EnhancedModelSelector';
+import { CrossCategoryModelSelector, SelectedModelConfig } from '@/components/ai/CrossCategoryModelSelector';
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
 
@@ -307,9 +307,23 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       case 'single':
         return (
           <div className="mt-4 space-y-4">
-            <EnhancedModelSelector
-              onModelSelect={handleModelSelect}
-              selectedModel={selectedModel}
+            <CrossCategoryModelSelector
+              onModelsSelect={(models) => {
+                if (models.length > 0) {
+                  const model = models[0];
+                  handleModelSelect(model.provider, model.model, model.category);
+                }
+              }}
+              selectedModels={selectedModel ? [{
+                provider: selectedModel.provider,
+                model: selectedModel.model,
+                category: selectedModel.category as any,
+                name: selectedModel.model,
+                role: 'primary' as const,
+                weight: 1
+              }] : []}
+              mode="single"
+              maxSelections={1}
             />
           </div>
         );
@@ -318,22 +332,20 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         return (
           <div className="mt-4 space-y-4">
             <p className="text-sm text-muted-foreground">Select models for side-by-side comparison</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div>
-                <p className="text-xs font-medium mb-2">Left Panel Model</p>
-                <EnhancedModelSelector
-                  onModelSelect={handleModelSelectLeft}
-                  selectedModel={selectedModelLeft}
-                />
-              </div>
-              <div>
-                <p className="text-xs font-medium mb-2">Right Panel Model</p>
-                <EnhancedModelSelector
-                  onModelSelect={handleModelSelectRight}
-                  selectedModel={selectedModelRight}
-                />
-              </div>
-            </div>
+            <CrossCategoryModelSelector
+              onModelsSelect={(models) => {
+                // Handle multi-model selection for split view
+                if (models.length >= 2) {
+                  const leftModel = models[0];
+                  const rightModel = models[1];
+                  handleModelSelectLeft(leftModel.provider, leftModel.model, leftModel.category);
+                  handleModelSelectRight(rightModel.provider, rightModel.model, rightModel.category);
+                }
+              }}
+              selectedModels={[]}
+              mode="multi"
+              maxSelections={2}
+            />
             <p className="text-xs text-muted-foreground">You can compare outputs from different providers/models in a split view.</p>
           </div>
         );
