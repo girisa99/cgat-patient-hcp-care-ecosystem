@@ -10,7 +10,7 @@ export default defineConfig(({ mode }) => ({
   server: {
     host: "0.0.0.0",
     port: 8080,
-    allowedHosts: ["localhost", "dev.geniecellgene.com"],
+    allowedHosts: ["localhost", "dev.geniecellgene.com", "genieaiexpermentationhub.com"],
   },
   plugins: [
     react(),

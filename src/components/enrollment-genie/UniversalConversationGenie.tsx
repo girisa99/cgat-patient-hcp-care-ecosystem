@@ -3,7 +3,7 @@
  * Global floating genie available across the entire application
  * Supports multi-user/multi-tenant conversations for any page context
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -87,9 +87,56 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
+  const [position, setPosition] = useState({ bottom: 24, right: 24 }); // Dynamic positioning
 
   const currentContext = getPageContext(location.pathname);
   const contextInfo = getContextInfo(currentContext);
+
+  // Smart positioning to avoid content overlap
+  useEffect(() => {
+    const checkForOverlap = () => {
+      const viewportHeight = window.innerHeight;
+      const viewportWidth = window.innerWidth;
+      
+      // Check for overlapping content elements
+      const bottomElements = document.querySelectorAll('[data-bottom-content="true"], footer, .bottom-navigation, .footer');
+      const rightElements = document.querySelectorAll('[data-right-content="true"], .sidebar-right, .right-panel');
+      
+      let newBottom = 24;
+      let newRight = 24;
+      
+      // Adjust for bottom elements
+      bottomElements.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.top < viewportHeight && rect.bottom > viewportHeight * 0.8) {
+          newBottom = Math.max(newBottom, viewportHeight - rect.top + 16);
+        }
+      });
+      
+      // Adjust for right elements
+      rightElements.forEach(el => {
+        const rect = el.getBoundingClientRect();
+        if (rect.left < viewportWidth && rect.right > viewportWidth * 0.8) {
+          newRight = Math.max(newRight, viewportWidth - rect.left + 16);
+        }
+      });
+      
+      // Ensure Genie stays within viewport bounds
+      newBottom = Math.min(newBottom, viewportHeight - 100);
+      newRight = Math.min(newRight, viewportWidth - 100);
+      
+      setPosition({ bottom: newBottom, right: newRight });
+    };
+    
+    checkForOverlap();
+    window.addEventListener('resize', checkForOverlap);
+    window.addEventListener('scroll', checkForOverlap);
+    
+    return () => {
+      window.removeEventListener('resize', checkForOverlap);
+      window.removeEventListener('scroll', checkForOverlap);
+    };
+  }, [location.pathname]); // Re-check when route changes
 
   const handleComplete = (data: any) => {
     setIsOpen(false);
@@ -98,9 +145,10 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
 
   return (
     <>
-      {/* Floating Genie Button */}
+      {/* Floating Genie Button with Smart Positioning */}
       <motion.div
-        className={`fixed bottom-6 right-6 z-50 ${className}`}
+        className={`fixed z-50 ${className}`}
+        style={{ bottom: `${position.bottom}px`, right: `${position.right}px` }}
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ delay: 0.5, type: "spring", stiffness: 200 }}

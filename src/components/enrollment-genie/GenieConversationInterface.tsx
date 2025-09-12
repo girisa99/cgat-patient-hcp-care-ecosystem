@@ -693,17 +693,32 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Mode-specific Content */}
           {renderModelSelectionContent()}
 
-          {/* Advanced Options Popover (scrollable, non-transparent) */}
+          {/* Enhanced API Configuration Section */}
           <div className="mt-6">
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button variant="outline" className="w-full justify-between">
-                  <div className="flex items-center gap-2">
-                    <Settings className="h-4 w-4" />
-                    <span>Select MCP Tools & Integrations ({conversationState.selectedMCPTools.length} selected)</span>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 bg-gradient-to-r from-blue-50 to-cyan-50 rounded-lg border border-blue-200">
+                <div className="flex items-center gap-2">
+                  <Database className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <span className="font-medium text-blue-900">API Configuration</span>
+                    <p className="text-xs text-blue-700">Configure external integrations and tools</p>
                   </div>
-                </Button>
-              </PopoverTrigger>
+                </div>
+                <Badge variant="secondary" className="bg-blue-100 text-blue-800">
+                  {conversationState.selectedMCPTools.length + 1} Active
+                </Badge>
+              </div>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full justify-between hover:bg-blue-50">
+                    <div className="flex items-center gap-2">
+                      <Settings className="h-4 w-4" />
+                      <span>MCP Tools & Integrations ({conversationState.selectedMCPTools.length} selected)</span>
+                    </div>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </PopoverTrigger>
               <PopoverContent className="w-[min(720px,90vw)] p-0 bg-popover z-[100] shadow-lg border">
                 <div className="p-3 border-b sticky top-0 bg-popover z-10">
                   <p className="text-xs text-muted-foreground">
@@ -874,6 +889,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 </Tabs>
               </PopoverContent>
             </Popover>
+            </div>
           </div>
 
           {/* Selected MCP Tools Display */}
