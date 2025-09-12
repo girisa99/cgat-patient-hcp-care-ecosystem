@@ -8,6 +8,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Bot, User, Database, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ConversationMessage as MessageType } from '@/hooks/useConversationState';
+import { RichMediaRenderer } from './RichMediaRenderer';
+import { AIMediaService } from '@/services/aiMediaService';
 
 interface ConversationMessageProps {
   message: MessageType;
@@ -18,39 +20,22 @@ export const ConversationMessage: React.FC<ConversationMessageProps> = ({ messag
   const isUser = message.role === 'user';
   const isError = message.error;
   
-  // Format the message content with proper line breaks and structure
-  const formatContent = (content: string) => {
-    // Split by double line breaks for paragraphs
-    const paragraphs = content.split('\n\n');
-    
-    return paragraphs.map((paragraph, index) => {
-      // Check if it's a list (starts with -, *, or 1.)
-      if (paragraph.includes('\n-') || paragraph.includes('\n*') || paragraph.includes('\n1.')) {
-        const lines = paragraph.split('\n');
-        const title = lines[0];
-        const listItems = lines.slice(1).filter(line => line.trim());
-        
-        return (
-          <div key={index} className="mb-4">
-            {title && <p className="font-medium mb-2">{title}</p>}
-            <ul className="space-y-1 ml-4">
-              {listItems.map((item, itemIndex) => (
-                <li key={itemIndex} className="text-sm">
-                  {item.replace(/^[-*]\s*/, '').replace(/^\d+\.\s*/, '')}
-                </li>
-              ))}
-            </ul>
-          </div>
-        );
-      }
-      
-      // Regular paragraph
-      return (
-        <p key={index} className="mb-3 last:mb-0 text-sm leading-relaxed">
-          {paragraph}
-        </p>
-      );
-    });
+  const handleGenerateImage = async (prompt: string): Promise<string> => {
+    try {
+      return await AIMediaService.generateImage(prompt);
+    } catch (error) {
+      console.error('Error generating image:', error);
+      throw error;
+    }
+  };
+
+  const handleGenerateVideo = async (prompt: string): Promise<string> => {
+    try {
+      return await AIMediaService.generateVideo(prompt);
+    } catch (error) {
+      console.error('Error generating video:', error);
+      throw error;
+    }
   };
 
   return (
@@ -88,9 +73,18 @@ export const ConversationMessage: React.FC<ConversationMessageProps> = ({ messag
               : 'bg-white border-gray-200 shadow-sm'
         }`}>
           <CardContent className="p-4">
-            {/* Content */}
+            {/* Content with Rich Media Support */}
             <div className={`${isUser ? 'text-white' : isError ? 'text-red-800' : 'text-gray-800'}`}>
-              {formatContent(message.content)}
+              {isUser ? (
+                <p className="text-sm leading-relaxed">{message.content}</p>
+              ) : (
+                <RichMediaRenderer
+                  content={message.content}
+                  metadata={message.metadata}
+                  onGenerateImage={handleGenerateImage}
+                  onGenerateVideo={handleGenerateVideo}
+                />
+              )}
             </div>
 
             {/* Metadata */}

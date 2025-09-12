@@ -29,6 +29,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useConversationEngines } from '@/hooks/useConversationEngines';
 import { useEnrollmentAgent } from '@/hooks/useEnrollmentAgent';
 import { DigitalSignatureCanvas } from './DigitalSignatureCanvas';
+import { RichMediaRenderer } from '../enrollment-genie/RichMediaRenderer';
+import { AIMediaService } from '@/services/aiMediaService';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -457,42 +459,71 @@ export const FloatingConversationalAgent: React.FC<FloatingConversationalAgentPr
         <CardContent className="flex-1 p-0 overflow-hidden">
           <ScrollArea className="h-full px-4 pb-2">
             <div className="space-y-3">
-              {messages.map((message) => (
-                <div
-                  key={message.id}
-                  className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
-                >
-                  <div className={`max-w-[80%] rounded-lg p-2 ${
-                    message.type === 'user' 
-                      ? 'bg-primary text-primary-foreground' 
-                      : message.type === 'system'
-                      ? 'bg-muted text-muted-foreground text-center'
-                      : 'bg-muted'
-                  }`}>
-                    <div className="flex items-start gap-2">
-                      {message.type === 'agent' && (
-                        <Bot className="h-3 w-3 mt-0.5 text-primary" />
-                      )}
-                      {message.type === 'user' && (
-                        <User className="h-3 w-3 mt-0.5" />
-                      )}
-                      <div className="flex-1">
-                        <p className="text-sm">{message.content}</p>
-                        {message.metadata?.extractedData && (
-                          <div className="mt-1 pt-1 border-t border-border/50">
-                            <p className="text-xs opacity-75">
-                              ✓ Captured: {Object.keys(message.metadata.extractedData).join(', ')}
-                            </p>
-                          </div>
+              {messages.map((message) => {
+                const handleGenerateImage = async (prompt: string): Promise<string> => {
+                  try {
+                    return await AIMediaService.generateImage(prompt);
+                  } catch (error) {
+                    console.error('Error generating image:', error);
+                    throw error;
+                  }
+                };
+
+                const handleGenerateVideo = async (prompt: string): Promise<string> => {
+                  try {
+                    return await AIMediaService.generateVideo(prompt);
+                  } catch (error) {
+                    console.error('Error generating video:', error);
+                    throw error;
+                  }
+                };
+
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-[80%] rounded-lg p-2 ${
+                      message.type === 'user' 
+                        ? 'bg-primary text-primary-foreground' 
+                        : message.type === 'system'
+                        ? 'bg-muted text-muted-foreground text-center'
+                        : 'bg-muted'
+                    }`}>
+                      <div className="flex items-start gap-2">
+                        {message.type === 'agent' && (
+                          <Bot className="h-3 w-3 mt-0.5 text-primary" />
                         )}
+                        {message.type === 'user' && (
+                          <User className="h-3 w-3 mt-0.5" />
+                        )}
+                         <div className="flex-1">
+                          {message.type === 'user' ? (
+                            <p className="text-sm">{message.content}</p>
+                          ) : (
+                            <RichMediaRenderer
+                              content={message.content}
+                              metadata={message.metadata}
+                              onGenerateImage={handleGenerateImage}
+                              onGenerateVideo={handleGenerateVideo}
+                            />
+                          )}
+                          {message.metadata?.extractedData && (
+                            <div className="mt-1 pt-1 border-t border-border/50">
+                              <p className="text-xs opacity-75">
+                                ✓ Captured: {Object.keys(message.metadata.extractedData).join(', ')}
+                              </p>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     </div>
                     <p className="text-xs opacity-50 mt-1">
                       {message.timestamp.toLocaleTimeString()}
                     </p>
                   </div>
-                </div>
-              ))}
+                );
+              })}
               {isProcessing && (
                 <div className="flex justify-start">
                   <div className="bg-muted rounded-lg p-2">
