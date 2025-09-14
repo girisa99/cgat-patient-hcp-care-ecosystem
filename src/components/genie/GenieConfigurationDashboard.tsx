@@ -36,11 +36,13 @@ import {
   BarChart3
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { UniversalModelSelector, SelectedModelConfig } from '@/components/ai';
+import { SelectedModelConfig } from '@/components/ai';
 import { useGenieState, GenieConfiguration } from '@/hooks/useGenieState';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { GenieProviderStatusPanel } from './GenieProviderStatusPanel';
+import { GenieModelDropdown } from './GenieModelDropdown';
+import { GenieFeatureDropdown } from './GenieFeatureDropdown';
 
 interface GenieConfigurationDashboardProps {
   isOpen: boolean;
@@ -418,16 +420,16 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
                   {/* Model Selection */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Model Selection</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        <Brain className="h-4 w-4 text-primary" />
+                        Model Selection
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <UniversalModelSelector
-                        onModelsSelect={setSelectedModels}
+                      <GenieModelDropdown
                         selectedModels={selectedModels}
+                        onModelsChange={setSelectedModels}
                         mode={selectedMode}
-                        enabledFeatures={enabledFeatures}
-                        allowModeSwitch={selectedMode !== 'single'}
-                        defaultSelectionMode={selectedMode === 'multi' ? 'cross-category' : 'single'}
                         maxSelections={selectedMode === 'single' ? 1 : 6}
                       />
                     </CardContent>
@@ -439,36 +441,26 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
                   {/* Features */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>Features</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="h-4 w-4 text-primary" />
+                        Features
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 gap-3">
-                        {availableFeatures.map((feature) => (
-                          <div
-                            key={feature.id}
-                            className="flex items-center justify-between p-3 border rounded-lg"
-                          >
-                            <div className="flex items-center gap-3">
-                              <feature.icon className="h-4 w-4 text-muted-foreground" />
-                              <div>
-                                <p className="font-medium">{feature.label}</p>
-                                <p className="text-xs text-muted-foreground">{feature.description}</p>
-                              </div>
-                            </div>
-                            <Switch
-                              checked={enabledFeatures.includes(feature.id)}
-                              onCheckedChange={() => handleFeatureToggle(feature.id)}
-                            />
-                          </div>
-                        ))}
-                      </div>
+                      <GenieFeatureDropdown
+                        selectedFeatures={enabledFeatures}
+                        onFeaturesChange={setEnabledFeatures}
+                      />
                     </CardContent>
                   </Card>
 
                   {/* MCP Tools */}
                   <Card>
                     <CardHeader>
-                      <CardTitle>MCP Tools</CardTitle>
+                      <CardTitle className="flex items-center gap-2">
+                        <Wrench className="h-4 w-4 text-primary" />
+                        MCP Tools
+                      </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-2 gap-2">
