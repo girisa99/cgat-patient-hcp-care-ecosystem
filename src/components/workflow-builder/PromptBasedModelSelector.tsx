@@ -14,13 +14,22 @@ export const PromptBasedModelSelector: React.FC<PromptBasedModelSelectorProps> =
   enabledFeatures = [],
   mode = 'single'
 }) => {
-  const [currentModels, setCurrentModels] = useState<SelectedModelConfig[]>([]);
+  const [currentModels, setCurrentModels] = useState<SelectedModelConfig[]>(
+    // Convert legacy selectedModels to SelectedModelConfig if they're just strings
+    selectedModels.map((model, index) => typeof model === 'string' ? {
+      provider: (model.includes('claude') ? 'claude' : model.includes('gemini') ? 'gemini' : 'openai') as 'openai' | 'claude' | 'gemini',
+      model,
+      category: 'llm' as const,
+      name: model,
+      role: 'primary' as const,
+      weight: 1.0
+    } : model)
+  );
 
   const handleModelsSelect = (models: SelectedModelConfig[]) => {
     setCurrentModels(models);
     
     // Maintain backward compatibility with the old interface
-    // Convert SelectedModelConfig back to the expected format
     if (models.length > 0) {
       const primaryModel = models.find(m => m.role === 'primary') || models[0];
       onModelSelect({
