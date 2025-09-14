@@ -63,6 +63,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
   const [knowledgeBase, setKnowledgeBase] = useState('');
   const [medicalContext, setMedicalContext] = useState(false);
   const [isDefault, setIsDefault] = useState(false);
+  const [saving, setSaving] = useState(false);
   
   const { 
     configurations, 
@@ -108,6 +109,8 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
       return;
     }
 
+    setSaving(true);
+
     const config: Omit<GenieConfiguration, 'id'> = {
       configuration_name: configName,
       selected_mode: selectedMode,
@@ -128,6 +131,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
       resetForm();
       setActiveTab('overview');
     }
+    setSaving(false);
   }, [
     configName, selectedMode, selectedModels, enabledFeatures, 
     selectedMCPTools, knowledgeBase, medicalContext, isDefault,
@@ -252,7 +256,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 overflow-y-auto">
+          <div className="flex-1 min-w-0 overflow-y-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               {/* Overview Tab */}
               <TabsContent value="overview" className="p-6 space-y-6">
@@ -338,9 +342,9 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
                     <Button variant="outline" onClick={resetForm}>
                       Reset
                     </Button>
-                    <Button onClick={handleSaveConfiguration} disabled={loading}>
+                    <Button onClick={handleSaveConfiguration} disabled={saving || !configName.trim()} aria-busy={saving}>
                       <Save className="h-4 w-4 mr-2" />
-                      Save Configuration
+                      {saving ? 'Saving...' : 'Save Configuration'}
                     </Button>
                   </div>
                 </div>
