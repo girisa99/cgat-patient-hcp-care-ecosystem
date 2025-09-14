@@ -52,7 +52,8 @@ export const useAIServiceHealth = () => {
           try {
             const { data, error } = await supabase.functions.invoke('ai-universal-processor', { body: { action: 'health_check', provider: p } });
             if (error) throw error;
-            const ok = !!data && data.status === 'ok';
+            // Check for availability in different response formats
+            const ok = !!(data?.available || data?.status === 'ok' || data?.healthy || data?.success);
             return { p, ok };
           } catch (err: any) {
             errors[`ai-universal-processor:${p}`] = err?.message || 'invoke failed';

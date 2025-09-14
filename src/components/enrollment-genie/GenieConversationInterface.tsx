@@ -443,7 +443,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => window.location.href = '/enrollment-workspace'}
+                  onClick={() => window.location.href = '/patient-onboarding'}
                   className="h-8 px-2 text-xs"
                 >
                   <User className="h-3 w-3 mr-1" />
@@ -765,19 +765,25 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         isOpen={showConfigDashboard}
         onClose={() => setShowConfigDashboard(false)}
         onConfigurationSelect={(config) => {
-          // Apply selected configuration
-          setSelectedModels(config.selected_models.map(model => ({
+          // Apply selected configuration and enable multi-model mode if needed
+          const modelConfigs: SelectedModelConfig[] = config.selected_models.map((model, index) => ({
             model,
-            provider: model.includes('claude') ? 'claude' : model.includes('gemini') ? 'gemini' : 'openai',
+            provider: (model.includes('claude') ? 'claude' : model.includes('gemini') ? 'gemini' : 'openai') as 'openai' | 'claude' | 'gemini',
             name: model,
-            category: config.selected_model_type === 'slm' ? 'small' : config.selected_model_type === 'vlm' ? 'vision' : 'llm' as const,
-            role: 'primary' as const,
-            weight: 1.0
-          })));
+            category: (config.selected_model_type === 'slm' ? 'small' : config.selected_model_type === 'vlm' ? 'vision' : 'llm') as 'llm' | 'small' | 'vision' | 'mcp',
+            role: (index === 0 ? 'primary' : 'secondary') as 'primary' | 'secondary',
+            weight: index === 0 ? 0.6 : 0.4
+          }));
+          
+          setSelectedModels(modelConfigs);
           setEnabledFeatures(config.enabled_features);
           setSelectedMCPTools(config.selected_mcp_tools);
           setKnowledgeBase(config.knowledge_base);
           setMedicalContext(config.medical_context);
+          
+          // Switch to the configuration's mode to trigger split screen if multi
+          handleModeChange(config.selected_mode);
+          
           showSuccess(`Configuration "${config.configuration_name}" applied`);
           setShowConfigDashboard(false);
         }}

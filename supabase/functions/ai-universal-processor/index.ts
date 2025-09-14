@@ -37,7 +37,15 @@ serve(async (req) => {
 
     // Lightweight actions that don't require full params
     if (action === 'health_check' || action === 'ping') {
-      return new Response(JSON.stringify({ ok: true, provider: provider || 'openai', timestamp: new Date().toISOString() }), {
+      return new Response(JSON.stringify({ 
+        ok: true, 
+        status: 'ok', 
+        available: true, 
+        healthy: true, 
+        success: true,
+        provider: provider || 'system', 
+        timestamp: new Date().toISOString() 
+      }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
     }

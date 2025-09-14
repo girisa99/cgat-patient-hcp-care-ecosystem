@@ -142,8 +142,17 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
       } else {
         await loadConfigurations();
         showSuccess('Configuration saved successfully');
-        resetForm();
-        setActiveTab('overview');
+        // Don't call resetForm() here, wait for successful save to complete
+        setConfigName('');
+        setSelectedModels([]);
+        setSelectedMode('single');
+        setEnabledFeatures([]);
+        setSelectedMCPTools([]);
+        setKnowledgeBase('');
+        setMedicalContext(false);
+        setIsDefault(false);
+        setEditingConfig(null);
+        setActiveTab('management'); // Show the saved config in management
       }
     } catch (e: any) {
       showError(e?.message || 'Failed to save configuration');
@@ -153,7 +162,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
   }, [
     configName, selectedMode, selectedModels, enabledFeatures,
     selectedMCPTools, knowledgeBase, medicalContext, isDefault,
-    saveConfiguration, showSuccess, showError, loadConfigurations, resetForm
+    saveConfiguration, showSuccess, showError, loadConfigurations
   ]);
 
   const resetForm = useCallback(() => {
@@ -508,6 +517,10 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
                 <div className="flex items-center justify-between">
                   <h3 className="text-lg font-semibold">Configuration Management</h3>
                   <div className="flex gap-2">
+                    <Button variant="outline" onClick={loadConfigurations} disabled={loading}>
+                      <Shield className="h-4 w-4 mr-2" />
+                      Refresh
+                    </Button>
                     <Button variant="outline" onClick={exportConfiguration}>
                       <Download className="h-4 w-4 mr-2" />
                       Export
@@ -532,45 +545,64 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
                 {/* Configuration List */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>All Configurations</CardTitle>
+                    <CardTitle>All Configurations ({configurations.length})</CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="space-y-2">
-                      {configurations.map((config) => (
-                        <div
-                          key={config.id}
-                          className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                    {loading ? (
+                      <div className="text-center py-8">
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
+                        <p className="text-sm text-muted-foreground mt-2">Loading configurations...</p>
+                      </div>
+                    ) : configurations.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-muted-foreground">No configurations found</p>
+                        <Button 
+                          variant="outline" 
+                          className="mt-2" 
+                          onClick={() => setActiveTab('builder')}
                         >
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <p className="font-medium">{config.configuration_name}</p>
-                              {config.is_default && <Badge variant="secondary">Default</Badge>}
+                          Create First Configuration
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-2">
+                        {configurations.map((config) => (
+                          <div
+                            key={config.id}
+                            className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50"
+                          >
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">{config.configuration_name}</p>
+                                {config.is_default && <Badge variant="secondary">Default</Badge>}
+                              </div>
+                              <div className="flex gap-4 text-sm text-muted-foreground mt-1">
+                                <span>Mode: {config.selected_mode}</span>
+                                <span>Models: {config.selected_models.length}</span>
+                                <span>Features: {config.enabled_features.length}</span>
+                                <span>Tools: {config.selected_mcp_tools.length}</span>
+                              </div>
                             </div>
-                            <div className="flex gap-4 text-sm text-muted-foreground mt-1">
-                              <span>Mode: {config.selected_mode}</span>
-                              <span>Models: {config.selected_models.length}</span>
-                              <span>Features: {config.enabled_features.length}</span>
+                            <div className="flex gap-2">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => onConfigurationSelect(config)}
+                              >
+                                Use
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => loadConfiguration(config)}
+                              >
+                                Edit
+                              </Button>
                             </div>
                           </div>
-                          <div className="flex gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => onConfigurationSelect(config)}
-                            >
-                              Use
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => loadConfiguration(config)}
-                            >
-                              Edit
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    )}
                   </CardContent>
                 </Card>
               </TabsContent>
