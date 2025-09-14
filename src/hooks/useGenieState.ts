@@ -122,6 +122,12 @@ export const useGenieState = () => {
     try {
       setLoading(true);
       
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('Authentication required to save configuration');
+      }
+      
       // If setting as default, unset other defaults first
       if (config.is_default) {
         await supabase
@@ -130,9 +136,14 @@ export const useGenieState = () => {
           .neq('id', '00000000-0000-0000-0000-000000000000');
       }
 
+      const configWithUser = {
+        ...config,
+        user_id: user.id
+      };
+
       const { data, error } = await supabase
         .from('genie_configurations')
-        .insert([config])
+        .insert([configWithUser])
         .select()
         .single();
 
@@ -202,7 +213,14 @@ export const useGenieState = () => {
     try {
       setLoading(true);
       
+      // Get current user
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        throw new Error('Authentication required to save session');
+      }
+      
       const dbSession = {
+        user_id: user.id,
         conversation_id: session.conversation_id,
         session_name: session.session_name,
         messages: session.messages as any,
