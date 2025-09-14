@@ -92,6 +92,16 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
     }
   }, []);
 
+  // Helper: default model per provider
+  const getDefaultModel = (provider: 'openai' | 'claude' | 'gemini') => {
+    switch (provider) {
+      case 'openai': return 'gpt-4o-mini';
+      case 'claude': return 'claude-3-5-haiku-20241022';
+      case 'gemini': return 'gemini-2.0-flash-exp';
+      default: return 'gpt-4o-mini';
+    }
+  };
+
   // Generate AI response
   const generateResponse = useCallback(async (request: AIRequest): Promise<AIResponse | null> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
