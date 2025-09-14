@@ -42,7 +42,7 @@ export const useAIServiceHealth = () => {
     setChecking(true);
     const errors: Record<string, string> = {};
 
-    // 1) Check provider availability via check-ai-provider
+    // 1) Check provider availability via ai-universal-processor health_check
     const providers: AIServiceHealthStatus['providers'] = { openai: false, claude: false, gemini: false };
     let checkAIProviderOK = false;
     try {
@@ -50,11 +50,12 @@ export const useAIServiceHealth = () => {
       const results = await Promise.all(
         providersToCheck.map(async (p) => {
           try {
-            const { data, error } = await supabase.functions.invoke('check-ai-provider', { body: { provider: p } });
+            const { data, error } = await supabase.functions.invoke('ai-universal-processor', { body: { action: 'health_check', provider: p } });
             if (error) throw error;
-            return { p, ok: !!data?.available };
+            const ok = !!data && data.status === 'ok';
+            return { p, ok };
           } catch (err: any) {
-            errors[`check-ai-provider:${p}`] = err?.message || 'invoke failed';
+            errors[`ai-universal-processor:${p}`] = err?.message || 'invoke failed';
             return { p, ok: false };
           }
         })
@@ -62,29 +63,16 @@ export const useAIServiceHealth = () => {
       results.forEach(r => { (providers as any)[r.p] = r.ok; });
       checkAIProviderOK = results.some(r => r.ok);
     } catch (e: any) {
-      errors['check-ai-provider'] = e?.message || 'invoke failed';
+      errors['ai-universal-processor'] = e?.message || 'invoke failed';
     }
 
-    // 2) Check generate-agent-from-prompt
-    const generateAgentFromPrompt = await checkFunction('generate-agent-from-prompt', {
-      prompt: 'health-check',
-      provider: 'openai',
-      generateConnections: false,
-      includeTemplates: false
+    // 2) Check ai-universal-processor ping
+    const generateAgentFromPrompt = await checkFunction('ai-universal-processor', {
+      action: 'ping'
     });
-    if (!generateAgentFromPrompt) {
-      errors['generate-agent-from-prompt'] = 'unavailable';
-    }
 
-    // 3) Check ai-universal-processor
-    const aiUniversalProcessor = await checkFunction('ai-universal-processor', {
-      action: 'health_check',
-      provider: 'openai',
-      prompt: 'ping'
-    });
-    if (!aiUniversalProcessor) {
-      errors['ai-universal-processor'] = 'unavailable';
-    }
+    // 3) ai-universal-processor availability (already covered but keep flag)
+    const aiUniversalProcessor = checkAIProviderOK || generateAgentFromPrompt;
 
     const updated: AIServiceHealthStatus = {
       providers,

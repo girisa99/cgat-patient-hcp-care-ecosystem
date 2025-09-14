@@ -104,8 +104,8 @@ export const GenieProviderStatusPanel: React.FC<ProviderStatusPanelProps> = ({
     );
   };
 
-  const overallHealth = providers.filter(p => p.available).length / providers.length;
   const healthyCount = providers.filter(p => p.available).length;
+  const overallHealth = providers.length ? healthyCount / providers.length : 0;
 
   if (compact) {
     return (
@@ -176,14 +176,14 @@ export const GenieProviderStatusPanel: React.FC<ProviderStatusPanelProps> = ({
             <div className="flex items-center justify-between">
               <span className="text-sm font-medium">Overall Health</span>
               <span className="text-lg font-bold">
-                {Math.round(overallHealth * 100)}%
+                {loading || providers.length === 0 ? '—' : `${Math.round(overallHealth * 100)}%`}
               </span>
             </div>
             
             <Progress value={overallHealth * 100} className="h-2" />
             
             <div className="flex items-center justify-between text-sm text-muted-foreground">
-              <span>{healthyCount} of {providers.length} providers online</span>
+              <span>{loading || providers.length === 0 ? 'Checking…' : `${healthyCount} of ${providers.length} providers online`}</span>
               <span>Last updated: {lastUpdate.toLocaleTimeString()}</span>
             </div>
             

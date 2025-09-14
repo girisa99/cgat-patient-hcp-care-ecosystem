@@ -40,7 +40,8 @@ export const PromptBasedModelSelector: React.FC<PromptBasedModelSelectorProps> =
       selectedModels={currentModels}
       mode={mode}
       enabledFeatures={enabledFeatures}
-      allowModeSwitch={true}
+      allowModeSwitch={mode !== 'single'}
+      defaultSelectionMode={mode === 'single' ? 'single' : 'cross-category'}
       maxSelections={mode === 'single' ? 1 : 6}
     />
   );

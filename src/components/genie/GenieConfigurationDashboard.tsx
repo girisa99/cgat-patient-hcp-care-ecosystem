@@ -104,15 +104,18 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
   }, []);
 
   const handleSaveConfiguration = useCallback(async () => {
-    if (!configName.trim()) {
-      showError('Configuration name is required');
-      return;
+    let name = configName.trim();
+    if (!name) {
+      // Auto-generate a sensible name to avoid disabled UX
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      name = `${selectedMode}-config-${ts}`;
+      setConfigName(name);
     }
 
     setSaving(true);
 
     const config: Omit<GenieConfiguration, 'id'> = {
-      configuration_name: configName,
+      configuration_name: name,
       selected_mode: selectedMode,
       selected_models: selectedModels.map(m => m.model),
       left_model: selectedModels.find(m => m.role === 'primary')?.model || '',
@@ -127,6 +130,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
 
     const saved = await saveConfiguration(config);
     if (saved) {
+      await loadConfigurations();
       showSuccess('Configuration saved successfully');
       resetForm();
       setActiveTab('overview');
@@ -230,9 +234,9 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
           </DialogTitle>
         </DialogHeader>
 
-        <div className="flex h-full">
+        <div className="relative flex h-full">
           {/* Sidebar Navigation */}
-          <div className="w-48 border-r bg-muted/30 p-4">
+          <div className="relative w-56 shrink-0 border-r bg-muted/30 p-4 z-0">
             <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="w-full">
               <TabsList className="grid w-full grid-rows-4 h-auto">
                 <TabsTrigger value="overview" className="justify-start">
@@ -256,7 +260,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 min-w-0">
+          <div className="relative z-10 flex-1 min-w-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               {/* Overview Tab */}
               <TabsContent value="overview" className="p-6 space-y-6">
@@ -342,7 +346,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
                     <Button variant="outline" onClick={resetForm}>
                       Reset
                     </Button>
-                    <Button onClick={handleSaveConfiguration} disabled={saving || !configName.trim()} aria-busy={saving}>
+                    <Button onClick={handleSaveConfiguration} disabled={saving || (selectedModels.length === 0 && !configName.trim())} aria-busy={saving}>
                       <Save className="h-4 w-4 mr-2" />
                       {saving ? 'Saving...' : 'Save Configuration'}
                     </Button>
@@ -422,7 +426,8 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
                         selectedModels={selectedModels}
                         mode={selectedMode}
                         enabledFeatures={enabledFeatures}
-                        allowModeSwitch={false}
+                        allowModeSwitch={selectedMode !== 'single'}
+                        defaultSelectionMode={selectedMode === 'multi' ? 'cross-category' : 'single'}
                         maxSelections={selectedMode === 'single' ? 1 : 6}
                       />
                     </CardContent>

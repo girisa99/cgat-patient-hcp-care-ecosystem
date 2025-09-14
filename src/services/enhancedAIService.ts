@@ -229,12 +229,12 @@ export class EnhancedAIService {
     const providers = ['openai', 'claude', 'gemini'];
     const healthPromises = providers.map(async (provider) => {
       try {
-        const { data, error } = await supabase.functions.invoke('check-ai-provider', {
-          body: { provider }
+        const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
+          body: { action: 'health_check', provider }
         });
-        
         if (error) throw error;
-        return { provider, healthy: data.available };
+        const healthy = !!data && data.status === 'ok';
+        return { provider, healthy };
       } catch (error) {
         console.warn(`Health check failed for ${provider}:`, error);
         return { provider, healthy: false };
