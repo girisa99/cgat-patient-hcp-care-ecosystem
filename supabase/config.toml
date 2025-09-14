@@ -58,13 +58,13 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.generate-agent-from-prompt]
-verify_jwt = false
+verify_jwt = true
 
 [functions.ai-universal-processor]
-verify_jwt = false
+verify_jwt = true
 
 [functions.check-ai-provider]
-verify_jwt = false
+verify_jwt = true
 
 [functions.arize-integration]
 verify_jwt = true

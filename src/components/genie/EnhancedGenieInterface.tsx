@@ -27,6 +27,7 @@ import { useEnhancedGenieConversation } from '@/hooks/useEnhancedGenieConversati
 import { GenieConfigurationDashboard } from './GenieConfigurationDashboard';
 import { GenieSessionManager } from './GenieSessionManager';
 import { GenieProviderStatusPanel } from './GenieProviderStatusPanel';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 interface EnhancedGenieInterfaceProps {
   isOpen: boolean;
@@ -58,6 +59,7 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
     testProvider,
     processingTime
   } = useEnhancedGenieConversation();
+  const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -81,6 +83,33 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
   const totalProviders = providerStatus.length;
 
   if (!isOpen) return null;
+
+  // Show auth prompt if not authenticated
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <motion.div
+        initial={{ opacity: 0, scale: 0.95 }}
+        animate={{ opacity: 1, scale: 1 }}
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50"
+      >
+        <div className="bg-background rounded-lg p-6 max-w-md shadow-xl">
+          <h3 className="text-lg font-semibold mb-4">Authentication Required</h3>
+          <p className="text-muted-foreground mb-6">
+            Please log in to access Genie AI features.
+          </p>
+          <div className="flex gap-3">
+            <Button onClick={() => window.location.href = '/login'} className="flex-1">
+              Go to Login
+            </Button>
+            <Button variant="outline" onClick={onClose} className="flex-1">
+              Cancel
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  }
 
   return (
     <>

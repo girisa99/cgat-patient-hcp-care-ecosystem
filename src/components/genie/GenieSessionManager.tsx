@@ -31,6 +31,7 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useGenieState, GenieConversationSession } from '@/hooks/useGenieState';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { format, isToday, isYesterday, formatDistanceToNow } from 'date-fns';
 
 interface GenieSessionManagerProps {
@@ -63,6 +64,7 @@ export const GenieSessionManager: React.FC<GenieSessionManagerProps> = ({
   } = useGenieState();
   
   const { showSuccess, showError } = useMasterToast();
+  const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
 
   // Load sessions on mount
   useEffect(() => {
@@ -222,6 +224,38 @@ export const GenieSessionManager: React.FC<GenieSessionManagerProps> = ({
   }, [sessions, showSuccess]);
 
   if (!isOpen) return null;
+
+  // Show auth prompt if not authenticated
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Archive className="h-5 w-5 text-primary" />
+              Authentication Required
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 p-6">
+            <p className="text-muted-foreground">
+              Please log in to access session management features.
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => window.location.href = '/login'} 
+                className="flex-1"
+              >
+                Go to Login
+              </Button>
+              <Button variant="outline" onClick={onClose} className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

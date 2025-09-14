@@ -40,6 +40,7 @@ import { SelectedModelConfig } from '@/components/ai';
 import { useGenieState, GenieConfiguration } from '@/hooks/useGenieState';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { GenieProviderStatusPanel } from './GenieProviderStatusPanel';
 import { GenieModelDropdown } from './GenieModelDropdown';
 import { GenieFeatureDropdown } from './GenieFeatureDropdown';
@@ -77,6 +78,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
   
   const { status, checkHealth, healthyProviders } = useAIServiceHealth();
   const { showSuccess, showError } = useMasterToast();
+  const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
 
   // Load health status on mount
   useEffect(() => {
@@ -245,7 +247,40 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
     };
   }, [healthyProviders]);
 
+  // Authentication check
   if (!isOpen) return null;
+
+  // Show auth prompt if not authenticated
+  if (!authLoading && !isAuthenticated) {
+    return (
+      <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings2 className="h-5 w-5 text-primary" />
+              Authentication Required
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 p-6">
+            <p className="text-muted-foreground">
+              Please log in to access Genie AI configuration features.
+            </p>
+            <div className="flex gap-2">
+              <Button 
+                onClick={() => window.location.href = '/login'} 
+                className="flex-1"
+              >
+                Go to Login
+              </Button>
+              <Button variant="outline" onClick={onClose} className="flex-1">
+                Cancel
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>

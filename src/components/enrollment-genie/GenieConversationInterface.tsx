@@ -44,6 +44,7 @@ import { useLabelStudio } from '@/hooks/useLabelStudio';
 // Genie-specific hooks and services
 import { ragService } from '@/services/ragService';
 import { useGenieState } from '@/hooks/useGenieState';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 // UI Components
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
@@ -95,10 +96,22 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { listProjects } = useLabelStudio();
   const { currentConfig, saveConfiguration, currentSession, updateSession, createNewSession } = useGenieState();
   const { showError, showSuccess } = useMasterToast();
+  const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
+
+  // Authentication check - redirect to login if not authenticated
+  useEffect(() => {
+    if (isOpen && !authLoading && !isAuthenticated) {
+      showError('Authentication required', 'Please log in to use Genie AI features');
+      onClose();
+      // Redirect to login page
+      window.location.href = '/login';
+      return;
+    }
+  }, [isOpen, isAuthenticated, authLoading, showError, onClose]);
 
   // Sync selection from current configuration when opened
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen || !isAuthenticated) return;
     if (currentConfig) {
       setSelectedModels(
         (currentConfig.selected_models || []).map((model, idx) => ({
