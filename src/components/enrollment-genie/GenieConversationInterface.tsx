@@ -202,7 +202,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const handleModeChange = useCallback((newMode: 'system' | 'single' | 'multi' | 'publish') => {
     switchMode(newMode as any);
     onModeChange?.(newMode);
-  }, [switchMode, onModeChange]);
+    // If switching to multi without 2+ models selected, prompt model selection
+    if (newMode === 'multi' && selectedModels.length < 2) {
+      setShowModelSelector(true);
+    }
+  }, [switchMode, onModeChange, selectedModels]);
 
   const handleFeatureToggle = useCallback((feature: string) => {
     setEnabledFeatures(prev => 
@@ -400,6 +404,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <RotateCcw className="h-4 w-4 mr-1" />
                 New
               </Button>
+              <Button variant="outline" size="sm" onClick={() => setShowModelSelector(true)}>
+                <Brain className="h-4 w-4 mr-1" />
+                Models
+              </Button>
               <Button variant="outline" size="sm" onClick={() => setShowConfigDashboard(true)}>
                 <Settings className="h-4 w-4 mr-1" />
                 Config
@@ -529,9 +537,9 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               <div className="flex-1 flex flex-col">
                 <div className="p-2 border-b bg-muted/10">
                   <p className="text-xs text-muted-foreground">
-                    {mode === 'system' && 'System mode: Auto-configured capabilities'}
-                    {mode === 'single' && 'Single model conversation'}
-                    {mode === 'publish' && 'Publishing mode: Content creation optimized'}
+                    {currentMode === 'system' && 'System mode: Auto-configured capabilities'}
+                    {currentMode === 'single' && 'Single model conversation'}
+                    {currentMode === 'publish' && 'Publishing mode: Content creation optimized'}
                   </p>
                 </div>
                 
@@ -624,6 +632,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 enabledFeatures={enabledFeatures}
                 maxSelections={currentMode === 'multi' ? 6 : 1}
                 defaultSelectionMode={currentMode === 'multi' ? 'cross-category' : 'single'}
+                allowModeSwitch={true}
               />
             </TabsContent>
             
