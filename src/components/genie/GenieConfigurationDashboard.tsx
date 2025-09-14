@@ -122,7 +122,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
       selected_models: selectedModels.map(m => m.model),
       left_model: selectedModels.find(m => m.role === 'primary')?.model || '',
       right_model: selectedModels.find(m => m.role === 'secondary')?.model || '',
-      selected_model_type: selectedModels[0]?.category as 'llm' | 'slm' | 'vlm' || 'llm',
+      selected_model_type: (selectedModels[0]?.category === 'small' ? 'slm' : selectedModels[0]?.category === 'vision' ? 'vlm' : 'llm'),
       enabled_features: enabledFeatures,
       selected_mcp_tools: selectedMCPTools,
       knowledge_base: knowledgeBase,
@@ -130,18 +130,30 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
       is_default: isDefault
     };
 
-    const saved = await saveConfiguration(config);
-    if (saved) {
-      await loadConfigurations();
-      showSuccess('Configuration saved successfully');
-      resetForm();
-      setActiveTab('overview');
+    try {
+      // Safety timeout to prevent infinite "Saving..." when network fails
+      const saved = await Promise.race([
+        saveConfiguration(config),
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000))
+      ]);
+
+      if (!saved) {
+        showError('Save timed out. Please check your connection and try again.');
+      } else {
+        await loadConfigurations();
+        showSuccess('Configuration saved successfully');
+        resetForm();
+        setActiveTab('overview');
+      }
+    } catch (e: any) {
+      showError(e?.message || 'Failed to save configuration');
+    } finally {
+      setSaving(false);
     }
-    setSaving(false);
   }, [
-    configName, selectedMode, selectedModels, enabledFeatures, 
+    configName, selectedMode, selectedModels, enabledFeatures,
     selectedMCPTools, knowledgeBase, medicalContext, isDefault,
-    saveConfiguration, showSuccess, showError
+    saveConfiguration, showSuccess, showError, loadConfigurations, resetForm
   ]);
 
   const resetForm = useCallback(() => {
@@ -228,7 +240,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl h-[85vh] overflow-y-auto p-0">
+      <DialogContent className="max-w-6xl h-[85vh] p-0 overflow-hidden">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="h-5 w-5 text-primary" />
@@ -238,7 +250,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
 
         <div className="relative flex h-full">
           {/* Sidebar Navigation */}
-          <div className="relative w-56 shrink-0 border-r bg-muted/30 p-4 z-0">
+          <div className="relative w-56 shrink-0 border-r bg-background p-4 z-10 overflow-y-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab} orientation="vertical" className="w-full">
               <TabsList className="grid w-full grid-rows-4 h-auto">
                 <TabsTrigger value="overview" className="justify-start">
@@ -262,7 +274,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
           </div>
 
           {/* Main Content */}
-          <div className="relative z-10 flex-1 min-w-0">
+          <div className="relative z-10 flex-1 min-w-0 overflow-y-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               {/* Overview Tab */}
               <TabsContent value="overview" className="p-6 space-y-6">
