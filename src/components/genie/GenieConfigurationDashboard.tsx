@@ -134,7 +134,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
       // Safety timeout to prevent infinite "Saving..." when network fails
       const saved = await Promise.race([
         saveConfiguration(config),
-        new Promise<null>((resolve) => setTimeout(() => resolve(null), 15000))
+        new Promise<null>((resolve) => setTimeout(() => resolve(null), 30000))
       ]);
 
       if (!saved) {
@@ -249,7 +249,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl h-[85vh] p-0 overflow-hidden">
+      <DialogContent className="max-w-6xl h-[85vh] p-0 overflow-y-auto">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="h-5 w-5 text-primary" />
@@ -283,7 +283,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
           </div>
 
           {/* Main Content */}
-          <div className="relative z-10 flex-1 min-w-0 overflow-y-auto">
+          <div className="relative z-10 flex-1 min-w-0 min-h-0 overflow-y-auto">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               {/* Overview Tab */}
               <TabsContent value="overview" className="p-6 space-y-6">

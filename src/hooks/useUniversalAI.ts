@@ -110,7 +110,7 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
       const { data, error } = await supabase.functions.invoke('ai-universal-processor', {
         body: {
           provider: request.provider,
-          model: request.model,
+          model: request.model || getDefaultModel(request.provider),
           prompt: request.prompt,
           systemPrompt: request.systemPrompt,
           // Note: Let the Edge Function map parameters per-model to avoid API param mismatches

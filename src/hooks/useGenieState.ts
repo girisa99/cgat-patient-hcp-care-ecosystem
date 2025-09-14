@@ -122,8 +122,12 @@ export const useGenieState = () => {
     try {
       setLoading(true);
       
-      // Get current user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      // Get current user with fallback to session
+      let { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (!user) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        user = (sessionData as any)?.session?.user ?? null;
+      }
       if (authError || !user) {
         throw new Error('Authentication required to save configuration');
       }
