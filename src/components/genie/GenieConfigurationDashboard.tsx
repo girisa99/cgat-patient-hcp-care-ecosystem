@@ -222,7 +222,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-6xl h-[85vh] overflow-hidden p-0">
+      <DialogContent className="max-w-6xl h-[85vh] overflow-y-auto p-0">
         <DialogHeader className="px-6 py-4 border-b">
           <DialogTitle className="flex items-center gap-2">
             <Settings2 className="h-5 w-5 text-primary" />
@@ -256,7 +256,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 min-w-0 overflow-y-auto">
+          <div className="flex-1 min-w-0">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               {/* Overview Tab */}
               <TabsContent value="overview" className="p-6 space-y-6">

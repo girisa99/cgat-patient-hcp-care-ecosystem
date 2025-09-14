@@ -96,17 +96,28 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { currentConfig, saveConfiguration, currentSession, updateSession, createNewSession } = useGenieState();
   const { showError, showSuccess } = useMasterToast();
 
-  // Load any locally saved model selection
+  // Sync selection from current configuration when opened
   useEffect(() => {
-    try {
-      const saved = localStorage.getItem('genie_selected_models');
-      if (saved) {
-        const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed)) setSelectedModels(parsed);
-      }
-    } catch {}
-  }, []);
-
+    if (!isOpen) return;
+    if (currentConfig) {
+      setSelectedModels(
+        (currentConfig.selected_models || []).map((model, idx) => ({
+          model,
+          provider: model.includes('claude') ? 'claude' : model.includes('gemini') ? 'gemini' : 'openai',
+          name: model,
+          category: currentConfig.selected_model_type === 'slm' ? 'small' : currentConfig.selected_model_type === 'vlm' ? 'vision' : 'llm',
+          role: idx === 0 ? 'primary' : 'secondary',
+          weight: 1,
+        }))
+      );
+      setEnabledFeatures(currentConfig.enabled_features || []);
+      setSelectedMCPTools(currentConfig.selected_mcp_tools || []);
+      setMedicalContext(!!currentConfig.medical_context);
+      setKnowledgeBase(currentConfig.knowledge_base || '');
+    } else {
+      setSelectedModels([]);
+    }
+  }, [currentConfig, isOpen]);
   // Auto-detect medical context
   useEffect(() => {
     if (context && (context.includes('medical') || context.includes('patient') || context.includes('health'))) {
@@ -369,6 +380,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             <div className="flex items-center gap-2">
               <Button variant="outline" size="sm" onClick={() => {
                 resetConversation();
+                setSelectedModels([]);
                 createNewSession();
               }}>
                 <RotateCcw className="h-4 w-4 mr-1" />
