@@ -97,6 +97,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { currentConfig, saveConfiguration, currentSession, updateSession, createNewSession } = useGenieState();
   const { showError, showSuccess } = useMasterToast();
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
+  const currentMode = (state?.selectedMode as any) || mode;
 
   // Authentication check - redirect to login if not authenticated
   useEffect(() => {
@@ -276,7 +277,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
       let responses: any[] = [];
 
-      if (mode === 'multi' && selectedModels.length > 1) {
+      if (currentMode === 'multi' && selectedModels.length > 1) {
         // Multi-model mode - get responses from multiple models using universalAI
         responses = await Promise.all(
           selectedModels.map(async model => {
@@ -382,7 +383,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 </h3>
                 <p className="text-xs text-muted-foreground font-medium">I am your technology navigator</p>
                 <p className="text-xs text-muted-foreground">
-                  {mode === 'multi' ? 'Multi-Model Chat' : medicalContext ? 'Medical AI' : 'AI Assistant'}
+                  {currentMode === 'multi' ? 'Multi-Model Chat' : medicalContext ? 'Medical AI' : 'AI Assistant'}
                 </p>
                 <p className="text-[11px] text-muted-foreground mt-1">
                   Selected: {selectedModels.length > 0 ? selectedModels.map(m => `${m.provider}:${m.model}`).join(', ') : 'None'}
@@ -420,7 +421,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           {/* Mode Selector & Quick Actions */}
           <div className="p-3 border-b bg-muted/20">
             <div className="flex items-center justify-between mb-2">
-              <Select value={mode} onValueChange={handleModeChange}>
+              <Select value={currentMode} onValueChange={handleModeChange}>
                 <SelectTrigger className="w-32 h-8">
                   <SelectValue />
                 </SelectTrigger>
@@ -486,7 +487,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
           {/* Main Chat Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
-            {mode === 'multi' && selectedModels.length > 1 ? (
+            {currentMode === 'multi' && selectedModels.length > 1 ? (
               /* Split Screen for Multi-Model */
               <div className="flex-1 flex flex-col">
                 <div className="p-2 border-b bg-muted/10">
@@ -619,10 +620,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   showSuccess('Models updated', `Selected ${models.length} models`);
                 }}
                 selectedModels={selectedModels}
-                mode={mode === 'general' ? 'single' : (mode as any)}
+                mode={currentMode === 'general' ? 'single' : (currentMode as any)}
                 enabledFeatures={enabledFeatures}
-                maxSelections={mode === 'multi' ? 6 : 1}
-                defaultSelectionMode={mode === 'multi' ? 'cross-category' : 'single'}
+                maxSelections={currentMode === 'multi' ? 6 : 1}
+                defaultSelectionMode={currentMode === 'multi' ? 'cross-category' : 'single'}
               />
             </TabsContent>
             
@@ -749,7 +750,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               onClick={async () => {
                 const configToSave = {
                   configuration_name: 'genie_user_config',
-                  selected_mode: mode as 'system' | 'single' | 'multi',
+                  selected_mode: currentMode as 'system' | 'single' | 'multi',
                   selected_models: selectedModels.map(m => m.model),
                   left_model: selectedModels.find(m => m.role === 'primary')?.model || selectedModels[0]?.model || '',
                   right_model: selectedModels.find(m => m.role === 'secondary')?.model || '',
