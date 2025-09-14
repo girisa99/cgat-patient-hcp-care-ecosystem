@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { CrossCategoryModelSelector, SelectedModelConfig } from '@/components/ai/CrossCategoryModelSelector';
+import { SimplifiedModelSelector } from '@/components/ai/SimplifiedModelSelector';
 import { EnhancedModelSelector } from '@/components/ai/EnhancedModelSelector';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Settings, Sparkles, Brain } from 'lucide-react';
@@ -155,7 +156,7 @@ export const UniversalModelSelector: React.FC<UniversalModelSelectorProps> = ({
             selectedModel={singleModel}
           />
         ) : (
-          <CrossCategoryModelSelector
+          <SimplifiedModelSelector
             onModelsSelect={onModelsSelect}
             selectedModels={selectedModels}
             mode={mode}
