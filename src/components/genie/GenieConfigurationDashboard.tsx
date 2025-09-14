@@ -40,6 +40,7 @@ import { UniversalModelSelector, SelectedModelConfig } from '@/components/ai';
 import { useGenieState, GenieConfiguration } from '@/hooks/useGenieState';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { GenieProviderStatusPanel } from './GenieProviderStatusPanel';
 
 interface GenieConfigurationDashboardProps {
   isOpen: boolean;
@@ -486,74 +487,7 @@ export const GenieConfigurationDashboard: React.FC<GenieConfigurationDashboardPr
 
               {/* Health Status Tab */}
               <TabsContent value="health" className="p-6 space-y-6">
-                <div className="flex items-center justify-between">
-                  <h3 className="text-lg font-semibold">Provider Health Status</h3>
-                  <Button variant="outline" onClick={checkHealth}>
-                    <Activity className="h-4 w-4 mr-2" />
-                    Refresh Status
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {['openai', 'claude', 'gemini'].map((provider) => {
-                    const providerStatus = getProviderStatus(provider);
-                    return (
-                      <Card key={provider}>
-                        <CardHeader className="pb-2">
-                          <CardTitle className="flex items-center justify-between">
-                            <span className="capitalize">{provider}</span>
-                            <Badge 
-                              variant={providerStatus.status === 'healthy' ? 'default' : 'destructive'}
-                            >
-                              {providerStatus.status}
-                            </Badge>
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="flex items-center gap-2">
-                            {providerStatus.status === 'healthy' ? (
-                              <Check className="h-4 w-4 text-green-600" />
-                            ) : (
-                              <X className="h-4 w-4 text-red-600" />
-                            )}
-                            <span className="text-sm">
-                              {providerStatus.status === 'healthy' ? 'Online' : 'Offline'}
-                            </span>
-                          </div>
-                          <p className="text-xs text-muted-foreground mt-2">
-                            Last checked: {new Date(status.lastChecked).toLocaleTimeString()}
-                          </p>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-
-                {/* Overall Health */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Overall System Health</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center gap-4">
-                    <div className={`p-2 rounded-full ${status.overallHealthy ? 'bg-green-100' : 'bg-red-100'}`}>
-                      {status.overallHealthy ? (
-                        <Check className="h-6 w-6 text-green-600" />
-                      ) : (
-                        <AlertCircle className="h-6 w-6 text-red-600" />
-                      )}
-                    </div>
-                    <div>
-                      <p className="font-medium">
-                        {status.overallHealthy ? 'All Systems Operational' : 'System Issues Detected'}
-                      </p>
-                        <p className="text-sm text-muted-foreground">
-                          {healthyProviders.length} of 3 providers available
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+                <GenieProviderStatusPanel />
               </TabsContent>
 
               {/* Management Tab */}
