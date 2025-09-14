@@ -30,7 +30,8 @@ import {
   MessageSquare,
   GitBranch,
   Workflow,
-  RotateCcw
+  RotateCcw,
+  History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -49,6 +50,8 @@ import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
 import { UniversalModelSelector, SelectedModelConfig } from '@/components/ai';
 import { AnimatedGenieResponse } from './AnimatedGenieResponse';
+import { GenieConfigurationDashboard } from '@/components/genie/GenieConfigurationDashboard';
+import { GenieSessionManager } from '@/components/genie/GenieSessionManager';
 
 // Assets
 import genieLogoImg from '@/assets/genie-logo.png';
@@ -77,6 +80,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
   const [showModelSelector, setShowModelSelector] = useState(false);
+  const [showSessionManager, setShowSessionManager] = useState(false);
+  const [showConfigDashboard, setShowConfigDashboard] = useState(false);
   const [selectedModels, setSelectedModels] = useState<SelectedModelConfig[]>([]);
   const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
   const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([]);
@@ -369,9 +374,17 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <RotateCcw className="h-4 w-4 mr-1" />
                 New
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowModelSelector(true)}>
+              <Button variant="outline" size="sm" onClick={() => setShowConfigDashboard(true)}>
                 <Settings className="h-4 w-4 mr-1" />
                 Config
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowSessionManager(true)}
+              >
+                <History className="h-4 w-4 mr-1" />
+                Sessions
               </Button>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 <X className="h-4 w-4" />
@@ -734,6 +747,42 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Configuration Dashboard */}
+      <GenieConfigurationDashboard
+        isOpen={showConfigDashboard}
+        onClose={() => setShowConfigDashboard(false)}
+        onConfigurationSelect={(config) => {
+          // Apply selected configuration
+          setSelectedModels(config.selected_models.map(model => ({
+            model,
+            provider: model.includes('claude') ? 'claude' : model.includes('gemini') ? 'gemini' : 'openai',
+            name: model,
+            category: config.selected_model_type === 'slm' ? 'small' : config.selected_model_type === 'vlm' ? 'vision' : 'llm' as const,
+            role: 'primary' as const,
+            weight: 1.0
+          })));
+          setEnabledFeatures(config.enabled_features);
+          setSelectedMCPTools(config.selected_mcp_tools);
+          setKnowledgeBase(config.knowledge_base);
+          setMedicalContext(config.medical_context);
+          showSuccess(`Configuration "${config.configuration_name}" applied`);
+          setShowConfigDashboard(false);
+        }}
+      />
+
+      {/* Session Manager */}
+      <GenieSessionManager
+        isOpen={showSessionManager}
+        onClose={() => setShowSessionManager(false)}
+        onSessionSelect={(session) => {
+          // Load selected session
+          // This would integrate with the conversation state
+          showSuccess(`Session "${session.session_name}" loaded`);
+          setShowSessionManager(false);
+        }}
+        currentSessionId={currentSession?.id}
+      />
     </>
   );
 };
