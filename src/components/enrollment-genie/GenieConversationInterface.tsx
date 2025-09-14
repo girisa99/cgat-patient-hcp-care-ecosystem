@@ -82,7 +82,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [isExpanded, setIsExpanded] = useState(false);
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showSessionManager, setShowSessionManager] = useState(false);
-  const [showConfigDashboard, setShowConfigDashboard] = useState(false);
+  const [isMaximized, setIsMaximized] = useState(false);
+  const [isMinimized, setIsMinimized] = useState(false);
   const [selectedModels, setSelectedModels] = useState<SelectedModelConfig[]>([]);
   const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
   const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([]);
@@ -363,7 +364,13 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         initial={{ opacity: 0, x: 400 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 400 }}
-        className="fixed top-0 right-0 h-full w-[450px] z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border-l rounded-l-lg shadow-xl flex flex-col"
+        className={`fixed z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg shadow-xl flex flex-col transition-all duration-300 ${
+          isMaximized 
+            ? 'top-0 right-0 left-0 bottom-0 w-full h-full' 
+            : isMinimized 
+              ? 'top-4 right-4 w-80 h-16' 
+              : 'top-0 right-0 h-full w-[450px] border-l rounded-l-lg'
+        }`}
       >
         <div className="flex flex-col h-full">
           {/* Header */}
@@ -395,30 +402,32 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1">
               <Button variant="outline" size="sm" onClick={() => {
                 resetConversation();
                 setSelectedModels([]);
                 createNewSession();
               }}>
-                <RotateCcw className="h-4 w-4 mr-1" />
-                New
+                <RotateCcw className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => {
+                // Refresh current session
+                resetConversation();
+                showSuccess('Session refreshed');
+              }}>
+                <History className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="sm" onClick={() => setShowModelSelector(true)}>
-                <Brain className="h-4 w-4 mr-1" />
-                Models
+                <Settings className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowConfigDashboard(true)}>
-                <Settings className="h-4 w-4 mr-1" />
-                Config
+              <Button variant="outline" size="sm" onClick={() => setShowSessionManager(true)}>
+                <Database className="h-4 w-4" />
               </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setShowSessionManager(true)}
-              >
-                <History className="h-4 w-4 mr-1" />
-                Sessions
+              <Button variant="outline" size="sm" onClick={() => setIsMinimized(!isMinimized)}>
+                {isMinimized ? '□' : '_'}
+              </Button>
+              <Button variant="outline" size="sm" onClick={() => setIsMaximized(!isMaximized)}>
+                {isMaximized ? '⧉' : '□'}
               </Button>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 <X className="h-4 w-4" />
@@ -602,158 +611,130 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         </div>
       </motion.div>
 
-      {/* Configuration Dialog */}
+      {/* Unified Configuration Dialog */}
       <Dialog open={showModelSelector} onOpenChange={setShowModelSelector}>
-        <DialogContent className="max-w-5xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
-              Genie Configuration
+              AI Configuration & Model Selection
             </DialogTitle>
           </DialogHeader>
           
-          <Tabs defaultValue="models" className="w-full">
-            <TabsList className="grid w-full grid-cols-4">
-              <TabsTrigger value="models">Models</TabsTrigger>
-              <TabsTrigger value="context">Context</TabsTrigger>
-              <TabsTrigger value="rag">RAG/KB</TabsTrigger>
-              <TabsTrigger value="tools">Tools</TabsTrigger>
-            </TabsList>
-            
-            <TabsContent value="models" className="mt-4">
-              <UniversalModelSelector
-                onModelsSelect={(models) => {
-                  setSelectedModels(models);
-                  try { localStorage.setItem('genie_selected_models', JSON.stringify(models)); } catch {}
-                  showSuccess('Models updated', `Selected ${models.length} models`);
-                }}
-                selectedModels={selectedModels}
-                mode={currentMode === 'general' ? 'single' : (currentMode as any)}
-                enabledFeatures={enabledFeatures}
-                maxSelections={currentMode === 'multi' ? 6 : 1}
-                defaultSelectionMode={currentMode === 'multi' ? 'cross-category' : 'single'}
-                allowModeSwitch={true}
-              />
-            </TabsContent>
-            
-            <TabsContent value="context" className="mt-4 space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Medical Context</label>
-                  <Switch checked={medicalContext} onCheckedChange={setMedicalContext} />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Enabled Features</label>
-                  <div className="grid grid-cols-3 gap-2">
-                    {['medical', 'publication', 'research', 'analysis', 'coding', 'creative'].map(feature => (
-                      <div key={feature} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={enabledFeatures.includes(feature)}
-                          onChange={() => handleFeatureToggle(feature)}
-                          className="rounded"
-                        />
-                        <label className="text-sm capitalize">{feature}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Current Context: {context}</label>
-                  <p className="text-xs text-muted-foreground">
-                    Context is auto-detected based on the current page and influences AI responses
-                  </p>
-                </div>
+          <div className="space-y-6">
+            {/* Quick Settings */}
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/20 rounded-lg">
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Medical Context</label>
+                <Switch checked={medicalContext} onCheckedChange={setMedicalContext} />
               </div>
-            </TabsContent>
-            
-            <TabsContent value="rag" className="mt-4 space-y-4">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">RAG System</label>
-                  <Switch checked={ragEnabled} onCheckedChange={setRAGEnabled} />
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Knowledge Base</label>
-                  <Select value={knowledgeBase} onValueChange={setKnowledgeBase}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select knowledge base" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="medical">Medical Knowledge Base</SelectItem>
-                      <SelectItem value="general">General Knowledge Base</SelectItem>
-                      <SelectItem value="research">Research Papers</SelectItem>
-                      <SelectItem value="custom">Custom Documents</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">Label Studio Integration</label>
-                  <Switch checked={labelStudioEnabled} onCheckedChange={setLabelStudioEnabled} />
-                </div>
-                
-                <Button 
-                  variant="outline" 
-                  className="w-full"
-                  onClick={() => window.location.href = '/label-studio'}
-                >
-                  <FileText className="h-4 w-4 mr-2" />
-                  Open Label Studio
-                </Button>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">RAG System</label>
+                <Switch checked={ragEnabled} onCheckedChange={setRAGEnabled} />
               </div>
-            </TabsContent>
-            
-            <TabsContent value="tools" className="mt-4 space-y-4">
-              <div className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">MCP Tools</label>
-                  <p className="text-xs text-muted-foreground mb-2">
-                    Model Context Protocol tools for external integrations
-                  </p>
-                  <div className="grid grid-cols-3 gap-2">
-                    {availableMCPTools.map(tool => (
-                      <div key={tool} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          checked={selectedMCPTools.includes(tool)}
-                          onChange={() => handleMCPToolToggle(tool)}
-                          className="rounded"
-                        />
-                        <label className="text-sm capitalize">{tool.replace('-', ' ')}</label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-                
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Selected Models Summary</label>
-                  {selectedModels.length === 0 ? (
-                    <p className="text-xs text-muted-foreground">No models selected</p>
-                  ) : (
-                    <div className="space-y-1">
-                      {selectedModels.map((model, index) => (
-                        <div key={index} className="flex items-center gap-2 text-xs p-2 border rounded">
-                          {model.category === 'llm' && <Brain className="h-3 w-3" />}
-                          {model.category === 'small' && <Zap className="h-3 w-3" />}
-                          {model.category === 'vision' && <Eye className="h-3 w-3" />}
-                          {model.category === 'mcp' && <Wrench className="h-3 w-3" />}
-                          <span>{model.name}</span>
-                          <Badge variant="outline" className="text-xs">{model.role}</Badge>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Label Studio</label>
+                <Switch checked={labelStudioEnabled} onCheckedChange={setLabelStudioEnabled} />
               </div>
-            </TabsContent>
-          </Tabs>
+              <div className="flex items-center justify-between">
+                <label className="text-sm font-medium">Tools</label>
+                <Badge variant="secondary">{selectedMCPTools.length}</Badge>
+              </div>
+            </div>
 
-          {/* Actions */}
-          <div className="mt-4 flex justify-end gap-2">
+            {/* Enhanced Model Selector with integrated features */}
+            <UniversalModelSelector
+              onModelsSelect={(models) => {
+                setSelectedModels(models);
+                try { localStorage.setItem('genie_selected_models', JSON.stringify(models)); } catch {}
+                
+                // Auto-enable features based on selected models
+                const newFeatures = [...enabledFeatures];
+                models.forEach(model => {
+                  if (model.category === 'vision' && !newFeatures.includes('vision')) {
+                    newFeatures.push('vision');
+                  }
+                  if (model.category === 'mcp' && !newFeatures.includes('tools')) {
+                    newFeatures.push('tools');
+                  }
+                });
+                if (medicalContext && !newFeatures.includes('medical')) {
+                  newFeatures.push('medical');
+                }
+                setEnabledFeatures(newFeatures);
+                
+                showSuccess('Configuration updated', `Selected ${models.length} models with ${newFeatures.length} features`);
+              }}
+              selectedModels={selectedModels}
+              mode={currentMode === 'general' ? 'single' : (currentMode as any)}
+              enabledFeatures={[...enabledFeatures, ...(medicalContext ? ['medical'] : []), ...(selectedMCPTools.length > 0 ? ['tools'] : [])]}
+              maxSelections={8}
+              defaultSelectionMode="cross-category"
+              allowModeSwitch={true}
+            />
+
+            {/* Advanced Settings */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-4 p-4 border rounded-lg">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Zap className="h-4 w-4" />
+                  Features & Context
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {['medical', 'publication', 'research', 'analysis', 'coding', 'creative'].map(feature => (
+                    <div key={feature} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={enabledFeatures.includes(feature)}
+                        onChange={() => handleFeatureToggle(feature)}
+                        className="rounded"
+                      />
+                      <label className="text-sm capitalize">{feature}</label>
+                    </div>
+                  ))}
+                </div>
+                
+                {ragEnabled && (
+                  <div className="mt-4">
+                    <label className="text-sm font-medium">Knowledge Base</label>
+                    <Select value={knowledgeBase} onValueChange={setKnowledgeBase}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select knowledge base" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="medical">Medical Knowledge Base</SelectItem>
+                        <SelectItem value="general">General Knowledge Base</SelectItem>
+                        <SelectItem value="research">Research Papers</SelectItem>
+                        <SelectItem value="custom">Custom Documents</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4 p-4 border rounded-lg">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Wrench className="h-4 w-4" />
+                  MCP Tools
+                </h4>
+                <div className="grid grid-cols-2 gap-2">
+                  {availableMCPTools.map(tool => (
+                    <div key={tool} className="flex items-center space-x-2">
+                      <input
+                        type="checkbox"
+                        checked={selectedMCPTools.includes(tool)}
+                        onChange={() => handleMCPToolToggle(tool)}
+                        className="rounded"
+                      />
+                      <label className="text-sm capitalize">{tool.replace('-', ' ')}</label>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex justify-end gap-2 pt-4 border-t">
             <Button variant="outline" onClick={() => setShowModelSelector(false)}>Close</Button>
             <Button
               onClick={async () => {
@@ -783,34 +764,6 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         </DialogContent>
       </Dialog>
 
-      {/* Configuration Dashboard */}
-      <GenieConfigurationDashboard
-        isOpen={showConfigDashboard}
-        onClose={() => setShowConfigDashboard(false)}
-        onConfigurationSelect={(config) => {
-          // Apply selected configuration and enable multi-model mode if needed
-          const modelConfigs: SelectedModelConfig[] = config.selected_models.map((model, index) => ({
-            model,
-            provider: (model.includes('claude') ? 'claude' : model.includes('gemini') ? 'gemini' : 'openai') as 'openai' | 'claude' | 'gemini',
-            name: model,
-            category: (config.selected_model_type === 'slm' ? 'small' : config.selected_model_type === 'vlm' ? 'vision' : 'llm') as 'llm' | 'small' | 'vision' | 'mcp',
-            role: (index === 0 ? 'primary' : 'secondary') as 'primary' | 'secondary',
-            weight: index === 0 ? 0.6 : 0.4
-          }));
-          
-          setSelectedModels(modelConfigs);
-          setEnabledFeatures(config.enabled_features);
-          setSelectedMCPTools(config.selected_mcp_tools);
-          setKnowledgeBase(config.knowledge_base);
-          setMedicalContext(config.medical_context);
-          
-          // Switch to the configuration's mode to trigger split screen if multi
-          handleModeChange(config.selected_mode);
-          
-          showSuccess(`Configuration "${config.configuration_name}" applied`);
-          setShowConfigDashboard(false);
-        }}
-      />
 
       {/* Session Manager */}
       <GenieSessionManager
