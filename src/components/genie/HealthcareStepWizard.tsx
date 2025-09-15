@@ -17,7 +17,7 @@ import {
   Info,
   AlertCircle
 } from 'lucide-react';
-import { HealthcareContextualGenie } from './HealthcareContextualGenie';
+import { GuidedHealthcareGenie } from './GuidedHealthcareGenie';
 
 interface HealthcareStepWizardProps {
   isOpen: boolean;
@@ -159,10 +159,15 @@ export const HealthcareStepWizard: React.FC<HealthcareStepWizardProps> = ({
                 </div>
               </>
             ) : (
-              <HealthcareContextualGenie
+              <GuidedHealthcareGenie
                 prompt={initialPrompt}
-                onResponse={handleResponse}
+                roleType="patientOnboarding"
                 onStepComplete={handleStepComplete}
+                onWorkflowComplete={(results) => {
+                  if (results.code_implementation?.generatedCode) {
+                    handleResponse(results.code_implementation.generatedCode);
+                  }
+                }}
               />
             )}
           </CardContent>

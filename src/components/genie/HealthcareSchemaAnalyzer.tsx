@@ -18,6 +18,7 @@ interface HealthcareSchemaAnalyzerProps {
 
 // Pre-configured healthcare tables based on your existing schema
 const HEALTHCARE_TABLES: HealthcareTable[] = [
+  // PATIENT ONBOARDING TABLES (11 tables)
   {
     table_name: 'enrollment_patient_info',
     category: 'patient',
@@ -29,7 +30,7 @@ const HEALTHCARE_TABLES: HealthcareTable[] = [
     table_name: 'enrollment_clinical_info',
     category: 'clinical',
     relevance_score: 1.0,
-    description: 'Clinical data including medical history and current medications',
+    description: 'Clinical data including medical history and medications',
     key_fields: ['medical_history', 'current_medications', 'allergies', 'vital_signs']
   },
   {
@@ -40,6 +41,71 @@ const HEALTHCARE_TABLES: HealthcareTable[] = [
     key_fields: ['primary_insurance_name', 'policy_number', 'group_number', 'subscriber_name']
   },
   {
+    table_name: 'enrollment_consent',
+    category: 'compliance',
+    relevance_score: 1.0,
+    description: 'Patient consent forms and HIPAA authorizations',
+    key_fields: ['consent_type', 'signed_date', 'consent_status', 'digital_signature']
+  },
+  {
+    table_name: 'enrollment_documents',
+    category: 'compliance',
+    relevance_score: 1.0,
+    description: 'Document management for enrollment process',
+    key_fields: ['document_type', 'file_path', 'upload_date', 'verification_status']
+  },
+  {
+    table_name: 'patient_enrollments',
+    category: 'patient',
+    relevance_score: 1.0,
+    description: 'Patient enrollment tracking and status management',
+    key_fields: ['patient_id', 'enrollment_date', 'status', 'program_type']
+  },
+  {
+    table_name: 'enrollment_treatment_plan',
+    category: 'treatment',
+    relevance_score: 1.0,
+    description: 'Treatment plans and care coordination',
+    key_fields: ['treatment_type', 'start_date', 'duration', 'care_team']
+  },
+  {
+    table_name: 'enrollment_collaborations',
+    category: 'treatment',
+    relevance_score: 0.9,
+    description: 'Care team collaboration and communication',
+    key_fields: ['collaboration_type', 'participants', 'notes', 'created_date']
+  },
+  {
+    table_name: 'enrollment_instances',
+    category: 'patient',
+    relevance_score: 0.9,
+    description: 'Enrollment session instances and workflow tracking',
+    key_fields: ['instance_id', 'session_data', 'created_at', 'status']
+  },
+  {
+    table_name: 'treatment_assessments',
+    category: 'clinical',
+    relevance_score: 0.9,
+    description: 'Clinical assessments and treatment evaluations',
+    key_fields: ['assessment_type', 'assessment_date', 'results', 'provider_id']
+  },
+  {
+    table_name: 'insurance_coverages',
+    category: 'insurance',
+    relevance_score: 0.9,
+    description: 'Insurance coverage options and details',
+    key_fields: ['coverage_type', 'effective_date', 'expiration_date', 'coverage_details']
+  },
+
+  // TREATMENT CENTER ONBOARDING TABLES (7 tables)
+  {
+    table_name: 'treatment_center_onboarding',
+    category: 'onboarding',
+    relevance_score: 1.0,
+    description: 'Treatment center facility information and onboarding status',
+    key_fields: ['center_name', 'address', 'license_number', 'accreditation_status']
+  },
+  {
     table_name: 'provider_profiles',
     category: 'provider',
     relevance_score: 1.0,
@@ -47,26 +113,72 @@ const HEALTHCARE_TABLES: HealthcareTable[] = [
     key_fields: ['first_name', 'last_name', 'npi_number', 'specialty', 'organization_name']
   },
   {
+    table_name: 'npi_verification_results',
+    category: 'provider',
+    relevance_score: 1.0,
+    description: 'NPI number verification and validation results (NPPES)',
+    key_fields: ['npi_number', 'verification_status', 'provider_name', 'verification_date']
+  },
+  {
     table_name: 'clinical_trials',
     category: 'clinical',
-    relevance_score: 0.9,
+    relevance_score: 1.0,
     description: 'Clinical trial management and tracking',
     key_fields: ['nct_number', 'title', 'trial_status', 'enrollment_target', 'primary_indication']
   },
   {
-    table_name: 'patient_enrollments',
-    category: 'patient',
+    table_name: 'service_providers',
+    category: 'provider',
     relevance_score: 0.9,
-    description: 'Patient enrollment tracking and status management',
-    key_fields: ['patient_id', 'enrollment_date', 'status', 'program_type']
+    description: 'External service provider configurations',
+    key_fields: ['provider_name', 'service_type', 'api_endpoint', 'configuration']
   },
   {
-    table_name: 'npi_verification_results',
+    table_name: 'service_provider_capabilities',
+    category: 'provider',
+    relevance_score: 0.9,
+    description: 'Service provider capabilities and offerings',
+    key_fields: ['capability_name', 'description', 'supported_operations', 'version']
+  },
+  {
+    table_name: 'provider_test_configs',
     category: 'provider',
     relevance_score: 0.8,
-    description: 'NPI number verification and validation results',
-    key_fields: ['npi_number', 'verification_status', 'provider_name', 'verification_date']
+    description: 'Provider testing and configuration settings',
+    key_fields: ['config_name', 'test_parameters', 'validation_rules', 'environment']
   },
+
+  // CUSTOMER ONBOARDING ROLE ADDITIONAL TABLES
+  {
+    table_name: 'enrollment_templates',
+    category: 'onboarding',
+    relevance_score: 0.8,
+    description: 'Enrollment form templates and configurations',
+    key_fields: ['template_name', 'form_fields', 'validation_rules', 'version']
+  },
+  {
+    table_name: 'saml_providers',
+    category: 'onboarding',
+    relevance_score: 0.7,
+    description: 'SAML authentication provider configurations',
+    key_fields: ['provider_name', 'entity_id', 'sso_url', 'certificate']
+  },
+  {
+    table_name: 'sso_providers',
+    category: 'onboarding',
+    relevance_score: 0.7,
+    description: 'Single sign-on provider configurations',
+    key_fields: ['provider_name', 'provider_type', 'client_id', 'configuration']
+  },
+  {
+    table_name: 'voice_providers',
+    category: 'onboarding',
+    relevance_score: 0.6,
+    description: 'Voice communication provider settings',
+    key_fields: ['provider_name', 'api_key', 'voice_settings', 'phone_numbers']
+  },
+
+  // HEALTHCARE PROVIDER ROLE ADDITIONAL TABLES
   {
     table_name: 'enrollment_provider_info',
     category: 'provider',
@@ -74,33 +186,91 @@ const HEALTHCARE_TABLES: HealthcareTable[] = [
     description: 'Provider information within enrollment context',
     key_fields: ['provider_name', 'npi_number', 'specialty', 'referral_source']
   },
+
+  // SUPER ADMIN CORE SYSTEM TABLES
   {
-    table_name: 'enrollment_treatment_plan',
-    category: 'treatment',
+    table_name: 'profiles',
+    category: 'other',
+    relevance_score: 1.0,
+    description: 'User profiles and basic information',
+    key_fields: ['id', 'first_name', 'last_name', 'email', 'role']
+  },
+  {
+    table_name: 'roles',
+    category: 'other',
+    relevance_score: 1.0,
+    description: 'System roles and permissions',
+    key_fields: ['name', 'description', 'is_default', 'permissions']
+  },
+  {
+    table_name: 'user_roles',
+    category: 'other',
+    relevance_score: 1.0,
+    description: 'User role assignments',
+    key_fields: ['user_id', 'role_id', 'assigned_at', 'is_active']
+  },
+  {
+    table_name: 'user_permissions',
+    category: 'other',
+    relevance_score: 0.9,
+    description: 'Individual user permissions',
+    key_fields: ['user_id', 'permission_id', 'granted_at', 'expires_at']
+  },
+  {
+    table_name: 'permissions',
+    category: 'other',
+    relevance_score: 0.9,
+    description: 'System permission definitions',
+    key_fields: ['name', 'description', 'resource_type', 'action']
+  },
+  {
+    table_name: 'role_permissions',
+    category: 'other',
+    relevance_score: 0.9,
+    description: 'Role-based permission assignments',
+    key_fields: ['role_id', 'permission_id', 'granted_at', 'is_active']
+  },
+  {
+    table_name: 'facilities',
+    category: 'other',
     relevance_score: 0.8,
-    description: 'Treatment plans and care coordination',
-    key_fields: ['treatment_type', 'start_date', 'duration', 'care_team']
+    description: 'Healthcare facilities and treatment centers',
+    key_fields: ['name', 'facility_type', 'address', 'license_number']
   },
   {
-    table_name: 'enrollment_consent',
-    category: 'compliance',
+    table_name: 'modules',
+    category: 'other',
+    relevance_score: 0.8,
+    description: 'System modules and features',
+    key_fields: ['name', 'description', 'is_active', 'module_type']
+  },
+  {
+    table_name: 'role_module_assignments',
+    category: 'other',
     relevance_score: 0.7,
-    description: 'Patient consent forms and HIPAA authorizations',
-    key_fields: ['consent_type', 'signed_date', 'consent_status', 'digital_signature']
+    description: 'Role access to modules',
+    key_fields: ['role_id', 'module_id', 'is_active', 'assigned_at']
   },
   {
-    table_name: 'enrollment_documents',
-    category: 'compliance',
+    table_name: 'user_module_assignments',
+    category: 'other',
     relevance_score: 0.7,
-    description: 'Document management for enrollment process',
-    key_fields: ['document_type', 'file_path', 'upload_date', 'verification_status']
+    description: 'User access to specific modules',
+    key_fields: ['user_id', 'module_id', 'is_active', 'assigned_at']
   },
   {
-    table_name: 'service_providers',
-    category: 'provider',
+    table_name: 'audit_logs',
+    category: 'compliance',
+    relevance_score: 0.9,
+    description: 'System audit and activity logs',
+    key_fields: ['user_id', 'action', 'table_name', 'timestamp']
+  },
+  {
+    table_name: 'active_issues',
+    category: 'other',
     relevance_score: 0.6,
-    description: 'External service provider configurations',
-    key_fields: ['provider_name', 'service_type', 'api_endpoint', 'configuration']
+    description: 'System issues and alerts monitoring',
+    key_fields: ['issue_type', 'severity', 'status', 'created_at']
   }
 ];
 
