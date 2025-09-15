@@ -2,6 +2,7 @@ import { useState, useCallback, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from './useMasterToast';
 import { ConversationMessage } from './useConversationState';
+import { syncOperationWrapper } from '@/utils/api/SyncOperationWrapper';
 
 // Configuration interfaces
 export interface GenieConfiguration {
@@ -82,14 +83,33 @@ export const useGenieState = (options?: { autoLoad?: boolean }) => {
   const loadConfigurations = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('genie_configurations')
-        .select('*')
-        .order('created_at', { ascending: false });
 
-      if (error) throw error;
+      // Auth guard to avoid anonymous flood of requests
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn('Genie: loadConfigurations skipped - unauthenticated');
+        return;
+      }
 
-      const configs = (data || []).map((dbConfig: DatabaseGenieConfiguration): GenieConfiguration => ({
+      const exec = await syncOperationWrapper.execute<DatabaseGenieConfiguration[]>(
+        async () => {
+          const { data, error } = await supabase
+            .from('genie_configurations')
+            .select('*')
+            .order('created_at', { ascending: false });
+          if (error) throw error;
+          return (data || []) as DatabaseGenieConfiguration[];
+        },
+        'load_genie_configurations',
+        { maxRetries: 3, baseDelay: 700, timeout: 15000 }
+      );
+
+      if (!exec.success) {
+        throw exec.error || new Error('Failed to load configurations');
+      }
+
+      const data = exec.data || [];
+      const configs = data.map((dbConfig): GenieConfiguration => ({
         id: dbConfig.id,
         configuration_name: dbConfig.configuration_name,
         selected_mode: dbConfig.selected_mode as 'system' | 'single' | 'multi',
@@ -103,10 +123,10 @@ export const useGenieState = (options?: { autoLoad?: boolean }) => {
         medical_context: dbConfig.medical_context,
         is_default: dbConfig.is_default
       }));
-      
+
       setConfigurations(configs);
 
-      // Set default or first config as current
+      // Set default or first config as current (only if not set yet)
       const defaultConfig = configs.find(c => c.is_default) || configs[0];
       if (defaultConfig && !currentConfig) {
         setCurrentConfig(defaultConfig);
@@ -190,15 +210,34 @@ export const useGenieState = (options?: { autoLoad?: boolean }) => {
   const loadSessions = useCallback(async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('genie_conversations')
-        .select('*')
-        .order('updated_at', { ascending: false })
-        .limit(20);
 
-      if (error) throw error;
+      // Auth guard to avoid anonymous flood of requests
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) {
+        console.warn('Genie: loadSessions skipped - unauthenticated');
+        return;
+      }
 
-      const sessionData = (data || []).map((dbSession: DatabaseGenieConversation): GenieConversationSession => ({
+      const exec = await syncOperationWrapper.execute<DatabaseGenieConversation[]>(
+        async () => {
+          const { data, error } = await supabase
+            .from('genie_conversations')
+            .select('*')
+            .order('updated_at', { ascending: false })
+            .limit(20);
+          if (error) throw error;
+          return (data || []) as DatabaseGenieConversation[];
+        },
+        'load_genie_sessions',
+        { maxRetries: 3, baseDelay: 700, timeout: 15000 }
+      );
+
+      if (!exec.success) {
+        throw exec.error || new Error('Failed to load conversation history');
+      }
+
+      const data = exec.data || [];
+      const sessionData = data.map((dbSession): GenieConversationSession => ({
         id: dbSession.id,
         conversation_id: dbSession.conversation_id,
         session_name: dbSession.session_name || 'Genie Session',
@@ -208,7 +247,7 @@ export const useGenieState = (options?: { autoLoad?: boolean }) => {
         created_at: dbSession.created_at,
         updated_at: dbSession.updated_at
       }));
-      
+
       setSessions(sessionData);
     } catch (error: any) {
       console.error('Error loading genie conversations:', error);

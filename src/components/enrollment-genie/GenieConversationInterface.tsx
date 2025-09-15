@@ -95,7 +95,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { generateResponse } = useUniversalAI();
   const { state, addMessage, updateConversationConfig, switchMode, resetConversation } = useConversationState();
   const { listProjects } = useLabelStudio();
-  const { currentConfig, saveConfiguration, currentSession, updateSession, createNewSession, loadConfigurations, loadSessions } = useGenieState({ autoLoad: false });
+  const { currentConfig, saveConfiguration, currentSession, setCurrentSession, saveSession, updateSession, createNewSession, loadConfigurations, loadSessions } = useGenieState({ autoLoad: false });
   const { showError, showSuccess } = useMasterToast();
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
   const currentMode = (state?.selectedMode as any) || mode;
@@ -408,10 +408,28 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
             
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" onClick={() => {
+              <Button variant="outline" size="sm" onClick={async () => {
                 resetConversation();
                 setSelectedModels([]);
-                createNewSession();
+                const draft = createNewSession();
+                const saved = await saveSession({
+                  conversation_id: draft.conversation_id,
+                  session_name: draft.session_name,
+                  messages: [],
+                  configuration_snapshot: {
+                    mode: currentMode,
+                    selectedModels,
+                    enabledFeatures,
+                    selectedMCPTools,
+                  },
+                  is_active: true,
+                } as any);
+                if (saved) {
+                  setCurrentSession(saved);
+                  showSuccess('New session created');
+                } else {
+                  showError('Could not save the new session');
+                }
               }}>
                 <RotateCcw className="h-4 w-4" />
               </Button>
