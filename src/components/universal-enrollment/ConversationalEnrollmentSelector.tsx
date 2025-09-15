@@ -113,8 +113,8 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
       </Card>
 
       {/* Method Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Structured AI Method */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        {/* AI Agent Method */}
         <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-colors cursor-pointer group">
           <div className="absolute top-4 right-4">
             <Badge variant="default" className="bg-green-500">
@@ -128,10 +128,10 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               <div className="p-2 bg-green-500/10 rounded-lg">
                 <Zap className="h-6 w-6 text-green-500" />
               </div>
-              Structured AI
+              AI Agent
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Section-by-section AI guidance with specialized assistance for each part
+              Guided step-by-step process with AI assistance and real-time database updates
             </p>
           </CardHeader>
           
@@ -141,11 +141,11 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               <ul className="space-y-1">
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
-                  Specialized AI for each section
+                  Step-by-step guidance
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
-                  Structured data capture
+                  Real-time database updates
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
@@ -156,11 +156,58 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
             
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>Estimated time: 8-12 minutes</span>
+              <span>Estimated time: 5-10 minutes</span>
             </div>
             
             <Button 
               className="w-full bg-green-500 hover:bg-green-600 gap-2"
+              onClick={() => {
+                closeEnrollment();
+                window.location.href = '/patient-onboarding';
+              }}
+            >
+              <Zap className="w-4 h-4" />
+              Start AI Agent
+            </Button>
+          </CardContent>
+        </Card>
+
+        {/* Structured AI Method */}
+        <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-colors cursor-pointer group">
+          <CardHeader className="pb-4">
+            <CardTitle className="flex items-center gap-3">
+              <div className="p-2 bg-blue-500/10 rounded-lg">
+                <Workflow className="h-6 w-6 text-blue-500" />
+              </div>
+              Structured AI
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Section-by-section AI guidance with specialized assistance
+            </p>
+          </CardHeader>
+          
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm">Benefits:</h4>
+              <ul className="space-y-1">
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-blue-500 rounded-full" />
+                  Specialized AI per section
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-blue-500 rounded-full" />
+                  Structured data capture
+                </li>
+              </ul>
+            </div>
+            
+            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <Clock className="h-3 w-3" />
+              <span>Estimated time: 8-12 minutes</span>
+            </div>
+            
+            <Button 
+              className="w-full"
               onClick={handleStructuredAI}
             >
               <Workflow className="w-4 h-4" />

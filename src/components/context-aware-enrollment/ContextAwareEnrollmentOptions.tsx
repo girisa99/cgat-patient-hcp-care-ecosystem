@@ -26,6 +26,7 @@ import DataIntegrationPanel from './DataIntegrationPanel';
 import { UniversalEnrollmentProcessor } from './UniversalEnrollmentProcessor';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { PatientEnrollmentTemplateManager } from '@/components/patient-enrollment/PatientEnrollmentTemplateManager';
+import { PatientEnrollmentIntegration } from '@/components/patient-enrollment/PatientEnrollmentIntegration';
 import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalAgentConfigManager';
 import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoiceManager';
 import { UniversalWorkflowProcessor } from '@/components/workflow-processor/UniversalWorkflowProcessor';
@@ -33,7 +34,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { toast } from 'sonner';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
-type WorkflowStep = 'submission_mode' | 'ai_agent_config' | 'template_selection' | 'environment_setup' | 'test_deploy';
+type WorkflowStep = 'submission_mode' | 'ai_agent_config' | 'template_selection' | 'environment_setup' | 'test_deploy' | 'online_form';
 
 interface EnrollmentOption {
   id: string;
@@ -138,7 +139,7 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
       estimatedTime: '10-15 min',
       action: () => {
         setSelectedOption('online-form');
-        setShowProcessor(true);
+        setCurrentWorkflowStep('online_form');
         onTraditionalSelect('online-form');
       }
     },
@@ -167,6 +168,41 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
       }
     }
   ];
+
+  // Online Form Display
+  if (currentWorkflowStep === 'online_form') {
+    return (
+      <div className={`space-y-6 ${className}`}>
+        {/* Header with Back Button */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-3 justify-between">
+              <div className="flex items-center gap-3">
+                {moduleInfo.icon}
+                {moduleInfo.title} - Online Form
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setCurrentWorkflowStep('submission_mode')}
+              >
+                Back to Options
+              </Button>
+            </CardTitle>
+          </CardHeader>
+        </Card>
+
+        {/* Patient Enrollment Form */}
+        <PatientEnrollmentIntegration
+          onComplete={(data) => {
+            console.log('Enrollment completed:', data);
+            toast.success('Patient enrollment completed successfully!');
+            onTraditionalSelect('completed');
+          }}
+        />
+      </div>
+    );
+  }
 
   // Render AI Agent Configuration Workflow
   const renderAIAgentWorkflow = () => {
