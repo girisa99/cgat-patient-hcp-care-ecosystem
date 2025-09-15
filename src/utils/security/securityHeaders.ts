@@ -32,7 +32,7 @@ export class SecurityHeaders {
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' https://fonts.gstatic.com",
       "img-src 'self' data: https: blob:",
-      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com",
+      "connect-src 'self' https://*.supabase.co wss://*.supabase.co https://api.openai.com https://cdnjs.cloudflare.com",
       "object-src 'none'",
       "base-uri 'self'",
       "form-action 'self'",
