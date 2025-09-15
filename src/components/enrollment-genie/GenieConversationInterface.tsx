@@ -95,7 +95,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { generateResponse } = useUniversalAI();
   const { state, addMessage, updateConversationConfig, switchMode, resetConversation } = useConversationState();
   const { listProjects } = useLabelStudio();
-  const { currentConfig, saveConfiguration, currentSession, updateSession, createNewSession } = useGenieState();
+  const { currentConfig, saveConfiguration, currentSession, updateSession, createNewSession, loadConfigurations, loadSessions } = useGenieState({ autoLoad: false });
   const { showError, showSuccess } = useMasterToast();
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
   const currentMode = (state?.selectedMode as any) || mode;
@@ -401,9 +401,9 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <p className="text-xs text-muted-foreground">
                   {currentMode === 'multi' ? 'Multi-Model Chat' : medicalContext ? 'Medical AI' : 'AI Assistant'}
                 </p>
-                <p className="text-[11px] text-muted-foreground mt-1">
+                <div className="text-[11px] text-muted-foreground mt-1 max-w-[240px] truncate" title={selectedModels.length > 0 ? selectedModels.map(m => `${m.provider}:${m.model}`).join(', ') : 'None'}>
                   Selected: {selectedModels.length > 0 ? selectedModels.map(m => `${m.provider}:${m.model}`).join(', ') : 'None'}
-                </p>
+                </div>
               </div>
             </div>
             
@@ -617,8 +617,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       </motion.div>
 
       {/* Unified Configuration Dialog */}
-      <Dialog open={showModelSelector} onOpenChange={setShowModelSelector}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={showModelSelector} onOpenChange={(open) => {
+        setShowModelSelector(open);
+        if (open) {
+          // Lazy-load to avoid background fetches when Genie is closed
+          try { loadConfigurations(); loadSessions(); } catch {}
+        }
+      }}>
+        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" aria-label="AI Configuration & Model Selection">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Settings className="h-5 w-5" />
@@ -648,28 +654,27 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
 
             {/* Enhanced Model Selector with integrated features */}
-            <UniversalModelSelector
-              onModelsSelect={(models) => {
-                setSelectedModels(models);
-                try { localStorage.setItem('genie_selected_models', JSON.stringify(models)); } catch {}
-                
-                // Auto-enable features based on selected models
-                const newFeatures = [...enabledFeatures];
-                models.forEach(model => {
-                  if (model.category === 'vision' && !newFeatures.includes('vision')) {
-                    newFeatures.push('vision');
+              <UniversalModelSelector
+                onModelsSelect={(models) => {
+                  setSelectedModels(models);
+                  try { localStorage.setItem('genie_selected_models', JSON.stringify(models)); } catch {}
+                  
+                  // Auto-enable features based on selected models
+                  const newFeatures = [...enabledFeatures];
+                  models.forEach(model => {
+                    if (model.category === 'vision' && !newFeatures.includes('vision')) {
+                      newFeatures.push('vision');
+                    }
+                    if (model.category === 'mcp' && !newFeatures.includes('tools')) {
+                      newFeatures.push('tools');
+                    }
+                  });
+                  if (medicalContext && !newFeatures.includes('medical')) {
+                    newFeatures.push('medical');
                   }
-                  if (model.category === 'mcp' && !newFeatures.includes('tools')) {
-                    newFeatures.push('tools');
-                  }
-                });
-                if (medicalContext && !newFeatures.includes('medical')) {
-                  newFeatures.push('medical');
-                }
-                setEnabledFeatures(newFeatures);
-                
-                showSuccess('Configuration updated', `Selected ${models.length} models with ${newFeatures.length} features`);
-              }}
+                  setEnabledFeatures(newFeatures);
+                  // Remove noisy auto toasts; final confirmation happens on Save & Apply
+                }}
               selectedModels={selectedModels}
               mode={currentMode === 'general' ? 'single' : (currentMode as any)}
               enabledFeatures={[...enabledFeatures, ...(medicalContext ? ['medical'] : []), ...(selectedMCPTools.length > 0 ? ['tools'] : [])]}
@@ -756,11 +761,13 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   medical_context: medicalContext,
                   is_default: true
                 };
-                const saved = await saveConfiguration(configToSave as any);
-                if (saved) {
-                  showSuccess('Configuration saved');
-                  setShowModelSelector(false);
-                }
+                 const saved = await saveConfiguration(configToSave as any);
+                 if (saved) {
+                   showSuccess('Configuration saved');
+                   setShowModelSelector(false);
+                 } else {
+                   showError('Save failed', 'You may need to sign in before saving your configuration.');
+                 }
               }}
             >
               Save & Apply

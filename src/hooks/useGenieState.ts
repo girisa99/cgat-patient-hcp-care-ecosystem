@@ -61,8 +61,9 @@ type DatabaseGenieConversation = {
   updated_at: string;
 };
 
-export const useGenieState = () => {
+export const useGenieState = (options?: { autoLoad?: boolean }) => {
   const [loading, setLoading] = useState(false);
+  const autoLoad = options?.autoLoad ?? true;
   
   // Configuration state
   const [configurations, setConfigurations] = useState<GenieConfiguration[]>([]);
@@ -75,7 +76,7 @@ export const useGenieState = () => {
   const { showError, showSuccess } = useMasterToast();
   // Prevent repeated 'Failed to fetch' toasts
   const fetchErrorShownRef = (globalThis as any).__genieFetchErrorShownRef || { current: false };
-  ;(globalThis as any).__genieFetchErrorShownRef = fetchErrorShownRef;
+  ;(globalThis as any).__genieFetchErrorShownRef = fetchErrorShownRef; // shared across mounts
 
   // Configuration methods
   const loadConfigurations = useCallback(async () => {
@@ -112,7 +113,11 @@ export const useGenieState = () => {
       }
     } catch (error: any) {
       console.error('Error loading genie configurations:', error);
-      showError(error.message || 'Failed to load configurations');
+      const msg = error?.message || 'Failed to load configurations';
+      if (!fetchErrorShownRef.current || !msg.includes('Failed to fetch')) {
+        showError(msg);
+        if (msg.includes('Failed to fetch')) fetchErrorShownRef.current = true;
+      }
     } finally {
       setLoading(false);
     }
@@ -207,7 +212,11 @@ export const useGenieState = () => {
       setSessions(sessionData);
     } catch (error: any) {
       console.error('Error loading genie conversations:', error);
-      showError(error.message || 'Failed to load conversation history');
+      const msg = error?.message || 'Failed to load conversation history';
+      if (!fetchErrorShownRef.current || !msg.includes('Failed to fetch')) {
+        showError(msg);
+        if (msg.includes('Failed to fetch')) fetchErrorShownRef.current = true;
+      }
     } finally {
       setLoading(false);
     }
@@ -328,9 +337,11 @@ export const useGenieState = () => {
 
   // Initialize on mount
   useEffect(() => {
-    loadConfigurations();
-    loadSessions();
-  }, [loadConfigurations, loadSessions]);
+    if (autoLoad) {
+      loadConfigurations();
+      loadSessions();
+    }
+  }, [autoLoad, loadConfigurations, loadSessions]);
 
   return {
     loading,
