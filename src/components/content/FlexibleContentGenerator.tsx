@@ -95,11 +95,7 @@ export const FlexibleContentGenerator: React.FC<FlexibleContentGeneratorProps> =
 
   const generateFromImage = async () => {
     if (!uploadedImage) {
-      showToast({
-        title: "Image Required",
-        description: "Please upload an image first",
-        type: "warning"
-      });
+      showError("Image Required", "Please upload an image first");
       return;
     }
 
@@ -126,19 +122,11 @@ export const FlexibleContentGenerator: React.FC<FlexibleContentGeneratorProps> =
         onContentGenerated(result);
       }
 
-      showToast({
-        title: "Content Generated",
-        description: `${selectedOutputType} generated from image successfully`,
-        type: "success"
-      });
+      showSuccess("Content Generated", `${selectedOutputType} generated from image successfully`);
 
     } catch (error) {
       console.error('Generation failed:', error);
-      showToast({
-        title: "Generation Failed",
-        description: "Failed to generate content from image",
-        type: "error"
-      });
+      showError("Generation Failed", "Failed to generate content from image");
     } finally {
       setIsGenerating(false);
     }

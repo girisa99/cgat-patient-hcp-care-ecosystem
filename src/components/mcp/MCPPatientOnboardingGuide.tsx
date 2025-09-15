@@ -138,11 +138,7 @@ export const MCPPatientOnboardingGuide: React.FC<MCPPatientOnboardingGuideProps>
             onTableUpdate(tableName, payload.new);
           }
           
-          showToast({
-            title: "Real-time Update",
-            description: `New data added to ${tableName}`,
-            type: "success"
-          });
+          showSuccess("Real-time Update", `New data added to ${tableName}`);
         })
         .on('postgres_changes', {
           event: 'UPDATE',
@@ -191,11 +187,7 @@ export const MCPPatientOnboardingGuide: React.FC<MCPPatientOnboardingGuideProps>
       return mockResponse;
     } catch (error) {
       console.error(`MCP action ${action} failed:`, error);
-      showToast({
-        title: "MCP Action Failed",
-        description: `Failed to execute ${action}`,
-        type: "error"
-      });
+      showError("MCP Action Failed", `Failed to execute ${action}`);
       return { success: false, error };
     } finally {
       setIsProcessing(false);
@@ -234,11 +226,7 @@ export const MCPPatientOnboardingGuide: React.FC<MCPPatientOnboardingGuideProps>
 
     } catch (error) {
       console.error('Step processing failed:', error);
-      showToast({
-        title: "Step Failed",
-        description: `Failed to process ${step.title}`,
-        type: "error"
-      });
+      showError("Step Failed", `Failed to process ${step.title}`);
     } finally {
       setIsProcessing(false);
     }
@@ -250,25 +238,25 @@ export const MCPPatientOnboardingGuide: React.FC<MCPPatientOnboardingGuideProps>
       const { data, error } = await supabase
         .from('patient_enrollments')
         .insert({
-          patient_id: patientId,
+          user_id: patientId,
+          session_id: `mcp-onboarding-${Date.now()}`,
           enrollment_status: 'completed',
-          completed_steps: PATIENT_ONBOARDING_STEPS.map(s => s.id),
-          enrollment_data: stepData,
+          progress_percentage: 100,
+          metadata: {
+            completed_steps: PATIENT_ONBOARDING_STEPS.map(s => s.id),
+            enrollment_data: stepData
+          },
           completed_at: new Date().toISOString()
         });
 
       if (error) throw error;
 
-      showToast({
-        title: "Onboarding Complete",
-        description: "Patient onboarding completed successfully",
-        type: "success"
-      });
+      showSuccess("Onboarding Complete", "Patient onboarding completed successfully");
 
       if (onComplete) {
         onComplete({
           patientId,
-          enrollmentId: data?.[0]?.id,
+          enrollmentId: `enrollment-${Date.now()}`,
           stepData,
           completedAt: new Date()
         });
