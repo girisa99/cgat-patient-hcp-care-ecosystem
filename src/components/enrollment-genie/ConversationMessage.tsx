@@ -71,26 +71,34 @@ export const ConversationMessage: React.FC<ConversationMessageProps> = ({ messag
       </div>
 
       {/* Message Content */}
-      <div className={`flex-1 max-w-[80%] ${isUser ? 'text-right' : 'text-left'}`}>
+      <div className={`flex-1 max-w-[85%] ${isUser ? 'text-right' : 'text-left'}`}>
         {/* Message Bubble */}
         <Card className={`${
           isUser 
-            ? 'bg-blue-500 text-white border-blue-500' 
+            ? 'bg-primary text-primary-foreground border-primary/20 shadow-md' 
             : isError 
-              ? 'bg-red-50 border-red-200' 
-              : 'bg-white border-gray-200 shadow-sm'
+              ? 'bg-destructive/10 border-destructive/20 text-destructive' 
+              : 'bg-card border-border shadow-sm hover:shadow-md transition-shadow'
         }`}>
           <CardContent className="p-4">
             {/* Content with Rich Media Support */}
-            <div className={`${isUser ? 'text-white' : isError ? 'text-red-800' : 'text-gray-800'}`}>
+            <div className={`${isUser ? 'text-primary-foreground' : isError ? 'text-destructive' : 'text-foreground'}`}>
               {isUser ? (
-                <p className="text-sm leading-relaxed">{message.content}</p>
+                <div className="space-y-2">
+                  <p className="text-sm leading-relaxed font-medium">{message.content}</p>
+                  {/* Add contextual user prompt enhancement */}
+                  <div className="flex items-center gap-1 text-xs opacity-80">
+                    <span>•</span>
+                    <span>Sent to Genie AI</span>
+                  </div>
+                </div>
               ) : (
                 <RichMediaRenderer
                   content={message.content}
                   metadata={message.metadata}
                   onGenerateImage={handleGenerateImage}
                   onGenerateVideo={handleGenerateVideo}
+                  enableVisualSearch={true}
                 />
               )}
             </div>

@@ -45,6 +45,7 @@ import { useLabelStudio } from '@/hooks/useLabelStudio';
 import { ragService } from '@/services/ragService';
 import { useGenieState } from '@/hooks/useGenieState';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useConversationalContext } from '@/hooks/useConversationalContext';
 
 // UI Components
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
@@ -98,6 +99,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { currentConfig, saveConfiguration, currentSession, setCurrentSession, saveSession, updateSession, createNewSession, loadConfigurations, loadSessions } = useGenieState({ autoLoad: false });
   const { showError, showSuccess } = useMasterToast();
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
+  const { updateContext, generateContextualResponse, getConversationSummary } = useConversationalContext();
   const currentMode = (state?.selectedMode as any) || mode;
 
   // Authentication check - redirect to login if not authenticated
@@ -255,6 +257,12 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     setIsLoading(true);
 
     try {
+      // Update conversational context
+      updateContext(userMessage, true);
+      
+      // Generate contextual enhancement
+      const contextualResponse = generateContextualResponse(userMessage);
+      
       addMessage({
         role: 'user',
         content: userMessage,
@@ -263,20 +271,20 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         model: selectedModels[0]?.model || 'gpt-4'
       });
 
-      // Enhance prompt with RAG if enabled (with error handling to prevent fetch errors)
-      let enhancedPrompt = userMessage;
+      // Enhance prompt with conversational context and RAG
+      let enhancedPrompt = contextualResponse.enhancedPrompt;
       let contextSources: string[] = [];
       
       if (enabledFeatures.length > 0) {
         try {
           console.log('Enhancing prompt with RAG features:', enabledFeatures);
-          const ragResult = await ragService.enhancePromptWithRAG(userMessage, enabledFeatures);
+          const ragResult = await ragService.enhancePromptWithRAG(enhancedPrompt, enabledFeatures);
           enhancedPrompt = ragResult.enhancedPrompt;
           contextSources = ragResult.contextSources;
           console.log('RAG enhancement successful, sources:', contextSources);
         } catch (error) {
-          console.warn('RAG enhancement failed, proceeding with original prompt:', error);
-          // Don't throw error, just continue with original prompt
+          console.warn('RAG enhancement failed, proceeding with contextual prompt:', error);
+          // Don't throw error, just continue with contextual prompt
         }
       }
 

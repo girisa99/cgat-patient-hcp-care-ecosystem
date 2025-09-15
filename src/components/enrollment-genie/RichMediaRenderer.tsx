@@ -1,13 +1,13 @@
 /**
- * RICH MEDIA MESSAGE RENDERER
- * Supports HTML, tables, images, videos, PDFs, documents, AI generation, and external visual content
+ * ENHANCED RICH MEDIA RENDERER
+ * Supports comprehensive rich media: HTML, tables, images, videos, PDFs, Word docs, 
+ * SVG, infographics, Excel files, and AI generation with streamlined layout
  */
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Image, 
   Video, 
@@ -20,10 +20,15 @@ import {
   Table,
   Code,
   ExternalLink,
-  Search
+  Search,
+  FileImage,
+  File,
+  PieChart,
+  Zap,
+  Camera,
+  Monitor
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { VisualContentDisplay } from '../search/VisualContentDisplay';
 import { externalVisualContentService, VisualContentSource } from '@/services/externalVisualContentService';
 import { toast } from 'sonner';
 
@@ -49,46 +54,48 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
   const [visualContent, setVisualContent] = useState<VisualContentSource[]>([]);
   const [isLoadingVisual, setIsLoadingVisual] = useState(false);
   const [showVisualContent, setShowVisualContent] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // Parse content for different media types
+  // Enhanced content parsing for all rich media types
   const parseContent = () => {
     const sections = [];
     
     // Check for HTML content
     if (content.includes('<') && content.includes('>')) {
-      sections.push({
-        type: 'html',
-        content: content
-      });
+      sections.push({ type: 'html', content: content });
     }
     
     // Check for table markdown
-    if (content.includes('|') && content.includes('---')) {
+    else if (content.includes('|') && content.includes('---')) {
       const tableRegex = /\|(.+)\|\n\|[-\s|]+\|\n((\|.+\|\n?)+)/g;
       let match;
       let remainingContent = content;
       
       while ((match = tableRegex.exec(content)) !== null) {
         const tableContent = match[0];
-        sections.push({
-          type: 'table',
-          content: tableContent
-        });
+        sections.push({ type: 'table', content: tableContent });
         remainingContent = remainingContent.replace(tableContent, '');
       }
       
       if (remainingContent.trim()) {
-        sections.push({
-          type: 'text',
-          content: remainingContent
-        });
+        sections.push({ type: 'text', content: remainingContent });
       }
-    } else {
-      // Regular text content
-      sections.push({
-        type: 'text',
-        content: content
-      });
+    }
+    // Check for embedded media URLs
+    else if (content.includes('http') && (content.includes('.jpg') || content.includes('.png') || 
+             content.includes('.gif') || content.includes('.webp') || content.includes('.svg'))) {
+      sections.push({ type: 'image_url', content: content });
+    }
+    else if (content.includes('http') && (content.includes('.mp4') || content.includes('.webm') || 
+             content.includes('.mov') || content.includes('youtube.com') || content.includes('vimeo.com'))) {
+      sections.push({ type: 'video_url', content: content });
+    }
+    else if (content.includes('http') && (content.includes('.pdf') || content.includes('.doc') || 
+             content.includes('.docx') || content.includes('.xlsx') || content.includes('.pptx'))) {
+      sections.push({ type: 'document_url', content: content });
+    }
+    else {
+      sections.push({ type: 'text', content: content });
     }
     
     return sections;
@@ -102,22 +109,22 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
     );
 
     return (
-      <div className="overflow-x-auto my-4">
-        <table className="min-w-full border border-gray-200 rounded-lg overflow-hidden">
-          <thead className="bg-gray-50">
+      <div className="overflow-x-auto my-4 border rounded-lg">
+        <table className="min-w-full">
+          <thead className="bg-muted/50">
             <tr>
               {headers.map((header, index) => (
-                <th key={index} className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">
+                <th key={index} className="px-4 py-3 text-left text-sm font-semibold">
                   {header}
                 </th>
               ))}
             </tr>
           </thead>
-          <tbody>
+          <tbody className="divide-y">
             {rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}>
+              <tr key={rowIndex} className="hover:bg-muted/20">
                 {row.map((cell, cellIndex) => (
-                  <td key={cellIndex} className="px-4 py-2 text-sm text-gray-800 border-b">
+                  <td key={cellIndex} className="px-4 py-3 text-sm">
                     {cell}
                   </td>
                 ))}
@@ -125,6 +132,79 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
             ))}
           </tbody>
         </table>
+      </div>
+    );
+  };
+
+  const renderEmbeddedMedia = (section: any) => {
+    const urls = section.content.match(/https?:\/\/[^\s]+/g) || [];
+    
+    return (
+      <div className="space-y-3 my-4">
+        {urls.map((url: string, index: number) => (
+          <Card key={index} className="overflow-hidden">
+            <CardContent className="p-0">
+              {section.type === 'image_url' && (
+                <div className="relative">
+                  <img 
+                    src={url} 
+                    alt="Embedded content"
+                    className="w-full max-h-96 object-contain bg-muted"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).style.display = 'none';
+                    }}
+                  />
+                  <div className="absolute top-2 right-2">
+                    <Badge variant="secondary" className="text-xs">
+                      <FileImage className="h-3 w-3 mr-1" />
+                      Image
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              
+              {section.type === 'video_url' && (
+                <div className="relative aspect-video bg-muted">
+                  {url.includes('youtube.com') || url.includes('vimeo.com') ? (
+                    <iframe 
+                      src={url.replace('watch?v=', 'embed/')}
+                      className="w-full h-full"
+                      allowFullScreen
+                    />
+                  ) : (
+                    <video controls className="w-full h-full">
+                      <source src={url} />
+                    </video>
+                  )}
+                  <div className="absolute top-2 right-2">
+                    <Badge variant="secondary" className="text-xs">
+                      <Video className="h-3 w-3 mr-1" />
+                      Video
+                    </Badge>
+                  </div>
+                </div>
+              )}
+              
+              {section.type === 'document_url' && (
+                <div className="p-4 flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    {url.includes('.pdf') && <File className="h-8 w-8 text-red-600" />}
+                    {url.includes('.doc') && <FileText className="h-8 w-8 text-blue-600" />}
+                    {url.includes('.xlsx') && <PieChart className="h-8 w-8 text-green-600" />}
+                    <div>
+                      <p className="font-medium">Document</p>
+                      <p className="text-xs text-muted-foreground">{url.split('/').pop()}</p>
+                    </div>
+                  </div>
+                  <Button size="sm" onClick={() => window.open(url, '_blank')}>
+                    <ExternalLink className="h-4 w-4 mr-1" />
+                    Open
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ))}
       </div>
     );
   };
@@ -300,23 +380,31 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
           {section.type === 'html' && renderHTML(section.content)}
           {section.type === 'table' && renderTable(section.content)}
           {section.type === 'text' && <div>{formatText(section.content)}</div>}
+          {(section.type === 'image_url' || section.type === 'video_url' || section.type === 'document_url') && 
+            renderEmbeddedMedia(section)}
         </motion.div>
       ))}
 
       {/* Generated Media Display */}
       {generatedMedia.length > 0 && (
-        <div className="mt-4 space-y-3">
-          <h4 className="text-sm font-medium text-gray-700">Generated Media:</h4>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <Zap className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">AI Generated Content</h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {generatedMedia.map((media, index) => (
-              <Card key={index} className="overflow-hidden">
+              <Card key={index} className="overflow-hidden group hover:shadow-md transition-shadow">
                 <CardContent className="p-0">
                   {media.type === 'image' ? (
-                    <img 
-                      src={media.url} 
-                      alt="Generated content"
-                      className="w-full h-48 object-cover"
-                    />
+                    <div className="relative">
+                      <img 
+                        src={media.url} 
+                        alt="Generated content"
+                        className="w-full h-48 object-cover"
+                      />
+                      <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors" />
+                    </div>
                   ) : (
                     <video 
                       src={media.url} 
@@ -324,10 +412,10 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
                       className="w-full h-48 object-cover"
                     />
                   )}
-                  <div className="p-2">
+                  <div className="p-3 border-t">
                     <Badge variant="secondary" className="text-xs">
-                      {media.type === 'image' ? <Image className="h-3 w-3 mr-1" /> : <Video className="h-3 w-3 mr-1" />}
-                      AI Generated {media.type}
+                      {media.type === 'image' ? <Camera className="h-3 w-3 mr-1" /> : <Monitor className="h-3 w-3 mr-1" />}
+                      AI {media.type.charAt(0).toUpperCase() + media.type.slice(1)}
                     </Badge>
                   </div>
                 </CardContent>
@@ -337,134 +425,185 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
         </div>
       )}
 
-      {/* External Visual Content */}
-      {enableVisualSearch && (showVisualContent || isLoadingVisual) && (
-        <Card className="mt-4">
-          <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Search className="h-4 w-4" />
-              Related Visual Content
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <VisualContentDisplay
-              sources={visualContent}
-              isLoading={isLoadingVisual}
-              onSearch={handleVisualSearch}
-              onCategoryFilter={handleVisualCategoryFilter}
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Media Generation Tools */}
-      {(onGenerateImage || onGenerateVideo) && (
-        <Card className="mt-4 border-dashed border-2 border-gray-200">
-          <CardHeader>
-            <CardTitle className="text-sm flex items-center gap-2">
-              <Wand2 className="h-4 w-4" />
-              AI Media Generation
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Tabs defaultValue="image" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                {onGenerateImage && (
-                  <TabsTrigger value="image" disabled={isGenerating}>
-                    <Image className="h-4 w-4 mr-2" />
-                    Generate Image
-                  </TabsTrigger>
-                )}
-                {onGenerateVideo && (
-                  <TabsTrigger value="video" disabled={isGenerating}>
-                    <Video className="h-4 w-4 mr-2" />
-                    Generate Video
-                  </TabsTrigger>
-                )}
-              </TabsList>
-              
-              {onGenerateImage && (
-                <TabsContent value="image" className="space-y-3">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Describe the image you want to generate..."
-                      value={imagePrompt}
-                      onChange={(e) => setImagePrompt(e.target.value)}
-                      disabled={isGenerating}
-                    />
-                    <Button 
-                      onClick={handleGenerateImage}
-                      disabled={!imagePrompt.trim() || isGenerating}
-                      size="sm"
-                    >
-                      {isGenerating ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Wand2 className="h-4 w-4" />
-                      )}
-                    </Button>
+      {/* Streamlined Visual Content Search */}
+      {enableVisualSearch && showVisualContent && (
+        <div className="mt-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <Search className="h-4 w-4 text-primary" />
+              <h4 className="text-sm font-semibold">Related Visual Content</h4>
+            </div>
+            
+            <div className="flex gap-2">
+              <Input
+                placeholder="Search for more..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-48 h-8 text-xs"
+                onKeyPress={(e) => e.key === 'Enter' && handleVisualSearch(searchQuery)}
+              />
+              <Button 
+                size="sm" 
+                variant="outline" 
+                onClick={() => handleVisualSearch(searchQuery)}
+                disabled={isLoadingVisual}
+                className="h-8"
+              >
+                {isLoadingVisual ? <Loader2 className="h-3 w-3 animate-spin" /> : <Search className="h-3 w-3" />}
+              </Button>
+            </div>
+          </div>
+          
+          {isLoadingVisual ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin" />
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {visualContent.slice(0, 6).map((source, index) => (
+                <Card key={source.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                  <div className="relative aspect-video bg-muted">
+                    {source.thumbnailUrl ? (
+                      <img 
+                        src={source.thumbnailUrl} 
+                        alt={source.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <FileImage className="h-8 w-8 text-muted-foreground" />
+                      </div>
+                    )}
+                    <Badge variant="secondary" className="absolute top-2 right-2 text-xs">
+                      {Math.round(source.relevanceScore * 100)}%
+                    </Badge>
                   </div>
-                </TabsContent>
-              )}
-              
-              {onGenerateVideo && (
-                <TabsContent value="video" className="space-y-3">
-                  <div className="flex gap-2">
-                    <Input
-                      placeholder="Describe the video you want to generate..."
-                      value={videoPrompt}
-                      onChange={(e) => setVideoPrompt(e.target.value)}
-                      disabled={isGenerating}
-                    />
-                    <Button 
-                      onClick={handleGenerateVideo}
-                      disabled={!videoPrompt.trim() || isGenerating}
-                      size="sm"
-                    >
-                      {isGenerating ? (
-                        <Loader2 className="h-4 w-4 animate-spin" />
-                      ) : (
-                        <Play className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </TabsContent>
-              )}
-            </Tabs>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* File Attachments */}
-      {metadata?.attachments && metadata.attachments.length > 0 && (
-        <div className="mt-4">
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Attachments:</h4>
-          <div className="space-y-2">
-            {metadata.attachments.map((attachment: any, index: number) => (
-              <Card key={index} className="border-gray-200">
-                <CardContent className="p-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <FileText className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm font-medium">{attachment.name}</span>
+                  <CardContent className="p-3">
+                    <h5 className="font-medium text-sm line-clamp-2 mb-2">{source.title}</h5>
+                    <div className="flex items-center justify-between">
                       <Badge variant="outline" className="text-xs">
-                        {attachment.type}
+                        {source.sourceType.replace('_', ' ')}
                       </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="outline">
-                        <Eye className="h-3 w-3 mr-1" />
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        onClick={() => {
+                          const url = source.videoUrl || source.imageUrl;
+                          if (url) window.open(url, '_blank');
+                        }}
+                        className="h-6 px-2 text-xs"
+                      >
+                        <ExternalLink className="h-3 w-3 mr-1" />
                         View
                       </Button>
-                      <Button size="sm" variant="outline">
-                        <Download className="h-3 w-3 mr-1" />
-                        Download
-                      </Button>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Simplified Media Generation */}
+      {(onGenerateImage || onGenerateVideo) && (
+        <div className="mt-6 p-4 border-2 border-dashed border-muted-foreground/25 rounded-lg bg-muted/10">
+          <div className="flex items-center gap-2 mb-4">
+            <Wand2 className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Generate New Content</h4>
+          </div>
+          
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {onGenerateImage && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Describe an image..."
+                    value={imagePrompt}
+                    onChange={(e) => setImagePrompt(e.target.value)}
+                    disabled={isGenerating}
+                    className="text-sm"
+                  />
+                  <Button 
+                    onClick={handleGenerateImage}
+                    disabled={!imagePrompt.trim() || isGenerating}
+                    size="sm"
+                  >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Camera className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            )}
+            
+            {onGenerateVideo && (
+              <div className="space-y-2">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Describe a video..."
+                    value={videoPrompt}
+                    onChange={(e) => setVideoPrompt(e.target.value)}
+                    disabled={isGenerating}
+                    className="text-sm"
+                  />
+                  <Button 
+                    onClick={handleGenerateVideo}
+                    disabled={!videoPrompt.trim() || isGenerating}
+                    size="sm"
+                  >
+                    {isGenerating ? <Loader2 className="h-4 w-4 animate-spin" /> : <Monitor className="h-4 w-4" />}
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced File Attachments Support */}
+      {metadata?.attachments && metadata.attachments.length > 0 && (
+        <div className="mt-6">
+          <div className="flex items-center gap-2 mb-3">
+            <FileText className="h-4 w-4 text-primary" />
+            <h4 className="text-sm font-semibold">Attachments</h4>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {metadata.attachments.map((attachment: any, index: number) => {
+              const getFileIcon = (type: string) => {
+                if (type.includes('pdf')) return <File className="h-5 w-5 text-red-600" />;
+                if (type.includes('word') || type.includes('doc')) return <FileText className="h-5 w-5 text-blue-600" />;
+                if (type.includes('excel') || type.includes('sheet')) return <PieChart className="h-5 w-5 text-green-600" />;
+                if (type.includes('image')) return <FileImage className="h-5 w-5 text-purple-600" />;
+                return <FileText className="h-5 w-5 text-gray-600" />;
+              };
+
+              return (
+                <Card key={index} className="hover:shadow-md transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        {getFileIcon(attachment.type)}
+                        <div>
+                          <p className="font-medium text-sm">{attachment.name}</p>
+                          <Badge variant="outline" className="text-xs mt-1">
+                            {attachment.type}
+                          </Badge>
+                        </div>
+                      </div>
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="outline">
+                          <Eye className="h-3 w-3 mr-1" />
+                          View
+                        </Button>
+                        <Button size="sm" variant="outline">
+                          <Download className="h-3 w-3 mr-1" />
+                          Save
+                        </Button>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </div>
       )}
