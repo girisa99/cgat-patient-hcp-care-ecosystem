@@ -391,7 +391,8 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-4">
-              {viewMode === 'combined' ? (
+            {mode === 'multi' && responses.length > 0 ? (
+              viewMode === 'combined' ? (
                 <div className="grid grid-cols-1 gap-4">
                   <Card className="h-full border-primary/20 bg-card/50 backdrop-blur-sm">
                     <CardHeader className="pb-3">
@@ -495,7 +496,7 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
                     </motion.div>
                   ))}
                 </div>
-              )}
+              )
             ) : (
               // Single model or empty state
               <div className="space-y-4">
