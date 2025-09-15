@@ -163,7 +163,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               className="w-full bg-green-500 hover:bg-green-600 gap-2"
               onClick={() => {
                 closeEnrollment();
-                window.location.href = '/patient-onboarding';
+                window.location.href = `/agents?from=enrollment&module=${moduleType}&open=builder`;
               }}
             >
               <Zap className="w-4 h-4" />

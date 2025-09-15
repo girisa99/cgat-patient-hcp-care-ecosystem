@@ -177,57 +177,62 @@ export const FloatingConversationalAgent: React.FC<FloatingConversationalAgentPr
 
     try {
       // Route to appropriate conversation engine
-      const { selectedEngines } = await routeMessage(
-        'enrollment-agent', 
-        currentMessage, 
-        { moduleType, currentSection, session: enrollmentSession }
+      // Route to appropriate conversation engine (with safe fallback)
+      let engineToUse: any = null;
+      try {
+        const routed = await routeMessage(
+          'enrollment-agent', 
+          currentMessage, 
+          { moduleType, currentSection, session: enrollmentSession }
+        );
+        engineToUse = routed.selectedEngines?.[0] || null;
+      } catch (e) {
+        console.warn('Routing failed or no engines assigned, using default engine');
+      }
+
+      // Process with AI engine or fallback echo
+      const response = await processMessage(
+        engineToUse || { id: 'default', name: 'Default Engine' } as any,
+        currentMessage,
+        { 
+          moduleType, 
+          currentSection, 
+          previousData: enrollmentSession?.formData,
+          context: 'enrollment_conversation'
+        }
       );
 
-      if (selectedEngines.length > 0) {
-        // Process with AI engine
-        const response = await processMessage(
-          selectedEngines[0],
-          currentMessage,
-          { 
-            moduleType, 
-            currentSection, 
-            previousData: enrollmentSession?.formData,
-            context: 'enrollment_conversation'
-          }
-        );
-
-        // Extract structured data from AI response
-        const extractedData = await extractStructuredData(currentMessage, currentSection, moduleType);
-        
-        if (extractedData && Object.keys(extractedData).length > 0) {
+      // Extract structured data from message
+      const extractedData = await extractStructuredData(currentMessage, currentSection, moduleType);
+      
+      if (extractedData && Object.keys(extractedData).length > 0) {
         // Update session with extracted data
         await updateSection(currentSection, extractedData);
         
         // Calculate progress
         const newProgress = calculateProgress(enrollmentSession?.formData || {}, extractedData);
         setSessionProgress(newProgress);
+      }
+
+      // Add AI response
+      const agentMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        type: 'agent',
+        content: response.response,
+        timestamp: new Date(),
+        metadata: {
+          section: currentSection,
+          extractedData,
+          confidence: response.confidence
         }
+      };
 
-        // Add AI response
-        const agentMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          type: 'agent',
-          content: response.response,
-          timestamp: new Date(),
-          metadata: {
-            section: currentSection,
-            extractedData,
-            confidence: response.confidence
-          }
-        };
-
-        setMessages(prev => [...prev, agentMessage]);
+      setMessages(prev => [...prev, agentMessage]);
 
       // Check if section is complete and move to next
       if (isSectionComplete(currentSection, extractedData)) {
         await completeSection(currentSection);
         moveToNextSection();
-      }
       }
     } catch (error) {
       console.error('Message processing error:', error);
