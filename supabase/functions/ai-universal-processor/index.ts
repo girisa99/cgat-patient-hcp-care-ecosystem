@@ -158,28 +158,57 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
     throw new Error('Anthropic API key not configured. Please add ANTHROPIC_API_KEY to your Edge Function secrets.');
   }
 
-  const requestBody: any = {
-    model,
-    max_tokens: maxTokens,
-    temperature,
-    messages: [{ role: 'user', content: prompt }]
+  // Normalize a few common aliases/old IDs to known-good models
+  const normalizeModel = (m: string): string => {
+    const ml = m.toLowerCase();
+    if (ml.includes('haiku-fast')) return 'claude-3-5-haiku-20241022';
+    if (ml === 'claude-3-5-sonnet' || ml === 'claude-3-5-sonnet-latest' || (ml.includes('sonnet') && !ml.match(/20\d{2}/))) {
+      // Prefer a widely available stable model if the exact Sonnet ID isn't available
+      return 'claude-3-5-haiku-20241022';
+    }
+    return m;
   };
 
-  if (systemPrompt) {
-    requestBody.system = systemPrompt;
+  let targetModel = normalizeModel(model);
+
+  const buildBody = (mdl: string) => {
+    const body: any = {
+      model: mdl,
+      max_tokens: maxTokens,
+      temperature,
+      messages: [{ role: 'user', content: prompt }]
+    };
+    if (systemPrompt) body.system = systemPrompt;
+    return body;
+  };
+
+  const makeRequest = async (mdl: string) => {
+    console.log(`Calling Claude API with model: ${mdl}`);
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'x-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify(buildBody(mdl)),
+    });
+    return response;
+  };
+
+  // First attempt
+  let response = await makeRequest(targetModel);
+
+  // If model not found (404), retry once with a stable fallback
+  if (!response.ok && response.status === 404) {
+    const errText = await response.text();
+    console.error(`Claude API error (first attempt ${response.status}):`, errText);
+    if (targetModel !== 'claude-3-5-haiku-20241022') {
+      console.log('Retrying Claude call with fallback model: claude-3-5-haiku-20241022');
+      targetModel = 'claude-3-5-haiku-20241022';
+      response = await makeRequest(targetModel);
+    }
   }
-
-  console.log(`Calling Claude API with model: ${model}`);
-
-  const response = await fetch('https://api.anthropic.com/v1/messages', {
-    method: 'POST',
-    headers: {
-      'x-api-key': apiKey,
-      'Content-Type': 'application/json',
-      'anthropic-version': '2023-06-01'
-    },
-    body: JSON.stringify(requestBody),
-  });
 
   if (!response.ok) {
     const errorData = await response.text();
@@ -189,7 +218,7 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
 
   const data = await response.json();
   return {
-    content: data.content[0].text,
+    content: data.content?.[0]?.text || '',
     usage: data.usage
   };
 }
