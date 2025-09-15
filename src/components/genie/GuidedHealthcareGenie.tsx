@@ -26,6 +26,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
+import { MCPPatientOnboardingGuide } from '../mcp/MCPPatientOnboardingGuide';
+import { FlexibleContentGenerator } from '../content/FlexibleContentGenerator';
 
 // Role-based table mappings
 const HEALTHCARE_TABLE_MAPPINGS = {
