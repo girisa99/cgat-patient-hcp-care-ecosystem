@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bot, Sparkles } from 'lucide-react';
 import { GenieConversationInterface } from './GenieConversationInterface';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEdgeFunctionAvailability } from '@/hooks/useEdgeFunctionAvailability';
 import genieLogoImg from '@/assets/genie-logo.png';
 
 interface UniversalConversationGenieProps {
@@ -94,10 +95,16 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   userId
 }) => {
   const location = useLocation();
+  const { isAvailable: edgeFunctionsAvailable } = useEdgeFunctionAvailability();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ bottom: 24, right: 24 }); // Dynamic positioning
   const [genieMode, setGenieMode] = useState<'system' | 'single' | 'multi' | 'publish' | 'general'>('system');
+
+  // Hide Genie entirely if edge functions are unavailable
+  if (!edgeFunctionsAvailable) {
+    return null;
+  }
 
   const currentContext = getPageContext(location.pathname);
   const contextInfo = getContextInfo(currentContext);

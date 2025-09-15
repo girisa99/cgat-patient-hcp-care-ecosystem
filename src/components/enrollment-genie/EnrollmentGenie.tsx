@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { Bot, Sparkles, X, MessageCircle, Users, Building2, Maximize2, Minimize2 } from 'lucide-react';
 import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useEdgeFunctionAvailability } from '@/hooks/useEdgeFunctionAvailability';
 
 interface UniversalConversationGenieProps {
   className?: string;
@@ -23,9 +24,15 @@ export const EnrollmentGenie: React.FC<UniversalConversationGenieProps> = ({
   className = '',
   onConversationComplete
 }) => {
+  const { isAvailable: edgeFunctionsAvailable } = useEdgeFunctionAvailability();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Hide Genie entirely if edge functions are unavailable
+  if (!edgeFunctionsAvailable) {
+    return null;
+  }
 
   const handleComplete = (data: any) => {
     setIsOpen(false);
