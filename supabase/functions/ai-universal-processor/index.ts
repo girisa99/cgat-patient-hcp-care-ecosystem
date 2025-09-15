@@ -153,9 +153,9 @@ async function callOpenAI(model: string, prompt: string, systemPrompt?: string, 
 }
 
 async function callClaude(model: string, prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
-  const apiKey = Deno.env.get('ANTHROPIC_API_KEY');
+  const apiKey = Deno.env.get('ANTHROPIC_API_KEY') || Deno.env.get('CLAUDE_API_KEY');
   if (!apiKey) {
-    throw new Error('Anthropic API key not configured. Please add ANTHROPIC_API_KEY to your Edge Function secrets.');
+    throw new Error('Claude API key not configured. Please add ANTHROPIC_API_KEY (or CLAUDE_API_KEY) to your Edge Function secrets.');
   }
 
   // Normalize a few common aliases/old IDs to known-good models
@@ -224,9 +224,9 @@ async function callClaude(model: string, prompt: string, systemPrompt?: string, 
 }
 
 async function callGemini(model: string, prompt: string, systemPrompt?: string, temperature?: number, maxTokens?: number) {
-  const apiKey = Deno.env.get('GOOGLE_API_KEY');
+  const apiKey = Deno.env.get('GOOGLE_API_KEY') || Deno.env.get('GEMINI_API_KEY');
   if (!apiKey) {
-    throw new Error('Google API key not configured. Please add GOOGLE_API_KEY to your Edge Function secrets.');
+    throw new Error('Gemini API key not configured. Please add GOOGLE_API_KEY (or GEMINI_API_KEY) to your Edge Function secrets.');
   }
 
   const fullPrompt = systemPrompt ? `${systemPrompt}\n\n${prompt}` : prompt;
