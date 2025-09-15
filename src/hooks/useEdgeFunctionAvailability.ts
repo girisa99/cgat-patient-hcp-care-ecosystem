@@ -20,17 +20,16 @@ export const useEdgeFunctionAvailability = () => {
     try {
       setAvailability(prev => ({ ...prev, isChecking: true, error: null }));
       
-      // Try a lightweight health check function or any simple function
-      // Using a timeout to prevent hanging
-      const timeoutPromise = new Promise((_, reject) => 
-        setTimeout(() => reject(new Error('Timeout')), 5000)
-      );
-      
-      const functionCall = supabase.functions.invoke('health-check', {
+      // Try a lightweight health check function
+      const { data, error } = await supabase.functions.invoke('health-check', {
         body: { test: true }
       });
       
-      await Promise.race([functionCall, timeoutPromise]);
+      console.log('🏥 Edge function health check result:', { data, error });
+      
+      if (error) {
+        throw new Error(`Health check failed: ${error.message}`);
+      }
       
       setAvailability({
         isAvailable: true,
@@ -41,7 +40,12 @@ export const useEdgeFunctionAvailability = () => {
       
       return true;
     } catch (error: any) {
-      console.warn('Edge functions unavailable:', error);
+      console.error('❌ Edge functions unavailable:', error);
+      console.error('Error details:', {
+        message: error.message,
+        stack: error.stack,
+        context: error.context
+      });
       
       setAvailability({
         isAvailable: false,
