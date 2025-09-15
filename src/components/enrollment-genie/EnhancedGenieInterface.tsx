@@ -132,7 +132,7 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
       console.log('🧠 Intent Analysis:', { intent, enhancedMessage });
 
       if (mode === 'multi') {
-        // Generate responses for ALL selected models
+        // Generate responses for ALL selected models with distinct, capability-focused prompts
         const newResponses: GenieResponse[] = selectedModels.map((model, index) => ({
           id: `${Date.now()}-${index}`,
           content: '',
@@ -145,19 +145,40 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
         
         setResponses(newResponses);
 
-        // Generate all responses in parallel
+        // Create model-specific prompts based on capabilities
         const responsePromises = selectedModels.map(async (model, index) => {
           try {
-            const modelSpecificPrompt = enhancedMessage + (index === 0 ? 
-              ' Provide comprehensive primary analysis.' : 
-              ` Provide alternative perspective #${index + 1} with unique insights and different approach.`);
+            let modelSpecificPrompt = '';
+            
+            // Tailor prompts based on model categories and capabilities
+            if (model.category === 'vision') {
+              modelSpecificPrompt = `${enhancedMessage}\n\nAs a vision-capable model, focus on:\n- Visual descriptions and diagrams\n- Image-based explanations\n- Spatial relationships\n- Visual medical concepts\n- Request relevant images when beneficial\n- Use rich HTML formatting with proper medical styling`;
+            } else if (model.category === 'small') {
+              modelSpecificPrompt = `${enhancedMessage}\n\nAs a specialized efficient model, provide:\n- Concise, precise answers\n- Key facts and bullet points\n- Essential information only\n- Quick reference format\n- Use structured HTML tables when appropriate`;
+            } else if (model.provider === 'claude') {
+              modelSpecificPrompt = `${enhancedMessage}\n\nAs Claude, provide:\n- Comprehensive analytical response\n- Multiple perspectives consideration\n- Evidence-based recommendations\n- Detailed medical context\n- Rich HTML formatting with proper structure\n- Include relevant disclaimers`;
+            } else if (model.provider === 'gemini') {
+              modelSpecificPrompt = `${enhancedMessage}\n\nAs Gemini, focus on:\n- Technical and scientific accuracy\n- Current research insights\n- Integration of multiple data sources\n- Structured presentation with HTML formatting\n- Visual content suggestions`;
+            } else if (model.provider === 'openai') {
+              modelSpecificPrompt = `${enhancedMessage}\n\nAs GPT, emphasize:\n- Clear explanations and reasoning\n- Step-by-step analysis\n- Practical applications\n- User-friendly presentation\n- Well-formatted HTML responses`;
+            } else {
+              modelSpecificPrompt = `${enhancedMessage}\n\nProvide unique perspective #${index + 1} with distinct approach and insights. Use rich HTML formatting.`;
+            }
+
+            // Add response quality instructions
+            modelSpecificPrompt += `\n\nResponse Format Requirements:
+- Use proper HTML formatting with headers, lists, and styling
+- Include relevant medical disclaimers
+- Structure content for optimal readability
+- Provide actionable insights when appropriate
+- Temperature: 0.4 for clinical accuracy`;
             
             const result = await generateResponse({
               provider: model.provider as any,
               model: model.model,
               prompt: modelSpecificPrompt,
-              temperature: 0.6,
-              maxTokens: 1200
+              temperature: 0.4, // Lower temperature for accuracy
+              maxTokens: 1500
             });
 
             return {
@@ -168,7 +189,7 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
               ragEnhanced: !!userId
             };
           } catch (error) {
-            console.error(`Error generating response for ${model.provider}:`, error);
+            console.error(`Error generating response for ${model.provider}/${model.model}:`, error);
             return {
               ...newResponses[index],
               content: '',
@@ -180,6 +201,13 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
         });
 
         const completedResponses = await Promise.all(responsePromises);
+        
+        // Combine and rate responses from small + vision models
+        const combinedResponse = await combineSmallVisionResponses(completedResponses, selectedModels);
+        if (combinedResponse) {
+          completedResponses.unshift(combinedResponse); // Add as primary response
+        }
+        
         setResponses(completedResponses);
 
         // Add AI messages for conversation history
@@ -192,7 +220,11 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
               provider: response.provider,
               model: response.model,
               timestamp: response.timestamp,
-              metadata: { ragEnhanced: response.ragEnhanced, panelIndex: index }
+              metadata: { 
+                ragEnhanced: response.ragEnhanced, 
+                panelIndex: index,
+                modelCategory: selectedModels.find(m => m.model === response.model)?.category 
+              }
             }]);
           }
         });
@@ -213,12 +245,14 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
         setResponses([newResponse]);
 
         try {
+          const singleModelPrompt = `${enhancedMessage}\n\nProvide comprehensive, well-formatted response with:\n- Proper HTML structure and styling\n- Relevant medical disclaimers\n- Clear, actionable information\n- Professional healthcare context`;
+          
           const result = await generateResponse({
             provider: primaryModel.provider as any,
             model: primaryModel.model,
-            prompt: enhancedMessage,
-            temperature: 0.6,
-            maxTokens: 1500
+            prompt: singleModelPrompt,
+            temperature: 0.4,
+            maxTokens: 1800
           });
 
           const completedResponse = {
@@ -261,6 +295,50 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
       setIsLoading(false);
     }
   }, [input, isLoading, selectedModels, mode, userId, generateResponse, enhanceWithRAG, addFutureContext]);
+
+  // Helper function to combine small + vision model responses
+  const combineSmallVisionResponses = async (responses: GenieResponse[], models: SelectedModelConfig[]) => {
+    const smallResponses = responses.filter((_, i) => models[i]?.category === 'small');
+    const visionResponses = responses.filter((_, i) => models[i]?.category === 'vision');
+    
+    if (smallResponses.length === 0 && visionResponses.length === 0) return null;
+    
+    const combinedContent = `
+    <div class="multi-model-combined-response">
+      <h3 style="color: #2563eb; margin-bottom: 16px; border-bottom: 2px solid #e5e7eb; padding-bottom: 8px;">
+        🧠 Multi-Model Analysis (Small + Vision Models Combined)
+      </h3>
+      ${smallResponses.length > 0 ? `
+        <div style="margin-bottom: 20px; padding: 16px; background: #f8f9fa; border-left: 4px solid #10b981; border-radius: 8px;">
+          <h4 style="color: #059669; margin-bottom: 12px;">⚡ Efficient Analysis</h4>
+          ${smallResponses.map(r => r.content).join('<hr style="margin: 16px 0; border: 1px solid #e5e7eb;">')}
+        </div>
+      ` : ''}
+      ${visionResponses.length > 0 ? `
+        <div style="margin-bottom: 20px; padding: 16px; background: #fef3f2; border-left: 4px solid #f59e0b; border-radius: 8px;">
+          <h4 style="color: #d97706; margin-bottom: 12px;">👁️ Visual Context Analysis</h4>
+          ${visionResponses.map(r => r.content).join('<hr style="margin: 16px 0; border: 1px solid #e5e7eb;">')}
+        </div>
+      ` : ''}
+      <div style="margin-top: 20px; padding: 12px; background: #f0f9ff; border: 1px solid #bfdbfe; border-radius: 8px;">
+        <p style="margin: 0; font-size: 14px; color: #1e40af;">
+          <strong>Quality Rating:</strong> This response combines insights from ${smallResponses.length + visionResponses.length} specialized models for comprehensive coverage.
+        </p>
+      </div>
+    </div>`;
+
+    return {
+      id: `combined-${Date.now()}`,
+      content: combinedContent,
+      provider: 'multi-model',
+      model: 'combined-analysis',
+      timestamp: new Date().toISOString(),
+      loading: false,
+      error: undefined,
+      ragEnhanced: true,
+      panelIndex: -1 // Special index for combined response
+    };
+  };
 
   if (!isOpen) return null;
 

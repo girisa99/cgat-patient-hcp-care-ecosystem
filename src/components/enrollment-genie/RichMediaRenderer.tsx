@@ -3,7 +3,7 @@
  * Supports comprehensive rich media: HTML, tables, images, videos, PDFs, Word docs, 
  * SVG, infographics, Excel files, and AI generation with streamlined layout
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { externalVisualContentService, VisualContentSource } from '@/services/externalVisualContentService';
+import universalMediaService from '@/services/universalMediaService';
 import { toast } from 'sonner';
 
 interface RichMediaRendererProps {
@@ -220,10 +221,37 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
   };
 
   const renderHTML = (htmlContent: string) => {
+    // Enhanced HTML rendering with medical styling
     return (
       <div 
-        className="prose prose-sm max-w-none my-4"
-        dangerouslySetInnerHTML={{ __html: htmlContent }}
+        className="prose prose-sm max-w-none my-4 medical-content"
+        dangerouslySetInnerHTML={{ 
+          __html: htmlContent.replace(
+            /<h([1-6])/g, 
+            '<h$1 style="color: #1e40af; margin-top: 1.5rem; margin-bottom: 0.75rem; font-weight: 600;"'
+          ).replace(
+            /<p>/g,
+            '<p style="line-height: 1.6; margin-bottom: 1rem; color: #374151;">'
+          ).replace(
+            /<ul>/g,
+            '<ul style="margin: 1rem 0; padding-left: 1.5rem; list-style-type: disc;">'
+          ).replace(
+            /<li>/g,
+            '<li style="margin-bottom: 0.5rem; color: #374151;">'
+          ).replace(
+            /<strong>/g,
+            '<strong style="color: #1f2937; font-weight: 600;">'
+          ).replace(
+            /<table>/g,
+            '<table style="width: 100%; border-collapse: collapse; margin: 1rem 0; border: 1px solid #e5e7eb;">'
+          ).replace(
+            /<th>/g,
+            '<th style="padding: 0.75rem; background: #f9fafb; border: 1px solid #e5e7eb; font-weight: 600; text-align: left;">'
+          ).replace(
+            /<td>/g,
+            '<td style="padding: 0.75rem; border: 1px solid #e5e7eb; color: #374151;">'
+          )
+        }}
       />
     );
   };
@@ -286,7 +314,58 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
     });
   };
 
-  const handleGenerateImage = async () => {
+  const handleGenerateImage = useCallback(async (prompt: string): Promise<string> => {
+    try {
+      // Use context-aware medical image generation
+      const result = await universalMediaService.generateMedicalImage(
+        prompt, 
+        'clinical', 
+        modelContext?.provider === 'gemini' ? 'gemini' : 'huggingface',
+        content // Pass original content for context
+      );
+      
+      if (result.success && result.mediaUrl) {
+        return result.mediaUrl;
+      } else {
+        throw new Error(result.error || 'Failed to generate image');
+      }
+    } catch (error) {
+      console.error('Context-aware image generation failed:', error);
+      throw error;
+    }
+  }, [content, modelContext]);
+
+  const handleGenerateVideo = useCallback(async (prompt: string): Promise<string> => {
+    try {
+      // Use context-aware video generation
+      const result = await universalMediaService.generateContextVideo(
+        prompt,
+        content, // Pass original content for context
+        'clinical'
+      );
+      
+      if (result.success && result.mediaUrl) {
+        return result.mediaUrl;
+      } else {
+        throw new Error(result.error || 'Failed to generate video');
+      }
+    } catch (error) {
+      console.error('Context-aware video generation failed:', error);
+      throw error;
+    }
+  }, [content]);
+
+  // Auto-search for visual content based on message content
+  useEffect(() => {
+    if (enableVisualSearch && content) {
+      const searchTerms = extractSearchTerms(content);
+      if (searchTerms.length > 0) {
+        searchVisualContent(searchTerms.join(' '));
+      }
+    }
+  }, [content, enableVisualSearch]);
+
+  const handleImageGeneration = async () => {
     if (!imagePrompt.trim() || !onGenerateImage) return;
     
     setIsGenerating(true);
@@ -306,7 +385,7 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
     }
   };
 
-  const handleGenerateVideo = async () => {
+  const handleVideoGeneration = async () => {
     if (!videoPrompt.trim() || !onGenerateVideo) return;
     
     setIsGenerating(true);
@@ -315,8 +394,7 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
       setGeneratedMedia(prev => [...prev, { type: 'video', url: videoUrl }]);
       setVideoPrompt('');
     } catch (error) {
-      console.error('Error generating video:', error);
-      toast.error('Video generation failed. Showing related visual content instead.');
+      console.error('Video generation failed. Showing related visual content instead.');
       if (videoPrompt.trim()) {
         searchVisualContent(videoPrompt);
         setShowVisualContent(true);
@@ -325,16 +403,6 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
       setIsGenerating(false);
     }
   };
-
-  // Auto-search for visual content based on message content
-  useEffect(() => {
-    if (enableVisualSearch && content) {
-      const searchTerms = extractSearchTerms(content);
-      if (searchTerms.length > 0) {
-        searchVisualContent(searchTerms.join(' '));
-      }
-    }
-  }, [content, enableVisualSearch]);
 
   const extractSearchTerms = (text: string): string[] => {
     // Extract medical/scientific terms for visual search
@@ -535,7 +603,7 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
                     className="text-sm"
                   />
                   <Button 
-                    onClick={handleGenerateImage}
+                    onClick={handleImageGeneration}
                     disabled={!imagePrompt.trim() || isGenerating}
                     size="sm"
                   >
@@ -556,7 +624,7 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
                     className="text-sm"
                   />
                   <Button 
-                    onClick={handleGenerateVideo}
+                    onClick={handleVideoGeneration}
                     disabled={!videoPrompt.trim() || isGenerating}
                     size="sm"
                   >

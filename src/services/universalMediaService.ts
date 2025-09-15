@@ -154,17 +154,27 @@ class UniversalMediaService {
   }
 
   /**
-   * Enhanced medical image generation with provider fallback
+   * Enhanced medical image generation with context-aware accuracy
    */
-  async generateMedicalImage(prompt: string, context?: 'clinical' | 'research' | 'educational', preferredProvider?: 'gemini' | 'huggingface'): Promise<MediaResponse> {
+  async generateMedicalImage(prompt: string, context?: 'clinical' | 'research' | 'educational', preferredProvider?: 'gemini' | 'huggingface', userMessage?: string): Promise<MediaResponse> {
     let enhancedPrompt = prompt;
     
+    // Extract relevant context from user message for better accuracy
+    if (userMessage) {
+      const medicalKeywords = this.extractMedicalContext(userMessage);
+      if (medicalKeywords.length > 0) {
+        enhancedPrompt = `${prompt} showing ${medicalKeywords.join(', ')}`;
+      }
+    }
+    
     if (context === 'clinical') {
-      enhancedPrompt = `MEDICAL CLINICAL ILLUSTRATION: ${prompt}. Professional clinical photograph style, medical textbook quality, precise anatomical structures, sterile clinical environment, ultra high resolution, professional medical photography, precise anatomical accuracy, clinical documentation quality`;
+      enhancedPrompt = `CLINICAL MEDICAL ILLUSTRATION: ${enhancedPrompt}. Ultra-realistic medical photography style, hospital clinical setting, precise anatomical accuracy, professional medical documentation quality, high-resolution clinical image, medical textbook standard, sterile clinical environment, accurate medical representation`;
     } else if (context === 'research') {
-      enhancedPrompt = `SCIENTIFIC RESEARCH VISUALIZATION: ${prompt}. Peer-reviewed journal figure quality, technical scientific accuracy, research laboratory setting, detailed scientific methodology, high quality medical illustration, anatomically correct, professional medical diagram`;
+      enhancedPrompt = `SCIENTIFIC RESEARCH VISUALIZATION: ${enhancedPrompt}. Peer-reviewed journal figure quality, technical scientific precision, modern research laboratory, detailed scientific methodology illustration, professional biomedical research diagram, anatomically precise, research-grade visualization`;
     } else if (context === 'educational') {
-      enhancedPrompt = `EDUCATIONAL MEDICAL DIAGRAM: ${prompt}. Medical school textbook illustration, clear anatomical labels, instructional diagram style, learning-focused presentation, medical illustration style, clear and accurate`;
+      enhancedPrompt = `EDUCATIONAL MEDICAL DIAGRAM: ${enhancedPrompt}. Medical school textbook illustration style, clear anatomical labeling, instructional medical diagram, educational healthcare presentation, learning-focused medical visualization, clear and medically accurate`;
+    } else {
+      enhancedPrompt = `ACCURATE MEDICAL VISUALIZATION: ${enhancedPrompt}. Professional healthcare illustration, medically accurate representation, clear clinical details, healthcare professional quality`;
     }
 
     if (preferredProvider) {
@@ -215,6 +225,49 @@ class UniversalMediaService {
     };
 
     return this.generateMedicalImage(stagePrompts[stage], 'clinical', preferredProvider);
+  }
+
+  /**
+   * Extract medical context from user message for more accurate image generation
+   */
+  private extractMedicalContext(message: string): string[] {
+    const medicalTerms = [
+      'CAR-T', 'immunotherapy', 'cell therapy', 'clinical trial', 'FDA approval',
+      'cancer treatment', 'biotech', 'pharmaceutical', 'drug development',
+      'personalized medicine', 'gene therapy', 'molecular biology', 'oncology',
+      'T-cells', 'lymphocytes', 'tumor', 'metastasis', 'chemotherapy',
+      'radiation therapy', 'surgical', 'biopsy', 'pathology', 'diagnosis'
+    ];
+    
+    const lowerMessage = message.toLowerCase();
+    return medicalTerms.filter(term => lowerMessage.includes(term.toLowerCase()));
+  }
+
+  /**
+   * Generate context-aware video with improved prompt accuracy
+   */
+  async generateContextVideo(prompt: string, userMessage: string, context?: 'clinical' | 'research' | 'educational'): Promise<MediaResponse> {
+    const medicalContext = this.extractMedicalContext(userMessage);
+    let enhancedPrompt = prompt;
+    
+    if (medicalContext.length > 0) {
+      enhancedPrompt = `${prompt} demonstrating ${medicalContext.slice(0, 3).join(', ')}`;
+    }
+    
+    if (context === 'clinical') {
+      enhancedPrompt = `CLINICAL PROCEDURE VIDEO: ${enhancedPrompt}. Professional medical procedure demonstration, clinical setting, healthcare professional performing, step-by-step medical process, educational clinical video, accurate medical techniques`;
+    } else if (context === 'research') {
+      enhancedPrompt = `RESEARCH PROCESS VIDEO: ${enhancedPrompt}. Scientific laboratory procedure, research methodology demonstration, professional laboratory techniques, biotech research process, scientific accuracy`;
+    } else {
+      enhancedPrompt = `MEDICAL EDUCATIONAL VIDEO: ${enhancedPrompt}. Healthcare education demonstration, clear instructional content, medical learning video, professional healthcare presentation`;
+    }
+    
+    return this.generateVideo({
+      prompt: enhancedPrompt,
+      provider: 'gemini',
+      duration: 15,
+      aspectRatio: '16:9'
+    });
   }
 }
 
