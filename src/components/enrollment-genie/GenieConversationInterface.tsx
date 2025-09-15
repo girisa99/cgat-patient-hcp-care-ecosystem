@@ -1,37 +1,25 @@
 /**
- * GENIE CONVERSATION INTERFACE (COMPREHENSIVE AI ASSISTANT)
- * Advanced multi-model AI assistant with mode switching, medical context processing,
- * RAG integration, Label Studio support, and MCP tools
+ * GENIE CONVERSATION INTERFACE - SIMPLIFIED VERSION
+ * Streamlined AI assistant with clean layout and proper context management
  */
 import React, { useState, useCallback, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   Bot, 
   X, 
-  User, 
   Send,
   Loader2,
   Settings,
   Brain,
   Database,
-  FileText,
   Microscope,
-  BookOpen,
-  Zap,
-  Eye,
   Wrench,
-  Target,
-  MessageSquare,
-  GitBranch,
-  Workflow,
-  RotateCcw,
-  History
+  History,
+  MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMasterToast } from '@/hooks/useMasterToast';
@@ -39,21 +27,19 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 // Core AI and conversation hooks
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { useConversationState } from '@/hooks/useConversationState';
-import { useLabelStudio } from '@/hooks/useLabelStudio';
+import { useConversationalContext } from '@/hooks/useConversationalContext';
 
 // Genie-specific hooks and services
 import { ragService } from '@/services/ragService';
 import { useGenieState } from '@/hooks/useGenieState';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { useConversationalContext } from '@/hooks/useConversationalContext';
 
 // UI Components
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
 import { TypingIndicator } from './TypingIndicator';
-import { UniversalModelSelector, SelectedModelConfig } from '@/components/ai';
-import { AnimatedGenieResponse } from './AnimatedGenieResponse';
-import { GenieConfigurationDashboard } from '@/components/genie/GenieConfigurationDashboard';
+import { SelectedModelConfig } from '@/components/ai';
 import { GenieSessionManager } from '@/components/genie/GenieSessionManager';
+import { StreamlinedModelSelector } from '@/components/genie/StreamlinedModelSelector';
 
 // Assets
 import genieLogoImg from '@/assets/genie-logo.png';
@@ -78,63 +64,47 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   mode = 'system',
   onModeChange
 }) => {
+  // State management
   const [message, setMessage] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isExpanded, setIsExpanded] = useState(false);
   const [showModelSelector, setShowModelSelector] = useState(false);
   const [showSessionManager, setShowSessionManager] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  
+  // Model and feature configuration
   const [selectedModels, setSelectedModels] = useState<SelectedModelConfig[]>([]);
   const [enabledFeatures, setEnabledFeatures] = useState<string[]>([]);
   const [selectedMCPTools, setSelectedMCPTools] = useState<string[]>([]);
   const [medicalContext, setMedicalContext] = useState(false);
   const [ragEnabled, setRAGEnabled] = useState(false);
-  const [labelStudioEnabled, setLabelStudioEnabled] = useState(false);
-  const [knowledgeBase, setKnowledgeBase] = useState<string>('');
   
+  // Hooks
   const { generateResponse } = useUniversalAI();
   const { state, addMessage, updateConversationConfig, switchMode, resetConversation } = useConversationState();
-  const { listProjects } = useLabelStudio();
-  const { currentConfig, saveConfiguration, currentSession, setCurrentSession, saveSession, updateSession, createNewSession, loadConfigurations, loadSessions } = useGenieState({ autoLoad: false });
+  const { 
+    currentSession, 
+    setCurrentSession, 
+    saveSession, 
+    updateSession, 
+    createNewSession 
+  } = useGenieState({ autoLoad: false });
   const { showError, showSuccess } = useMasterToast();
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
-  const { updateContext, generateContextualResponse, getConversationSummary } = useConversationalContext();
+  const { updateContext, generateContextualResponse } = useConversationalContext();
+  
   const currentMode = (state?.selectedMode as any) || mode;
 
-  // Authentication check - redirect to login if not authenticated
+  // Authentication check
   useEffect(() => {
     if (isOpen && !authLoading && !isAuthenticated) {
       showError('Authentication required', 'Please log in to use Genie AI features');
       onClose();
-      // Redirect to login page
       window.location.href = '/login';
       return;
     }
   }, [isOpen, isAuthenticated, authLoading, showError, onClose]);
 
-  // Sync selection from current configuration when opened
-  useEffect(() => {
-    if (!isOpen || !isAuthenticated) return;
-    if (currentConfig) {
-      setSelectedModels(
-        (currentConfig.selected_models || []).map((model, idx) => ({
-          model,
-          provider: model.includes('claude') ? 'claude' : model.includes('gemini') ? 'gemini' : 'openai',
-          name: model,
-          category: currentConfig.selected_model_type === 'slm' ? 'small' : currentConfig.selected_model_type === 'vlm' ? 'vision' : 'llm',
-          role: idx === 0 ? 'primary' : 'secondary',
-          weight: 1,
-        }))
-      );
-      setEnabledFeatures(currentConfig.enabled_features || []);
-      setSelectedMCPTools(currentConfig.selected_mcp_tools || []);
-      setMedicalContext(!!currentConfig.medical_context);
-      setKnowledgeBase(currentConfig.knowledge_base || '');
-    } else {
-      setSelectedModels([]);
-    }
-  }, [currentConfig, isOpen]);
   // Auto-detect medical context
   useEffect(() => {
     if (context && (context.includes('medical') || context.includes('patient') || context.includes('health'))) {
@@ -143,58 +113,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     }
   }, [context]);
 
-  // Auto-save configuration changes (disabled to prevent continuous API calls)
-  /*
-  useEffect(() => {
-    if (currentConfig && saveConfiguration) {
-      const configToSave = {
-        configuration_name: 'auto_save',
-        selected_mode: mode as 'system' | 'single' | 'multi',
-        selected_models: selectedModels.map(m => m.model),
-        left_model: selectedModels.find(m => m.role === 'primary')?.model || 'GEMINI',
-        right_model: selectedModels.find(m => m.role === 'secondary')?.model || 'GPT',
-        selected_model_type: selectedModels[0]?.category as 'llm' | 'slm' | 'vlm' || 'llm',
-        enabled_features: enabledFeatures,
-        selected_mcp_tools: selectedMCPTools,
-        knowledge_base: knowledgeBase,
-        medical_context: medicalContext,
-        is_default: true
-      };
-      
-      // Debounce the save to avoid too many calls
-      const timeoutId = setTimeout(() => {
-        saveConfiguration(configToSave);
-      }, 1000);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [mode, selectedModels, enabledFeatures, selectedMCPTools, knowledgeBase, medicalContext, currentConfig, saveConfiguration]);
-
-  // Auto-save conversation messages (disabled to prevent continuous API calls)
-  useEffect(() => {
-    if (currentSession && updateSession && state.messages.length > 0) {
-      const timeoutId = setTimeout(() => {
-        updateSession(state.conversationId, {
-          messages: state.messages,
-          configuration_snapshot: {
-            mode,
-            selectedModels,
-            enabledFeatures,
-            selectedMCPTools
-          }
-        });
-      }, 2000);
-      
-      return () => clearTimeout(timeoutId);
-    }
-  }, [state.messages, currentSession, updateSession, state.conversationId, mode, selectedModels, enabledFeatures, selectedMCPTools]);
-  */
-
-  // Update conversation state when mode or models change
+  // Update conversation state when configuration changes
   useEffect(() => {
     updateConversationConfig({
       selectedMode: mode as any,
-      selectedModel: selectedModels[0]?.model || 'GEMINI',
+      selectedModel: selectedModels[0]?.model || 'gpt-4o-mini',
       selectedModelType: (selectedModels[0]?.category === 'small' ? 'slm' : 
                          selectedModels[0]?.category === 'vision' ? 'vlm' : 'llm') as 'llm' | 'slm' | 'vlm',
       enabledFeatures,
@@ -205,27 +128,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const handleModeChange = useCallback((newMode: 'system' | 'single' | 'multi' | 'publish') => {
     switchMode(newMode as any);
     onModeChange?.(newMode);
-    // If switching to multi without 2+ models selected, prompt model selection
     if (newMode === 'multi' && selectedModels.length < 2) {
       setShowModelSelector(true);
     }
   }, [switchMode, onModeChange, selectedModels]);
-
-  const handleFeatureToggle = useCallback((feature: string) => {
-    setEnabledFeatures(prev => 
-      prev.includes(feature) 
-        ? prev.filter(f => f !== feature)
-        : [...prev, feature]
-    );
-  }, []);
-
-  const handleMCPToolToggle = useCallback((tool: string) => {
-    setSelectedMCPTools(prev =>
-      prev.includes(tool)
-        ? prev.filter(t => t !== tool)
-        : [...prev, tool]
-    );
-  }, []);
 
   const buildSystemPrompt = useCallback(() => {
     let systemPrompt = 'You are a comprehensive AI assistant with advanced capabilities.';
@@ -234,12 +140,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       systemPrompt += ' You specialize in medical and healthcare contexts, with expertise in patient care, medical terminology, and healthcare processes.';
     }
     
-    if (ragEnabled && knowledgeBase) {
-      systemPrompt += ` You have access to specialized knowledge from: ${knowledgeBase}.`;
-    }
-    
-    if (labelStudioEnabled) {
-      systemPrompt += ' You can assist with data labeling, annotation tasks, and machine learning data preparation.';
+    if (ragEnabled) {
+      systemPrompt += ' You have access to specialized knowledge databases and can provide enhanced contextual responses.';
     }
     
     if (selectedMCPTools.length > 0) {
@@ -247,7 +149,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     }
     
     return systemPrompt;
-  }, [medicalContext, ragEnabled, knowledgeBase, labelStudioEnabled, selectedMCPTools]);
+  }, [medicalContext, ragEnabled, selectedMCPTools]);
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -263,15 +165,16 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       // Generate contextual enhancement
       const contextualResponse = generateContextualResponse(userMessage);
       
+      // Add user message to conversation
       addMessage({
         role: 'user',
         content: userMessage,
         timestamp: new Date().toISOString(),
         provider: (selectedModels[0]?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
-        model: selectedModels[0]?.model || 'gpt-4'
+        model: selectedModels[0]?.model || 'gpt-4o-mini'
       });
 
-      // Enhance prompt with conversational context and RAG
+      // Enhance prompt with RAG if enabled
       let enhancedPrompt = contextualResponse.enhancedPrompt;
       let contextSources: string[] = [];
       
@@ -284,15 +187,13 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           console.log('RAG enhancement successful, sources:', contextSources);
         } catch (error) {
           console.warn('RAG enhancement failed, proceeding with contextual prompt:', error);
-          // Don't throw error, just continue with contextual prompt
         }
       }
 
-      let responses: any[] = [];
-
+      // Generate AI response(s)
       if (currentMode === 'multi' && selectedModels.length > 1) {
-        // Multi-model mode - get responses from multiple models using universalAI
-        responses = await Promise.all(
+        // Multi-model mode
+        const responses = await Promise.all(
           selectedModels.map(async model => {
             return await generateResponse({
               provider: (model.provider as 'openai' | 'claude' | 'gemini') || 'openai',
@@ -305,11 +206,6 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           })
         );
         
-        // If all failed, show a single consolidated error toast
-        if (responses.every(r => !r)) {
-          showError('AI request failed', 'AI service is not reachable. Please ensure the Supabase Edge Function is accessible.');
-        }
-        
         // Add each response
         responses.forEach((resp, index) => {
           if (resp && resp.content) {
@@ -318,12 +214,16 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               content: resp.content,
               timestamp: new Date().toISOString(),
               provider: (selectedModels[index]?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
-              model: selectedModels[index]?.model || 'gpt-4'
+              model: selectedModels[index]?.model || 'gpt-4o-mini'
             });
           }
         });
+        
+        if (responses.every(r => !r)) {
+          showError('AI request failed', 'AI service is not reachable. Please check configuration.');
+        }
       } else {
-        // Single model response using universalAI
+        // Single model response
         const primaryModel = selectedModels.find(m => m.role === 'primary') || selectedModels[0];
         const resp = await generateResponse({
           provider: (primaryModel?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
@@ -346,12 +246,12 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       }
     } catch (error: any) {
       console.error('Error generating response:', error);
-      const raw = error?.message || String(error);
-      const friendly = raw.includes('Failed to fetch')
+      const friendly = error?.message?.includes('Failed to fetch')
         ? 'AI service is not reachable. Please check Edge Functions configuration.'
         : (error instanceof Error ? error.message : 'Unknown error');
+      
       showError('Failed to generate response', friendly);
-      // Also add an assistant message so the chat shows feedback
+      
       addMessage({
         role: 'assistant',
         content: `Unable to generate a response: ${friendly}`,
@@ -363,11 +263,6 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       setIsLoading(false);
     }
   };
-
-  const availableMCPTools = [
-    'filesystem', 'memory', 'web-search', 'database', 'api-client', 
-    'document-processor', 'image-analyzer', 'code-executor'
-  ];
 
   if (!isOpen) return null;
 
@@ -382,18 +277,18 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             ? 'top-0 right-0 left-0 bottom-0 w-full h-full' 
             : isMinimized 
               ? 'top-4 right-4 w-80 h-16' 
-              : 'top-0 right-0 h-full w-[450px] border-l rounded-l-lg'
+              : 'top-0 right-0 h-full w-[500px] border-l rounded-l-lg'
         }`}
       >
         <div className="flex flex-col h-full">
-          {/* Header */}
-          <div className="flex items-center justify-between p-4 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
-            <div className="flex items-center gap-3">
+          {/* Simplified Header */}
+          <div className="flex items-center justify-between p-3 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
+            <div className="flex items-center gap-2">
               <div className="p-1 bg-primary/10 rounded-lg">
                 <img 
                   src={genieLogoImg} 
-                  alt="GENIE - Cell & Gene Technology Navigator" 
-                  className="h-12 w-auto object-contain rounded-lg"
+                  alt="GENIE" 
+                  className="h-8 w-auto object-contain"
                   loading="eager"
                   onError={(e) => {
                     console.warn('GENIE logo failed to load');
@@ -402,63 +297,27 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 />
               </div>
               <div>
-                <h3 className="font-semibold text-lg bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
-                  GENIE
+                <h3 className="font-semibold text-base bg-gradient-to-r from-cyan-600 to-blue-600 bg-clip-text text-transparent">
+                  GENIE AI
                 </h3>
-                <p className="text-xs text-muted-foreground font-medium">I am your technology navigator</p>
                 <p className="text-xs text-muted-foreground">
-                  {currentMode === 'multi' ? 'Multi-Model Chat' : medicalContext ? 'Medical AI' : 'AI Assistant'}
+                  {selectedModels.length} model{selectedModels.length !== 1 ? 's' : ''} • {currentMode} mode
                 </p>
-                <div className="text-[11px] text-muted-foreground mt-1 max-w-[240px] truncate" title={selectedModels.length > 0 ? selectedModels.map(m => `${m.provider}:${m.model}`).join(', ') : 'None'}>
-                  Selected: {selectedModels.length > 0 ? selectedModels.map(m => `${m.provider}:${m.model}`).join(', ') : 'None'}
-                </div>
               </div>
             </div>
             
             <div className="flex items-center gap-1">
-              <Button variant="outline" size="sm" onClick={async () => {
-                resetConversation();
-                setSelectedModels([]);
-                const draft = createNewSession();
-                const saved = await saveSession({
-                  conversation_id: draft.conversation_id,
-                  session_name: draft.session_name,
-                  messages: [],
-                  configuration_snapshot: {
-                    mode: currentMode,
-                    selectedModels,
-                    enabledFeatures,
-                    selectedMCPTools,
-                  },
-                  is_active: true,
-                } as any);
-                if (saved) {
-                  setCurrentSession(saved);
-                  showSuccess('New session created');
-                } else {
-                  showError('Could not save the new session');
-                }
-              }}>
-                <RotateCcw className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => {
-                // Refresh current session
-                resetConversation();
-                showSuccess('Session refreshed');
-              }}>
-                <History className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowModelSelector(true)}>
+              <Button variant="ghost" size="sm" onClick={() => setShowModelSelector(true)}>
                 <Settings className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setShowSessionManager(true)}>
-                <Database className="h-4 w-4" />
+              <Button variant="ghost" size="sm" onClick={() => setShowSessionManager(true)}>
+                <History className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setIsMinimized(!isMinimized)}>
-                {isMinimized ? '□' : '_'}
+              <Button variant="ghost" size="sm" onClick={() => setIsMinimized(!isMinimized)}>
+                <span className="text-sm">_</span>
               </Button>
-              <Button variant="outline" size="sm" onClick={() => setIsMaximized(!isMaximized)}>
-                {isMaximized ? '⧉' : '□'}
+              <Button variant="ghost" size="sm" onClick={() => setIsMaximized(!isMaximized)}>
+                <span className="text-sm">□</span>
               </Button>
               <Button variant="ghost" size="sm" onClick={onClose}>
                 <X className="h-4 w-4" />
@@ -466,345 +325,197 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
           </div>
 
-          {/* Mode Selector & Quick Actions */}
-          <div className="p-3 border-b bg-muted/20">
-            <div className="flex items-center justify-between mb-2">
-              <Select value={currentMode} onValueChange={handleModeChange}>
-                <SelectTrigger className="w-32 h-8">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent className="bg-background border shadow-md z-[60]">
-                  <SelectItem value="system">
-                    <div className="flex items-center gap-2">
-                      <Workflow className="h-3 w-3" />
-                      System
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="single">
-                    <div className="flex items-center gap-2">
-                      <MessageSquare className="h-3 w-3" />
-                      Single
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="multi">
-                    <div className="flex items-center gap-2">
-                      <GitBranch className="h-3 w-3" />
-                      Multi
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="publish">
-                    <div className="flex items-center gap-2">
-                      <Target className="h-3 w-3" />
-                      Publish
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-              
-              <div className="flex items-center gap-1">
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => window.location.href = '/patient-onboarding'}
-                  className="h-8 px-2 text-xs"
-                >
-                  <User className="h-3 w-3 mr-1" />
-                  Enroll
-                </Button>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={() => window.location.href = '/gen-ai'}
-                  className="h-8 px-2 text-xs"
-                >
-                  <Zap className="h-3 w-3 mr-1" />
-                  Gen AI
-                </Button>
-              </div>
-            </div>
-            
-            {/* Active Features */}
-            <div className="flex gap-1 flex-wrap">
-              {medicalContext && <Badge variant="secondary" className="text-xs h-5"><Microscope className="h-2 w-2 mr-1" />Medical</Badge>}
-              {ragEnabled && <Badge variant="secondary" className="text-xs h-5"><Database className="h-2 w-2 mr-1" />RAG</Badge>}
-              {labelStudioEnabled && <Badge variant="secondary" className="text-xs h-5"><FileText className="h-2 w-2 mr-1" />Label</Badge>}
-              {selectedMCPTools.length > 0 && <Badge variant="secondary" className="text-xs h-5"><Wrench className="h-2 w-2 mr-1" />Tools({selectedMCPTools.length})</Badge>}
-              {selectedModels.length > 0 && <Badge variant="secondary" className="text-xs h-5"><Brain className="h-2 w-2 mr-1" />Models({selectedModels.length})</Badge>}
-            </div>
-          </div>
-
-            {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col min-h-0">
-              {currentMode === 'multi' && selectedModels.length > 1 ? (
-                /* Split Screen for Multi-Model */
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="p-2 border-b bg-muted/10 flex-shrink-0">
-                    <p className="text-xs text-muted-foreground text-center">Multi-Model Conversation</p>
+          {!isMinimized && (
+            <>
+              {/* Context Status Bar */}
+              <div className="px-3 py-2 bg-muted/20 border-b">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Switch
+                      checked={medicalContext}
+                      onCheckedChange={setMedicalContext}
+                      className="scale-75"
+                    />
+                    <span className="text-xs text-muted-foreground">Medical Context</span>
+                    
+                    <Switch
+                      checked={ragEnabled}
+                      onCheckedChange={setRAGEnabled}
+                      className="scale-75 ml-3"
+                    />
+                    <span className="text-xs text-muted-foreground">RAG Enabled</span>
+                    
+                    {selectedMCPTools.length > 0 && (
+                      <Badge variant="secondary" className="text-xs ml-2">
+                        {selectedMCPTools.length} tools active
+                      </Badge>
+                    )}
                   </div>
                   
-                  <div className="flex-1 grid grid-cols-2 gap-1 min-h-0">
-                    {selectedModels.slice(0, 2).map((model, index) => (
-                      <div key={index} className="flex flex-col border-r last:border-r-0 min-h-0">
-                        {/* Model Header */}
-                        <div className="p-2 border-b bg-muted/5 flex-shrink-0">
-                          <div className="flex items-center gap-1">
-                            {model.category === 'llm' && <Brain className="h-3 w-3" />}
-                            {model.category === 'small' && <Zap className="h-3 w-3" />}
-                            {model.category === 'vision' && <Eye className="h-3 w-3" />}
-                            {model.category === 'mcp' && <Wrench className="h-3 w-3" />}
-                            <span className="text-xs font-medium">{model.name}</span>
-                          </div>
-                        </div>
-                        
-                        {/* Model Conversation */}
-                        <div className="flex-1 p-2 overflow-y-auto">
-                          {state.messages
-                            .filter(msg => msg.role === 'user' || msg.model === model.model)
-                            .map((msg, msgIndex) => (
-                              <MessageComponent key={msgIndex} message={msg} />
-                            ))}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                  <Select value={currentMode} onValueChange={handleModeChange}>
+                    <SelectTrigger className="w-24 h-6 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="system">System</SelectItem>
+                      <SelectItem value="single">Single</SelectItem>
+                      <SelectItem value="multi">Multi</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
-              ) : (
-                /* Single Model Conversation */
-                <div className="flex-1 flex flex-col min-h-0">
-                  <div className="p-2 border-b bg-muted/10 flex-shrink-0">
-                    <p className="text-xs text-muted-foreground">
-                      {currentMode === 'system' && 'System mode: Auto-configured capabilities'}
-                      {currentMode === 'single' && 'Single model conversation'}
-                      {currentMode === 'publish' && 'Publishing mode: Content creation optimized'}
+              </div>
+
+              {/* Conversation Area - Simplified */}
+              <div 
+                className={`flex-1 overflow-y-auto p-4 space-y-3 ${
+                  isMaximized ? 'max-h-[calc(100vh-160px)]' : 'max-h-[450px]'
+                }`}
+              >
+                {state.messages.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                    <div className="mb-6">
+                      <img 
+                        src={genieAnimatedImg} 
+                        alt="GENIE" 
+                        className="h-12 w-auto object-contain opacity-60"
+                        loading="eager"
+                        onError={(e) => {
+                          console.warn('GENIE animated image failed to load');
+                          (e.target as HTMLImageElement).style.display = 'none';
+                        }}
+                      />
+                    </div>
+                    <h4 className="text-base font-medium text-foreground mb-2">
+                      Ready to Help
+                    </h4>
+                    <p className="text-sm text-muted-foreground max-w-sm mx-auto">
+                      Ask me about biotech, medical research, data analysis, or any topic you need assistance with.
                     </p>
+                    
+                    {/* Active Features Display */}
+                    {(medicalContext || ragEnabled || selectedMCPTools.length > 0) && (
+                      <div className="mt-4 flex gap-2 flex-wrap justify-center">
+                        {medicalContext && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Microscope className="h-3 w-3 mr-1" />
+                            Medical
+                          </Badge>
+                        )}
+                        {ragEnabled && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Database className="h-3 w-3 mr-1" />
+                            Knowledge
+                          </Badge>
+                        )}
+                        {selectedMCPTools.length > 0 && (
+                          <Badge variant="secondary" className="text-xs">
+                            <Wrench className="h-3 w-3 mr-1" />
+                            {selectedMCPTools.length} Tools
+                          </Badge>
+                        )}
+                      </div>
+                    )}
                   </div>
-                  
-                   {/* Conversation Display */}
-                  <div className="flex-1 space-y-3 p-3 overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
+                ) : (
+                  <>
                     {state.messages.map((msg, index) => (
-                      <MessageComponent key={`${msg.timestamp}-${index}`} message={msg} isLast={index === state.messages.length - 1} />
+                      <MessageComponent 
+                        key={`${msg.timestamp}-${index}-${msg.role}`}
+                        message={msg}
+                      />
                     ))}
                     
-                    <AnimatePresence>
-                      {isLoading && (
-                        <motion.div
-                          initial={{ opacity: 0, y: 10 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          exit={{ opacity: 0, y: -10 }}
-                        >
-                          <AnimatedGenieResponse isVisible={true} />
-                        </motion.div>
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </div>
-              )}
-            
-            {/* Message Input */}
-            <div className="p-3 border-t bg-background/50">
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={message}
-                  onChange={(e) => setMessage(e.target.value)}
-                  placeholder={medicalContext ? "Ask about medical topics..." : "Ask me anything..."}
-                  className="flex-1 px-3 py-2 text-sm border border-border rounded-md bg-background text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent"
-                  onKeyPress={(e) => e.key === 'Enter' && !isLoading && handleSend()}
-                  disabled={isLoading}
-                />
-                <Button 
-                  onClick={handleSend} 
-                  disabled={!message.trim() || isLoading}
-                  size="sm"
-                >
-                  {isLoading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <Send className="h-4 w-4" />
-                  )}
-                </Button>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </motion.div>
-
-      {/* Unified Configuration Dialog */}
-      <Dialog open={showModelSelector} onOpenChange={(open) => {
-        setShowModelSelector(open);
-        if (open) {
-          // Lazy-load to avoid background fetches when Genie is closed
-          try { loadConfigurations(); loadSessions(); } catch {}
-        }
-      }}>
-        <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto" aria-label="AI Configuration & Model Selection">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <Settings className="h-5 w-5" />
-              AI Configuration & Model Selection
-            </DialogTitle>
-          </DialogHeader>
-          
-          <div className="space-y-6">
-            {/* Quick Settings */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-muted/20 rounded-lg">
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Medical Context</label>
-                <Switch checked={medicalContext} onCheckedChange={setMedicalContext} />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">RAG System</label>
-                <Switch checked={ragEnabled} onCheckedChange={setRAGEnabled} />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Label Studio</label>
-                <Switch checked={labelStudioEnabled} onCheckedChange={setLabelStudioEnabled} />
-              </div>
-              <div className="flex items-center justify-between">
-                <label className="text-sm font-medium">Tools</label>
-                <Badge variant="secondary">{selectedMCPTools.length}</Badge>
-              </div>
-            </div>
-
-            {/* Enhanced Model Selector with integrated features */}
-              <UniversalModelSelector
-                onModelsSelect={(models) => {
-                  setSelectedModels(models);
-                  try { localStorage.setItem('genie_selected_models', JSON.stringify(models)); } catch {}
-                  
-                  // Auto-enable features based on selected models
-                  const newFeatures = [...enabledFeatures];
-                  models.forEach(model => {
-                    if (model.category === 'vision' && !newFeatures.includes('vision')) {
-                      newFeatures.push('vision');
-                    }
-                    if (model.category === 'mcp' && !newFeatures.includes('tools')) {
-                      newFeatures.push('tools');
-                    }
-                  });
-                  if (medicalContext && !newFeatures.includes('medical')) {
-                    newFeatures.push('medical');
-                  }
-                  setEnabledFeatures(newFeatures);
-                  // Remove noisy auto toasts; final confirmation happens on Save & Apply
-                }}
-              selectedModels={selectedModels}
-              mode={currentMode === 'general' ? 'single' : (currentMode as any)}
-              enabledFeatures={[...enabledFeatures, ...(medicalContext ? ['medical'] : []), ...(selectedMCPTools.length > 0 ? ['tools'] : [])]}
-              maxSelections={8}
-              defaultSelectionMode="cross-category"
-              allowModeSwitch={true}
-            />
-
-            {/* Advanced Settings */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-medium flex items-center gap-2">
-                  <Zap className="h-4 w-4" />
-                  Features & Context
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {['medical', 'publication', 'research', 'analysis', 'coding', 'creative'].map(feature => (
-                    <div key={feature} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={enabledFeatures.includes(feature)}
-                        onChange={() => handleFeatureToggle(feature)}
-                        className="rounded"
-                      />
-                      <label className="text-sm capitalize">{feature}</label>
-                    </div>
-                  ))}
-                </div>
-                
-                {ragEnabled && (
-                  <div className="mt-4">
-                    <label className="text-sm font-medium">Knowledge Base</label>
-                    <Select value={knowledgeBase} onValueChange={setKnowledgeBase}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select knowledge base" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="medical">Medical Knowledge Base</SelectItem>
-                        <SelectItem value="general">General Knowledge Base</SelectItem>
-                        <SelectItem value="research">Research Papers</SelectItem>
-                        <SelectItem value="custom">Custom Documents</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                    {isLoading && (
+                      <div className="flex justify-start">
+                        <TypingIndicator />
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
 
-              <div className="space-y-4 p-4 border rounded-lg">
-                <h4 className="font-medium flex items-center gap-2">
-                  <Wrench className="h-4 w-4" />
-                  MCP Tools
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {availableMCPTools.map(tool => (
-                    <div key={tool} className="flex items-center space-x-2">
-                      <input
-                        type="checkbox"
-                        checked={selectedMCPTools.includes(tool)}
-                        onChange={() => handleMCPToolToggle(tool)}
-                        className="rounded"
-                      />
-                      <label className="text-sm capitalize">{tool.replace('-', ' ')}</label>
-                    </div>
-                  ))}
+              {/* Simplified Input Area */}
+              <div className="border-t bg-background p-4">
+                <div className="flex gap-2 items-end">
+                  <div className="flex-1">
+                    <textarea
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                          handleSend();
+                        }
+                      }}
+                      placeholder={selectedModels.length > 0 
+                        ? `Message ${selectedModels.map(m => m.provider).join(' & ')}...` 
+                        : "Configure models to start chatting..."
+                      }
+                      className="w-full min-h-[60px] max-h-32 p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
+                      disabled={isLoading || selectedModels.length === 0}
+                      rows={2}
+                    />
+                  </div>
+                  <Button 
+                    onClick={handleSend} 
+                    disabled={isLoading || !message.trim() || selectedModels.length === 0}
+                    className="px-4 py-3 h-[60px] rounded-lg"
+                  >
+                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  </Button>
                 </div>
+                
+                {/* Active Models Display */}
+                {selectedModels.length > 0 && (
+                  <div className="mt-2 text-xs text-muted-foreground">
+                    Active: {selectedModels.map(m => `${m.provider}:${m.model}`).join(', ')}
+                  </div>
+                )}
               </div>
-            </div>
-          </div>
+            </>
+          )}
+        </div>
+      </motion.div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t">
-            <Button variant="outline" onClick={() => setShowModelSelector(false)}>Close</Button>
-            <Button
-              onClick={async () => {
-                const configToSave = {
-                  configuration_name: 'genie_user_config',
-                  selected_mode: currentMode as 'system' | 'single' | 'multi',
-                  selected_models: selectedModels.map(m => m.model),
-                  left_model: selectedModels.find(m => m.role === 'primary')?.model || selectedModels[0]?.model || '',
-                  right_model: selectedModels.find(m => m.role === 'secondary')?.model || '',
-                  selected_model_type: (selectedModels[0]?.category === 'small' ? 'slm' : selectedModels[0]?.category === 'vision' ? 'vlm' : 'llm') as 'llm' | 'slm' | 'vlm',
-                  enabled_features: enabledFeatures,
-                  selected_mcp_tools: selectedMCPTools,
-                  knowledge_base: knowledgeBase,
-                  medical_context: medicalContext,
-                  is_default: true
-                };
-                 const saved = await saveConfiguration(configToSave as any);
-                 if (saved) {
-                   showSuccess('Configuration saved');
-                   setShowModelSelector(false);
-                 } else {
-                   showError('Save failed', 'You may need to sign in before saving your configuration.');
-                 }
-              }}
-            >
+      {/* Simplified Configuration Modal */}
+      <Dialog open={showModelSelector} onOpenChange={setShowModelSelector}>
+        <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Settings className="h-5 w-5" />
+              GENIE Configuration
+            </DialogTitle>
+          </DialogHeader>
+          <StreamlinedModelSelector
+            selectedModels={selectedModels}
+            onModelsChange={setSelectedModels}
+            selectedFeatures={enabledFeatures}
+            onFeaturesChange={setEnabledFeatures}
+            selectedMCPTools={selectedMCPTools}
+            onMCPToolsChange={setSelectedMCPTools}
+            mode={mode === 'publish' || mode === 'general' ? 'system' : mode}
+          />
+          <div className="flex justify-end gap-2 mt-4 pt-4 border-t">
+            <Button variant="outline" onClick={() => setShowModelSelector(false)}>
+              Cancel
+            </Button>
+            <Button onClick={() => setShowModelSelector(false)}>
               Save & Apply
             </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-
-      {/* Session Manager */}
-      {showSessionManager && (
-        <GenieSessionManager
-          isOpen={showSessionManager}
-          onClose={() => setShowSessionManager(false)}
-          onSessionSelect={(session) => {
-            // Load selected session
-            // This would integrate with the conversation state
-            showSuccess(`Session "${session.session_name}" loaded`);
-            setShowSessionManager(false);
-          }}
-          currentSessionId={currentSession?.id}
-        />
-      )}
+      {/* Session Manager Modal */}
+      <GenieSessionManager
+        isOpen={showSessionManager}
+        onClose={() => setShowSessionManager(false)}
+        currentSessionId={currentSession?.conversation_id}
+        onSessionSelect={(sessionId) => {
+          // Handle session selection logic here
+          setShowSessionManager(false);
+        }}
+      />
     </>
   );
 };
