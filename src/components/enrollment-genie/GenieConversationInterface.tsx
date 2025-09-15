@@ -33,6 +33,7 @@ import { useConversationalContext } from '@/hooks/useConversationalContext';
 import { ragService } from '@/services/ragService';
 import { useGenieState } from '@/hooks/useGenieState';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
+import { useNavigationSafe } from '@/hooks/useNavigationSafe';
 
 // UI Components
 import { ConversationMessage as MessageComponent } from './ConversationMessage';
@@ -98,6 +99,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const { showError, showSuccess } = useMasterToast();
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
   const { updateContext, generateContextualResponse } = useConversationalContext();
+  const { navigateSafe } = useNavigationSafe();
   
   const currentMode = (state?.selectedMode as any) || mode;
 
@@ -471,6 +473,13 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                         )}
                       </div>
                     )}
+
+                    {/* Direct CTA to patient onboarding */}
+                    <div className="mt-6">
+                      <Button size="sm" onClick={() => { navigateSafe('/patient-onboarding'); onClose(); }}>
+                        Start step-wise AI Enrollment
+                      </Button>
+                    </div>
                   </div>
                 ) : (
                   <>

@@ -272,7 +272,7 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
                 <Card className="cursor-pointer hover:shadow-lg transition-all"
                       onClick={() => {
                         setSelectedOption('online-form');
-                        setShowProcessor(true);
+                        setCurrentWorkflowStep('online_form');
                         onTraditionalSelect('online-form');
                       }}>
                   <CardContent className="p-6">
@@ -285,7 +285,9 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
                     <p className="text-sm text-muted-foreground mb-4">
                       Skip agent configuration and go directly to online form with NPI verification and voice support
                     </p>
-                    <Button variant="outline" className="w-full">Go to Form</Button>
+                    <Button variant="outline" className="w-full" onClick={(e) => { e.stopPropagation(); setCurrentWorkflowStep('online_form'); }}>
+                      Go to Form
+                    </Button>
                   </CardContent>
                 </Card>
               </div>
