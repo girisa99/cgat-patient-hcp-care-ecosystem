@@ -9,7 +9,7 @@ import { Bot, User, Database, AlertCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { ConversationMessage as MessageType } from '@/hooks/useConversationState';
 import { RichMediaRenderer } from './RichMediaRenderer';
-import { AIMediaService } from '@/services/aiMediaService';
+import { geminiMediaService } from '@/services/geminiMediaService';
 
 interface ConversationMessageProps {
   message: MessageType;
@@ -22,18 +22,26 @@ export const ConversationMessage: React.FC<ConversationMessageProps> = ({ messag
   
   const handleGenerateImage = async (prompt: string): Promise<string> => {
     try {
-      return await AIMediaService.generateImage(prompt);
+      const response = await geminiMediaService.generateImage({ prompt });
+      if (response.success && response.mediaUrl) {
+        return response.mediaUrl;
+      }
+      throw new Error(response.error || 'Failed to generate image');
     } catch (error) {
-      console.error('Error generating image:', error);
+      console.error('Error generating image with Gemini:', error);
       throw error;
     }
   };
 
   const handleGenerateVideo = async (prompt: string): Promise<string> => {
     try {
-      return await AIMediaService.generateVideo(prompt);
+      const response = await geminiMediaService.generateVideo({ prompt });
+      if (response.success && response.mediaUrl) {
+        return response.mediaUrl;
+      }
+      throw new Error(response.error || 'Failed to generate video');
     } catch (error) {
-      console.error('Error generating video:', error);
+      console.error('Error generating video with Gemini:', error);
       throw error;
     }
   };

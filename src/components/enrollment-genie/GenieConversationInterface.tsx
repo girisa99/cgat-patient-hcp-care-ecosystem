@@ -525,84 +525,72 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
           </div>
 
-          {/* Main Chat Area */}
-          <div className="flex-1 flex flex-col overflow-hidden">
-            {currentMode === 'multi' && selectedModels.length > 1 ? (
-              /* Split Screen for Multi-Model */
-              <div className="flex-1 flex flex-col">
-                <div className="p-2 border-b bg-muted/10">
-                  <p className="text-xs text-muted-foreground text-center">Multi-Model Conversation</p>
-                </div>
-                
-                <div className="flex-1 grid grid-cols-2 gap-1">
-                  {selectedModels.slice(0, 2).map((model, index) => (
-                    <div key={index} className="flex flex-col border-r last:border-r-0">
-                      {/* Model Header */}
-                      <div className="p-2 border-b bg-muted/5">
-                        <div className="flex items-center gap-1">
-                          {model.category === 'llm' && <Brain className="h-3 w-3" />}
-                          {model.category === 'small' && <Zap className="h-3 w-3" />}
-                          {model.category === 'vision' && <Eye className="h-3 w-3" />}
-                          {model.category === 'mcp' && <Wrench className="h-3 w-3" />}
-                          <span className="text-xs font-medium">{model.name}</span>
+            {/* Main Chat Area */}
+            <div className="flex-1 flex flex-col min-h-0">
+              {currentMode === 'multi' && selectedModels.length > 1 ? (
+                /* Split Screen for Multi-Model */
+                <div className="flex-1 flex flex-col min-h-0">
+                  <div className="p-2 border-b bg-muted/10 flex-shrink-0">
+                    <p className="text-xs text-muted-foreground text-center">Multi-Model Conversation</p>
+                  </div>
+                  
+                  <div className="flex-1 grid grid-cols-2 gap-1 min-h-0">
+                    {selectedModels.slice(0, 2).map((model, index) => (
+                      <div key={index} className="flex flex-col border-r last:border-r-0 min-h-0">
+                        {/* Model Header */}
+                        <div className="p-2 border-b bg-muted/5 flex-shrink-0">
+                          <div className="flex items-center gap-1">
+                            {model.category === 'llm' && <Brain className="h-3 w-3" />}
+                            {model.category === 'small' && <Zap className="h-3 w-3" />}
+                            {model.category === 'vision' && <Eye className="h-3 w-3" />}
+                            {model.category === 'mcp' && <Wrench className="h-3 w-3" />}
+                            <span className="text-xs font-medium">{model.name}</span>
+                          </div>
+                        </div>
+                        
+                        {/* Model Conversation */}
+                        <div className="flex-1 p-2 overflow-y-auto">
+                          {state.messages
+                            .filter(msg => msg.role === 'user' || msg.model === model.model)
+                            .map((msg, msgIndex) => (
+                              <MessageComponent key={msgIndex} message={msg} />
+                            ))}
                         </div>
                       </div>
-                      
-                      {/* Model Conversation */}
-                      <div className="flex-1 p-2 overflow-y-auto max-h-[300px]">
-                        {state.messages
-                          .filter(msg => msg.role === 'user' || msg.model === model.model)
-                          .map((msg, msgIndex) => (
-                            <div key={msgIndex} className={`mb-2 text-xs ${msg.role === 'user' ? 'text-blue-600' : 'text-foreground'}`}>
-                              <div className={`p-2 rounded ${msg.role === 'user' ? 'bg-blue-50 ml-4' : 'bg-muted/50 mr-4'}`}>
-                                {msg.content}
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              /* Single Model Conversation */
-              <div className="flex-1 flex flex-col">
-                <div className="p-2 border-b bg-muted/10">
-                  <p className="text-xs text-muted-foreground">
-                    {currentMode === 'system' && 'System mode: Auto-configured capabilities'}
-                    {currentMode === 'single' && 'Single model conversation'}
-                    {currentMode === 'publish' && 'Publishing mode: Content creation optimized'}
-                  </p>
-                </div>
-                
-                 {/* Conversation Display */}
-                <div className="flex-1 space-y-3 p-3 overflow-y-auto">
-                  {state.messages.map((msg, index) => (
-                    msg.role === 'assistant' ? (
-                      <AnimatedGenieResponse 
-                        key={index} 
-                        isVisible={true} 
-                        message={msg.content}
-                      />
-                    ) : (
-                      <MessageComponent key={index} message={msg} />
-                    )
-                  ))}
+              ) : (
+                /* Single Model Conversation */
+                <div className="flex-1 flex flex-col min-h-0">
+                  <div className="p-2 border-b bg-muted/10 flex-shrink-0">
+                    <p className="text-xs text-muted-foreground">
+                      {currentMode === 'system' && 'System mode: Auto-configured capabilities'}
+                      {currentMode === 'single' && 'Single model conversation'}
+                      {currentMode === 'publish' && 'Publishing mode: Content creation optimized'}
+                    </p>
+                  </div>
                   
-                  <AnimatePresence>
-                    {isLoading && (
-                      <motion.div
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -10 }}
-                      >
-                        <AnimatedGenieResponse isVisible={true} />
-                      </motion.div>
-                    )}
-                  </AnimatePresence>
+                   {/* Conversation Display */}
+                  <div className="flex-1 space-y-3 p-3 overflow-y-auto">
+                    {state.messages.map((msg, index) => (
+                      <MessageComponent key={index} message={msg} />
+                    ))}
+                    
+                    <AnimatePresence>
+                      {isLoading && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          exit={{ opacity: 0, y: -10 }}
+                        >
+                          <AnimatedGenieResponse isVisible={true} />
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
+                  </div>
                 </div>
-              </div>
-            )}
+              )}
             
             {/* Message Input */}
             <div className="p-3 border-t bg-background/50">
