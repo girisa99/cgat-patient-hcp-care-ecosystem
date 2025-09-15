@@ -109,29 +109,33 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
     );
 
     return (
-      <div className="overflow-x-auto my-4 border rounded-lg">
-        <table className="min-w-full">
-          <thead className="bg-muted/50">
-            <tr>
-              {headers.map((header, index) => (
-                <th key={index} className="px-4 py-3 text-left text-sm font-semibold">
-                  {header}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="divide-y">
-            {rows.map((row, rowIndex) => (
-              <tr key={rowIndex} className="hover:bg-muted/20">
-                {row.map((cell, cellIndex) => (
-                  <td key={cellIndex} className="px-4 py-3 text-sm">
-                    {cell}
-                  </td>
+      <div className="w-full my-4 -mx-4 px-4">
+        <div className="bg-background border rounded-lg overflow-hidden shadow-sm">
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead>
+                <tr className="bg-muted/30 border-b">
+                  {headers.map((header, index) => (
+                    <th key={index} className="px-3 py-2 text-left text-sm font-semibold text-foreground whitespace-nowrap">
+                      {header}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((row, rowIndex) => (
+                  <tr key={rowIndex} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                    {row.map((cell, cellIndex) => (
+                      <td key={cellIndex} className="px-3 py-2 text-sm text-foreground whitespace-nowrap">
+                        {cell}
+                      </td>
+                    ))}
+                  </tr>
                 ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
+              </tbody>
+            </table>
+          </div>
+        </div>
       </div>
     );
   };

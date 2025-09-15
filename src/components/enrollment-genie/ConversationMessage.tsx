@@ -106,13 +106,15 @@ export const ConversationMessage: React.FC<ConversationMessageProps> = ({ messag
                   </div>
                 </div>
               ) : (
-                <RichMediaRenderer
-                  content={message.content}
-                  metadata={message.metadata}
-                  onGenerateImage={handleGenerateImage}
-                  onGenerateVideo={handleGenerateVideo}
-                  enableVisualSearch={true}
-                />
+                <div className="max-w-none overflow-visible">
+                  <RichMediaRenderer
+                    content={message.content}
+                    metadata={message.metadata}
+                    onGenerateImage={handleGenerateImage}
+                    onGenerateVideo={handleGenerateVideo}
+                    enableVisualSearch={true}
+                  />
+                </div>
               )}
             </div>
 

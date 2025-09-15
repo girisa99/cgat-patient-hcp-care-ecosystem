@@ -215,48 +215,70 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         }
       }
 
+      // Enhanced prompt for better media generation accuracy
+      let finalPrompt = enhancedPrompt;
+      if (finalPrompt.toLowerCase().includes('image') || finalPrompt.toLowerCase().includes('visual') || 
+          finalPrompt.toLowerCase().includes('diagram') || finalPrompt.toLowerCase().includes('chart')) {
+        finalPrompt += ' Please provide detailed, accurate descriptions and consider visual elements in your response. If describing medical or scientific processes, include precise terminology and current best practices.';
+      }
+
       // Generate AI response(s)
       if (currentMode === 'multi' && selectedModels.length > 1) {
-        // Multi-model mode
+        // Multi-model mode with enhanced accuracy
         const responses = await Promise.all(
-          selectedModels.map(async model => {
+          selectedModels.map(async (model, index) => {
+            const modelSpecificPrompt = finalPrompt + (index === 0 ? 
+              ' Focus on primary analysis and key insights.' : 
+              ` Provide alternative perspective #${index + 1} with complementary insights.`);
+            
             return await generateResponse({
               provider: (model.provider as 'openai' | 'claude' | 'gemini') || 'openai',
               model: model.model,
-              prompt: enhancedPrompt,
+              prompt: modelSpecificPrompt,
               systemPrompt: buildSystemPrompt(),
-              temperature: 0.7,
-              maxTokens: 1000
+              temperature: 0.6, // Slightly lower for better accuracy
+              maxTokens: 1200
             }, { silent: true });
           })
         );
         
-        // Add each response
-        responses.forEach((resp, index) => {
+        // Add each response with proper timing
+        for (let i = 0; i < responses.length; i++) {
+          const resp = responses[i];
           if (resp && resp.content) {
+            // Add slight delay between responses for better UX
+            if (i > 0) {
+              await new Promise(resolve => setTimeout(resolve, 200));
+            }
+            
             addMessage({
               role: 'assistant',
               content: resp.content,
               timestamp: new Date().toISOString(),
-              provider: (selectedModels[index]?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
-              model: selectedModels[index]?.model || 'gpt-4o-mini'
+              provider: (selectedModels[i]?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
+              model: selectedModels[i]?.model || 'gpt-4o-mini',
+              metadata: { 
+                ragEnhanced: contextSources.length > 0,
+                modelIndex: i,
+                totalModels: selectedModels.length
+              }
             });
           }
-        });
+        }
         
         if (responses.every(r => !r)) {
           showError('AI request failed', 'AI service is not reachable. Please check configuration.');
         }
       } else {
-        // Single model response
+        // Single model response with enhanced accuracy
         const primaryModel = selectedModels.find(m => m.role === 'primary') || selectedModels[0];
         const resp = await generateResponse({
           provider: (primaryModel?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
           model: primaryModel?.model || 'gpt-4o-mini',
-          prompt: enhancedPrompt,
+          prompt: finalPrompt,
           systemPrompt: buildSystemPrompt(),
-          temperature: 0.7,
-          maxTokens: 1000
+          temperature: 0.6, // Slightly lower for better accuracy
+          maxTokens: 1500
         });
 
         if (resp && resp.content) {
@@ -265,7 +287,11 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             content: resp.content,
             timestamp: new Date().toISOString(),
             provider: (primaryModel?.provider as 'openai' | 'claude' | 'gemini') || 'openai',
-            model: primaryModel?.model || 'gpt-4o-mini'
+            model: primaryModel?.model || 'gpt-4o-mini',
+            metadata: { 
+              ragEnhanced: contextSources.length > 0,
+              enhancedAccuracy: true
+            }
           });
         }
       }
@@ -391,14 +417,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 </div>
               </div>
 
-              {/* Conversation Area - Simplified */}
+              {/* Conversation Area - Multi-Model Support */}
               <div 
-                className={`flex-1 overflow-y-auto p-4 space-y-3 ${
+                className={`flex-1 overflow-hidden ${
                   isMaximized ? 'max-h-[calc(100vh-160px)]' : 'max-h-[450px]'
                 }`}
               >
                 {state.messages.length === 0 ? (
-                  <div className="flex flex-col items-center justify-center h-full text-center py-12">
+                  <div className="flex flex-col items-center justify-center h-full text-center py-12 px-4">
                     <div className="mb-6">
                       <img 
                         src={genieAnimatedImg} 
@@ -444,59 +470,149 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   </div>
                 ) : (
                   <>
-                    {state.messages.map((msg, index) => (
-                      <MessageComponent 
-                        key={`${msg.timestamp}-${index}-${msg.role}`}
-                        message={msg}
-                      />
-                    ))}
-                    
-                    {isLoading && (
-                      <div className="flex justify-start">
-                        <TypingIndicator />
+                    {/* Multi-Model Split Screen Layout */}
+                    {currentMode === 'multi' && selectedModels.length > 1 ? (
+                      <div className="flex h-full">
+                        {selectedModels.map((model, modelIndex) => {
+                          // Filter messages for this specific model
+                          const userMessages = state.messages.filter(m => m.role === 'user');
+                          const assistantMessages = state.messages.filter(m => m.role === 'assistant');
+                          
+                          const modelMessages = userMessages.reduce((acc, userMsg, userIndex) => {
+                            acc.push(userMsg);
+                            const responseIndex = userIndex * selectedModels.length + modelIndex;
+                            if (assistantMessages[responseIndex]) {
+                              acc.push(assistantMessages[responseIndex]);
+                            }
+                            return acc;
+                          }, [] as any[]);
+
+                          return (
+                            <div key={`model-${modelIndex}`} className={`flex-1 ${selectedModels.length > 1 ? 'border-r border-muted/20' : ''} ${selectedModels.length > 2 ? 'min-w-[280px]' : ''} last:border-r-0`}>
+                              {/* Model Header */}
+                              <div className="sticky top-0 bg-background/95 backdrop-blur border-b border-muted/20 p-3 z-10">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs font-medium">
+                                    {model.provider.toUpperCase()}
+                                  </Badge>
+                                  <span className="text-xs text-muted-foreground font-medium truncate">
+                                    {model.model}
+                                  </span>
+                                </div>
+                              </div>
+                              
+                              {/* Messages for this model */}
+                              <div className="overflow-y-auto h-[calc(100%-60px)] p-3 space-y-3">
+                                <AnimatePresence>
+                                  {modelMessages.map((message, msgIndex) => (
+                                    <MessageComponent
+                                      key={`model-${modelIndex}-msg-${msgIndex}-${message.timestamp}`}
+                                      message={message}
+                                      isLast={msgIndex === modelMessages.length - 1}
+                                    />
+                                  ))}
+                                </AnimatePresence>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      /* Single Model Layout */
+                      <div className="h-full overflow-y-auto p-4 space-y-3">
+                        <AnimatePresence>
+                          {state.messages.map((msg, index) => (
+                            <MessageComponent 
+                              key={`${msg.timestamp}-${index}-${msg.role}`}
+                              message={msg}
+                              isLast={index === state.messages.length - 1}
+                            />
+                          ))}
+                        </AnimatePresence>
+                        
+                        {isLoading && (
+                          <div className="flex justify-start">
+                            <TypingIndicator />
+                          </div>
+                        )}
                       </div>
                     )}
                   </>
                 )}
               </div>
 
-              {/* Simplified Input Area */}
-              <div className="border-t bg-background p-4">
-                <div className="flex gap-2 items-end">
-                  <div className="flex-1">
-                    <textarea
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSend();
+              {/* Input Area - Fixed Layout */}
+              <div className="border-t bg-background">
+                <div className="p-4">
+                  <div className="flex gap-2 items-end">
+                    <div className="flex-1 relative">
+                      <textarea
+                        value={message}
+                        onChange={(e) => setMessage(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && !e.shiftKey) {
+                            e.preventDefault();
+                            handleSend();
+                          }
+                        }}
+                        placeholder={
+                          currentMode === 'multi' && selectedModels.length > 1
+                            ? `Ask ${selectedModels.length} AI models simultaneously...`
+                            : selectedModels.length > 0 
+                              ? `Message ${selectedModels[0]?.provider || 'AI'}...` 
+                              : "Configure models to start chatting..."
                         }
-                      }}
-                      placeholder={selectedModels.length > 0 
-                        ? `Message ${selectedModels.map(m => m.provider).join(' & ')}...` 
-                        : "Configure models to start chatting..."
+                        className="w-full min-h-[60px] max-h-32 p-3 pr-16 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary bg-background"
+                        disabled={isLoading || selectedModels.length === 0}
+                        rows={2}
+                      />
+                      <div className="absolute right-3 bottom-2 text-xs text-muted-foreground pointer-events-none">
+                        {message.length}/2000
+                      </div>
+                    </div>
+                    <Button 
+                      onClick={handleSend} 
+                      disabled={isLoading || !message.trim() || selectedModels.length === 0}
+                      className="px-4 py-3 h-[60px] rounded-lg"
+                      size="sm"
+                    >
+                      {isLoading ? (
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                      ) : (
+                        <Send className="h-4 w-4" />
+                      )}
+                    </Button>
+                  </div>
+                  
+                  {/* Status Bar */}
+                  <div className="flex items-center justify-between mt-3 pt-2 border-t border-muted/10">
+                    <div className="flex gap-2 items-center">
+                      {userInfo && (
+                        <Badge variant="outline" className="text-xs px-2 py-0.5">
+                          {userInfo.firstName}
+                        </Badge>
+                      )}
+                      {isLoading && (
+                        <Badge variant="secondary" className="text-xs px-2 py-0.5">
+                          <Loader2 className="h-2 w-2 animate-spin mr-1" />
+                          {currentMode === 'multi' && selectedModels.length > 1 
+                            ? `Processing ${selectedModels.length} responses...`
+                            : 'Generating response...'
+                          }
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    <div className="text-xs text-muted-foreground">
+                      {currentMode === 'multi' && selectedModels.length > 1 
+                        ? `Split: ${selectedModels.length} models`
+                        : selectedModels.length > 0
+                          ? `${selectedModels[0]?.provider || 'OpenAI'} • ${selectedModels[0]?.model || 'gpt-4o-mini'}`
+                          : 'No models selected'
                       }
-                      className="w-full min-h-[60px] max-h-32 p-3 border rounded-lg resize-none text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                      disabled={isLoading || selectedModels.length === 0}
-                      rows={2}
-                    />
+                    </div>
                   </div>
-                  <Button 
-                    onClick={handleSend} 
-                    disabled={isLoading || !message.trim() || selectedModels.length === 0}
-                    className="px-4 py-3 h-[60px] rounded-lg"
-                  >
-                    {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                  </Button>
                 </div>
-                
-                {/* Active Models Display */}
-                {selectedModels.length > 0 && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Active: {selectedModels.map(m => `${m.provider}:${m.model}`).join(', ')}
-                  </div>
-                )}
               </div>
             </>
           )}
