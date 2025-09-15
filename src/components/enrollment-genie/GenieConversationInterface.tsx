@@ -168,8 +168,12 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
     setIsLoading(true);
 
     try {
-      // Update conversational context
-      updateContext(userMessage, true);
+      // Update conversational context with user information
+      if (userInfo) {
+        updateContext(`[User: ${userInfo.firstName}] ${userMessage}`, true);
+      } else {
+        updateContext(userMessage, true);
+      }
       
       // Generate contextual enhancement
       const contextualResponse = generateContextualResponse(userMessage);
@@ -187,7 +191,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
       let enhancedPrompt = contextualResponse.enhancedPrompt;
       let contextSources: string[] = [];
       
-      // Add user context to prompt
+      // Add user context to prompt if available
       if (userInfo) {
         enhancedPrompt = `[User: ${userInfo.firstName} - ${userInfo.email}] ${enhancedPrompt}`;
       }
@@ -199,9 +203,10 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           enhancedPrompt = ragResult.enhancedPrompt;
           contextSources = ragResult.contextSources;
           
-          // Update knowledge base with user interaction (simulate)
+          // Store knowledge contribution for RAG improvement
           if (userInfo && contextSources.length > 0) {
             console.log(`Updating knowledge base with interaction from ${userInfo.firstName}:`, contextSources);
+            // This would typically save to the knowledge_base_contributions table
           }
           
           console.log('RAG enhancement successful, sources:', contextSources);

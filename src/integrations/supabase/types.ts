@@ -6526,6 +6526,50 @@ export type Database = {
           },
         ]
       }
+      knowledge_base_contributions: {
+        Row: {
+          content_summary: string | null
+          context_sources: Json | null
+          contribution_type: string
+          conversation_id: string | null
+          created_at: string
+          id: string
+          rag_enhancement_data: Json | null
+          relevance_score: number | null
+          user_id: string | null
+        }
+        Insert: {
+          content_summary?: string | null
+          context_sources?: Json | null
+          contribution_type?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          rag_enhancement_data?: Json | null
+          relevance_score?: number | null
+          user_id?: string | null
+        }
+        Update: {
+          content_summary?: string | null
+          context_sources?: Json | null
+          contribution_type?: string
+          conversation_id?: string | null
+          created_at?: string
+          id?: string
+          rag_enhancement_data?: Json | null
+          relevance_score?: number | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "knowledge_base_contributions_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "user_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       labeling_projects: {
         Row: {
           annotation_guidelines: string | null
@@ -11258,6 +11302,42 @@ export type Database = {
           session_id?: string | null
           user_agent?: string | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_conversations: {
+        Row: {
+          conversation_context: Json | null
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          knowledge_contributions: Json | null
+          rag_context: Json | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          conversation_context?: Json | null
+          created_at?: string
+          email: string
+          first_name: string
+          id?: string
+          knowledge_contributions?: Json | null
+          rag_context?: Json | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          conversation_context?: Json | null
+          created_at?: string
+          email?: string
+          first_name?: string
+          id?: string
+          knowledge_contributions?: Json | null
+          rag_context?: Json | null
+          updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }

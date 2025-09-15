@@ -10,6 +10,7 @@ import { motion } from 'framer-motion';
 import { ConversationMessage as MessageType } from '@/hooks/useConversationState';
 import { RichMediaRenderer } from './RichMediaRenderer';
 import { universalMediaService } from '@/services/universalMediaService';
+import { ContentDownloader } from '@/components/genie/ContentDownloader';
 
 interface ConversationMessageProps {
   message: MessageType;
@@ -19,6 +20,18 @@ interface ConversationMessageProps {
 export const ConversationMessage: React.FC<ConversationMessageProps> = ({ message, isLast }) => {
   const isUser = message.role === 'user';
   const isError = message.error;
+  
+  // Detect if message contains downloadable content
+  const hasTable = message.content.includes('<table') || /\|.*\|/.test(message.content);
+  const hasHTML = message.content.includes('<') && message.content.includes('>');
+  const hasStructuredContent = hasTable || hasHTML || message.content.length > 500;
+
+  const getContentType = () => {
+    if (hasTable) return 'table';
+    if (hasHTML) return 'html';
+    if (message.content.includes('```')) return 'code';
+    return 'text';
+  };
   
   const handleGenerateImage = async (prompt: string): Promise<string> => {
     try {
@@ -126,10 +139,21 @@ export const ConversationMessage: React.FC<ConversationMessageProps> = ({ messag
                   )}
                 </div>
                 
-                {/* Timestamp */}
-                <span className="text-xs text-gray-500">
-                  {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                </span>
+                <div className="flex items-center gap-2">
+                  {/* Download button for AI responses with structured content */}
+                  {hasStructuredContent && (
+                    <ContentDownloader
+                      content={message.content}
+                      contentType={getContentType()}
+                      filename={`genie-response-${Date.now()}`}
+                    />
+                  )}
+                  
+                  {/* Timestamp */}
+                  <span className="text-xs text-gray-500">
+                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </span>
+                </div>
               </div>
             )}
           </CardContent>
