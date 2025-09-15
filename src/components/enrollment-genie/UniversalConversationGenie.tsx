@@ -101,10 +101,6 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   const [position, setPosition] = useState({ bottom: 24, right: 24 }); // Dynamic positioning
   const [genieMode, setGenieMode] = useState<'system' | 'single' | 'multi' | 'publish' | 'general'>('system');
 
-  // Hide Genie entirely if edge functions are unavailable
-  if (!edgeFunctionsAvailable) {
-    return null;
-  }
 
   const currentContext = getPageContext(location.pathname);
   const contextInfo = getContextInfo(currentContext);
@@ -178,6 +174,11 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
     setIsOpen(false);
     onConversationComplete?.(data);
   };
+
+  // Hide Genie entirely if edge functions are unavailable
+  if (!edgeFunctionsAvailable) {
+    return null;
+  }
 
   return (
     <>
