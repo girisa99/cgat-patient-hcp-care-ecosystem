@@ -85,12 +85,13 @@ const CODE_NODE_CONFIGS = {
   }
 };
 
-export const CodeGenerationNode: React.FC<NodeProps<CodeNodeData>> = ({ data, selected }) => {
+export const CodeGenerationNode: React.FC<NodeProps<any>> = ({ data, selected }) => {
   const [isExpanded, setIsExpanded] = useState(false);
-  const [localPrompt, setLocalPrompt] = useState(data.prompt || '');
+  const [localPrompt, setLocalPrompt] = useState((data as CodeNodeData).prompt || '');
   const [isProcessing, setIsProcessing] = useState(false);
 
-  const config = CODE_NODE_CONFIGS[data.nodeType];
+  const codeData = data as CodeNodeData;
+  const config = CODE_NODE_CONFIGS[codeData.nodeType];
   const IconComponent = config.icon;
 
   const handleGenerate = useCallback(async () => {
@@ -99,13 +100,13 @@ export const CodeGenerationNode: React.FC<NodeProps<CodeNodeData>> = ({ data, se
       // Simulate code generation
       await new Promise(resolve => setTimeout(resolve, 2000));
       
-      const mockGeneratedCode = `// Generated ${data.language || 'JavaScript'} code
-function ${data.nodeType.replace('-', '')}() {
+      const mockGeneratedCode = `// Generated ${codeData.language || 'JavaScript'} code
+function ${codeData.nodeType.replace('-', '')}() {
   // Implementation based on prompt: ${localPrompt}
   return "Generated code based on your requirements";
 }
 
-export default ${data.nodeType.replace('-', '')};`;
+export default ${codeData.nodeType.replace('-', '')};`;
 
       // Update node data (in real implementation, this would update the flow state)
       console.log('Generated code:', mockGeneratedCode);
@@ -114,7 +115,7 @@ export default ${data.nodeType.replace('-', '')};`;
     } finally {
       setIsProcessing(false);
     }
-  }, [localPrompt, data.language, data.nodeType]);
+  }, [localPrompt, codeData.language, codeData.nodeType]);
 
   const handleFix = useCallback(async () => {
     setIsProcessing(true);
@@ -134,13 +135,13 @@ export default ${data.nodeType.replace('-', '')};`;
     try {
       // Simulate GitHub actions
       await new Promise(resolve => setTimeout(resolve, 2000));
-      console.log(`GitHub action completed: ${data.nodeType}`);
+      console.log(`GitHub action completed: ${codeData.nodeType}`);
     } catch (error) {
       console.error('GitHub action failed:', error);
     } finally {
       setIsProcessing(false);
     }
-  }, [data.nodeType]);
+  }, [codeData.nodeType]);
 
   const getStatusColor = (status?: string) => {
     switch (status) {
@@ -158,18 +159,18 @@ export default ${data.nodeType.replace('-', '')};`;
   };
 
   const renderNodeContent = () => {
-    switch (data.nodeType) {
+    switch (codeData.nodeType) {
       case 'code-generator':
         return (
           <div className="space-y-3">
-            {data.language && (
+            {codeData.language && (
               <Badge variant="secondary" className="text-xs">
-                {data.language}
+                {codeData.language}
               </Badge>
             )}
-            {data.framework && (
+            {codeData.framework && (
               <Badge variant="outline" className="text-xs">
-                {data.framework}
+                {codeData.framework}
               </Badge>
             )}
             
@@ -223,18 +224,18 @@ export default ${data.nodeType.replace('-', '')};`;
       case 'code-fixer':
         return (
           <div className="space-y-3">
-            {data.errors && data.errors.length > 0 && (
+            {codeData.errors && codeData.errors.length > 0 && (
               <div>
                 <div className="text-xs font-medium mb-1">Errors Found</div>
                 <div className="space-y-1">
-                  {data.errors.slice(0, 2).map((error, index) => (
+                  {codeData.errors.slice(0, 2).map((error, index) => (
                     <div key={index} className="text-xs text-red-500 bg-red-50 dark:bg-red-900/20 p-1 rounded">
                       {error}
                     </div>
                   ))}
-                  {data.errors.length > 2 && (
+                  {codeData.errors.length > 2 && (
                     <div className="text-xs text-muted-foreground">
-                      +{data.errors.length - 2} more errors
+                      +{codeData.errors.length - 2} more errors
                     </div>
                   )}
                 </div>
@@ -265,16 +266,16 @@ export default ${data.nodeType.replace('-', '')};`;
       case 'github-repo':
         return (
           <div className="space-y-3">
-            {data.githubRepo && (
+            {codeData.githubRepo && (
               <div className="text-xs">
                 <div className="font-medium">Repository</div>
-                <div className="text-muted-foreground">{data.githubRepo}</div>
+                <div className="text-muted-foreground">{codeData.githubRepo}</div>
               </div>
             )}
-            {data.branch && (
+            {codeData.branch && (
               <div className="flex items-center gap-1">
                 <GitBranch className="h-3 w-3" />
-                <span className="text-xs">{data.branch}</span>
+                <span className="text-xs">{codeData.branch}</span>
               </div>
             )}
 
@@ -302,9 +303,9 @@ export default ${data.nodeType.replace('-', '')};`;
       case 'github-pr':
         return (
           <div className="space-y-3">
-            {data.prNumber && (
+            {codeData.prNumber && (
               <Badge variant="outline" className="text-xs">
-                PR #{data.prNumber}
+                PR #{codeData.prNumber}
               </Badge>
             )}
             
@@ -387,14 +388,14 @@ export default ${data.nodeType.replace('-', '')};`;
             <IconComponent className="h-4 w-4" />
           </div>
           <div className="flex-1">
-            <CardTitle className="text-sm">{data.label}</CardTitle>
+            <CardTitle className="text-sm">{codeData.label}</CardTitle>
             <p className="text-xs text-muted-foreground">
               {config.description}
             </p>
           </div>
-          {data.status && (
-            <Badge variant="outline" className={`text-xs ${getStatusColor(data.status)}`}>
-              {data.status}
+          {codeData.status && (
+            <Badge variant="outline" className={`text-xs ${getStatusColor(codeData.status)}`}>
+              {codeData.status}
             </Badge>
           )}
         </div>

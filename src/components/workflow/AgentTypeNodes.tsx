@@ -92,30 +92,31 @@ const AGENT_NODE_CONFIGS = {
   }
 };
 
-export const AgentTypeNode: React.FC<NodeProps<AgentNodeData>> = ({ data, selected }) => {
+export const AgentTypeNode: React.FC<NodeProps<any>> = ({ data, selected }) => {
   const [isConfigOpen, setIsConfigOpen] = useState(false);
-  const [isRunning, setIsRunning] = useState(data.status === 'active');
+  const [isRunning, setIsRunning] = useState((data as AgentNodeData).status === 'active');
 
-  const config = AGENT_NODE_CONFIGS[data.agentType];
+  const agentData = data as AgentNodeData;
+  const config = AGENT_NODE_CONFIGS[agentData.agentType];
   const IconComponent = config.icon;
 
   const handleStart = useCallback(() => {
     setIsRunning(true);
     // Integration point for starting agent
-    console.log(`Starting agent: ${data.label}`);
-  }, [data.label]);
+    console.log(`Starting agent: ${agentData.label}`);
+  }, [agentData.label]);
 
   const handleStop = useCallback(() => {
     setIsRunning(false);
     // Integration point for stopping agent
-    console.log(`Stopping agent: ${data.label}`);
-  }, [data.label]);
+    console.log(`Stopping agent: ${agentData.label}`);
+  }, [agentData.label]);
 
   const handleConfigure = useCallback(() => {
     setIsConfigOpen(true);
     // Integration point for agent configuration
-    console.log(`Configuring agent: ${data.label}`);
-  }, [data.label]);
+    console.log(`Configuring agent: ${agentData.label}`);
+  }, [agentData.label]);
 
   return (
     <Card className={`min-w-[280px] ${selected ? 'ring-2 ring-primary' : ''}`}>
@@ -127,7 +128,7 @@ export const AgentTypeNode: React.FC<NodeProps<AgentNodeData>> = ({ data, select
             <IconComponent className="h-4 w-4" />
           </div>
           <div className="flex-1">
-            <CardTitle className="text-sm">{data.label}</CardTitle>
+            <CardTitle className="text-sm">{agentData.label}</CardTitle>
             <p className="text-xs text-muted-foreground">
               {config.description}
             </p>
@@ -149,18 +150,18 @@ export const AgentTypeNode: React.FC<NodeProps<AgentNodeData>> = ({ data, select
 
       <CardContent className="space-y-3">
         {/* MCP Tools */}
-        {data.mcpTools && data.mcpTools.length > 0 && (
+        {agentData.mcpTools && agentData.mcpTools.length > 0 && (
           <div>
             <div className="text-xs font-medium mb-1">MCP Tools</div>
             <div className="flex flex-wrap gap-1">
-              {data.mcpTools.slice(0, 3).map((tool) => (
+              {agentData.mcpTools.slice(0, 3).map((tool) => (
                 <Badge key={tool} variant="outline" className="text-xs">
                   {tool}
                 </Badge>
               ))}
-              {data.mcpTools.length > 3 && (
+              {agentData.mcpTools.length > 3 && (
                 <Badge variant="outline" className="text-xs">
-                  +{data.mcpTools.length - 3}
+                  +{agentData.mcpTools.length - 3}
                 </Badge>
               )}
             </div>
@@ -168,18 +169,18 @@ export const AgentTypeNode: React.FC<NodeProps<AgentNodeData>> = ({ data, select
         )}
 
         {/* Models */}
-        {data.models && data.models.length > 0 && (
+        {agentData.models && agentData.models.length > 0 && (
           <div>
             <div className="text-xs font-medium mb-1">Models</div>
             <div className="flex flex-wrap gap-1">
-              {data.models.slice(0, 2).map((model) => (
+              {agentData.models.slice(0, 2).map((model) => (
                 <Badge key={model} variant="secondary" className="text-xs">
                   {model}
                 </Badge>
               ))}
-              {data.models.length > 2 && (
+              {agentData.models.length > 2 && (
                 <Badge variant="secondary" className="text-xs">
-                  +{data.models.length - 2}
+                  +{agentData.models.length - 2}
                 </Badge>
               )}
             </div>
@@ -187,18 +188,18 @@ export const AgentTypeNode: React.FC<NodeProps<AgentNodeData>> = ({ data, select
         )}
 
         {/* Channels */}
-        {data.channels && data.channels.length > 0 && (
+        {agentData.channels && agentData.channels.length > 0 && (
           <div>
             <div className="text-xs font-medium mb-1">Channels</div>
             <div className="flex flex-wrap gap-1">
-              {data.channels.slice(0, 2).map((channel) => (
+              {agentData.channels.slice(0, 2).map((channel) => (
                 <Badge key={channel} variant="outline" className="text-xs">
                   {channel}
                 </Badge>
               ))}
-              {data.channels.length > 2 && (
+              {agentData.channels.length > 2 && (
                 <Badge variant="outline" className="text-xs">
-                  +{data.channels.length - 2}
+                  +{agentData.channels.length - 2}
                 </Badge>
               )}
             </div>
@@ -206,15 +207,15 @@ export const AgentTypeNode: React.FC<NodeProps<AgentNodeData>> = ({ data, select
         )}
 
         {/* Token Usage */}
-        {data.tokenUsage && (
+        {agentData.tokenUsage && (
           <div>
             <div className="text-xs font-medium mb-1">Token Usage</div>
             <div className="text-xs text-muted-foreground">
-              {data.tokenUsage.used.toLocaleString()} / {data.tokenUsage.total.toLocaleString()}
+              {agentData.tokenUsage.used.toLocaleString()} / {agentData.tokenUsage.total.toLocaleString()}
               <div className="w-full bg-muted rounded-full h-1 mt-1">
                 <div 
                   className="bg-primary h-1 rounded-full" 
-                  style={{ width: `${(data.tokenUsage.used / data.tokenUsage.total) * 100}%` }}
+                  style={{ width: `${(agentData.tokenUsage.used / agentData.tokenUsage.total) * 100}%` }}
                 />
               </div>
             </div>
@@ -252,9 +253,9 @@ export const AgentTypeNode: React.FC<NodeProps<AgentNodeData>> = ({ data, select
         </div>
 
         {/* Last Activity */}
-        {data.lastActivity && (
+        {agentData.lastActivity && (
           <div className="text-xs text-muted-foreground">
-            Last active: {data.lastActivity}
+            Last active: {agentData.lastActivity}
           </div>
         )}
       </CardContent>
