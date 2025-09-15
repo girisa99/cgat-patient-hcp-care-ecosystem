@@ -796,17 +796,19 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
 
       {/* Session Manager */}
-      <GenieSessionManager
-        isOpen={showSessionManager}
-        onClose={() => setShowSessionManager(false)}
-        onSessionSelect={(session) => {
-          // Load selected session
-          // This would integrate with the conversation state
-          showSuccess(`Session "${session.session_name}" loaded`);
-          setShowSessionManager(false);
-        }}
-        currentSessionId={currentSession?.id}
-      />
+      {showSessionManager && (
+        <GenieSessionManager
+          isOpen={showSessionManager}
+          onClose={() => setShowSessionManager(false)}
+          onSessionSelect={(session) => {
+            // Load selected session
+            // This would integrate with the conversation state
+            showSuccess(`Session "${session.session_name}" loaded`);
+            setShowSessionManager(false);
+          }}
+          currentSessionId={currentSession?.id}
+        />
+      )}
     </>
   );
 };

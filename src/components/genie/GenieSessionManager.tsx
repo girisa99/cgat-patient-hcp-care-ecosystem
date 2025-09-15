@@ -61,15 +61,17 @@ export const GenieSessionManager: React.FC<GenieSessionManagerProps> = ({
     saveSession, 
     updateSession,
     createNewSession 
-  } = useGenieState();
+  } = useGenieState({ autoLoad: false });
   
   const { showSuccess, showError } = useMasterToast();
   const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
 
-  // Load sessions on mount
+  // Load sessions only when the manager is opened
   useEffect(() => {
-    loadSessions();
-  }, [loadSessions]);
+    if (isOpen) {
+      loadSessions();
+    }
+  }, [isOpen, loadSessions]);
 
   // Filter and sort sessions
   const filteredAndSortedSessions = useMemo(() => {
