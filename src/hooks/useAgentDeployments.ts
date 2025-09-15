@@ -14,12 +14,7 @@ export const useAgentDeployments = () => {
     try {
       const { data, error: fetchError } = await supabase
         .from('agent_channel_deployments')
-        .select(`
-          *,
-          agents!agent_channel_deployments_agent_id_fkey (
-            id, name, status, description
-          )
-        `)
+        .select('*')
         .order('created_at', { ascending: false });
 
       if (fetchError) throw fetchError;
