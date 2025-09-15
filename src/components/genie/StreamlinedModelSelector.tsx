@@ -15,6 +15,7 @@ interface StreamlinedModelSelectorProps {
   selectedMCPTools: string[];
   onMCPToolsChange: (tools: string[]) => void;
   mode: 'single' | 'multi' | 'system' | 'publish';
+  onModelPriorityChange?: (priorities: { [key: string]: number }) => void;
 }
 
 interface ModelOption {
@@ -44,7 +45,7 @@ const modelOptions: ModelOption[] = [
 ];
 
 const featureOptions = [
-  { id: 'medical', label: 'Medical Context', icon: <Brain className="h-4 w-4" />, description: 'Healthcare expertise' },
+  { id: 'medical', label: 'Medical Context', icon: <Brain className="h-4 w-4" />, description: 'Healthcare expertise + provider consultation reminder' },
   { id: 'knowledge', label: 'Knowledge Base', icon: <Database className="h-4 w-4" />, description: 'RAG integration' },
   { id: 'web', label: 'Web Search', icon: <Globe className="h-4 w-4" />, description: 'Real-time information' },
   { id: 'vision', label: 'Vision Analysis', icon: <Eye className="h-4 w-4" />, description: 'Image processing' },
@@ -63,9 +64,12 @@ export const StreamlinedModelSelector: React.FC<StreamlinedModelSelectorProps> =
   onFeaturesChange,
   selectedMCPTools,
   onMCPToolsChange,
-  mode
+  mode,
+  onModelPriorityChange
 }) => {
   const [providerFilter, setProviderFilter] = useState<string>('all');
+  const [modelPriorities, setModelPriorities] = useState<{ [key: string]: number }>({});
+  const [mediaAccuracy, setMediaAccuracy] = useState<'high' | 'medium' | 'fast'>('high');
 
   // Auto-enable features based on selected models
   useEffect(() => {
@@ -102,6 +106,11 @@ export const StreamlinedModelSelector: React.FC<StreamlinedModelSelectorProps> =
     if (isSelected) {
       // Remove model
       onModelsChange(selectedModels.filter(m => m.model !== model.id));
+      // Remove from priorities
+      const newPriorities = { ...modelPriorities };
+      delete newPriorities[model.id];
+      setModelPriorities(newPriorities);
+      onModelPriorityChange?.(newPriorities);
     } else {
       // Add model
       const newModel: SelectedModelConfig = {
@@ -117,8 +126,18 @@ export const StreamlinedModelSelector: React.FC<StreamlinedModelSelectorProps> =
         onModelsChange([newModel]);
       } else {
         onModelsChange([...selectedModels, newModel]);
+        // Set default priority
+        const newPriorities = { ...modelPriorities, [model.id]: selectedModels.length + 1 };
+        setModelPriorities(newPriorities);
+        onModelPriorityChange?.(newPriorities);
       }
     }
+  };
+
+  const handlePriorityChange = (modelId: string, priority: number) => {
+    const newPriorities = { ...modelPriorities, [modelId]: priority };
+    setModelPriorities(newPriorities);
+    onModelPriorityChange?.(newPriorities);
   };
 
   const handleFeatureToggle = (featureId: string) => {
@@ -181,13 +200,38 @@ export const StreamlinedModelSelector: React.FC<StreamlinedModelSelectorProps> =
                         }`}
                       >
                         <div className="flex items-center justify-between">
-                          <div>
+                          <div className="flex-1">
                             <div className="font-medium text-sm">{model.name}</div>
                             <div className="text-xs text-muted-foreground">{model.description}</div>
+                            {isSelected && mode === 'multi' && (
+                              <div className="mt-2">
+                                <Select
+                                  value={modelPriorities[model.id]?.toString() || '1'}
+                                  onValueChange={(value) => handlePriorityChange(model.id, parseInt(value))}
+                                >
+                                  <SelectTrigger className="w-24 h-6 text-xs">
+                                    <SelectValue placeholder="Priority" />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="1">1st</SelectItem>
+                                    <SelectItem value="2">2nd</SelectItem>
+                                    <SelectItem value="3">3rd</SelectItem>
+                                    <SelectItem value="4">Default</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                              </div>
+                            )}
                           </div>
-                          <Badge variant={model.provider === 'openai' ? 'default' : model.provider === 'claude' ? 'secondary' : 'outline'} className="text-xs">
-                            {model.provider}
-                          </Badge>
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge variant={model.provider === 'openai' ? 'default' : model.provider === 'claude' ? 'secondary' : 'outline'} className="text-xs">
+                              {model.provider}
+                            </Badge>
+                            {isSelected && modelPriorities[model.id] && (
+                              <Badge variant="outline" className="text-xs">
+                                Priority {modelPriorities[model.id]}
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                       </button>
                     );
@@ -243,6 +287,31 @@ export const StreamlinedModelSelector: React.FC<StreamlinedModelSelectorProps> =
         </div>
       )}
 
+      {/* Media Quality Settings */}
+      {(selectedFeatures.includes('vision') || selectedModels.some(m => m.category === 'vision')) && (
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">Media Generation Quality</h3>
+          <div className="p-3 rounded-lg border bg-card">
+            <div className="flex items-center justify-between mb-2">
+              <div>
+                <div className="font-medium text-sm">Content Accuracy</div>
+                <div className="text-xs text-muted-foreground">Higher accuracy = slower generation</div>
+              </div>
+              <Select value={mediaAccuracy} onValueChange={(value: 'high' | 'medium' | 'fast') => setMediaAccuracy(value)}>
+                <SelectTrigger className="w-24">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="fast">Fast</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Selection Summary */}
       <div className="p-4 bg-muted/50 rounded-lg">
         <div className="text-sm font-medium mb-2">Configuration Summary</div>
@@ -250,6 +319,9 @@ export const StreamlinedModelSelector: React.FC<StreamlinedModelSelectorProps> =
           <div>Models: {selectedModels.length} selected</div>
           <div>Features: {selectedFeatures.length} enabled</div>
           <div>Tools: {selectedMCPTools.length} active</div>
+          <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded text-yellow-800 dark:text-yellow-200">
+            <strong>Medical Disclaimer:</strong> This AI provides educational information only. Always consult qualified healthcare providers for medical advice, diagnosis, or treatment decisions.
+          </div>
         </div>
       </div>
     </div>

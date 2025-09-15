@@ -323,12 +323,12 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         initial={{ opacity: 0, x: 400 }}
         animate={{ opacity: 1, x: 0 }}
         exit={{ opacity: 0, x: 400 }}
-        className={`fixed z-50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 border rounded-lg shadow-xl flex flex-col transition-all duration-300 ${
+        className={`fixed z-50 bg-background border shadow-2xl flex flex-col transition-all duration-300 ${
           isMaximized 
-            ? 'top-0 right-0 left-0 bottom-0 w-full h-full' 
+            ? 'inset-0 w-full h-full rounded-none' 
             : isMinimized 
-              ? 'top-4 right-4 w-80 h-16' 
-              : 'top-0 right-0 h-full w-[500px] border-l rounded-l-lg'
+              ? 'bottom-4 right-4 w-80 h-16 rounded-lg' 
+              : 'bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-4xl h-[600px] rounded-lg'
         }`}
       >
         <div className="flex flex-col h-full">
@@ -441,7 +441,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                       Ready to Help
                     </h4>
                     <p className="text-sm text-muted-foreground max-w-sm mx-auto">
-                      Ask me about biotech, medical research, data analysis, or any topic you need assistance with.
+                      Ask me about biotech, medical research, data analysis, or any topic you need assistance with. 
+                      <strong className="text-foreground">Always consult your healthcare provider for medical decisions.</strong>
                     </p>
                     
                     {/* Active Features Display */}

@@ -110,9 +110,9 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
 
     return (
       <div className="w-full my-4 -mx-4 px-4">
-        <div className="bg-background border rounded-lg overflow-hidden shadow-sm">
+        <div className="bg-background border rounded-lg overflow-hidden shadow-sm max-w-full">
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-full">
               <thead>
                 <tr className="bg-muted/30 border-b">
                   {headers.map((header, index) => (
@@ -124,7 +124,7 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
               </thead>
               <tbody>
                 {rows.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="border-b border-muted/20 hover:bg-muted/10 transition-colors">
+                  <tr key={rowIndex} className="border-b border-muted/20 hover:bg-muted/10">
                     {row.map((cell, cellIndex) => (
                       <td key={cellIndex} className="px-3 py-2 text-sm text-foreground whitespace-nowrap">
                         {cell}

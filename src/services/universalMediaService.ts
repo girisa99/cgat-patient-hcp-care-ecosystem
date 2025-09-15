@@ -160,11 +160,11 @@ class UniversalMediaService {
     let enhancedPrompt = prompt;
     
     if (context === 'clinical') {
-      enhancedPrompt = `Medical illustration for clinical use: ${prompt}. Professional, accurate, clean medical diagram style.`;
+      enhancedPrompt = `MEDICAL CLINICAL ILLUSTRATION: ${prompt}. Professional clinical photograph style, medical textbook quality, precise anatomical structures, sterile clinical environment, ultra high resolution, professional medical photography, precise anatomical accuracy, clinical documentation quality`;
     } else if (context === 'research') {
-      enhancedPrompt = `Scientific research visualization: ${prompt}. High-quality scientific illustration with technical accuracy.`;
+      enhancedPrompt = `SCIENTIFIC RESEARCH VISUALIZATION: ${prompt}. Peer-reviewed journal figure quality, technical scientific accuracy, research laboratory setting, detailed scientific methodology, high quality medical illustration, anatomically correct, professional medical diagram`;
     } else if (context === 'educational') {
-      enhancedPrompt = `Educational medical diagram: ${prompt}. Clear, instructional, anatomically accurate illustration for learning.`;
+      enhancedPrompt = `EDUCATIONAL MEDICAL DIAGRAM: ${prompt}. Medical school textbook illustration, clear anatomical labels, instructional diagram style, learning-focused presentation, medical illustration style, clear and accurate`;
     }
 
     if (preferredProvider) {
@@ -186,7 +186,7 @@ class UniversalMediaService {
    * Generate biotech process visualization with smart provider selection
    */
   async generateBiotechProcess(processName: string, steps: string[], preferredProvider?: 'gemini' | 'huggingface'): Promise<MediaResponse> {
-    const prompt = `Biotech process visualization: ${processName}. Show the following steps in sequence: ${steps.join(', ')}. Scientific diagram style with clear flow arrows and labels.`;
+    const prompt = `BIOTECH PROCESS DIAGRAM: ${processName}. Sequential workflow showing: ${steps.join(' → ')}. Ultra-detailed scientific equipment, precise laboratory instrumentation, professional biotech facility, technical accuracy, clear process flow arrows, step-by-step scientific methodology, modern biotechnology laboratory setting, professional scientific illustration style.`;
     
     if (preferredProvider) {
       return this.generateImage({
