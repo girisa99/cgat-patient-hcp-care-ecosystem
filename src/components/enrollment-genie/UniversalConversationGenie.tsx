@@ -4,11 +4,12 @@
  * Supports multi-user/multi-tenant conversations for any page context
  */
 import React, { useState, useEffect, useCallback } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Bot, Sparkles } from 'lucide-react';
 import { GenieConversationInterface } from './GenieConversationInterface';
+import { TenantModeExplanation } from './TenantModeExplanation';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEdgeFunctionAvailability } from '@/hooks/useEdgeFunctionAvailability';
 import genieLogoImg from '@/assets/genie-logo.png';
@@ -95,11 +96,13 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
   userId
 }) => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { isAvailable: edgeFunctionsAvailable } = useEdgeFunctionAvailability();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [position, setPosition] = useState({ bottom: 24, right: 24 }); // Dynamic positioning
   const [genieMode, setGenieMode] = useState<'system' | 'single' | 'multi' | 'publish' | 'general'>('system');
+  const [showModeExplanation, setShowModeExplanation] = useState(false);
 
 
   const currentContext = getPageContext(location.pathname);
@@ -315,13 +318,29 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
                     {contextInfo.description}
                   </p>
                   <div className="flex gap-1 mb-2">
-                    <Badge variant="secondary" className="text-xs">
+                    <Badge 
+                      variant="secondary" 
+                      className="text-xs cursor-pointer hover:bg-muted"
+                      onClick={() => setShowModeExplanation(!showModeExplanation)}
+                    >
                       {tenantId ? 'Multi-tenant' : 'Single'}
                     </Badge>
-                    <Badge variant="outline" className="text-xs">
+                    <Badge 
+                      variant="outline" 
+                      className="text-xs cursor-pointer hover:bg-muted"
+                      onClick={() => setShowModeExplanation(!showModeExplanation)}
+                    >
                       {genieMode.toUpperCase()} Mode
                     </Badge>
                   </div>
+                  
+                  {/* Mode Explanation */}
+                  {showModeExplanation && (
+                    <div className="mb-3 p-3 bg-muted/50 rounded-lg">
+                      <TenantModeExplanation currentMode={tenantId ? 'multi-tenant' : 'system'} />
+                    </div>
+                  )}
+                  
                   {isEnrollmentContext && (
                     <Button 
                       variant="outline" 
@@ -329,8 +348,8 @@ export const UniversalConversationGenie: React.FC<UniversalConversationGenieProp
                       className="w-full mt-2"
                       onClick={(e) => {
                         e.stopPropagation();
-                        // Direct to enrollment workspace instead of toggling mode
-                        window.location.href = '/enrollment-workspace';
+                        // Navigate to patient onboarding using React Router
+                        navigate('/patient-onboarding');
                       }}
                     >
                       Open Enrollment Workspace

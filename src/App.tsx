@@ -166,7 +166,12 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/patient-onboarding" element={
-                    <ProtectedRoute requiredRoles={['healthcareProvider']}>
+                    <ProtectedRoute requiredRoles={['healthcareProvider', 'onboardingTeam', 'superAdmin', 'admin']}>
+                      <PatientOnboarding />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/enrollment-workspace" element={
+                    <ProtectedRoute requiredRoles={['healthcareProvider', 'onboardingTeam', 'superAdmin', 'admin']}>
                       <PatientOnboarding />
                     </ProtectedRoute>
                   } />
