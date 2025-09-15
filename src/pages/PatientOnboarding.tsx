@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -29,6 +29,7 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
+import { useLocation } from 'react-router-dom';
 
 interface PatientOnboarding {
   id: string;
@@ -125,6 +126,21 @@ export default function PatientOnboarding() {
   const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
   const [selectedAgentType, setSelectedAgentType] = useState<string>('');
   const [channelData, setChannelData] = useState<Record<string, any>>({});
+  const location = useLocation();
+
+  // Auto-open New Enrollment based on navigation intent
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const flow = params.get('flow');
+      const start = (location.state as any)?.startEnrollment;
+      if (flow === 'ai' || flow === 'form' || start) {
+        setCurrentView('new_enrollment');
+      }
+    } catch (e) {
+      console.warn('Failed to parse navigation state/query for PatientOnboarding');
+    }
+  }, [location]);
 
   const filteredOnboarding = mockOnboarding.filter(item => {
     const matchesSearch = item.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||

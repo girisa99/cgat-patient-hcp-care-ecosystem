@@ -476,7 +476,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
                     {/* Direct CTA to patient onboarding */}
                     <div className="mt-6">
-                      <Button size="sm" onClick={() => { navigateSafe('/patient-onboarding'); onClose(); }}>
+                      <Button size="sm" onClick={() => { navigateSafe('/patient-onboarding?flow=ai'); onClose(); }}>
                         Start step-wise AI Enrollment
                       </Button>
                     </div>

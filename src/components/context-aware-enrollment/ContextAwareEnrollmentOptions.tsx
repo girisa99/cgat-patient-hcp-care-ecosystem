@@ -3,7 +3,7 @@
  * Shows enrollment options based on current page context
  * Integrates AI agents with existing enrollment flows
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -113,6 +113,18 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
   }
 
   const moduleInfo = getModuleInfo(currentModule);
+
+  // If navigated with a flow query, jump to appropriate step
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const flow = params.get('flow');
+    if (flow === 'ai') {
+      setCurrentWorkflowStep('ai_agent_config');
+    } else if (flow === 'form') {
+      setSelectedOption('online-form');
+      setCurrentWorkflowStep('online_form');
+    }
+  }, [location.search]);
 
   const enrollmentOptions: EnrollmentOption[] = [
     {
