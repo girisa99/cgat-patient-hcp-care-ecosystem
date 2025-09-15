@@ -217,7 +217,7 @@ export const SimplifiedModelSelector: React.FC<SimplifiedModelSelectorProps> = (
               <ChevronDown className="h-4 w-4 opacity-50" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-80 p-0" align="start">
+          <PopoverContent className="w-80 p-0 bg-background border shadow-md z-[60]" align="start">
             <div className="p-4 max-h-60 overflow-auto">
               <div className="space-y-3">
                 {models.map((model) => {

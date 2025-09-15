@@ -293,9 +293,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
               systemPrompt: buildSystemPrompt(),
               temperature: 0.7,
               maxTokens: 1000
-            });
+            }, { silent: true });
           })
         );
+        
+        // If all failed, show a single consolidated error toast
+        if (responses.every(r => !r)) {
+          showError('AI request failed', 'AI service is not reachable. Please ensure the Supabase Edge Function is accessible.');
+        }
         
         // Add each response
         responses.forEach((resp, index) => {
@@ -442,7 +447,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                 <SelectTrigger className="w-32 h-8">
                   <SelectValue />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="bg-background border shadow-md z-[60]">
                   <SelectItem value="system">
                     <div className="flex items-center gap-2">
                       <Workflow className="h-3 w-3" />

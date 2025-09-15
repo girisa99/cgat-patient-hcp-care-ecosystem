@@ -103,7 +103,10 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
   };
 
   // Generate AI response
-  const generateResponse = useCallback(async (request: AIRequest): Promise<AIResponse | null> => {
+  const generateResponse = useCallback(async (
+    request: AIRequest,
+    options?: { silent?: boolean }
+  ): Promise<AIResponse | null> => {
     setState(prev => ({ ...prev, isLoading: true, error: null }));
 
     try {
@@ -139,7 +142,9 @@ export const useUniversalAI = (options: UseUniversalAIOptions = {}) => {
         ? 'AI service is not reachable. Please ensure the Supabase Edge Function "ai-universal-processor" is deployed and API keys are configured.'
         : (error instanceof Error ? error.message : 'AI generation failed');
       setState(prev => ({ ...prev, error: friendly, isLoading: false }));
-      showError('AI request failed', friendly);
+      if (!options?.silent) {
+        showError('AI request failed', friendly);
+      }
       return null;
     }
   }, [showError]);
