@@ -40,6 +40,7 @@ import { TypingIndicator } from './TypingIndicator';
 import { SelectedModelConfig } from '@/components/ai';
 import { GenieSessionManager } from '@/components/genie/GenieSessionManager';
 import { StreamlinedModelSelector } from '@/components/genie/StreamlinedModelSelector';
+import { DisclaimerModal } from '@/components/genie/DisclaimerModal';
 
 // Assets
 import genieLogoImg from '@/assets/genie-logo.png';
@@ -71,6 +72,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [showSessionManager, setShowSessionManager] = useState(false);
   const [isMaximized, setIsMaximized] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
+  const [showDisclaimer, setShowDisclaimer] = useState(true);
+  const [userInfo, setUserInfo] = useState<{ firstName: string; email: string } | null>(null);
   
   // Model and feature configuration
   const [selectedModels, setSelectedModels] = useState<SelectedModelConfig[]>([]);
@@ -134,22 +137,28 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   }, [switchMode, onModeChange, selectedModels]);
 
   const buildSystemPrompt = useCallback(() => {
-    let systemPrompt = 'You are a comprehensive AI assistant with advanced capabilities.';
+    let systemPrompt = 'You are GENIE, a comprehensive AI assistant with advanced capabilities in healthcare, biotech, and cell & gene therapy.';
+    
+    if (userInfo) {
+      systemPrompt += ` User Information: You are assisting ${userInfo.firstName} (${userInfo.email}). Personalize responses accordingly.`;
+    }
     
     if (medicalContext) {
-      systemPrompt += ' You specialize in medical and healthcare contexts, with expertise in patient care, medical terminology, and healthcare processes.';
+      systemPrompt += ' You specialize in medical and healthcare contexts, with expertise in patient care, medical terminology, healthcare processes, and regulatory compliance.';
     }
     
     if (ragEnabled) {
-      systemPrompt += ' You have access to specialized knowledge databases and can provide enhanced contextual responses.';
+      systemPrompt += ' You have access to specialized knowledge databases and can provide enhanced contextual responses using RAG (Retrieval-Augmented Generation).';
     }
     
     if (selectedMCPTools.length > 0) {
       systemPrompt += ` You have access to these tools: ${selectedMCPTools.join(', ')}.`;
     }
     
+    systemPrompt += ' IMPORTANT: Always remind users that your responses are AI-generated and should be verified with healthcare professionals. When providing medical information, always recommend consulting with qualified Healthcare Providers (HCPs).';
+    
     return systemPrompt;
-  }, [medicalContext, ragEnabled, selectedMCPTools]);
+  }, [medicalContext, ragEnabled, selectedMCPTools, userInfo]);
 
   const handleSend = async () => {
     if (!message.trim() || isLoading) return;
@@ -174,9 +183,14 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
         model: selectedModels[0]?.model || 'gpt-4o-mini'
       });
 
-      // Enhance prompt with RAG if enabled
+      // Enhance prompt with RAG and user context
       let enhancedPrompt = contextualResponse.enhancedPrompt;
       let contextSources: string[] = [];
+      
+      // Add user context to prompt
+      if (userInfo) {
+        enhancedPrompt = `[User: ${userInfo.firstName} - ${userInfo.email}] ${enhancedPrompt}`;
+      }
       
       if (enabledFeatures.length > 0) {
         try {
@@ -184,6 +198,12 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           const ragResult = await ragService.enhancePromptWithRAG(enhancedPrompt, enabledFeatures);
           enhancedPrompt = ragResult.enhancedPrompt;
           contextSources = ragResult.contextSources;
+          
+          // Update knowledge base with user interaction (simulate)
+          if (userInfo && contextSources.length > 0) {
+            console.log(`Updating knowledge base with interaction from ${userInfo.firstName}:`, contextSources);
+          }
+          
           console.log('RAG enhancement successful, sources:', contextSources);
         } catch (error) {
           console.warn('RAG enhancement failed, proceeding with contextual prompt:', error);
@@ -360,6 +380,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                       <SelectItem value="system">System</SelectItem>
                       <SelectItem value="single">Single</SelectItem>
                       <SelectItem value="multi">Multi</SelectItem>
+                      <SelectItem value="publish">Publish</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -505,6 +526,20 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Disclaimer Modal */}
+      <DisclaimerModal
+        isOpen={showDisclaimer}
+        onAccept={(userInfo) => {
+          setUserInfo(userInfo);
+          setShowDisclaimer(false);
+          console.log('User accepted disclaimer:', userInfo);
+        }}
+        onDecline={() => {
+          setShowDisclaimer(false);
+          onClose();
+        }}
+      />
 
       {/* Session Manager Modal */}
       <GenieSessionManager

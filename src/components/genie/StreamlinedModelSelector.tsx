@@ -14,7 +14,7 @@ interface StreamlinedModelSelectorProps {
   onFeaturesChange: (features: string[]) => void;
   selectedMCPTools: string[];
   onMCPToolsChange: (tools: string[]) => void;
-  mode: 'single' | 'multi' | 'system';
+  mode: 'single' | 'multi' | 'system' | 'publish';
 }
 
 interface ModelOption {
@@ -76,9 +76,15 @@ export const StreamlinedModelSelector: React.FC<StreamlinedModelSelectorProps> =
       newFeatures.push('vision');
     }
     
-    // Auto-enable medical context for system mode
-    if (mode === 'system' && !newFeatures.includes('medical')) {
+    // Auto-enable medical context for system and publish modes
+    if ((mode === 'system' || mode === 'publish') && !newFeatures.includes('medical')) {
       newFeatures.push('medical');
+    }
+    
+    // Auto-enable knowledge and web features for publish mode
+    if (mode === 'publish') {
+      if (!newFeatures.includes('knowledge')) newFeatures.push('knowledge');
+      if (!newFeatures.includes('web')) newFeatures.push('web');
     }
     
     if (newFeatures.length !== selectedFeatures.length) {
