@@ -16,7 +16,7 @@ export const useAgentDeployments = () => {
         .from('agent_channel_deployments')
         .select(`
           *,
-          agents (
+          agents!agent_channel_deployments_agent_id_fkey (
             id, name, status, description
           )
         `)

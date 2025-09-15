@@ -29,15 +29,15 @@ export const EnrollmentGenie: React.FC<UniversalConversationGenieProps> = ({
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  // Hide Genie entirely if edge functions are unavailable
-  if (!edgeFunctionsAvailable) {
-    return null;
-  }
-
   const handleComplete = (data: any) => {
     setIsOpen(false);
     onConversationComplete?.(data);
   };
+
+  // Hide Genie entirely if edge functions are unavailable
+  if (!edgeFunctionsAvailable) {
+    return null;
+  }
 
   return (
     <>
