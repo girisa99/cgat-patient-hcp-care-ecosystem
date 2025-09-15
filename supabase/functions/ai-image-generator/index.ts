@@ -56,6 +56,8 @@ Deno.serve(async (req) => {
 
     return new Response(JSON.stringify({ 
       imageUrl,
+      mediaUrl: imageUrl, // For compatibility with universalMediaService
+      success: true,
       provider,
       model: model || getDefaultModel(provider),
       metadata: {

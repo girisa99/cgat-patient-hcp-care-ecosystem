@@ -572,9 +572,9 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                   </div>
                   
                    {/* Conversation Display */}
-                  <div className="flex-1 space-y-3 p-3 overflow-y-auto">
+                  <div className="flex-1 space-y-3 p-3 overflow-y-auto" style={{ scrollBehavior: 'smooth' }}>
                     {state.messages.map((msg, index) => (
-                      <MessageComponent key={index} message={msg} />
+                      <MessageComponent key={`${msg.timestamp}-${index}`} message={msg} isLast={index === state.messages.length - 1} />
                     ))}
                     
                     <AnimatePresence>
