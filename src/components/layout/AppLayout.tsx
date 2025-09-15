@@ -2,9 +2,16 @@
  * ENHANCED APP LAYOUT COMPONENT
  * Consistent layout wrapper with navigation for all pages
  */
-import React from 'react';
+import React, { Suspense } from 'react';
 import RoleBasedNavigation from '@/components/navigation/RoleBasedNavigation';
 import '@/styles/navigation.css';
+import { GlobalConversationalEnrollmentProvider } from '@/hooks/useGlobalConversationalEnrollment';
+const GlobalConversationalEnrollmentModalLazy = React.lazy(() =>
+  import('@/components/global/GlobalConversationalEnrollmentModal').then(m => ({ default: m.GlobalConversationalEnrollmentModal }))
+);
+const UniversalConversationGenieLazy = React.lazy(() =>
+  import('@/components/enrollment-genie/UniversalConversationGenie').then(m => ({ default: m.UniversalConversationGenie }))
+);
 
 interface AppLayoutProps {
   title?: string;

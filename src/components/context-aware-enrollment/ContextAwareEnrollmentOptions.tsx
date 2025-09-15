@@ -106,6 +106,8 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [environmentConfig, setEnvironmentConfig] = useState<any>(null);
   const [agentDeployed, setAgentDeployed] = useState(false);
+  const { openEnrollment } = useGlobalConversationalEnrollment();
+  const [hasAutoLaunchedAI, setHasAutoLaunchedAI] = useState(false);
 
   // Don't show if not on a specific module page
   if (!currentModule) {
@@ -114,17 +116,19 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
 
   const moduleInfo = getModuleInfo(currentModule);
 
-  // If navigated with a flow query, jump to appropriate step
+  // If navigated with a flow query, launch appropriate experience
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const flow = params.get('flow');
-    if (flow === 'ai') {
-      setCurrentWorkflowStep('ai_agent_config');
+    if (flow === 'ai' && !hasAutoLaunchedAI) {
+      // Open conversational enrollment modal instead of config workflow
+      openEnrollment(currentModule as any);
+      setHasAutoLaunchedAI(true);
     } else if (flow === 'form') {
       setSelectedOption('online-form');
       setCurrentWorkflowStep('online_form');
     }
-  }, [location.search]);
+  }, [location.search, hasAutoLaunchedAI, openEnrollment, currentModule]);
 
   const enrollmentOptions: EnrollmentOption[] = [
     {
@@ -135,10 +139,10 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
       estimatedTime: '5-10 min',
       isAgent: true,
       action: () => {
-        console.log('🤖 Launching AI Agent Configuration for module:', currentModule);
-        setCurrentWorkflowStep('ai_agent_config');
-        toast.success('AI Agent Configuration Loaded', {
-          description: 'Template dashboard, workflows, NPI verification, and credentialing agents are ready'
+        console.log('🤖 Launching Conversational Enrollment for module:', currentModule);
+        openEnrollment(currentModule as any);
+        toast.success('AI Assistant started', {
+          description: 'Conversational, step-wise enrollment is now active'
         });
         onAgentSelect(currentModule);
       }
