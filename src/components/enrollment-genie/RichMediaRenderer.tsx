@@ -38,6 +38,11 @@ interface RichMediaRendererProps {
   onGenerateImage?: (prompt: string) => Promise<string>;
   onGenerateVideo?: (prompt: string) => Promise<string>;
   enableVisualSearch?: boolean;
+  modelContext?: {
+    provider: string;
+    model: string;
+    panelIndex: number;
+  };
 }
 
 export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({ 
@@ -45,7 +50,8 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
   metadata,
   onGenerateImage,
   onGenerateVideo,
-  enableVisualSearch = true
+  enableVisualSearch = true,
+  modelContext
 }) => {
   const [imagePrompt, setImagePrompt] = useState('');
   const [videoPrompt, setVideoPrompt] = useState('');
