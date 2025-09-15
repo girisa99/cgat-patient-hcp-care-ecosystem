@@ -22,6 +22,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
+import HealthcareSchemaAnalyzer from './HealthcareSchemaAnalyzer';
+import HealthcareWorkflowMapper from './HealthcareWorkflowMapper';
 
 interface HealthcareStep {
   id: string;
@@ -151,7 +153,6 @@ export const HealthcareContextualGenie: React.FC<HealthcareContextualGenieProps>
 
       const response = await generateResponse({
         provider: 'claude',
-        model: 'claude-3-5-sonnet-20241022',
         prompt: analysisPrompt,
         temperature: 0.3,
         maxTokens: 1000
@@ -377,7 +378,6 @@ Columns: ${schema.columns.map(col =>
 
       const response = await generateResponse({
         provider: 'claude',
-        model: 'claude-3-5-sonnet-20241022',
         prompt: codeGenerationPrompt,
         temperature: 0.2,
         maxTokens: 1800
