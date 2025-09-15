@@ -41,6 +41,7 @@ import { SelectedModelConfig } from '@/components/ai';
 import { GenieSessionManager } from '@/components/genie/GenieSessionManager';
 import { StreamlinedModelSelector } from '@/components/genie/StreamlinedModelSelector';
 import { DisclaimerModal } from '@/components/genie/DisclaimerModal';
+import { HealthcareStepWizard } from '@/components/genie/HealthcareStepWizard';
 
 // Assets
 import genieLogoImg from '@/assets/genie-logo.png';
@@ -74,6 +75,8 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
   const [isMinimized, setIsMinimized] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(true);
   const [userInfo, setUserInfo] = useState<{ firstName: string; email: string } | null>(null);
+  const [showHealthcareWizard, setShowHealthcareWizard] = useState(false);
+  const [pendingHealthcarePrompt, setPendingHealthcarePrompt] = useState('');
   
   // Model and feature configuration
   const [selectedModels, setSelectedModels] = useState<SelectedModelConfig[]>([]);
