@@ -59,6 +59,7 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [responses, setResponses] = useState<GenieResponse[]>([]);
   const [messages, setMessages] = useState<any[]>([]);
+  const [viewMode, setViewMode] = useState<'panels' | 'combined'>('panels');
   
   const { generateResponse } = useUniversalAI();
   const { enhanceWithRAG, addFutureContext } = useRAGContext();
@@ -297,7 +298,7 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
   }, [input, isLoading, selectedModels, mode, userId, generateResponse, enhanceWithRAG, addFutureContext]);
 
   // Helper function to combine small + vision model responses
-  const combineSmallVisionResponses = async (responses: GenieResponse[], models: SelectedModelConfig[]) => {
+  const combineSmallVisionResponses = (responses: GenieResponse[], models: SelectedModelConfig[]) => {
     const smallResponses = responses.filter((_, i) => models[i]?.category === 'small');
     const visionResponses = responses.filter((_, i) => models[i]?.category === 'vision');
     
@@ -347,7 +348,7 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
       initial={{ opacity: 0, x: 400 }}
       animate={{ opacity: 1, x: 0 }}
       exit={{ opacity: 0, x: 400 }}
-      className="fixed bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-6xl h-[600px] bg-background border shadow-2xl rounded-lg flex flex-col z-50"
+      className="fixed bottom-8 left-1/2 transform -translate-x-1/2 w-full max-w-7xl h-[80vh] bg-background border shadow-2xl rounded-lg flex flex-col z-50"
     >
       {/* Header */}
       <div className="flex items-center justify-between p-3 border-b bg-gradient-to-r from-primary/5 to-secondary/5">
@@ -363,7 +364,17 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
           </div>
         </div>
         
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-2">
+          {mode === 'multi' && (
+            <div className="hidden md:flex items-center gap-1 mr-2">
+              <Button variant={viewMode === 'panels' ? 'secondary' : 'outline'} size="sm" onClick={() => setViewMode('panels')}>
+                Panels
+              </Button>
+              <Button variant={viewMode === 'combined' ? 'secondary' : 'outline'} size="sm" onClick={() => setViewMode('combined')}>
+                Combined
+              </Button>
+            </div>
+          )}
           <Button variant="ghost" size="sm">
             <Settings className="h-4 w-4" />
           </Button>
@@ -380,80 +391,111 @@ export const EnhancedGenieInterface: React.FC<EnhancedGenieInterfaceProps> = ({
       <div className="flex-1 overflow-hidden">
         <ScrollArea className="h-full">
           <div className="p-4">
-            {mode === 'multi' && responses.length > 0 ? (
-              // Multi-model grid layout - shows ALL responses
-              <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
-                {responses.map((response, index) => (
-                  <motion.div
-                    key={`${response.id}-${index}`}
-                    initial={{ opacity: 0, y: 20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="relative"
-                  >
-                    <Card className="h-full border-primary/20 bg-card/50 backdrop-blur-sm">
-                      <CardHeader className="pb-3">
-                        <div className="flex items-center gap-2">
-                          <Avatar className="h-6 w-6">
-                            <AvatarImage src="/placeholder.svg" />
-                            <AvatarFallback className="text-xs bg-primary text-primary-foreground">
-                              {response.provider === 'claude' ? 'C' : 
-                               response.provider === 'gemini' ? 'G' : 
-                               response.provider === 'openai' ? 'O' : 'AI'}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <p className="text-sm font-medium text-foreground capitalize truncate">
-                              {response.provider} {response.model}
-                            </p>
-                            <p className="text-xs text-muted-foreground">
-                              Panel {index + 1} • {format(new Date(response.timestamp), 'HH:mm:ss')}
-                            </p>
-                          </div>
-                          {response.ragEnhanced && (
-                            <Badge variant="secondary" className="text-xs">RAG</Badge>
-                          )}
-                          {response.error && (
-                            <Badge variant="destructive" className="text-xs">Error</Badge>
-                          )}
+              {viewMode === 'combined' ? (
+                <div className="grid grid-cols-1 gap-4">
+                  <Card className="h-full border-primary/20 bg-card/50 backdrop-blur-sm">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2">
+                        <Avatar className="h-6 w-6">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback className="text-xs bg-primary text-primary-foreground">MM</AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <p className="text-sm font-medium text-foreground truncate">
+                            Combined Analysis (Small + Vision)
+                          </p>
+                          <p className="text-xs text-muted-foreground">Aggregated cross-category insights</p>
                         </div>
-                      </CardHeader>
-                      <CardContent className="pt-0">
-                        <ScrollArea className="max-h-[350px]">
-                          {response.loading ? (
-                            <div className="flex items-center justify-center h-32">
-                              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-                              <span className="ml-3 text-sm text-muted-foreground">Generating response...</span>
+                        <Badge variant="secondary" className="text-xs">Combined</Badge>
+                      </div>
+                    </CardHeader>
+                    <CardContent className="pt-0">
+                      <ScrollArea className="max-h-[55vh]">
+                        <RichMediaRenderer 
+                          content={combineSmallVisionResponses(responses, selectedModels)?.content || '<p>Send a prompt to see the combined analysis.</p>'}
+                          onGenerateImage={handleGenerateImage}
+                          onGenerateVideo={handleGenerateVideo}
+                          modelContext={{ provider: 'multi-model', model: 'combined-analysis', panelIndex: 0 }}
+                        />
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+                </div>
+              ) : (
+                // Multi-model grid layout - shows ALL responses
+                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                  {responses.map((response, index) => (
+                    <motion.div
+                      key={`${response.id}-${index}`}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 }}
+                      className="relative"
+                    >
+                      <Card className="h-full border-primary/20 bg-card/50 backdrop-blur-sm">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center gap-2">
+                            <Avatar className="h-6 w-6">
+                              <AvatarImage src="/placeholder.svg" />
+                              <AvatarFallback className="text-xs bg-primary text-primary-foreground">
+                                {response.provider === 'claude' ? 'C' : 
+                                 response.provider === 'gemini' ? 'G' : 
+                                 response.provider === 'openai' ? 'O' : 'AI'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <p className="text-sm font-medium text-foreground capitalize truncate">
+                                {response.provider} {response.model}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Panel {index + 1} • {format(new Date(response.timestamp), 'HH:mm:ss')}
+                              </p>
                             </div>
-                          ) : response.error ? (
-                            <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
-                              <p className="text-sm text-destructive">{response.error}</p>
-                            </div>
-                          ) : (
-                            <RichMediaRenderer 
-                              content={response.content} 
-                              onGenerateImage={handleGenerateImage}
-                              onGenerateVideo={handleGenerateVideo}
-                              modelContext={{
-                                provider: response.provider,
-                                model: response.model,
-                                panelIndex: index
-                              }}
-                            />
-                          )}
-                        </ScrollArea>
-                        {response.content && !response.loading && (
-                          <div className="mt-3 pt-3 border-t border-border">
-                            <Badge variant="outline" className="text-xs">
-                              {response.provider} Panel {index + 1}
-                            </Badge>
+                            {response.ragEnhanced && (
+                              <Badge variant="secondary" className="text-xs">RAG</Badge>
+                            )}
+                            {response.error && (
+                              <Badge variant="destructive" className="text-xs">Error</Badge>
+                            )}
                           </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </motion.div>
-                ))}
-              </div>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <ScrollArea className="max-h-[55vh]">
+                            {response.loading ? (
+                              <div className="flex items-center justify-center h-32">
+                                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+                                <span className="ml-3 text-sm text-muted-foreground">Generating response...</span>
+                              </div>
+                            ) : response.error ? (
+                              <div className="p-4 bg-destructive/10 border border-destructive/20 rounded-lg">
+                                <p className="text-sm text-destructive">{response.error}</p>
+                              </div>
+                            ) : (
+                              <RichMediaRenderer 
+                                content={response.content} 
+                                onGenerateImage={handleGenerateImage}
+                                onGenerateVideo={handleGenerateVideo}
+                                modelContext={{
+                                  provider: response.provider,
+                                  model: response.model,
+                                  panelIndex: index
+                                }}
+                              />
+                            )}
+                          </ScrollArea>
+                          {response.content && !response.loading && (
+                            <div className="mt-3 pt-3 border-t border-border">
+                              <Badge variant="outline" className="text-xs">
+                                {response.provider} Panel {index + 1}
+                              </Badge>
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
             ) : (
               // Single model or empty state
               <div className="space-y-4">
