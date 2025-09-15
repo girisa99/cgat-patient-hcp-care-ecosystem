@@ -24,6 +24,8 @@ import { useMasterToast } from '@/hooks/useMasterToast';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import HealthcareSchemaAnalyzer from './HealthcareSchemaAnalyzer';
 import HealthcareWorkflowMapper from './HealthcareWorkflowMapper';
+import ExternalSystemsIntegrator from './ExternalSystemsIntegrator';
+import HealthcareDataMapper from './HealthcareDataMapper';
 
 interface HealthcareStep {
   id: string;
