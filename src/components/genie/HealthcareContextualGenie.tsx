@@ -150,10 +150,11 @@ export const HealthcareContextualGenie: React.FC<HealthcareContextualGenieProps>
       `;
 
       const response = await generateResponse({
+        provider: 'claude',
+        model: 'claude-3-5-sonnet-20241022',
         prompt: analysisPrompt,
-        model: { id: 'claude-3-5-sonnet-20241022', provider: 'anthropic' },
-        enabledFeatures: ['medical'],
-        temperature: 0.3
+        temperature: 0.3,
+        maxTokens: 1000
       });
 
       // Parse and validate the response
@@ -375,10 +376,11 @@ Columns: ${schema.columns.map(col =>
       `;
 
       const response = await generateResponse({
+        provider: 'claude',
+        model: 'claude-3-5-sonnet-20241022',
         prompt: codeGenerationPrompt,
-        model: { id: 'claude-3-5-sonnet-20241022', provider: 'anthropic' },
-        enabledFeatures: ['medical', 'tools'],
-        temperature: 0.2
+        temperature: 0.2,
+        maxTokens: 1800
       });
 
       setGeneratedCode(response.content);

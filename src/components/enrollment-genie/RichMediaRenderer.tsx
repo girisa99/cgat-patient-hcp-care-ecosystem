@@ -423,9 +423,12 @@ export const RichMediaRenderer: React.FC<RichMediaRendererProps> = ({
     
     setIsLoadingVisual(true);
     try {
-      const result = await externalVisualContentService.searchVisualContent(query, 6);
-      setVisualContent(result.sources);
-      setShowVisualContent(result.sources.length > 0);
+      const result = await externalVisualContentService.searchVisualContent(query, 12);
+      const filtered = (result.sources || [])
+        .filter(s => (s.relevanceScore ?? 0) >= 0.6)
+        .sort((a, b) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0));
+      setVisualContent(filtered);
+      setShowVisualContent(filtered.length > 0);
     } catch (error) {
       console.error('Error searching visual content:', error);
     } finally {

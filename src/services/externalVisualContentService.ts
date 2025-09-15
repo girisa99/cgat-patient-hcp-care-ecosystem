@@ -44,7 +44,11 @@ export class ExternalVisualContentService {
       });
 
       if (error) throw error;
-      return data;
+      const sources = (data?.sources || [])
+        .filter((s: VisualContentSource) => (s.relevanceScore ?? 0) >= 0.6)
+        .sort((a: VisualContentSource, b: VisualContentSource) => (b.relevanceScore ?? 0) - (a.relevanceScore ?? 0))
+        .slice(0, limit);
+      return { sources, query, totalFound: sources.length };
     } catch (error) {
       console.error('Visual content search error:', error);
       return {
