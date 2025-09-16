@@ -61,6 +61,10 @@ export { EnhancedProviderFormWithConfirmation } from '../enrollment/EnhancedProv
 // Enhanced comprehensive enrollment structure
 export { EnhancedPatientEnrollmentStructure, createEmptyEnhancedPatientEnrollmentData } from '../enrollment/EnhancedPatientEnrollmentStructure';
 
+// Form selection and AI workflow components
+export { EnrollmentFormSelector } from '../enrollment/EnrollmentFormSelector';
+export { AIConsentWorkflow } from '../enrollment/AIConsentWorkflow';
+
 // Export complete data types
 export type { 
   CompletePatientInformation,
