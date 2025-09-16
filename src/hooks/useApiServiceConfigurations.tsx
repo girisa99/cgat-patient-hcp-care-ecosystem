@@ -7,13 +7,21 @@ interface ApiServiceConfiguration {
   agent_id?: string;
   service_name: string;
   service_type: string;
-  configuration: any;
+  configuration?: any;
   credentials?: any;
   is_active: boolean;
   health_status?: string;
   last_health_check?: string;
   created_at: string;
   updated_at: string;
+  // New regular columns extracted from JSONB
+  api_endpoint?: string;
+  auth_type?: string;
+  api_key_header?: string;
+  timeout_ms?: number;
+  retry_attempts?: number;
+  rate_limit?: number;
+  environment?: string;
 }
 
 export const useApiServiceConfigurations = () => {
@@ -26,7 +34,16 @@ export const useApiServiceConfigurations = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('api_service_configurations')
-        .select('*')
+        .select(`
+          *,
+          api_endpoint,
+          auth_type,
+          api_key_header,
+          timeout_ms,
+          retry_attempts,
+          rate_limit,
+          environment
+        `)
         .order('service_name');
       
       if (error) throw error;
@@ -39,7 +56,27 @@ export const useApiServiceConfigurations = () => {
     mutationFn: async (config: Pick<ApiServiceConfiguration, 'service_name' | 'service_type'> & Partial<Omit<ApiServiceConfiguration, 'id' | 'created_at' | 'updated_at' | 'service_name' | 'service_type'>>) => {
       const { data, error } = await supabase
         .from('api_service_configurations')
-        .insert([config])
+        .insert([{
+          ...config,
+          // Use regular columns for better performance
+          api_endpoint: config.api_endpoint,
+          auth_type: config.auth_type,
+          api_key_header: config.api_key_header,
+          timeout_ms: config.timeout_ms || 30000,
+          retry_attempts: config.retry_attempts || 3,
+          rate_limit: config.rate_limit || 100,
+          environment: config.environment || 'production',
+          // Keep backwards compatibility with JSONB
+          configuration: config.configuration || {
+            endpoint: config.api_endpoint,
+            auth_type: config.auth_type,
+            api_key_header: config.api_key_header,
+            timeout_ms: config.timeout_ms,
+            retry_attempts: config.retry_attempts,
+            rate_limit: config.rate_limit,
+            environment: config.environment
+          }
+        }])
         .select()
         .maybeSingle();
       
@@ -62,7 +99,27 @@ export const useApiServiceConfigurations = () => {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<ApiServiceConfiguration> }) => {
       const { data, error } = await supabase
         .from('api_service_configurations')
-        .update(updates)
+        .update({
+          ...updates,
+          // Update regular columns
+          api_endpoint: updates.api_endpoint,
+          auth_type: updates.auth_type,
+          api_key_header: updates.api_key_header,
+          timeout_ms: updates.timeout_ms,
+          retry_attempts: updates.retry_attempts,
+          rate_limit: updates.rate_limit,
+          environment: updates.environment,
+          // Update JSONB for backwards compatibility
+          configuration: updates.configuration || {
+            endpoint: updates.api_endpoint,
+            auth_type: updates.auth_type,
+            api_key_header: updates.api_key_header,
+            timeout_ms: updates.timeout_ms,
+            retry_attempts: updates.retry_attempts,
+            rate_limit: updates.rate_limit,
+            environment: updates.environment
+          }
+        })
         .eq('id', id)
         .select()
         .maybeSingle();

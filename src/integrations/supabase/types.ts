@@ -1156,6 +1156,11 @@ export type Database = {
       agent_sessions: {
         Row: {
           actions: Json | null
+          agent_brand: string | null
+          agent_description: string | null
+          agent_name: string | null
+          agent_purpose: string | null
+          agent_use_case: string | null
           basic_info: Json | null
           canvas: Json | null
           connectors: Json | null
@@ -1175,6 +1180,11 @@ export type Database = {
         }
         Insert: {
           actions?: Json | null
+          agent_brand?: string | null
+          agent_description?: string | null
+          agent_name?: string | null
+          agent_purpose?: string | null
+          agent_use_case?: string | null
           basic_info?: Json | null
           canvas?: Json | null
           connectors?: Json | null
@@ -1194,6 +1204,11 @@ export type Database = {
         }
         Update: {
           actions?: Json | null
+          agent_brand?: string | null
+          agent_description?: string | null
+          agent_name?: string | null
+          agent_purpose?: string | null
+          agent_use_case?: string | null
           basic_info?: Json | null
           canvas?: Json | null
           connectors?: Json | null
@@ -1573,6 +1588,7 @@ export type Database = {
       agents: {
         Row: {
           agent_type: string | null
+          api_rate_limit: number | null
           brand: string | null
           business_units: string[] | null
           categories: string[] | null
@@ -1581,19 +1597,27 @@ export type Database = {
           created_by: string | null
           deployment_config: Json | null
           description: string | null
+          enabled_features: string[] | null
           facility_id: string | null
           id: string
+          max_tokens: number | null
+          model_name: string | null
+          model_provider: string | null
           name: string
           organization_id: string | null
           purpose: string | null
           status: string | null
+          system_prompt: string | null
+          temperature: number | null
           template_id: string | null
+          timeout_seconds: number | null
           topics: string[] | null
           updated_at: string
           use_case: string | null
         }
         Insert: {
           agent_type?: string | null
+          api_rate_limit?: number | null
           brand?: string | null
           business_units?: string[] | null
           categories?: string[] | null
@@ -1602,19 +1626,27 @@ export type Database = {
           created_by?: string | null
           deployment_config?: Json | null
           description?: string | null
+          enabled_features?: string[] | null
           facility_id?: string | null
           id?: string
+          max_tokens?: number | null
+          model_name?: string | null
+          model_provider?: string | null
           name: string
           organization_id?: string | null
           purpose?: string | null
           status?: string | null
+          system_prompt?: string | null
+          temperature?: number | null
           template_id?: string | null
+          timeout_seconds?: number | null
           topics?: string[] | null
           updated_at?: string
           use_case?: string | null
         }
         Update: {
           agent_type?: string | null
+          api_rate_limit?: number | null
           brand?: string | null
           business_units?: string[] | null
           categories?: string[] | null
@@ -1623,13 +1655,20 @@ export type Database = {
           created_by?: string | null
           deployment_config?: Json | null
           description?: string | null
+          enabled_features?: string[] | null
           facility_id?: string | null
           id?: string
+          max_tokens?: number | null
+          model_name?: string | null
+          model_provider?: string | null
           name?: string
           organization_id?: string | null
           purpose?: string | null
           status?: string | null
+          system_prompt?: string | null
+          temperature?: number | null
           template_id?: string | null
+          timeout_seconds?: number | null
           topics?: string[] | null
           updated_at?: string
           use_case?: string | null
@@ -2087,7 +2126,10 @@ export type Database = {
         Row: {
           base_url: string | null
           category: string
+          contact_email: string | null
           contact_info: Json | null
+          contact_name: string | null
+          contact_phone: string | null
           created_at: string
           created_by: string | null
           data_mappings_count: number | null
@@ -2100,20 +2142,31 @@ export type Database = {
           lifecycle_stage: string
           name: string
           purpose: string
+          rate_limit_requests_per_hour: number | null
+          rate_limit_requests_per_minute: number | null
           rate_limits: Json | null
+          requires_approval: boolean | null
+          requires_authentication: boolean | null
           rls_policies_count: number | null
           security_requirements: Json | null
           sla_requirements: Json | null
+          sla_response_time_ms: number | null
+          sla_uptime_percentage: number | null
           status: string
           type: string
           updated_at: string
           version: string
           webhook_config: Json | null
+          webhook_secret: string | null
+          webhook_url: string | null
         }
         Insert: {
           base_url?: string | null
           category: string
+          contact_email?: string | null
           contact_info?: Json | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
           data_mappings_count?: number | null
@@ -2126,20 +2179,31 @@ export type Database = {
           lifecycle_stage?: string
           name: string
           purpose: string
+          rate_limit_requests_per_hour?: number | null
+          rate_limit_requests_per_minute?: number | null
           rate_limits?: Json | null
+          requires_approval?: boolean | null
+          requires_authentication?: boolean | null
           rls_policies_count?: number | null
           security_requirements?: Json | null
           sla_requirements?: Json | null
+          sla_response_time_ms?: number | null
+          sla_uptime_percentage?: number | null
           status?: string
           type: string
           updated_at?: string
           version?: string
           webhook_config?: Json | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
         }
         Update: {
           base_url?: string | null
           category?: string
+          contact_email?: string | null
           contact_info?: Json | null
+          contact_name?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
           data_mappings_count?: number | null
@@ -2152,15 +2216,23 @@ export type Database = {
           lifecycle_stage?: string
           name?: string
           purpose?: string
+          rate_limit_requests_per_hour?: number | null
+          rate_limit_requests_per_minute?: number | null
           rate_limits?: Json | null
+          requires_approval?: boolean | null
+          requires_authentication?: boolean | null
           rls_policies_count?: number | null
           security_requirements?: Json | null
           sla_requirements?: Json | null
+          sla_response_time_ms?: number | null
+          sla_uptime_percentage?: number | null
           status?: string
           type?: string
           updated_at?: string
           version?: string
           webhook_config?: Json | null
+          webhook_secret?: string | null
+          webhook_url?: string | null
         }
         Relationships: []
       }
@@ -2339,41 +2411,62 @@ export type Database = {
       api_service_configurations: {
         Row: {
           agent_id: string | null
+          api_endpoint: string | null
+          api_key_header: string | null
+          auth_type: string | null
           configuration: Json
           created_at: string
           credentials: Json | null
+          environment: string | null
           health_status: string | null
           id: string
           is_active: boolean
           last_health_check: string | null
+          rate_limit: number | null
+          retry_attempts: number | null
           service_name: string
           service_type: string
+          timeout_ms: number | null
           updated_at: string
         }
         Insert: {
           agent_id?: string | null
+          api_endpoint?: string | null
+          api_key_header?: string | null
+          auth_type?: string | null
           configuration?: Json
           created_at?: string
           credentials?: Json | null
+          environment?: string | null
           health_status?: string | null
           id?: string
           is_active?: boolean
           last_health_check?: string | null
+          rate_limit?: number | null
+          retry_attempts?: number | null
           service_name: string
           service_type: string
+          timeout_ms?: number | null
           updated_at?: string
         }
         Update: {
           agent_id?: string | null
+          api_endpoint?: string | null
+          api_key_header?: string | null
+          auth_type?: string | null
           configuration?: Json
           created_at?: string
           credentials?: Json | null
+          environment?: string | null
           health_status?: string | null
           id?: string
           is_active?: boolean
           last_health_check?: string | null
+          rate_limit?: number | null
+          retry_attempts?: number | null
           service_name?: string
           service_type?: string
+          timeout_ms?: number | null
           updated_at?: string
         }
         Relationships: []

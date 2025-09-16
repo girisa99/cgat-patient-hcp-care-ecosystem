@@ -16,7 +16,7 @@ interface Agent {
   purpose?: string;
   use_case?: string;
   brand?: string;
-  configuration: unknown;
+  configuration?: unknown;
   deployment_config?: unknown;
   template_id?: string;
   categories?: string[];
@@ -27,6 +27,15 @@ interface Agent {
   created_by?: string;
   created_at: string;
   updated_at: string;
+  // New regular columns extracted from JSONB
+  model_provider?: string;
+  model_name?: string;
+  temperature?: number;
+  max_tokens?: number;
+  system_prompt?: string;
+  enabled_features?: string[];
+  api_rate_limit?: number;
+  timeout_seconds?: number;
 }
 
 export const useAgents = () => {
@@ -58,7 +67,17 @@ export const useAgents = () => {
       console.log('🤖 Fetching MY agents from database...', { userId: user?.id });
       const { data, error } = await supabase
         .from('agents')
-        .select('*')
+        .select(`
+          *,
+          model_provider,
+          model_name,
+          temperature,
+          max_tokens,
+          system_prompt,
+          enabled_features,
+          api_rate_limit,
+          timeout_seconds
+        `)
         .eq('created_by', user!.id)
         .order('created_at', { ascending: false });
       if (error) {
@@ -97,6 +116,15 @@ export const useAgents = () => {
       organization_id?: string;
       facility_id?: string;
       created_by: string;
+      // New regular columns
+      model_provider?: string;
+      model_name?: string;
+      temperature?: number;
+      max_tokens?: number;
+      system_prompt?: string;
+      enabled_features?: string[];
+      api_rate_limit?: number;
+      timeout_seconds?: number;
     }) => {
       // Check for duplicate name
       const isDuplicate = await checkDuplicateName(agentData.name, agentData.created_by);
@@ -109,7 +137,26 @@ export const useAgents = () => {
         .insert({
           ...agentData,
           status: 'draft',
-          configuration: agentData.configuration || {},
+          // Use regular columns for better performance
+          model_provider: agentData.model_provider,
+          model_name: agentData.model_name,
+          temperature: agentData.temperature,
+          max_tokens: agentData.max_tokens,
+          system_prompt: agentData.system_prompt,
+          enabled_features: agentData.enabled_features || [],
+          api_rate_limit: agentData.api_rate_limit || 100,
+          timeout_seconds: agentData.timeout_seconds || 30,
+          // Keep backwards compatibility with JSONB
+          configuration: agentData.configuration || {
+            model_provider: agentData.model_provider,
+            model_name: agentData.model_name,
+            temperature: agentData.temperature,
+            max_tokens: agentData.max_tokens,
+            system_prompt: agentData.system_prompt,
+            enabled_features: agentData.enabled_features,
+            api_rate_limit: agentData.api_rate_limit,
+            timeout_seconds: agentData.timeout_seconds
+          },
           deployment_config: {}
         })
          .select()
@@ -148,6 +195,26 @@ export const useAgents = () => {
         .from('agents')
         .update({
           ...updates,
+          // Update regular columns
+          model_provider: updates.model_provider,
+          model_name: updates.model_name,
+          temperature: updates.temperature,
+          max_tokens: updates.max_tokens,
+          system_prompt: updates.system_prompt,
+          enabled_features: updates.enabled_features,
+          api_rate_limit: updates.api_rate_limit,
+          timeout_seconds: updates.timeout_seconds,
+          // Update JSONB for backwards compatibility
+          configuration: updates.configuration || {
+            model_provider: updates.model_provider,
+            model_name: updates.model_name,
+            temperature: updates.temperature,
+            max_tokens: updates.max_tokens,
+            system_prompt: updates.system_prompt,
+            enabled_features: updates.enabled_features,
+            api_rate_limit: updates.api_rate_limit,
+            timeout_seconds: updates.timeout_seconds
+          },
           updated_at: new Date().toISOString()
         })
         .eq('id', id)

@@ -15,6 +15,17 @@ export interface ApiSummary {
   version?: string;
   endpoints?: ApiEndpoint[];
   published_at?: string;
+  // Regular columns for better performance
+  contact_email?: string;
+  contact_phone?: string;
+  contact_name?: string;
+  rate_limit_requests_per_hour?: number;
+  rate_limit_requests_per_minute?: number;
+  requires_approval?: boolean;
+  requires_authentication?: boolean;
+  webhook_url?: string;
+  sla_response_time_ms?: number;
+  sla_uptime_percentage?: number;
   // Catch-all for future, still typed — better than any
   [key: string]: unknown;
 }

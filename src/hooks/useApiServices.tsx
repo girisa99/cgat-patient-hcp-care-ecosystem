@@ -11,7 +11,19 @@ export const useApiServices = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('api_integration_registry')
-        .select('*')
+        .select(`
+          *,
+          contact_email,
+          contact_phone,
+          contact_name,
+          rate_limit_requests_per_hour,
+          rate_limit_requests_per_minute,
+          requires_approval,
+          requires_authentication,
+          webhook_url,
+          sla_response_time_ms,
+          sla_uptime_percentage
+        `)
         .order('name');
       
       if (error) throw error;
