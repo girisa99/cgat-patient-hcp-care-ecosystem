@@ -30,7 +30,7 @@ import {
   Network,
   Users
 } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 // Import existing components
 import { ModeSelector, type AgentMode } from '@/components/agent-builder/ModeSelector';
@@ -141,6 +141,8 @@ const AgentsInner = () => {
   const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
   const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment' | 'verification' | 'audit' | 'workflow-audit' | 'consolidated-audit'>('collaboration');
 
+  const location = useLocation();
+
   console.log('[Agents] state init', {
     selectedMode,
     showModeSelector,
@@ -157,6 +159,30 @@ const AgentsInner = () => {
     checkHealth();
   }, [checkHealth]);
 
+  // Honor deep-links like /agents?from=enrollment&module=patient&open=builder
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const open = params.get('open');
+    const from = params.get('from');
+    const moduleParam = params.get('module');
+
+    if (open === 'builder') {
+      setVisualWorkflowSubTab('builder');
+      setShowModeSelector(false);
+      if (!selectedMode) {
+        setSelectedMode('visual' as AgentMode);
+      }
+      toast.success('AI Agent Builder is ready');
+    }
+
+    if (from === 'enrollment') {
+      if (moduleParam) {
+        toast.info(`Enrollment context: ${moduleParam}`);
+      } else {
+        toast.info('Enrollment context detected');
+      }
+    }
+  }, [location.search]);
   // Pick up any pending workflow generated outside /agents
   useEffect(() => {
     try {
