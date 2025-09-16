@@ -26,6 +26,10 @@ export { ComprehensiveTreatmentAssessment, type ComprehensiveTreatmentAssessment
 export { EnrollmentStatusDashboard, type EnrollmentStatus, type CriticalIssue } from './EnrollmentStatusDashboard';
 export { PatientEnrollmentTemplateManager } from './PatientEnrollmentTemplateManager';
 
-// Export both components for external use
+// Export field comparison components for all sections
 export { PatientInformationDemo } from '../enrollment/PatientInformationDemo';
 export { PatientInformationFieldComparison } from '../enrollment/PatientInformationFieldComparison';
+export { ProviderTreatmentCenterFieldComparison } from '../enrollment/ProviderTreatmentCenterFieldComparison';
+export { InsuranceInformationFieldComparison } from '../enrollment/InsuranceInformationFieldComparison';
+export { ClinicalTreatmentFieldComparison } from '../enrollment/ClinicalTreatmentFieldComparison';
+export { FinalSubmissionFieldComparison } from '../enrollment/FinalSubmissionFieldComparison';
