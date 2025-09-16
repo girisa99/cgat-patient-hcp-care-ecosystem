@@ -41,6 +41,7 @@ import { ConsentManagement, type ConsentData } from './ConsentManagement';
 import { CollaborationStatus } from './CollaborationStatus';
 import { PatientDataPrefill } from './PatientDataPrefill';
 import { AutomatedWhatsAppConsent } from './AutomatedWhatsAppConsent';
+import { EnhancedWhatsAppEnrollment } from './EnhancedWhatsAppEnrollment';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { UniversalSaveResumeManager } from '@/components/universal/UniversalSaveResumeManager';
 import { useUniversalSaveResume } from '@/hooks/useUniversalSaveResume';

@@ -13,6 +13,7 @@ export { PatientEnrollmentForm, type PatientEnrollmentData } from './PatientEnro
 export { ConsentManagement, type ConsentData } from './ConsentManagement';
 export { WhatsAppConsentAgent } from './WhatsAppConsentAgent';
 export { AutomatedWhatsAppConsent } from './AutomatedWhatsAppConsent';
+export { EnhancedWhatsAppEnrollment } from './EnhancedWhatsAppEnrollment';
 export { PatientEnrollmentWithWhatsApp } from './PatientEnrollmentWithWhatsApp';
 export { CollaborationStatus } from './CollaborationStatus';
 export { PatientDataPrefill } from './PatientDataPrefill';

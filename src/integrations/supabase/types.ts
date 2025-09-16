@@ -5116,6 +5116,50 @@ export type Database = {
           },
         ]
       }
+      enrollment_real_time_sync: {
+        Row: {
+          conflict_resolution: string | null
+          field_name: string
+          field_value: Json | null
+          id: string
+          session_id: string
+          sync_direction: string | null
+          sync_status: string | null
+          sync_timestamp: string | null
+          whatsapp_session_id: string | null
+        }
+        Insert: {
+          conflict_resolution?: string | null
+          field_name: string
+          field_value?: Json | null
+          id?: string
+          session_id: string
+          sync_direction?: string | null
+          sync_status?: string | null
+          sync_timestamp?: string | null
+          whatsapp_session_id?: string | null
+        }
+        Update: {
+          conflict_resolution?: string | null
+          field_name?: string
+          field_value?: Json | null
+          id?: string
+          session_id?: string
+          sync_direction?: string | null
+          sync_status?: string | null
+          sync_timestamp?: string | null
+          whatsapp_session_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "enrollment_real_time_sync_whatsapp_session_id_fkey"
+            columns: ["whatsapp_session_id"]
+            isOneToOne: false
+            referencedRelation: "whatsapp_enrollment_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       enrollment_templates: {
         Row: {
           created_at: string
@@ -12064,6 +12108,48 @@ export type Database = {
           },
         ]
       }
+      whatsapp_business_numbers: {
+        Row: {
+          capabilities: Json | null
+          created_at: string | null
+          department: string | null
+          display_name: string
+          id: string
+          is_active: boolean | null
+          is_default: boolean | null
+          phone_number: string
+          region: string | null
+          twilio_sid: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          capabilities?: Json | null
+          created_at?: string | null
+          department?: string | null
+          display_name: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          phone_number: string
+          region?: string | null
+          twilio_sid?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          capabilities?: Json | null
+          created_at?: string | null
+          department?: string | null
+          display_name?: string
+          id?: string
+          is_active?: boolean | null
+          is_default?: boolean | null
+          phone_number?: string
+          region?: string | null
+          twilio_sid?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       whatsapp_consent_sessions: {
         Row: {
           caregiver_info: Json | null
@@ -12109,6 +12195,114 @@ export type Database = {
           signature_alternative?: string | null
           status?: string
           updated_at?: string
+        }
+        Relationships: []
+      }
+      whatsapp_conversation_flows: {
+        Row: {
+          agent_type: string
+          created_at: string | null
+          flow_stage: string
+          humor_elements: Json | null
+          id: string
+          next_stage_logic: Json | null
+          personality_type: string
+          prompt_template: string
+          response_options: Json | null
+          validation_rules: Json | null
+        }
+        Insert: {
+          agent_type: string
+          created_at?: string | null
+          flow_stage: string
+          humor_elements?: Json | null
+          id?: string
+          next_stage_logic?: Json | null
+          personality_type: string
+          prompt_template: string
+          response_options?: Json | null
+          validation_rules?: Json | null
+        }
+        Update: {
+          agent_type?: string
+          created_at?: string | null
+          flow_stage?: string
+          humor_elements?: Json | null
+          id?: string
+          next_stage_logic?: Json | null
+          personality_type?: string
+          prompt_template?: string
+          response_options?: Json | null
+          validation_rules?: Json | null
+        }
+        Relationships: []
+      }
+      whatsapp_enrollment_sessions: {
+        Row: {
+          agent_type: string
+          collected_fields: Json | null
+          completed_at: string | null
+          completed_steps: string[] | null
+          consent_status: string | null
+          conversation_context: Json | null
+          conversation_personality: string | null
+          created_at: string | null
+          current_step: string | null
+          enrollment_mode: string
+          expires_at: string | null
+          form_sync_data: Json | null
+          from_phone: string
+          id: string
+          patient_data: Json | null
+          patient_phone: string
+          provider_data: Json | null
+          real_time_sync_enabled: boolean | null
+          session_id: string
+          updated_at: string | null
+        }
+        Insert: {
+          agent_type: string
+          collected_fields?: Json | null
+          completed_at?: string | null
+          completed_steps?: string[] | null
+          consent_status?: string | null
+          conversation_context?: Json | null
+          conversation_personality?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          enrollment_mode: string
+          expires_at?: string | null
+          form_sync_data?: Json | null
+          from_phone: string
+          id?: string
+          patient_data?: Json | null
+          patient_phone: string
+          provider_data?: Json | null
+          real_time_sync_enabled?: boolean | null
+          session_id: string
+          updated_at?: string | null
+        }
+        Update: {
+          agent_type?: string
+          collected_fields?: Json | null
+          completed_at?: string | null
+          completed_steps?: string[] | null
+          consent_status?: string | null
+          conversation_context?: Json | null
+          conversation_personality?: string | null
+          created_at?: string | null
+          current_step?: string | null
+          enrollment_mode?: string
+          expires_at?: string | null
+          form_sync_data?: Json | null
+          from_phone?: string
+          id?: string
+          patient_data?: Json | null
+          patient_phone?: string
+          provider_data?: Json | null
+          real_time_sync_enabled?: boolean | null
+          session_id?: string
+          updated_at?: string | null
         }
         Relationships: []
       }
