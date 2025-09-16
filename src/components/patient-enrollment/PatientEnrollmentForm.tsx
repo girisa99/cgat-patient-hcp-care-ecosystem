@@ -763,17 +763,27 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     //   return;
     // }
 
-    const consentData = {
-      providerConsent: providerSignature,
-      providerConsentDate: new Date().toISOString(),
-      providerConsentBy: 'current_user' // In real implementation, get actual user
-    };
+    try {
+      const currentDate = new Date();
+      if (isNaN(currentDate.getTime())) {
+        throw new Error('Invalid date');
+      }
 
-    updateFormData('providerConsent', consentData.providerConsent);
-    updateFormData('providerConsentDate', consentData.providerConsentDate);
-    updateFormData('providerConsentBy', consentData.providerConsentBy);
+      const consentData = {
+        providerConsent: providerSignature,
+        providerConsentDate: currentDate.toISOString(),
+        providerConsentBy: 'current_user' // In real implementation, get actual user
+      };
 
-    showSuccess('Provider consent recorded');
+      updateFormData('providerConsent', consentData.providerConsent);
+      updateFormData('providerConsentDate', consentData.providerConsentDate);
+      updateFormData('providerConsentBy', consentData.providerConsentBy);
+
+      showSuccess('Provider consent recorded');
+    } catch (error) {
+      console.error('Date handling error:', error);
+      showError('Error recording provider consent');
+    }
   };
 
   const renderSubmissionOptions = () => (
