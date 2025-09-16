@@ -45,7 +45,7 @@ import { UniversalSaveResumeManager } from '@/components/universal/UniversalSave
 import { useUniversalSaveResume } from '@/hooks/useUniversalSaveResume';
 
 export interface PatientEnrollmentData {
-  // Patient Information
+  // Patient Information - Complete Section
   firstName: string;
   lastName: string;
   middleName?: string;
@@ -54,10 +54,10 @@ export interface PatientEnrollmentData {
   otherLanguage?: string;
   gender: 'male' | 'female' | 'other';
   otherGender?: string;
-  ssn: string;
+  ssn?: string;
   email: string;
   
-  // Contact Information
+  // Contact Information - Complete Section
   homePhone?: string;
   cellPhone: string;
   alternateContactName?: string;
@@ -65,7 +65,7 @@ export interface PatientEnrollmentData {
   alternateContactPhone?: string;
   doNotContactPatient?: boolean;
   
-  // Address Information
+  // Address Information - Complete Section
   address: string;
   apartment?: string;
   city: string;
@@ -138,10 +138,24 @@ export interface PatientEnrollmentData {
   referralSource: string;
   admissionDate?: string;
   
-  // Consent and Authorization
+  // Provider Contact Information
+  providerPhone?: string;
+  providerEmail?: string;
+  
+  // Consent Management - Complete Section
   consentToTreatment: boolean;
   hipaaAuthorization: boolean;
-  financialResponsibility: boolean;
+  financialResponsibility: boolean;  
+  communicationConsent?: boolean;
+  telehealthConsent?: boolean;
+  marketingConsent?: boolean;
+  consentMethod: 'facility_present' | 'digital_sms' | 'digital_email' | 'verbal';
+  verbalConsentWitness?: string;
+  digitalConsentEmail?: string;
+  digitalConsentPhone?: string;
+  patientConsentDate?: string;
+  providerConsentDate?: string;
+  consentNotes?: string;
   
   // Submission Options
   submissionMethod: 'fax' | 'pdf_submit' | 'online' | 'ai_agent';
@@ -151,12 +165,7 @@ export interface PatientEnrollmentData {
   
   // Provider Consent
   providerConsent?: string;
-  providerConsentDate?: string;
   providerConsentBy?: string;
-  
-  // Provider Contact Information
-  providerPhone?: string;
-  providerEmail?: string;
   
   // Consent Management
   consentData?: ConsentData;
@@ -249,6 +258,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
     consentToTreatment: false,
     hipaaAuthorization: false,
     financialResponsibility: false,
+    consentMethod: 'facility_present',
     submissionMethod: 'online',
     collaborators: [],
     consentData: {
