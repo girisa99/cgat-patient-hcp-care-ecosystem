@@ -1,6 +1,6 @@
 /**
- * FLOATING CONVERSATIONAL AGENT
- * Complete conversational enrollment agent with floating interface, auto-save, and signature capture
+ * FLOATING CONVERSATIONAL AGENT WITH MCP INTEGRATION
+ * Complete conversational enrollment with real-time MCP tools, healthcare validation, and auto-save
  */
 import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,6 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   MessageCircle, 
   Minimize2, 
@@ -23,11 +24,17 @@ import {
   CheckCircle,
   Clock,
   User,
-  Bot
+  Bot,
+  Database,
+  Zap,
+  Activity,
+  AlertCircle
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useConversationEngines } from '@/hooks/useConversationEngines';
 import { useEnrollmentAgent } from '@/hooks/useEnrollmentAgent';
+import { useEnrollmentRealtime } from '@/hooks/useEnrollmentRealtime';
+import { useHealthcareAI } from '@/hooks/useHealthcareAI';
 import { DigitalSignatureCanvas } from './DigitalSignatureCanvas';
 import { RichMediaRenderer } from '../enrollment-genie/RichMediaRenderer';
 import { AIMediaService } from '@/services/aiMediaService';
@@ -43,7 +50,16 @@ interface Message {
     section?: string;
     extractedData?: Record<string, any>;
     confidence?: number;
+    mcpContext?: any;
   };
+}
+
+interface MCPConversationSession {
+  sessionId: string;
+  mcpServerStatus: 'connecting' | 'connected' | 'error';
+  realtimeChannel: any;
+  conversationData: Record<string, any>;
+  mcpTools: string[];
 }
 
 interface FloatingConversationalAgentProps {
@@ -68,6 +84,10 @@ export const FloatingConversationalAgent: React.FC<FloatingConversationalAgentPr
   const [sessionProgress, setSessionProgress] = useState(0);
   const [currentSection, setCurrentSection] = useState('personal_info');
   
+  // MCP Integration State
+  const [mcpSession, setMcpSession] = useState<MCPConversationSession | null>(null);
+  const [mcpError, setMcpError] = useState<string | null>(null);
+  
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { routeMessage, processMessage, getAgentPrimaryEngine } = useConversationEngines();
   const { 
@@ -78,6 +98,20 @@ export const FloatingConversationalAgent: React.FC<FloatingConversationalAgentPr
     generatePDF,
     isLoading 
   } = useEnrollmentAgent();
+  
+  // MCP Hooks
+  const { 
+    isConnected: realtimeConnected, 
+    connect: connectRealtime,
+    updateEnrollmentData,
+    createConversationEntry
+  } = useEnrollmentRealtime();
+  
+  const { 
+    queryHealthcareAI, 
+    executeMCPRequest, 
+    isLoading: mcpLoading 
+  } = useHealthcareAI();
 
   // Auto-scroll to bottom of messages
   useEffect(() => {

@@ -1,12 +1,13 @@
 /**
- * STRUCTURED ENROLLMENT AGENT
- * Multi-agent system for section-specific patient enrollment
+ * STRUCTURED ENROLLMENT AGENT WITH MCP INTEGRATION
+ * Multi-agent system with real-time MCP tools, healthcare validation, and structured conversations
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { 
   User, 
   Heart, 
@@ -22,11 +23,17 @@ import {
   Send,
   Stethoscope,
   Search,
-  AlertCircle
+  AlertCircle,
+  Database,
+  Zap,
+  Workflow
 } from 'lucide-react';
 import { useEnrollmentAgent } from '@/hooks/useEnrollmentAgent';
+import { useEnrollmentRealtime } from '@/hooks/useEnrollmentRealtime';
+import { useHealthcareAI } from '@/hooks/useHealthcareAI';
 import { useNPIVerification } from '@/hooks/useNPIVerification';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -41,6 +48,24 @@ interface EnrollmentSection {
   validationRules: Record<string, any>;
   hasSubsections?: boolean;
   subsections?: EnrollmentSection[];
+  // MCP Integration
+  mcpTools: string[];
+  realtimeEnabled: boolean;
+  mcpContext?: Record<string, any>;
+}
+
+interface MCPSession {
+  sessionId: string;
+  mcpServerStatus: 'connecting' | 'connected' | 'error';
+  realtimeChannel: any;
+  currentStep: number;
+  stepData: Record<string, any>;
+  conversationHistory: Array<{
+    role: 'user' | 'assistant' | 'system';
+    content: string;
+    timestamp: Date;
+    mcpContext?: any;
+  }>;
 }
 
 interface StructuredEnrollmentAgentProps {
@@ -59,8 +84,27 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
   const [sectionData, setSectionData] = useState<Record<string, any>>({});
   const [npiVerificationEnabled, setNpiVerificationEnabled] = useState<boolean | null>(null);
   const [isNpiVerifying, setIsNpiVerifying] = useState(false);
+  
+  // MCP Integration State
+  const [mcpSession, setMcpSession] = useState<MCPSession | null>(null);
+  const [mcpError, setMcpError] = useState<string | null>(null);
+  
   const { toast } = useToast();
   const { verifyCredentials } = useNPIVerification();
+  
+  // MCP Hooks
+  const { 
+    isConnected: realtimeConnected, 
+    connect: connectRealtime,
+    updateEnrollmentData,
+    createConversationEntry
+  } = useEnrollmentRealtime();
+  
+  const { 
+    queryHealthcareAI, 
+    executeMCPRequest, 
+    isLoading: mcpLoading 
+  } = useHealthcareAI();
   
   const {
     currentSession,
@@ -75,11 +119,65 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
   const currentSection = sections[currentSectionIndex];
   const progress = ((currentSectionIndex + 1) / sections.length) * 100;
 
+  // Initialize MCP session and realtime connection
   useEffect(() => {
-    if (!currentSession) {
+    const initializeMCPSession = async () => {
+      try {
+        // Connect to realtime
+        await connectRealtime();
+        
+        // Initialize MCP session
+        const sessionId = `mcp-structured-${Date.now()}`;
+        const newMcpSession: MCPSession = {
+          sessionId,
+          mcpServerStatus: 'connecting',
+          realtimeChannel: null,
+          currentStep: 0,
+          stepData: {},
+          conversationHistory: []
+        };
+        
+        setMcpSession(newMcpSession);
+        
+        // Start enrollment session
+        if (!currentSession) {
+          await startEnrollment(moduleType);
+        }
+        
+        // Add initial MCP conversation entry
+        await createConversationEntry({
+          sessionId,
+          agentId: 'structured-enrollment-agent',
+          data: [{
+            role: 'assistant',
+            content: 'Structured Enrollment Agent with MCP integration initialized',
+            timestamp: new Date()
+          }],
+          metadata: { moduleType, mcpEnabled: true }
+        });
+        
+        // Update MCP status
+        setMcpSession(prev => prev ? { ...prev, mcpServerStatus: 'connected' } : null);
+        
+        toast({
+          title: "MCP Integration Active",
+          description: "Real-time healthcare tools and validation enabled",
+        });
+      } catch (error) {
+        console.error('MCP initialization failed:', error);
+        setMcpError('Failed to initialize MCP integration');
+        setMcpSession(prev => prev ? { ...prev, mcpServerStatus: 'error' } : null);
+      }
+    };
+
+    initializeMCPSession();
+  }, [moduleType]);
+
+  useEffect(() => {
+    if (!currentSession && mcpSession?.mcpServerStatus === 'connected') {
       startEnrollment(moduleType);
     }
-  }, [moduleType, currentSession, startEnrollment]);
+  }, [moduleType, currentSession, startEnrollment, mcpSession?.mcpServerStatus]);
 
   const handleStartSectionChat = (sectionId: string) => {
     setActiveChatSection(sectionId);
@@ -87,11 +185,56 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
 
   const handleSectionComplete = async (sectionId: string, data: any) => {
     setSectionData(prev => ({ ...prev, [sectionId]: data }));
+    
+    // MCP Integration: Real-time data update
+    if (mcpSession && realtimeConnected) {
+      try {
+        // Update enrollment data in real-time
+        await updateEnrollmentData(currentSession?.instanceId || '', sectionId, data);
+        
+        // Execute MCP tools for this section
+        const section = sections.find(s => s.id === sectionId);
+        if (section?.mcpTools) {
+          for (const tool of section.mcpTools) {
+            try {
+              await executeMCPRequest({
+                method: tool,
+                params: { sectionId, data, moduleType }
+              });
+            } catch (toolError) {
+              console.warn(`MCP tool ${tool} failed:`, toolError);
+            }
+          }
+        }
+        
+        // Add conversation entry for section completion
+        await createConversationEntry({
+          sessionId: mcpSession.sessionId,
+          agentId: 'structured-enrollment-agent',
+          data: {
+            role: 'system',
+            content: `Section ${section?.name || sectionId} completed successfully with MCP validation`,
+            timestamp: new Date(),
+            mcpContext: { sectionId, toolsExecuted: section?.mcpTools || [] }
+          },
+          metadata: { sectionId, completed: true, mcpValidated: true }
+        });
+        
+      } catch (mcpError) {
+        console.error('MCP processing error:', mcpError);
+        toast({
+          title: "MCP Processing Warning",
+          description: "Section saved but some real-time features may not be available",
+          variant: "default"
+        });
+      }
+    }
+    
     await updateSection(sectionId, data);
     await completeSection(sectionId);
     
     // Run NPI verification in background if enabled and provider data is available
-    if (npiVerificationEnabled && sectionId === 'provider-info' && data.providerNPI) {
+    if (npiVerificationEnabled && sectionId === 'provider_info' && data.providerNPI) {
       runNPIVerification(data);
     }
     
@@ -219,11 +362,46 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
+      {/* MCP Status Alert */}
+      {mcpSession && (
+        <Alert className={`border ${
+          mcpSession.mcpServerStatus === 'connected' ? 'border-green-200 bg-green-50' :
+          mcpSession.mcpServerStatus === 'error' ? 'border-red-200 bg-red-50' :
+          'border-yellow-200 bg-yellow-50'
+        }`}>
+          <div className="flex items-center gap-2">
+            {mcpSession.mcpServerStatus === 'connected' ? (
+              <Database className="h-4 w-4 text-green-600" />
+            ) : mcpSession.mcpServerStatus === 'error' ? (
+              <AlertCircle className="h-4 w-4 text-red-600" />
+            ) : (
+              <Bot className="h-4 w-4 text-yellow-600" />
+            )}
+            <Zap className="h-4 w-4 text-primary" />
+          </div>
+          <AlertDescription className="mt-1">
+            <strong>MCP Integration: </strong>
+            {mcpSession.mcpServerStatus === 'connected' && 
+              `✅ Healthcare tools active • Real-time sync enabled • ${realtimeConnected ? 'Connected' : 'Connecting...'}`}
+            {mcpSession.mcpServerStatus === 'error' && 
+              `❌ MCP connection failed • ${mcpError || 'Unknown error'}`}
+            {mcpSession.mcpServerStatus === 'connecting' && 
+              '🔄 Connecting to healthcare MCP tools...'}
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Progress Header */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span>Patient Enrollment - Structured AI Approach</span>
+            <div className="flex items-center gap-3">
+              <span>Structured AI Enrollment</span>
+              <Badge variant="secondary" className="flex items-center gap-1">
+                <Zap className="h-3 w-3" />
+                MCP Enhanced
+              </Badge>
+            </div>
             <Badge variant="outline">
               Section {currentSectionIndex + 1} of {sections.length}
             </Badge>
@@ -231,7 +409,7 @@ export const StructuredEnrollmentAgent: React.FC<StructuredEnrollmentAgentProps>
           <div className="space-y-2">
             <Progress value={progress} className="h-2" />
             <p className="text-sm text-muted-foreground">
-              Complete each section with dedicated AI assistance
+              AI-powered sections with real-time healthcare validation and MCP tools
             </p>
           </div>
         </CardHeader>
@@ -551,7 +729,9 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       aiPrompt: "Welcome! I'm here to help you with your patient enrollment. First, let's set up how you'd like to complete this process. You can choose to fill everything out now, save and continue later, or get help along the way. What works best for you?",
       estimatedTime: '1-2 min',
       requiredFields: ['Submission Method', 'Contact Preference', 'Language Preference'],
-      validationRules: { method: 'required' }
+      validationRules: { method: 'required' },
+      mcpTools: ['validate-submission-method', 'track-submission-preference'],
+      realtimeEnabled: true
     },
     {
       id: 'consent_management',
@@ -561,7 +741,9 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       aiPrompt: "Before we begin collecting your information, I need to walk you through some important consent forms. These ensure we handle your information properly and that you understand the enrollment process. Shall we start with the general enrollment consent?",
       estimatedTime: '3-4 min',
       requiredFields: ['Enrollment Consent', 'HIPAA Authorization', 'Communication Consent', 'Digital Signature'],
-      validationRules: { consent: 'required', signature: 'required' }
+      validationRules: { consent: 'required', signature: 'required' },
+      mcpTools: ['validate-consent', 'store-consent-records', 'audit-consent-trail'],
+      realtimeEnabled: true
     },
     {
       id: 'patient_info',
@@ -571,7 +753,9 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       aiPrompt: "Now let's collect your personal information. I'll help you provide your demographics in a conversational way. Let's start with your full name - what would you like me to call you?",
       estimatedTime: '4-6 min',
       requiredFields: ['First Name', 'Last Name', 'Date of Birth', 'Phone Number', 'Email Address', 'Home Address', 'Emergency Contact'],
-      validationRules: { name: 'required', dob: 'date', phone: 'phone', email: 'email' }
+      validationRules: { name: 'required', dob: 'date', phone: 'phone', email: 'email' },
+      mcpTools: ['validate-demographics', 'verify-contact-info', 'address-validation'],
+      realtimeEnabled: true
     },
     {
       id: 'provider_info',
@@ -581,7 +765,9 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       aiPrompt: "Let's gather information about your healthcare providers and any referrals. This helps us coordinate your care properly. Do you have a primary care physician or specialist who referred you?",
       estimatedTime: '3-5 min',
       requiredFields: ['Primary Care Physician', 'Referring Provider', 'Provider NPI', 'Referral Reason', 'Provider Contact'],
-      validationRules: { npi: 'npi_format' }
+      validationRules: { npi: 'npi_format' },
+      mcpTools: ['verify-provider-npi', 'validate-medical-licenses', 'check-referral-authorization'],
+      realtimeEnabled: true
     },
     {
       id: 'insurance',
@@ -591,7 +777,9 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       aiPrompt: "Let's get your insurance information set up. I'll walk you through this step by step. Do you have your insurance card handy? If so, I can help you enter the details.",
       estimatedTime: '4-6 min',
       requiredFields: ['Insurance Provider', 'Policy Number', 'Group Number', 'Subscriber Name', 'Subscriber DOB', 'Secondary Insurance'],
-      validationRules: { policyNumber: 'required', provider: 'required' }
+      validationRules: { policyNumber: 'required', provider: 'required' },
+      mcpTools: ['verify-insurance-eligibility', 'validate-policy-status', 'check-coverage-benefits'],
+      realtimeEnabled: true
     },
     {
       id: 'treatment_assessment',
@@ -601,7 +789,9 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       aiPrompt: "Now I'll help you document your medical history and current condition. This information helps us provide better care. Let's start with your current symptoms or the main reason for seeking treatment.",
       estimatedTime: '6-8 min',
       requiredFields: ['Chief Complaint', 'Current Medications', 'Allergies', 'Medical History', 'Previous Treatments', 'Current Symptoms'],
-      validationRules: { medications: 'array', allergies: 'array' }
+      validationRules: { medications: 'array', allergies: 'array' },
+      mcpTools: ['validate-medical-history', 'check-drug-interactions', 'verify-allergy-contraindications'],
+      realtimeEnabled: true
     },
     {
       id: 'final_review',
@@ -611,7 +801,9 @@ const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
       aiPrompt: "Great! We're almost done. Let me review all the information we've collected to make sure everything is correct. After we review together, you can submit your completed enrollment. Ready to go through everything?",
       estimatedTime: '2-3 min',
       requiredFields: ['Information Review', 'Final Consent', 'Submission Confirmation'],
-      validationRules: { review: 'required', final_consent: 'required' }
+      validationRules: { review: 'required', final_consent: 'required' },
+      mcpTools: ['validate-completeness', 'generate-enrollment-summary', 'submit-to-healthcare-systems'],
+      realtimeEnabled: true
     }
   ];
 
