@@ -13319,6 +13319,17 @@ export type Database = {
           severity_breakdown: Json
         }[]
       }
+      get_database_bloat_info: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          bloat_ratio: number
+          dead_rows: number
+          live_rows: number
+          recommendation: string
+          table_name: string
+          total_size: string
+        }[]
+      }
       get_import_statistics: {
         Args: { p_user_id?: string }
         Returns: Json
@@ -13498,7 +13509,7 @@ export type Database = {
       }
       optimize_database_performance: {
         Args: Record<PropertyKey, never>
-        Returns: undefined
+        Returns: Json
       }
       optimize_slow_queries: {
         Args: Record<PropertyKey, never>
