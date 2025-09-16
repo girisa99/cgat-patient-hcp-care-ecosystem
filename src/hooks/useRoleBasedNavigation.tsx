@@ -68,7 +68,7 @@ export const useRoleBasedNavigation = () => {
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
       'database-performance': ['superAdmin', 'demoUser'], // Database performance optimization
       'order-management': ['healthcareProvider'], // Healthcare provider specific
-      'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+      'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
       'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment 
       'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
     };
@@ -113,7 +113,7 @@ export const useRoleBasedNavigation = () => {
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
       'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
       'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
-      'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+      'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
       'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
       'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
@@ -165,7 +165,7 @@ export const useRoleBasedNavigation = () => {
           modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
           'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
           'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
-          'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+          'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
           'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
           'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
           ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
