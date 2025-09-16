@@ -41,6 +41,10 @@ export { CompleteInsuranceForm, createEmptyCompleteInsuranceData } from '../enro
 export { CompleteClinicalForm, createEmptyCompleteClinicalData } from '../enrollment/CompleteClinicalForm';
 export { CompleteFinalSubmissionForm, createEmptyCompleteFinalSubmissionData } from '../enrollment/CompleteFinalSubmissionForm';
 
+// Export enhanced dynamic forms for complex scenarios
+export { EnhancedInsuranceForm, createEmptyEnhancedInsuranceData } from '../enrollment/EnhancedInsuranceForm';
+export { InsurancePermutationAnalysis } from '../enrollment/InsurancePermutationAnalysis';
+
 // Export complete data types
 export type { 
   CompletePatientInformation,
