@@ -40,6 +40,8 @@ import { AgentSession } from '@/types/agent-session';
 import { useConnectorAssignments } from '@/hooks/useConnectorAssignments';
 import { CHANNELS } from '@/config/orchestration';
 import { supabase } from '@/integrations/supabase/client';
+import { PatientEnrollmentWorkflow } from './PatientEnrollmentWorkflow';
+import { useLocation } from 'react-router-dom';
 
 // Enhanced Node Components with integrated features
 const CustomerNode = ({ data }: { data: any }) => (
@@ -306,6 +308,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
   // Always call hooks in the same order - CRITICAL for React hook rules
   const { user } = useMasterAuth();
   const { showSuccess, showError } = useMasterToast();
+  const location = useLocation();
   
   // State management
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(propSessionId || null);
@@ -317,6 +320,7 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
   const [activeTab, setActiveTab] = useState(step === 'canvas' ? 'canvas' : 'workflow');
   const [showConfigPanel, setShowConfigPanel] = useState(false);
   const [configStep, setConfigStep] = useState<'basic' | 'connectors' | 'knowledge' | 'rag' | 'channels' | 'deploy'>('basic');
+  const [hasLoadedEnrollmentWorkflow, setHasLoadedEnrollmentWorkflow] = useState(false);
   
   // Deploy resources
   
@@ -392,6 +396,18 @@ export const IntegratedWorkflowBuilder: React.FC<IntegratedWorkflowBuilderProps>
       handleCreateNewSession();
     }
   }, [user, activeTab, currentSessionId]);
+
+  // Auto-load patient enrollment workflow when coming from enrollment
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const from = params.get('from');
+    const moduleParam = params.get('module');
+    
+    if (from === 'enrollment' && moduleParam === 'patient' && !hasLoadedEnrollmentWorkflow) {
+      setHasLoadedEnrollmentWorkflow(true);
+      // Will be handled by PatientEnrollmentWorkflow component
+    }
+  }, [location.search, hasLoadedEnrollmentWorkflow]);
 
   // Load session data into workflow when session changes
   useEffect(() => {
@@ -1111,6 +1127,27 @@ setAgentConfig({
               </TabsContent>
             
             <TabsContent value="canvas" className="space-y-4">
+              {/* Patient Enrollment Workflow Loader */}
+              {(() => {
+                const params = new URLSearchParams(location.search);
+                const from = params.get('from');
+                const moduleParam = params.get('module');
+                
+                if (from === 'enrollment' && moduleParam === 'patient' && !hasLoadedEnrollmentWorkflow) {
+                  return (
+                    <PatientEnrollmentWorkflow 
+                      onLoad={(workflowNodes, workflowEdges) => {
+                        setNodes(workflowNodes);
+                        setEdges(workflowEdges);
+                        setHasLoadedEnrollmentWorkflow(true);
+                        showSuccess('Patient Enrollment Workflow Loaded!');
+                      }}
+                    />
+                  );
+                }
+                return null;
+              })()}
+
               <h3 className="font-medium mb-3">Add Components</h3>
               <div className="space-y-2">
                 <Button 
@@ -1121,7 +1158,7 @@ setAgentConfig({
                   disabled={!currentSessionId}
                 >
                   <Users className="h-4 w-4 mr-2" />
-                  Customer Touchpoint
+                  Patient Demographics
                 </Button>
                 <Button 
                   variant="outline" 
@@ -1131,7 +1168,7 @@ setAgentConfig({
                   disabled={!currentSessionId}
                 >
                   <Bot className="h-4 w-4 mr-2" />
-                  AI Agent (w/ Vision)
+                  NPI Verification Agent
                 </Button>
                 <Button 
                   variant="outline" 

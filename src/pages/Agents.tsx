@@ -172,7 +172,14 @@ const AgentsInner = () => {
       if (!selectedMode) {
         setSelectedMode('visual' as AgentMode);
       }
-      toast.success('AI Agent Builder is ready');
+      
+      // Auto-load patient enrollment workflow if coming from enrollment
+      if (from === 'enrollment' && moduleParam === 'patient') {
+        // This will be handled by the workflow builder component
+        toast.success('Loading Patient Enrollment Workflow...');
+      } else {
+        toast.success('AI Agent Builder is ready');
+      }
     }
 
     if (from === 'enrollment') {
