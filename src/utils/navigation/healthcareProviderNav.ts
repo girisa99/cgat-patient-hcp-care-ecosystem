@@ -3,6 +3,7 @@ import {
   ShoppingCart,
   Stethoscope,
   UserCheck,
+  MessageSquare,
   Activity,
   Bot,
   TestTube
@@ -29,7 +30,13 @@ export const healthcareProviderNavItems = [
     title: "Patient Onboarding",
     url: "/patient-onboarding",
     icon: UserCheck,
-    description: "Patient enrollment and onboarding processes"
+    description: "Standard patient enrollment and onboarding processes"
+  },
+  {
+    title: "WhatsApp Patient Enrollment",
+    url: "/patient-onboarding-whatsapp",
+    icon: MessageSquare,
+    description: "AI-powered patient consent via WhatsApp with location awareness"
   },
   {
     title: "API Services",

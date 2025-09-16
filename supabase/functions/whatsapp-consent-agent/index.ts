@@ -26,6 +26,29 @@ interface PatientConsentData {
   caregiver_info?: any;
 }
 
+async function createConsentSession(payload: any, supabase: any) {
+  const { sessionData } = payload;
+  
+  console.log('Creating consent session:', sessionData);
+  
+  const { data: session, error: sessionError } = await supabase
+    .from('whatsapp_consent_sessions')
+    .insert(sessionData)
+    .select()
+    .single();
+
+  if (sessionError) throw sessionError;
+
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      data: session,
+      message: 'Session created successfully'
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
@@ -42,6 +65,8 @@ serve(async (req) => {
     console.log('WhatsApp Consent Agent - Action:', action, 'Payload:', payload);
 
     switch (action) {
+      case 'create_session':
+        return await createConsentSession(payload, supabase);
       case 'initiate_consent':
         return await initiateConsentProcess(payload, supabase);
       case 'process_message':
@@ -75,7 +100,7 @@ async function initiateConsentProcess(payload: any, supabase: any) {
   const { data: session, error: sessionError } = await supabase
     .from('whatsapp_consent_sessions')
     .upsert({
-      id: session_id,
+      id: session_id || crypto.randomUUID(),
       phone_number,
       location_type,
       consent_method,

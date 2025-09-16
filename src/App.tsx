@@ -44,6 +44,7 @@ import { PresentationPage } from '@/pages/PresentationPage';
 import SystemIntegration from '@/pages/SystemIntegration';
 import OrderManagement from '@/pages/OrderManagement';
 import PatientOnboarding from '@/pages/PatientOnboarding';
+import PatientOnboardingWhatsApp from '@/pages/PatientOnboardingWhatsApp';
 
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
@@ -169,6 +170,11 @@ const AppContent = () => {
                   <Route path="/patient-onboarding" element={
                     <ProtectedRoute requiredRoles={['healthcareProvider', 'onboardingTeam', 'superAdmin', 'admin']}>
                       <PatientOnboarding />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/patient-onboarding-whatsapp" element={
+                    <ProtectedRoute requiredRoles={['healthcareProvider', 'onboardingTeam', 'superAdmin', 'admin']}>
+                      <PatientOnboardingWhatsApp />
                     </ProtectedRoute>
                   } />
                   <Route path="/enrollment-workspace" element={

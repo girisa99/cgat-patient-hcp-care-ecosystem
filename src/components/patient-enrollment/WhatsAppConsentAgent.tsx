@@ -49,7 +49,7 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
     setIsInitiating(true);
     
     try {
-      // Create consent session
+      // Create consent session using edge function to avoid type issues
       const sessionData = {
         enrollment_id: enrollmentId,
         phone_number: phoneNumber,
@@ -62,11 +62,12 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
         }
       };
 
-      const { data: session, error: sessionError } = await supabase
-        .from('whatsapp_consent_sessions')
-        .insert(sessionData)
-        .select()
-        .single();
+      const { data: session, error: sessionError } = await supabase.functions.invoke('whatsapp-consent-agent', {
+        body: {
+          action: 'create_session',
+          sessionData
+        }
+      });
 
       if (sessionError) throw sessionError;
 
@@ -75,7 +76,7 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
         body: {
           action: 'initiate_consent',
           phone_number: phoneNumber,
-          session_id: session.id,
+          session_id: session.data?.id,
           location_type: locationType,
           consent_method: consentMethod,
           n8n_webhook: n8nWebhookUrl
@@ -84,7 +85,7 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
 
       if (messageError) throw messageError;
 
-      setCurrentSession(session);
+      setCurrentSession(session.data);
       setActiveTab('active');
       toast.success('WhatsApp consent process initiated');
 

@@ -4538,6 +4538,7 @@ export type Database = {
       }
       enrollment_consent: {
         Row: {
+          collection_method: string | null
           communication_consent: boolean | null
           consent_date: string | null
           consent_to_treatment: boolean | null
@@ -4546,6 +4547,7 @@ export type Database = {
           financial_responsibility: boolean | null
           hipaa_authorization: boolean | null
           id: string
+          location_type: string | null
           marketing_consent: boolean | null
           patient_signature: string | null
           telehealth_consent: boolean | null
@@ -4553,6 +4555,7 @@ export type Database = {
           witness_signature: string | null
         }
         Insert: {
+          collection_method?: string | null
           communication_consent?: boolean | null
           consent_date?: string | null
           consent_to_treatment?: boolean | null
@@ -4561,6 +4564,7 @@ export type Database = {
           financial_responsibility?: boolean | null
           hipaa_authorization?: boolean | null
           id?: string
+          location_type?: string | null
           marketing_consent?: boolean | null
           patient_signature?: string | null
           telehealth_consent?: boolean | null
@@ -4568,6 +4572,7 @@ export type Database = {
           witness_signature?: string | null
         }
         Update: {
+          collection_method?: string | null
           communication_consent?: boolean | null
           consent_date?: string | null
           consent_to_treatment?: boolean | null
@@ -4576,6 +4581,7 @@ export type Database = {
           financial_responsibility?: boolean | null
           hipaa_authorization?: boolean | null
           id?: string
+          location_type?: string | null
           marketing_consent?: boolean | null
           patient_signature?: string | null
           telehealth_consent?: boolean | null
@@ -12057,6 +12063,54 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      whatsapp_consent_sessions: {
+        Row: {
+          caregiver_info: Json | null
+          completed_at: string | null
+          consent_method: string
+          created_at: string
+          enrollment_id: string | null
+          id: string
+          location_type: string
+          patient_info: Json | null
+          phone_number: string
+          session_data: Json | null
+          signature_alternative: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          caregiver_info?: Json | null
+          completed_at?: string | null
+          consent_method: string
+          created_at?: string
+          enrollment_id?: string | null
+          id?: string
+          location_type: string
+          patient_info?: Json | null
+          phone_number: string
+          session_data?: Json | null
+          signature_alternative?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          caregiver_info?: Json | null
+          completed_at?: string | null
+          consent_method?: string
+          created_at?: string
+          enrollment_id?: string | null
+          id?: string
+          location_type?: string
+          patient_info?: Json | null
+          phone_number?: string
+          session_data?: Json | null
+          signature_alternative?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       workflow_actions: {
         Row: {

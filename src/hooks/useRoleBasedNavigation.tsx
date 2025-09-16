@@ -68,7 +68,8 @@ export const useRoleBasedNavigation = () => {
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
       'database-performance': ['superAdmin', 'demoUser'], // Database performance optimization
       'order-management': ['healthcareProvider'], // Healthcare provider specific
-      'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific
+      'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment 
+      'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
     };
 
     const filteredItems = navItems.filter(item => {
@@ -111,6 +112,8 @@ export const useRoleBasedNavigation = () => {
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
       'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
       'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
+      'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+      'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
       reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
@@ -161,6 +164,8 @@ export const useRoleBasedNavigation = () => {
           modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
           'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
           'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
+          'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+          'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
           ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
           security: ['superAdmin'],
           reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
