@@ -13480,6 +13480,10 @@ export type Database = {
         Args: { user_uuid: string }
         Returns: Json
       }
+      get_system_integration_status: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       get_user_accessible_facilities: {
         Args: { user_id: string }
         Returns: {
@@ -13659,6 +13663,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      run_comprehensive_system_update: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       schedule_maintenance: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -13690,6 +13698,14 @@ export type Database = {
       update_api_key_usage: {
         Args: { key_hash: string }
         Returns: undefined
+      }
+      update_api_services_documentation: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      update_testing_suite_comprehensive: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       user_can_access_node_config: {
         Args: { config_id: string }
