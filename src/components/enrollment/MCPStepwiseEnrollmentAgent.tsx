@@ -254,6 +254,9 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         conversationHistory: [...prev.conversationHistory, userMessage]
       } : null);
 
+      // Clear input after sending
+      setCurrentMessage('');
+
       // Use MCP context in AI processing
       const mcpContext = {
         sessionId: mcpSession.sessionId,
@@ -594,7 +597,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                 type="text"
                 value={currentMessage}
                 onChange={(e) => setCurrentMessage(e.target.value)}
-                onKeyPress={(e) => e.key === 'Enter' && processMessageWithMCP(currentMessage)}
+                onKeyDown={(e) => e.key === 'Enter' && processMessageWithMCP(currentMessage)}
                 placeholder={currentStep.aiPrompt}
                 className="flex-1 px-3 py-2 border rounded-md"
                 disabled={isProcessing}
