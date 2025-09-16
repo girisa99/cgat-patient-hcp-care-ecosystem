@@ -10,6 +10,7 @@ import { MessageCircle, FileText, Zap, Clock, Workflow } from 'lucide-react';
 import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
 import { FloatingConversationalAgent } from '../enrollment/FloatingConversationalAgent';
 import { StructuredEnrollmentAgent } from '../enrollment/StructuredEnrollmentAgent';
+import { MCPStepwiseEnrollmentAgent } from '../enrollment/MCPStepwiseEnrollmentAgent';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { EnrollmentErrorBoundary } from '../enrollment/EnrollmentErrorBoundary';
 import { EnrollmentAgentWorkflowCreator } from '../enrollment/EnrollmentAgentWorkflowCreator';
@@ -26,7 +27,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   moduleType,
   onComplete
 }) => {
-  const [selectedMethod, setSelectedMethod] = useState<'conversation' | 'structured' | 'traditional' | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<'conversation' | 'structured' | 'traditional' | 'mcp_stepwise' | null>(null);
   const [showWorkflowCreator, setShowWorkflowCreator] = useState(false);
   const { closeEnrollment } = useGlobalConversationalEnrollment();
   const navigate = useNavigate();
@@ -72,6 +73,18 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
     return moduleInfo[type];
   };
 
+  if (selectedMethod === 'mcp_stepwise') {
+    return (
+      <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
+        <MCPStepwiseEnrollmentAgent
+          moduleType={moduleType}
+          onComplete={onComplete || (() => {})}
+          onCancel={() => setSelectedMethod(null)}
+        />
+      </EnrollmentErrorBoundary>
+    );
+  }
+
   if (selectedMethod === 'conversation') {
     return (
       <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
@@ -115,8 +128,8 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
       </Card>
 
       {/* Method Selection */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        {/* AI Agent Method */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* MCP Stepwise Agent Method */}
         <Card className="relative overflow-hidden border-2 hover:border-primary/50 transition-colors cursor-pointer group">
           <div className="absolute top-4 right-4">
             <Badge variant="default" className="bg-green-500">
@@ -130,10 +143,10 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               <div className="p-2 bg-green-500/10 rounded-lg">
                 <Zap className="h-6 w-6 text-green-500" />
               </div>
-              AI Agent
+              MCP Stepwise Agent
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Guided step-by-step process with AI assistance and real-time database updates
+              Advanced MCP-powered stepwise process with real-time updates and structured conversations
             </p>
           </CardHeader>
           
@@ -143,33 +156,30 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               <ul className="space-y-1">
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
-                  Step-by-step guidance
+                  MCP tool integration
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
-                  Real-time database updates
+                  Real-time database sync
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
-                  Progress tracking
+                  Structured conversations
                 </li>
               </ul>
             </div>
             
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>Estimated time: 5-10 minutes</span>
+              <span>Estimated time: 5-8 minutes</span>
             </div>
             
             <Button 
               className="w-full bg-green-500 hover:bg-green-600 gap-2"
-              onClick={() => {
-                closeEnrollment();
-                navigate(`/agents?from=enrollment&module=${moduleType}&open=builder`);
-              }}
+              onClick={() => setSelectedMethod('mcp_stepwise')}
             >
               <Zap className="w-4 h-4" />
-              Start AI Agent
+              Start MCP Agent
             </Button>
           </CardContent>
         </Card>
