@@ -202,13 +202,13 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
     data: any
   ): Promise<boolean> => {
     try {
-      const result = await supabase
+      const result: any = await (supabase as any)
         .from('enrollment_instances')
         .update({
           form_data: data,
           current_section: sectionId,
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .eq('instance_id', instanceId);
 
       if (result.error) throw result.error;
@@ -225,7 +225,7 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
     conversationData: ConversationEntry
   ) => {
     try {
-      const result = await supabase
+      const result: any = await (supabase as any)
         .from('agent_conversations')
         .insert({
           session_id: conversationData.sessionId,
@@ -235,7 +235,7 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
           metadata: conversationData.metadata || {},
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString()
-        })
+        } as any)
         .select()
         .single();
 
@@ -247,7 +247,6 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
       return null;
     }
   };
-
   // Auto-connect on mount if sessionId provided
   useEffect(() => {
     if (sessionId) {
