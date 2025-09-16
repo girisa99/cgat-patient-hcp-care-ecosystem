@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { 
   Network, Database, Shield, Globe, Upload, 
-  Activity, Settings, Link2, Bot, Zap
+  Activity, Settings, Link2, Bot, Zap, Monitor
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
@@ -67,6 +67,15 @@ const SystemIntegration = () => {
       route: '/agents',
       status: 'active',
       items: ['Process Flows', 'Event Triggers', 'Notifications', 'Scheduling']
+    },
+    {
+      id: 'performance-monitoring',
+      title: 'Performance & Analytics',
+      description: 'Real-time database performance monitoring and analytics',
+      icon: Monitor,
+      route: '/database-performance',
+      status: 'active',
+      items: ['Database Health', 'Query Performance', 'Memory Usage', 'Real-time Metrics']
     }
   ];
 
