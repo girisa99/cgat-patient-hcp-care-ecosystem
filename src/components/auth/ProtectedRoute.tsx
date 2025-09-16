@@ -29,6 +29,7 @@ const ProtectedRoute = ({
   const { canRead, canWrite, canAdmin } = useFacilityScope();
   const navigate = useNavigate();
 
+  // CRITICAL: Use normalized roles to prevent role mismatch issues
   const normalizedUserRoles = normalizeRoles(userRoles);
   const normalizedRequiredRoles = requiredRoles?.map(normalizeRoleName);
 
