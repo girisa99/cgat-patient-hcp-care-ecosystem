@@ -165,6 +165,14 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
         placeholder: 'Enter last name'
       },
       {
+        fieldKey: 'middle_name',
+        fieldLabel: 'Middle Name',
+        fieldType: 'text',
+        destinationColumn: 'middle_name',
+        required: false,
+        placeholder: 'Enter middle name (optional)'
+      },
+      {
         fieldKey: 'date_of_birth',
         fieldLabel: 'Date of Birth',
         fieldType: 'date',
@@ -186,6 +194,14 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
         destinationColumn: 'gender',
         required: true,
         options: ['Male', 'Female', 'Other']
+      },
+      {
+        fieldKey: 'ssn',
+        fieldLabel: 'Social Security Number',
+        fieldType: 'text',
+        destinationColumn: 'ssn',
+        required: false,
+        placeholder: 'XXX-XX-XXXX (optional)'
       },
       {
         fieldKey: 'street_address',
@@ -274,6 +290,13 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
         destinationColumn: 'email',
         required: true,
         placeholder: 'Enter email address'
+      },
+      {
+        fieldKey: 'do_not_contact_patient',
+        fieldLabel: 'Do Not Contact Patient',
+        fieldType: 'checkbox',
+        destinationColumn: 'do_not_contact_patient',
+        required: false
       }
     ],
     requiredFields: ['first_name', 'last_name', 'date_of_birth', 'preferred_language', 'gender', 'street_address', 'city', 'state', 'zip_code', 'cell_phone', 'email_address'],

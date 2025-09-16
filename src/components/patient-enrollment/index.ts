@@ -26,5 +26,6 @@ export { ComprehensiveTreatmentAssessment, type ComprehensiveTreatmentAssessment
 export { EnrollmentStatusDashboard, type EnrollmentStatus, type CriticalIssue } from './EnrollmentStatusDashboard';
 export { PatientEnrollmentTemplateManager } from './PatientEnrollmentTemplateManager';
 
-// Hooks
-export { useOnboardingDataPrefill } from '@/hooks/useOnboardingDataPrefill';
+// Export both components for external use
+export { PatientInformationDemo } from '../enrollment/PatientInformationDemo';
+export { PatientInformationFieldComparison } from '../enrollment/PatientInformationFieldComparison';
