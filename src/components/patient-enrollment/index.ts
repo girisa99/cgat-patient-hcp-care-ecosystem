@@ -33,3 +33,20 @@ export { ProviderTreatmentCenterFieldComparison } from '../enrollment/ProviderTr
 export { InsuranceInformationFieldComparison } from '../enrollment/InsuranceInformationFieldComparison';
 export { ClinicalTreatmentFieldComparison } from '../enrollment/ClinicalTreatmentFieldComparison';
 export { FinalSubmissionFieldComparison } from '../enrollment/FinalSubmissionFieldComparison';
+export { SectionFieldSummary } from '../enrollment/SectionFieldSummary';
+
+// Export complete form components with ALL fields mapped
+export { CompleteProviderForm, createEmptyCompleteProviderData } from '../enrollment/CompleteProviderForm';
+export { CompleteInsuranceForm, createEmptyCompleteInsuranceData } from '../enrollment/CompleteInsuranceForm';
+export { CompleteClinicalForm, createEmptyCompleteClinicalData } from '../enrollment/CompleteClinicalForm';
+export { CompleteFinalSubmissionForm, createEmptyCompleteFinalSubmissionData } from '../enrollment/CompleteFinalSubmissionForm';
+
+// Export complete data types
+export type { 
+  CompletePatientInformation,
+  CompleteProviderTreatmentCenter,
+  CompleteInsuranceInformation,
+  CompleteClinicalTreatmentAssessment,
+  CompleteFinalSubmission,
+  CompleteEnrollmentData
+} from '@/types/completeEnrollmentMapping';
