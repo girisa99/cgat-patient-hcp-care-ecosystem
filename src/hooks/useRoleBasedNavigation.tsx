@@ -2,6 +2,7 @@
 import { useMemo } from 'react';
 import { navItems } from '@/nav-items';
 import { useMasterAuth } from './useMasterAuth';
+import { normalizeRoles, getDefaultRouteForRoles } from '@/utils/roles';
 
 export const useRoleBasedNavigation = () => {
   const { userRoles, isAuthenticated, user, profile } = useMasterAuth();
