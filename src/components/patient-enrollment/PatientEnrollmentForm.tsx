@@ -1786,6 +1786,41 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
             onPatientDataUpdate={handlePatientDataUpdate}
             readOnly={readOnly}
           />
+          
+          {/* Enhanced WhatsApp Enrollment Integration */}
+          {whatsappConsentTriggered && (
+            <div className="mb-6">
+              <EnhancedWhatsAppEnrollment
+                patientData={{
+                  firstName: formData.firstName,
+                  lastName: formData.lastName,
+                  cellPhone: formData.cellPhone,
+                  email: formData.email
+                }}
+                providerData={{
+                  name: formData.providerName,
+                  phone: '', // Add provider phone if available
+                  email: '', // Add provider email if available
+                  treatmentCenter: formData.treatmentCenterName
+                }}
+                onEnrollmentComplete={(enrollmentData) => {
+                  console.log('WhatsApp enrollment completed:', enrollmentData);
+                  // Integrate collected data into form
+                  if (enrollmentData.collectedData) {
+                    setFormData(prev => ({ ...prev, ...enrollmentData.collectedData }));
+                  }
+                  showSuccess('🎉 WhatsApp enrollment completed successfully!');
+                }}
+                onFormDataSync={(syncData) => {
+                  console.log('Real-time sync data:', syncData);
+                  // Real-time sync with form fields
+                  setFormData(prev => ({ ...prev, ...syncData }));
+                }}
+                trigger={true}
+              />
+            </div>
+          )}
+          
           {renderPatientInfo()}
         </>
       )}

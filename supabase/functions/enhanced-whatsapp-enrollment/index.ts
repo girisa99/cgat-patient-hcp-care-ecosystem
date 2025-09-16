@@ -13,34 +13,54 @@ const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!
 const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
 serve(async (req) => {
+  console.log('🔥 Enhanced WhatsApp Enrollment function called');
+  
   if (req.method === 'OPTIONS') {
+    console.log('⚙️ Handling CORS preflight request');
     return new Response('ok', { headers: corsHeaders })
   }
 
   try {
-    const { action, ...payload } = await req.json()
-    console.log(`🤖 Enhanced WhatsApp Enrollment Action: ${action}`)
+    console.log('📨 Processing request...');
+    const requestBody = await req.json();
+    console.log('📋 Request body:', requestBody);
+    
+    const { action, ...payload } = requestBody;
+    console.log(`🤖 Enhanced WhatsApp Enrollment Action: ${action}`);
+    console.log('📦 Payload:', payload);
 
     switch (action) {
       case 'initiate_enrollment':
+        console.log('🚀 Starting enrollment initiation...');
         return await initiateEnrollment(payload)
       case 'send_choice_menu':
+        console.log('📋 Sending choice menu...');
         return await sendChoiceMenu(payload)
       case 'process_conversation':
+        console.log('💬 Processing conversation...');
         return await processConversation(payload)
       case 'sync_form_data':
+        console.log('🔄 Syncing form data...');
         return await syncFormData(payload)
       case 'get_business_numbers':
+        console.log('📞 Getting business numbers...');
         return await getBusinessNumbers()
       case 'get_agent_types':
+        console.log('🤖 Getting agent types...');
         return await getAgentTypes()
       default:
+        console.error(`❌ Unknown action: ${action}`);
         throw new Error(`Unknown action: ${action}`)
     }
   } catch (error) {
-    console.error('❌ Enhanced WhatsApp Enrollment Error:', error)
+    console.error('❌ Enhanced WhatsApp Enrollment Error:', error);
+    console.error('❌ Error stack:', error.stack);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ 
+        success: false,
+        error: error.message,
+        stack: error.stack 
+      }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -430,19 +450,40 @@ async function syncFormData(payload: any) {
 }
 
 async function getBusinessNumbers() {
-  const { data: numbers } = await supabase
-    .from('whatsapp_business_numbers')
-    .select('*')
-    .eq('is_active', true)
-    .order('is_default', { ascending: false })
+  console.log('📞 Fetching business numbers from database...');
+  
+  try {
+    const { data: numbers, error } = await supabase
+      .from('whatsapp_business_numbers')
+      .select('*')
+      .eq('is_active', true)
+      .order('is_default', { ascending: false });
 
-  return new Response(
-    JSON.stringify({ success: true, numbers }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  )
+    console.log('📞 Database query result:', { numbers, error });
+
+    if (error) {
+      console.error('❌ Database error:', error);
+      throw error;
+    }
+
+    console.log('✅ Business numbers loaded:', numbers?.length || 0);
+
+    return new Response(
+      JSON.stringify({ success: true, numbers: numbers || [] }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  } catch (error) {
+    console.error('❌ Error fetching business numbers:', error);
+    return new Response(
+      JSON.stringify({ success: false, error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    )
+  }
 }
 
 async function getAgentTypes() {
+  console.log('🤖 Returning agent types...');
+  
   const agentTypes = [
     {
       id: 'conversational',
@@ -468,7 +509,9 @@ async function getAgentTypes() {
       description: 'Combines multiple approaches based on patient preference',
       personalities: ['humorous_warm', 'friendly_professional', 'casual_supportive', 'medical_empathetic']
     }
-  ]
+  ];
+
+  console.log('✅ Agent types ready:', agentTypes.length);
 
   return new Response(
     JSON.stringify({ success: true, agentTypes }),

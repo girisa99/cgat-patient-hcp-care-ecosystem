@@ -81,46 +81,91 @@ export const EnhancedWhatsAppEnrollment: React.FC<EnhancedWhatsAppEnrollmentProp
 
   // Load agent types and business numbers
   useEffect(() => {
+    console.log('🔧 Loading WhatsApp configuration...');
     loadConfiguration();
   }, []);
 
   const loadConfiguration = async () => {
     try {
+      console.log('🔧 Starting configuration load...');
       setEnrollmentStatus('configuring');
 
       // Load agent types
-      const { data: agentTypesData } = await supabase.functions.invoke('enhanced-whatsapp-enrollment', {
+      console.log('📋 Loading agent types...');
+      const { data: agentTypesData, error: agentError } = await supabase.functions.invoke('enhanced-whatsapp-enrollment', {
         body: { action: 'get_agent_types' }
       });
 
+      console.log('📋 Agent types response:', { agentTypesData, agentError });
+
+      if (agentError) {
+        console.error('❌ Agent types error:', agentError);
+        throw agentError;
+      }
+
       if (agentTypesData?.success) {
         setAgentTypes(agentTypesData.agentTypes);
+        console.log('✅ Loaded agent types:', agentTypesData.agentTypes.length);
+      } else {
+        console.warn('⚠️ No agent types loaded, using defaults');
+        // Set default agent types
+        setAgentTypes([
+          {
+            id: 'hybrid',
+            name: 'Hybrid Agent',
+            description: 'Combines multiple approaches based on patient preference',
+            personalities: ['humorous_warm', 'friendly_professional', 'casual_supportive', 'medical_empathetic']
+          }
+        ]);
       }
 
       // Load business numbers
-      const { data: numbersData } = await supabase.functions.invoke('enhanced-whatsapp-enrollment', {
+      console.log('📞 Loading business numbers...');
+      const { data: numbersData, error: numbersError } = await supabase.functions.invoke('enhanced-whatsapp-enrollment', {
         body: { action: 'get_business_numbers' }
       });
 
-      if (numbersData?.success) {
+      console.log('📞 Business numbers response:', { numbersData, numbersError });
+
+      if (numbersError) {
+        console.error('❌ Business numbers error:', numbersError);
+        // Continue with default number
+      }
+
+      if (numbersData?.success && numbersData.numbers) {
         setBusinessNumbers(numbersData.numbers);
         // Set default number
         const defaultNumber = numbersData.numbers.find((n: BusinessNumber) => n.phone_number.includes('555-HEALTH'));
         if (defaultNumber) {
           setSelectedBusinessNumber(defaultNumber.id);
+          console.log('✅ Set default business number:', defaultNumber.display_name);
         }
+      } else {
+        console.warn('⚠️ No business numbers loaded, using placeholder');
+        // Set placeholder business number
+        setBusinessNumbers([{
+          id: 'default',
+          phone_number: '+1-555-HEALTH',
+          display_name: 'Patient Enrollment Center',
+          department: 'enrollment'
+        }]);
+        setSelectedBusinessNumber('default');
       }
 
       setEnrollmentStatus('idle');
+      console.log('✅ Configuration loaded successfully');
     } catch (error) {
-      console.error('Failed to load configuration:', error);
+      console.error('❌ Failed to load configuration:', error);
       setEnrollmentStatus('failed');
-      toast.error('Failed to load WhatsApp configuration');
+      toast.error(`Failed to load WhatsApp configuration: ${error.message}`);
     }
   };
 
   const initiateEnrollment = async () => {
+    console.log('🚀 Starting enrollment initiation...');
+    
     if (!patientData.cellPhone || !patientData.firstName) {
+      console.error('❌ Missing required patient data:', { cellPhone: patientData.cellPhone, firstName: patientData.firstName });
       toast.error('Patient phone number and name are required');
       return;
     }
@@ -128,6 +173,15 @@ export const EnhancedWhatsAppEnrollment: React.FC<EnhancedWhatsAppEnrollmentProp
     setEnrollmentStatus('sending');
 
     try {
+      console.log('📤 Invoking enhanced-whatsapp-enrollment function...', {
+        action: 'initiate_enrollment',
+        patientData,
+        providerData,
+        agentType: selectedAgentType,
+        personalityType: selectedPersonality,
+        businessNumberId: selectedBusinessNumber
+      });
+
       const { data, error } = await supabase.functions.invoke('enhanced-whatsapp-enrollment', {
         body: {
           action: 'initiate_enrollment',
@@ -139,22 +193,31 @@ export const EnhancedWhatsAppEnrollment: React.FC<EnhancedWhatsAppEnrollmentProp
         }
       });
 
-      if (error) throw error;
+      console.log('📥 Function response:', { data, error });
+
+      if (error) {
+        console.error('❌ Function error:', error);
+        throw error;
+      }
 
       if (data?.success) {
         setSessionId(data.sessionId);
         setEnrollmentStatus('active');
+        console.log('✅ Enrollment initiated successfully:', data.sessionId);
         toast.success(`WhatsApp enrollment sent to ${patientData.firstName}!`, {
           description: `From: ${data.businessNumber} | Agent: ${selectedAgentType}`
         });
 
         // Start monitoring enrollment progress
         startEnrollmentMonitoring(data.sessionId);
+      } else {
+        console.warn('⚠️ Function returned unsuccessful response:', data);
+        throw new Error(data?.message || 'Unknown error occurred');
       }
     } catch (error) {
-      console.error('Failed to initiate enrollment:', error);
+      console.error('❌ Failed to initiate enrollment:', error);
       setEnrollmentStatus('failed');
-      toast.error('Failed to send WhatsApp enrollment');
+      toast.error(`Failed to send WhatsApp enrollment: ${error.message}`);
     }
   };
 
