@@ -13,6 +13,7 @@ import { StructuredEnrollmentAgent } from '../enrollment/StructuredEnrollmentAge
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { EnrollmentErrorBoundary } from '../enrollment/EnrollmentErrorBoundary';
 import { EnrollmentAgentWorkflowCreator } from '../enrollment/EnrollmentAgentWorkflowCreator';
+import { useNavigate } from 'react-router-dom';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -28,6 +29,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   const [selectedMethod, setSelectedMethod] = useState<'conversation' | 'structured' | 'traditional' | null>(null);
   const [showWorkflowCreator, setShowWorkflowCreator] = useState(false);
   const { closeEnrollment } = useGlobalConversationalEnrollment();
+  const navigate = useNavigate();
 
   const handleStructuredAI = () => {
     console.log('Starting Structured AI with Workflow Creation');
@@ -163,7 +165,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               className="w-full bg-green-500 hover:bg-green-600 gap-2"
               onClick={() => {
                 closeEnrollment();
-                window.location.href = `/agents?from=enrollment&module=${moduleType}&open=builder`;
+                navigate(`/agents?from=enrollment&module=${moduleType}&open=builder`);
               }}
             >
               <Zap className="w-4 h-4" />
