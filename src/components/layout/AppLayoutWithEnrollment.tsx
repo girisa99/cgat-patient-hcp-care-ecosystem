@@ -33,7 +33,7 @@ export const AppLayoutWithEnrollment: React.FC<AppLayoutWithEnrollmentProps> = (
         {children}
         
         {/* Global Enrollment Modal (Legacy Support) */}
-        <Suspense fallback={null}>
+        <Suspense fallback={<div />}>
           <GlobalConversationalEnrollmentModalLazy />
 
           {/* Universal Conversation Genie - Available Globally */}
