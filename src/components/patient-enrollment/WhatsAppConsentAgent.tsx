@@ -68,6 +68,8 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
       additionalNotes: `Consent collected via WhatsApp Agent. Provider: ${providerInfo?.name || 'Unknown'}`
     });
   };
+
+  const initiateWhatsAppConsent = async () => {
     if (!phoneNumber) {
       toast.error('Please enter a valid phone number');
       return;
