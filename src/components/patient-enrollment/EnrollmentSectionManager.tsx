@@ -5,6 +5,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { saveEnrollmentSection, enrollmentTableMappings } from './EnrollmentFieldMapper';
 import { 
   CheckCircle2, 
   Clock, 
@@ -40,56 +41,92 @@ const enrollmentSections: EnrollmentSection[] = [
   {
     id: 'consent_management',
     title: 'Consent Management',
-    description: 'Patient consent options & provider authorization',
+    description: 'Patient consent, legal documents & authorization',
     icon: <Shield className="h-4 w-4" />,
     status: 'pending',
     tableName: 'enrollment_consent',
-    requiredFields: ['consent_to_treatment', 'hipaa_authorization', 'consent_method']
+    requiredFields: ['consent_to_treatment', 'hipaa_authorization', 'consent_date', 'patient_signature']
   },
   {
     id: 'patient_info',
-    title: 'Patient Information',
-    description: 'Complete patient demographics and contact details',
+    title: 'Patient Demographics',
+    description: 'Personal information, contact details & demographics',
     icon: <User className="h-4 w-4" />,
     status: 'pending',
     tableName: 'enrollment_patient_info',
-    requiredFields: ['first_name', 'last_name', 'date_of_birth', 'phone', 'email']
+    requiredFields: ['first_name', 'last_name', 'date_of_birth', 'phone', 'email', 'address_line1', 'city', 'state', 'zip_code']
   },
   {
     id: 'provider_info',
-    title: 'Provider & Treatment Center',
-    description: 'Provider information and treatment facility details',
+    title: 'Provider Information',
+    description: 'Referring provider details & NPI verification',
     icon: <Building2 className="h-4 w-4" />,
     status: 'pending',
     tableName: 'enrollment_provider_info',
-    requiredFields: ['referring_provider_name', 'treatment_facility']
+    requiredFields: ['referring_provider_name', 'referring_provider_npi', 'referring_provider_phone']
   },
   {
-    id: 'insurance',
-    title: 'Insurance Information',
-    description: 'Medical & pharmacy insurance coverage',
+    id: 'treatment_center',
+    title: 'Treatment Center',
+    description: 'Treatment facility selection & verification',
+    icon: <Building2 className="h-4 w-4" />,
+    status: 'pending',
+    tableName: 'enrollment_treatment_plan',
+    requiredFields: ['treatment_facility', 'facility_npi', 'treatment_type']
+  },
+  {
+    id: 'insurance_info',
+    title: 'Insurance Coverage',
+    description: 'Medical & pharmacy insurance information',
     icon: <CreditCard className="h-4 w-4" />,
     status: 'pending',
     tableName: 'enrollment_insurance_info',
-    requiredFields: ['primary_insurance_name', 'primary_policy_number']
+    requiredFields: ['primary_insurance_name', 'primary_policy_number', 'primary_subscriber_name']
   },
   {
-    id: 'treatment_assessment',
-    title: 'Treatment & Clinical Assessment',
-    description: 'Clinical information and treatment planning',
+    id: 'clinical_assessment',
+    title: 'Clinical Assessment',
+    description: 'Medical history, medications & clinical data',
     icon: <Activity className="h-4 w-4" />,
     status: 'pending',
     tableName: 'enrollment_clinical_info',
-    requiredFields: ['chief_complaint', 'medical_history']
+    requiredFields: ['chief_complaint', 'medical_history', 'current_medications', 'allergies']
+  },
+  {
+    id: 'treatment_plan',
+    title: 'Treatment Planning',
+    description: 'Treatment goals, protocols & care planning',
+    icon: <Activity className="h-4 w-4" />,
+    status: 'pending',
+    tableName: 'enrollment_treatment_plan',
+    requiredFields: ['treatment_type', 'treatment_goals', 'estimated_duration']
+  },
+  {
+    id: 'documents',
+    title: 'Required Documents',
+    description: 'Upload required forms & documentation',
+    icon: <Send className="h-4 w-4" />,
+    status: 'pending',
+    tableName: 'enrollment_documents',
+    requiredFields: ['document_type', 'file_name', 'file_path']
+  },
+  {
+    id: 'collaborations',
+    title: 'Care Team Coordination',
+    description: 'Care team assignments & collaboration setup',
+    icon: <User className="h-4 w-4" />,
+    status: 'pending',
+    tableName: 'enrollment_collaborations',
+    requiredFields: ['assigned_role', 'step_id', 'status']
   },
   {
     id: 'submit',
     title: 'Review & Submit',
-    description: 'Final review and submission with signatures',
+    description: 'Final review, signatures & enrollment completion',
     icon: <Send className="h-4 w-4" />,
     status: 'pending',
     tableName: 'patient_enrollments',
-    requiredFields: ['patient_signature']
+    requiredFields: ['patient_signature', 'provider_signature', 'enrollment_status']
   }
 ];
 
@@ -154,93 +191,12 @@ export const EnrollmentSectionManager: React.FC<EnrollmentSectionManagerProps> =
     try {
       console.log(`Saving ${sectionId} to ${section.tableName}:`, sectionData);
 
-      // Save to appropriate table based on section
-      switch (sectionId) {
-        case 'consent_management':
-          await supabase.from('enrollment_consent').upsert({
-            enrollment_id: enrollmentId,
-            consent_to_treatment: sectionData.consentToTreatment || false,
-            hipaa_authorization: sectionData.hipaaAuthorization || false,
-            financial_responsibility: sectionData.financialResponsibility || false,
-            communication_consent: sectionData.communicationConsent || false,
-            telehealth_consent: sectionData.telehealthConsent || false,
-            marketing_consent: sectionData.marketingConsent || false,
-            consent_date: new Date().toISOString(),
-            patient_signature: sectionData.patientSignature || '',
-            witness_signature: sectionData.witnessSignature || ''
-          });
-          break;
-
-        case 'patient_info':
-          await supabase.from('enrollment_patient_info').upsert({
-            enrollment_id: enrollmentId,
-            first_name: sectionData.firstName || '',
-            last_name: sectionData.lastName || '',
-            middle_name: sectionData.middleName || '',
-            date_of_birth: sectionData.dateOfBirth || null,
-            ssn: sectionData.ssn || '',
-            gender: sectionData.gender || '',
-            phone: sectionData.cellPhone || sectionData.homePhone || '',
-            email: sectionData.email || '',
-            address_line1: sectionData.address || '',
-            address_line2: sectionData.apartment || '',
-            city: sectionData.city || '',
-            state: sectionData.state || '',
-            zip_code: sectionData.zipCode || '',
-            emergency_contact_name: sectionData.alternateContactName || '',
-            emergency_contact_phone: sectionData.alternateContactPhone || '',
-            emergency_contact_relationship: sectionData.alternateContactRelationship || '',
-            preferred_language: sectionData.preferredLanguage || 'english',
-            do_not_contact: sectionData.doNotContactPatient || false
-          });
-          break;
-
-        case 'provider_info':
-          await supabase.from('enrollment_provider_info').upsert({
-            enrollment_id: enrollmentId,
-            referring_provider_name: sectionData.providerName || '',
-            referring_provider_npi: sectionData.providerNpi || '',
-            referring_provider_phone: sectionData.providerPhone || '',
-            primary_care_physician: sectionData.primaryPhysician || '',
-            treatment_facility: sectionData.treatmentCenterName || '',
-            facility_npi: sectionData.treatmentCenterNpi || '',
-            facility_address: sectionData.treatmentCenterAddress || '',
-            treatment_type: sectionData.treatmentType || ''
-          });
-          break;
-
-        case 'insurance':
-          await supabase.from('enrollment_insurance_info').upsert({
-            enrollment_id: enrollmentId,
-            primary_insurance_name: sectionData.medicalInsurance?.provider || '',
-            primary_policy_number: sectionData.medicalInsurance?.policyNumber || '',
-            primary_group_number: sectionData.medicalInsurance?.groupNumber || '',
-            primary_subscriber_name: `${sectionData.firstName} ${sectionData.lastName}`,
-            secondary_insurance_name: sectionData.pharmacyInsurance?.provider || '',
-            secondary_policy_number: sectionData.pharmacyInsurance?.policyNumber || '',
-            secondary_group_number: sectionData.pharmacyInsurance?.groupNumber || ''
-          });
-          break;
-
-        case 'treatment_assessment':
-          await supabase.from('enrollment_clinical_info').upsert({
-            enrollment_id: enrollmentId,
-            chief_complaint: sectionData.treatmentType || '',
-            current_medications: sectionData.currentMedications ? [sectionData.currentMedications] : [],
-            medical_history: sectionData.medicalHistory ? [sectionData.medicalHistory] : [],
-            allergies: sectionData.allergies ? [sectionData.allergies] : [],
-            clinical_notes: sectionData.productDrugInfo || ''
-          });
-          break;
-
-        case 'submit':
-          await supabase.from('patient_enrollments').update({
-            status: 'completed',
-            completed_at: new Date().toISOString(),
-            patient_signature: sectionData.patientSignature || '',
-            provider_signature: sectionData.providerSignature || ''
-          }).eq('id', enrollmentId);
-          break;
+      // Use the new field mapper for all sections
+      const { saveEnrollmentSection } = await import('./EnrollmentFieldMapper');
+      const saveResult = await saveEnrollmentSection(enrollmentId, sectionId, sectionData);
+      
+      if (!saveResult.success) {
+        throw new Error(saveResult.error || 'Failed to save section data');
       }
 
       // Update main enrollment progress
