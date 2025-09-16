@@ -102,9 +102,9 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
       patient: {
         title: 'Patient Enrollment',
         description: 'Complete your patient enrollment and medical intake with comprehensive provider verification',
-        mcpBenefits: ['Real-time NPI verification', 'Instant insurance eligibility', 'Provider credential validation', 'Clinical history integration'],
-        structuredBenefits: ['Section-by-section guidance', 'Medical terminology assistance', 'Form auto-completion', 'Insurance pre-validation'],
-        conversationBenefits: ['Natural medical conversation', 'Symptom explanation assistance', 'Treatment option discussion', 'Appointment scheduling'],
+        mcpBenefits: ['WhatsApp enrollment with real-time sync', 'Real-time NPI verification', 'Instant insurance eligibility', 'Provider credential validation', 'Clinical history integration', 'Business number management'],
+        structuredBenefits: ['WhatsApp patient option', 'Section-by-section guidance', 'Medical terminology assistance', 'Form auto-completion', 'Insurance pre-validation', 'NPI verification integration'],
+        conversationBenefits: ['WhatsApp conversational enrollment', 'AI personality selection (Humorous/Empathetic/Professional/Casual)', 'Natural medical conversation', 'Symptom explanation assistance', 'Treatment option discussion', 'Appointment scheduling'],
         traditionalBenefits: ['Familiar medical forms', 'Print-friendly format', 'Offline completion', 'Standard HIPAA compliance'],
         verificationAPIs: ['NPPES Registry', 'Eligibility APIs', 'Clinical Data Exchange'],
         dataCollected: ['Personal information', 'Insurance details', 'Medical history', 'Provider references', 'Emergency contacts']
@@ -147,61 +147,73 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
     const implementations = {
       mcp_stepwise: {
         name: 'MCP Stepwise Agent',
-        description: 'Most advanced AI agent with full MCP integration and real-time verification',
+        description: 'Most advanced AI agent with full MCP integration, WhatsApp enrollment, and real-time verification',
         features: [
           'Model Context Protocol (MCP) Integration',
-          'Real-time database synchronization',
+          'WhatsApp enrollment with patient phone link',
+          'Real-time database synchronization & form sync',
+          'NPI provider verification integration',
           'Intelligent step-by-step guidance',
           'Auto-completion with validation',
           'Smart error recovery',
-          'Contextual help system'
+          'Contextual help system',
+          'Business number management for WhatsApp'
         ],
         mcpTools: [
           'Healthcare MCP Server - Clinical data access and validation',
+          'NPI Verification MCP Server - Real-time provider credential checks',
+          'WhatsApp MCP Server - Patient communication and enrollment',
           'Filesystem MCP Server - Secure document handling',
           'BioMCP Server - Specialized biotech/pharma workflows (if applicable)'
         ],
         aiProviders: 'Works with OpenAI GPT-5, Claude 3.5, Gemini 2.0 (Provider-agnostic)',
-        techStack: ['React + TypeScript', 'Supabase Backend', 'MCP Protocol', 'Real-time WebSockets'],
-        benefits: ['Fastest completion time', 'Highest accuracy', 'Real-time validation', 'Smart assistance'],
-        timeEstimate: '5-8 minutes',
-        accuracy: '98%+'
+        techStack: ['React + TypeScript', 'Supabase Backend', 'MCP Protocol', 'Real-time WebSockets', 'WhatsApp Business API'],
+        benefits: ['WhatsApp patient enrollment', 'NPI real-time verification', 'Fastest completion time', 'Highest accuracy', 'Real-time validation', 'Smart assistance'],
+        timeEstimate: '3-5 minutes (with WhatsApp)',
+        accuracy: '99%+'
       },
       structured: {
         name: 'Structured AI Agent',
-        description: 'Section-by-section AI guidance with specialized assistance per form section',
+        description: 'Section-by-section AI guidance with WhatsApp integration and specialized assistance per form section',
         features: [
           'Section-specific AI models',
+          'WhatsApp enrollment option for patients',
+          'Real-time form synchronization',
+          'NPI verification integration',
           'Form auto-completion',
           'Contextual validation',
           'Progress tracking',
           'Save and resume',
           'Data export options'
         ],
-        mcpTools: ['None - Uses traditional form processing with AI enhancement'],
+        mcpTools: ['WhatsApp Integration - Patient communication and data sync', 'NPI Verification - Real-time provider checks', 'Uses traditional form processing with AI enhancement'],
         aiProviders: 'Primarily OpenAI GPT-4o, with Claude 3.5 fallback',
-        techStack: ['React + TypeScript', 'Supabase Backend', 'AI Form Enhancement', 'Progressive Web App'],
-        benefits: ['Familiar form experience', 'AI-powered assistance', 'Section specialization', 'Flexible pacing'],
-        timeEstimate: '8-12 minutes',
-        accuracy: '95%+'
+        techStack: ['React + TypeScript', 'Supabase Backend', 'AI Form Enhancement', 'WhatsApp Business API', 'Progressive Web App'],
+        benefits: ['WhatsApp patient option', 'Familiar form experience', 'AI-powered assistance', 'Section specialization', 'Flexible pacing'],
+        timeEstimate: '6-10 minutes (4-6 with WhatsApp)',
+        accuracy: '96%+'
       },
       conversational: {
         name: 'Conversational AI Agent',
-        description: 'Natural language processing for chat-based enrollment experience',
+        description: 'Natural language processing with WhatsApp integration and multiple personality modes for chat-based enrollment',
         features: [
           'Natural language understanding',
+          'WhatsApp conversational enrollment',
+          'AI personality selection (Humorous, Empathetic, Professional, Casual)',
+          'Real-time form synchronization',
+          'NPI verification during conversation',
           'Conversational data extraction',
           'Context awareness',
           'Clarifying questions',
           'Voice input support',
           'Multi-turn conversations'
         ],
-        mcpTools: ['None - Uses conversational AI with standard APIs'],
+        mcpTools: ['WhatsApp Integration - Patient conversations with personality modes', 'NPI Verification - Seamless provider validation', 'Uses conversational AI with standard APIs'],
         aiProviders: 'OpenAI GPT-4o for conversation, Claude 3.5 for data extraction',
-        techStack: ['React + TypeScript', 'Supabase Backend', 'NLP Processing', 'Voice Recognition'],
-        benefits: ['Most natural experience', 'Flexible interaction', 'Voice support', 'Adaptive flow'],
-        timeEstimate: '10-15 minutes',
-        accuracy: '92%+'
+        techStack: ['React + TypeScript', 'Supabase Backend', 'WhatsApp Business API', 'NLP Processing', 'Voice Recognition'],
+        benefits: ['WhatsApp conversations', 'Multiple AI personalities', 'Most natural experience', 'Flexible interaction', 'Voice support', 'Adaptive flow'],
+        timeEstimate: '5-10 minutes (WhatsApp), 10-15 minutes (web)',
+        accuracy: '94%+'
       },
       traditional: {
         name: 'Traditional Forms',
@@ -298,7 +310,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               MCP Stepwise Agent
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Advanced MCP-powered stepwise process with real-time updates and structured conversations
+              Advanced MCP-powered stepwise process with WhatsApp enrollment, NPI verification, and real-time updates
             </p>
           </CardHeader>
           
@@ -308,22 +320,26 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               <ul className="space-y-1">
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  WhatsApp patient enrollment
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  NPI verification integration
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
+                  Real-time form sync
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
                   MCP tool integration
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
-                  Real-time database sync
-                </li>
-                <li className="flex items-center gap-2 text-sm">
-                  <div className="h-1.5 w-1.5 bg-green-500 rounded-full" />
-                  Structured conversations
                 </li>
               </ul>
             </div>
             
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>Estimated time: 5-8 minutes</span>
+              <span>Estimated time: 3-5 minutes</span>
             </div>
             
             <Button 
@@ -346,7 +362,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               Structured AI
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Section-by-section AI guidance with specialized assistance
+              Section-by-section AI guidance with WhatsApp integration and specialized assistance
             </p>
           </CardHeader>
           
@@ -356,18 +372,26 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               <ul className="space-y-1">
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-blue-500 rounded-full" />
-                  Specialized AI per section
+                  WhatsApp enrollment option
                 </li>
                 <li className="flex items-center gap-2 text-sm">
                   <div className="h-1.5 w-1.5 bg-blue-500 rounded-full" />
-                  Structured data capture
+                  NPI verification integration
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-blue-500 rounded-full" />
+                  Real-time form sync
+                </li>
+                <li className="flex items-center gap-2 text-sm">
+                  <div className="h-1.5 w-1.5 bg-blue-500 rounded-full" />
+                  Specialized AI per section
                 </li>
               </ul>
             </div>
             
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>Estimated time: 8-12 minutes</span>
+              <span>Estimated time: 6-10 minutes</span>
             </div>
             
             <Button 
@@ -397,7 +421,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
               Conversational AI
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Single AI conversation covering all enrollment aspects naturally
+              Natural chat with WhatsApp integration, AI personalities, and real-time sync
             </p>
           </CardHeader>
           
@@ -416,7 +440,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
             
             <div className="flex items-center gap-2 text-xs text-muted-foreground">
               <Clock className="h-3 w-3" />
-              <span>Estimated time: 10-15 minutes</span>
+              <span>Estimated time: 5-10 minutes</span>
             </div>
             
             <Button 

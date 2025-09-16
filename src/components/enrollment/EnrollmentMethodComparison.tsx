@@ -53,7 +53,7 @@ const enrollmentMethods: EnrollmentMethod[] = [
     id: 'mcp_stepwise',
     name: 'MCP Stepwise Agent',
     icon: Zap,
-    description: 'Advanced MCP-powered stepwise enrollment with real-time database updates and structured conversations',
+    description: 'Advanced MCP-powered stepwise enrollment with WhatsApp integration, NPI verification, and real-time database updates',
     badge: { text: 'RECOMMENDED', variant: 'default', color: 'bg-green-500' },
     features: {
       mcpIntegration: true,
@@ -67,18 +67,21 @@ const enrollmentMethods: EnrollmentMethod[] = [
       digitalSignature: true,
       auditTrail: true
     },
-    estimatedTime: '5-8 minutes',
+    estimatedTime: '3-5 minutes',
     complexity: 'high',
     dataAccuracy: 'superior',
     userExperience: 'excellent',
     technicalRequirements: [
       'MCP Server Integration',
+      'WhatsApp Business API',
+      'NPI Verification Service',
       'Real-time Database Connection',
       'AI Model Integration',
       'WebSocket Support'
     ],
     idealFor: [
       'Complex healthcare enrollments',
+      'WhatsApp-enabled patient communication',
       'High-compliance requirements',
       'Real-time data validation needed',
       'Multi-step processes'
@@ -93,11 +96,11 @@ const enrollmentMethods: EnrollmentMethod[] = [
     id: 'structured_ai',
     name: 'Structured AI',
     icon: Workflow,
-    description: 'Section-by-section AI guidance with specialized assistance for each enrollment step',
+    description: 'Section-by-section AI guidance with WhatsApp integration and specialized assistance for each enrollment step',
     badge: { text: 'EFFICIENT', variant: 'default', color: 'bg-blue-500' },
     features: {
       mcpIntegration: false,
-      realtimeUpdates: false,
+      realtimeUpdates: true,
       structuredConversation: true,
       stepwiseGuidance: true,
       aiAssistance: true,
@@ -107,23 +110,25 @@ const enrollmentMethods: EnrollmentMethod[] = [
       digitalSignature: true,
       auditTrail: true
     },
-    estimatedTime: '8-12 minutes',
+    estimatedTime: '6-10 minutes',
     complexity: 'medium',
     dataAccuracy: 'enhanced',
     userExperience: 'good',
     technicalRequirements: [
+      'WhatsApp Business API',
+      'NPI Verification Service',
       'AI Model Integration',
       'Database Connection',
       'Form Validation Logic'
     ],
     idealFor: [
       'Standard healthcare enrollments',
+      'WhatsApp patient communication',
       'Users who prefer structured approach',
       'Step-by-step guidance needed'
     ],
     limitations: [
-      'No real-time updates',
-      'No MCP tool integration',
+      'No full MCP integration',
       'Limited to basic AI assistance'
     ]
   },
@@ -131,37 +136,40 @@ const enrollmentMethods: EnrollmentMethod[] = [
     id: 'conversational_ai',
     name: 'Conversational AI',
     icon: MessageCircle,
-    description: 'Single AI conversation covering all enrollment aspects in a natural chat flow',
+    description: 'Natural chat with WhatsApp integration, multiple AI personalities, and conversational enrollment flow',
     badge: { text: 'AI POWERED', variant: 'default', color: 'bg-purple-500' },
     features: {
       mcpIntegration: false,
-      realtimeUpdates: false,
+      realtimeUpdates: true,
       structuredConversation: true,
       stepwiseGuidance: false,
       aiAssistance: true,
       databaseSync: true,
-      validationTools: false,
+      validationTools: true,
       pdfGeneration: true,
       digitalSignature: true,
       auditTrail: false
     },
-    estimatedTime: '10-15 minutes',
+    estimatedTime: '5-10 minutes',
     complexity: 'medium',
     dataAccuracy: 'enhanced',
-    userExperience: 'good',
+    userExperience: 'excellent',
     technicalRequirements: [
+      'WhatsApp Business API',
+      'AI Personality Models',
+      'NPI Verification Service', 
       'AI Model Integration',
       'Conversation Management',
       'Data Extraction Logic'
     ],
     idealFor: [
       'Users comfortable with chat interfaces',
+      'WhatsApp-preferred communication',
       'Natural conversation preference',
       'Flexible enrollment flow'
     ],
     limitations: [
-      'Less structured data collection',
-      'No real-time validation',
+      'Less structured than stepwise approach',
       'Dependent on AI understanding'
     ]
   },
