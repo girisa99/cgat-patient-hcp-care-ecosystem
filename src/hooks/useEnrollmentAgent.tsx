@@ -23,7 +23,7 @@ interface UseEnrollmentAgentReturn {
   isLoading: boolean;
   error: string | null;
   startEnrollment: (moduleType: ModuleType) => Promise<string>;
-  updateSection: (sectionName: string, data: any) => Promise<void>;
+  updateSection: (sectionName: string, data: any, options?: { skipNPIVerification?: boolean }) => Promise<void>;
   completeSection: (sectionName: string) => Promise<void>;
   generatePDF: () => Promise<{ pdfUrl: string; documentId: string }>;
   endSession: () => void;
@@ -77,7 +77,7 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
     }
   }, [toast]);
 
-  const updateSection = useCallback(async (sectionName: string, data: any) => {
+  const updateSection = useCallback(async (sectionName: string, data: any, options?: { skipNPIVerification?: boolean }) => {
     if (!currentSession) return;
 
     try {
@@ -97,8 +97,12 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
       // TODO: Update database once tables are finalized
       // For now, using local state only
 
-      // Trigger NPI verification if this is provider info and NPI is present
-      if (sectionName === 'provider_info' && data.npi && !data.npiVerified) {
+      // Only trigger NPI verification if explicitly enabled and not skipped
+      if (!options?.skipNPIVerification && 
+          sectionName === 'provider_info' && 
+          data.npi && 
+          !data.npiVerified && 
+          data.enableNPIVerification) {
         await triggerNPIVerification(data.npi, sectionName);
       }
 

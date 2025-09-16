@@ -52,6 +52,8 @@ export { ComprehensiveInsuranceFieldMapping } from '../enrollment/ComprehensiveI
 export { EnhancedProviderForm } from '../enrollment/EnhancedProviderForm';
 export { NPIVerificationComponent } from '../enrollment/NPIVerificationComponent';
 export { ProviderPermutationAnalysis } from '../enrollment/ProviderPermutationAnalysis';
+export { NPIVerificationConfirmationModal } from '../enrollment/NPIVerificationConfirmationModal';
+export { EnhancedProviderFormWithConfirmation } from '../enrollment/EnhancedProviderFormWithConfirmation';
 
 // Export complete data types
 export type { 
