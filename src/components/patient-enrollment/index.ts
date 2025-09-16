@@ -44,6 +44,9 @@ export { CompleteFinalSubmissionForm, createEmptyCompleteFinalSubmissionData } f
 // Export enhanced dynamic forms for complex scenarios
 export { EnhancedInsuranceForm, createEmptyEnhancedInsuranceData } from '../enrollment/EnhancedInsuranceForm';
 export { InsurancePermutationAnalysis } from '../enrollment/InsurancePermutationAnalysis';
+export { InsuranceCardUpload } from '../enrollment/InsuranceCardUpload';
+export { DynamicInsuranceDemo } from '../enrollment/DynamicInsuranceDemo';
+export { ComprehensiveInsuranceFieldMapping } from '../enrollment/ComprehensiveInsuranceFieldMapping';
 
 // Export complete data types
 export type { 
