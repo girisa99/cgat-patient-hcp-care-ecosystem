@@ -31,6 +31,9 @@ export { PatientInformationDemo } from '../enrollment/PatientInformationDemo';
 export { PatientInformationFieldComparison } from '../enrollment/PatientInformationFieldComparison';
 export { ProviderTreatmentCenterFieldComparison } from '../enrollment/ProviderTreatmentCenterFieldComparison';
 export { InsuranceInformationFieldComparison } from '../enrollment/InsuranceInformationFieldComparison';
+// Clinical & Treatment enrollment components
+export { ClinicalTreatmentPermutationAnalysis } from '../enrollment/ClinicalTreatmentPermutationAnalysis';
+export { ComprehensiveClinicalTreatmentForm } from '../enrollment/ComprehensiveClinicalTreatmentForm';
 export { ClinicalTreatmentFieldComparison } from '../enrollment/ClinicalTreatmentFieldComparison';
 export { FinalSubmissionFieldComparison } from '../enrollment/FinalSubmissionFieldComparison';
 export { SectionFieldSummary } from '../enrollment/SectionFieldSummary';
