@@ -1,6 +1,6 @@
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,6 +9,7 @@ import {
   Activity, Settings, Link2, Bot, Zap, Monitor
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { SystemIntegrationDashboard } from '@/components/system-integration/SystemIntegrationDashboard';
 
 const SystemIntegration = () => {
   const navigate = useNavigate();
@@ -108,164 +109,125 @@ const SystemIntegration = () => {
               System Integration Hub
             </h1>
             <p className="text-muted-foreground mt-2">
-              Unified access to all integration tools and services. Database connectors and system connectors remain in the Agent ecosystem for workflow management.
+              Unified access to all integration tools and services. Real-time performance monitoring, database management, and system analytics.
             </p>
           </div>
         </div>
 
-        {/* Integration Overview */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <Card className="bg-blue-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-600">Active Integrations</p>
-                  <p className="text-2xl font-bold text-blue-900">{integrationSections.filter(s => s.status === 'active').length}</p>
-                </div>
-                <Network className="h-8 w-8 text-blue-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-green-50 border-green-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-green-600">API Services</p>
-                  <p className="text-2xl font-bold text-green-900">12</p>
-                </div>
-                <Activity className="h-8 w-8 text-green-500" />
-              </div>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-purple-50 border-purple-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-purple-600">External Services</p>
-                  <p className="text-2xl font-bold text-purple-900">8</p>
-                </div>
-                <Globe className="h-8 w-8 text-purple-500" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Main Integration Dashboard */}
+        <Tabs defaultValue="dashboard" className="space-y-6">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="dashboard">System Dashboard</TabsTrigger>
+            <TabsTrigger value="services">Integration Services</TabsTrigger>
+          </TabsList>
 
-        {/* Integration Services Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {integrationSections.map((section) => {
-            const Icon = section.icon;
-            
-            return (
-              <Card key={section.id} className="hover:shadow-md transition-shadow cursor-pointer">
-                <CardHeader>
+          <TabsContent value="dashboard" className="space-y-6">
+            <SystemIntegrationDashboard />
+          </TabsContent>
+
+          <TabsContent value="services" className="space-y-6">
+            {/* Integration Overview */}
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-primary/10 rounded-lg">
-                        <Icon className="h-6 w-6 text-primary" />
-                      </div>
-                      <div>
-                        <CardTitle className="text-lg">{section.title}</CardTitle>
-                      </div>
+                    <div>
+                      <p className="text-sm text-blue-600">Active Integrations</p>
+                      <p className="text-2xl font-bold text-blue-900">{integrationSections.filter(s => s.status === 'active').length}</p>
                     </div>
-                    <div className="flex items-center gap-1">
-                      {getStatusIcon(section.status)}
-                      <Badge className={getStatusColor(section.status)}>
-                        {section.status}
-                      </Badge>
-                    </div>
-                  </div>
-                </CardHeader>
-                
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground">{section.description}</p>
-                  
-                  {/* Features List */}
-                  <div className="space-y-2">
-                    <h4 className="text-sm font-medium">Features:</h4>
-                    <div className="grid grid-cols-2 gap-1">
-                      {section.items.map((item, index) => (
-                        <div key={index} className="text-xs text-gray-600 flex items-center gap-1">
-                          <div className="w-1 h-1 bg-primary rounded-full"></div>
-                          {item}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  {/* Actions */}
-                  <div className="flex gap-2 pt-2 border-t">
-                    <Button 
-                      onClick={() => navigate(section.route)}
-                      className="flex-1"
-                      size="sm"
-                    >
-                      <Link2 className="h-3 w-3 mr-1" />
-                      Access
-                    </Button>
-                    <Button variant="outline" size="sm">
-                      <Settings className="h-3 w-3" />
-                    </Button>
+                    <Network className="h-8 w-8 text-blue-500" />
                   </div>
                 </CardContent>
               </Card>
-            );
-          })}
-        </div>
-
-        {/* Integration Architecture */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Network className="h-5 w-5" />
-              Integration Architecture
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Preserved in Agent Ecosystem:</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-3 bg-blue-50 rounded">
-                    <Database className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="font-medium">System Connectors</p>
-                      <p className="text-sm text-gray-600">Remain in Agent Actions & Configuration</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 p-3 bg-purple-50 rounded">
-                    <Bot className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="font-medium">Workflow Integration</p>
-                      <p className="text-sm text-gray-600">Agent-specific connector assignments</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
               
-              <div className="space-y-4">
-                <h3 className="font-semibold text-lg">Consolidated Here:</h3>
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 p-3 bg-green-50 rounded">
-                    <Activity className="h-5 w-5 text-green-600" />
+              <Card className="bg-green-50 border-green-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">API Services</p>
-                      <p className="text-sm text-gray-600">Centralized API management</p>
+                      <p className="text-sm text-green-600">API Services</p>
+                      <p className="text-2xl font-bold text-green-900">12</p>
                     </div>
+                    <Activity className="h-8 w-8 text-green-500" />
                   </div>
-                  <div className="flex items-center gap-2 p-3 bg-orange-50 rounded">
-                    <Globe className="h-5 w-5 text-orange-600" />
+                </CardContent>
+              </Card>
+              
+              <Card className="bg-purple-50 border-purple-200">
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium">External Services</p>
-                      <p className="text-sm text-gray-600">Third-party integrations hub</p>
+                      <p className="text-sm text-purple-600">External Services</p>
+                      <p className="text-2xl font-bold text-purple-900">8</p>
                     </div>
+                    <Globe className="h-8 w-8 text-purple-500" />
                   </div>
-                </div>
-              </div>
+                </CardContent>
+              </Card>
             </div>
-          </CardContent>
-        </Card>
+
+            {/* Integration Services Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {integrationSections.map((section) => {
+                const Icon = section.icon;
+                
+                return (
+                  <Card key={section.id} className="hover:shadow-md transition-shadow cursor-pointer">
+                    <CardHeader>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-primary/10 rounded-lg">
+                            <Icon className="h-6 w-6 text-primary" />
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg">{section.title}</CardTitle>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          {getStatusIcon(section.status)}
+                          <Badge className={getStatusColor(section.status)}>
+                            {section.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent className="space-y-4">
+                      <p className="text-sm text-muted-foreground">{section.description}</p>
+                      
+                      {/* Features List */}
+                      <div className="space-y-2">
+                        <h4 className="text-sm font-medium">Features:</h4>
+                        <div className="grid grid-cols-2 gap-1">
+                          {section.items.map((item, index) => (
+                            <div key={index} className="text-xs text-gray-600 flex items-center gap-1">
+                              <div className="w-1 h-1 bg-primary rounded-full"></div>
+                              {item}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      {/* Actions */}
+                      <div className="flex gap-2 pt-2 border-t">
+                        <Button 
+                          onClick={() => navigate(section.route)}
+                          className="flex-1"
+                          size="sm"
+                        >
+                          <Link2 className="h-3 w-3 mr-1" />
+                          Access
+                        </Button>
+                        <Button variant="outline" size="sm">
+                          <Settings className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                );
+              })}
+            </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </AppLayout>
   );

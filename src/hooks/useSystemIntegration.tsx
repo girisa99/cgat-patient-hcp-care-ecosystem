@@ -5,6 +5,66 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Types for system status data
+interface SystemStatusData {
+  system_health: string;
+  database_stats: {
+    total_tables: number;
+    largest_table_size: string;
+    total_db_size: string;
+  };
+  api_services_stats: {
+    total_apis: number;
+    active_apis: number;
+    internal_apis: number;
+    external_apis: number;
+  };
+  agent_system_stats: {
+    total_agents: number;
+    active_agents: number;
+    draft_agents: number;
+    deployed_agents: number;
+  };
+  testing_suite_stats: {
+    total_test_cases: number;
+    auto_generated_tests: number;
+    manual_tests: number;
+    integration_tests: number;
+  };
+  integration_status: string;
+  multi_tenant_ready: boolean;
+  real_time_capable: boolean;
+  last_updated: string;
+}
+
+interface MigrationIntegrityData {
+  migration_status: string;
+  agents_integrity: any;
+  sessions_integrity: any;
+  verification_timestamp: string;
+}
+
+interface ComprehensiveUpdateData {
+  api_documentation_update: {
+    updated_services: number;
+  };
+  testing_suite_update: {
+    updated_tests: number;
+    cleaned_duplicates: number;
+  };
+  cleanup_results: {
+    universal_save_cleanup: {
+      deleted_sessions: number;
+    };
+    agent_sessions_cleanup: {
+      deleted_sessions: number;
+    };
+    test_cases_cleanup: {
+      deleted_duplicates: number;
+    };
+  };
+}
+
 export const useSystemIntegration = () => {
   const queryClient = useQueryClient();
 
@@ -14,7 +74,7 @@ export const useSystemIntegration = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('get_system_integration_status');
       if (error) throw error;
-      return data;
+      return data as unknown as SystemStatusData;
     },
     refetchInterval: 30000, // Refresh every 30 seconds for real-time monitoring
   });
@@ -25,7 +85,7 @@ export const useSystemIntegration = () => {
     queryFn: async () => {
       const { data, error } = await supabase.rpc('verify_jsonb_migration_integrity');
       if (error) throw error;
-      return data;
+      return data as unknown as MigrationIntegrityData;
     },
   });
 
@@ -36,9 +96,10 @@ export const useSystemIntegration = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
+      const updateData = data as ComprehensiveUpdateData;
       toast.success('System update completed successfully', {
-        description: `Updated ${data.api_documentation_update?.updated_services || 0} API services and ${data.testing_suite_update?.updated_tests || 0} test cases`,
+        description: `Updated ${updateData.api_documentation_update?.updated_services || 0} API services and ${updateData.testing_suite_update?.updated_tests || 0} test cases`,
       });
       queryClient.invalidateQueries({ queryKey: ['system-integration-status'] });
       queryClient.invalidateQueries({ queryKey: ['jsonb-migration-integrity'] });
@@ -57,7 +118,7 @@ export const useSystemIntegration = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       const totalDeleted = (data.universal_save_cleanup?.deleted_sessions || 0) + 
                           (data.agent_sessions_cleanup?.deleted_sessions || 0) + 
                           (data.test_cases_cleanup?.deleted_duplicates || 0);
@@ -80,7 +141,7 @@ export const useSystemIntegration = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success('API documentation updated', {
         description: `Enhanced ${data.updated_services} API services`,
       });
@@ -100,7 +161,7 @@ export const useSystemIntegration = () => {
       if (error) throw error;
       return data;
     },
-    onSuccess: (data) => {
+    onSuccess: (data: any) => {
       toast.success('Testing suite updated', {
         description: `Cleaned ${data.cleaned_duplicates} duplicates and updated ${data.updated_tests} test cases`,
       });

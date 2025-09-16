@@ -31,7 +31,7 @@ export const SystemIntegrationDashboard: React.FC = () => {
     updateTestingSuite,
     refetchStatus,
     isHealthy,
-    isMultiTenrantReady,
+    isMultiTenantReady,
     isRealTimeCapable,
     totalAgents,
     totalAPIs,
@@ -41,7 +41,8 @@ export const SystemIntegrationDashboard: React.FC = () => {
   const getHealthBadge = () => {
     if (!systemStatus) return <Badge variant="secondary">Unknown</Badge>;
     
-    switch (systemStatus.system_health) {
+    const health = (systemStatus as any)?.system_health;
+    switch (health) {
       case 'optimal':
         return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Optimal</Badge>;
       case 'warning':
@@ -101,7 +102,7 @@ export const SystemIntegrationDashboard: React.FC = () => {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Multi-Tenant Ready</span>
-                  {isMultiTenrantReady ? (
+                  {isMultiTenantReady ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   ) : (
                     <AlertTriangle className="h-4 w-4 text-yellow-600" />
@@ -117,7 +118,7 @@ export const SystemIntegrationDashboard: React.FC = () => {
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">JSONB Migration</span>
-                  {migrationIntegrity?.migration_status === 'verified' ? (
+                  {(migrationIntegrity as any)?.migration_status === 'verified' ? (
                     <CheckCircle className="h-4 w-4 text-green-600" />
                   ) : (
                     <AlertTriangle className="h-4 w-4 text-yellow-600" />
@@ -161,19 +162,19 @@ export const SystemIntegrationDashboard: React.FC = () => {
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Total Size</span>
                   <Badge variant="outline">
-                    {systemStatus?.database_stats?.total_db_size || 'N/A'}
+                    {(systemStatus as any)?.database_stats?.total_db_size || 'N/A'}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Total Tables</span>
                   <Badge variant="outline">
-                    {systemStatus?.database_stats?.total_tables || 0}
+                    {(systemStatus as any)?.database_stats?.total_tables || 0}
                   </Badge>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Largest Table</span>
                   <Badge variant="outline">
-                    {systemStatus?.database_stats?.largest_table_size || 'N/A'}
+                    {(systemStatus as any)?.database_stats?.largest_table_size || 'N/A'}
                   </Badge>
                 </div>
               </div>
@@ -335,18 +336,18 @@ export const SystemIntegrationDashboard: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span>Total Agents</span>
-                    <Badge>{systemStatus?.agent_system_stats?.total_agents || 0}</Badge>
+                    <Badge>{(systemStatus as any)?.agent_system_stats?.total_agents || 0}</Badge>
                   </div>
                   <div className="flex justify-between">
                     <span>Active Agents</span>
                     <Badge className="bg-green-100 text-green-800">
-                      {systemStatus?.agent_system_stats?.active_agents || 0}
+                      {(systemStatus as any)?.agent_system_stats?.active_agents || 0}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
                     <span>Draft Agents</span>
                     <Badge variant="secondary">
-                      {systemStatus?.agent_system_stats?.draft_agents || 0}
+                      {(systemStatus as any)?.agent_system_stats?.draft_agents || 0}
                     </Badge>
                   </div>
                 </div>
@@ -362,18 +363,18 @@ export const SystemIntegrationDashboard: React.FC = () => {
                 <div className="space-y-3">
                   <div className="flex justify-between">
                     <span>Total APIs</span>
-                    <Badge>{systemStatus?.api_services_stats?.total_apis || 0}</Badge>
+                    <Badge>{(systemStatus as any)?.api_services_stats?.total_apis || 0}</Badge>
                   </div>
                   <div className="flex justify-between">
                     <span>Active APIs</span>
                     <Badge className="bg-green-100 text-green-800">
-                      {systemStatus?.api_services_stats?.active_apis || 0}
+                      {(systemStatus as any)?.api_services_stats?.active_apis || 0}
                     </Badge>
                   </div>
                   <div className="flex justify-between">
                     <span>Internal APIs</span>
                     <Badge variant="outline">
-                      {systemStatus?.api_services_stats?.internal_apis || 0}
+                      {(systemStatus as any)?.api_services_stats?.internal_apis || 0}
                     </Badge>
                   </div>
                 </div>
