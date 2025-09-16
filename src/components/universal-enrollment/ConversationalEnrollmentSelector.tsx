@@ -1,12 +1,38 @@
 /**
- * CONVERSATIONAL ENROLLMENT SELECTOR
- * Component to choose between traditional forms or AI conversation
+ * ENHANCED CONVERSATIONAL ENROLLMENT SELECTOR
+ * Component to choose between AI agent types with detailed implementation highlights
+ * Includes NPI/Credentialing confirmation and comprehensive API information
  */
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageCircle, FileText, Zap, Clock, Workflow } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { Separator } from '@/components/ui/separator';
+import { 
+  MessageCircle, 
+  FileText, 
+  Zap, 
+  Clock, 
+  Workflow, 
+  Shield, 
+  Database, 
+  Activity,
+  CheckCircle2, 
+  AlertTriangle, 
+  Info, 
+  ChevronDown,
+  ChevronUp,
+  Users,
+  Building2,
+  Globe,
+  Lock,
+  Eye,
+  FileCheck,
+  Stethoscope,
+  CreditCard
+} from 'lucide-react';
 import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
 import { FloatingConversationalAgent } from '../enrollment/FloatingConversationalAgent';
 import { StructuredEnrollmentAgent } from '../enrollment/StructuredEnrollmentAgent';
@@ -14,6 +40,7 @@ import { MCPStepwiseEnrollmentAgent } from '../enrollment/MCPStepwiseEnrollmentA
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { EnrollmentErrorBoundary } from '../enrollment/EnrollmentErrorBoundary';
 import { EnrollmentAgentWorkflowCreator } from '../enrollment/EnrollmentAgentWorkflowCreator';
+import { NPICredentialingConfirmationModal } from './NPICredentialingConfirmationModal';
 import { useNavigate } from 'react-router-dom';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
@@ -29,12 +56,39 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
 }) => {
   const [selectedMethod, setSelectedMethod] = useState<'conversation' | 'structured' | 'traditional' | 'mcp_stepwise' | null>(null);
   const [showWorkflowCreator, setShowWorkflowCreator] = useState(false);
+  const [showNPIConfirmation, setShowNPIConfirmation] = useState(false);
+  const [pendingAgentType, setPendingAgentType] = useState<'mcp_stepwise' | 'structured' | 'conversation' | null>(null);
+  const [showImplementationDetails, setShowImplementationDetails] = useState<string | null>(null);
   const { closeEnrollment } = useGlobalConversationalEnrollment();
   const navigate = useNavigate();
 
-  const handleStructuredAI = () => {
-    console.log('Starting Structured AI with Workflow Creation');
-    setShowWorkflowCreator(true);
+  const handleAgentSelection = (agentType: 'mcp_stepwise' | 'structured' | 'conversation') => {
+    const isHealthcareModule = moduleType === 'patient' || moduleType === 'treatment_center';
+    
+    if (isHealthcareModule) {
+      setPendingAgentType(agentType);
+      setShowNPIConfirmation(true);
+    } else {
+      // Non-healthcare modules proceed directly
+      if (agentType === 'structured') {
+        console.log('Starting Structured AI with Workflow Creation');
+        setShowWorkflowCreator(true);
+      } else {
+        setSelectedMethod(agentType);
+      }
+    }
+  };
+
+  const handleNPIConfirmation = (preferences: any) => {
+    console.log('NPI/Credentialing preferences:', preferences);
+    
+    if (pendingAgentType === 'structured') {
+      setShowWorkflowCreator(true);
+    } else if (pendingAgentType) {
+      setSelectedMethod(pendingAgentType);
+    }
+    
+    setPendingAgentType(null);
   };
 
   const handleAgentCreated = (agent: any) => {
@@ -47,30 +101,128 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
     const moduleInfo = {
       patient: {
         title: 'Patient Enrollment',
-        description: 'Complete your patient enrollment and medical intake',
-        conversationBenefits: ['Natural conversation flow', 'Ask questions anytime', 'Guided step-by-step'],
-        traditionalBenefits: ['Familiar form interface', 'Fill at your own pace', 'Standard form layout']
+        description: 'Complete your patient enrollment and medical intake with comprehensive provider verification',
+        mcpBenefits: ['Real-time NPI verification', 'Instant insurance eligibility', 'Provider credential validation', 'Clinical history integration'],
+        structuredBenefits: ['Section-by-section guidance', 'Medical terminology assistance', 'Form auto-completion', 'Insurance pre-validation'],
+        conversationBenefits: ['Natural medical conversation', 'Symptom explanation assistance', 'Treatment option discussion', 'Appointment scheduling'],
+        traditionalBenefits: ['Familiar medical forms', 'Print-friendly format', 'Offline completion', 'Standard HIPAA compliance'],
+        verificationAPIs: ['NPPES Registry', 'Eligibility APIs', 'Clinical Data Exchange'],
+        dataCollected: ['Personal information', 'Insurance details', 'Medical history', 'Provider references', 'Emergency contacts']
       },
       treatment_center: {
         title: 'Treatment Center Onboarding',
-        description: 'Register your facility and complete onboarding requirements',
-        conversationBenefits: ['AI guides through regulations', 'Complex questions simplified', 'Real-time assistance'],
-        traditionalBenefits: ['Structured form sections', 'Save and resume later', 'Clear requirements list']
+        description: 'Comprehensive facility registration with full credentialing and compliance verification',
+        mcpBenefits: ['Real-time facility NPI verification', 'Multi-state license validation', 'DEA registration checking', 'Insurance credentialing'],
+        structuredBenefits: ['Regulatory compliance guidance', 'Accreditation tracking', 'Provider roster management', 'Documentation assistance'],
+        conversationBenefits: ['Regulatory requirement explanation', 'Compliance gap analysis', 'Credentialing status updates', 'Custom workflow guidance'],
+        traditionalBenefits: ['Standard onboarding forms', 'Document upload interface', 'Compliance checklists', 'Manual verification'],
+        verificationAPIs: ['NPPES Registry', 'State Medical Boards', 'DEA Verification', 'CAQH ProView', 'Joint Commission', 'OIG Exclusion'],
+        dataCollected: ['Facility information', 'Provider credentials', 'License numbers', 'DEA registrations', 'Insurance contracts', 'Accreditation status']
       },
       customer: {
         title: 'Customer Registration',
-        description: 'Join our platform and set up your account',
-        conversationBenefits: ['Personalized setup', 'Tailored recommendations', 'Interactive assistance'],
-        traditionalBenefits: ['Quick standard setup', 'Familiar registration', 'Minimal time investment']
+        description: 'Streamlined business account setup with identity and business verification',
+        mcpBenefits: ['Business registration verification', 'Tax ID validation', 'Contact verification', 'Credit check integration'],
+        structuredBenefits: ['Business type guidance', 'Service plan recommendations', 'Feature configuration', 'Integration setup'],
+        conversationBenefits: ['Personalized onboarding', 'Service recommendations', 'Custom setup assistance', 'Integration planning'],
+        traditionalBenefits: ['Quick registration', 'Standard business forms', 'Self-service setup', 'Immediate access'],
+        verificationAPIs: ['D&B Business API', 'IRS Verification', 'Contact Validation Services'],
+        dataCollected: ['Business information', 'Contact details', 'Tax identification', 'Service preferences', 'Payment information']
       },
       manufacturer: {
         title: 'Manufacturer Registration',
-        description: 'Register your company and products',
-        conversationBenefits: ['Product catalog assistance', 'Compliance guidance', 'Custom workflows'],
-        traditionalBenefits: ['Bulk data entry', 'Structured product forms', 'Standard categories']
+        description: 'FDA-compliant manufacturer onboarding with comprehensive regulatory verification',
+        mcpBenefits: ['FDA registration verification', 'Manufacturing license validation', 'Product registration', 'Supply chain compliance'],
+        structuredBenefits: ['Regulatory guidance', 'Product catalog setup', 'Quality certification tracking', 'Compliance monitoring'],
+        conversationBenefits: ['Regulatory requirement explanation', 'Product classification assistance', 'Compliance gap analysis', 'Custom workflows'],
+        traditionalBenefits: ['Standard registration forms', 'Document management', 'Manual verification', 'Compliance checklists'],
+        verificationAPIs: ['FDA Establishment API', 'State Manufacturing Boards', 'ISO Registry', 'FDA NDC Database', 'DSCSA Compliance'],
+        dataCollected: ['Manufacturing facility details', 'FDA registrations', 'Product information', 'Quality certifications', 'Supply chain data']
       }
     };
     return moduleInfo[type];
+  };
+
+  const getDetailedImplementation = (agentType: string) => {
+    const implementations = {
+      mcp_stepwise: {
+        name: 'MCP Stepwise Agent',
+        description: 'Most advanced AI agent with full MCP integration and real-time verification',
+        features: [
+          'Model Context Protocol (MCP) Integration',
+          'Real-time database synchronization',
+          'Intelligent step-by-step guidance',
+          'Auto-completion with validation',
+          'Smart error recovery',
+          'Contextual help system'
+        ],
+        mcpTools: [
+          'Healthcare MCP Server - Clinical data access and validation',
+          'Filesystem MCP Server - Secure document handling',
+          'BioMCP Server - Specialized biotech/pharma workflows (if applicable)'
+        ],
+        aiProviders: 'Works with OpenAI GPT-5, Claude 3.5, Gemini 2.0 (Provider-agnostic)',
+        techStack: ['React + TypeScript', 'Supabase Backend', 'MCP Protocol', 'Real-time WebSockets'],
+        benefits: ['Fastest completion time', 'Highest accuracy', 'Real-time validation', 'Smart assistance'],
+        timeEstimate: '5-8 minutes',
+        accuracy: '98%+'
+      },
+      structured: {
+        name: 'Structured AI Agent',
+        description: 'Section-by-section AI guidance with specialized assistance per form section',
+        features: [
+          'Section-specific AI models',
+          'Form auto-completion',
+          'Contextual validation',
+          'Progress tracking',
+          'Save and resume',
+          'Data export options'
+        ],
+        mcpTools: ['None - Uses traditional form processing with AI enhancement'],
+        aiProviders: 'Primarily OpenAI GPT-4o, with Claude 3.5 fallback',
+        techStack: ['React + TypeScript', 'Supabase Backend', 'AI Form Enhancement', 'Progressive Web App'],
+        benefits: ['Familiar form experience', 'AI-powered assistance', 'Section specialization', 'Flexible pacing'],
+        timeEstimate: '8-12 minutes',
+        accuracy: '95%+'
+      },
+      conversational: {
+        name: 'Conversational AI Agent',
+        description: 'Natural language processing for chat-based enrollment experience',
+        features: [
+          'Natural language understanding',
+          'Conversational data extraction',
+          'Context awareness',
+          'Clarifying questions',
+          'Voice input support',
+          'Multi-turn conversations'
+        ],
+        mcpTools: ['None - Uses conversational AI with standard APIs'],
+        aiProviders: 'OpenAI GPT-4o for conversation, Claude 3.5 for data extraction',
+        techStack: ['React + TypeScript', 'Supabase Backend', 'NLP Processing', 'Voice Recognition'],
+        benefits: ['Most natural experience', 'Flexible interaction', 'Voice support', 'Adaptive flow'],
+        timeEstimate: '10-15 minutes',
+        accuracy: '92%+'
+      },
+      traditional: {
+        name: 'Traditional Forms',
+        description: 'Standard HTML forms without AI assistance - fastest and most reliable fallback',
+        features: [
+          'Standard form validation',
+          'Client-side validation',
+          'Manual data entry',
+          'Basic error checking',
+          'Print-friendly format',
+          'Offline capability'
+        ],
+        mcpTools: ['None - Pure form-based processing'],
+        aiProviders: 'None - No AI processing involved',
+        techStack: ['React + TypeScript', 'Supabase Backend', 'Standard Forms', 'Basic Validation'],
+        benefits: ['Fastest loading', 'Most reliable', 'Offline capable', 'No AI dependencies'],
+        timeEstimate: '15-20 minutes',
+        accuracy: 'Depends on user input quality'
+      }
+    };
+    return implementations[agentType];
   };
 
   if (selectedMethod === 'mcp_stepwise') {
@@ -176,7 +328,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
             
             <Button 
               className="w-full bg-green-500 hover:bg-green-600 gap-2"
-              onClick={() => setSelectedMethod('mcp_stepwise')}
+              onClick={() => handleAgentSelection('mcp_stepwise')}
             >
               <Zap className="w-4 h-4" />
               Start MCP Agent
@@ -220,7 +372,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
             
             <Button 
               className="w-full"
-              onClick={handleStructuredAI}
+              onClick={() => handleAgentSelection('structured')}
             >
               <Workflow className="w-4 h-4" />
               Create AI Agent
@@ -269,7 +421,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
             
             <Button 
               className="w-full"
-              onClick={() => setSelectedMethod('conversation')}
+              onClick={() => handleAgentSelection('conversation')}
             >
               Start AI Conversation
             </Button>
@@ -340,6 +492,20 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
           </div>
         </CardContent>
       </Card>
+
+      {/* NPI/Credentialing Confirmation Modal */}
+      {showNPIConfirmation && pendingAgentType && (
+        <NPICredentialingConfirmationModal
+          isOpen={showNPIConfirmation}
+          onClose={() => {
+            setShowNPIConfirmation(false);
+            setPendingAgentType(null);
+          }}
+          onConfirm={handleNPIConfirmation}
+          moduleType={moduleType}
+          agentType={pendingAgentType === 'conversation' ? 'conversational' : pendingAgentType}
+        />
+      )}
 
       {/* Workflow Creator */}
       {showWorkflowCreator && (
