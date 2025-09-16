@@ -139,6 +139,11 @@ export const navItems = [
     icon: Brain,
   },
   {
+    title: "Database Performance",
+    url: "/database-performance",
+    icon: Database,
+  },
+  {
     title: "Ngrok Integration",
     url: "/ngrok",
     icon: Globe,

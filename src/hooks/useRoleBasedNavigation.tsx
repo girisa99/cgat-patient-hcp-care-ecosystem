@@ -61,6 +61,7 @@ export const useRoleBasedNavigation = () => {
       'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
       'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
+      'database-performance': ['superAdmin', 'demoUser'], // Database performance optimization
       'order-management': ['healthcareProvider'], // Healthcare provider specific
       'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific
     };
@@ -117,6 +118,7 @@ export const useRoleBasedNavigation = () => {
       'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
       'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
+      'database-performance': ['superAdmin', 'demoUser'], // Database performance optimization
       'order-management': ['healthcareProvider'], // Healthcare provider specific
       'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific
     };

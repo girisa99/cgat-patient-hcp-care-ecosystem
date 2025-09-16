@@ -34,6 +34,7 @@ import Security from '@/pages/Security';
 import Reports from '@/pages/Reports';
 import Testing from '@/pages/Testing';
 import FrameworkDashboard from '@/pages/FrameworkDashboard';
+import DatabasePerformance from '@/pages/DatabasePerformance';
 import RoleManagement from '@/pages/RoleManagement';
 import Stability from '@/pages/Stability';
 import Governance from '@/pages/Governance';
@@ -230,6 +231,11 @@ const AppContent = () => {
                   <Route path="/ngrok" element={
                     <ProtectedRoute requiredRoles={['superAdmin']}>
                       <NgrokIntegration />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/database-performance" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'demoUser']}>
+                      <DatabasePerformance />
                     </ProtectedRoute>
                   } />
                   <Route path="/security" element={
