@@ -13348,6 +13348,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      cleanup_agent_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      cleanup_duplicate_test_cases: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       cleanup_old_draft_agents: {
         Args: { p_confirm?: boolean; p_user_id?: string }
         Returns: Json
@@ -13359,6 +13367,10 @@ export type Database = {
       cleanup_orphaned_role_assignments: {
         Args: Record<PropertyKey, never>
         Returns: number
+      }
+      cleanup_universal_save_sessions: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
       }
       cleanup_user_agent_work: {
         Args: { p_statuses?: string[]; p_user_id?: string }
@@ -13643,6 +13655,10 @@ export type Database = {
         }
         Returns: Json
       }
+      run_automated_cleanup: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
       schedule_maintenance: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -13700,6 +13716,10 @@ export type Database = {
       }
       validate_data_against_schema: {
         Args: { data_row: Json; schema_def: Json }
+        Returns: Json
+      }
+      verify_jsonb_migration_integrity: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
     }
