@@ -30,8 +30,6 @@ interface ConversationEntry {
   metadata?: any;
 }
 
-type SupabaseChannel = any;
-
 export const useEnrollmentRealtime = (sessionId?: string) => {
   const [state, setState] = useState<EnrollmentRealtimeState>({
     isConnected: false,
@@ -41,7 +39,7 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
     connectionStatus: 'disconnected'
   });
 
-  const [channel, setChannel] = useState<SupabaseChannel>(null);
+  const [channel, setChannel] = useState<any>(null);
   const { toast } = useToast();
 
   // Connect to real-time channel
@@ -197,13 +195,14 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
     }
   }, [channel]);
 
-  const updateEnrollmentData = useCallback(async (
+  // Update enrollment data in real-time
+  const updateEnrollmentData = async (
     instanceId: string,
     sectionId: string,
     data: any
   ): Promise<boolean> => {
     try {
-      const { error } = await supabase
+      const result = await supabase
         .from('enrollment_instances')
         .update({
           form_data: data,
@@ -212,43 +211,42 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
         })
         .eq('instance_id', instanceId);
 
-      if (error) throw error;
+      if (result.error) throw result.error;
+      console.log('✅ Real-time enrollment data updated:', { instanceId, sectionId });
       return true;
-    } catch {
+    } catch (error) {
+      console.error('❌ Failed to update enrollment data:', error);
       return false;
     }
-  }, []);
+  };
 
   // Create conversation entry with real-time sync
-  const createConversationEntry = useCallback(async (
+  const createConversationEntry = async (
     conversationData: ConversationEntry
   ) => {
     try {
-      const insertPayload = {
-        session_id: conversationData.sessionId,
-        agent_id: conversationData.agentId,
-        conversation_data: conversationData.data,
-        healthcare_context: conversationData.healthcareContext || {},
-        metadata: conversationData.metadata || {},
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      };
-
       const result = await supabase
         .from('agent_conversations')
-        .insert(insertPayload)
+        .insert({
+          session_id: conversationData.sessionId,
+          agent_id: conversationData.agentId,
+          conversation_data: conversationData.data,
+          healthcare_context: conversationData.healthcareContext || {},
+          metadata: conversationData.metadata || {},
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        })
         .select()
         .single();
 
       if (result.error) throw result.error;
-
       console.log('✅ Real-time conversation entry created:', result.data);
       return result.data;
     } catch (error) {
       console.error('❌ Failed to create conversation entry:', error);
       return null;
     }
-  }, []);
+  };
 
   // Auto-connect on mount if sessionId provided
   useEffect(() => {
