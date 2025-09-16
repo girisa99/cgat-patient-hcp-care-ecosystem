@@ -45,41 +45,72 @@ interface FormField {
 
 const enrollmentSections: FormSection[] = [
   {
-    id: 'personal_info',
-    title: 'Personal Information',
-    description: 'Basic demographic and contact details',
+    id: 'submission_method',
+    title: 'Submission Method',
+    description: 'Choose how you want to submit your enrollment',
+    icon: <FileText className="h-5 w-5" />,
+    status: 'pending',
+    required: true,
+    fields: [
+      { id: 'submission_method', type: 'select', label: 'Submission Method', required: true, 
+        options: ['Complete Now', 'Save and Continue Later', 'Get Help Along the Way'] },
+      { id: 'contact_preference', type: 'select', label: 'Contact Preference', required: true,
+        options: ['Email', 'Phone', 'Text Message'] },
+      { id: 'language_preference', type: 'select', label: 'Language Preference', required: true,
+        options: ['English', 'Spanish', 'Other'] }
+    ]
+  },
+  {
+    id: 'consent_management',
+    title: 'Consent Management',
+    description: 'Review and provide consent for enrollment',
+    icon: <Shield className="h-5 w-5" />,
+    status: 'pending',
+    required: true,
+    fields: [
+      { id: 'enrollment_consent', type: 'checkbox', label: 'I consent to patient enrollment', required: true },
+      { id: 'hipaa_authorization', type: 'checkbox', label: 'I authorize HIPAA disclosure', required: true },
+      { id: 'communication_consent', type: 'checkbox', label: 'I consent to communication', required: true },
+      { id: 'digital_signature', type: 'text', label: 'Digital Signature (Type your full name)', required: true }
+    ]
+  },
+  {
+    id: 'patient_info',
+    title: 'Patient Information',
+    description: 'Personal demographics and contact details',
     icon: <Users className="h-5 w-5" />,
     status: 'pending',
     required: true,
     fields: [
       { id: 'first_name', type: 'text', label: 'First Name', required: true },
       { id: 'last_name', type: 'text', label: 'Last Name', required: true },
-      { id: 'email', type: 'email', label: 'Email Address', required: true },
-      { id: 'phone', type: 'phone', label: 'Phone Number', required: true },
       { id: 'date_of_birth', type: 'text', label: 'Date of Birth (MM/DD/YYYY)', required: true },
-      { id: 'address', type: 'textarea', label: 'Home Address', required: true }
-    ]
-  },
-  {
-    id: 'medical_history',
-    title: 'Medical History',
-    description: 'Health background and current conditions',
-    icon: <FileText className="h-5 w-5" />,
-    status: 'pending',
-    required: true,
-    fields: [
-      { id: 'primary_condition', type: 'text', label: 'Primary Medical Condition', required: true },
-      { id: 'medications', type: 'textarea', label: 'Current Medications', required: false },
-      { id: 'allergies', type: 'textarea', label: 'Known Allergies', required: false },
-      { id: 'previous_treatments', type: 'textarea', label: 'Previous Treatments', required: false },
+      { id: 'phone_number', type: 'phone', label: 'Phone Number', required: true },
+      { id: 'email_address', type: 'email', label: 'Email Address', required: true },
+      { id: 'home_address', type: 'textarea', label: 'Home Address', required: true },
       { id: 'emergency_contact', type: 'text', label: 'Emergency Contact Name', required: true },
       { id: 'emergency_phone', type: 'phone', label: 'Emergency Contact Phone', required: true }
     ]
   },
   {
-    id: 'insurance_info',
+    id: 'provider_info',
+    title: 'Provider & Referral Information',
+    description: 'Healthcare provider and referral details',
+    icon: <FileText className="h-5 w-5" />,
+    status: 'pending',
+    required: true,
+    fields: [
+      { id: 'primary_care_physician', type: 'text', label: 'Primary Care Physician', required: false },
+      { id: 'referring_provider', type: 'text', label: 'Referring Provider', required: false },
+      { id: 'provider_npi', type: 'text', label: 'Provider NPI Number', required: false },
+      { id: 'referral_reason', type: 'textarea', label: 'Reason for Referral', required: false },
+      { id: 'provider_contact', type: 'text', label: 'Provider Contact Information', required: false }
+    ]
+  },
+  {
+    id: 'insurance',
     title: 'Insurance Information',
-    description: 'Coverage details and payment information',
+    description: 'Insurance coverage and verification details',
     icon: <Shield className="h-5 w-5" />,
     status: 'pending',
     required: true,
@@ -88,7 +119,37 @@ const enrollmentSections: FormSection[] = [
       { id: 'policy_number', type: 'text', label: 'Policy Number', required: true },
       { id: 'group_number', type: 'text', label: 'Group Number', required: false },
       { id: 'subscriber_name', type: 'text', label: 'Subscriber Name', required: true },
-      { id: 'subscriber_dob', type: 'text', label: 'Subscriber Date of Birth', required: true }
+      { id: 'subscriber_dob', type: 'text', label: 'Subscriber Date of Birth', required: true },
+      { id: 'secondary_insurance', type: 'text', label: 'Secondary Insurance (if any)', required: false }
+    ]
+  },
+  {
+    id: 'treatment_assessment',
+    title: 'Clinical Assessment',
+    description: 'Medical history and treatment assessment',
+    icon: <FileText className="h-5 w-5" />,
+    status: 'pending',
+    required: true,
+    fields: [
+      { id: 'chief_complaint', type: 'textarea', label: 'Chief Complaint/Reason for Treatment', required: true },
+      { id: 'current_medications', type: 'textarea', label: 'Current Medications', required: false },
+      { id: 'allergies', type: 'textarea', label: 'Known Allergies', required: false },
+      { id: 'medical_history', type: 'textarea', label: 'Relevant Medical History', required: false },
+      { id: 'previous_treatments', type: 'textarea', label: 'Previous Treatments', required: false },
+      { id: 'current_symptoms', type: 'textarea', label: 'Current Symptoms', required: false }
+    ]
+  },
+  {
+    id: 'final_review',
+    title: 'Final Review & Submission',
+    description: 'Review all information and complete enrollment',
+    icon: <FileText className="h-5 w-5" />,
+    status: 'pending',
+    required: true,
+    fields: [
+      { id: 'information_review', type: 'checkbox', label: 'I have reviewed all information and confirm it is accurate', required: true },
+      { id: 'final_consent', type: 'checkbox', label: 'I provide final consent to submit this enrollment', required: true },
+      { id: 'submission_confirmation', type: 'text', label: 'Type "SUBMIT" to confirm enrollment', required: true }
     ]
   }
 ];

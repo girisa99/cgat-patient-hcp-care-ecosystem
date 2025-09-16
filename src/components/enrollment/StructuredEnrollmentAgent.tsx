@@ -544,44 +544,74 @@ const isDataComplete = () => {
 const getSectionsForModule = (moduleType: ModuleType): EnrollmentSection[] => {
   const patientSections: EnrollmentSection[] = [
     {
-      id: 'demographics',
-      name: 'Demographics',
+      id: 'submission_method',
+      name: 'Submission Method',
+      icon: Send,
+      description: 'Choose how you want to submit your enrollment',
+      aiPrompt: "Welcome! I'm here to help you with your patient enrollment. First, let's set up how you'd like to complete this process. You can choose to fill everything out now, save and continue later, or get help along the way. What works best for you?",
+      estimatedTime: '1-2 min',
+      requiredFields: ['Submission Method', 'Contact Preference', 'Language Preference'],
+      validationRules: { method: 'required' }
+    },
+    {
+      id: 'consent_management',
+      name: 'Consent Management',
+      icon: FileCheck,
+      description: 'Review and provide consent for enrollment',
+      aiPrompt: "Before we begin collecting your information, I need to walk you through some important consent forms. These ensure we handle your information properly and that you understand the enrollment process. Shall we start with the general enrollment consent?",
+      estimatedTime: '3-4 min',
+      requiredFields: ['Enrollment Consent', 'HIPAA Authorization', 'Communication Consent', 'Digital Signature'],
+      validationRules: { consent: 'required', signature: 'required' }
+    },
+    {
+      id: 'patient_info',
+      name: 'Patient Information',
       icon: User,
-      description: 'Basic personal information and contact details',
-      aiPrompt: "Hi! I'm your AI assistant for collecting your personal information. I'll help you provide your demographics in a conversational way. Let's start with your full name - what would you like me to call you?",
-      estimatedTime: '3-5 min',
-      requiredFields: ['First Name', 'Last Name', 'Date of Birth', 'Home Phone', 'Email', 'Address', 'City', 'State', 'ZIP Code', 'Emergency Contact Name', 'Emergency Contact Phone'],
+      description: 'Personal demographics and contact details',
+      aiPrompt: "Now let's collect your personal information. I'll help you provide your demographics in a conversational way. Let's start with your full name - what would you like me to call you?",
+      estimatedTime: '4-6 min',
+      requiredFields: ['First Name', 'Last Name', 'Date of Birth', 'Phone Number', 'Email Address', 'Home Address', 'Emergency Contact'],
       validationRules: { name: 'required', dob: 'date', phone: 'phone', email: 'email' }
     },
     {
-      id: 'medical-history',
-      name: 'Medical History',
-      icon: Heart,
-      description: 'Current medications, allergies, and medical conditions',
-      aiPrompt: "Now I'll help you document your medical history. This information helps us provide better care. Let's start with any current medications you're taking - you can tell me about them one by one or all at once, whatever feels comfortable.",
-      estimatedTime: '5-8 min',
-      requiredFields: ['Current Medications', 'Allergies', 'Medical History', 'Primary Care Physician', 'Previous Surgeries', 'Family Medical History', 'Current Symptoms'],
-      validationRules: { medications: 'array', allergies: 'array' }
+      id: 'provider_info',
+      name: 'Provider & Referral Information',
+      icon: Stethoscope,
+      description: 'Healthcare provider and referral details',
+      aiPrompt: "Let's gather information about your healthcare providers and any referrals. This helps us coordinate your care properly. Do you have a primary care physician or specialist who referred you?",
+      estimatedTime: '3-5 min',
+      requiredFields: ['Primary Care Physician', 'Referring Provider', 'Provider NPI', 'Referral Reason', 'Provider Contact'],
+      validationRules: { npi: 'npi_format' }
     },
     {
       id: 'insurance',
-      name: 'Insurance Information', 
+      name: 'Insurance Information',
       icon: Shield,
-      description: 'Insurance details and coverage verification',
-      aiPrompt: "Let's get your insurance information set up. I'll walk you through this step by step. First, do you have your insurance card handy? If so, I can help you enter the details, or you can tell me what information you have available.",
-      estimatedTime: '3-4 min',
-      requiredFields: ['Insurance Provider', 'Primary Insurance', 'Policy Number', 'Group Number', 'Subscriber Name', 'Subscriber DOB', 'Secondary Insurance'],
+      description: 'Insurance coverage and verification details',
+      aiPrompt: "Let's get your insurance information set up. I'll walk you through this step by step. Do you have your insurance card handy? If so, I can help you enter the details.",
+      estimatedTime: '4-6 min',
+      requiredFields: ['Insurance Provider', 'Policy Number', 'Group Number', 'Subscriber Name', 'Subscriber DOB', 'Secondary Insurance'],
       validationRules: { policyNumber: 'required', provider: 'required' }
     },
     {
-      id: 'consent',
-      name: 'Consent & Agreements',
-      icon: FileCheck,
-      description: 'Legal agreements and consent forms',
-      aiPrompt: "Finally, I'll help you understand and complete the necessary consent forms and agreements. I'll explain each one clearly and answer any questions you have. Shall we start with the treatment consent form?",
+      id: 'treatment_assessment',
+      name: 'Clinical Assessment',
+      icon: Heart,
+      description: 'Medical history and treatment assessment',
+      aiPrompt: "Now I'll help you document your medical history and current condition. This information helps us provide better care. Let's start with your current symptoms or the main reason for seeking treatment.",
+      estimatedTime: '6-8 min',
+      requiredFields: ['Chief Complaint', 'Current Medications', 'Allergies', 'Medical History', 'Previous Treatments', 'Current Symptoms'],
+      validationRules: { medications: 'array', allergies: 'array' }
+    },
+    {
+      id: 'final_review',
+      name: 'Final Review & Submission',
+      icon: CheckCircle,
+      description: 'Review all information and complete enrollment',
+      aiPrompt: "Great! We're almost done. Let me review all the information we've collected to make sure everything is correct. After we review together, you can submit your completed enrollment. Ready to go through everything?",
       estimatedTime: '2-3 min',
-      requiredFields: ['Treatment Consent', 'HIPAA Authorization', 'Financial Responsibility', 'Privacy Notice Acknowledgment', 'Digital Signature', 'Patient Rights Acknowledgment'],
-      validationRules: { signature: 'required', consents: 'required' }
+      requiredFields: ['Information Review', 'Final Consent', 'Submission Confirmation'],
+      validationRules: { review: 'required', final_consent: 'required' }
     }
   ];
 
