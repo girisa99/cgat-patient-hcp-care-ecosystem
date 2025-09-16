@@ -29,379 +29,226 @@ export const PatientEnrollmentWorkflow: React.FC<PatientEnrollmentWorkflowProps>
         position: { x: 100, y: 50 },
         data: {
           label: 'Patient Enrollment Start',
-          description: 'Begin comprehensive patient enrollment process',
+          description: 'Begin patient enrollment process',
           icon: User,
           section: 'start'
         }
       },
 
-      // Demographics Section with Sub-sections
+      // 1. Patient Demographics (enrollment_patient_info)
       {
-        id: 'demographics',
+        id: 'patient_demographics',
         type: 'default',
-        position: { x: 100, y: 150 },
+        position: { x: 100, y: 200 },
         data: {
           label: 'Patient Demographics',
-          description: 'Collect comprehensive patient information',
+          description: 'Basic patient information',
           icon: User,
           section: 'demographics',
           table: 'enrollment_patient_info',
-          fields: ['first_name', 'last_name', 'date_of_birth', 'phone', 'email', 'address'],
+          fields: ['first_name', 'last_name', 'middle_name', 'date_of_birth', 'gender', 'ssn'],
           status: 'pending',
-          subSections: [
-            'Basic Information',
-            'Contact Details', 
-            'Emergency Contacts',
-            'Communication Preferences'
-          ]
+          aiAgent: {
+            name: 'Demographics Agent',
+            description: 'Collects patient demographic information',
+            prompt: 'Help collect patient demographics including name, date of birth, gender'
+          }
         }
       },
 
-      // Demographics Sub-sections
+      // 2. Contact Information (enrollment_patient_info)
       {
-        id: 'demo-basic',
+        id: 'contact_info',
         type: 'default',
-        position: { x: 300, y: 100 },
+        position: { x: 400, y: 200 },
         data: {
-          label: 'Basic Information',
-          description: 'Name, DOB, SSN, Gender, Marital Status',
+          label: 'Contact Information',
+          description: 'Phone, email, and address details',
           icon: User,
-          section: 'demographics-basic',
-          parentSection: 'demographics',
-          fields: ['first_name', 'last_name', 'date_of_birth', 'ssn', 'gender', 'marital_status'],
+          section: 'contact',
+          table: 'enrollment_patient_info',
+          fields: ['phone', 'email', 'address_line1', 'address_line2', 'city', 'state', 'zip_code'],
           status: 'pending'
         }
       },
 
+      // 3. Emergency Contact (enrollment_patient_info)
       {
-        id: 'demo-contact',
+        id: 'emergency_contact',
         type: 'default',
-        position: { x: 300, y: 200 },
+        position: { x: 700, y: 200 },
         data: {
-          label: 'Contact & Address',
-          description: 'Phone, email, home address, mailing address',
+          label: 'Emergency Contact',
+          description: 'Emergency contact details',
           icon: User,
-          section: 'demographics-contact',
-          parentSection: 'demographics',
-          fields: ['phone', 'email', 'home_address', 'mailing_address'],
+          section: 'emergency',
+          table: 'enrollment_patient_info',
+          fields: ['emergency_contact_name', 'emergency_contact_phone', 'emergency_contact_relationship'],
           status: 'pending'
         }
       },
 
-      // NPI Verification Agent
+      // 4. Clinical Assessment (enrollment_clinical_info)
       {
-        id: 'npi-agent',
+        id: 'clinical_assessment',
         type: 'default',
-        position: { x: 500, y: 150 },
-        data: {
-          label: 'NPI Verification Agent',
-          description: 'AI agent validates provider credentials and NPI numbers',
-          icon: Bot,
-          section: 'verification',
-          agentType: 'npi-verification',
-          capabilities: ['npi_lookup', 'license_verification', 'credential_validation'],
-          status: 'ready'
-        }
-      },
-
-      // Clinical Information with Sub-sections
-      {
-        id: 'clinical-info',
-        type: 'default',
-        position: { x: 100, y: 350 },
+        position: { x: 100, y: 400 },
         data: {
           label: 'Clinical Assessment',
-          description: 'Comprehensive medical evaluation',
+          description: 'Medical history and clinical information',
           icon: Stethoscope,
           section: 'clinical',
           table: 'enrollment_clinical_info',
-          fields: ['medical_history', 'current_medications', 'allergies', 'primary_diagnosis'],
+          fields: ['chief_complaint', 'medical_history', 'surgical_history', 'family_history', 'social_history'],
           status: 'pending',
-          subSections: [
-            'Medical History',
-            'Current Medications',
-            'Allergies & Reactions',
-            'Previous Treatments',
-            'Mental Health Assessment'
-          ]
+          aiAgent: {
+            name: 'Clinical Assessment Agent',
+            description: 'Gathers comprehensive medical history',
+            prompt: 'Collect detailed medical history including chief complaint and past medical history'
+          }
         }
       },
 
-      // Clinical Sub-sections
+      // 5. Medications & Allergies (enrollment_clinical_info)
       {
-        id: 'clinical-history',
+        id: 'medications_allergies',
         type: 'default',
-        position: { x: 300, y: 300 },
+        position: { x: 400, y: 400 },
         data: {
-          label: 'Medical History',
-          description: 'Past medical conditions, surgeries, hospitalizations',
+          label: 'Medications & Allergies',
+          description: 'Current medications and known allergies',
           icon: Stethoscope,
-          section: 'clinical-history',
-          parentSection: 'clinical',
-          fields: ['past_conditions', 'surgeries', 'hospitalizations', 'family_history'],
+          section: 'medications',
+          table: 'enrollment_clinical_info',
+          fields: ['current_medications', 'allergies'],
           status: 'pending'
         }
       },
 
+      // 6. Primary Insurance (enrollment_insurance_info)
       {
-        id: 'clinical-medications',
+        id: 'primary_insurance',
         type: 'default',
-        position: { x: 300, y: 400 },
+        position: { x: 100, y: 600 },
         data: {
-          label: 'Current Medications',
-          description: 'All current medications, dosages, frequencies',
-          icon: Stethoscope,
-          section: 'clinical-medications',
-          parentSection: 'clinical',
-          fields: ['current_medications', 'dosages', 'frequencies', 'prescribing_doctors'],
-          status: 'pending'
-        }
-      },
-
-      // Treatment Plan with Sub-sections
-      {
-        id: 'treatment-plan',
-        type: 'default',
-        position: { x: 500, y: 350 },
-        data: {
-          label: 'Treatment Planning',
-          description: 'Comprehensive treatment strategy',
-          icon: Heart,
-          section: 'treatment',
-          table: 'enrollment_treatment_plan',
-          fields: ['treatment_type', 'duration', 'goals', 'provider_assignment'],
-          status: 'pending',
-          subSections: [
-            'Treatment Goals',
-            'Provider Assignment',
-            'Treatment Modalities',
-            'Schedule Preferences',
-            'Care Team Assembly'
-          ]
-        }
-      },
-
-      // Insurance with Sub-sections
-      {
-        id: 'insurance',
-        type: 'default',
-        position: { x: 100, y: 550 },
-        data: {
-          label: 'Insurance Verification',
-          description: 'Comprehensive insurance validation',
+          label: 'Primary Insurance',
+          description: 'Primary insurance information',
           icon: CreditCard,
           section: 'insurance',
           table: 'enrollment_insurance_info',
-          fields: ['insurance_provider', 'policy_number', 'group_number', 'coverage_details'],
+          fields: ['primary_insurance_name', 'primary_policy_number', 'primary_group_number', 'primary_subscriber_name'],
           status: 'pending',
-          subSections: [
-            'Primary Insurance',
-            'Secondary Insurance',
-            'Prior Authorizations',
-            'Coverage Verification',
-            'Financial Responsibility'
-          ]
+          aiAgent: {
+            name: 'Insurance Verification Agent',
+            description: 'Verifies insurance coverage and benefits',
+            prompt: 'Collect and verify primary insurance information and check benefits'
+          }
         }
       },
 
-      // Insurance Sub-sections
+      // 7. Secondary Insurance (enrollment_insurance_info)
       {
-        id: 'insurance-primary',
+        id: 'secondary_insurance',
         type: 'default',
-        position: { x: 300, y: 500 },
+        position: { x: 400, y: 600 },
         data: {
-          label: 'Primary Insurance',
-          description: 'Primary insurance details and verification',
+          label: 'Secondary Insurance',
+          description: 'Secondary insurance if applicable',
           icon: CreditCard,
-          section: 'insurance-primary',
-          parentSection: 'insurance',
-          fields: ['primary_insurance', 'policy_number', 'group_number', 'subscriber_info'],
+          section: 'secondary_insurance',
+          table: 'enrollment_insurance_info',
+          fields: ['secondary_insurance_name', 'secondary_policy_number', 'secondary_group_number'],
           status: 'pending'
         }
       },
 
+      // 8. Insurance Benefits (enrollment_insurance_info)
       {
-        id: 'insurance-auth',
+        id: 'insurance_benefits',
         type: 'default',
-        position: { x: 300, y: 600 },
+        position: { x: 700, y: 600 },
         data: {
-          label: 'Prior Authorizations',
-          description: 'Required authorizations and approvals',
+          label: 'Insurance Benefits',
+          description: 'Coverage details and benefits verification',
           icon: CreditCard,
-          section: 'insurance-auth',
-          parentSection: 'insurance',
-          fields: ['auth_requirements', 'approval_status', 'auth_numbers', 'expiration_dates'],
+          section: 'benefits',
+          table: 'enrollment_insurance_info',
+          fields: ['copay_amount', 'deductible_amount', 'out_of_pocket_max', 'prior_authorization_required'],
           status: 'pending'
         }
       },
 
-      // Insurance Agent
+      // 9. Treatment Consent (enrollment_consent)
       {
-        id: 'insurance-agent',
+        id: 'treatment_consent',
         type: 'default',
-        position: { x: 500, y: 550 },
+        position: { x: 100, y: 800 },
         data: {
-          label: 'Insurance AI Agent',
-          description: 'Automated insurance verification and benefits check',
-          icon: Bot,
-          section: 'insurance-verification',
-          agentType: 'insurance-verification',
-          capabilities: ['benefits_check', 'prior_authorization', 'coverage_analysis'],
-          status: 'ready'
-        }
-      },
-
-      // Consent Management with Sub-sections
-      {
-        id: 'consent',
-        type: 'default',
-        position: { x: 100, y: 750 },
-        data: {
-          label: 'Consent & Legal',
-          description: 'Comprehensive legal documentation',
+          label: 'Treatment Consent',
+          description: 'Consent to treatment',
           icon: Shield,
           section: 'consent',
           table: 'enrollment_consent',
-          fields: ['hipaa_consent', 'treatment_consent', 'privacy_agreement', 'signature'],
+          fields: ['consent_to_treatment', 'consent_date', 'patient_signature'],
           status: 'pending',
-          subSections: [
-            'HIPAA Authorization',
-            'Treatment Consent',
-            'Privacy Agreements',
-            'Financial Agreements',
-            'Emergency Authorization'
-          ]
+          aiAgent: {
+            name: 'Consent Management Agent',
+            description: 'Manages consent collection and validation',
+            prompt: 'Guide patients through treatment consent forms and legal requirements'
+          }
         }
       },
 
-      // Consent Sub-sections
+      // 10. HIPAA & Legal (enrollment_consent)
       {
-        id: 'consent-hipaa',
+        id: 'hipaa_legal',
         type: 'default',
-        position: { x: 300, y: 700 },
+        position: { x: 400, y: 800 },
         data: {
-          label: 'HIPAA Authorization',
-          description: 'Health information privacy agreements',
+          label: 'HIPAA & Legal',
+          description: 'HIPAA authorization and legal consents',
           icon: Shield,
-          section: 'consent-hipaa',
-          parentSection: 'consent',
-          fields: ['hipaa_authorization', 'information_sharing', 'access_rights'],
+          section: 'hipaa',
+          table: 'enrollment_consent',
+          fields: ['hipaa_authorization', 'financial_responsibility', 'communication_consent'],
           status: 'pending'
         }
       },
 
+      // 11. Document Upload (enrollment_documents)
       {
-        id: 'consent-treatment',
+        id: 'document_upload',
         type: 'default',
-        position: { x: 300, y: 800 },
+        position: { x: 100, y: 1000 },
         data: {
-          label: 'Treatment Consent',
-          description: 'Consent for proposed treatments and procedures',
-          icon: Shield,
-          section: 'consent-treatment',
-          parentSection: 'consent',
-          fields: ['treatment_consent', 'procedure_consent', 'medication_consent'],
-          status: 'pending'
-        }
-      },
-
-      // Treatment Center Assignment with Sub-sections
-      {
-        id: 'treatment-center',
-        type: 'default',
-        position: { x: 500, y: 750 },
-        data: {
-          label: 'Treatment Center Assignment',
-          description: 'Facility matching and assignment',
-          icon: Building,
-          section: 'facility',
-          table: 'enrollment_collaborations',
-          fields: ['assigned_facility', 'location_preference', 'specialty_match'],
-          status: 'pending',
-          subSections: [
-            'Facility Matching',
-            'Location Preferences',
-            'Specialty Requirements',
-            'Availability Check',
-            'Assignment Confirmation'
-          ]
-        }
-      },
-
-      // Document Management with Sub-sections
-      {
-        id: 'documents',
-        type: 'default',
-        position: { x: 300, y: 950 },
-        data: {
-          label: 'Document Management',
-          description: 'Comprehensive document collection',
+          label: 'Document Upload',
+          description: 'Upload required documents',
           icon: FileText,
           section: 'documents',
           table: 'enrollment_documents',
-          fields: ['document_type', 'file_path', 'upload_date', 'verification_status'],
+          fields: ['document_type', 'file_name', 'file_path'],
           status: 'pending',
-          subSections: [
-            'Medical Records Upload',
-            'Insurance Cards',
-            'ID Verification',
-            'Previous Treatment Records',
-            'Lab Results & Reports'
-          ]
+          aiAgent: {
+            name: 'Document Management Agent',
+            description: 'Manages document collection and organization',
+            prompt: 'Help patients upload and organize required enrollment documents'
+          }
         }
       },
 
-      // Document Sub-sections
+      // 12. Enrollment Completion (patient_enrollments)
       {
-        id: 'docs-medical',
-        type: 'default',
-        position: { x: 100, y: 900 },
-        data: {
-          label: 'Medical Records',
-          description: 'Upload previous medical records and reports',
-          icon: FileText,
-          section: 'docs-medical',
-          parentSection: 'documents',
-          fields: ['medical_records', 'lab_reports', 'imaging_results'],
-          status: 'pending'
-        }
-      },
-
-      {
-        id: 'docs-insurance',
-        type: 'default',
-        position: { x: 500, y: 900 },
-        data: {
-          label: 'Insurance Documents',
-          description: 'Insurance cards and coverage documents',
-          icon: FileText,
-          section: 'docs-insurance',
-          parentSection: 'documents',
-          fields: ['insurance_cards', 'coverage_letters', 'auth_documents'],
-          status: 'pending'
-        }
-      },
-
-      // Final Review & Completion
-      {
-        id: 'completion',
+        id: 'enrollment_completion',
         type: 'output',
-        position: { x: 300, y: 1100 },
+        position: { x: 400, y: 1000 },
         data: {
           label: 'Enrollment Complete',
-          description: 'Final review and enrollment completion',
+          description: 'Final enrollment status and tracking',
           icon: CheckCircle,
           section: 'completion',
           table: 'patient_enrollments',
-          fields: ['enrollment_status', 'completion_date', 'assigned_provider'],
-          status: 'pending',
-          subSections: [
-            'Final Review',
-            'Validation Check',
-            'Provider Assignment',
-            'Welcome Package',
-            'First Appointment Scheduling'
-          ]
+          fields: ['enrollment_status', 'progress_percentage'],
+          status: 'pending'
         }
       }
     ];
