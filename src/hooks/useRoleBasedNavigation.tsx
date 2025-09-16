@@ -68,7 +68,7 @@ export const useRoleBasedNavigation = () => {
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
       'database-performance': ['superAdmin', 'demoUser'], // Database performance optimization
       'order-management': ['healthcareProvider'], // Healthcare provider specific
-      'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment 
+      'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment 
       'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
     };
 
@@ -112,7 +112,7 @@ export const useRoleBasedNavigation = () => {
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
       'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
       'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
-      'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+      'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
       'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
@@ -128,7 +128,6 @@ export const useRoleBasedNavigation = () => {
       'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
       'database-performance': ['superAdmin', 'demoUser'], // Database performance optimization
       'order-management': ['healthcareProvider'], // Healthcare provider specific
-      'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific
     };
 
     const allowedRoles = roleAccess[cleanPath as keyof typeof roleAccess] || [];
@@ -164,7 +163,7 @@ export const useRoleBasedNavigation = () => {
           modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
           'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
           'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
-          'patient-onboarding': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
+          'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
           'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
           ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
           security: ['superAdmin'],
@@ -178,8 +177,7 @@ export const useRoleBasedNavigation = () => {
           'stability': ['superAdmin', 'demoUser'], // Add demoUser for stability demo
           'healthcare-ai': ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for AI demo
           'treatment-centers': ['superAdmin', 'demoUser'], // Add treatment centers for demoUser
-          'order-management': ['healthcareProvider'], // Healthcare provider specific
-          'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific
+          'order-management': ['healthcareProvider'] // Healthcare provider specific
         };
         
         const allowedRoles = roleAccess[path as keyof typeof roleAccess] || [];

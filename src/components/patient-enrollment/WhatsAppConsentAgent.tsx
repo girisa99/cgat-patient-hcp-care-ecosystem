@@ -13,7 +13,22 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface WhatsAppConsentAgentProps {
   enrollmentId?: string;
-  onConsentComplete?: (consentData: any) => void;
+  providerInfo?: {
+    name: string;
+    phone: string;
+    email: string;
+    treatmentCenter: string;
+  };
+  onConsentComplete?: (data: {
+    sessionId: string;
+    patientName?: string;
+    patientEmail?: string;
+    patientPhone?: string;
+    locationType: 'facility' | 'remote' | 'caregiver';
+    signature?: string;
+    additionalNotes?: string;
+  }) => void;
+  onError?: (error: string) => void;
 }
 
 interface ConsentSession {
@@ -29,7 +44,9 @@ interface ConsentSession {
 
 export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
   enrollmentId,
-  onConsentComplete
+  providerInfo,
+  onConsentComplete,
+  onError
 }) => {
   const [activeTab, setActiveTab] = useState('setup');
   const [consentSessions, setConsentSessions] = useState<ConsentSession[]>([]);
@@ -40,7 +57,17 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
   const [isInitiating, setIsInitiating] = useState(false);
   const [n8nWebhookUrl, setN8nWebhookUrl] = useState('');
 
-  const initiateWhatsAppConsent = async () => {
+  const handleConsentComplete = (consentData: any) => {
+    onConsentComplete?.({
+      sessionId: consentData.sessionId || `whatsapp-${Date.now()}`,
+      patientName: consentData.patientName,
+      patientEmail: consentData.patientEmail,
+      patientPhone: consentData.patientPhone,
+      locationType: locationType || 'facility',
+      signature: consentData.signature,
+      additionalNotes: `Consent collected via WhatsApp Agent. Provider: ${providerInfo?.name || 'Unknown'}`
+    });
+  };
     if (!phoneNumber) {
       toast.error('Please enter a valid phone number');
       return;
@@ -221,6 +248,17 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
                   </p>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {providerInfo && (
+                    <div className="bg-muted/30 p-3 rounded-lg text-sm">
+                      <h4 className="font-medium mb-2">Provider Information</h4>
+                      <div className="space-y-1 text-muted-foreground">
+                        <div>Provider: {providerInfo.name}</div>
+                        <div>Treatment Center: {providerInfo.treatmentCenter}</div>
+                        <div>Phone: {providerInfo.phone}</div>
+                      </div>
+                    </div>
+                  )}
+                  
                   <div className="grid grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="phone">Patient/Caregiver Phone Number</Label>
@@ -288,12 +326,17 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
                   </div>
 
                   <Button 
-                    onClick={initiateWhatsAppConsent}
-                    disabled={isInitiating || !phoneNumber}
+                    onClick={() => handleConsentComplete({ 
+                      sessionId: `mock-${Date.now()}`,
+                      patientName: 'Mock Patient',
+                      patientEmail: 'patient@example.com',
+                      patientPhone: '+1234567890',
+                      signature: 'digital_signature_data',
+                      status: 'completed' 
+                    })}
                     className="w-full"
                   >
-                    <Send className="h-4 w-4 mr-2" />
-                    {isInitiating ? 'Initiating...' : 'Start WhatsApp Consent Process'}
+                    Simulate WhatsApp Consent Complete
                   </Button>
                 </CardContent>
               </Card>

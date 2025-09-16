@@ -11,6 +11,8 @@ export { PatientEnrollmentForm, type PatientEnrollmentData } from './PatientEnro
 
 // Sub-components
 export { ConsentManagement, type ConsentData } from './ConsentManagement';
+export { WhatsAppConsentAgent } from './WhatsAppConsentAgent';
+export { PatientEnrollmentWithWhatsApp } from './PatientEnrollmentWithWhatsApp';
 export { CollaborationStatus } from './CollaborationStatus';
 export { PatientDataPrefill } from './PatientDataPrefill';
 export { EnrollmentJourneySteps } from './EnrollmentJourneySteps';

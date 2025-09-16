@@ -149,7 +149,7 @@ export interface PatientEnrollmentData {
   communicationConsent?: boolean;
   telehealthConsent?: boolean;
   marketingConsent?: boolean;
-  consentMethod: 'facility_present' | 'digital_sms' | 'digital_email' | 'verbal';
+  consentMethod: 'facility_present' | 'digital_sms' | 'digital_email' | 'verbal' | 'whatsapp';
   verbalConsentWitness?: string;
   digitalConsentEmail?: string;
   digitalConsentPhone?: string;
@@ -280,7 +280,10 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
       digitalConsentPhone: '',
       providerSignature: '',
       providerConsentDate: '',
-      notes: ''
+      notes: '',
+      // WhatsApp specific fields
+      whatsappConsentSession: '',
+      locationType: 'facility'
     },
     comprehensiveProviderData: createEmptyComprehensiveProviderData(),
     comprehensiveInsuranceData: createEmptyComprehensiveInsuranceData(),
