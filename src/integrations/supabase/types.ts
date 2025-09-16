@@ -13279,6 +13279,32 @@ export type Database = {
         }
         Relationships: []
       }
+      index_usage_stats: {
+        Row: {
+          idx_scan: number | null
+          idx_tup_fetch: number | null
+          idx_tup_read: number | null
+          index_name: unknown | null
+          index_size_bytes: number | null
+          index_size_pretty: string | null
+          schema_name: unknown | null
+          table_name: unknown | null
+        }
+        Relationships: []
+      }
+      unused_index_candidates: {
+        Row: {
+          idx_scan: number | null
+          idx_tup_fetch: number | null
+          idx_tup_read: number | null
+          index_name: unknown | null
+          index_size_bytes: number | null
+          index_size_pretty: string | null
+          schema_name: unknown | null
+          table_name: unknown | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       _table_exists: {
