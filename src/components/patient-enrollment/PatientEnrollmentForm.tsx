@@ -40,6 +40,7 @@ import { ComprehensiveTreatmentAssessment, createEmptyComprehensiveTreatmentAsse
 import { ConsentManagement, type ConsentData } from './ConsentManagement';
 import { CollaborationStatus } from './CollaborationStatus';
 import { PatientDataPrefill } from './PatientDataPrefill';
+import { AutomatedWhatsAppConsent } from './AutomatedWhatsAppConsent';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { UniversalSaveResumeManager } from '@/components/universal/UniversalSaveResumeManager';
 import { useUniversalSaveResume } from '@/hooks/useUniversalSaveResume';
@@ -302,6 +303,7 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
   const [providerSignature, setProviderSignature] = useState<string | null>(null);
   const [patientSignature, setPatientSignature] = useState<string | null>(null);
   const [completedSteps, setCompletedSteps] = useState<number[]>([]);
+  const [whatsappConsentTriggered, setWhatsappConsentTriggered] = useState(false);
   const { showSuccess, showError } = useMasterToast();
   const hasInitializedFromResume = useRef(false);
 
@@ -496,6 +498,11 @@ export const PatientEnrollmentForm: React.FC<PatientEnrollmentFormProps> = ({
 
   const handlePatientDataUpdate = (patientData: Partial<PatientEnrollmentData>) => {
     setFormData(prev => ({ ...prev, ...patientData }));
+    
+    // Auto-trigger WhatsApp consent when sufficient patient data is available
+    if (patientData.cellPhone && patientData.firstName && !whatsappConsentTriggered) {
+      setWhatsappConsentTriggered(true);
+    }
   };
 
   const handleStepNavigation = (stepIndex: number) => {

@@ -242,31 +242,7 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
           </CardContent>
         </Card>
 
-        {/* WhatsApp Consent Option */}
-        <Card className={`cursor-pointer border-2 transition-colors ${
-          consentData.consentType === 'whatsapp' 
-            ? 'border-primary bg-primary/5' 
-            : 'border-muted hover:border-primary/50'
-        }`}
-        onClick={() => handleConsentTypeChange('whatsapp')}>
-          <CardContent className="p-4">
-            <div className="flex items-start gap-3">
-              <MessageSquare className="h-5 w-5 mt-1 text-green-600" />
-              <div className="flex-1">
-                <h5 className="font-medium">WhatsApp Agent Consent</h5>
-                <p className="text-sm text-muted-foreground mt-1">
-                  AI-powered consent collection via WhatsApp with location awareness
-                </p>
-                {consentData.consentType === 'whatsapp' && (
-                  <Badge className="mt-2" variant="default">
-                    <CheckCircle2 className="h-3 w-3 mr-1" />
-                    Selected
-                  </Badge>
-                )}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* WhatsApp Consent Option - Remove this manual option */}
       </div>
     </div>
   );
@@ -321,32 +297,6 @@ export const ConsentManagement: React.FC<ConsentManagementProps> = ({
                 disabled={readOnly}
               />
             </div>
-          </div>
-        )}
-
-        {consentData.consentType === 'whatsapp' && (
-          <div>
-            <h5 className="font-medium mb-3">WhatsApp AI Agent Consent Collection</h5>
-            <WhatsAppConsentAgent
-              enrollmentId={`enrollment-${Date.now()}`}
-              providerInfo={{
-                name: consentData.providerName,
-                phone: consentData.providerPhone,
-                email: consentData.providerEmail,
-                treatmentCenter: consentData.treatmentCenter
-              }}
-              onConsentComplete={(consentResult) => {
-                handleFieldChange('patientConsentStatus', 'obtained');
-                handleFieldChange('consentDate', new Date().toISOString());
-                handleFieldChange('consentBy', consentResult.patientName || 'WhatsApp User');
-                handleFieldChange('whatsappConsentSession', consentResult.sessionId);
-                handleFieldChange('locationType', consentResult.locationType);
-                handleFieldChange('notes', `WhatsApp consent collected. Session: ${consentResult.sessionId}. Location: ${consentResult.locationType}. ${consentResult.additionalNotes || ''}`);
-              }}
-              onError={(error) => {
-                console.error('WhatsApp consent error:', error);
-              }}
-            />
           </div>
         )}
 
