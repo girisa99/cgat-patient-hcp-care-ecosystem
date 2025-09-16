@@ -48,6 +48,11 @@ export { InsuranceCardUpload } from '../enrollment/InsuranceCardUpload';
 export { DynamicInsuranceDemo } from '../enrollment/DynamicInsuranceDemo';
 export { ComprehensiveInsuranceFieldMapping } from '../enrollment/ComprehensiveInsuranceFieldMapping';
 
+// Provider enrollment components
+export { EnhancedProviderForm } from '../enrollment/EnhancedProviderForm';
+export { NPIVerificationComponent } from '../enrollment/NPIVerificationComponent';
+export { ProviderPermutationAnalysis } from '../enrollment/ProviderPermutationAnalysis';
+
 // Export complete data types
 export type { 
   CompletePatientInformation,

@@ -97,12 +97,68 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
       // TODO: Update database once tables are finalized
       // For now, using local state only
 
+      // Trigger NPI verification if this is provider info and NPI is present
+      if (sectionName === 'provider_info' && data.npi && !data.npiVerified) {
+        await triggerNPIVerification(data.npi, sectionName);
+      }
+
     } catch (err) {
       console.error('Failed to update section:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to update section';
       setError(errorMessage);
     }
   }, [currentSession]);
+
+  const triggerNPIVerification = useCallback(async (npi: string, sectionName: string) => {
+    try {
+      // Call NPI verification service
+      const { data, error } = await supabase.functions.invoke('verify-npi-credentials', {
+        body: {
+          npi,
+          providerType: 'individual',
+          enrollmentId: currentSession?.instanceId
+        }
+      });
+
+      if (error) throw error;
+
+      if (data.success && data.verification.isValid) {
+        // Auto-fill provider data from NPI verification
+        const autoFillData = {
+          firstName: data.verification.npiData?.basic?.first_name || '',
+          lastName: data.verification.npiData?.basic?.last_name || '',
+          primarySpecialty: data.verification.npiData?.taxonomies?.[0]?.desc || '',
+          practiceAddress: data.verification.npiData?.addresses?.[0]?.address_1 || '',
+          practiceCity: data.verification.npiData?.addresses?.[0]?.city || '',
+          practiceState: data.verification.npiData?.addresses?.[0]?.state || '',
+          practiceZip: data.verification.npiData?.addresses?.[0]?.postal_code || '',
+          businessPhone: data.verification.npiData?.addresses?.[0]?.telephone_number || '',
+          npiVerified: true,
+          verificationDate: new Date().toISOString()
+        };
+
+        // Update the session with auto-filled data
+        setCurrentSession(prev => prev ? {
+          ...prev,
+          formData: {
+            ...prev.formData,
+            [sectionName]: {
+              ...prev.formData[sectionName],
+              ...autoFillData
+            }
+          }
+        } : null);
+
+        toast({
+          title: "NPI Verified",
+          description: "Provider information has been auto-filled from NPI verification",
+        });
+      }
+    } catch (err) {
+      console.error('NPI verification failed:', err);
+      // Don't throw error, just log it - form can still be completed manually
+    }
+  }, [currentSession, toast]);
 
   const completeSection = useCallback(async (sectionName: string) => {
     if (!currentSession) return;
