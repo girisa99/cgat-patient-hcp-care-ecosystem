@@ -58,6 +58,9 @@ export { ProviderPermutationAnalysis } from '../enrollment/ProviderPermutationAn
 export { NPIVerificationConfirmationModal } from '../enrollment/NPIVerificationConfirmationModal';
 export { EnhancedProviderFormWithConfirmation } from '../enrollment/EnhancedProviderFormWithConfirmation';
 
+// Enhanced comprehensive enrollment structure
+export { EnhancedPatientEnrollmentStructure, createEmptyEnhancedPatientEnrollmentData } from '../enrollment/EnhancedPatientEnrollmentStructure';
+
 // Export complete data types
 export type { 
   CompletePatientInformation,
@@ -67,3 +70,6 @@ export type {
   CompleteFinalSubmission,
   CompleteEnrollmentData
 } from '@/types/completeEnrollmentMapping';
+
+// Export enhanced data types
+export type { EnhancedPatientEnrollmentData } from '../enrollment/EnhancedPatientEnrollmentStructure';
