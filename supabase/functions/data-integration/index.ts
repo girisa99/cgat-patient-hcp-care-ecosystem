@@ -1,296 +1,428 @@
-import "https://deno.land/x/xhr@0.1.0/mod.ts";
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+}
 
-interface DataOperation {
-  operation: 'import' | 'export' | 'update' | 'bulk_update' | 'import_from_api' | 'sync_to_api';
-  tableName: string;
-  data?: any;
-  filters?: Record<string, any>;
-  format?: 'json' | 'csv';
-  mapping?: Record<string, string>;
-  apiEndpoint?: string;
-  headers?: Record<string, string>;
+interface DataIntegrationConfig {
+  operation: 'import' | 'export' | 'update' | 'import_from_api' | 'sync_to_api' | 'bulk_update' | 'auto_map_fields'
+  tableName: string
+  data?: any
+  mapping?: Record<string, string>
+  apiEndpoint?: string
+  headers?: Record<string, string>
+  filters?: Record<string, any>
+  format?: 'json' | 'csv'
+  mcpType?: 'database' | 'api' | 'memory'
+  autoMapFields?: boolean
+}
+
+// Field mapping definitions for enrollment data
+const ENROLLMENT_FIELD_MAPPINGS = {
+  // Patient Info mappings
+  patient_info: {
+    'firstName': 'first_name',
+    'lastName': 'last_name', 
+    'dateOfBirth': 'date_of_birth',
+    'email': 'email',
+    'phone': 'phone_number',
+    'ssn': 'social_security_number',
+    'address': 'address_line_1',
+    'city': 'city',
+    'state': 'state',
+    'zip': 'zip_code'
+  },
+
+  // Insurance mappings
+  insurance: {
+    'insuranceProvider': 'primary_insurance_provider',
+    'policyNumber': 'policy_number',
+    'groupNumber': 'group_number',
+    'subscriberId': 'subscriber_id',
+    'relationshipToSubscriber': 'relationship_to_subscriber'
+  },
+
+  // Provider mappings
+  provider: {
+    'providerName': 'provider_name', 
+    'npiNumber': 'npi_number',
+    'practiceName': 'practice_name',
+    'providerPhone': 'provider_phone',
+    'providerAddress': 'provider_address'
+  },
+
+  // Clinical mappings
+  clinical: {
+    'primaryDiagnosis': 'primary_diagnosis',
+    'secondaryDiagnosis': 'secondary_diagnosis',
+    'treatmentType': 'treatment_type',
+    'medicationAllergies': 'medication_allergies',
+    'currentMedications': 'current_medications'
+  }
 }
 
 serve(async (req) => {
-  // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { headers: corsHeaders })
   }
 
   try {
-    const supabaseClient = createClient(
+    const supabase = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-    );
+      Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
+    )
 
-    const { operation, tableName, data, filters, format, mapping, apiEndpoint, headers }: DataOperation = await req.json();
+    const config: DataIntegrationConfig = await req.json()
+    console.log(`Data Integration - Operation: ${config.operation}, Table: ${config.tableName}`)
 
-    console.log('Data integration operation:', { operation, tableName, format });
+    switch (config.operation) {
+      case 'auto_map_fields':
+        const mappingResult = await autoMapFields(config.data, config.tableName)
+        return new Response(JSON.stringify({ 
+          success: true, 
+          data: mappingResult 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
 
-    switch (operation) {
-      case 'import': {
-        const result = await handleImport(supabaseClient, tableName, data, mapping);
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      case 'import':
+        const importResult = await importData(supabase, config)
+        return new Response(JSON.stringify({ 
+          success: true, 
+          data: importResult 
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
 
-      case 'export': {
-        const result = await handleExport(supabaseClient, tableName, filters, format);
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      case 'import_from_api':
+        const apiImportResult = await importFromAPI(supabase, config)
+        return new Response(JSON.stringify({
+          success: true,
+          data: apiImportResult
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
 
-      case 'update': {
-        const result = await handleUpdate(supabaseClient, tableName, data.id, data.updates);
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      case 'export':
+        const exportResult = await exportData(supabase, config)
+        return new Response(JSON.stringify({
+          success: true,
+          data: exportResult.data,
+          count: exportResult.count
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
 
-      case 'bulk_update': {
-        const result = await handleBulkUpdate(supabaseClient, tableName, data);
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      case 'update':
+        const updateResult = await updateRecord(supabase, config)
+        return new Response(JSON.stringify({
+          success: true,
+          data: updateResult
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
 
-      case 'import_from_api': {
-        const result = await handleImportFromAPI(supabaseClient, tableName, apiEndpoint!, headers, mapping);
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      case 'bulk_update':
+        const bulkResult = await bulkUpdate(supabase, config)
+        return new Response(JSON.stringify({
+          success: true,
+          data: bulkResult
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
 
-      case 'sync_to_api': {
-        const result = await handleSyncToAPI(supabaseClient, tableName, apiEndpoint!, filters, headers);
-        return new Response(JSON.stringify(result), {
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        });
-      }
+      case 'sync_to_api':
+        const syncResult = await syncToAPI(supabase, config)
+        return new Response(JSON.stringify({
+          success: true,
+          data: syncResult
+        }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+        })
 
       default:
-        throw new Error('Invalid operation');
+        throw new Error(`Unknown operation: ${config.operation}`)
     }
   } catch (error) {
-    console.error('Error in data-integration function:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error('Data Integration Error:', error)
+    return new Response(JSON.stringify({ 
+      success: false, 
+      error: error.message 
+    }), {
+      status: 400,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+    })
   }
-});
+})
 
-async function handleImport(supabaseClient: any, tableName: string, data: any[], mapping?: Record<string, string>) {
-  const result = { success: 0, errors: 0, details: [] as any[] };
+async function autoMapFields(data: any, tableName: string) {
+  // Auto-detect fields and suggest mappings
+  const sampleRecord = Array.isArray(data) ? data[0] : data
+  const sourceFields = Object.keys(sampleRecord)
   
-  for (let i = 0; i < data.length; i++) {
-    try {
-      const transformedData = transformData(data[i], mapping);
-      
-      const { error } = await supabaseClient
-        .from(tableName)
-        .upsert({
-          ...transformedData,
-          updated_at: new Date().toISOString()
-        });
+  // Get enrollment section from table name
+  const section = getEnrollmentSection(tableName)
+  const sectionMappings = ENROLLMENT_FIELD_MAPPINGS[section] || {}
+  
+  const suggestions = sourceFields.map(field => {
+    // Find best match from predefined mappings
+    const exactMatch = sectionMappings[field]
+    if (exactMatch) {
+      return { sourceField: field, targetField: exactMatch, confidence: 1.0, reason: 'exact_match' }
+    }
+    
+    // Fuzzy matching
+    const fuzzyMatch = findFuzzyMatch(field, Object.values(sectionMappings))
+    if (fuzzyMatch.score > 0.7) {
+      return { 
+        sourceField: field, 
+        targetField: fuzzyMatch.field, 
+        confidence: fuzzyMatch.score, 
+        reason: 'fuzzy_match' 
+      }
+    }
+    
+    // Default mapping (camelCase to snake_case)
+    const snakeCase = field.replace(/([A-Z])/g, '_$1').toLowerCase()
+    return { 
+      sourceField: field, 
+      targetField: snakeCase, 
+      confidence: 0.5, 
+      reason: 'snake_case_conversion' 
+    }
+  })
+  
+  return {
+    tableName,
+    section,
+    sourceFields,
+    suggestions,
+    autoMappingAvailable: suggestions.some(s => s.confidence >= 0.8)
+  }
+}
 
-      if (error) throw error;
+async function importData(supabase: any, config: DataIntegrationConfig) {
+  const records = Array.isArray(config.data) ? config.data : [config.data]  
+  let success = 0
+  let errors = 0
+  const details: Array<{ row: number; error: string }> = []
+  
+  for (let i = 0; i < records.length; i++) {
+    try {
+      let recordData = records[i]
       
-      result.success++;
-    } catch (error: any) {
-      result.errors++;
-      result.details.push({
-        row: i + 1,
-        error: error.message
-      });
+      // Apply field mapping if provided
+      if (config.mapping) {
+        recordData = transformData(recordData, config.mapping)
+      }
+      
+      // Auto-map fields if enabled
+      if (config.autoMapFields) {
+        const section = getEnrollmentSection(config.tableName)
+        const sectionMappings = ENROLLMENT_FIELD_MAPPINGS[section] || {}
+        recordData = transformData(recordData, sectionMappings)
+      }
+      
+      // Insert into database
+      const { error } = await supabase
+        .from(config.tableName)
+        .insert(recordData)
+      
+      if (error) throw error
+      success++
+    } catch (error) {
+      errors++
+      details.push({ row: i + 1, error: error.message })
     }
   }
-
-  return result;
-}
-
-async function handleExport(supabaseClient: any, tableName: string, filters?: Record<string, any>, format?: string) {
-  let query = supabaseClient.from(tableName).select('*');
   
-  if (filters) {
-    Object.entries(filters).forEach(([key, value]) => {
-      query = query.eq(key, value);
-    });
-  }
-
-  const { data, error } = await query;
-  if (error) throw error;
-
-  if (format === 'csv') {
-    const csvContent = convertJSONToCSV(data);
-    return { data: csvContent, format: 'csv', count: data.length };
-  }
-
-  return { data, format: 'json', count: data.length };
+  return { success, errors, details }
 }
 
-async function handleUpdate(supabaseClient: any, tableName: string, id: string, updates: any) {
-  const { error } = await supabaseClient
-    .from(tableName)
-    .update({
-      ...updates,
-      updated_at: new Date().toISOString()
+async function importFromAPI(supabase: any, config: DataIntegrationConfig) {
+  // Fetch data from external API
+  const response = await fetch(config.apiEndpoint!, {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+      ...config.headers
+    }
+  })
+  
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`)
+  }
+  
+  const apiData = await response.json()
+  
+  // Import the fetched data
+  return importData(supabase, {
+    ...config,
+    data: apiData
+  })
+}
+
+async function exportData(supabase: any, config: DataIntegrationConfig) {
+  let query = supabase.from(config.tableName).select('*')
+  
+  // Apply filters if provided
+  if (config.filters) {
+    Object.entries(config.filters).forEach(([key, value]) => {
+      query = query.eq(key, value)
     })
-    .eq('id', id);
-
-  if (error) throw error;
-
-  return { success: true, updated_id: id };
+  }
+  
+  const { data, error } = await query
+  if (error) throw error
+  
+  if (config.format === 'csv') {
+    const csvData = convertToCSV(data)
+    return { data: csvData, count: data.length }
+  }
+  
+  return { data, count: data.length }
 }
 
-async function handleBulkUpdate(supabaseClient: any, tableName: string, updates: Array<{ id: string; data: any }>) {
-  const result = { success: 0, errors: 0, details: [] as any[] };
+async function updateRecord(supabase: any, config: DataIntegrationConfig) {
+  const { id, updates } = config.data
+  
+  const { data, error } = await supabase
+    .from(config.tableName)
+    .update(updates)
+    .eq('id', id)
+    .select()
+  
+  if (error) throw error
+  return data
+}
+
+async function bulkUpdate(supabase: any, config: DataIntegrationConfig) {
+  const updates = config.data
+  let success = 0
+  let errors = 0
+  const details: Array<{ row: number; error: string }> = []
   
   for (let i = 0; i < updates.length; i++) {
     try {
-      const { id, data } = updates[i];
-      await handleUpdate(supabaseClient, tableName, id, data);
-      result.success++;
-    } catch (error: any) {
-      result.errors++;
-      result.details.push({
-        row: i + 1,
-        error: error.message
-      });
+      const { id, data: updateData } = updates[i]
+      
+      const { error } = await supabase
+        .from(config.tableName)
+        .update(updateData)
+        .eq('id', id)
+      
+      if (error) throw error
+      success++
+    } catch (error) {
+      errors++
+      details.push({ row: i + 1, error: error.message })
     }
   }
-
-  return result;
+  
+  return { success, errors, details }
 }
 
-function transformData(data: any, mapping?: Record<string, string>): any {
-  if (!mapping) return data;
+async function syncToAPI(supabase: any, config: DataIntegrationConfig) {
+  // Get data from database
+  let query = supabase.from(config.tableName).select('*')
   
-  const transformed: any = {};
+  if (config.filters) {
+    Object.entries(config.filters).forEach(([key, value]) => {
+      query = query.eq(key, value)
+    })
+  }
+  
+  const { data, error } = await query
+  if (error) throw error
+  
+  // Send to external API
+  const response = await fetch(config.apiEndpoint!, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      ...config.headers
+    },
+    body: JSON.stringify(data)
+  })
+  
+  if (!response.ok) {
+    throw new Error(`API sync failed: ${response.status} ${response.statusText}`)
+  }
+  
+  return { count: data.length, synced: true }
+}
+
+// Utility functions
+function transformData(data: any, mapping: Record<string, string>): any {
+  const transformed: any = {}
   Object.entries(data).forEach(([key, value]) => {
-    const mappedKey = mapping[key] || key;
-    transformed[mappedKey] = value;
-  });
-  
-  return transformed;
+    const mappedKey = mapping[key] || key
+    transformed[mappedKey] = value
+  })
+  return transformed
 }
 
-function convertJSONToCSV(data: any[]): string {
-  if (data.length === 0) return '';
+function getEnrollmentSection(tableName: string): string {
+  if (tableName.includes('patient_info')) return 'patient_info'
+  if (tableName.includes('insurance')) return 'insurance'
+  if (tableName.includes('provider')) return 'provider'
+  if (tableName.includes('clinical')) return 'clinical'
+  return 'patient_info' // default
+}
+
+function findFuzzyMatch(sourceField: string, targetFields: string[]) {
+  let bestMatch = { field: '', score: 0 }
   
-  const headers = Object.keys(data[0]);
-  const csvHeaders = headers.join(',');
+  for (const targetField of targetFields) {
+    const score = calculateSimilarity(sourceField.toLowerCase(), targetField.toLowerCase())
+    if (score > bestMatch.score) {
+      bestMatch = { field: targetField, score }
+    }
+  }
+  
+  return bestMatch
+}
+
+function calculateSimilarity(str1: string, str2: string): number {
+  const len1 = str1.length
+  const len2 = str2.length
+  const matrix = Array(len2 + 1).fill(null).map(() => Array(len1 + 1).fill(null))
+  
+  for (let i = 0; i <= len1; i++) matrix[0][i] = i
+  for (let j = 0; j <= len2; j++) matrix[j][0] = j
+  
+  for (let j = 1; j <= len2; j++) {
+    for (let i = 1; i <= len1; i++) {
+      const cost = str1[i - 1] === str2[j - 1] ? 0 : 1
+      matrix[j][i] = Math.min(
+        matrix[j][i - 1] + 1,     // deletion
+        matrix[j - 1][i] + 1,     // insertion
+        matrix[j - 1][i - 1] + cost // substitution
+      )
+    }
+  }
+  
+  const distance = matrix[len2][len1]
+  return 1 - distance / Math.max(len1, len2)
+}
+
+function convertToCSV(data: any[]): string {
+  if (data.length === 0) return ''
+  
+  const headers = Object.keys(data[0])
+  const csvHeaders = headers.join(',')
   
   const csvRows = data.map(row =>
     headers.map(header => {
-      const value = row[header];
+      const value = row[header]
       if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-        return `"${value.replace(/"/g, '""')}"`;
+        return `"${value.replace(/"/g, '""')}"`
       }
-      return value || '';
+      return value || ''
     }).join(',')
-  );
+  )
   
-  return [csvHeaders, ...csvRows].join('\n');
-}
-
-async function handleImportFromAPI(supabaseClient: any, tableName: string, apiEndpoint: string, headers?: Record<string, string>, mapping?: Record<string, string>) {
-  const result = { success: 0, errors: 0, details: [] as any[] };
-  
-  try {
-    // Fetch data from external API
-    const fetchHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...headers
-    };
-
-    const response = await fetch(apiEndpoint, {
-      method: 'GET',
-      headers: fetchHeaders
-    });
-
-    if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
-    }
-
-    const apiData = await response.json();
-    const dataArray = Array.isArray(apiData) ? apiData : [apiData];
-
-    // Process and import each record
-    for (let i = 0; i < dataArray.length; i++) {
-      try {
-        const transformedData = transformData(dataArray[i], mapping);
-        
-        const { error } = await supabaseClient
-          .from(tableName)
-          .upsert({
-            ...transformedData,
-            updated_at: new Date().toISOString()
-          });
-
-        if (error) throw error;
-        
-        result.success++;
-      } catch (error: any) {
-        result.errors++;
-        result.details.push({
-          row: i + 1,
-          error: error.message
-        });
-      }
-    }
-
-    return result;
-  } catch (error: any) {
-    throw new Error(`API import failed: ${error.message}`);
-  }
-}
-
-async function handleSyncToAPI(supabaseClient: any, tableName: string, apiEndpoint: string, filters?: Record<string, any>, headers?: Record<string, string>) {
-  try {
-    // Get data from Supabase
-    let query = supabaseClient.from(tableName).select('*');
-    
-    if (filters) {
-      Object.entries(filters).forEach(([key, value]) => {
-        query = query.eq(key, value);
-      });
-    }
-
-    const { data, error } = await query;
-    if (error) throw error;
-
-    // Send data to external API
-    const fetchHeaders: Record<string, string> = {
-      'Content-Type': 'application/json',
-      ...headers
-    };
-
-    const response = await fetch(apiEndpoint, {
-      method: 'POST',
-      headers: fetchHeaders,
-      body: JSON.stringify(data)
-    });
-
-    if (!response.ok) {
-      throw new Error(`API sync failed: ${response.status} ${response.statusText}`);
-    }
-
-    return { 
-      success: true, 
-      count: data.length,
-      message: 'Data successfully synced to external API'
-    };
-  } catch (error: any) {
-    throw new Error(`API sync failed: ${error.message}`);
-  }
+  return [csvHeaders, ...csvRows].join('\n')
 }

@@ -110,3 +110,6 @@ verify_jwt = false
 
 [functions.mcp-memory-server]
 verify_jwt = false
+
+[functions.data-integration]
+verify_jwt = false

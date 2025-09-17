@@ -213,6 +213,63 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
     )
   }
 
+  const getRecommendedTools = () => {
+    // Tools vary by MCP type and use case
+    const toolsByType = {
+      database: [
+        'get_schema',           // Database structure analysis
+        'query_data',           // Read operations  
+        'insert_data',          // Create operations
+        'update_data',          // Update operations
+        'get_conversation_context', // Agent conversation tracking
+        'store_agent_memory'    // Agent memory storage
+      ],
+      api: [
+        'get_endpoints',        // List available APIs
+        'call_api',            // Make API calls
+        'healthcare_api_call',  // HIPAA-compliant API calls
+        'batch_api_calls',     // Multiple API operations
+        'clear_cache',         // Cache management
+        'import_from_api',     // Import from external APIs
+        'sync_to_api'          // Sync data to external APIs
+      ],
+      memory: [
+        'store',               // Store data in memory
+        'retrieve',            // Get data from memory
+        'query',              // Query memory data
+        'delete',             // Remove data
+        'get_stats',          // Memory usage stats
+        'compress_data',      // Compress memory data
+        'backup_partition'    // Backup memory partition
+      ]
+    }
+    
+    return toolsByType[config.mcp_type] || toolsByType['database']
+  }
+
+  const getAutoMappingSupport = () => {
+    // Define which MCP types support auto-mapping to enrollment tables
+    const mappingSupport = {
+      database: {
+        autoMapping: true,
+        directTableAccess: true,
+        description: 'Direct database operations with full field mapping'
+      },
+      api: {
+        autoMapping: true,
+        directTableAccess: false,
+        description: 'API data import with automatic field mapping to enrollment tables'
+      },
+      memory: {
+        autoMapping: true,
+        directTableAccess: false,
+        description: 'Memory storage with optional persistence to enrollment tables'
+      }
+    }
+    
+    return mappingSupport[config.mcp_type] || mappingSupport['database']
+  }
+
   if (isLoading) {
     return <div>Loading database schema...</div>
   }

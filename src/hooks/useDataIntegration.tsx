@@ -310,6 +310,32 @@ export const useDataIntegration = () => {
     }
   }, [toast]);
 
+  // Auto-map fields for file uploads
+  const autoMapFields = useCallback(async (
+    data: any,
+    tableName: string
+  ) => {
+    try {
+      const { data: result, error } = await supabase.functions.invoke('data-integration', {
+        body: {
+          operation: 'auto_map_fields',
+          tableName,
+          data
+        }
+      });
+
+      if (error) throw error;
+      return result;
+    } catch (error) {
+      toast({
+        title: "Auto-mapping Failed",
+        description: error instanceof Error ? error.message : 'Unknown error',
+        variant: "destructive"
+      });
+      throw error;
+    }
+  }, [toast]);
+
   return {
     isProcessing,
     progress,
@@ -320,7 +346,8 @@ export const useDataIntegration = () => {
     exportToCSV,
     updateRecord,
     bulkUpdate,
-    syncToAPI
+    syncToAPI,
+    autoMapFields
   };
 };
 
