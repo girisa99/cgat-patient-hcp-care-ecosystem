@@ -699,5 +699,29 @@ export const createEmptyCompleteClinicalData = (): CompleteClinicalTreatmentAsse
   qualityAssurance: '',
   regulatoryCompliance: [],
   documentationStandards: '',
-  auditTrail: ''
+  auditTrail: '',
+  
+  // Prior Treatment History & Outcomes (25 additional fields to complete 180 total)
+  previousTherapies: [],
+  previousTreatmentDates: [],
+  previousTreatmentDurations: [],
+  treatmentOutcomes: [],
+  treatmentResponses: [],
+  adverseEvents: [],
+  hospitalizationHistory: [],
+  surgicalHistory: [],
+  emergencyDepartmentVisits: [],
+  specialistConsultations: [],
+  immunizationHistory: [],
+  screeningHistory: [],
+  preventiveCareMeasures: [],
+  rehabilitationHistory: [],
+  mentalHealthTreatment: [],
+  substanceAbuseTreatment: [],
+  alternativeTherapies: [],
+  medicalDeviceHistory: [],
+  homeHealthServices: [],
+  palliativeCareHistory: [],
+  hospiceCareHistory: [],
+  longTermCareHistory: []
 });

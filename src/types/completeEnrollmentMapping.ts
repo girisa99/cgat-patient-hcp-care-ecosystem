@@ -364,6 +364,30 @@ export interface CompleteClinicalTreatmentAssessment {
   regulatoryCompliance?: string[];
   documentationStandards?: string;
   auditTrail?: string;
+
+  // Prior Treatment History & Outcomes (25 additional fields to complete 180 total)
+  previousTherapies?: string[];
+  previousTreatmentDates?: string[];
+  previousTreatmentDurations?: string[];
+  treatmentOutcomes?: string[];
+  treatmentResponses?: string[];
+  adverseEvents?: string[];
+  hospitalizationHistory?: string[];
+  surgicalHistory?: string[];
+  emergencyDepartmentVisits?: string[];
+  specialistConsultations?: string[];
+  immunizationHistory?: string[];
+  screeningHistory?: string[];
+  preventiveCareMeasures?: string[];
+  rehabilitationHistory?: string[];
+  mentalHealthTreatment?: string[];
+  substanceAbuseTreatment?: string[];
+  alternativeTherapies?: string[];
+  medicalDeviceHistory?: string[];
+  homeHealthServices?: string[];
+  palliativeCareHistory?: string[];
+  hospiceCareHistory?: string[];
+  longTermCareHistory?: string[];
 }
 
 // Complete Final Submission (23 fields)
