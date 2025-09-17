@@ -258,8 +258,24 @@ export const ComprehensiveEnrollmentForm: React.FC<ComprehensiveEnrollmentFormPr
   };
 
   const handleFieldChange = async (fieldId: string, value: any) => {
-    setFormData(prev => ({ ...prev, [fieldId]: value }));
-    await broadcastFormUpdate(fieldId, value);
+    // Handle date values properly to prevent toISOString errors
+    let processedValue = value;
+    
+    if (fieldId.includes('date') || fieldId.includes('_date') || fieldId.includes('dob')) {
+      if (value && typeof value === 'string') {
+        // If it's already a string, validate it's a proper date
+        const dateTest = new Date(value);
+        processedValue = !isNaN(dateTest.getTime()) ? value : null;
+      } else if (value instanceof Date) {
+        // If it's a Date object, convert to ISO string safely
+        processedValue = !isNaN(value.getTime()) ? value.toISOString() : null;
+      } else if (value === undefined || value === '') {
+        processedValue = null;
+      }
+    }
+    
+    setFormData(prev => ({ ...prev, [fieldId]: processedValue }));
+    await broadcastFormUpdate(fieldId, processedValue);
   };
 
   const verifyNPI = async (npiNumber: string) => {
@@ -339,24 +355,33 @@ export const ComprehensiveEnrollmentForm: React.FC<ComprehensiveEnrollmentFormPr
           break;
           
         case 'provider':
+          // Ensure date fields are properly handled for provider section
+          const processedProviderData = { ...formData };
+          if (processedProviderData.treatment_start_date) {
+            const startDate = new Date(processedProviderData.treatment_start_date);
+            processedProviderData.treatment_start_date = !isNaN(startDate.getTime()) 
+              ? startDate.toISOString() 
+              : null;
+          }
+          
           await supabase.from('enrollment_provider_info').upsert({
             enrollment_id: enrollmentId,
-            referring_provider_name: formData.referring_provider_name || '',
-            referring_provider_npi: formData.referring_provider_npi || '',
-            referring_provider_phone: formData.referring_provider_phone || '',
-            primary_care_physician: formData.primary_care_physician || '',
-            pcp_npi: formData.pcp_npi || '',
-            pcp_phone: formData.pcp_phone || '',
-            treatment_facility: formData.treatment_facility || '',
-            facility_npi: formData.facility_npi || '',
-            facility_address: formData.facility_address || '',
-            treatment_type: formData.treatment_type || '',
-            treatment_start_date: formData.treatment_start_date || null,
-            diagnosis_codes: formData.diagnosis_codes || [],
-            treatment_plan: formData.treatment_plan || {},
+            referring_provider_name: processedProviderData.referring_provider_name || '',
+            referring_provider_npi: processedProviderData.referring_provider_npi || '',
+            referring_provider_phone: processedProviderData.referring_provider_phone || '',
+            primary_care_physician: processedProviderData.primary_care_physician || '',
+            pcp_npi: processedProviderData.pcp_npi || '',
+            pcp_phone: processedProviderData.pcp_phone || '',
+            treatment_facility: processedProviderData.treatment_facility || '',
+            facility_npi: processedProviderData.facility_npi || '',
+            facility_address: processedProviderData.facility_address || '',
+            treatment_type: processedProviderData.treatment_type || '',
+            treatment_start_date: processedProviderData.treatment_start_date || null,
+            diagnosis_codes: processedProviderData.diagnosis_codes || [],
+            treatment_plan: processedProviderData.treatment_plan || {},
             npi_verification_status: npiVerificationStatus,
-            credentialing_status: formData.credentialing_status || 'pending',
-            credentialing_notes: formData.credentialing_notes || ''
+            credentialing_status: processedProviderData.credentialing_status || 'pending',
+            credentialing_notes: processedProviderData.credentialing_notes || ''
           });
           break;
           
@@ -608,7 +633,12 @@ export const ComprehensiveEnrollmentForm: React.FC<ComprehensiveEnrollmentFormPr
                 selected={selectedDate}
                 onSelect={(date) => {
                   setSelectedDate(date);
-                  handleFieldChange('date_of_birth', date?.toISOString().split('T')[0]);
+                  // Safely handle date conversion to prevent toISOString errors
+                  if (date && !isNaN(date.getTime())) {
+                    handleFieldChange('date_of_birth', date.toISOString().split('T')[0]);
+                  } else {
+                    handleFieldChange('date_of_birth', null);
+                  }
                 }}
                 disabled={(date) => date > new Date() || date < new Date("1900-01-01")}
                 initialFocus
