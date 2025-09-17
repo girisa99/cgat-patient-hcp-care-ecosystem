@@ -167,24 +167,29 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   const initializeMCPSession = async () => {
     try {
       const sessionId = `mcp-${Date.now()}`;
+      // Generate a proper UUID for patientId if not already valid
+      const validPatientId = patientId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i) 
+        ? patientId 
+        : crypto.randomUUID();
       
       const newSession: MCPSession = {
         sessionId,
-        patientId,
+        patientId: validPatientId,
         currentStep: enrollmentSteps[0].id,
         mcpTools: enrollmentSteps[0].mcpTools
       };
 
+      const currentTime = new Date().toISOString();
       const enrollmentSession: PatientEnrollmentSession = {
-        patient_id: patientId,
+        patient_id: validPatientId,
         session_id: sessionId,
         enrollment_source: enrollmentSource,
         consent_method: 'digital_signature', // Default
         current_section: 'consent_management',
         enrollment_status: 'in_progress',
         progress_percentage: 0,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString(),
+        created_at: currentTime,
+        updated_at: currentTime,
         metadata: {
           agent_type: 'mcp_stepwise',
           module_type: moduleType,
@@ -207,19 +212,21 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       }
 
       await supabase.from('patient_enrollments').insert({
-        id: patientId,
+        id: validPatientId,
         session_id: sessionId,
         enrollment_status: 'in_progress',
         current_section: 'consent_management',
         progress_percentage: 0,
         enrollment_source: enrollmentSource,
         metadata: enrollmentSession.metadata,
-        user_id: authUser.user.id
+        user_id: authUser.user.id,
+        created_at: currentTime,
+        updated_at: currentTime
       });
 
       toast({
         title: "MCP Session Initialized",
-        description: `Stepwise enrollment ready for Patient ID: ${patientId}`,
+        description: `Stepwise enrollment ready for Patient ID: ${validPatientId}`,
       });
       
       return { session: newSession, enrollment: enrollmentSession };
@@ -240,10 +247,24 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     try {
       const mappedData: Record<string, any> = {};
       
-      // Map data to proper column names
+      // Map data to proper column names with proper type handling
       sectionMapping.fields.forEach((field: any) => {
         if (data[field.fieldKey] !== undefined) {
-          mappedData[field.destinationColumn] = data[field.fieldKey];
+          let value = data[field.fieldKey];
+          
+          // Handle date fields properly
+          if (field.fieldType === 'date' && value) {
+            // Ensure value is a valid date
+            const dateValue = new Date(value);
+            if (!isNaN(dateValue.getTime())) {
+              value = dateValue.toISOString();
+            } else {
+              console.warn(`Invalid date value for ${field.fieldKey}:`, value);
+              value = null;
+            }
+          }
+          
+          mappedData[field.destinationColumn] = value;
         }
       });
 
@@ -268,18 +289,27 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
 
       setCollectedData(prev => ({ ...prev, ...data }));
 
-      // Update progress
+      // Update progress with proper error handling
       const progress = Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100);
+      
+      const progressUpdate = { 
+        progress_percentage: progress,
+        current_section: sectionMapping.sectionKey,
+        updated_at: new Date().toISOString()
+      };
+      
       await supabase
         .from('patient_enrollments')
-        .update({ 
-          progress_percentage: progress,
-          current_section: sectionMapping.sectionKey 
-        })
+        .update(progressUpdate)
         .eq('id', patientId);
 
     } catch (error) {
       console.error('Real-time update error:', error);
+      toast({
+        title: "Update Error",
+        description: "Failed to save data. Please try again.",
+        variant: "destructive"
+      });
     }
   };
 
