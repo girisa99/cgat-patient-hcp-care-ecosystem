@@ -149,8 +149,9 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
   }
 
   const getRecommendedTables = () => {
-    // Patient enrollment workflow sections - aligned with existing implementation
+    // Integration with EXISTING agent templates (NO CHANGES to current implementation)
     const moduleTableMap = {
+      // Patient enrollment - uses existing agent templates and workflows
       enrollment: [
         'enrollment_instances',
         'enrollment_consent', 
@@ -158,12 +159,23 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
         'enrollment_provider_info',
         'enrollment_insurance_info',
         'enrollment_clinical_info',
-        'enrollment_documents'
+        'enrollment_documents',
+        'agent_templates', // Existing agent templates for reuse
+        'npi_verification_results', // Existing NPI verification agent
+        'voice_providers' // Existing voice/SMS/WhatsApp/email agents
+      ],
+      // Agent module - existing functionality (NO modifications)
+      agent: [
+        'agents', 
+        'agent_sessions', 
+        'agent_conversations',
+        'agent_templates', // Existing templates for NPI, credentialing, PDF, consent
+        'npi_verification_results',
+        'voice_providers'
       ],
       patient: ['profiles', 'patient_medical_history', 'patient_demographics'],
       clinical: ['clinical_assessments', 'treatment_plans', 'clinical_notes'],
-      facility: ['facilities', 'facility_staff', 'facility_departments'],
-      agent: ['agents', 'agent_sessions', 'agent_conversations']
+      facility: ['facilities', 'facility_staff', 'facility_departments']
     }
 
     const recommendedTables = moduleTableMap[moduleContext] || []
