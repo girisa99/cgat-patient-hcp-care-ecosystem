@@ -8902,9 +8902,11 @@ export type Database = {
       }
       patient_enrollments: {
         Row: {
+          agent_channel: string | null
           completed_at: string | null
           created_at: string
           current_section: string
+          enrollment_source: string | null
           enrollment_status: string
           id: string
           metadata: Json | null
@@ -8914,14 +8916,18 @@ export type Database = {
           session_id: string
           signature_data: Json | null
           signed_at: string | null
+          submission_method: string | null
           tenant_id: string | null
           updated_at: string
           user_id: string | null
+          verification_method: string | null
         }
         Insert: {
+          agent_channel?: string | null
           completed_at?: string | null
           created_at?: string
           current_section?: string
+          enrollment_source?: string | null
           enrollment_status?: string
           id?: string
           metadata?: Json | null
@@ -8931,14 +8937,18 @@ export type Database = {
           session_id: string
           signature_data?: Json | null
           signed_at?: string | null
+          submission_method?: string | null
           tenant_id?: string | null
           updated_at?: string
           user_id?: string | null
+          verification_method?: string | null
         }
         Update: {
+          agent_channel?: string | null
           completed_at?: string | null
           created_at?: string
           current_section?: string
+          enrollment_source?: string | null
           enrollment_status?: string
           id?: string
           metadata?: Json | null
@@ -8948,9 +8958,11 @@ export type Database = {
           session_id?: string
           signature_data?: Json | null
           signed_at?: string | null
+          submission_method?: string | null
           tenant_id?: string | null
           updated_at?: string
           user_id?: string | null
+          verification_method?: string | null
         }
         Relationships: []
       }

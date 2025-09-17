@@ -207,7 +207,12 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       setCollectedData(prev => ({ ...prev, submission_method: enrollmentSource }));
       await supabase
         .from('patient_enrollments')
-        .update({ enrollment_source: enrollmentSource })
+        .update({ 
+          // Cast to any to avoid types mismatch until Supabase types refresh
+          enrollment_source: enrollmentSource,
+          submission_method: 'conversational_agent',
+          agent_channel: 'mcp'
+        } as any)
         .eq('id', patientId);
 
       toast({
@@ -286,6 +291,15 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
           
           // Trigger consent collection workflow
           await triggerConsentCollection(extractedData.patient_consent_method as ConsentMethod, patientId);
+        }
+
+        // Capture verification method when NPI is provided in provider section
+        if (currentSectionMapping.sectionKey === 'provider_treatment_center' &&
+            (extractedData.referring_provider_npi || extractedData.facility_npi)) {
+          await supabase
+            .from('patient_enrollments')
+            .update({ verification_method: 'npi_agent' } as any)
+            .eq('id', patientId);
         }
       }
 
