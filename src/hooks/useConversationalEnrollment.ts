@@ -48,7 +48,8 @@ export const useConversationalEnrollment = () => {
     try {
       setError(null);
       
-      const sessionId = `conv_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      // Generate proper UUID instead of concatenated string
+      const sessionId = crypto.randomUUID();
       
       const newSession: ConversationSession = {
         sessionId,

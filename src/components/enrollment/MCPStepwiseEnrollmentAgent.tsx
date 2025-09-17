@@ -130,14 +130,14 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   
   // Patient enrollment session tracking
   const [patientEnrollmentSession, setPatientEnrollmentSession] = useState<PatientEnrollmentSession | null>(null);
-  const [patientId] = useState(() => `patient_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [patientId] = useState(() => crypto.randomUUID());
   const [enrollmentSource] = useState<EnrollmentSource>('mcp'); // Set as MCP source
   const [consentMethod, setConsentMethod] = useState<ConsentMethod | null>(null);
 
   // Initialize MCP session with patient enrollment tracking
   const initializeMCPSession = async () => {
     try {
-      const sessionId = `enrollment_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      const sessionId = crypto.randomUUID();
       
       const newSession: MCPSession = {
         sessionId,
