@@ -362,12 +362,24 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         return `I see you've chosen MCP (Conversational Agent) as your enrollment method. This allows us to walk through each section step by step. Ready to continue with consent management?`;
       
       case 'consent_management':
-        if (!context.collectedData.provider_name) {
-          return `For consent management, I need information about your healthcare provider. Can you tell me the provider's name and NPI number who will be handling your care?`;
-        } else if (!context.collectedData.patient_consent_method) {
-          return `Great! Now I need to know your preferred method for providing consent. Would you like to provide consent via WhatsApp, SMS, email, verbal consent, or digital signature?`;
-        } else {
-          return `Perfect! I have your provider information and consent preference. Let's proceed to collect your personal information.`;
+        // Step 1: Basic Provider Information
+        if (!context.collectedData.provider_name || !context.collectedData.provider_npi) {
+          return `For consent management, I need basic provider information. Please provide your healthcare provider's full name and 10-digit NPI number who will be handling your care.`;
+        } 
+        // Step 2: Treatment Center Information  
+        else if (!context.collectedData.treatment_center) {
+          return `Thank you! Now I need the treatment center information. What is the name of the treatment center where you'll be receiving care?`;
+        }
+        // Step 3: Patient Consent Method Selection
+        else if (!context.collectedData.patient_consent_method) {
+          return `Great! Now I need to know your preferred method for providing consent. Would you like to provide consent via:\n\n• WhatsApp\n• SMS/Text\n• Email\n• Verbal consent\n• Digital signature\n\nPlease select your preferred method.`;
+        }
+        // Step 4: Provider Authorization (signature handled in UI)
+        else if (!context.collectedData.provider_signature) {
+          return `Perfect! I have your provider information and consent preference. Before we proceed, the healthcare provider needs to review and sign the authorization. Once the provider signature is captured, we can move to collecting your personal information.`;
+        }
+        else {
+          return `Excellent! All consent management information has been collected including provider authorization. Let's now proceed to collect your personal information.`;
         }
       
       case 'patient_information':
@@ -438,7 +450,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         if (!data[key] && /provider_npi|referring_provider_npi/i.test(key)) {
           data[key] = npiMatches[0];
         }
-        if (!data[key] && /facility_npi/i.test(key) && npiMatches[1]) {
+        if (!data[key] && /treatment_center_npi|facility_npi/i.test(key) && npiMatches[1]) {
           data[key] = npiMatches[1];
         }
       });
@@ -460,12 +472,39 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       }
     }
 
+    // Detect treatment center name
+    if (sectionMapping.fields.some((f: any) => f.fieldKey === 'treatment_center')) {
+      // Look for treatment center keywords
+      const centerKeywords = ['treatment center', 'medical center', 'clinic', 'hospital', 'facility'];
+      const centerMatch = centerKeywords.find(keyword => lower.includes(keyword));
+      if (centerMatch) {
+        // Extract text around the keyword
+        const words = message.split(/\s+/);
+        const keywordIndex = words.findIndex(word => word.toLowerCase().includes(centerMatch.split(' ')[0]));
+        if (keywordIndex >= 0) {
+          // Take words around the keyword to form center name
+          const start = Math.max(0, keywordIndex - 2);
+          const end = Math.min(words.length, keywordIndex + 3);
+          const centerName = words.slice(start, end).join(' ').replace(/[,;:]\s*$/,'').trim();
+          if (centerName.length > 5) {
+            data['treatment_center'] = centerName;
+          }
+        }
+      } else {
+        // If no keywords, treat entire message as potential center name (for simple responses)
+        const simpleName = message.trim().replace(/[,;:]\s*$/,'');
+        if (simpleName.length > 2 && simpleName.length < 100 && !lower.includes('method') && !lower.includes('consent')) {
+          data['treatment_center'] = simpleName;
+        }
+      }
+    }
+
     // Detect consent method keywords
     const consentField = sectionMapping.fields.find((f: any) => f.fieldKey === 'patient_consent_method');
     if (consentField?.options?.length) {
       for (const opt of consentField.options) {
         const variant = String(opt).replace(/_/g, ' ').toLowerCase();
-        if (lower.includes(variant)) {
+        if (lower.includes(variant) || lower.includes(String(opt).toLowerCase())) {
           data['patient_consent_method'] = opt;
           break;
         }
