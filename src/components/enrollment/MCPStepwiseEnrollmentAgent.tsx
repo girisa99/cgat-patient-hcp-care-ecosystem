@@ -297,17 +297,28 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
 
       // 1) Extract data from the USER message first (prevents loops)
       const extractedFromUser = extractDataFromMessage(message, currentSectionMapping);
+      console.log('🔍 Extracted from user message:', extractedFromUser);
+      
       if (Object.keys(extractedFromUser).length > 0) {
         console.debug('MCP extracted from user:', extractedFromUser);
+        
+        // Merge with existing data first
+        const mergedData = { ...collectedData, ...extractedFromUser };
+        setCollectedData(mergedData);
+        
+        // Persist to database
         await updateRealtimeDataWithMapping(currentSectionMapping, extractedFromUser);
 
-        // Update local consent method if provided
+        // CRITICAL: Handle consent method selection completion
         if (currentSectionMapping.sectionKey === 'consent_management' && extractedFromUser.patient_consent_method) {
+          console.log('✅ Consent method selected:', extractedFromUser.patient_consent_method);
           setConsentMethod(extractedFromUser.patient_consent_method as ConsentMethod);
           await triggerConsentCollection(extractedFromUser.patient_consent_method as ConsentMethod, patientId);
           
-          // Update consent sub-step to signature after consent method is selected
-          setConsentSubStep('provider_signature');
+          // Check if all consent requirements are now met
+          const updatedStep = computeConsentSubStep(mergedData);
+          console.log('🔄 Updated consent sub-step after method selection:', updatedStep);
+          setConsentSubStep(updatedStep);
         }
 
         // Record verification when any NPI is present in this section
@@ -369,10 +380,37 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
 
   // Consent sub-step calculator ensures strict ordering
   const computeConsentSubStep = (data: Record<string, any>) => {
+    console.log('🔍 Computing consent sub-step with data:', data);
     const hasValidNpi = data?.provider_npi && /^\d{10}$/.test(String(data.provider_npi));
-    if (!data?.provider_name || !hasValidNpi) return 'provider_info';
-    if (!data?.treatment_center) return 'treatment_center';
-    if (!data?.patient_consent_method) return 'patient_method';
+    const hasProvider = data?.provider_name;
+    const hasTreatmentCenter = data?.treatment_center;
+    const hasConsentMethod = data?.patient_consent_method;
+    
+    console.log('📋 Consent requirements check:', {
+      hasProvider,
+      hasValidNpi,
+      hasTreatmentCenter,
+      hasConsentMethod,
+      provider_name: data?.provider_name,
+      provider_npi: data?.provider_npi,
+      treatment_center: data?.treatment_center,
+      patient_consent_method: data?.patient_consent_method
+    });
+    
+    if (!hasProvider || !hasValidNpi) {
+      console.log('➡️ Sub-step: provider_info (missing provider or NPI)');
+      return 'provider_info';
+    }
+    if (!hasTreatmentCenter) {
+      console.log('➡️ Sub-step: treatment_center');
+      return 'treatment_center';
+    }
+    if (!hasConsentMethod) {
+      console.log('➡️ Sub-step: patient_method');
+      return 'patient_method';
+    }
+    
+    console.log('➡️ Sub-step: provider_signature (all consent info collected)');
     return 'provider_signature';
   };
 
@@ -493,6 +531,25 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
           data[key] = npiMatches[1];
         }
       });
+    }
+
+    // CRITICAL FIX: Detect consent method selection
+    if (sectionMapping.fields.some((f: any) => f.fieldKey === 'patient_consent_method')) {
+      const consentMethodMatches = [
+        { keywords: ['whatsapp', 'whats app', 'what\'s app'], method: 'whatsapp' },
+        { keywords: ['sms', 'text', 'message'], method: 'sms' },
+        { keywords: ['email', 'e-mail'], method: 'email' },
+        { keywords: ['voice', 'call', 'phone'], method: 'voice' },
+        { keywords: ['verbal', 'verbally'], method: 'verbal' },
+        { keywords: ['digital', 'signature', 'sign'], method: 'digital_signature' }
+      ];
+      
+      for (const match of consentMethodMatches) {
+        if (match.keywords.some(keyword => lower.includes(keyword))) {
+          data.patient_consent_method = match.method;
+          break;
+        }
+      }
     }
 
     // Detect provider name when present in this section
@@ -770,8 +827,11 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       const merged = { ...collectedData, provider_signature: dataUrl };
       const complete = checkStepCompletionWithMapping(sectionMapping as any, merged);
       if (complete) {
-        setConsentSubStep('provider_signature');
-        setTimeout(() => advanceToNextStep(), 800);
+        toast({
+          title: "Consent Management Completed! 🎉",
+          description: "All consent information captured. Moving to patient information collection.",
+        });
+        setTimeout(() => advanceToNextStep(), 1000);
       }
     } catch (e) {
       console.error('Signature accept error', e);
