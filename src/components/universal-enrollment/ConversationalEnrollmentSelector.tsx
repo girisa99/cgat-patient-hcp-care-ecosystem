@@ -34,8 +34,8 @@ import {
   CreditCard
 } from 'lucide-react';
 import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
-import { FloatingConversationalAgent } from '../enrollment/FloatingConversationalAgent';
-import { StructuredEnrollmentAgent } from '../enrollment/StructuredEnrollmentAgent';
+import { EnhancedFloatingConversationalAgent } from '../enrollment/EnhancedFloatingConversationalAgent';
+import { EnhancedStructuredEnrollmentAgent } from '../enrollment/EnhancedStructuredEnrollmentAgent';
 import { MCPStepwiseEnrollmentAgent } from '../enrollment/MCPStepwiseEnrollmentAgent';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { EnrollmentErrorBoundary } from '../enrollment/EnrollmentErrorBoundary';
@@ -254,7 +254,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   if (selectedMethod === 'conversation') {
     return (
       <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
-        <FloatingConversationalAgent
+        <EnhancedFloatingConversationalAgent
           moduleType={moduleType}
           onComplete={onComplete || (() => {})}
           onCancel={() => setSelectedMethod(null)}
@@ -266,7 +266,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   if (selectedMethod === 'structured') {
     return (
       <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
-        <StructuredEnrollmentAgent
+        <EnhancedStructuredEnrollmentAgent
           moduleType={moduleType}
           onComplete={onComplete || (() => {})}
           onCancel={() => setSelectedMethod(null)}

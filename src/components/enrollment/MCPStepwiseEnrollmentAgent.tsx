@@ -30,11 +30,21 @@ import { MCPWelcomeOverview } from './MCPWelcomeOverview';
 import SignatureCanvas from 'react-signature-canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-// Update MCPStepwiseEnrollmentAgent to use enhanced components
-import { EnrollmentSectionProgressTracker } from './EnrollmentSectionProgressTracker';
-import { FieldByFieldCollector } from './FieldByFieldCollector';
-import { EnhancedRealtimeProgressTracker } from './EnhancedRealtimeProgressTracker';
-import { EnhancedSectionCompletionModal } from './EnhancedSectionCompletionModal';
+import { 
+  ENROLLMENT_SECTION_MAPPINGS, 
+  getSectionByKey, 
+  getNextSection,
+  type EnrollmentSectionKey,
+  type PatientEnrollmentSession,
+  type EnrollmentSource,
+  type ConsentMethod
+} from '@/types/patientEnrollmentMapping';
+
+// Enhanced components for better UX
+import { EnrollmentSectionProgressTracker } from '../patient-enrollment/EnrollmentSectionProgressTracker';
+import { FieldByFieldCollector } from '../patient-enrollment/FieldByFieldCollector';
+import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
+import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -131,7 +141,13 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   const [patientId] = useState(() => crypto.randomUUID());
   const [enrollmentSource] = useState<EnrollmentSource>('mcp'); // Set as MCP source
   const [consentMethod, setConsentMethod] = useState<ConsentMethod | null>(null);
-const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(true);
+  
+  // Enhanced UX state
+  const [showSectionCompletion, setShowSectionCompletion] = useState(false);
+  const [completedSectionData, setCompletedSectionData] = useState<any>(null);
+  const [showFieldByField, setShowFieldByField] = useState(false);
+  
   // Consent sub-steps state machine and signature ref
   const [consentSubStep, setConsentSubStep] = useState<'provider_info' | 'treatment_center' | 'patient_method' | 'provider_signature'>('provider_info');
   const signatureRef = useRef<SignatureCanvas | null>(null);
@@ -817,182 +833,246 @@ const [showWelcome, setShowWelcome] = useState(true);
   }
 
   return (
-    <div className="max-w-4xl mx-auto p-6 space-y-6">
-      {/* Header */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Bot className="h-5 w-5 text-primary" />
-            MCP Patient Enrollment Agent
-            <Badge variant="secondary">Schema-Driven</Badge>
-          </CardTitle>
-          {patientEnrollmentSession && (
-            <div className="text-sm text-muted-foreground">
-              Patient ID: {patientId} | Source: {enrollmentSource.toUpperCase()} | Status: {patientEnrollmentSession.enrollment_status}
-            </div>
-          )}
-        </CardHeader>
-      </Card>
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Main Content - Left Column */}
+        <div className="lg:col-span-2 space-y-6">
+          {/* Header */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" />
+                MCP Patient Enrollment Agent
+                <Badge variant="secondary">Enhanced UX</Badge>
+              </CardTitle>
+              {patientEnrollmentSession && (
+                <div className="text-sm text-muted-foreground">
+                  Patient ID: {patientId} | Source: {enrollmentSource.toUpperCase()} | Status: {patientEnrollmentSession.enrollment_status}
+                </div>
+              )}
+            </CardHeader>
+          </Card>
 
-      {/* Progress */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span>Progress</span>
-              <span>{progress}%</span>
-            </div>
-            <Progress value={progress} className="w-full" />
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>Step {currentStepIndex + 1} of {enrollmentSteps.length}</span>
-              <span>{currentStep.name}</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Current Step */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <currentStep.icon className="h-5 w-5" />
-            {currentStep.name}
-            {currentStep.realtimeEnabled && (
-              <Badge variant="outline" className="text-xs">
-                <Activity className="h-3 w-3 mr-1" />
-                Real-time
-              </Badge>
-            )}
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">{currentStep.description}</p>
-        </CardHeader>
-        
-        <CardContent className="space-y-4">
-          {/* Conversation */}
-          <div className="border rounded-lg p-4 min-h-[300px] max-h-[400px] overflow-y-auto bg-muted/30">
-            {!mcpSession ? (
-              <div className="text-center text-muted-foreground py-8">
-                <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Initializing agent...</p>
-                <p className="text-xs mt-1">{currentStep.aiPrompt}</p>
-              </div>
-            ) : (mcpSession.conversationHistory.length === 0 ? (
-              <div className="text-center text-muted-foreground py-8">
-                <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                <p>Start the conversation by typing your message below</p>
-                <p className="text-xs mt-1">{currentStep.aiPrompt}</p>
-              </div>
-            ) : (
-              <div className="space-y-3">
-                {mcpSession.conversationHistory.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[80%] p-3 rounded-lg ${
-                      msg.role === 'user'
-                        ? 'bg-primary text-primary-foreground'
-                        : 'bg-background border'
-                    }`}>
-                      <p className="text-sm">{msg.content}</p>
-                      <p className="text-xs opacity-70 mt-1">
-                        {new Date(msg.timestamp).toLocaleTimeString()}
-                      </p>
-                    </div>
+          {/* Current Step */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <currentStep.icon className="h-5 w-5" />
+                  {currentStep.name}
+                  {currentStep.realtimeEnabled && (
+                    <Badge variant="outline" className="text-xs">
+                      <Activity className="h-3 w-3 mr-1" />
+                      Real-time
+                    </Badge>
+                  )}
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowFieldByField(!showFieldByField)}
+                >
+                  {showFieldByField ? 'Chat Mode' : 'Field Mode'}
+                </Button>
+              </CardTitle>
+              <p className="text-sm text-muted-foreground">{currentStep.description}</p>
+            </CardHeader>
+            
+            <CardContent className="space-y-4">
+              {/* Conversation */}
+              <div className="border rounded-lg p-4 min-h-[300px] max-h-[400px] overflow-y-auto bg-muted/30">
+                {!mcpSession ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Initializing agent...</p>
+                    <p className="text-xs mt-1">{currentStep.aiPrompt}</p>
+                  </div>
+                ) : (mcpSession.conversationHistory.length === 0 ? (
+                  <div className="text-center text-muted-foreground py-8">
+                    <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p>Start the conversation by typing your message below</p>
+                    <p className="text-xs mt-1">{currentStep.aiPrompt}</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {mcpSession.conversationHistory.map((msg, idx) => (
+                      <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[80%] p-3 rounded-lg ${
+                          msg.role === 'user'
+                            ? 'bg-primary text-primary-foreground'
+                            : 'bg-background border'
+                        }`}>
+                          <p className="text-sm">{msg.content}</p>
+                          <p className="text-xs opacity-70 mt-1">
+                            {new Date(msg.timestamp).toLocaleTimeString()}
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                    {isProcessing && (
+                      <div className="flex justify-start">
+                        <div className="bg-background border p-3 rounded-lg">
+                          <div className="flex items-center gap-2">
+                            <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
+                            <span className="text-sm">Processing...</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 ))}
-                {isProcessing && (
-                  <div className="flex justify-start">
-                    <div className="bg-background border p-3 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
-                        <span className="text-sm">Processing...</span>
+              </div>
+
+              {/* Input */}
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  value={currentMessage}
+                  onChange={(e) => setCurrentMessage(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && mcpSession) {
+                      processMessageWithMCP(currentMessage);
+                    }
+                  }}
+                  placeholder={currentStep.aiPrompt}
+                  className="flex-1 px-3 py-2 border rounded-md"
+                  disabled={isProcessing || !mcpSession}
+                />
+                <Button 
+                  onClick={() => processMessageWithMCP(currentMessage)}
+                  disabled={isProcessing || !currentMessage.trim() || !mcpSession}
+                >
+                  Send
+                </Button>
+              </div>
+
+              {/* Provider Signature Capture */}
+              {currentStep.id === 'consent_management' && consentSubStep === 'provider_signature' && (
+                <Card className="mt-4 border-amber-200 bg-amber-50">
+                  <CardHeader>
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Shield className="h-5 w-5 text-amber-600" />
+                      Provider Authorization Signature Required
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                      The healthcare provider must review and sign below to authorize this patient enrollment.
+                    </p>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
+                      <p className="text-sm font-medium mb-2">Provider Signature:</p>
+                      <div className="border border-gray-400 rounded">
+                        <SignatureCanvas
+                          ref={signatureRef}
+                          canvasProps={{
+                            width: 400,
+                            height: 150,
+                            className: 'signature-canvas w-full'
+                          }}
+                        />
+                      </div>
+                      <div className="flex gap-2 mt-2">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => signatureRef.current?.clear()}
+                        >
+                          Clear
+                        </Button>
+                        <Button
+                          onClick={handleAcceptSignature}
+                          className="bg-green-600 hover:bg-green-700"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-2" />
+                          Accept Signature
+                        </Button>
                       </div>
                     </div>
+                  </CardContent>
+                </Card>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Right Sidebar - Progress & Tools */}
+        <div className="space-y-6">
+          {/* Enhanced Real-time Progress Tracker */}
+          <EnhancedRealtimeProgressTracker
+            patientId={patientId}
+            sessionId={mcpSession?.sessionId || ''}
+            onSectionComplete={(sectionKey) => {
+              setCompletedSectionData({ sectionKey, completedAt: new Date() });
+              setShowSectionCompletion(true);
+            }}
+            onProgressUpdate={(progress) => {
+              // Handle progress updates
+              console.log('Progress updated:', progress);
+            }}
+            dashboardSyncEnabled={true}
+          />
+
+          {/* MCP Tools Status */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-sm flex items-center gap-2">
+                <Zap className="h-4 w-4" />
+                Active MCP Tools
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-2">
+                {currentStep.mcpTools.map((tool, idx) => (
+                  <div key={idx} className="flex items-center justify-between p-2 bg-muted/50 rounded">
+                    <Badge variant="outline" className="text-xs">
+                      {tool}
+                    </Badge>
+                    <div className="h-2 w-2 bg-green-500 rounded-full" />
                   </div>
-                )}
+                ))}
               </div>
-            ))}
-          </div>
-
-          {/* Input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={currentMessage}
-              onChange={(e) => setCurrentMessage(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && mcpSession) {
-                  processMessageWithMCP(currentMessage);
-                }
-              }}
-              placeholder={currentStep.aiPrompt}
-              className="flex-1 px-3 py-2 border rounded-md"
-              disabled={isProcessing || !mcpSession}
-            />
-            <Button 
-              onClick={() => processMessageWithMCP(currentMessage)}
-              disabled={isProcessing || !currentMessage.trim() || !mcpSession}
-            >
-              Send
-            </Button>
-          </div>
-
-          {/* MCP Tools */}
-          <div className="flex flex-wrap gap-2">
-            <span className="text-xs text-muted-foreground">Active MCP Tools:</span>
-            {currentStep.mcpTools.map((tool, idx) => (
-              <Badge key={idx} variant="outline" className="text-xs">
-                <Zap className="h-3 w-3 mr-1" />
-                {tool}
-              </Badge>
-            ))}
-          </div>
-
-          {/* Provider Signature Capture */}
-          {currentStep.id === 'consent_management' && consentSubStep === 'provider_signature' && (
-            <Card className="mt-4 border-amber-200 bg-amber-50">
-              <CardHeader>
-                <CardTitle className="text-lg flex items-center gap-2">
-                  <Shield className="h-5 w-5 text-amber-600" />
-                  Provider Authorization Signature Required
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                  The healthcare provider must review and sign below to authorize this patient enrollment.
-                </p>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
-                  <p className="text-sm font-medium mb-2">Provider Signature:</p>
-                  <div className="border border-gray-400 rounded">
-                    <SignatureCanvas
-                      ref={signatureRef}
-                      canvasProps={{
-                        width: 400,
-                        height: 150,
-                        className: 'signature-canvas w-full'
-                      }}
-                    />
-                  </div>
-                  <div className="flex gap-2 mt-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => signatureRef.current?.clear()}
-                    >
-                      Clear
-                    </Button>
-                    <Button
-                      onClick={handleAcceptSignature}
-                      className="bg-green-600 hover:bg-green-700"
-                    >
-                      <CheckCircle className="h-4 w-4 mr-2" />
-                      Accept Signature
-                    </Button>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </CardContent>
-      </Card>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+      
+      {/* Section Completion Modal */}
+      {showSectionCompletion && completedSectionData && (
+        <EnhancedSectionCompletionModal
+          isOpen={showSectionCompletion}
+          onClose={() => setShowSectionCompletion(false)}
+          onContinue={() => {
+            setShowSectionCompletion(false);
+            advanceToNextStep();
+          }}
+          completedSection={{
+            sectionKey: completedSectionData.sectionKey,
+            sectionTitle: currentStep.name,
+            description: currentStep.description,
+            completedFields: Object.keys(collectedData).length,
+            totalFields: currentStep.requiredFields.length,
+            requiredFields: currentStep.requiredFields.length,
+            completionTime: 120, // Mock data
+            dataCollected: Object.entries(collectedData).map(([key, value]) => ({
+              fieldName: key,
+              displayName: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+              value
+            }))
+          }}
+          nextSection={currentStepIndex < enrollmentSteps.length - 1 ? {
+            sectionKey: enrollmentSteps[currentStepIndex + 1].id,
+            sectionTitle: enrollmentSteps[currentStepIndex + 1].name,
+            description: enrollmentSteps[currentStepIndex + 1].description,
+            estimatedTime: 5,
+            totalFields: enrollmentSteps[currentStepIndex + 1].requiredFields.length,
+            requiredFields: enrollmentSteps[currentStepIndex + 1].requiredFields.length,
+            keyFields: enrollmentSteps[currentStepIndex + 1].requiredFields.slice(0, 3)
+          } : null}
+          overallProgress={progress}
+          totalSections={enrollmentSteps.length}
+          completedSections={currentStepIndex}
+        />
+      )}
 
       {/* Actions */}
       <div className="flex gap-2 justify-end">
