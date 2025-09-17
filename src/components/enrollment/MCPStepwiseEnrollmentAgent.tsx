@@ -135,15 +135,23 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   const [consentMethod, setConsentMethod] = useState<ConsentMethod | null>(null);
 
   // Initialize MCP session with patient enrollment tracking
-  const initializeMCPSession = async () => {
+  const initializeMCPSession = async (): Promise<{ session: MCPSession; enrollment: PatientEnrollmentSession } | null> => {
     try {
       const sessionId = crypto.randomUUID();
       
+      const initialAssistantMessage: ConversationMessage = {
+        role: 'assistant',
+        content: getAIPromptForSection(enrollmentSteps[0].id as EnrollmentSectionKey),
+        timestamp: new Date().toISOString(),
+        step: enrollmentSteps[0].id,
+        metadata: { mcpTools: enrollmentSteps[0].mcpTools }
+      };
+
       const newSession: MCPSession = {
         sessionId,
         status: 'active',
         currentStep: enrollmentSteps[0].id,
-        conversationHistory: [],
+        conversationHistory: [initialAssistantMessage],
         mcpTools: enrollmentSteps[0].mcpTools,
         metadata: {
           enrollmentType: 'patient_enrollment',
@@ -189,6 +197,8 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         description: `MCP enrollment session initialized for Patient ID: ${patientId}`,
       });
       
+      return { session: newSession, enrollment: enrollmentSession };
+      
     } catch (error) {
       console.error('Failed to initialize MCP session:', error);
       toast({
@@ -196,9 +206,9 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         description: "Failed to start enrollment session. Please try again.",
         variant: "destructive",
       });
+      return null;
     }
   };
-
   // Process user message with MCP and schema mapping
   const processMessageWithMCP = async (message: string) => {
     if (!mcpSession || !patientEnrollmentSession || isProcessing || !message.trim()) return;
