@@ -149,9 +149,10 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
   }
 
   const getRecommendedTables = () => {
-    // Integration with EXISTING agent templates (NO CHANGES to current implementation)
+    // Modular MCP Agent Configuration System
+    // Each module can have different MCP agents with specific table sets and tools
     const moduleTableMap = {
-      // Patient enrollment - uses existing agent templates and workflows
+      // CURRENT: Patient enrollment (database MCP with enrollment tables)
       enrollment: [
         'patient_enrollments', // Main enrollment tracking
         'enrollment_consent', 
@@ -165,18 +166,43 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
         'npi_verification_results', // Existing NPI verification
         'voice_providers' // Existing communication channels
       ],
-      // Agent module - existing functionality (NO modifications)
+      
+      // FUTURE: Clinical MCP Agent (different tables + tools)
+      clinical: [
+        'clinical_assessments', 
+        'treatment_plans', 
+        'clinical_notes',
+        'patient_medical_history',
+        'agent_conversations'
+      ],
+      
+      // FUTURE: Facility Management MCP Agent
+      facility: [
+        'facilities', 
+        'facility_staff', 
+        'facility_departments',
+        'facility_compliance',
+        'agent_conversations'
+      ],
+      
+      // CURRENT: Agent module (uses all agent-related tables)
       agent: [
         'agents', 
         'agent_sessions', 
         'agent_conversations',
-        'agent_templates', // Existing templates for NPI, credentialing, PDF, consent
+        'agent_templates',
         'npi_verification_results',
         'voice_providers'
       ],
-      patient: ['profiles', 'patient_medical_history', 'patient_demographics'],
-      clinical: ['clinical_assessments', 'treatment_plans', 'clinical_notes'],
-      facility: ['facilities', 'facility_staff', 'facility_departments']
+      
+      // FUTURE: Patient Care MCP Agent (patient-focused subset)
+      patient: [
+        'profiles', 
+        'patient_medical_history', 
+        'patient_demographics',
+        'clinical_assessments',
+        'agent_conversations'
+      ]
     }
 
     const recommendedTables = moduleTableMap[moduleContext] || []
