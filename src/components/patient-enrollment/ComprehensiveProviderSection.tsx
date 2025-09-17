@@ -398,23 +398,35 @@ export const ComprehensiveProviderSection: React.FC<ComprehensiveProviderSection
     );
   };
 
-  // Temporarily disabled date picker - will be implemented after adding calendar component
+  // Date picker with robust handling for Date | string | undefined values
   const renderDatePicker = (
     label: string, 
-    value: Date | undefined, 
+    value: Date | string | undefined, 
     onChange: (date: Date | undefined) => void,
     placeholder: string = "Pick a date"
-  ) => (
-    <div>
-      <Label>{label}</Label>
-      <Input
-        type="date"
-        value={value ? value.toISOString().split('T')[0] : ''}
-        onChange={(e) => onChange(e.target.value ? new Date(e.target.value) : undefined)}
-        disabled={readOnly}
-      />
-    </div>
-  );
+  ) => {
+    const normalizeToDate = (v: Date | string | undefined): Date | undefined => {
+      if (!v) return undefined;
+      if (v instanceof Date) return isNaN(v.getTime()) ? undefined : v;
+      const d = new Date(v as string);
+      return isNaN(d.getTime()) ? undefined : d;
+    };
+
+    const dateVal = normalizeToDate(value);
+    const inputVal = dateVal ? dateVal.toISOString().split('T')[0] : '';
+
+    return (
+      <div>
+        <Label>{label}</Label>
+        <Input
+          type="date"
+          value={inputVal}
+          onChange={(e) => onChange(e.target.value ? new Date(e.target.value) : undefined)}
+          disabled={readOnly}
+        />
+      </div>
+    );
+  };
 
   return (
     <Card>
