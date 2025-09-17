@@ -13,8 +13,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { 
   Bot, 
-  FileTemplate, 
-  BarChart3, 
+  FileText, 
+  BarChart3,
   Play, 
   Pause, 
   Settings, 
@@ -383,7 +383,7 @@ export const AgentsManagementPage: React.FC = () => {
             Agents ({agents.length})
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
-            <FileTemplate className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             Templates ({templates.length})
           </TabsTrigger>
           <TabsTrigger value="deployments" className="flex items-center gap-2">
@@ -496,7 +496,7 @@ export const AgentsManagementPage: React.FC = () => {
         {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-4">
           <Alert>
-            <FileTemplate className="h-4 w-4" />
+            <FileText className="h-4 w-4" />
             <AlertDescription>
               Agent templates provide pre-configured workflows for common healthcare scenarios. 
               Create new agents from these templates to ensure consistency and best practices.
@@ -509,7 +509,7 @@ export const AgentsManagementPage: React.FC = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <FileTemplate className="h-5 w-5" />
+                      <FileText className="h-5 w-5" />
                       {template.name}
                       {template.is_default && (
                         <Badge variant="default" className="text-xs">Default</Badge>
