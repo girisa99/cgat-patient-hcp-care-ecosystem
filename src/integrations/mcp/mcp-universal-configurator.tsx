@@ -149,8 +149,17 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
   }
 
   const getRecommendedTables = () => {
+    // Patient enrollment workflow sections - aligned with existing implementation
     const moduleTableMap = {
-      enrollment: ['patient_enrollment', 'enrollment_documents', 'enrollment_status'],
+      enrollment: [
+        'enrollment_instances',
+        'enrollment_consent', 
+        'enrollment_patient_info',
+        'enrollment_provider_info',
+        'enrollment_insurance_info',
+        'enrollment_clinical_info',
+        'enrollment_documents'
+      ],
       patient: ['profiles', 'patient_medical_history', 'patient_demographics'],
       clinical: ['clinical_assessments', 'treatment_plans', 'clinical_notes'],
       facility: ['facilities', 'facility_staff', 'facility_departments'],
