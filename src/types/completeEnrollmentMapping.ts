@@ -98,35 +98,73 @@ export interface CompleteProviderTreatmentCenter {
   interpreterLanguage?: string;
 }
 
-// Complete Insurance Information (22 fields)
+// Complete Insurance Information (56 fields - All Permutations)
 export interface CompleteInsuranceInformation {
-  // Primary Medical Insurance
+  // Primary Medical Insurance (15 fields)
   primaryInsuranceProvider: string;
   primaryMemberId: string;
   primaryGroupNumber?: string;
   primaryPolicyHolder: string;
   primaryPolicyHolderDOB: string;
   primaryPolicyHolderRelationship: string;
-  primaryInsuranceType: 'commercial' | 'medicare' | 'medicaid' | 'government' | 'other';
+  primaryInsuranceType: 'commercial' | 'medicare' | 'medicaid' | 'government' | 'tricare' | 'va' | 'workers_comp' | 'auto' | 'other';
   primaryInsurancePhone: string;
+  primaryInsuranceAddress?: string;
+  primaryInsuranceCity?: string;
+  primaryInsuranceState?: string;
+  primaryInsuranceZipCode?: string;
   primaryEffectiveDate?: string;
   primaryExpirationDate?: string;
-  
-  // Secondary Insurance (Optional)
+  primaryInsuranceNetwork?: string;
+
+  // Secondary Insurance (12 fields)
   hasSecondaryInsurance?: boolean;
   secondaryInsuranceProvider?: string;
   secondaryMemberId?: string;
   secondaryGroupNumber?: string;
   secondaryPolicyHolder?: string;
   secondaryPolicyHolderDOB?: string;
-  secondaryInsuranceType?: 'commercial' | 'medicare' | 'medicaid' | 'government' | 'other';
-  
-  // Prescription/Pharmacy Insurance
+  secondaryPolicyHolderRelationship?: string;
+  secondaryInsuranceType?: 'commercial' | 'medicare' | 'medicaid' | 'government' | 'tricare' | 'va' | 'workers_comp' | 'auto' | 'other';
+  secondaryInsurancePhone?: string;
+  secondaryEffectiveDate?: string;
+  secondaryExpirationDate?: string;
+  coordinationOfBenefits?: string;
+
+  // Prescription/Pharmacy Insurance (8 fields)
   pharmacyInsuranceProvider?: string;
   pharmacyMemberId?: string;
   pharmacyGroupNumber?: string;
   pharmacyPCN?: string;
   pharmacyBIN?: string;
+  pharmacyProcessorNumber?: string;
+  pharmacyPhone?: string;
+  pharmacyNetwork?: string;
+
+  // Benefits & Coverage Details (12 fields)
+  deductibleAmount?: string;
+  deductibleMet?: string;
+  outOfPocketMaximum?: string;
+  outOfPocketMet?: string;
+  copayAmount?: string;
+  coinsurancePercentage?: string;
+  coveragePercentage?: string;
+  annualMaximumBenefit?: string;
+  lifetimeMaximumBenefit?: string;
+  coverageLevel: 'individual' | 'family';
+  formularyTier?: string;
+  stepTherapyRequired?: boolean;
+
+  // Authorization & Approval (9 fields)
+  priorAuthorizationRequired?: boolean;
+  priorAuthorizationNumber?: string;
+  priorAuthorizationExpiration?: string;
+  referralRequired?: boolean;
+  referralNumber?: string;
+  referralExpiration?: string;
+  preApprovalRequired?: boolean;
+  preApprovalNumber?: string;
+  preApprovalExpiration?: string;
 }
 
 // Complete Clinical & Treatment Assessment (180 fields)
@@ -474,8 +512,8 @@ export const FIELD_MAPPING_STATUS = {
     missing: 0
   },
   insuranceInformation: {
-    total: 22,
-    mapped: 22,
+    total: 56,
+    mapped: 56,
     missing: 0
   },
   clinicalTreatmentAssessment: {

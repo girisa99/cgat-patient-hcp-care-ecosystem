@@ -184,32 +184,33 @@ const COMPLETE_FIELD_MAPPING: TabSection[] = [
     id: 'insurance',
     title: 'Insurance',
     icon: CreditCard,
-    description: 'Insurance verification, benefits analysis, and financial assessment (22 fields)',
-    overallCompletion: 91,
-    totalFields: 22,
-    completedFields: 20,
+    description: 'Complete insurance verification, benefits analysis, and coverage management (56 fields)',
+    overallCompletion: 89,
+    totalFields: 56,
+    completedFields: 50,
     aiIntegration: {
-      mcp: { count: 12, status: 'active' },
-      conversational: { count: 8, status: 'active' },
-      structured: { count: 10, status: 'active' }
+      mcp: { count: 25, status: 'active' },
+      conversational: { count: 18, status: 'active' },
+      structured: { count: 22, status: 'active' }
     },
     subSections: {
-      primary_insurance: { name: 'Primary Insurance', fields: ['primary_insurance_company', 'policy_number', 'group_number'], completion: 100 },
-      secondary_insurance: { name: 'Secondary Insurance', fields: ['secondary_insurance', 'secondary_policy'], completion: 80 },
-      benefits_verification: { name: 'Benefits Verification', fields: ['coverage_verification', 'prior_auth', 'copay_deductible'], completion: 95 },
-      financial_assistance: { name: 'Financial Assistance', fields: ['financial_assistance_needed', 'payment_plans'], completion: 75 }
+      primary_insurance: { name: 'Primary Insurance Details', fields: ['primary_insurance_company', 'policy_number', 'group_number'], completion: 95 },
+      secondary_insurance: { name: 'Secondary Insurance', fields: ['secondary_insurance', 'secondary_policy', 'coordination_benefits'], completion: 85 },
+      pharmacy_insurance: { name: 'Pharmacy Benefits', fields: ['pharmacy_insurance', 'pharmacy_network', 'formulary'], completion: 90 },
+      benefits_coverage: { name: 'Benefits & Coverage', fields: ['deductible', 'copay', 'out_of_pocket'], completion: 92 },
+      authorization_approval: { name: 'Authorization & Approval', fields: ['prior_auth', 'referrals', 'pre_approval'], completion: 88 }
     },
-    fields: Array.from({ length: 22 }, (_, i) => ({
+    fields: Array.from({ length: 56 }, (_, i) => ({
       id: `insurance_field_${i + 1}`,
       name: `Insurance Field ${i + 1}`,
-      type: 'text',
-      required: i < 12,
-      mcpEnabled: i < 12,
-      conversationalEnabled: i < 16,
-      structuredEnabled: i < 16,
-      completion: Math.max(75, 100 - i),
-      validationStatus: (i % 5 === 0 ? 'pending' : 'valid'),
-      category: i < 8 ? 'primary_insurance' : i < 12 ? 'secondary_insurance' : i < 18 ? 'benefits_verification' : 'financial_assistance'
+      type: i < 10 ? 'text' : i < 20 ? 'select' : i < 30 ? 'checkbox' : i < 40 ? 'date' : 'number',
+      required: i < 25,
+      mcpEnabled: i < 25,
+      conversationalEnabled: i < 38,
+      structuredEnabled: i < 42,
+      completion: Math.max(70, 100 - Math.floor(i / 2)),
+      validationStatus: (i % 7 === 0 ? 'pending' : i % 14 === 0 ? 'processing' : 'valid'),
+      category: i < 15 ? 'primary_insurance' : i < 27 ? 'secondary_insurance' : i < 35 ? 'pharmacy_insurance' : i < 47 ? 'benefits_coverage' : 'authorization_approval'
     }))
   },
   {
