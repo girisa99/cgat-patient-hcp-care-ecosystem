@@ -3,7 +3,7 @@
  * Schema-driven patient enrollment following exact form structure
  * Uses Patient ID as primary key with proper enrollment source tracking
  */
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -27,6 +27,7 @@ import {
   Stethoscope
 } from 'lucide-react';
 import { MCPWelcomeOverview } from './MCPWelcomeOverview';
+import SignatureCanvas from 'react-signature-canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -134,7 +135,10 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   const [patientId] = useState(() => crypto.randomUUID());
   const [enrollmentSource] = useState<EnrollmentSource>('mcp'); // Set as MCP source
   const [consentMethod, setConsentMethod] = useState<ConsentMethod | null>(null);
-  const [showWelcome, setShowWelcome] = useState(true);
+const [showWelcome, setShowWelcome] = useState(true);
+  // Consent sub-steps state machine and signature ref
+  const [consentSubStep, setConsentSubStep] = useState<'provider_info' | 'treatment_center' | 'patient_method' | 'provider_signature'>('provider_info');
+  const signatureRef = useRef<SignatureCanvas | null>(null);
 
   // Initialize MCP session with patient enrollment tracking
   const initializeMCPSession = async (): Promise<{ session: MCPSession; enrollment: PatientEnrollmentSession } | null> => {
@@ -347,6 +351,15 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     }
   };
 
+
+  // Consent sub-step calculator ensures strict ordering
+  const computeConsentSubStep = (data: Record<string, any>) => {
+    const hasValidNpi = data?.provider_npi && /^\d{10}$/.test(String(data.provider_npi));
+    if (!data?.provider_name || !hasValidNpi) return 'provider_info';
+    if (!data?.treatment_center) return 'treatment_center';
+    if (!data?.patient_consent_method) return 'patient_method';
+    return 'provider_signature';
+  };
 
   // Generate schema-aware AI response
   const generateSchemaAwareResponse = async (
@@ -613,7 +626,44 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     }
   };
 
-  // Check step completion with schema validation
+  // Accept provider signature and progress
+  const handleAcceptSignature = async () => {
+    try {
+      if (!signatureRef.current) return;
+      const dataUrl = signatureRef.current.getTrimmedCanvas().toDataURL('image/png');
+      if (!dataUrl || dataUrl.length < 200) {
+        toast({ title: 'Signature required', description: 'Please sign in the box before accepting.', variant: 'destructive' });
+        return;
+      }
+      const sectionMapping = getSectionByKey('consent_management');
+      await updateRealtimeDataWithMapping(sectionMapping, { provider_signature: dataUrl });
+
+      // Add assistant message and attempt progression
+      setMcpSession(prev => prev ? {
+        ...prev,
+        conversationHistory: [
+          ...prev.conversationHistory,
+          {
+            role: 'assistant',
+            content: 'Provider authorization signature captured successfully. Proceeding to the next step.',
+            timestamp: new Date().toISOString(),
+            step: 'consent_management',
+            metadata: { event: 'provider_signature_captured' }
+          }
+        ]
+      } : null);
+
+      const merged = { ...collectedData, provider_signature: dataUrl };
+      const complete = checkStepCompletionWithMapping(sectionMapping as any, merged);
+      if (complete) {
+        setConsentSubStep('provider_signature');
+        setTimeout(() => advanceToNextStep(), 800);
+      }
+    } catch (e) {
+      console.error('Signature accept error', e);
+      toast({ title: 'Error', description: 'Failed to save signature. Please try again.', variant: 'destructive' });
+    }
+  };
   const checkStepCompletionWithMapping = (sectionMapping: any, data: Record<string, any>): boolean => {
     return sectionMapping.requiredFields.every((field: string) => {
       return data[field] && data[field].toString().trim() !== '';
