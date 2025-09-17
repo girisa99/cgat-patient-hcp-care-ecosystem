@@ -30,15 +30,11 @@ import { MCPWelcomeOverview } from './MCPWelcomeOverview';
 import SignatureCanvas from 'react-signature-canvas';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  ENROLLMENT_SECTION_MAPPINGS, 
-  getSectionByKey, 
-  getNextSection,
-  type EnrollmentSectionKey,
-  type PatientEnrollmentSession,
-  type EnrollmentSource,
-  type ConsentMethod
-} from '@/types/patientEnrollmentMapping';
+// Update MCPStepwiseEnrollmentAgent to use enhanced components
+import { EnrollmentSectionProgressTracker } from './EnrollmentSectionProgressTracker';
+import { FieldByFieldCollector } from './FieldByFieldCollector';
+import { EnhancedRealtimeProgressTracker } from './EnhancedRealtimeProgressTracker';
+import { EnhancedSectionCompletionModal } from './EnhancedSectionCompletionModal';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
