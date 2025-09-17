@@ -38,7 +38,7 @@ import {
 
 // Enhanced components for better UX
 import { EnrollmentSectionProgressTracker } from '../patient-enrollment/EnrollmentSectionProgressTracker';
-import { FieldByFieldCollector } from '../patient-enrollment/FieldByFieldCollector';
+import { FieldByFieldCollector, type FieldDefinition } from '../patient-enrollment/FieldByFieldCollector';
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
 import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
 
@@ -347,6 +347,22 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     }
   };
 
+  // Convert enrollment section to FieldDefinition format
+  const convertToFieldDefinitions = (sectionKey: EnrollmentSectionKey): FieldDefinition[] => {
+    const sectionMapping = getSectionByKey(sectionKey);
+    return sectionMapping.fields.map(field => ({
+      name: field.fieldKey,
+      displayName: field.fieldLabel,
+      type: field.fieldType as 'text' | 'email' | 'phone' | 'date' | 'select' | 'textarea' | 'number',
+      isRequired: field.required,
+      placeholder: field.placeholder || `Enter ${field.fieldLabel.toLowerCase()}`,
+      validation: {
+        pattern: field.fieldKey === 'provider_npi' || field.fieldKey === 'referring_provider_npi' ? /^\d{10}$/ : undefined,
+        minLength: field.fieldType === 'email' ? 5 : field.fieldKey.includes('name') ? 2 : undefined
+      }
+    }));
+  };
+
   // Initialize session on component mount
   useEffect(() => {
     if (!mcpSession) {
@@ -412,48 +428,40 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                     </AlertDescription>
                   </Alert>
                   
-                  {/* Show section fields as structured form */}
-                  <div className="grid gap-4">
-                    {getSectionByKey(currentStep.id as EnrollmentSectionKey).fields.map((field) => (
-                      <div key={field.fieldKey} className="space-y-2">
-                        <label className="text-sm font-medium">
-                          {field.fieldLabel} {field.required && <span className="text-red-500">*</span>}
-                        </label>
-                        <input
-                          type={field.fieldType === 'email' ? 'email' : field.fieldType === 'phone' ? 'tel' : 'text'}
-                          placeholder={field.placeholder}
-                          value={collectedData[field.fieldKey] || ''}
-                          onChange={async (e) => {
-                            const value = e.target.value;
-                            const sectionMapping = getSectionByKey(currentStep.id as EnrollmentSectionKey);
-                            await updateRealtimeDataWithMapping(sectionMapping, { [field.fieldKey]: value });
-                            setCollectedData(prev => ({ ...prev, [field.fieldKey]: value }));
-                          }}
-                          className="w-full px-3 py-2 border border-input bg-background rounded-md"
-                        />
-                      </div>
-                    ))}
-                  </div>
-                  
-                  {/* Section Complete Button */}
-                  <Button 
-                    onClick={() => {
+                  {/* Field-by-Field Collector for MCP Stepwise */}
+                  <FieldByFieldCollector
+                    sectionTitle={currentStep.name}
+                    sectionDescription={currentStep.description}
+                    fields={convertToFieldDefinitions(currentStep.id as EnrollmentSectionKey)}
+                    initialData={collectedData}
+                    onFieldUpdate={async (fieldName, value) => {
                       const sectionMapping = getSectionByKey(currentStep.id as EnrollmentSectionKey);
-                      const isComplete = checkStepCompletionWithMapping(sectionMapping, collectedData);
-                      if (isComplete) {
-                        advanceToNextStep();
-                      } else {
-                        toast({
-                          title: "Incomplete Section",
-                          description: "Please fill all required fields before continuing.",
-                          variant: "destructive"
-                        });
-                      }
+                      await updateRealtimeDataWithMapping(sectionMapping, { [fieldName]: value });
                     }}
-                    className="w-full"
-                  >
-                    Complete {currentStep.name}
-                  </Button>
+                    onSectionComplete={async (data) => {
+                      setCollectedData(prev => ({ ...prev, ...data }));
+                      
+                      // Mark section as completed
+                      const sectionMapping = getSectionByKey(currentStep.id as EnrollmentSectionKey);
+                      setCompletedSectionData({
+                        sectionKey: currentStep.id,
+                        completedAt: new Date()
+                      });
+                      setShowSectionCompletion(true);
+                      
+                      toast({
+                        title: `${currentStep.name} Completed! 🎉`,
+                        description: "All required fields completed. Advancing to next section...",
+                      });
+                      
+                      // Auto-advance after 2 seconds
+                      setTimeout(() => {
+                        setShowSectionCompletion(false);
+                        advanceToNextStep();
+                      }, 2000);
+                    }}
+                    onCancel={onCancel}
+                  />
                 </div>
               )}
 
@@ -497,6 +505,44 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                     </div>
                   </CardContent>
                 </Card>
+              )}
+
+              {/* Section Completion Modal */}
+              {showSectionCompletion && completedSectionData && (
+                <EnhancedSectionCompletionModal
+                  isOpen={showSectionCompletion}
+                  completedSection={{
+                    sectionKey: completedSectionData.sectionKey,
+                    sectionTitle: completedSectionData.sectionKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                    description: currentStep.description,
+                    completedFields: currentStep.requiredFields.length,
+                    totalFields: currentStep.requiredFields.length,
+                    requiredFields: currentStep.requiredFields.length,
+                    completionTime: 30,
+                    dataCollected: Object.entries(collectedData).map(([key, value]) => ({
+                      fieldName: key,
+                      displayName: key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
+                      value: value
+                    }))
+                  }}
+                  nextSection={currentStepIndex < enrollmentSteps.length - 1 ? {
+                    sectionKey: enrollmentSteps[currentStepIndex + 1].id,
+                    sectionTitle: enrollmentSteps[currentStepIndex + 1].name,
+                    description: enrollmentSteps[currentStepIndex + 1].description,
+                    estimatedTime: 3,
+                    totalFields: enrollmentSteps[currentStepIndex + 1].requiredFields.length,
+                    requiredFields: enrollmentSteps[currentStepIndex + 1].requiredFields.length,
+                    keyFields: enrollmentSteps[currentStepIndex + 1].requiredFields
+                  } : null}
+                  overallProgress={progress}
+                  totalSections={enrollmentSteps.length}
+                  completedSections={currentStepIndex + 1}
+                  onClose={() => setShowSectionCompletion(false)}
+                  onContinue={() => {
+                    setShowSectionCompletion(false);
+                    advanceToNextStep();
+                  }}
+                />
               )}
             </CardContent>
           </Card>
