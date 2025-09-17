@@ -350,17 +350,30 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   // Convert enrollment section to FieldDefinition format
   const convertToFieldDefinitions = (sectionKey: EnrollmentSectionKey): FieldDefinition[] => {
     const sectionMapping = getSectionByKey(sectionKey);
-    return sectionMapping.fields.map(field => ({
-      name: field.fieldKey,
-      displayName: field.fieldLabel,
-      type: field.fieldType as 'text' | 'email' | 'phone' | 'date' | 'select' | 'textarea' | 'number',
-      isRequired: field.required,
-      placeholder: field.placeholder || `Enter ${field.fieldLabel.toLowerCase()}`,
-      validation: {
-        pattern: field.fieldKey === 'provider_npi' || field.fieldKey === 'referring_provider_npi' ? /^\d{10}$/ : undefined,
-        minLength: field.fieldType === 'email' ? 5 : field.fieldKey.includes('name') ? 2 : undefined
+    return sectionMapping.fields.map(field => {
+      const base: FieldDefinition = {
+        name: field.fieldKey,
+        displayName: field.fieldLabel,
+        type: field.fieldType as 'text' | 'email' | 'phone' | 'date' | 'select' | 'textarea' | 'number',
+        isRequired: field.required,
+        placeholder: field.placeholder || `Enter ${field.fieldLabel.toLowerCase()}`,
+        validation: {
+          pattern: field.fieldKey === 'provider_npi' || field.fieldKey === 'referring_provider_npi' ? /^\d{10}$/ : undefined,
+          minLength: field.fieldType === 'email' ? 5 : field.fieldKey.includes('name') ? 2 : undefined
+        }
+      };
+
+      // Provide options for select fields so dropdowns render correctly
+      if (field.fieldType === 'select' && Array.isArray(field.options)) {
+        const toLabel = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+        return {
+          ...base,
+          options: field.options.map((opt) => ({ value: opt, label: toLabel(opt) })),
+        };
       }
-    }));
+
+      return base;
+    });
   };
 
   // Initialize session on component mount
