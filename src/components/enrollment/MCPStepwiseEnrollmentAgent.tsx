@@ -362,6 +362,14 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         return `I see you've chosen MCP (Conversational Agent) as your enrollment method. This allows us to walk through each section step by step. Ready to continue with consent management?`;
       
       case 'consent_management':
+        // Debug current field presence to ensure correct prompt ordering
+        console.debug('Consent mgmt field state', {
+          provider_name: context.collectedData?.provider_name,
+          provider_npi: context.collectedData?.provider_npi,
+          treatment_center: context.collectedData?.treatment_center,
+          patient_consent_method: context.collectedData?.patient_consent_method,
+          provider_signature: context.collectedData?.provider_signature,
+        });
         // Step 1: Basic Provider Information
         if (!context.collectedData.provider_name || !context.collectedData.provider_npi) {
           return `For consent management, I need basic provider information. Please provide your healthcare provider's full name and 10-digit NPI number who will be handling your care.`;
