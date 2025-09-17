@@ -5,8 +5,8 @@ import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Card, CardContent } from '@/components/ui/card';
 import { PatientManagementTable } from '@/components/patients/PatientManagementTable';
 
-const Patients: React.FC = () => {
-  console.log('🏥 Patients page - Using existing working components and relationships');
+const PatientPage: React.FC = () => {
+  console.log('🏥 Patient page - Enhanced with real-time enrollment tracking');
   
   const { hasAccess, currentRole } = useRoleBasedNavigation();
   
@@ -30,4 +30,4 @@ const Patients: React.FC = () => {
   );
 };
 
-export default Patients;
+export default PatientPage;

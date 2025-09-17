@@ -51,6 +51,32 @@ interface PendingActivity {
 export function OnboardingProgressDashboard({ applications, onNavigateToStep }: OnboardingProgressDashboardProps) {
   console.log('🔍 OnboardingProgressDashboard received applications:', applications?.length || 0, applications);
   
+  // Real-time enrollment integration
+  const [realtimeUpdates, setRealtimeUpdates] = React.useState<any[]>([]);
+  const [enrollmentProgress, setEnrollmentProgress] = React.useState<Record<string, number>>({});
+  
+  // Simulate real-time updates (would connect to actual real-time system)
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      const update = {
+        id: Date.now(),
+        type: 'enrollment_progress',
+        applicationId: applications[0]?.id,
+        progress: Math.min(100, (enrollmentProgress[applications[0]?.id] || 0) + Math.random() * 10),
+        timestamp: new Date().toISOString(),
+        section: ['consent_mode', 'patient_info', 'provider_treatment_center', 'insurance', 'treatment_clinical'][Math.floor(Math.random() * 5)]
+      };
+      
+      setRealtimeUpdates(prev => [update, ...prev.slice(0, 49)]);
+      setEnrollmentProgress(prev => ({
+        ...prev,
+        [applications[0]?.id]: update.progress
+      }));
+    }, 15000); // Update every 15 seconds
+    
+    return () => clearInterval(interval);
+  }, [applications]);
+  
   // Calculate detailed progress for each application
   const calculateApplicationProgress = (app: any): ApplicationProgress => {
     const createdDate = new Date(app.created_at || Date.now());
