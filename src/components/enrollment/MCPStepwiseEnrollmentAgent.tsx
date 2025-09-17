@@ -350,6 +350,9 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   // Convert enrollment section to FieldDefinition format
   const convertToFieldDefinitions = (sectionKey: EnrollmentSectionKey): FieldDefinition[] => {
     const sectionMapping = getSectionByKey(sectionKey);
+    
+    console.log(`Converting fields for section: ${sectionKey}`, sectionMapping.fields);
+    
     return sectionMapping.fields.map(field => {
       const base: FieldDefinition = {
         name: field.fieldKey,
@@ -372,6 +375,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         };
       }
 
+      console.log(`Generated field definition:`, base);
       return base;
     });
   };
@@ -448,10 +452,12 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                     fields={convertToFieldDefinitions(currentStep.id as EnrollmentSectionKey)}
                     initialData={collectedData}
                     onFieldUpdate={async (fieldName, value) => {
+                      console.log(`Field updated: ${fieldName} = ${value}`);
                       const sectionMapping = getSectionByKey(currentStep.id as EnrollmentSectionKey);
                       await updateRealtimeDataWithMapping(sectionMapping, { [fieldName]: value });
                     }}
                     onSectionComplete={async (data) => {
+                      console.log(`Section completed: ${currentStep.id}`, data);
                       setCollectedData(prev => ({ ...prev, ...data }));
                       
                       // Mark section as completed
@@ -467,7 +473,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                         description: "All required fields completed. Advancing to next section...",
                       });
                       
-                      // Auto-advance after 2 seconds
+                      // Auto-advance after 3 seconds to give user time to see completion
                       setTimeout(() => {
                         setShowSectionCompletion(false);
                         advanceToNextStep();

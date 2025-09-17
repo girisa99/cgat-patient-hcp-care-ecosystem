@@ -83,16 +83,9 @@ export const FieldByFieldCollector: React.FC<FieldByFieldCollectorProps> = ({
   const requiredProgress = (completedRequiredFields / requiredFields.length) * 100;
 
   useEffect(() => {
-    // Auto-advance if current field is completed and valid
-    if (currentField && formData[currentField.name] && !fieldErrors[currentField.name]) {
-      const timer = setTimeout(() => {
-        if (currentFieldIndex < activeFields.length - 1) {
-          setCurrentFieldIndex(prev => prev + 1);
-        }
-      }, 1500); // Give user time to see the completion
-
-      return () => clearTimeout(timer);
-    }
+    // DISABLED auto-advance to prevent navigation issues
+    // Users must manually navigate or use Next button
+    // This fixes the issue where fields advance too quickly without allowing edits
   }, [formData, currentField, fieldErrors, currentFieldIndex, activeFields.length]);
 
   const validateField = (field: FieldDefinition, value: any): string | null => {
