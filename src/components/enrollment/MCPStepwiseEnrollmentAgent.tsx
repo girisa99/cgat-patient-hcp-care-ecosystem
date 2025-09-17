@@ -422,6 +422,19 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   ): Promise<string> => {
     // Simulate intelligent response based on current section and required fields
     const { sectionKey } = sectionMapping;
+
+    // Helper: find the next required field not yet captured
+    const getNextMissingField = () => {
+      for (const field of sectionMapping.fields) {
+        if (sectionMapping.requiredFields.includes(field.fieldKey)) {
+          const val = context.collectedData?.[field.fieldKey];
+          if (val === undefined || val === null || String(val).trim() === '') {
+            return field;
+          }
+        }
+      }
+      return null;
+    };
     
     switch (sectionKey) {
       case 'submission_method':
@@ -459,17 +472,21 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
             return `All consent management steps completed. Moving to personal information collection.`;
         }
       
-      case 'patient_information':
-        if (!context.collectedData.first_name) {
-          return `Now I'll collect your basic information. Let's start with your full name and date of birth. What is your first and last name?`;
-        } else if (!context.collectedData.email_address) {
-          return `Thank you! Now I need your contact information. What's your email address and cell phone number?`;
-        } else {
-          return `Great! I have your basic information. Let's move on to your provider and treatment center details.`;
+      case 'patient_information': {
+        const nextField = getNextMissingField();
+        if (nextField) {
+          return `Let's capture your ${nextField.fieldLabel}. ${nextField.placeholder || 'Please provide the value.'}`;
         }
+        return `Great! I have your basic information. Let's move on to your provider and treatment center details.`;
+      }
       
-      case 'provider_treatment_center':
-        return `Now I need information about your healthcare provider for NPI verification. Can you provide the referring provider's NPI number?`;
+      case 'provider_treatment_center': {
+        const nextField = getNextMissingField();
+        if (nextField) {
+          return `Please provide ${nextField.fieldLabel}. ${nextField.placeholder || ''}`.trim();
+        }
+        return `Provider and treatment center information captured. We'll verify NPI and credentials next.`;
+      }
       
       case 'insurance_information':
         return `Let's verify your insurance coverage. I'll need your insurance provider name, member ID, and policy holder information from your insurance card.`;
