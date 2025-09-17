@@ -72,14 +72,11 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
 
   const loadSavedConfigs = async () => {
     try {
-      const { data, error } = await supabase
-        .from('mcp_configurations') // You'd need to create this table
-        .select('*')
-        .eq('module_context', moduleContext)
-        .eq('is_active', true)
-      
-      if (error) throw error
-      setSavedConfigs(data || [])
+      // For now, use local storage until database types are updated
+      const saved = localStorage.getItem(`mcp_configs_${moduleContext}`)
+      if (saved) {
+        setSavedConfigs(JSON.parse(saved))
+      }
     } catch (error) {
       console.error('Failed to load MCP configurations:', error)
     }
@@ -89,22 +86,21 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
     try {
       const configToSave = {
         ...config,
+        id: config.id || crypto.randomUUID(),
         tables: selectedTables,
         module_context: moduleContext,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       }
 
-      const { data, error } = await supabase
-        .from('mcp_configurations')
-        .upsert(configToSave)
-        .select()
-        .single()
+      // Save to local storage for now
+      const saved = localStorage.getItem(`mcp_configs_${moduleContext}`)
+      const configs = saved ? JSON.parse(saved) : []
+      const updatedConfigs = [...configs.filter(c => c.id !== configToSave.id), configToSave]
+      localStorage.setItem(`mcp_configs_${moduleContext}`, JSON.stringify(updatedConfigs))
 
-      if (error) throw error
-
-      setSavedConfigs(prev => [...prev.filter(c => c.id !== data.id), data])
-      onConfigSave?.(data)
+      setSavedConfigs(updatedConfigs)
+      onConfigSave?.(configToSave)
       toast.success('MCP configuration saved successfully')
     } catch (error) {
       console.error('Failed to save MCP configuration:', error)

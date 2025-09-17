@@ -6937,6 +6937,63 @@ export type Database = {
           },
         ]
       }
+      mcp_configurations: {
+        Row: {
+          api_endpoints: Json | null
+          created_at: string
+          created_by: string | null
+          description: string | null
+          filters: Json | null
+          hybrid_config: Json | null
+          id: string
+          is_active: boolean
+          mcp_type: string
+          memory_config: Json | null
+          module_context: string
+          name: string
+          permissions: Json
+          schema_name: string
+          tables: string[]
+          updated_at: string
+        }
+        Insert: {
+          api_endpoints?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          filters?: Json | null
+          hybrid_config?: Json | null
+          id?: string
+          is_active?: boolean
+          mcp_type: string
+          memory_config?: Json | null
+          module_context?: string
+          name: string
+          permissions?: Json
+          schema_name?: string
+          tables?: string[]
+          updated_at?: string
+        }
+        Update: {
+          api_endpoints?: Json | null
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          filters?: Json | null
+          hybrid_config?: Json | null
+          id?: string
+          is_active?: boolean
+          mcp_type?: string
+          memory_config?: Json | null
+          module_context?: string
+          name?: string
+          permissions?: Json
+          schema_name?: string
+          tables?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       mcp_servers: {
         Row: {
           capabilities: Json | null
