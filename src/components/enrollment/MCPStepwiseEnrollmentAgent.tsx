@@ -566,7 +566,13 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         <CardContent className="space-y-4">
           {/* Conversation */}
           <div className="border rounded-lg p-4 min-h-[300px] max-h-[400px] overflow-y-auto bg-muted/30">
-            {mcpSession?.conversationHistory.length === 0 ? (
+            {!mcpSession ? (
+              <div className="text-center text-muted-foreground py-8">
+                <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                <p>Initializing agent...</p>
+                <p className="text-xs mt-1">{currentStep.aiPrompt}</p>
+              </div>
+            ) : (mcpSession.conversationHistory.length === 0 ? (
               <div className="text-center text-muted-foreground py-8">
                 <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
                 <p>Start the conversation by typing your message below</p>
@@ -574,11 +580,11 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
               </div>
             ) : (
               <div className="space-y-3">
-                {mcpSession?.conversationHistory.map((msg, idx) => (
+                {mcpSession.conversationHistory.map((msg, idx) => (
                   <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                     <div className={`max-w-[80%] p-3 rounded-lg ${
-                      msg.role === 'user' 
-                        ? 'bg-primary text-primary-foreground' 
+                      msg.role === 'user'
+                        ? 'bg-primary text-primary-foreground'
                         : 'bg-background border'
                     }`}>
                       <p className="text-sm">{msg.content}</p>
@@ -599,7 +605,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                   </div>
                 )}
               </div>
-            )}
+            ))}
           </div>
 
           {/* Input */}
@@ -608,14 +614,18 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
               type="text"
               value={currentMessage}
               onChange={(e) => setCurrentMessage(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && processMessageWithMCP(currentMessage)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && mcpSession) {
+                  processMessageWithMCP(currentMessage);
+                }
+              }}
               placeholder={currentStep.aiPrompt}
               className="flex-1 px-3 py-2 border rounded-md"
-              disabled={isProcessing}
+              disabled={isProcessing || !mcpSession}
             />
             <Button 
               onClick={() => processMessageWithMCP(currentMessage)}
-              disabled={isProcessing || !currentMessage.trim()}
+              disabled={isProcessing || !currentMessage.trim() || !mcpSession}
             >
               Send
             </Button>
