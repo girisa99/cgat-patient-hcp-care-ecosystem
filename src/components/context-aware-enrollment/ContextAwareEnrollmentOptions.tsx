@@ -567,30 +567,8 @@ export const ContextAwareEnrollmentOptions: React.FC<ContextAwareEnrollmentOptio
         ))}
       </div>
 
-      {/* Progress Sections Preview */}
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-lg">What You'll Complete</CardTitle>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => setShowDataIntegration(!showDataIntegration)}
-          >
-            <Database className="h-4 w-4 mr-2" />
-            Data Integration
-          </Button>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {moduleInfo.sections.map((section, index) => (
-              <div key={section} className="flex items-center gap-2 p-3 bg-muted/50 rounded-lg">
-                <CheckCircle className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{section}</span>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
+      {/* Progress Sections Preview - removed to avoid duplication, now covered by AI agents' welcome and step guidance */}
+      {/* If needed later, re-enable with a feature flag */}
 
       {/* Data Integration Panel */}
       {showDataIntegration && (

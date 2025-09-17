@@ -183,13 +183,24 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       setPatientEnrollmentSession(enrollmentSession);
       
       // Initialize in database with patient_id as primary key
+      const { data: authUser } = await supabase.auth.getUser();
+      if (!authUser.user?.id) {
+        toast({
+          title: "Sign-in required",
+          description: "Please sign in to start an enrollment session.",
+          variant: "destructive",
+        });
+        return null;
+      }
+
       await supabase.from('patient_enrollments').insert({
         id: patientId, // Using patient_id as the primary key
         session_id: sessionId,
         enrollment_status: 'in_progress',
         current_section: 'submission_method',
         progress_percentage: 0,
-        metadata: enrollmentSession.metadata
+        metadata: enrollmentSession.metadata,
+        user_id: authUser.user.id
       });
 
       toast({
