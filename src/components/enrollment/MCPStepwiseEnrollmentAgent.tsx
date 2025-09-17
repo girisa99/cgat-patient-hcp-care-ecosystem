@@ -293,6 +293,9 @@ const [showWelcome, setShowWelcome] = useState(true);
         if (currentSectionMapping.sectionKey === 'consent_management' && extractedFromUser.patient_consent_method) {
           setConsentMethod(extractedFromUser.patient_consent_method as ConsentMethod);
           await triggerConsentCollection(extractedFromUser.patient_consent_method as ConsentMethod, patientId);
+          
+          // Update consent sub-step to signature after consent method is selected
+          setConsentSubStep('provider_signature');
         }
 
         // Record verification when any NPI is present in this section
@@ -375,32 +378,35 @@ const [showWelcome, setShowWelcome] = useState(true);
         return `I see you've chosen MCP (Conversational Agent) as your enrollment method. This allows us to walk through each section step by step. Ready to continue with consent management?`;
       
       case 'consent_management':
-        // Debug current field presence to ensure correct prompt ordering
-        console.debug('Consent mgmt field state', {
-          provider_name: context.collectedData?.provider_name,
-          provider_npi: context.collectedData?.provider_npi,
-          treatment_center: context.collectedData?.treatment_center,
-          patient_consent_method: context.collectedData?.patient_consent_method,
-          provider_signature: context.collectedData?.provider_signature,
-        });
-        // Step 1: Basic Provider Information
-        if (!context.collectedData.provider_name || !context.collectedData.provider_npi) {
-          return `For consent management, I need basic provider information. Please provide your healthcare provider's full name and 10-digit NPI number who will be handling your care.`;
-        } 
-        // Step 2: Treatment Center Information  
-        else if (!context.collectedData.treatment_center) {
-          return `Thank you! Now I need the treatment center information. What is the name of the treatment center where you'll be receiving care?`;
-        }
-        // Step 3: Patient Consent Method Selection
-        else if (!context.collectedData.patient_consent_method) {
-          return `Great! Now I need to know your preferred method for providing consent. Would you like to provide consent via:\n\n• WhatsApp\n• SMS/Text\n• Email\n• Verbal consent\n• Digital signature\n\nPlease select your preferred method.`;
-        }
-        // Step 4: Provider Authorization (signature handled in UI)
-        else if (!context.collectedData.provider_signature) {
-          return `Perfect! I have your provider information and consent preference. Before we proceed, the healthcare provider needs to review and sign the authorization. Once the provider signature is captured, we can move to collecting your personal information.`;
-        }
-        else {
-          return `Excellent! All consent management information has been collected including provider authorization. Let's now proceed to collect your personal information.`;
+        // Use strict sub-step state machine to prevent skipping
+        const currentSubStep = computeConsentSubStep(context.collectedData);
+        setConsentSubStep(currentSubStep);
+        
+        switch (currentSubStep) {
+          case 'provider_info':
+            const hasValidNpi = context.collectedData?.provider_npi && /^\d{10}$/.test(String(context.collectedData.provider_npi));
+            if (!context.collectedData?.provider_name) {
+              return `For consent management, I need the healthcare provider's information first. Please provide the provider's full name who will be handling your care.`;
+            } else if (!hasValidNpi) {
+              // Trigger NPI verification agent if provider name exists
+              if (context.collectedData.provider_name) {
+                await triggerNPIVerification(context.collectedData.provider_name);
+              }
+              return `Thank you! Now I need the provider's 10-digit NPI number for verification and credentialing purposes. Please provide the NPI number for ${context.collectedData.provider_name}.`;
+            }
+            break;
+            
+          case 'treatment_center':
+            return `Great! I have the provider information. Now I need the treatment center where you'll be receiving care. Please provide the name of the treatment center or facility.`;
+            
+          case 'patient_method':
+            return `Perfect! Now I need to know your preferred method for providing consent. Please choose one of the following:\n\n• **WhatsApp** - Receive consent link via WhatsApp\n• **SMS/Text** - Receive consent link via text message\n• **Email** - Receive consent form via email\n• **Voice** - Complete consent via voice call\n• **Verbal** - Provide verbal consent during this session\n• **Digital Signature** - Sign electronically now\n\nWhich method would you prefer?`;
+            
+          case 'provider_signature':
+            return `Excellent! I have all the consent information. Now I need the healthcare provider to review and authorize this enrollment by providing their signature below.`;
+            
+          default:
+            return `All consent management steps completed. Moving to personal information collection.`;
         }
       
       case 'patient_information':
@@ -585,44 +591,140 @@ const [showWelcome, setShowWelcome] = useState(true);
     }
   };
 
+  // Trigger NPI verification agent
+  const triggerNPIVerification = async (providerName: string) => {
+    try {
+      toast({
+        title: "NPI Verification",
+        description: `Initiating NPI verification for ${providerName}...`,
+      });
+      
+      // Call NPI verification edge function
+      const { data, error } = await supabase.functions.invoke('npi-verification-agent', {
+        body: { 
+          provider_name: providerName,
+          patient_id: patientId,
+          session_id: mcpSession?.sessionId
+        }
+      });
+      
+      if (error) throw error;
+      
+      if (data?.npi) {
+        // Auto-fill NPI if found
+        const sectionMapping = getSectionByKey('consent_management');
+        await updateRealtimeDataWithMapping(sectionMapping, { 
+          provider_npi: data.npi,
+          provider_verified: true 
+        });
+        
+        toast({
+          title: "NPI Found",
+          description: `NPI ${data.npi} verified for ${providerName}`,
+        });
+      }
+    } catch (error) {
+      console.error('NPI verification error:', error);
+    }
+  };
+
   // Trigger consent collection based on method
   const triggerConsentCollection = async (method: ConsentMethod, patientId: string) => {
     try {
+      // Get patient contact info for triggering background agents
+      const contactInfo = {
+        email: collectedData.email_address || collectedData.email,
+        phone: collectedData.cell_phone || collectedData.phone_number
+      };
+
       switch (method) {
         case 'whatsapp':
-          // Trigger WhatsApp consent workflow
+          // Trigger WhatsApp consent agent
+          await supabase.functions.invoke('whatsapp-consent-agent', {
+            body: { 
+              patient_id: patientId,
+              phone: contactInfo.phone,
+              provider_name: collectedData.provider_name,
+              treatment_center: collectedData.treatment_center
+            }
+          });
           toast({
-            title: "WhatsApp Consent",
-            description: "WhatsApp consent link will be sent to the patient's phone number.",
+            title: "WhatsApp Consent Initiated",
+            description: "WhatsApp consent agent will send consent link to patient's phone number.",
           });
           break;
+          
         case 'sms':
-          // Trigger SMS consent workflow
+          // Trigger SMS consent agent
+          await supabase.functions.invoke('sms-consent-agent', {
+            body: { 
+              patient_id: patientId,
+              phone: contactInfo.phone,
+              provider_name: collectedData.provider_name
+            }
+          });
           toast({
-            title: "SMS Consent",
-            description: "SMS consent link will be sent to the patient.",
+            title: "SMS Consent Initiated",
+            description: "SMS consent agent will send consent link to patient.",
           });
           break;
+          
         case 'email':
-          // Trigger email consent workflow
+          // Trigger email consent agent
+          await supabase.functions.invoke('email-consent-agent', {
+            body: { 
+              patient_id: patientId,
+              email: contactInfo.email,
+              provider_name: collectedData.provider_name
+            }
+          });
           toast({
-            title: "Email Consent",
-            description: "Consent form will be emailed to the patient.",
+            title: "Email Consent Initiated",
+            description: "Email consent agent will send consent form to patient.",
           });
           break;
+          
+        case 'voice':
+          // Trigger voice consent agent
+          await supabase.functions.invoke('voice-consent-agent', {
+            body: { 
+              patient_id: patientId,
+              phone: contactInfo.phone,
+              provider_name: collectedData.provider_name
+            }
+          });
+          toast({
+            title: "Voice Consent Scheduled",
+            description: "Voice consent agent will initiate call to patient.",
+          });
+          break;
+          
         case 'verbal':
-          // Handle verbal consent process
+          // Handle verbal consent in this session
           toast({
-            title: "Verbal Consent",
-            description: "Verbal consent will be recorded during the call.",
+            title: "Verbal Consent Ready",
+            description: "Verbal consent will be recorded in this session.",
           });
           break;
+          
+        case 'digital_signature':
+          // Handle digital signature in UI
+          toast({
+            title: "Digital Signature Ready",
+            description: "Patient can provide digital signature in the interface.",
+          });
+          break;
+          
         default:
-          // Handle digital signature or other methods
           break;
       }
     } catch (error) {
       console.error('Consent collection trigger error:', error);
+      toast({
+        title: "Consent Agent Error",
+        description: "Failed to trigger consent collection. Please try manual process.",
+        variant: "destructive"
+      });
     }
   };
 
@@ -847,6 +949,52 @@ const [showWelcome, setShowWelcome] = useState(true);
               </Badge>
             ))}
           </div>
+
+          {/* Provider Signature Capture */}
+          {currentStep.id === 'consent_management' && consentSubStep === 'provider_signature' && (
+            <Card className="mt-4 border-amber-200 bg-amber-50">
+              <CardHeader>
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <Shield className="h-5 w-5 text-amber-600" />
+                  Provider Authorization Signature Required
+                </CardTitle>
+                <p className="text-sm text-muted-foreground">
+                  The healthcare provider must review and sign below to authorize this patient enrollment.
+                </p>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 bg-white">
+                  <p className="text-sm font-medium mb-2">Provider Signature:</p>
+                  <div className="border border-gray-400 rounded">
+                    <SignatureCanvas
+                      ref={signatureRef}
+                      canvasProps={{
+                        width: 400,
+                        height: 150,
+                        className: 'signature-canvas w-full'
+                      }}
+                    />
+                  </div>
+                  <div className="flex gap-2 mt-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => signatureRef.current?.clear()}
+                    >
+                      Clear
+                    </Button>
+                    <Button
+                      onClick={handleAcceptSignature}
+                      className="bg-green-600 hover:bg-green-700"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Accept Signature
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
         </CardContent>
       </Card>
 
