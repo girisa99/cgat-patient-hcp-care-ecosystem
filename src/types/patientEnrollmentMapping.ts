@@ -144,7 +144,7 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
     sectionKey: 'patient_information',
     sectionTitle: 'Patient Information',
     description: 'Collect complete patient demographics and contact information',
-    destinationTable: 'profiles',
+    destinationTable: 'enrollment_patient_info',
     primaryKey: 'patient_id',
     realtimeEnabled: true,
     fields: [
@@ -204,18 +204,18 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
         placeholder: 'XXX-XX-XXXX (optional)'
       },
       {
-        fieldKey: 'street_address',
+        fieldKey: 'address_line1',
         fieldLabel: 'Street Address',
         fieldType: 'text',
-        destinationColumn: 'address_street',
+        destinationColumn: 'address_line1',
         required: true,
         placeholder: 'Enter street address'
       },
       {
-        fieldKey: 'apartment',
+        fieldKey: 'address_line2',
         fieldLabel: 'Apt/Unit',
         fieldType: 'text',
-        destinationColumn: 'address_unit',
+        destinationColumn: 'address_line2',
         required: false,
         placeholder: 'Apt, Unit, etc.'
       },
@@ -223,7 +223,7 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
         fieldKey: 'city',
         fieldLabel: 'City',
         fieldType: 'text',
-        destinationColumn: 'address_city',
+        destinationColumn: 'city',
         required: true,
         placeholder: 'Enter city'
       },
@@ -231,7 +231,7 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
         fieldKey: 'state',
         fieldLabel: 'State',
         fieldType: 'text',
-        destinationColumn: 'address_state',
+        destinationColumn: 'state',
         required: true,
         placeholder: 'Enter state'
       },
@@ -239,52 +239,20 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
         fieldKey: 'zip_code',
         fieldLabel: 'ZIP Code',
         fieldType: 'text',
-        destinationColumn: 'address_zip',
+        destinationColumn: 'zip_code',
         required: true,
         placeholder: 'Enter ZIP code'
       },
       {
-        fieldKey: 'home_phone',
-        fieldLabel: 'Home Phone',
+        fieldKey: 'phone',
+        fieldLabel: 'Primary Phone',
         fieldType: 'phone',
-        destinationColumn: 'home_phone',
-        required: false,
-        placeholder: '(555) 123-4567'
-      },
-      {
-        fieldKey: 'cell_phone',
-        fieldLabel: 'Cell Phone',
-        fieldType: 'phone',
-        destinationColumn: 'cell_phone',
+        destinationColumn: 'phone',
         required: true,
         placeholder: '(555) 123-4567'
       },
       {
-        fieldKey: 'alternate_phone',
-        fieldLabel: 'Alternate Phone',
-        fieldType: 'phone',
-        destinationColumn: 'alternate_phone',
-        required: false,
-        placeholder: '(555) 123-4567'
-      },
-      {
-        fieldKey: 'alternate_contact_name',
-        fieldLabel: 'Alternate Contact Name',
-        fieldType: 'text',
-        destinationColumn: 'alternate_contact_name',
-        required: false,
-        placeholder: 'Emergency contact name'
-      },
-      {
-        fieldKey: 'alternate_contact_relationship',
-        fieldLabel: 'Relationship',
-        fieldType: 'text',
-        destinationColumn: 'alternate_contact_relationship',
-        required: false,
-        placeholder: 'Relationship to patient'
-      },
-      {
-        fieldKey: 'email_address',
+        fieldKey: 'email',
         fieldLabel: 'Email Address',
         fieldType: 'email',
         destinationColumn: 'email',
@@ -292,17 +260,58 @@ export const ENROLLMENT_SECTION_MAPPINGS: Record<EnrollmentSectionKey, Enrollmen
         placeholder: 'Enter email address'
       },
       {
-        fieldKey: 'do_not_contact_patient',
-        fieldLabel: 'Do Not Contact Patient',
-        fieldType: 'checkbox',
-        destinationColumn: 'do_not_contact_patient',
-        required: false
+        fieldKey: 'emergency_contact_name',
+        fieldLabel: 'Emergency Contact Name',
+        fieldType: 'text',
+        destinationColumn: 'emergency_contact_name',
+        required: false,
+        placeholder: 'Emergency contact name'
+      },
+      {
+        fieldKey: 'emergency_contact_relationship',
+        fieldLabel: 'Relationship',
+        fieldType: 'text',
+        destinationColumn: 'emergency_contact_relationship',
+        required: false,
+        placeholder: 'Relationship to patient'
+      },
+      {
+        fieldKey: 'emergency_contact_phone',
+        fieldLabel: 'Emergency Contact Phone',
+        fieldType: 'phone',
+        destinationColumn: 'emergency_contact_phone',
+        required: false,
+        placeholder: '(555) 123-4567'
+      },
+      {
+        fieldKey: 'marital_status',
+        fieldLabel: 'Marital Status',
+        fieldType: 'select',
+        destinationColumn: 'marital_status',
+        required: false,
+        options: ['Single', 'Married', 'Divorced', 'Widowed', 'Other']
+      },
+      {
+        fieldKey: 'occupation',
+        fieldLabel: 'Occupation',
+        fieldType: 'text',
+        destinationColumn: 'occupation',
+        required: false,
+        placeholder: 'Current occupation'
+      },
+      {
+        fieldKey: 'employer',
+        fieldLabel: 'Employer',
+        fieldType: 'text',
+        destinationColumn: 'employer',
+        required: false,
+        placeholder: 'Current employer'
       }
     ],
-    requiredFields: ['first_name', 'last_name', 'date_of_birth', 'preferred_language', 'gender', 'street_address', 'city', 'state', 'zip_code', 'cell_phone', 'email_address'],
+    requiredFields: ['first_name', 'last_name', 'date_of_birth', 'preferred_language', 'gender', 'address_line1', 'city', 'state', 'zip_code', 'phone', 'email'],
     validationRules: {
-      email_address: { required: true, format: 'email' },
-      cell_phone: { required: true, format: 'phone' },
+      email: { required: true, format: 'email' },
+      phone: { required: true, format: 'phone' },
       zip_code: { required: true, pattern: '^[0-9]{5}(-[0-9]{4})?$' }
     }
   },
