@@ -60,7 +60,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   const [showNPIConfirmation, setShowNPIConfirmation] = useState(false);
   const [pendingAgentType, setPendingAgentType] = useState<'mcp_stepwise' | 'structured' | 'conversation' | null>(null);
   const [showImplementationDetails, setShowImplementationDetails] = useState<string | null>(null);
-  const [showWelcome, setShowWelcome] = useState(true);
+  const [showWelcome, setShowWelcome] = useState(false);
   const { closeEnrollment } = useGlobalConversationalEnrollment();
   const navigate = useNavigate();
 
@@ -244,6 +244,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
       <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
         <MCPStepwiseEnrollmentAgent
           moduleType={moduleType}
+          enrollmentSource="mcp"
           onComplete={onComplete || (() => {})}
           onCancel={() => setSelectedMethod(null)}
         />
