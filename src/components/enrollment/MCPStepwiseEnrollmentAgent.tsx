@@ -203,6 +203,13 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         user_id: authUser.user.id
       });
 
+      // Prefill submission method as MCP and persist source
+      setCollectedData(prev => ({ ...prev, submission_method: enrollmentSource }));
+      await supabase
+        .from('patient_enrollments')
+        .update({ enrollment_source: enrollmentSource })
+        .eq('id', patientId);
+
       toast({
         title: "Enrollment Started",
         description: `MCP enrollment session initialized for Patient ID: ${patientId}`,
@@ -399,20 +406,28 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   // Update real-time data with proper table mapping
   const updateRealtimeDataWithMapping = async (sectionMapping: any, data: Record<string, any>) => {
     try {
+      // Map field keys to destination columns
+      const mappedData: Record<string, any> = {};
+      sectionMapping.fields.forEach((field: any) => {
+        if (data[field.fieldKey] !== undefined) {
+          mappedData[field.destinationColumn] = data[field.fieldKey];
+        }
+      });
+
+      // Always include updated_at
       const updateData = {
-        ...data,
-        updated_at: new Date().toISOString(),
-        patient_id: patientId
+        ...mappedData,
+        updated_at: new Date().toISOString()
       };
 
-      // Update appropriate table based on section mapping
       if (sectionMapping.destinationTable === 'patient_enrollments') {
+        // Update main enrollment row by id
         await supabase
           .from('patient_enrollments')
           .update(updateData)
           .eq('id', patientId);
       } else {
-        // Handle other destination tables
+        // For child tables, upsert by enrollment_id foreign key
         await supabase
           .from(sectionMapping.destinationTable)
           .upsert({
@@ -422,7 +437,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       }
 
       setCollectedData(prev => ({ ...prev, ...data }));
-      
+
       // Update progress
       const progress = Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100);
       await supabase
