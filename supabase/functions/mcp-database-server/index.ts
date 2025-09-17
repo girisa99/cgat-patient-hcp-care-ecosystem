@@ -30,7 +30,7 @@ serve(async (req) => {
 
     const { action, config, data, query } = await req.json()
     const mcpConfig: McpDatabaseConfig = config || {
-      tables: ['patient_enrollment'], // Default fallback
+      tables: ['patient_enrollments', 'enrollment_consent', 'enrollment_patient_info', 'enrollment_provider_info', 'enrollment_insurance_info', 'enrollment_clinical_info', 'enrollment_documents', 'profiles'], // Full enrollment table set
       schema: 'public',
       permissions: { read: true, write: true, delete: false }
     }

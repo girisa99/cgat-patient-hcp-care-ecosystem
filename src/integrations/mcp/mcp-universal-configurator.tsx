@@ -153,16 +153,17 @@ export const McpUniversalConfigurator: React.FC<McpUniversalConfiguratorProps> =
     const moduleTableMap = {
       // Patient enrollment - uses existing agent templates and workflows
       enrollment: [
-        'enrollment_instances',
+        'patient_enrollments', // Main enrollment tracking
         'enrollment_consent', 
         'enrollment_patient_info',
         'enrollment_provider_info',
         'enrollment_insurance_info',
         'enrollment_clinical_info',
         'enrollment_documents',
-        'agent_templates', // Existing agent templates for reuse
-        'npi_verification_results', // Existing NPI verification agent
-        'voice_providers' // Existing voice/SMS/WhatsApp/email agents
+        'profiles', // Patient profiles
+        'agent_conversations', // MCP conversation tracking
+        'npi_verification_results', // Existing NPI verification
+        'voice_providers' // Existing communication channels
       ],
       // Agent module - existing functionality (NO modifications)
       agent: [

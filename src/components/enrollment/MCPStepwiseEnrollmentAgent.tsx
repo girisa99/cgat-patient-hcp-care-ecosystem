@@ -99,7 +99,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       name: section.sectionTitle,
       icon: iconMap[section.sectionKey],
       description: section.description,
-      mcpTools: [`validate-${section.sectionKey}`, `store-${section.sectionKey}`, 'audit-trail'],
+      mcpTools: ['get_schema', 'query_data', 'insert_data', 'get_conversation_context'],
       realtimeEnabled: section.realtimeEnabled,
       requiredFields: section.requiredFields,
       validationRules: section.validationRules,
