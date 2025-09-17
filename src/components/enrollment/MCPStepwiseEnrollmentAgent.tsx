@@ -261,8 +261,8 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       // Clear input after sending
       setCurrentMessage('');
 
-      // Use MCP context with schema mapping
-      const mcpContext = {
+      // Build MCP context from current state
+      const baseContext = {
         sessionId: mcpSession.sessionId,
         patientId: patientId,
         currentStep: currentStep.id,
@@ -277,31 +277,35 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         consentMethod: consentMethod
       };
 
-      // Simulate AI processing with schema-aware response
-      const aiResponse = await generateSchemaAwareResponse(message, mcpContext, currentSectionMapping);
+      // 1) Extract data from the USER message first (prevents loops)
+      const extractedFromUser = extractDataFromMessage(message, currentSectionMapping);
+      if (Object.keys(extractedFromUser).length > 0) {
+        console.debug('MCP extracted from user:', extractedFromUser);
+        await updateRealtimeDataWithMapping(currentSectionMapping, extractedFromUser);
 
-      // Extract and validate data using schema mapping
-      const extractedData = extractDataFromResponse(aiResponse, currentSectionMapping.fields);
-      if (Object.keys(extractedData).length > 0) {
-        await updateRealtimeDataWithMapping(currentSectionMapping, extractedData);
-        
-        // Update consent method if we're in consent management section
-        if (currentSectionMapping.sectionKey === 'consent_management' && extractedData.patient_consent_method) {
-          setConsentMethod(extractedData.patient_consent_method as ConsentMethod);
-          
-          // Trigger consent collection workflow
-          await triggerConsentCollection(extractedData.patient_consent_method as ConsentMethod, patientId);
+        // Update local consent method if provided
+        if (currentSectionMapping.sectionKey === 'consent_management' && extractedFromUser.patient_consent_method) {
+          setConsentMethod(extractedFromUser.patient_consent_method as ConsentMethod);
+          await triggerConsentCollection(extractedFromUser.patient_consent_method as ConsentMethod, patientId);
         }
 
-        // Capture verification method when NPI is provided in provider section
-        if (currentSectionMapping.sectionKey === 'provider_treatment_center' &&
-            (extractedData.referring_provider_npi || extractedData.facility_npi)) {
+        // Record verification when any NPI is present in this section
+        const hasNPI = !!(extractedFromUser.provider_npi || extractedFromUser.referring_provider_npi || extractedFromUser.facility_npi);
+        if (hasNPI) {
           await supabase
             .from('patient_enrollments')
             .update({ verification_method: 'npi_agent' } as any)
             .eq('id', patientId);
         }
       }
+
+      // 2) Generate AI response using the UPDATED context
+      const mergedCollected = { ...collectedData, ...extractedFromUser };
+      const aiResponse = await generateSchemaAwareResponse(
+        message,
+        { ...baseContext, collectedData: mergedCollected },
+        currentSectionMapping
+      );
 
       // Add AI response to conversation
       const aiMessage: ConversationMessage = {
@@ -311,7 +315,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         step: currentStep.id,
         metadata: { 
           mcpTools: currentStep.mcpTools,
-          extractedData: extractedData,
+          extractedData: extractedFromUser,
           sectionMapping: currentSectionMapping.sectionKey,
           destinationTable: currentSectionMapping.destinationTable
         }
@@ -322,14 +326,13 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         conversationHistory: [...prev.conversationHistory, aiMessage]
       } : null);
 
-      // Check if step is complete using schema validation
-      const isStepComplete = checkStepCompletionWithMapping(currentSectionMapping, { ...collectedData, ...extractedData });
+      // 3) Determine if step can progress based on merged data
+      const isStepComplete = checkStepCompletionWithMapping(currentSectionMapping, mergedCollected);
       if (isStepComplete && currentStepIndex < enrollmentSteps.length - 1) {
         setTimeout(() => {
           advanceToNextStep();
         }, 1500);
       }
-
     } catch (error) {
       console.error('MCP processing error:', error);
       toast({
@@ -341,6 +344,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       setIsProcessing(false);
     }
   };
+
 
   // Generate schema-aware AI response
   const generateSchemaAwareResponse = async (
@@ -415,6 +419,58 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     });
     
     return extractedData;
+  };
+
+  // NEW: Extract structured data directly from the user's message
+  // This prevents loops where the assistant keeps asking because it was parsing its own prompt
+  const extractDataFromMessage = (message: string, sectionMapping: any): Record<string, any> => {
+    const data: Record<string, any> = {};
+    const lower = message.toLowerCase();
+
+    // Detect NPIs (10 digits)
+    const npiMatches = message.match(/\b\d{10}\b/g) || [];
+    if (npiMatches.length > 0) {
+      // Map NPIs to fields present in this section
+      sectionMapping.fields.forEach((f: any) => {
+        const key = f.fieldKey as string;
+        if (!data[key] && /provider_npi|referring_provider_npi/i.test(key)) {
+          data[key] = npiMatches[0];
+        }
+        if (!data[key] && /facility_npi/i.test(key) && npiMatches[1]) {
+          data[key] = npiMatches[1];
+        }
+      });
+    }
+
+    // Detect provider name when present in this section
+    if (sectionMapping.fields.some((f: any) => f.fieldKey === 'provider_name')) {
+      if (lower.includes('npi')) {
+        const idx = lower.indexOf('npi');
+        const nameSeg = message.slice(0, idx).replace(/^\s*dr\.?\s*/i, '').replace(/[,;:]\s*$/,'').trim();
+        if (nameSeg && nameSeg.length > 2) {
+          data['provider_name'] = nameSeg;
+        }
+      } else {
+        const drMatch = message.match(/^(?:dr\.?\s*)?([a-zA-Z][a-zA-Z\s'.-]{2,})$/);
+        if (drMatch) {
+          data['provider_name'] = drMatch[1].trim();
+        }
+      }
+    }
+
+    // Detect consent method keywords
+    const consentField = sectionMapping.fields.find((f: any) => f.fieldKey === 'patient_consent_method');
+    if (consentField?.options?.length) {
+      for (const opt of consentField.options) {
+        const variant = String(opt).replace(/_/g, ' ').toLowerCase();
+        if (lower.includes(variant)) {
+          data['patient_consent_method'] = opt;
+          break;
+        }
+      }
+    }
+
+    return data;
   };
 
   // Update real-time data with proper table mapping
