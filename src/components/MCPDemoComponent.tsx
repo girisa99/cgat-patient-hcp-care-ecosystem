@@ -3,17 +3,32 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { 
   defaultHealthcareServer,
   MCPUtils
 } from '@/integrations/mcp/healthcare-server';
 import { defaultFileSystemServer } from '@/integrations/mcp/filesystem-server';
-import { Activity, FileText, Database, Shield, Cpu } from 'lucide-react';
+import { useConversationalEnrollment } from '@/hooks/useConversationalEnrollment';
+import { Activity, FileText, Database, Shield, Cpu, Users, UserCheck } from 'lucide-react';
 
 const MCPDemoComponent: React.FC = () => {
   const [serverStatus, setServerStatus] = useState<'stopped' | 'starting' | 'running'>('stopped');
   const [selectedTool, setSelectedTool] = useState<string | null>(null);
   const [toolResult, setToolResult] = useState<any>(null);
+  const [isEnrollmentMode, setIsEnrollmentMode] = useState(false);
+  const [messageInput, setMessageInput] = useState('');
+  
+  // Integration with conversational enrollment
+  const { 
+    session, 
+    isProcessing, 
+    error, 
+    startConversation, 
+    processMessage, 
+    endConversation 
+  } = useConversationalEnrollment();
 
   const handleStartServer = async () => {
     setServerStatus('starting');
@@ -53,6 +68,45 @@ const MCPDemoComponent: React.FC = () => {
       
       setToolResult(MCPUtils.generateToolResponse(toolName, result));
     } catch (error) {
+      setToolResult({ error: error.message });
+    }
+  };
+
+  const handleStartEnrollmentConversation = async (moduleType: 'patient' | 'treatment_center') => {
+    try {
+      setIsEnrollmentMode(true);
+      const sessionId = await startConversation(moduleType);
+      console.log(`🎯 MCP initiated ${moduleType} enrollment conversation:`, sessionId);
+      
+      // Auto-start with a welcome message
+      await processMessage(`Hello! I'd like to start the ${moduleType} enrollment process. Can you help me get started?`);
+      
+      setToolResult({
+        tool: 'enrollment-conversation',
+        status: 'started',
+        sessionId,
+        moduleType,
+        message: `${moduleType} enrollment conversation initiated via MCP`
+      });
+    } catch (error) {
+      console.error('Failed to start enrollment conversation:', error);
+      setToolResult({ error: error.message });
+    }
+  };
+
+  const handleSendMessage = async (message: string) => {
+    if (!session) return;
+    
+    try {
+      const response = await processMessage(message);
+      setToolResult({
+        tool: 'enrollment-message',
+        message: response.response,
+        extractedData: response.extractedData,
+        confidence: response.confidence
+      });
+    } catch (error) {
+      console.error('Failed to process message:', error);
       setToolResult({ error: error.message });
     }
   };
@@ -156,7 +210,48 @@ const MCPDemoComponent: React.FC = () => {
       </Card>
 
       {serverStatus === 'running' && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Users className="h-5 w-5" />
+                Enrollment Agents
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => handleStartEnrollmentConversation('patient')}
+                disabled={isProcessing}
+              >
+                <UserCheck className="h-4 w-4 mr-2" />
+                Start Patient Enrollment
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full justify-start"
+                onClick={() => handleStartEnrollmentConversation('treatment_center')}
+                disabled={isProcessing}
+              >
+                <Database className="h-4 w-4 mr-2" />
+                Start Treatment Center Enrollment
+              </Button>
+              {session && (
+                <div className="mt-4 p-3 bg-green-50 border border-green-200 rounded">
+                  <p className="text-sm font-medium text-green-800">
+                    Active Session: {session.moduleType}
+                  </p>
+                  <p className="text-xs text-green-600">
+                    Current Section: {session.currentSection}
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
@@ -206,12 +301,57 @@ const MCPDemoComponent: React.FC = () => {
       {toolResult && (
         <Card>
           <CardHeader>
-            <CardTitle>Tool Execution Result: {selectedTool}</CardTitle>
+            <CardTitle>
+              {isEnrollmentMode ? 'Enrollment Conversation' : `Tool Execution Result: ${selectedTool}`}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
-              {JSON.stringify(toolResult, null, 2)}
-            </pre>
+            {isEnrollmentMode && session ? (
+              <div className="space-y-4">
+                <div className="bg-blue-50 p-4 rounded">
+                  <h4 className="font-medium text-blue-800">
+                    {session.moduleType === 'patient' ? 'Patient' : 'Treatment Center'} Enrollment Active
+                  </h4>
+                  <p className="text-sm text-blue-600 mt-1">
+                    Session ID: {session.sessionId}
+                  </p>
+                  <p className="text-sm text-blue-600">
+                    Current Section: {session.currentSection}
+                  </p>
+                </div>
+                <div className="border-t pt-4">
+                  <Label>Send Message to Continue Enrollment:</Label>
+                  <div className="flex gap-2 mt-2">
+                    <Input
+                      type="text"
+                      placeholder="Type your response..."
+                      value={messageInput}
+                      onChange={(e) => setMessageInput(e.target.value)}
+                      onKeyPress={(e) => {
+                        if (e.key === 'Enter') {
+                          handleSendMessage(messageInput);
+                          setMessageInput('');
+                        }
+                      }}
+                      className="flex-1"
+                    />
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        setIsEnrollmentMode(false);
+                        endConversation();
+                      }}
+                    >
+                      End Session
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <pre className="bg-gray-100 p-4 rounded text-sm overflow-auto">
+                {JSON.stringify(toolResult, null, 2)}
+              </pre>
+            )}
           </CardContent>
         </Card>
       )}
