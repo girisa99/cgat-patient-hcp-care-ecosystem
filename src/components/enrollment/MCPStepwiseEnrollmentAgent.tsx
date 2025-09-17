@@ -26,6 +26,7 @@ import {
   CreditCard,
   Stethoscope
 } from 'lucide-react';
+import { MCPWelcomeOverview } from './MCPWelcomeOverview';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { 
@@ -133,6 +134,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   const [patientId] = useState(() => crypto.randomUUID());
   const [enrollmentSource] = useState<EnrollmentSource>('mcp'); // Set as MCP source
   const [consentMethod, setConsentMethod] = useState<ConsentMethod | null>(null);
+  const [showWelcome, setShowWelcome] = useState(true);
 
   // Initialize MCP session with patient enrollment tracking
   const initializeMCPSession = async (): Promise<{ session: MCPSession; enrollment: PatientEnrollmentSession } | null> => {
@@ -600,10 +602,12 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     }
   };
 
-  // Initialize session on component mount
+  // Initialize session after welcome
   useEffect(() => {
-    initializeMCPSession();
-  }, []);
+    if (!showWelcome && !mcpSession) {
+      initializeMCPSession();
+    }
+  }, [showWelcome, mcpSession]);
 
   const currentStep = enrollmentSteps[currentStepIndex];
   const progress = Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100);
