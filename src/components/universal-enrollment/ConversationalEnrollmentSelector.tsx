@@ -41,6 +41,7 @@ import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversation
 import { EnrollmentErrorBoundary } from '../enrollment/EnrollmentErrorBoundary';
 import { EnrollmentAgentWorkflowCreator } from '../enrollment/EnrollmentAgentWorkflowCreator';
 import { NPICredentialingConfirmationModal } from './NPICredentialingConfirmationModal';
+import { MCPWelcomeOverview } from '../enrollment/MCPWelcomeOverview';
 import { useNavigate } from 'react-router-dom';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
@@ -59,6 +60,7 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   const [showNPIConfirmation, setShowNPIConfirmation] = useState(false);
   const [pendingAgentType, setPendingAgentType] = useState<'mcp_stepwise' | 'structured' | 'conversation' | null>(null);
   const [showImplementationDetails, setShowImplementationDetails] = useState<string | null>(null);
+  const [showWelcome, setShowWelcome] = useState(true);
   const { closeEnrollment } = useGlobalConversationalEnrollment();
   const navigate = useNavigate();
 
@@ -277,6 +279,15 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
     // Close modal and let the user continue with the existing form on the page
     closeEnrollment();
     return null;
+  }
+
+  // Show welcome overview first
+  if (showWelcome) {
+    return (
+      <MCPWelcomeOverview 
+        onStart={() => setShowWelcome(false)}
+      />
+    );
   }
 
   const moduleInfo = getModuleInfo(moduleType);

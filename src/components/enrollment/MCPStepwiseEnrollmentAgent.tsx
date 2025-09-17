@@ -612,6 +612,15 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   const currentStep = enrollmentSteps[currentStepIndex];
   const progress = Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100);
 
+  // Show welcome overview first
+  if (showWelcome) {
+    return (
+      <MCPWelcomeOverview 
+        onStart={() => setShowWelcome(false)}
+      />
+    );
+  }
+
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       {/* Header */}
