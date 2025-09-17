@@ -78,18 +78,37 @@ const MCPDemoComponent: React.FC = () => {
       const sessionId = await startConversation(moduleType);
       console.log(`🎯 MCP initiated ${moduleType} enrollment conversation:`, sessionId);
       
-      // Auto-start with a welcome message
-      await processMessage(`Hello! I'd like to start the ${moduleType} enrollment process. Can you help me get started?`);
+      // Start with MCP educational conversation first
+      const mcpWelcomeMessage = `🤖 Welcome! I'm your MCP-powered enrollment agent. 
+
+Before we begin your ${moduleType} enrollment, let me share something exciting about the technology powering our conversation:
+
+**What is MCP (Model Context Protocol)?**
+MCP is a revolutionary standard that allows AI agents like me to seamlessly connect with various data sources, tools, and systems in real-time. Think of me as having superpowers - I can instantly access patient databases, verify NPI credentials, generate documents, and coordinate with multiple systems simultaneously.
+
+**Why MCP is transforming healthcare:**
+• **Real-time Intelligence**: I can verify your NPI, check credentialing status, and auto-fill forms instantly
+• **Multi-System Integration**: I connect to databases, APIs, document generators, and communication channels all at once  
+• **Contextual Awareness**: I remember our conversation and can reference any data point throughout the enrollment
+• **Tool Orchestration**: I can trigger PDF generation, send SMS/WhatsApp notifications, and coordinate with voice agents
+
+**The Evolution**: MCP is becoming the backbone of intelligent automation, enabling agents like me to be truly helpful rather than just conversational. We're moving from simple chatbots to intelligent assistants that can actually get work done.
+
+Now, ready to experience this in action? I'll guide you through ${moduleType} enrollment while demonstrating these capabilities. What would you like to know about the enrollment process, or shall we dive right in?`;
+
+      const response = await processMessage(mcpWelcomeMessage);
       
       setToolResult({
-        tool: 'enrollment-conversation',
-        status: 'started',
+        tool: 'mcp-educational-conversation',
+        status: 'educational-phase',
         sessionId,
         moduleType,
-        message: `${moduleType} enrollment conversation initiated via MCP`
+        message: response.response,
+        phase: 'education',
+        nextPhase: 'enrollment'
       });
     } catch (error) {
-      console.error('Failed to start enrollment conversation:', error);
+      console.error('Failed to start MCP conversation:', error);
       setToolResult({ error: error.message });
     }
   };
@@ -98,12 +117,56 @@ const MCPDemoComponent: React.FC = () => {
     if (!session) return;
     
     try {
-      const response = await processMessage(message);
+      // Check if user wants to proceed to enrollment
+      const isReadyForEnrollment = message.toLowerCase().includes('dive right in') || 
+                                   message.toLowerCase().includes('start enrollment') ||
+                                   message.toLowerCase().includes('begin enrollment') ||
+                                   message.toLowerCase().includes('ready') ||
+                                   message.toLowerCase().includes('let\'s start');
+      
+      let contextualMessage = message;
+      
+      if (isReadyForEnrollment && toolResult?.phase === 'education') {
+        contextualMessage = `Perfect! Let's transition to the actual ${session.moduleType} enrollment process. 
+
+**🚀 MCP Powers Activated!**
+Watch as I demonstrate real-time capabilities:
+- Auto-detecting required fields for ${session.moduleType}
+- Preparing NPI verification systems
+- Setting up document generation workflows
+- Initializing communication channels (SMS/WhatsApp/Email)
+
+${message}
+
+Now, let's start with the basics. What's the primary contact information for this ${session.moduleType} enrollment?`;
+
+        // Update phase to enrollment
+        setToolResult(prev => ({...prev, phase: 'enrollment'}));
+      }
+      
+      const response = await processMessage(contextualMessage);
+      
+      // Enhance response with MCP context if in educational phase
+      let enhancedResponse = response;
+      if (toolResult?.phase === 'education' && !isReadyForEnrollment) {
+        enhancedResponse = {
+          ...response,
+          response: response.response + `\n\n💡 **MCP Insight**: As we chat, I'm maintaining context about your ${session.moduleType} enrollment needs. When you're ready to begin, just say "let's start" and I'll demonstrate real-time data integration and intelligent form assistance!`
+        };
+      }
+      
       setToolResult({
-        tool: 'enrollment-message',
-        message: response.response,
-        extractedData: response.extractedData,
-        confidence: response.confidence
+        tool: 'mcp-conversation',
+        message: enhancedResponse.response,
+        extractedData: enhancedResponse.extractedData,
+        confidence: enhancedResponse.confidence,
+        phase: isReadyForEnrollment ? 'enrollment' : (toolResult?.phase || 'education'),
+        mcpCapabilities: {
+          npiVerification: 'Ready',
+          documentGeneration: 'Active',
+          multiSystemIntegration: 'Connected',
+          contextualMemory: 'Maintaining session data'
+        }
       });
     } catch (error) {
       console.error('Failed to process message:', error);
@@ -308,23 +371,39 @@ const MCPDemoComponent: React.FC = () => {
           <CardContent>
             {isEnrollmentMode && session ? (
               <div className="space-y-4">
-                <div className="bg-blue-50 p-4 rounded">
-                  <h4 className="font-medium text-blue-800">
-                    {session.moduleType === 'patient' ? 'Patient' : 'Treatment Center'} Enrollment Active
+                <div className={`p-4 rounded ${toolResult?.phase === 'education' ? 'bg-purple-50 border border-purple-200' : 'bg-blue-50 border border-blue-200'}`}>
+                  <h4 className={`font-medium ${toolResult?.phase === 'education' ? 'text-purple-800' : 'text-blue-800'}`}>
+                    🤖 MCP Agent: {session.moduleType === 'patient' ? 'Patient' : 'Treatment Center'} {toolResult?.phase === 'education' ? 'Education' : 'Enrollment'}
                   </h4>
-                  <p className="text-sm text-blue-600 mt-1">
+                  <p className={`text-sm mt-1 ${toolResult?.phase === 'education' ? 'text-purple-600' : 'text-blue-600'}`}>
                     Session ID: {session.sessionId}
                   </p>
-                  <p className="text-sm text-blue-600">
-                    Current Section: {session.currentSection}
+                  <p className={`text-sm ${toolResult?.phase === 'education' ? 'text-purple-600' : 'text-blue-600'}`}>
+                    Phase: {toolResult?.phase === 'education' ? '🎓 Learning about MCP' : `📋 ${session.currentSection}`}
                   </p>
+                  {toolResult?.mcpCapabilities && (
+                    <div className="mt-3 grid grid-cols-2 gap-2">
+                       {Object.entries(toolResult.mcpCapabilities).map(([key, status]) => (
+                         <div key={key} className="flex items-center gap-1">
+                           <div className="w-2 h-2 bg-green-400 rounded-full"></div>
+                           <span className="text-xs text-gray-600">{key}: {String(status)}</span>
+                         </div>
+                       ))}
+                    </div>
+                  )}
                 </div>
                 <div className="border-t pt-4">
-                  <Label>Send Message to Continue Enrollment:</Label>
+                  <Label>
+                    {toolResult?.phase === 'education' 
+                      ? '💭 Continue the MCP conversation or say "let\'s start" to begin enrollment:' 
+                      : '📝 Continue with enrollment details:'}
+                  </Label>
                   <div className="flex gap-2 mt-2">
                     <Input
                       type="text"
-                      placeholder="Type your response..."
+                      placeholder={toolResult?.phase === 'education' 
+                        ? "Ask about MCP benefits or say 'let's start'..." 
+                        : "Provide enrollment information..."}
                       value={messageInput}
                       onChange={(e) => setMessageInput(e.target.value)}
                       onKeyPress={(e) => {
@@ -335,6 +414,17 @@ const MCPDemoComponent: React.FC = () => {
                       }}
                       className="flex-1"
                     />
+                    {toolResult?.phase === 'education' && (
+                      <Button 
+                        variant="default"
+                        onClick={() => {
+                          handleSendMessage("Let's dive right in and start the enrollment!");
+                          setMessageInput('');
+                        }}
+                      >
+                        Start Enrollment
+                      </Button>
+                    )}
                     <Button 
                       variant="outline" 
                       onClick={() => {
@@ -345,6 +435,40 @@ const MCPDemoComponent: React.FC = () => {
                       End Session
                     </Button>
                   </div>
+                  {toolResult?.phase === 'education' && (
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          handleSendMessage("What makes MCP different from regular chatbots?");
+                          setMessageInput('');
+                        }}
+                      >
+                        MCP vs Chatbots?
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          handleSendMessage("How does MCP help with healthcare enrollment specifically?");
+                          setMessageInput('');
+                        }}
+                      >
+                        Healthcare Benefits?
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => {
+                          handleSendMessage("What systems can you integrate with during enrollment?");
+                          setMessageInput('');
+                        }}
+                      >
+                        Integration Capabilities?
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </div>
             ) : (
