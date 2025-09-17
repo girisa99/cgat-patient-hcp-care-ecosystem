@@ -13,7 +13,7 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Progress } from "@/components/ui/progress";
 import { 
   Bot, 
-  Template, 
+  FileTemplate, 
   BarChart3, 
   Play, 
   Pause, 
@@ -25,7 +25,7 @@ import {
   Filter,
   Activity,
   Database,
-  Memory,
+  HardDrive,
   Cloud,
   MessageSquare,
   Users,
@@ -40,7 +40,7 @@ interface Agent {
   id: string;
   name: string;
   description: string;
-  status: 'draft' | 'deployed' | 'paused' | 'archived';
+  status: string;
   template_id?: string;
   created_at: string;
   updated_at: string;
@@ -56,7 +56,7 @@ interface AgentTemplate {
   description: string;
   template_type: string;
   configuration: any;
-  journey_stages: any[];
+  journey_stages: any;
   is_default: boolean;
   created_at: string;
 }
@@ -264,7 +264,7 @@ export const AgentsManagementPage: React.FC = () => {
     // Determine agent type based on configuration
     const config = agent.configuration || {};
     if (config.database_enabled) return <Database className="h-4 w-4" />;
-    if (config.memory_enabled) return <Memory className="h-4 w-4" />;
+    if (config.memory_enabled) return <HardDrive className="h-4 w-4" />;
     if (config.api_enabled) return <Cloud className="h-4 w-4" />;
     return <Bot className="h-4 w-4" />;
   };
@@ -383,7 +383,7 @@ export const AgentsManagementPage: React.FC = () => {
             Agents ({agents.length})
           </TabsTrigger>
           <TabsTrigger value="templates" className="flex items-center gap-2">
-            <Template className="h-4 w-4" />
+            <FileTemplate className="h-4 w-4" />
             Templates ({templates.length})
           </TabsTrigger>
           <TabsTrigger value="deployments" className="flex items-center gap-2">
@@ -399,13 +399,13 @@ export const AgentsManagementPage: React.FC = () => {
         {/* Agents Tab */}
         <TabsContent value="agents" className="space-y-4">
           <div className="flex gap-4 items-center">
-            <div className="flex-1">
+            <div className="flex-1 relative">
+              <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground" />
               <Input
                 placeholder="Search agents..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="max-w-sm"
-                icon={<Search className="h-4 w-4" />}
+                className="max-w-sm pl-10"
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -496,7 +496,7 @@ export const AgentsManagementPage: React.FC = () => {
         {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-4">
           <Alert>
-            <Template className="h-4 w-4" />
+            <FileTemplate className="h-4 w-4" />
             <AlertDescription>
               Agent templates provide pre-configured workflows for common healthcare scenarios. 
               Create new agents from these templates to ensure consistency and best practices.
@@ -509,7 +509,7 @@ export const AgentsManagementPage: React.FC = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Template className="h-5 w-5" />
+                      <FileTemplate className="h-5 w-5" />
                       {template.name}
                       {template.is_default && (
                         <Badge variant="default" className="text-xs">Default</Badge>
@@ -530,7 +530,8 @@ export const AgentsManagementPage: React.FC = () => {
                   <div className="flex items-center justify-between">
                     <Badge variant="outline">{template.template_type}</Badge>
                     <span className="text-xs text-muted-foreground">
-                      {template.journey_stages?.length || 0} stages
+                      {Array.isArray(template.journey_stages) ? template.journey_stages.length : 
+                       (template.journey_stages ? Object.keys(template.journey_stages).length : 0)} stages
                     </span>
                   </div>
                 </CardContent>

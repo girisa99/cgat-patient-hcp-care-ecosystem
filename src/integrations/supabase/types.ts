@@ -6470,6 +6470,51 @@ export type Database = {
           },
         ]
       }
+      insurance_document_uploads: {
+        Row: {
+          created_at: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id: string
+          insurance_tier_id: string
+          metadata: Json | null
+          mime_type: string
+          patient_id: string
+          updated_at: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          created_at?: string
+          document_type: string
+          file_name: string
+          file_path: string
+          file_size: number
+          id?: string
+          insurance_tier_id: string
+          metadata?: Json | null
+          mime_type: string
+          patient_id: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          created_at?: string
+          document_type?: string
+          file_name?: string
+          file_path?: string
+          file_size?: number
+          id?: string
+          insurance_tier_id?: string
+          metadata?: Json | null
+          mime_type?: string
+          patient_id?: string
+          updated_at?: string
+          uploaded_by?: string | null
+        }
+        Relationships: []
+      }
       issue_fixes: {
         Row: {
           category: string
