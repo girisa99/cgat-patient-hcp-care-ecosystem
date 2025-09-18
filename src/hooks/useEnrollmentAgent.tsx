@@ -129,16 +129,21 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
         formData: updatedFormData
       } : null);
 
-      // Update database with proper UUID validation
+      // Update database with proper UUID validation - individual fields approach
       const { data: authUser } = await supabase.auth.getUser();
       if (authUser.user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(currentSession.instanceId)) {
+        // Calculate progress based on completed sections
+        const allSections = getSectionsForModule(currentSession.moduleType);
+        const progress = Math.round((currentSession.completedSections.length / allSections.length) * 100);
+        
         await supabase.from('patient_enrollments').update({
+          current_section: currentSession.currentSection,
+          progress_percentage: progress,
+          // Only use JSONB for truly flexible configuration data
           metadata: {
             agent_type: 'hook_managed',
             module_type: currentSession.moduleType,
-            completed_sections: currentSession.completedSections,
-            section_data: { [sectionName]: cleanedData },
-            section_timestamps: {}
+            last_updated_section: sectionName
           } as any,
           updated_at: new Date().toISOString()
         }).eq('id', currentSession.instanceId);
@@ -227,19 +232,18 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
         currentSection: nextSection || sectionName
       } : null);
 
-      // Update database progress with proper UUID validation
+      // Update database progress with individual fields approach
       const { data: authUser } = await supabase.auth.getUser();
       if (authUser.user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(currentSession.instanceId)) {
         await supabase.from('patient_enrollments').update({
           current_section: nextSection || 'completed',
           progress_percentage: progress,
+          // Only use JSONB for truly flexible configuration data
           metadata: {
             agent_type: 'hook_managed',
             module_type: currentSession.moduleType,
-            completed_sections: updatedCompletedSections,
-            section_timestamps: {
-              [sectionName]: new Date().toISOString()
-            }
+            last_completed_section: sectionName,
+            completion_timestamp: new Date().toISOString()
           } as any,
           updated_at: new Date().toISOString()
         }).eq('id', currentSession.instanceId);
