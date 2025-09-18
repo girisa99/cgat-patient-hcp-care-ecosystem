@@ -755,7 +755,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
                 <div className="text-sm">Progress updates are being synced to the main dashboard in real-time.</div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" onClick={() => window.open('/dashboard', '_blank')}>
+                <Button variant="outline" size="sm" onClick={() => window.open('/patient-onboarding', '_blank')}>
                   <Eye className="h-3 w-3 mr-1" />
                   View Dashboard
                 </Button>
