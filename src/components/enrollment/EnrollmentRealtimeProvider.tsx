@@ -130,6 +130,12 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
           } else if (table === 'enrollment_insurance_info') {
             tabId = 'insurance';
             sectionProgress = calculateFieldProgress(instanceData, ['insurance_provider', 'member_id', 'policy_holder']);
+          } else if (table === 'insurance_document_uploads') {
+            tabId = 'insurance';
+            sectionProgress = instanceData.upload_status === 'completed' ? 100 : (instanceData.upload_status === 'processing' ? 75 : 25);
+          } else if (table === 'insurance_coverages') {
+            tabId = 'insurance';
+            sectionProgress = calculateFieldProgress(instanceData, ['coverage_type', 'coverage_status', 'effective_date']);
           } else if (table === 'enrollment_clinical_info') {
             tabId = 'treatment_clinical';
             sectionProgress = calculateFieldProgress(instanceData, ['primary_diagnosis', 'treatment_goals']);

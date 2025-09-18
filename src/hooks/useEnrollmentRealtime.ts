@@ -79,6 +79,32 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
           timestamp: new Date().toISOString()
         });
       })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'insurance_document_uploads'
+      }, (payload: any) => {
+        handleRealtimeUpdate({
+          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+          table: 'insurance_document_uploads',
+          old: payload.old,
+          new: payload.new,
+          timestamp: new Date().toISOString()
+        });
+      })
+      .on('postgres_changes', {
+        event: '*',
+        schema: 'public',
+        table: 'insurance_coverages'
+      }, (payload: any) => {
+        handleRealtimeUpdate({
+          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
+          table: 'insurance_coverages',
+          old: payload.old,
+          new: payload.new,
+          timestamp: new Date().toISOString()
+        });
+      })
       .on('presence', { event: 'sync' }, () => {
         const presenceState = newChannel.presenceState();
         setState(prev => ({
