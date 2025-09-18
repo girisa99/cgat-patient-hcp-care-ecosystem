@@ -77,11 +77,10 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
         current_section: 'consent_management',
         progress_percentage: 0,
         enrollment_source: 'conversational',
+        // Only use JSONB for truly flexible configuration data
         metadata: { 
           agent_type: 'conversational', 
           module_type: moduleType,
-          completed_sections: [],
-          section_timestamps: {},
           conversation_personality: 'professional'
         },
         user_id: authUser.user.id,

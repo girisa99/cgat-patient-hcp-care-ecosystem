@@ -81,11 +81,10 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
         current_section: 'patient_information',
         progress_percentage: 0,
         enrollment_source: 'structured_ai',
+        // Only use JSONB for truly flexible configuration data
         metadata: { 
           agent_type: 'structured', 
-          module_type: moduleType,
-          completed_sections: [],
-          section_timestamps: {}
+          module_type: moduleType
         },
         user_id: authUser.user.id,
         created_at: new Date().toISOString(),
