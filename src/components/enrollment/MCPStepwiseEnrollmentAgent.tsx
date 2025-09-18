@@ -270,6 +270,22 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       sectionMapping.fields.forEach((field: any) => {
         if (data[field.fieldKey] !== undefined) {
           let value = data[field.fieldKey];
+
+          // Normalize empty strings to null (avoid failing CHECK constraints)
+          if (typeof value === 'string' && value.trim() === '') {
+            value = null;
+          }
+
+          // NPI fields: only persist when exactly 10 digits
+          const isNpiField = /npi$/i.test(field.fieldKey) || /npi$/i.test(field.destinationColumn);
+          if (isNpiField) {
+            const digits = (value ?? '').toString().replace(/\D/g, '');
+            if (digits.length !== 10) {
+              // Skip persisting invalid intermediate values to prevent 400 errors
+              return;
+            }
+            value = digits;
+          }
           
           // Enhanced date field handling to prevent toISOString errors
           if (field.fieldType === 'date' && value) {
@@ -278,7 +294,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
               if (typeof value === 'string') {
                 // Check if it's already an ISO string
                 if (value.includes('T') && value.includes('Z')) {
-                  value = value; // Already ISO format
+                  // Already ISO
                 } else if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
                   // Date-only format, convert to ISO
                   value = new Date(value + 'T00:00:00.000Z').toISOString();
@@ -309,7 +325,10 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
             }
           }
           
-          mappedData[field.destinationColumn] = value;
+          // Only set when defined (null allowed)
+          if (value !== undefined) {
+            mappedData[field.destinationColumn] = value;
+          }
         }
       });
 
@@ -564,45 +583,97 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                     sectionDescription={currentStep.description}
                     fields={convertToFieldDefinitions(currentStep.id as EnrollmentSectionKey)}
                     initialData={collectedData}
-                    onFieldUpdate={async (fieldName, value) => {
-                      console.log(`Field updated: ${fieldName} = ${value}`);
-                      const sectionMapping = getSectionByKey(currentStep.id as EnrollmentSectionKey);
-                      await updateRealtimeDataWithMapping(sectionMapping, { [fieldName]: value });
-                      
-                      // Update local collected data immediately
-                      const updatedData = { ...collectedData, [fieldName]: value };
-                      setCollectedData(updatedData);
-                      
-                      // Check if section is complete with updated data
-                      const isComplete = checkStepCompletionWithMapping(sectionMapping, updatedData);
-                      
-                      console.log(`Field ${fieldName} updated. Section complete: ${isComplete}`);
-                      console.log('Required fields:', sectionMapping.requiredFields);
-                      console.log('Current data:', updatedData);
-                    }}
-                    onSectionComplete={async (data) => {
-                      console.log(`Section completed: ${currentStep.id}`, data);
-                      setCollectedData(prev => ({ ...prev, ...data }));
-                      
-                      // Mark section as completed
-                      const sectionMapping = getSectionByKey(currentStep.id as EnrollmentSectionKey);
-                      setCompletedSectionData({
-                        sectionKey: currentStep.id,
-                        completedAt: new Date()
-                      });
-                      setShowSectionCompletion(true);
-                      
-                      toast({
-                        title: `${currentStep.name} Completed! 🎉`,
-                        description: "All required fields completed. Advancing to next section...",
-                      });
-                      
-                      // Auto-advance after 3 seconds to give user time to see completion
-                      setTimeout(() => {
-                        setShowSectionCompletion(false);
-                        advanceToNextStep();
-                      }, 2000);
-                    }}
+                      onFieldUpdate={async (fieldName, value) => {
+                        console.log(`Field updated: ${fieldName} = ${value}`);
+                        const sectionMapping = getSectionByKey(currentStep.id as EnrollmentSectionKey);
+
+                        // Local update first (keep empty string locally for UX)
+                        const localValue = (typeof value === 'string' && value.trim() === '') ? '' : value;
+                        const updatedData = { ...collectedData, [fieldName]: localValue };
+                        setCollectedData(updatedData);
+
+                        // NPI fields: only persist when exactly 10 digits
+                        const isNpi = /npi$/i.test(fieldName);
+                        if (isNpi) {
+                          const digits = (value ?? '').toString().replace(/\D/g, '');
+                          if (digits.length === 10) {
+                            await updateRealtimeDataWithMapping(sectionMapping, { [fieldName]: digits });
+                          } else {
+                            // Skip DB write for partial/invalid NPI to avoid 400 errors
+                          }
+                        } else {
+                          await updateRealtimeDataWithMapping(sectionMapping, { [fieldName]: value });
+                        }
+
+                        // When consent method is chosen, move to provider signature sub-step
+                        if (currentStep.id === 'consent_management' && fieldName === 'patient_consent_method' && value) {
+                          setConsentMethod(value as ConsentMethod);
+                          setConsentSubStep('provider_signature');
+                        }
+
+                        // Check if section is complete with updated data
+                        const isComplete = checkStepCompletionWithMapping(sectionMapping, updatedData);
+
+                        console.log(`Field ${fieldName} updated. Section complete: ${isComplete}`);
+                        console.log('Required fields:', sectionMapping.requiredFields);
+                        console.log('Current data:', updatedData);
+                      }}
+                      onSectionComplete={async (data) => {
+                        console.log(`Section completed: ${currentStep.id}`, data);
+                        const merged = { ...collectedData, ...data };
+                        setCollectedData(merged);
+
+                        // Persist completion to enrollment metadata + progress
+                        try {
+                          const { data: enroll } = await supabase
+                            .from('patient_enrollments')
+                            .select('metadata, progress_percentage')
+                            .eq('id', patientId)
+                            .maybeSingle();
+
+                          const existingMeta = ((enroll?.metadata || {}) as Record<string, any>);
+                          const completedSections = Array.isArray(existingMeta.completed_sections)
+                            ? (existingMeta.completed_sections as string[])
+                            : [];
+                          const newCompleted = Array.from(new Set([...completedSections, currentStep.id]));
+
+                          const nextKey = getNextSection(currentStep.id as EnrollmentSectionKey) ?? 'final_submit';
+                          const newProgress = Math.max(
+                            Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100),
+                            enroll?.progress_percentage || 0
+                          );
+
+                          await supabase
+                            .from('patient_enrollments')
+                            .update({
+                              current_section: nextKey,
+                              progress_percentage: newProgress,
+                              updated_at: new Date().toISOString(),
+                              metadata: { ...existingMeta, completed_sections: newCompleted } as any
+                            })
+                            .eq('id', patientId);
+                        } catch (err) {
+                          console.error('Failed to mark section complete:', err);
+                        }
+                        
+                        // Mark section as completed in UI
+                        setCompletedSectionData({
+                          sectionKey: currentStep.id,
+                          completedAt: new Date()
+                        });
+                        setShowSectionCompletion(true);
+                        
+                        toast({
+                          title: `${currentStep.name} Completed! 🎉`,
+                          description: "All required fields completed. Advancing to next section...",
+                        });
+                        
+                        // Auto-advance after 2 seconds
+                        setTimeout(() => {
+                          setShowSectionCompletion(false);
+                          advanceToNextStep();
+                        }, 2000);
+                      }}
                     onCancel={onCancel}
                   />
                 </div>
