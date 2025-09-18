@@ -264,15 +264,24 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   // Update real-time data with UNIVERSAL DATABASE CONSTRAINT FIXES
   const updateRealtimeDataWithMapping = async (sectionMapping: any, data: Record<string, any>) => {
     try {
-      const mappedData: Record<string, any> = {};
+      // Normalize collection method for consent fields
+      if (data.collection_method) {
+        data.collection_method = normalizeCollectionMethod(data.collection_method);
+      }
       
-      // Map data to proper column names with UNIVERSAL DB CONSTRAINT FIXES
-      sectionMapping.fields.forEach((field: any) => {
-        if (data[field.fieldKey] !== undefined) {
-          let value = data[field.fieldKey];
+      // Route fields to appropriate tables based on field types  
+      const tableUpdates = routeFieldsToTables(data);
+      
+      // Execute all table updates
+      for (const batch of tableUpdates) {
+        if (batch.operation === 'update') {
+          await supabase.from(batch.tableName).update(batch.data).eq('id', patientId);
+        } else {
+          await supabase.from(batch.tableName).upsert({...batch.data, enrollment_id: patientId});
+        }
+      }
 
-          // UNIVERSAL FIX 1: Convert empty strings to null (PostgreSQL constraint compliance)
-          if (typeof value === 'string' && value.trim() === '') {
+      setCollectedData(prev => ({ ...prev, ...data }));
             value = null;
           }
 
@@ -413,7 +422,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       console.error('Database operation failed:', {
         section: sectionMapping.sectionKey,
         destinationTable: sectionMapping.destinationTable,
-        mappedData: Object.keys(mappedData),
+        formData: Object.keys(data),
         errorMessage: error instanceof Error ? error.message : error,
         errorCode: (error as any)?.code,
         errorDetails: (error as any)?.details

@@ -433,7 +433,6 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
     }
   };
 
-  // Load progress data from database with better error handling
   const loadProgressData = async (): Promise<RealtimeProgress | null> => {
     try {
       if (!isValidUuid(patientId)) {
