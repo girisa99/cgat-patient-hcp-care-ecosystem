@@ -261,62 +261,61 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     }
   };
 
-  // Update real-time data with proper mapping and enhanced date handling
+  // Update real-time data with UNIVERSAL DATABASE CONSTRAINT FIXES
   const updateRealtimeDataWithMapping = async (sectionMapping: any, data: Record<string, any>) => {
     try {
       const mappedData: Record<string, any> = {};
       
-      // Map data to proper column names with proper type handling
+      // Map data to proper column names with UNIVERSAL DB CONSTRAINT FIXES
       sectionMapping.fields.forEach((field: any) => {
         if (data[field.fieldKey] !== undefined) {
           let value = data[field.fieldKey];
 
-          // Normalize empty strings to null (avoid failing CHECK constraints)
+          // UNIVERSAL FIX 1: Convert empty strings to null (PostgreSQL constraint compliance)
           if (typeof value === 'string' && value.trim() === '') {
             value = null;
           }
 
-          // NPI fields: only persist when exactly 10 digits
+          // UNIVERSAL FIX 2: NPI validation - only persist exactly 10 digits
           const isNpiField = /npi$/i.test(field.fieldKey) || /npi$/i.test(field.destinationColumn);
-          if (isNpiField) {
-            const digits = (value ?? '').toString().replace(/\D/g, '');
-            if (digits.length !== 10) {
-              // Skip persisting invalid intermediate values to prevent 400 errors
-              return;
+          if (isNpiField && value) {
+            const digits = value.toString().replace(/\D/g, '');
+            // Only persist valid 10-digit NPIs to prevent database constraint violations
+            value = digits.length === 10 ? digits : null;
+          }
+
+          // UNIVERSAL FIX 3: UUID validation for ID fields
+          const isUuidField = /_id$/i.test(field.fieldKey) || /_id$/i.test(field.destinationColumn);
+          if (isUuidField && value && typeof value === 'string') {
+            const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+            if (!uuidPattern.test(value)) {
+              console.warn(`Invalid UUID format for ${field.fieldKey}:`, value);
+              value = null; // Prevent invalid UUIDs from causing 400 errors
             }
-            value = digits;
           }
           
-          // Enhanced date field handling to prevent toISOString errors
+          // UNIVERSAL FIX 4: Enhanced date field handling with proper validation
           if (field.fieldType === 'date' && value) {
             try {
-              // Handle various date formats
+              // Handle various date formats safely
               if (typeof value === 'string') {
-                // Check if it's already an ISO string
+                // Check if it's already a valid ISO string
                 if (value.includes('T') && value.includes('Z')) {
-                  // Already ISO
+                  const testDate = new Date(value);
+                  value = !isNaN(testDate.getTime()) ? value : null;
                 } else if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
-                  // Date-only format, convert to ISO
-                  value = new Date(value + 'T00:00:00.000Z').toISOString();
+                  // Date-only format, convert to ISO safely
+                  const dateOnly = new Date(value + 'T00:00:00.000Z');
+                  value = !isNaN(dateOnly.getTime()) ? dateOnly.toISOString() : null;
                 } else {
                   // Try to parse as date
                   const parsedDate = new Date(value);
-                  if (!isNaN(parsedDate.getTime())) {
-                    value = parsedDate.toISOString();
-                  } else {
-                    console.warn(`Invalid date value for ${field.fieldKey}:`, value);
-                    value = null;
-                  }
+                  value = !isNaN(parsedDate.getTime()) ? parsedDate.toISOString() : null;
                 }
               } else if (value instanceof Date) {
-                if (!isNaN(value.getTime())) {
-                  value = value.toISOString();
-                } else {
-                  console.warn(`Invalid Date object for ${field.fieldKey}:`, value);
-                  value = null;
-                }
+                value = !isNaN(value.getTime()) ? value.toISOString() : null;
               } else {
-                console.warn(`Unexpected date type for ${field.fieldKey}:`, typeof value, value);
+                console.warn(`Invalid date type for ${field.fieldKey}:`, typeof value, value);
                 value = null;
               }
             } catch (dateError) {
@@ -325,7 +324,13 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
             }
           }
           
-          // Only set when defined (null allowed)
+          // UNIVERSAL FIX 5: Numeric field validation
+          if (field.fieldType === 'number' && value !== null) {
+            const numValue = parseFloat(value);
+            value = !isNaN(numValue) ? numValue : null;
+          }
+          
+          // Only set when not undefined (null is allowed for nullable fields)
           if (value !== undefined) {
             mappedData[field.destinationColumn] = value;
           }

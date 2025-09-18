@@ -140,7 +140,21 @@ export const EnhancedProviderForm: React.FC<EnhancedProviderFormProps> = ({
   const { showSuccess, showError } = useMasterToast();
 
   const updateFormData = (field: keyof ProviderFormData, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Apply UNIVERSAL DATABASE CONSTRAINT FIXES before updating form data
+    let processedValue = value;
+
+    // UNIVERSAL FIX 1: Convert empty strings to null for database compliance
+    if (typeof processedValue === 'string' && processedValue.trim() === '') {
+      processedValue = '';  // Keep empty for form display, will convert to null on save
+    }
+
+    // UNIVERSAL FIX 2: NPI field validation - only allow digits, max 10
+    if (field.toLowerCase().includes('npi')) {
+      const digits = processedValue.replace(/\D/g, '');
+      processedValue = digits.slice(0, 10); // Limit to 10 digits max
+    }
+
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
   };
 
   const handleNPIVerification = async () => {

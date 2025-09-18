@@ -233,7 +233,28 @@ export const ComprehensiveClinicalTreatmentForm: React.FC<ComprehensiveClinicalT
   });
 
   const updateFormData = (field: keyof ClinicalTreatmentFormData, value: any) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+    // Apply UNIVERSAL DATABASE CONSTRAINT FIXES for clinical treatment data
+    let processedValue = value;
+
+    // UNIVERSAL FIX 1: Convert empty strings to null for database compliance
+    if (typeof processedValue === 'string' && processedValue.trim() === '') {
+      processedValue = null;
+    }
+
+    // UNIVERSAL FIX 2: Numeric validation for severity scales and counts
+    if (typeof processedValue === 'string' && !isNaN(Number(processedValue))) {
+      const numValue = parseFloat(processedValue);
+      if (!isNaN(numValue)) {
+        processedValue = numValue;
+      }
+    }
+
+    // UNIVERSAL FIX 3: Array validation - ensure arrays are not empty when required
+    if (Array.isArray(processedValue) && processedValue.length === 0) {
+      // Keep empty array for form display, will handle required validation separately
+    }
+
+    setFormData(prev => ({ ...prev, [field]: processedValue }));
   };
 
   const addToArray = (field: keyof ClinicalTreatmentFormData, newItem: string) => {
