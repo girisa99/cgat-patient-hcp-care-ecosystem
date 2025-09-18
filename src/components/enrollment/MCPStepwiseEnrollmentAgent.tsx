@@ -343,22 +343,37 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
       };
 
       if (sectionMapping.destinationTable === 'patient_enrollments') {
-        await supabase
+        const { error: updateError } = await supabase
           .from('patient_enrollments')
           .update(updateData)
           .eq('id', patientId);
+        
+        if (updateError) {
+          console.error('Patient enrollments update error:', updateError);
+          throw updateError;
+        }
       } else {
-        await supabase
+        // For section-specific tables, upsert with enrollment_id
+        const upsertData = {
+          ...updateData,
+          enrollment_id: patientId
+        };
+        
+        console.log(`Upserting to ${sectionMapping.destinationTable}:`, upsertData);
+        
+        const { error: upsertError } = await supabase
           .from(sectionMapping.destinationTable)
-          .upsert({
-            ...updateData,
-            enrollment_id: patientId
-          });
+          .upsert(upsertData);
+        
+        if (upsertError) {
+          console.error(`${sectionMapping.destinationTable} upsert error:`, upsertError);
+          throw upsertError;
+        }
       }
 
       setCollectedData(prev => ({ ...prev, ...data }));
 
-      // Update progress with proper error handling
+      // Update progress with detailed error handling
       const progress = Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100);
       
       const progressUpdate = { 
@@ -367,10 +382,15 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         updated_at: new Date().toISOString()
       };
       
-      await supabase
+      const { error: progressError } = await supabase
         .from('patient_enrollments')
         .update(progressUpdate)
         .eq('id', patientId);
+        
+      if (progressError) {
+        console.error('Progress update error:', progressError);
+        throw progressError;
+      }
 
       // Also update universal save system for cross-agent resume capability
       await saveUniversalProgress(
@@ -388,11 +408,25 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
 
     } catch (error) {
       console.error('Real-time update error:', error);
+      
+      // Log specific error details for debugging 400 errors
+      console.error('Database operation failed:', {
+        section: sectionMapping.sectionKey,
+        destinationTable: sectionMapping.destinationTable,
+        mappedData: Object.keys(mappedData),
+        errorMessage: error instanceof Error ? error.message : error,
+        errorCode: (error as any)?.code,
+        errorDetails: (error as any)?.details
+      });
+      
       toast({
         title: "Update Error",
-        description: "Failed to save data. Please try again.",
+        description: `Failed to save ${sectionMapping.sectionTitle} data. Please check console for details.`,
         variant: "destructive"
       });
+      
+      // Re-throw to prevent silent failures
+      throw error;
     }
   };
 
