@@ -105,12 +105,12 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
     if (sessionData && Object.keys(sessionData).length > 0) {
       setActiveSessions(sessionData);
       
-      // Update progress based on session data from multiple sources
+      // Update progress based on session data from ALL enrollment tables
       Object.entries(sessionData).forEach(([table, data]: [string, any]) => {
         if (data.data) {
           const instanceData = data.data;
           
-          // Handle different table types
+          // Handle different table types for comprehensive progress tracking
           let tabId = 'consent_mode';
           let sectionProgress = 0;
           
@@ -133,6 +133,14 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
           } else if (table === 'enrollment_clinical_info') {
             tabId = 'treatment_clinical';
             sectionProgress = calculateFieldProgress(instanceData, ['primary_diagnosis', 'treatment_goals']);
+          } else if (table === 'enrollment_documents') {
+            // Document uploads can affect multiple sections
+            tabId = instanceData.section_type || 'submit';
+            sectionProgress = instanceData.upload_complete ? 100 : 50;
+          } else if (table === 'enrollment_instances') {
+            // Workflow instances track overall progress
+            tabId = instanceData.current_section?.split('_')[0] || 'consent_mode';
+            sectionProgress = instanceData.completion_percentage || 0;
           }
           
           if (tabProgress[tabId]) {

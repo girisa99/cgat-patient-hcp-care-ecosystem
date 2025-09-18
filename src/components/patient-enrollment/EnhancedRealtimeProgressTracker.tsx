@@ -100,7 +100,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
         onProgressUpdate?.(initialProgress);
       }
 
-      // Set up real-time subscription for all enrollment tables
+      // Set up real-time subscription for ALL enrollment tables
       const channel = supabase
         .channel(`enrollment_progress_${patientId}`)
         .on(
@@ -169,6 +169,30 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             event: '*',
             schema: 'public',
             table: 'enrollment_clinical_info',
+            filter: `patient_id=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'enrollment_documents',
+            filter: `patient_id=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'enrollment_instances',
             filter: `patient_id=eq.${patientId}`
           },
           async (payload) => {
