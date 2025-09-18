@@ -7,9 +7,11 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { CalendarDays, AlertTriangle, CheckCircle, Expand, Minimize } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { CalendarDays, AlertTriangle, CheckCircle, Expand, Minimize, Settings } from "lucide-react";
 import { getExpandedFields, calculateSectionCompletion, FIELD_EXPANSION_RULES } from "@/utils/conditionalFieldExpansion";
 import { ENHANCED_FIELD_EXPANSION_RULES } from "@/utils/extendedConditionalFields";
+import { ConditionalFieldRenderer } from './ConditionalFieldRenderer';
 
 interface EnrollmentFormProps {
   step: string;
@@ -39,6 +41,7 @@ export const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
   const [formData, setFormData] = useState<Record<string, any>>(initialData);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [showExpandedFields, setShowExpandedFields] = useState(true);
+  const [showOptionalProviderFields, setShowOptionalProviderFields] = useState(false);
 
   // Update form data when initialData changes
   useEffect(() => {
@@ -121,9 +124,11 @@ export const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
       emergency_contact_name: { type: 'text', label: 'Emergency Contact Name' },
       emergency_contact_phone: { type: 'tel', label: 'Emergency Contact Phone' },
       
+      // Provider and Treatment Center fields (now optional) 
+      treatment_center_id: { type: 'custom', label: 'Treatment Center (Optional)' },
+      provider_id: { type: 'custom', label: 'Healthcare Provider (Optional)' },
+      
       // Provider fields
-      provider_name: { type: 'text', label: 'Provider Name' },
-      provider_npi: { type: 'text', label: 'Provider NPI', pattern: '[0-9]{10}' },
       provider_specialty: { type: 'text', label: 'Provider Specialty' },
       provider_phone: { type: 'tel', label: 'Provider Phone' },
       provider_email: { type: 'email', label: 'Provider Email' },
@@ -294,6 +299,26 @@ export const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
     const value = formData[fieldKey] || '';
     const isConditional = enableConditionalFields && !fields.includes(fieldKey);
 
+    // Use ConditionalFieldRenderer for special fields
+    if (['treatment_center_id', 'provider_id', 'collection_method', 'consent_treatment', 'consent_privacy', 'consent_communication'].includes(fieldKey)) {
+      return (
+        <ConditionalFieldRenderer
+          key={fieldKey}
+          fieldKey={fieldKey}
+          value={value}
+          onChange={handleInputChange}  
+          formData={formData}
+          showOptionalFields={showOptionalProviderFields}
+        />
+      );
+    }
+
+    // Skip auto-populated fields that are handled by selectors
+    if (['treatment_center', 'treatment_center_npi', 'provider_name', 'provider_npi'].includes(fieldKey) && 
+        (formData.treatment_center_id || formData.provider_id)) {
+      return null;
+    }
+
     const commonProps = {
       id: fieldKey,
       required: isRequired,
@@ -301,6 +326,19 @@ export const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
     };
 
     switch (config.type) {
+      case 'custom':
+        // Handle custom field types (treatment center, provider selectors)
+        return (
+          <ConditionalFieldRenderer
+            key={fieldKey}
+            fieldKey={fieldKey}
+            value={value}
+            onChange={handleInputChange}  
+            formData={formData}
+            showOptionalFields={showOptionalProviderFields}
+          />
+        );
+        
       case 'checkbox':
         return (
           <div key={fieldKey} className={`flex items-start space-x-3 p-4 border rounded-lg ${isConditional ? 'border-blue-200 bg-blue-50/30' : ''}`}>

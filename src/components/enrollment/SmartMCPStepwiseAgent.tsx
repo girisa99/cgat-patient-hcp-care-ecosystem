@@ -42,9 +42,9 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     {
       key: 'consent_management',
       title: 'Consent Management',
-      description: 'Patient consent, treatment center, and provider information',
+      description: 'Patient consent and authorization',
       icon: <FileText className="w-5 h-5" />,
-      requiredFields: ['consent_treatment', 'consent_privacy', 'treatment_center_id', 'provider_name'],
+      requiredFields: ['consent_treatment', 'consent_privacy'],
       fields: [
         'consent_treatment', 'consent_privacy', 'consent_communication',
         'collection_method', 'patient_signature', 'treatment_center_id', 
@@ -111,7 +111,6 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
 
   const currentStep = enrollmentSteps[currentStepIndex];
 
-  // Ensure a base patient_enrollments row exists (required by RLS on related tables)
   useEffect(() => {
     const init = async () => {
       try {
@@ -119,9 +118,10 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
         const userId = authUser.user?.id;
         if (!userId || !patientId) return;
 
+        // First, create the main enrollment record with user_id (required by RLS)
         const { error } = await supabase.from('patient_enrollments').upsert({
           id: patientId,
-          user_id: userId,
+          user_id: userId, // CRITICAL: Required for RLS to allow related table inserts
           session_id: `mcp-${Date.now()}`,
           enrollment_source: enrollmentSource || 'mcp',
           enrollment_status: 'in_progress',
@@ -130,15 +130,23 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         });
+        
         if (error) {
           console.error('Init enrollment record error:', error);
+          toast({
+            title: "Initialization Error", 
+            description: "Failed to initialize enrollment. Please refresh and try again.",
+            variant: "destructive"
+          });
+        } else {
+          console.log('✅ Successfully initialized patient enrollment record with user_id:', userId);
         }
       } catch (e) {
         console.error('Init enrollment record failed:', e);
       }
     };
     init();
-  }, [patientId, enrollmentSource]);
+  }, [patientId, enrollmentSource, toast]);
 
   // Smart database update using field routing
   const updateDatabase = async (data: Record<string, any>) => {

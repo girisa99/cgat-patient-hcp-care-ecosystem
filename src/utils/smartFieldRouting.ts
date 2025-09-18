@@ -30,12 +30,12 @@ export const SMART_FIELD_MAPPINGS: SmartFieldMapping[] = [
   { fieldKey: 'patient_signature', fieldType: 'signature', destinationTable: 'enrollment_consent', destinationColumn: 'patient_signature' },
   { fieldKey: 'signature_date', fieldType: 'signature', destinationTable: 'enrollment_consent', destinationColumn: 'signature_date', validation: 'date' },
   
-  // NEW: Treatment center/facility selection (UUID)
+  // NEW: Treatment center/facility selection (UUID) - Optional
   { fieldKey: 'treatment_center_id', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'facility_id', validation: 'uuid' },
   { fieldKey: 'treatment_center', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'treatment_center' },
   { fieldKey: 'treatment_center_npi', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'treatment_center_npi', validation: 'npi' },
   
-  // Provider fields that appear in consent section (UUID references)
+  // Provider fields that appear in consent section (UUID references) - Optional
   { fieldKey: 'provider_id', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'provider_id', validation: 'uuid' },
   { fieldKey: 'provider_name', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'provider_name' },
   { fieldKey: 'provider_npi', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'provider_npi', validation: 'npi' },
