@@ -110,8 +110,16 @@ export const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
       consent_communication: { type: 'checkbox', label: 'Communication Consent', description: 'I consent to communications' },
       collection_method: { 
         type: 'select', 
-        label: 'Collection Method',
-        options: ['digital', 'phone', 'paper']
+        label: 'Consent Collection Method',
+        options: [
+          { value: 'whatsapp', label: 'WhatsApp Agent' },
+          { value: 'sms', label: 'SMS Link' },
+          { value: 'email', label: 'Email Link' },
+          { value: 'voice', label: 'Voice Call' },
+          { value: 'verbal', label: 'Verbal (Witnessed)' },
+          { value: 'facility_present', label: 'Facility Present' },
+          { value: 'digital', label: 'Digital Signature' }
+        ]
       },
       
       // Patient fields
