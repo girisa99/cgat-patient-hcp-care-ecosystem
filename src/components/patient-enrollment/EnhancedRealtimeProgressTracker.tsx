@@ -199,6 +199,54 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             await handleRealtimeUpdate(payload);
           }
         )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_conversations',
+            filter: `patient_id=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'conversation_messages',
+            filter: `conversation_id=in.(select id from agent_conversations where patient_id='${patientId}')`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'conversation_sessions',
+            filter: `user_id=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'multi_model_conversations',
+            filter: `user_id=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
         .subscribe();
 
       // Set up periodic sync if enabled

@@ -141,6 +141,22 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
             // Workflow instances track overall progress
             tabId = instanceData.current_section?.split('_')[0] || 'consent_mode';
             sectionProgress = instanceData.completion_percentage || 0;
+          } else if (table === 'agent_conversations') {
+            // Agent conversations affect the section they're processing
+            tabId = instanceData.conversation_context?.current_section || 'consent_mode';
+            sectionProgress = instanceData.completion_score || 0;
+          } else if (table === 'conversation_messages') {
+            // Conversation messages indicate active engagement
+            tabId = instanceData.conversation_context?.section || 'consent_mode';
+            sectionProgress = instanceData.confidence_score ? instanceData.confidence_score * 100 : 25;
+          } else if (table === 'conversation_sessions') {
+            // Conversation sessions track section-level progress
+            tabId = instanceData.current_section || 'consent_mode';
+            sectionProgress = instanceData.completion_score || 0;
+          } else if (table === 'multi_model_conversations') {
+            // Multi-model conversations with AI agents
+            tabId = instanceData.context_data?.current_section || 'consent_mode';
+            sectionProgress = instanceData.status === 'completed' ? 100 : 50;
           }
           
           if (tabProgress[tabId]) {
