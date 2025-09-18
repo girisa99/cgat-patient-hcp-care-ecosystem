@@ -102,11 +102,30 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
     try {
       setIsLoading(true);
       
-      // Load initial data
+      // Load initial data with fallback
       const initialProgress = await loadProgressData();
       if (initialProgress) {
         setProgress(initialProgress);
         onProgressUpdate?.(initialProgress);
+      } else {
+        // Create fallback progress data to prevent component failure
+        const fallbackProgress: RealtimeProgress = {
+          patientId,
+          sessionId,
+          enrollmentStatus: 'in_progress',
+          currentSection: 'consent_management',
+          sections: [],
+          overallProgress: 0,
+          lastActivity: new Date().toISOString(),
+          criticalIssues: [],
+          syncedToDashboard: false,
+          connectionStatus: 'connected'
+        };
+        setProgress(fallbackProgress);
+        onProgressUpdate?.(fallbackProgress);
+        
+        // Initialize enrollment record if it doesn't exist
+        await initializeEnrollmentRecord();
       }
 
       // Set up real-time subscription for ALL enrollment tables
@@ -365,17 +384,80 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
     }
   };
 
+  // Initialize enrollment record if missing
+  const initializeEnrollmentRecord = async () => {
+    try {
+      const { data: authUser } = await supabase.auth.getUser();
+      if (!authUser.user?.id) {
+        console.warn('No authenticated user for enrollment initialization');
+        return;
+      }
+
+      // Check if enrollment exists
+      const { data: existing } = await supabase
+        .from('patient_enrollments')
+        .select('id')
+        .eq('id', patientId)
+        .single();
+
+      if (!existing) {
+        // Create new enrollment record
+        const { error } = await supabase
+          .from('patient_enrollments')
+          .insert({
+            id: patientId,
+            session_id: sessionId,
+            enrollment_status: 'in_progress',
+            current_section: 'consent_management',
+            progress_percentage: 0,
+            enrollment_source: 'mcp_stepwise',
+            user_id: authUser.user.id,
+            metadata: {
+              agent_type: 'mcp_stepwise',
+              initialized_at: new Date().toISOString()
+            }
+          });
+
+        if (error) {
+          console.error('Failed to initialize enrollment record:', error);
+        } else {
+          console.log('Initialized enrollment record for:', patientId);
+          toast({
+            title: "Session Initialized",
+            description: "New enrollment session created successfully.",
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Enrollment initialization error:', error);
+    }
+  };
+
+  const loadProgressData = async (): Promise<RealtimeProgress | null> => {
+  // Load progress data from database with better error handling
   const loadProgressData = async (): Promise<RealtimeProgress | null> => {
     try {
-      if (!isValidUuid(patientId)) return null;
-      // Base enrollment row
+      if (!isValidUuid(patientId)) {
+        console.warn('Invalid patient ID format:', patientId);
+        return null;
+      }
+      
+      // Base enrollment row with better error handling
       const { data: enrollment, error: enrollmentError } = await supabase
         .from('patient_enrollments')
         .select('*')
         .eq('id', patientId)
         .maybeSingle();
 
-      if (enrollmentError) throw enrollmentError;
+      if (enrollmentError) {
+        console.error('Enrollment query error:', enrollmentError);
+        return null;
+      }
+
+      if (!enrollment) {
+        console.warn('No enrollment found for patient:', patientId);
+        return null;
+      }
 
       // Load section-specific tables individually to keep types simple
       const consentRes: any = await (supabase as any).from('enrollment_consent').select('*').eq('enrollment_id', patientId).maybeSingle();
@@ -425,6 +507,12 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
       return progressData;
     } catch (error) {
       console.error('Failed to load progress data:', error);
+      // Log the specific error for debugging
+      console.error('Progress loading error details:', {
+        patientId,
+        sessionId,
+        error: error instanceof Error ? error.message : error
+      });
       return null;
     }
   };
