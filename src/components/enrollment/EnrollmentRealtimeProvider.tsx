@@ -157,6 +157,34 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
             // Multi-model conversations with AI agents
             tabId = instanceData.context_data?.current_section || 'consent_mode';
             sectionProgress = instanceData.status === 'completed' ? 100 : 50;
+          } else if (table === 'agent_sessions') {
+            // Agent sessions track workflow progress
+            tabId = instanceData.current_step?.split('_')[0] || 'consent_mode';
+            sectionProgress = instanceData.status === 'completed' ? 100 : (instanceData.status === 'active' ? 50 : 25);
+          } else if (table === 'agent_workflows') {
+            // Workflow execution progress
+            tabId = 'treatment_clinical'; // Workflows usually relate to clinical/treatment section
+            sectionProgress = instanceData.status === 'completed' ? 100 : (instanceData.status === 'running' ? 75 : 25);
+          } else if (table === 'agent_actions') {
+            // Agent actions indicate form processing activity
+            tabId = 'consent_mode'; // Actions often start with consent/initial steps
+            sectionProgress = instanceData.success_rate ? Math.round(instanceData.success_rate * 100) : 25;
+          } else if (table === 'agent_communications') {
+            // Inter-agent communications during enrollment
+            tabId = instanceData.metadata?.section || 'consent_mode';
+            sectionProgress = instanceData.status === 'processed' ? 100 : 50;
+          } else if (table === 'agent_performance_metrics') {
+            // Performance metrics indicate ongoing processing
+            tabId = 'treatment_clinical';
+            sectionProgress = instanceData.metric_value ? Math.min(Math.round(instanceData.metric_value), 100) : 10;
+          } else if (table === 'agent_health_checks') {
+            // Health checks ensure agents are running properly
+            tabId = 'submit'; // Health checks relate to final submission
+            sectionProgress = instanceData.health_status === 'healthy' ? 100 : 50;
+          } else if (table === 'agent_audit_logs') {
+            // Audit logs track all enrollment activities
+            tabId = instanceData.execution_context?.section || 'consent_mode';
+            sectionProgress = 25; // Audit logs indicate activity but not completion
           }
           
           if (tabProgress[tabId]) {

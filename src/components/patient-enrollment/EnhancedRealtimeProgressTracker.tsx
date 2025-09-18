@@ -247,7 +247,97 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             await handleRealtimeUpdate(payload);
           }
         )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_sessions',
+            filter: `user_id=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_workflows',
+            filter: `created_by=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_actions',
+            filter: `agent_id=in.(select id from agents where created_by='${patientId}')`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_communications',
+            filter: `conversation_id=in.(select id from agent_conversations where user_id='${patientId}')`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_performance_metrics',
+            filter: `agent_id=in.(select id from agents where created_by='${patientId}')`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_health_checks',
+            filter: `agent_id=in.(select id from agents where created_by='${patientId}')`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'agent_audit_logs',
+            filter: `agent_id=in.(select id from agents where created_by='${patientId}')`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
         .subscribe();
+
+      console.log(`🔴 Real-time subscriptions set up for patient ${patientId} with comprehensive AI agent coverage:`, {
+        enrollment_tables: ['patient_enrollments', 'enrollment_consent', 'enrollment_patient_info', 'enrollment_provider_info', 'enrollment_insurance_info', 'enrollment_clinical_info', 'enrollment_documents', 'enrollment_instances'],
+        conversational_ai_tables: ['agent_conversations', 'conversation_messages', 'conversation_sessions', 'multi_model_conversations'],
+        agent_structure_tables: ['agent_sessions', 'agent_workflows', 'agent_actions', 'agent_communications', 'agent_performance_metrics', 'agent_health_checks', 'agent_audit_logs']
+      });
 
       // Set up periodic sync if enabled
       if (autoSyncEnabled) {
