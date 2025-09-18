@@ -80,8 +80,17 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
   const [lastSync, setLastSync] = useState<Date | null>(null);
   const [autoSyncEnabled, setAutoSyncEnabled] = useState(true);
 
+  // Guard: only proceed when we have a valid UUID (prevents 400 errors)
+  const isValidUuid = (v: string) =>
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(v);
+
+
   // Initialize real-time connection
   useEffect(() => {
+    if (!isValidUuid(patientId)) {
+      // Wait until we have a valid enrollment UUID before subscribing
+      return;
+    }
     initializeRealtimeConnection();
     return () => {
       // Cleanup subscriptions
@@ -358,12 +367,13 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
 
   const loadProgressData = async (): Promise<RealtimeProgress | null> => {
     try {
+      if (!isValidUuid(patientId)) return null;
       // Base enrollment row
       const { data: enrollment, error: enrollmentError } = await supabase
         .from('patient_enrollments')
         .select('*')
         .eq('id', patientId)
-        .single();
+        .maybeSingle();
 
       if (enrollmentError) throw enrollmentError;
 

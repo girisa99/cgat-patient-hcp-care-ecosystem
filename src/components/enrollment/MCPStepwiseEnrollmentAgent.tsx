@@ -178,8 +178,9 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   // NPI Verification hook
   const { verifyCredentials, isVerifying, validateNPIFormat } = useNPIVerification();
   
-  // Generate unique patient ID
-  const patientId = patientEnrollmentSession?.patient_id || `${Date.now().toString()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Use enrollment UUID once initialized; avoid placeholder IDs
+  const patientId = mcpSession?.patientId || patientEnrollmentSession?.patient_id || '';
+
 
   // Initialize MCP Session
   const initializeMCPSession = async () => {
