@@ -385,17 +385,38 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         return;
       }
       
+      // Update signature data
+      const updatedData = { ...collectedData, provider_signature: dataUrl };
+      setCollectedData(updatedData);
+      
       const sectionMapping = getSectionByKey('consent_management');
       await updateRealtimeDataWithMapping(sectionMapping, { provider_signature: dataUrl });
 
-      const merged = { ...collectedData, provider_signature: dataUrl };
-      const complete = checkStepCompletionWithMapping(sectionMapping as any, merged);
+      // Check if the complete consent section is now done
+      const complete = checkStepCompletionWithMapping(sectionMapping as any, updatedData);
+      
+      toast({
+        title: "Signature Captured",
+        description: "Provider signature has been saved successfully.",
+      });
+      
       if (complete) {
+        // Trigger section completion
+        setCompletedSectionData({
+          sectionKey: 'consent_management',
+          completedAt: new Date()
+        });
+        setShowSectionCompletion(true);
+        
         toast({
           title: "Consent Management Completed! 🎉",
           description: "All consent information captured. Moving to patient information.",
         });
-        setTimeout(() => advanceToNextStep(), 1000);
+        
+        setTimeout(() => {
+          setShowSectionCompletion(false);
+          advanceToNextStep();
+        }, 2000);
       }
     } catch (e) {
       console.error('Signature accept error', e);
@@ -409,31 +430,33 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     
     console.log(`Converting fields for section: ${sectionKey}`, sectionMapping.fields);
     
-    return sectionMapping.fields.map(field => {
-      const base: FieldDefinition = {
-        name: field.fieldKey,
-        displayName: field.fieldLabel,
-        type: field.fieldType as 'text' | 'email' | 'phone' | 'date' | 'select' | 'textarea' | 'number',
-        isRequired: field.required,
-        placeholder: field.placeholder || `Enter ${field.fieldLabel.toLowerCase()}`,
-        validation: {
-          pattern: field.fieldKey === 'provider_npi' || field.fieldKey === 'referring_provider_npi' ? /^\d{10}$/ : undefined,
-          minLength: field.fieldType === 'email' ? 5 : field.fieldKey.includes('name') ? 2 : undefined
-        }
-      };
-
-      // Provide options for select fields so dropdowns render correctly
-      if (field.fieldType === 'select' && Array.isArray(field.options)) {
-        const toLabel = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
-        return {
-          ...base,
-          options: field.options.map((opt) => ({ value: opt, label: toLabel(opt) })),
+    return sectionMapping.fields
+      .filter(field => field.fieldType !== 'signature') // Exclude signature fields - handled separately
+      .map(field => {
+        const base: FieldDefinition = {
+          name: field.fieldKey,
+          displayName: field.fieldLabel,
+          type: field.fieldType as 'text' | 'email' | 'phone' | 'date' | 'select' | 'textarea' | 'number',
+          isRequired: field.required,
+          placeholder: field.placeholder || `Enter ${field.fieldLabel.toLowerCase()}`,
+          validation: {
+            pattern: field.fieldKey === 'provider_npi' || field.fieldKey === 'referring_provider_npi' ? /^\d{10}$/ : undefined,
+            minLength: field.fieldType === 'email' ? 5 : field.fieldKey.includes('name') ? 2 : undefined
+          }
         };
-      }
 
-      console.log(`Generated field definition:`, base);
-      return base;
-    });
+        // Provide options for select fields so dropdowns render correctly
+        if (field.fieldType === 'select' && Array.isArray(field.options)) {
+          const toLabel = (s: string) => s.replace(/_/g, ' ').replace(/\b\w/g, (c) => c.toUpperCase());
+          return {
+            ...base,
+            options: field.options.map((opt) => ({ value: opt, label: toLabel(opt) })),
+          };
+        }
+
+        console.log(`Generated field definition:`, base);
+        return base;
+      });
   };
 
   // Initialize session on component mount
@@ -512,6 +535,17 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                       console.log(`Field updated: ${fieldName} = ${value}`);
                       const sectionMapping = getSectionByKey(currentStep.id as EnrollmentSectionKey);
                       await updateRealtimeDataWithMapping(sectionMapping, { [fieldName]: value });
+                      
+                      // Update local collected data immediately
+                      const updatedData = { ...collectedData, [fieldName]: value };
+                      setCollectedData(updatedData);
+                      
+                      // Check if section is complete with updated data
+                      const isComplete = checkStepCompletionWithMapping(sectionMapping, updatedData);
+                      
+                      console.log(`Field ${fieldName} updated. Section complete: ${isComplete}`);
+                      console.log('Required fields:', sectionMapping.requiredFields);
+                      console.log('Current data:', updatedData);
                     }}
                     onSectionComplete={async (data) => {
                       console.log(`Section completed: ${currentStep.id}`, data);
