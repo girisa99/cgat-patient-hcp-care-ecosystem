@@ -27,7 +27,7 @@ import {
 interface FieldDefinition {
   name: string;
   displayName: string;
-  type: 'text' | 'email' | 'phone' | 'date' | 'select' | 'textarea' | 'number';
+  type: 'text' | 'email' | 'phone' | 'date' | 'select' | 'textarea' | 'number' | 'checkbox' | 'tel';
   isRequired: boolean;
   placeholder?: string;
   helperText?: string;
