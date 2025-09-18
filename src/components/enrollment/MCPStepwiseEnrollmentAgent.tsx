@@ -68,7 +68,7 @@ const enrollmentSteps = [
     name: 'Consent Management',
     icon: Shield,
     description: 'Provider authorization and consent collection setup',
-    requiredFields: ['provider_name', 'provider_npi', 'treatment_center', 'patient_consent_method', 'provider_signature'],
+    requiredFields: ['provider_name', 'provider_npi', 'treatment_center', 'collection_method', 'provider_signature'],
     validationRules: {
       provider_npi: { pattern: /^\d{10}$/, required: true },
       provider_name: { minLength: 2, required: true }
@@ -109,9 +109,9 @@ const enrollmentSteps = [
     name: 'Insurance Information',
     icon: CreditCard,
     description: 'Insurance coverage and benefit verification',
-    requiredFields: ['insurance_provider', 'member_id', 'policy_holder'],
+    requiredFields: ['primary_insurance_name', 'primary_policy_number', 'primary_subscriber_name'],
     validationRules: {
-      member_id: { minLength: 3, required: true }
+      primary_policy_number: { minLength: 3, required: true }
     },
     mcpTools: ['verify_insurance', 'get_schema', 'insert_data'],
     realtimeEnabled: true,
@@ -122,9 +122,9 @@ const enrollmentSteps = [
     name: 'Clinical & Treatment',
     icon: Stethoscope,
     description: 'Clinical information and treatment planning',
-    requiredFields: ['primary_diagnosis', 'treatment_goals'],
+    requiredFields: ['chief_complaint', 'treatment_goals'],
     validationRules: {
-      primary_diagnosis: { minLength: 5, required: true }
+      chief_complaint: { minLength: 5, required: true }
     },
     mcpTools: ['get_schema', 'insert_data'],
     realtimeEnabled: true,

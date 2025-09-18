@@ -20,6 +20,7 @@ import {
 } from 'lucide-react';
 import { useConversationalEnrollment } from '@/hooks/useConversationalEnrollment';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
 import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
 
@@ -53,6 +54,33 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
   const [completedSectionData, setCompletedSectionData] = useState<any>(null);
   const [patientId] = useState(() => crypto.randomUUID());
   const [sessionId, setSessionId] = useState('');
+
+  // Initialize database record on mount
+  useEffect(() => {
+    initializeEnrollmentRecord();
+  }, [patientId]);
+
+  const initializeEnrollmentRecord = async () => {
+    try {
+      const { data: authUser } = await supabase.auth.getUser();
+      if (!authUser.user?.id) return;
+
+      await supabase.from('patient_enrollments').upsert({
+        id: patientId,
+        session_id: sessionId || `conv-${Date.now()}`,
+        enrollment_status: 'in_progress',
+        current_section: 'consent_management',
+        progress_percentage: 0,
+        enrollment_source: 'conversational',
+        metadata: { agent_type: 'conversational', module_type: moduleType },
+        user_id: authUser.user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Failed to initialize enrollment record:', error);
+    }
+  };
 
   useEffect(() => {
     initializeConversation();

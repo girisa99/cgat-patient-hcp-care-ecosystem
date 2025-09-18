@@ -21,6 +21,7 @@ import {
   Zap
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { FieldByFieldCollector, type FieldDefinition } from '../patient-enrollment/FieldByFieldCollector';
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
 import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
@@ -58,6 +59,33 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
   const [patientId] = useState(() => crypto.randomUUID());
   const [sessionId] = useState(() => crypto.randomUUID());
 
+  // Initialize database record on mount  
+  useEffect(() => {
+    initializeEnrollmentRecord();
+  }, [patientId]);
+
+  const initializeEnrollmentRecord = async () => {
+    try {
+      const { data: authUser } = await supabase.auth.getUser();
+      if (!authUser.user?.id) return;
+
+      await supabase.from('patient_enrollments').upsert({
+        id: patientId,
+        session_id: sessionId,
+        enrollment_status: 'in_progress',
+        current_section: 'patient_information',
+        progress_percentage: 0,
+        enrollment_source: 'structured_ai',
+        metadata: { agent_type: 'structured', module_type: moduleType },
+        user_id: authUser.user.id,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      });
+    } catch (error) {
+      console.error('Failed to initialize enrollment record:', error);
+    }
+  };
+
   // Define enrollment sections based on module type
   const getEnrollmentSections = (): EnrollmentSection[] => {
     const patientSections: EnrollmentSection[] = [
@@ -94,7 +122,7 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
             helperText: 'This information is required for identity verification'
           },
           {
-            name: 'email_address',
+            name: 'email',
             displayName: 'Email Address',
             type: 'email',
             isRequired: true,
@@ -102,7 +130,7 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
             helperText: 'We\'ll use this for important updates about your enrollment'
           },
           {
-            name: 'phone_number',
+            name: 'phone',
             displayName: 'Phone Number',
             type: 'phone',
             isRequired: true,
