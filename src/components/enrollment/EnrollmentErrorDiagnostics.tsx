@@ -104,39 +104,61 @@ export const EnrollmentErrorDiagnostics: React.FC = () => {
       results.push({ test: 'Consent Data Insert', status: 'running' });
       setTestResults([...results]);
 
-      const testEnrollmentId = `test-${Date.now()}`;
-      
-      const { data: insertTest, error: insertError } = await supabase
-        .from('enrollment_consent')
-        .insert({
-          enrollment_id: testEnrollmentId,
-          consent_to_treatment: true,
-          privacy_consent: true,
-          patient_signature: 'Test Signature',
-          signature_date: new Date().toISOString()
-        })
-        .select();
+      const testEnrollmentId = crypto.randomUUID();
+      const { data: authUser } = await supabase.auth.getUser();
+      const userId = authUser.user?.id;
 
-      if (insertError) {
+      if (!userId) {
         results[results.length - 1] = { 
           test: 'Consent Data Insert', 
           status: 'failed', 
-          error: insertError.message 
+          error: 'Not authenticated: user_id required for RLS' 
         };
+        setTestResults([...results]);
       } else {
-        results[results.length - 1] = { 
-          test: 'Consent Data Insert', 
-          status: 'passed',
-          details: 'Successfully inserted test consent data'
-        };
+        // Ensure base patient_enrollments row exists to satisfy RLS
+        await supabase.from('patient_enrollments').upsert({
+          id: testEnrollmentId,
+          user_id: userId,
+          session_id: `diagnostic-${Date.now()}`,
+          enrollment_source: 'diagnostic_test',
+          enrollment_status: 'draft',
+          current_section: 'consent_management',
+          progress_percentage: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
 
-        // Clean up test data
-        await supabase
+        const { data: insertTest, error: insertError } = await supabase
           .from('enrollment_consent')
-          .delete()
-          .eq('enrollment_id', testEnrollmentId);
+          .insert({
+            enrollment_id: testEnrollmentId,
+            consent_to_treatment: true,
+            privacy_consent: true,
+            patient_signature: 'Test Signature',
+            signature_date: new Date().toISOString()
+          })
+          .select();
+
+        if (insertError) {
+          results[results.length - 1] = { 
+            test: 'Consent Data Insert', 
+            status: 'failed', 
+            error: insertError.message 
+          };
+        } else {
+          results[results.length - 1] = { 
+            test: 'Consent Data Insert', 
+            status: 'passed',
+            details: 'Successfully inserted test consent data'
+          };
+
+          // Clean up test data
+          await supabase.from('enrollment_consent').delete().eq('enrollment_id', testEnrollmentId);
+          await supabase.from('patient_enrollments').delete().eq('id', testEnrollmentId);
+        }
+        setTestResults([...results]);
       }
-      setTestResults([...results]);
 
       // Test 5: Patient Enrollment Insert Test
       results.push({ test: 'Patient Enrollment Insert', status: 'running' });

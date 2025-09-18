@@ -111,7 +111,7 @@ export const SMART_FIELD_MAPPINGS: SmartFieldMapping[] = [
   { fieldKey: 'final_patient_signature', fieldType: 'signature', destinationTable: 'enrollment_consent', destinationColumn: 'final_signature' },
   { fieldKey: 'final_signature_date', fieldType: 'signature', destinationTable: 'enrollment_consent', destinationColumn: 'final_signature_date', validation: 'date' },
   { fieldKey: 'submission_notes', fieldType: 'general', destinationTable: 'patient_enrollments', destinationColumn: 'submission_notes' },
-  { fieldKey: 'enrollment_status', fieldType: 'general', destinationTable: 'patient_enrollments', destinationColumn: 'status' },
+  { fieldKey: 'enrollment_status', fieldType: 'general', destinationTable: 'patient_enrollments', destinationColumn: 'enrollment_status' },
 ];
 
 /**

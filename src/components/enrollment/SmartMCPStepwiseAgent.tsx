@@ -111,6 +111,35 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
 
   const currentStep = enrollmentSteps[currentStepIndex];
 
+  // Ensure a base patient_enrollments row exists (required by RLS on related tables)
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const { data: authUser } = await supabase.auth.getUser();
+        const userId = authUser.user?.id;
+        if (!userId || !patientId) return;
+
+        const { error } = await supabase.from('patient_enrollments').upsert({
+          id: patientId,
+          user_id: userId,
+          session_id: `mcp-${Date.now()}`,
+          enrollment_source: enrollmentSource || 'mcp',
+          enrollment_status: 'in_progress',
+          current_section: 'consent_management',
+          progress_percentage: 0,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+        });
+        if (error) {
+          console.error('Init enrollment record error:', error);
+        }
+      } catch (e) {
+        console.error('Init enrollment record failed:', e);
+      }
+    };
+    init();
+  }, [patientId, enrollmentSource]);
+
   // Smart database update using field routing
   const updateDatabase = async (data: Record<string, any>) => {
     if (!patientId) return;
@@ -163,7 +192,7 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
       const { error: progressError } = await supabase
         .from('patient_enrollments')
         .update({ 
-          current_step: currentStep.key,
+          current_section: currentStep.key,
           progress_percentage: progress,
           updated_at: new Date().toISOString()
         })
@@ -240,7 +269,7 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
         await supabase
           .from('patient_enrollments')
           .update({ 
-            status: 'completed',
+            enrollment_status: 'completed',
             completed_at: new Date().toISOString()
           })
           .eq('id', patientId);
