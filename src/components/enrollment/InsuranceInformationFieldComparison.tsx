@@ -4,11 +4,71 @@ import { Badge } from '@/components/ui/badge';
 import { CheckCircle, AlertCircle, Info } from 'lucide-react';
 
 export const InsuranceInformationFieldComparison = () => {
+  // Complete Insurance Fields - 56 fields total from actual form implementation
   const currentMappedFields = [
-    { key: 'insurance_provider', label: 'Insurance Provider', required: true, table: 'enrollment_insurance_info' },
-    { key: 'member_id', label: 'Member ID', required: true, table: 'enrollment_insurance_info' },
-    { key: 'group_number', label: 'Group Number', required: false, table: 'enrollment_insurance_info' },
-    { key: 'policy_holder', label: 'Policy Holder Name', required: true, table: 'enrollment_insurance_info' }
+    // Primary Insurance (14 fields)
+    { key: 'primaryInsuranceProvider', label: 'Primary Insurance Provider', required: true, table: 'enrollment_insurance_info' },
+    { key: 'primaryMemberId', label: 'Primary Member/Policy ID', required: true, table: 'enrollment_insurance_info' },
+    { key: 'primaryGroupNumber', label: 'Primary Group Number', required: false, table: 'enrollment_insurance_info' },
+    { key: 'primaryPolicyHolder', label: 'Primary Policy Holder Name', required: true, table: 'enrollment_insurance_info' },
+    { key: 'primaryPolicyHolderDOB', label: 'Primary Policy Holder DOB', required: true, table: 'enrollment_insurance_info' },
+    { key: 'primaryPolicyHolderRelationship', label: 'Primary Policy Holder Relationship', required: true, table: 'enrollment_insurance_info' },
+    { key: 'primaryInsuranceType', label: 'Primary Insurance Type', required: true, table: 'enrollment_insurance_info' },
+    { key: 'primaryInsurancePhone', label: 'Primary Insurance Phone', required: true, table: 'enrollment_insurance_info' },
+    { key: 'primaryInsuranceAddress', label: 'Primary Insurance Address', required: false, table: 'enrollment_insurance_info' },
+    { key: 'primaryInsuranceCity', label: 'Primary Insurance City', required: false, table: 'enrollment_insurance_info' },
+    { key: 'primaryInsuranceState', label: 'Primary Insurance State', required: false, table: 'enrollment_insurance_info' },
+    { key: 'primaryInsuranceZipCode', label: 'Primary Insurance Zip Code', required: false, table: 'enrollment_insurance_info' },
+    { key: 'primaryEffectiveDate', label: 'Primary Effective Date', required: false, table: 'enrollment_insurance_info' },
+    { key: 'primaryExpirationDate', label: 'Primary Expiration Date', required: false, table: 'enrollment_insurance_info' },
+    
+    // Secondary Insurance (9 fields)
+    { key: 'hasSecondaryInsurance', label: 'Has Secondary Insurance', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryInsuranceProvider', label: 'Secondary Insurance Provider', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryMemberId', label: 'Secondary Member ID', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryGroupNumber', label: 'Secondary Group Number', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryPolicyHolder', label: 'Secondary Policy Holder', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryPolicyHolderDOB', label: 'Secondary Policy Holder DOB', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryPolicyHolderRelationship', label: 'Secondary Policy Holder Relationship', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryInsuranceType', label: 'Secondary Insurance Type', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryInsurancePhone', label: 'Secondary Insurance Phone', required: false, table: 'enrollment_insurance_info' },
+    
+    // Pharmacy Insurance (8 fields)
+    { key: 'pharmacyInsuranceProvider', label: 'Pharmacy Insurance Provider', required: false, table: 'enrollment_insurance_info' },
+    { key: 'pharmacyMemberId', label: 'Pharmacy Member ID', required: false, table: 'enrollment_insurance_info' },
+    { key: 'pharmacyGroupNumber', label: 'Pharmacy Group Number', required: false, table: 'enrollment_insurance_info' },
+    { key: 'pharmacyPCN', label: 'Pharmacy PCN', required: false, table: 'enrollment_insurance_info' },
+    { key: 'pharmacyBIN', label: 'Pharmacy BIN', required: false, table: 'enrollment_insurance_info' },
+    { key: 'pharmacyProcessorNumber', label: 'Pharmacy Processor Number', required: false, table: 'enrollment_insurance_info' },
+    { key: 'pharmacyPhone', label: 'Pharmacy Phone', required: false, table: 'enrollment_insurance_info' },
+    { key: 'pharmacyNetwork', label: 'Pharmacy Network', required: false, table: 'enrollment_insurance_info' },
+    
+    // Benefits & Coverage (25 fields)
+    { key: 'deductibleAmount', label: 'Deductible Amount', required: false, table: 'enrollment_insurance_info' },
+    { key: 'deductibleMet', label: 'Deductible Met', required: false, table: 'enrollment_insurance_info' },
+    { key: 'outOfPocketMaximum', label: 'Out of Pocket Maximum', required: false, table: 'enrollment_insurance_info' },
+    { key: 'outOfPocketMet', label: 'Out of Pocket Met', required: false, table: 'enrollment_insurance_info' },
+    { key: 'copayAmount', label: 'Copay Amount', required: false, table: 'enrollment_insurance_info' },
+    { key: 'coinsurancePercentage', label: 'Coinsurance Percentage', required: false, table: 'enrollment_insurance_info' },
+    { key: 'coveragePercentage', label: 'Coverage Percentage', required: false, table: 'enrollment_insurance_info' },
+    { key: 'annualMaximumBenefit', label: 'Annual Maximum Benefit', required: false, table: 'enrollment_insurance_info' },
+    { key: 'lifetimeMaximumBenefit', label: 'Lifetime Maximum Benefit', required: false, table: 'enrollment_insurance_info' },
+    { key: 'coverageLevel', label: 'Coverage Level', required: false, table: 'enrollment_insurance_info' },
+    { key: 'formularyTier', label: 'Formulary Tier', required: false, table: 'enrollment_insurance_info' },
+    { key: 'stepTherapyRequired', label: 'Step Therapy Required', required: false, table: 'enrollment_insurance_info' },
+    { key: 'priorAuthorizationRequired', label: 'Prior Authorization Required', required: false, table: 'enrollment_insurance_info' },
+    { key: 'priorAuthorizationNumber', label: 'Prior Authorization Number', required: false, table: 'enrollment_insurance_info' },
+    { key: 'priorAuthorizationExpiration', label: 'Prior Authorization Expiration', required: false, table: 'enrollment_insurance_info' },
+    { key: 'referralRequired', label: 'Referral Required', required: false, table: 'enrollment_insurance_info' },
+    { key: 'referralNumber', label: 'Referral Number', required: false, table: 'enrollment_insurance_info' },
+    { key: 'referralExpiration', label: 'Referral Expiration', required: false, table: 'enrollment_insurance_info' },
+    { key: 'preApprovalRequired', label: 'Pre-approval Required', required: false, table: 'enrollment_insurance_info' },
+    { key: 'preApprovalNumber', label: 'Pre-approval Number', required: false, table: 'enrollment_insurance_info' },
+    { key: 'preApprovalExpiration', label: 'Pre-approval Expiration', required: false, table: 'enrollment_insurance_info' },
+    { key: 'primaryInsuranceNetwork', label: 'Primary Insurance Network', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryEffectiveDate', label: 'Secondary Effective Date', required: false, table: 'enrollment_insurance_info' },
+    { key: 'secondaryExpirationDate', label: 'Secondary Expiration Date', required: false, table: 'enrollment_insurance_info' },
+    { key: 'coordinationOfBenefits', label: 'Coordination of Benefits', required: false, table: 'enrollment_insurance_info' }
   ];
 
   const expectedOnlineFormFields = [
