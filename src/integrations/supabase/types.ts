@@ -4544,13 +4544,23 @@ export type Database = {
           consent_to_treatment: boolean | null
           created_at: string
           enrollment_id: string
+          final_signature: string | null
+          final_signature_date: string | null
           financial_responsibility: boolean | null
           hipaa_authorization: boolean | null
           id: string
           location_type: string | null
           marketing_consent: boolean | null
           patient_signature: string | null
+          privacy_consent: boolean | null
+          provider_name: string | null
+          provider_npi: string | null
+          provider_signature: string | null
+          signature_date: string | null
           telehealth_consent: boolean | null
+          treatment_center: string | null
+          treatment_center_npi: string | null
+          treatment_consent: boolean | null
           updated_at: string
           witness_signature: string | null
         }
@@ -4561,13 +4571,23 @@ export type Database = {
           consent_to_treatment?: boolean | null
           created_at?: string
           enrollment_id: string
+          final_signature?: string | null
+          final_signature_date?: string | null
           financial_responsibility?: boolean | null
           hipaa_authorization?: boolean | null
           id?: string
           location_type?: string | null
           marketing_consent?: boolean | null
           patient_signature?: string | null
+          privacy_consent?: boolean | null
+          provider_name?: string | null
+          provider_npi?: string | null
+          provider_signature?: string | null
+          signature_date?: string | null
           telehealth_consent?: boolean | null
+          treatment_center?: string | null
+          treatment_center_npi?: string | null
+          treatment_consent?: boolean | null
           updated_at?: string
           witness_signature?: string | null
         }
@@ -4578,13 +4598,23 @@ export type Database = {
           consent_to_treatment?: boolean | null
           created_at?: string
           enrollment_id?: string
+          final_signature?: string | null
+          final_signature_date?: string | null
           financial_responsibility?: boolean | null
           hipaa_authorization?: boolean | null
           id?: string
           location_type?: string | null
           marketing_consent?: boolean | null
           patient_signature?: string | null
+          privacy_consent?: boolean | null
+          provider_name?: string | null
+          provider_npi?: string | null
+          provider_signature?: string | null
+          signature_date?: string | null
           telehealth_consent?: boolean | null
+          treatment_center?: string | null
+          treatment_center_npi?: string | null
+          treatment_consent?: boolean | null
           updated_at?: string
           witness_signature?: string | null
         }

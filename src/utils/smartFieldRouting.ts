@@ -22,8 +22,8 @@ export interface TableBatch {
 // Comprehensive field mapping for ALL enrollment sections
 export const SMART_FIELD_MAPPINGS: SmartFieldMapping[] = [
   // === CONSENT MANAGEMENT SECTION ===
-  { fieldKey: 'consent_treatment', fieldType: 'consent', destinationTable: 'enrollment_consent', destinationColumn: 'treatment_consent' },
-  { fieldKey: 'consent_privacy', fieldType: 'consent', destinationTable: 'enrollment_consent', destinationColumn: 'privacy_consent' },
+  { fieldKey: 'consent_treatment', fieldType: 'consent', destinationTable: 'enrollment_consent', destinationColumn: 'consent_to_treatment' },
+  { fieldKey: 'consent_privacy', fieldType: 'consent', destinationTable: 'enrollment_consent', destinationColumn: 'hipaa_authorization' },
   { fieldKey: 'consent_communication', fieldType: 'consent', destinationTable: 'enrollment_consent', destinationColumn: 'communication_consent' },
   { fieldKey: 'consent_date', fieldType: 'consent', destinationTable: 'enrollment_consent', destinationColumn: 'consent_date', validation: 'date' },
   { fieldKey: 'collection_method', fieldType: 'consent', destinationTable: 'enrollment_consent', destinationColumn: 'collection_method' },

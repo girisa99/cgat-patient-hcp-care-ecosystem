@@ -356,6 +356,8 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
             onPrevious={currentStepIndex > 0 ? handlePrevious : undefined}
             isLoading={isLoading}
             checkCompletion={checkStepCompletion}
+            enableConditionalFields={true}
+            sectionKey={currentStep.key}
           />
         </CardContent>
       </Card>
