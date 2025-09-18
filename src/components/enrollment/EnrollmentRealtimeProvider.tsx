@@ -100,13 +100,40 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
     }
   }, [tabProgress]);
 
+  // Apply universal DB constraint fixes to real-time data updates
+  const applyConstraintFixes = (data: any) => {
+    if (!data || typeof data !== 'object') return data;
+    
+    return Object.fromEntries(
+      Object.entries(data).map(([key, value]) => {
+        let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+        
+        // NPI validation: only allow exactly 10 digits for DB persistence
+        if (/npi$/i.test(key) && dbValue) {
+          const digits = dbValue.toString().replace(/\D/g, '');
+          dbValue = digits.length === 10 ? digits : null;
+        }
+        
+        return [key, dbValue];
+      })
+    );
+  };
+
   // Handle real-time session data updates from ALL enrollment tables
   useEffect(() => {
     if (sessionData && Object.keys(sessionData).length > 0) {
-      setActiveSessions(sessionData);
+      // Apply constraint fixes to all incoming real-time data
+      const cleanedSessionData = Object.fromEntries(
+        Object.entries(sessionData).map(([table, data]: [string, any]) => [
+          table,
+          data.data ? { ...data, data: applyConstraintFixes(data.data) } : data
+        ])
+      );
       
-      // Update progress based on session data from ALL enrollment tables
-      Object.entries(sessionData).forEach(([table, data]: [string, any]) => {
+      setActiveSessions(cleanedSessionData);
+      
+      // Update progress based on cleaned session data from ALL enrollment tables
+      Object.entries(cleanedSessionData).forEach(([table, data]: [string, any]) => {
         if (data.data) {
           const instanceData = data.data;
           

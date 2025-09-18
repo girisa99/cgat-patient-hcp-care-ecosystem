@@ -60,9 +60,24 @@ export const PatientEnrollmentIntegration: React.FC<PatientEnrollmentIntegration
   }, []);
 
   const handleEnrollmentSubmit = (data: PatientEnrollmentData) => {
-    setEnrollmentData(data);
+    // Apply universal DB constraint fixes before processing
+    const cleanedData = Object.fromEntries(
+      Object.entries(data).map(([key, value]) => {
+        let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+        
+        // NPI validation: only allow exactly 10 digits
+        if (/npi$/i.test(key) && dbValue) {
+          const digits = dbValue.toString().replace(/\D/g, '');
+          dbValue = digits.length === 10 ? digits : null;
+        }
+        
+        return [key, dbValue];
+      })
+    ) as PatientEnrollmentData;
+    
+    setEnrollmentData(cleanedData);
     setIsComplete(true);
-    onComplete?.(data);
+    onComplete?.(cleanedData);
     showSuccess('Patient enrollment completed successfully');
   };
 

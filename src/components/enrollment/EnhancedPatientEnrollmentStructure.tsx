@@ -630,18 +630,39 @@ export const EnhancedPatientEnrollmentStructure: React.FC<EnhancedPatientEnrollm
   const [completedSections, setCompletedSections] = useState<string[]>([]);
 
   const updateFormData = (section: keyof EnhancedPatientEnrollmentData, field: string, value: any) => {
+    // Apply universal DB constraint fixes
+    let dbValue = value;
+    if (typeof value === 'string' && value.trim() === '') {
+      dbValue = null;
+    }
+    
+    // NPI validation: only allow exactly 10 digits
+    if (/npi$/i.test(field) && dbValue) {
+      const digits = dbValue.toString().replace(/\D/g, '');
+      dbValue = digits.length === 10 ? digits : null;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [section]: {
         ...prev[section],
-        [field]: value
+        [field]: dbValue
       }
     }));
   };
 
   const addToArray = (section: keyof EnhancedPatientEnrollmentData, field: string, newItem: any) => {
+    // Apply constraint fixes to new array items
+    const cleanedItem = typeof newItem === 'object' ? 
+      Object.fromEntries(
+        Object.entries(newItem).map(([key, value]) => [
+          key, 
+          (typeof value === 'string' && value.trim() === '') ? null : value
+        ])
+      ) : newItem;
+    
     const currentArray = (formData[section] as any)[field] || [];
-    updateFormData(section, field, [...currentArray, newItem]);
+    updateFormData(section, field, [...currentArray, cleanedItem]);
   };
 
   const removeFromArray = (section: keyof EnhancedPatientEnrollmentData, field: string, index: number) => {

@@ -315,42 +315,65 @@ export const ComprehensiveEnrollmentForm: React.FC<ComprehensiveEnrollmentFormPr
       
       switch (currentSection.id) {
         case 'consent':
+          // Apply universal DB constraint fixes for consent data
+          const cleanedConsentData = Object.fromEntries(
+            Object.entries(formData).map(([key, value]) => [
+              key, 
+              (typeof value === 'string' && value.trim() === '') ? null : value
+            ])
+          );
+
           await supabase.from('enrollment_consent').upsert({
             enrollment_id: enrollmentId,
-            consent_to_treatment: formData.consent_to_treatment || false,
-            hipaa_authorization: formData.hipaa_authorization || false,
-            financial_responsibility: formData.financial_responsibility || false,
-            communication_consent: formData.communication_consent || false,
-            telehealth_consent: formData.telehealth_consent || false,
-            marketing_consent: formData.marketing_consent || false,
+            consent_to_treatment: cleanedConsentData.consent_to_treatment || false,
+            hipaa_authorization: cleanedConsentData.hipaa_authorization || false,
+            financial_responsibility: cleanedConsentData.financial_responsibility || false,
+            communication_consent: cleanedConsentData.communication_consent || false,
+            telehealth_consent: cleanedConsentData.telehealth_consent || false,
+            marketing_consent: cleanedConsentData.marketing_consent || false,
             consent_date: new Date().toISOString(),
-            patient_signature: formData.patient_signature || ''
+            patient_signature: cleanedConsentData.patient_signature
           });
           break;
           
         case 'patient':
+          // Apply universal DB constraint fixes
+          const cleanedPatientData = Object.fromEntries(
+            Object.entries(formData).map(([key, value]) => {
+              let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+              
+              // NPI validation: only allow exactly 10 digits for DB persistence
+              if (/npi$/i.test(key) && dbValue) {
+                const digits = dbValue.toString().replace(/\D/g, '');
+                dbValue = digits.length === 10 ? digits : null;
+              }
+              
+              return [key, dbValue];
+            })
+          );
+
           await supabase.from('enrollment_patient_info').upsert({
             enrollment_id: enrollmentId,
-            first_name: formData.first_name || '',
-            last_name: formData.last_name || '',
-            middle_name: formData.middle_name || '',
-            date_of_birth: formData.date_of_birth || null,
-            ssn: formData.ssn || '',
-            gender: formData.gender || '',
-            phone: formData.phone || '',
-            email: formData.email || '',
-            address_line1: formData.address_line1 || '',
-            address_line2: formData.address_line2 || '',
-            city: formData.city || '',
-            state: formData.state || '',
-            zip_code: formData.zip_code || '',
-            emergency_contact_name: formData.emergency_contact_name || '',
-            emergency_contact_phone: formData.emergency_contact_phone || '',
-            emergency_contact_relationship: formData.emergency_contact_relationship || '',
-            preferred_language: formData.preferred_language || 'English',
-            marital_status: formData.marital_status || '',
-            occupation: formData.occupation || '',
-            employer: formData.employer || ''
+            first_name: cleanedPatientData.first_name,
+            last_name: cleanedPatientData.last_name,
+            middle_name: cleanedPatientData.middle_name,
+            date_of_birth: cleanedPatientData.date_of_birth,
+            ssn: cleanedPatientData.ssn,
+            gender: cleanedPatientData.gender,
+            phone: cleanedPatientData.phone,
+            email: cleanedPatientData.email,
+            address_line1: cleanedPatientData.address_line1,
+            address_line2: cleanedPatientData.address_line2,
+            city: cleanedPatientData.city,
+            state: cleanedPatientData.state,
+            zip_code: cleanedPatientData.zip_code,
+            emergency_contact_name: cleanedPatientData.emergency_contact_name,
+            emergency_contact_phone: cleanedPatientData.emergency_contact_phone,
+            emergency_contact_relationship: cleanedPatientData.emergency_contact_relationship,
+            preferred_language: cleanedPatientData.preferred_language || 'English',
+            marital_status: cleanedPatientData.marital_status,
+            occupation: cleanedPatientData.occupation,
+            employer: cleanedPatientData.employer
           });
           break;
           
@@ -364,10 +387,25 @@ export const ComprehensiveEnrollmentForm: React.FC<ComprehensiveEnrollmentFormPr
               : null;
           }
           
+          // Apply universal DB constraint fixes for provider data
+          const cleanedProviderData = Object.fromEntries(
+            Object.entries(processedProviderData).map(([key, value]) => {
+              let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+              
+              // NPI validation: only allow exactly 10 digits for DB persistence
+              if (/npi$/i.test(key) && dbValue) {
+                const digits = dbValue.toString().replace(/\D/g, '');
+                dbValue = digits.length === 10 ? digits : null;
+              }
+              
+              return [key, dbValue];
+            })
+          );
+
           await supabase.from('enrollment_provider_info').upsert({
             enrollment_id: enrollmentId,
-            referring_provider_name: processedProviderData.referring_provider_name || '',
-            referring_provider_npi: processedProviderData.referring_provider_npi || '',
+            referring_provider_name: cleanedProviderData.referring_provider_name,
+            referring_provider_npi: cleanedProviderData.referring_provider_npi,
             referring_provider_phone: processedProviderData.referring_provider_phone || '',
             primary_care_physician: processedProviderData.primary_care_physician || '',
             pcp_npi: processedProviderData.pcp_npi || '',
