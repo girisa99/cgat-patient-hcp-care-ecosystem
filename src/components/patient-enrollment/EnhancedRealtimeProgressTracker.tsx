@@ -367,18 +367,45 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
 
       if (enrollmentError) throw enrollmentError;
 
-      // For now, just use the main enrollment data to avoid TypeScript complexity
-      // TODO: Add section-specific data loading when TypeScript types are resolved
-      const merged = enrollment;
+      // Load section-specific tables individually to keep types simple
+      const consentRes: any = await (supabase as any).from('enrollment_consent').select('*').eq('patient_id', patientId).maybeSingle();
+      const patientInfoRes: any = await (supabase as any).from('enrollment_patient_info').select('*').eq('patient_id', patientId).maybeSingle();
+      const providerInfoRes: any = await (supabase as any).from('enrollment_provider_info').select('*').eq('patient_id', patientId).maybeSingle();
+      const insuranceInfoRes: any = await (supabase as any).from('enrollment_insurance_info').select('*').eq('patient_id', patientId).maybeSingle();
+      const clinicalInfoRes: any = await (supabase as any).from('enrollment_clinical_info').select('*').eq('patient_id', patientId).maybeSingle();
 
-      // Build progress object from enrollment data
+      const consentData = consentRes?.data;
+      const patientInfoData = patientInfoRes?.data;
+      const providerInfoData = providerInfoRes?.data;
+      const insuranceInfoData = insuranceInfoRes?.data;
+      const clinicalInfoData = clinicalInfoRes?.data;
+
+      const merged = {
+        ...enrollment,
+        ...(consentData || {}),
+        ...(patientInfoData || {}),
+        ...(providerInfoData || {}),
+        ...(insuranceInfoData || {}),
+        ...(clinicalInfoData || {}),
+        metadata: enrollment.metadata || {}
+      } as any;
+
+      // Build sections from merged data and compute overall if missing
+      const sections = buildSectionStatus(merged);
+      let overall = enrollment.progress_percentage || 0;
+      if (!overall || overall === 0) {
+        overall = sections.length > 0
+          ? sections.reduce((sum, s) => sum + s.overallProgress, 0) / sections.length
+          : 0;
+      }
+
       const progressData: RealtimeProgress = {
         patientId,
         sessionId,
         enrollmentStatus: (enrollment.enrollment_status as 'in_progress' | 'completed' | 'paused' | 'error') || 'in_progress',
         currentSection: enrollment.current_section || 'submission_method',
-        sections: buildSectionStatus(merged),
-        overallProgress: enrollment.progress_percentage || 0,
+        sections,
+        overallProgress: overall,
         lastActivity: enrollment.updated_at,
         criticalIssues: [],
         syncedToDashboard: true,
@@ -509,33 +536,11 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
   const handleRealtimeUpdate = useCallback(async (payload: any) => {
     console.log('Realtime update received:', payload);
     try {
-      // Only trust patient_enrollments for authoritative progress/current_section
-      if ((payload as any)?.table === 'patient_enrollments') {
-        if (payload.new) {
-          const updatedProgress = buildProgressFromPayload(payload.new);
-          setProgress(updatedProgress);
-          onProgressUpdate?.(updatedProgress);
-
-          // Detect newly completed sections
-          const completedSections = payload.new.metadata?.completed_sections || [];
-          const previousSections = progress?.sections.filter(s => s.isCompleted).map(s => s.sectionKey) || [];
-          const newCompletions = completedSections.filter((s: string) => !previousSections.includes(s));
-
-          newCompletions.forEach((sectionKey: string) => {
-            onSectionComplete?.(sectionKey);
-            toast({
-              title: "Section Completed! 🎉",
-              description: `${getSectionTitle(sectionKey)} has been completed successfully.`,
-            });
-          });
-        }
-      } else {
-        // For updates from other tables, reload from patient_enrollments to avoid stale current_section
-        const latest = await loadProgressData();
-        if (latest) {
-          setProgress(prev => ({ ...latest, connectionStatus: prev?.connectionStatus || 'connected' }));
-          onProgressUpdate?.(latest);
-        }
+      // Always reload authoritative merged progress from DB to avoid stale state
+      const latest = await loadProgressData();
+      if (latest) {
+        setProgress(prev => ({ ...latest, connectionStatus: prev?.connectionStatus || 'connected' }));
+        onProgressUpdate?.(latest);
       }
 
       updateConnectionStatus('connected');
@@ -543,7 +548,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
     } catch (err) {
       console.error('Realtime handler error:', err);
     }
-  }, [progress, onProgressUpdate, onSectionComplete, toast]);
+  }, [onProgressUpdate]);
 
   const buildProgressFromPayload = (data: any): RealtimeProgress => {
     return {
