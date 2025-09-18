@@ -9,8 +9,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useToast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { saveUniversalProgress, loadUniversalProgress } from "@/utils/universalSave";
-import { smartRouteFieldsToTables, normalizeCollectionMethod } from "@/utils/smartFieldRouting";
+import { smartRouteFieldsToTables, normalizeCollectionMethod, SMART_FIELD_MAPPINGS } from "@/utils/smartFieldRouting";
 import { EnrollmentForm } from "@/components/enrollment/EnrollmentForm";
+import { enrollmentDebugger } from "@/utils/enrollmentDebugger";
+import { EnrollmentDebugPanel } from "@/components/enrollment/EnrollmentDebugPanel";
+import { EnrollmentErrorDiagnostics } from "@/components/enrollment/EnrollmentErrorDiagnostics";
 
 interface SmartMCPStepwiseAgentProps {
   patientId: string;
@@ -189,12 +192,23 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
       
       console.log('Smart database update successful');
 
-    } catch (error) {
+    } catch (error: any) {
+      enrollmentDebugger.error('DATABASE_UPDATE', 'Database update failed', {
+        currentStep: currentStep.key,
+        inputData: data,
+        error: {
+          message: error.message,
+          code: error.code,
+          details: error.details,
+          hint: error.hint
+        }
+      });
+      
       console.error('Smart routing update error:', error);
       
       toast({
         title: "Update Error",
-        description: `Failed to save ${currentStep.title} data. Please try again.`,
+        description: `Failed to save ${currentStep.title} data: ${error.message || 'Unknown error'}`,
         variant: "destructive"
       });
       
@@ -339,28 +353,33 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
           <CardDescription>{currentStep.description}</CardDescription>
         </CardHeader>
         <CardContent>
-          <Alert className="mb-6">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              Using smart field routing - provider fields automatically go to provider table, 
-              patient fields to patient table, etc.
-            </AlertDescription>
-          </Alert>
+            <Alert className="mb-6">
+              <AlertTriangle className="h-4 w-4" />
+              <AlertDescription>
+                Using smart field routing with comprehensive debugging - all operations are logged below.
+              </AlertDescription>
+            </Alert>
 
-          <EnrollmentForm
-            step={currentStep.key}
-            fields={currentStep.fields}
-            requiredFields={currentStep.requiredFields}
-            initialData={collectedData}
-            onSubmit={handleNext}
-            onPrevious={currentStepIndex > 0 ? handlePrevious : undefined}
-            isLoading={isLoading}
-            checkCompletion={checkStepCompletion}
-            enableConditionalFields={true}
-            sectionKey={currentStep.key}
-          />
-        </CardContent>
-      </Card>
+            <EnrollmentForm
+              step={currentStep.key}
+              fields={currentStep.fields}
+              requiredFields={currentStep.requiredFields}
+              initialData={collectedData}
+              onSubmit={handleNext}
+              onPrevious={currentStepIndex > 0 ? handlePrevious : undefined}
+              isLoading={isLoading}
+              checkCompletion={checkStepCompletion}
+              enableConditionalFields={true}
+              sectionKey={currentStep.key}
+            />
+          </CardContent>
+        </Card>
+
+        {/* Debug Panel */}
+        <div className="mt-6 space-y-6">
+          <EnrollmentErrorDiagnostics />
+          <EnrollmentDebugPanel />
+        </div>
     </div>
   );
 };
