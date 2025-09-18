@@ -242,7 +242,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
     }
   };
 
-  // Update real-time data with proper mapping
+  // Update real-time data with proper mapping and enhanced date handling
   const updateRealtimeDataWithMapping = async (sectionMapping: any, data: Record<string, any>) => {
     try {
       const mappedData: Record<string, any> = {};
@@ -252,14 +252,40 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         if (data[field.fieldKey] !== undefined) {
           let value = data[field.fieldKey];
           
-          // Handle date fields properly
+          // Enhanced date field handling to prevent toISOString errors
           if (field.fieldType === 'date' && value) {
-            // Ensure value is a valid date
-            const dateValue = new Date(value);
-            if (!isNaN(dateValue.getTime())) {
-              value = dateValue.toISOString();
-            } else {
-              console.warn(`Invalid date value for ${field.fieldKey}:`, value);
+            try {
+              // Handle various date formats
+              if (typeof value === 'string') {
+                // Check if it's already an ISO string
+                if (value.includes('T') && value.includes('Z')) {
+                  value = value; // Already ISO format
+                } else if (value.match(/^\d{4}-\d{2}-\d{2}$/)) {
+                  // Date-only format, convert to ISO
+                  value = new Date(value + 'T00:00:00.000Z').toISOString();
+                } else {
+                  // Try to parse as date
+                  const parsedDate = new Date(value);
+                  if (!isNaN(parsedDate.getTime())) {
+                    value = parsedDate.toISOString();
+                  } else {
+                    console.warn(`Invalid date value for ${field.fieldKey}:`, value);
+                    value = null;
+                  }
+                }
+              } else if (value instanceof Date) {
+                if (!isNaN(value.getTime())) {
+                  value = value.toISOString();
+                } else {
+                  console.warn(`Invalid Date object for ${field.fieldKey}:`, value);
+                  value = null;
+                }
+              } else {
+                console.warn(`Unexpected date type for ${field.fieldKey}:`, typeof value, value);
+                value = null;
+              }
+            } catch (dateError) {
+              console.error(`Date processing error for ${field.fieldKey}:`, dateError);
               value = null;
             }
           }

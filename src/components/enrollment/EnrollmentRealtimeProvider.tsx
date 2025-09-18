@@ -92,26 +92,54 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
   useEffect(() => {
     const totalProgress = Object.values(tabProgress).reduce((acc, tab) => acc + tab.completion, 0);
     const avgProgress = totalProgress / Math.max(Object.keys(tabProgress).length, 1);
-    setOverallProgress(Math.round(avgProgress));
+    const calculatedProgress = Math.round(avgProgress);
+    
+    // Only update if progress actually changed to prevent infinite loops
+    if (calculatedProgress !== overallProgress) {
+      setOverallProgress(calculatedProgress);
+    }
   }, [tabProgress]);
 
-  // Handle real-time session data updates
+  // Handle real-time session data updates from ALL enrollment tables
   useEffect(() => {
     if (sessionData && Object.keys(sessionData).length > 0) {
       setActiveSessions(sessionData);
       
-      // Update progress based on session data
+      // Update progress based on session data from multiple sources
       Object.entries(sessionData).forEach(([table, data]: [string, any]) => {
-        if (table === 'enrollment_instances' && data.data) {
+        if (data.data) {
           const instanceData = data.data;
-          const currentSection = instanceData.current_section;
-          const tabId = currentSection?.split('_')[0] || 'consent_mode';
+          
+          // Handle different table types
+          let tabId = 'consent_mode';
+          let sectionProgress = 0;
+          
+          if (table === 'patient_enrollments') {
+            const currentSection = instanceData.current_section;
+            tabId = currentSection?.split('_')[0] || 'consent_mode';
+            sectionProgress = instanceData.progress_percentage || 0;
+          } else if (table === 'enrollment_consent') {
+            tabId = 'consent_mode';
+            sectionProgress = calculateFieldProgress(instanceData, ['provider_name', 'provider_npi', 'treatment_center', 'patient_consent_method']);
+          } else if (table === 'enrollment_patient_info') {
+            tabId = 'patient_info';
+            sectionProgress = calculateFieldProgress(instanceData, ['first_name', 'last_name', 'date_of_birth', 'preferred_language', 'email', 'phone']);
+          } else if (table === 'enrollment_provider_info') {
+            tabId = 'provider_treatment_center';
+            sectionProgress = calculateFieldProgress(instanceData, ['referring_provider_npi']);
+          } else if (table === 'enrollment_insurance_info') {
+            tabId = 'insurance';
+            sectionProgress = calculateFieldProgress(instanceData, ['insurance_provider', 'member_id', 'policy_holder']);
+          } else if (table === 'enrollment_clinical_info') {
+            tabId = 'treatment_clinical';
+            sectionProgress = calculateFieldProgress(instanceData, ['primary_diagnosis', 'treatment_goals']);
+          }
           
           if (tabProgress[tabId]) {
             updateProgress(tabId, {
-              currentSection,
+              currentSection: `${tabId}_${table}`,
               lastUpdated: data.lastUpdate,
-              completion: calculateCompletionFromData(instanceData)
+              completion: Math.min(sectionProgress, 100)
             });
           }
         }
@@ -121,6 +149,18 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
       syncWithDashboard();
     }
   }, [sessionData]);
+
+  // Enhanced field progress calculation for different data structures
+  const calculateFieldProgress = (data: any, requiredFields: string[]): number => {
+    if (!data || !requiredFields.length) return 0;
+    
+    const completedFields = requiredFields.filter(field => {
+      const value = data[field];
+      return value !== null && value !== undefined && value !== '';
+    });
+    
+    return Math.round((completedFields.length / requiredFields.length) * 100);
+  };
 
   const calculateCompletionFromData = (data: any): number => {
     if (!data.form_data) return 0;
@@ -135,20 +175,25 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
   };
 
   const updateProgress = (tabId: string, progress: Partial<EnrollmentProgress>) => {
-    setTabProgress(prev => ({
-      ...prev,
-      [tabId]: {
-        ...prev[tabId],
-        ...progress,
-        lastUpdated: new Date().toISOString()
-      }
-    }));
+    setTabProgress(prev => {
+      const newProgress = {
+        ...prev,
+        [tabId]: {
+          ...prev[tabId],
+          ...progress,
+          lastUpdated: new Date().toISOString()
+        }
+      };
+      
+      console.log(`📊 Progress updated for ${tabId}:`, newProgress[tabId]);
+      return newProgress;
+    });
 
     // Create real-time update for dashboards
     const update = {
       type: 'progress_update',
       tabId,
-      progress: { ...tabProgress[tabId], ...progress },
+      progress: progress,
       timestamp: new Date().toISOString()
     };
 
@@ -232,7 +277,7 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
   useEffect(() => {
     const interval = setInterval(syncWithDashboard, 30000);
     return () => clearInterval(interval);
-  }, [overallProgress, tabProgress]);
+  }, [overallProgress, tabProgress, calculateFieldProgress]);
 
   const contextValue: EnrollmentRealtimeContextType = {
     // Real-time connection state
