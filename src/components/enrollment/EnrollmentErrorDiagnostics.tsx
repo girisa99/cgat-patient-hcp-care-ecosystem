@@ -164,39 +164,49 @@ export const EnrollmentErrorDiagnostics: React.FC = () => {
       results.push({ test: 'Patient Enrollment Insert', status: 'running' });
       setTestResults([...results]);
 
-      const { data: patientTest, error: patientError } = await supabase
-        .from('patient_enrollments')
-        .insert({
-          session_id: `diagnostic-test-${Date.now()}`,
-          enrollment_source: 'diagnostic_test',
-          enrollment_status: 'draft',
-          current_section: 'test',
-          metadata: { test: true, diagnostic: true }
-        })
-        .select();
-
-      if (patientError) {
+      if (!userId) {
         results[results.length - 1] = { 
           test: 'Patient Enrollment Insert', 
           status: 'failed', 
-          error: patientError.message 
+          error: 'Not authenticated: user_id required for RLS' 
         };
+        setTestResults([...results]);
       } else {
-        results[results.length - 1] = { 
-          test: 'Patient Enrollment Insert', 
-          status: 'passed',
-          details: 'Successfully inserted test patient data'
-        };
+        const { data: patientTest, error: patientError } = await supabase
+          .from('patient_enrollments')
+          .insert({
+            user_id: userId, // Required by RLS
+            session_id: `diagnostic-test-${Date.now()}`,
+            enrollment_source: 'diagnostic_test',
+            enrollment_status: 'draft',
+            current_section: 'test',
+            metadata: { test: true, diagnostic: true }
+          })
+          .select();
 
-        // Clean up test data
-        if (patientTest && patientTest[0]) {
-          await supabase
-            .from('patient_enrollments')
-            .delete()
-            .eq('id', patientTest[0].id);
+        if (patientError) {
+          results[results.length - 1] = { 
+            test: 'Patient Enrollment Insert', 
+            status: 'failed', 
+            error: patientError.message 
+          };
+        } else {
+          results[results.length - 1] = { 
+            test: 'Patient Enrollment Insert', 
+            status: 'passed',
+            details: 'Successfully inserted test patient data'
+          };
+
+          // Clean up test data
+          if (patientTest && patientTest[0]) {
+            await supabase
+              .from('patient_enrollments')
+              .delete()
+              .eq('id', patientTest[0].id);
+          }
         }
+        setTestResults([...results]);
       }
-      setTestResults([...results]);
 
     } catch (error: any) {
       results.push({ 
