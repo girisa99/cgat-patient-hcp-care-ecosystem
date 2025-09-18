@@ -41,6 +41,9 @@ import { EnrollmentSectionProgressTracker } from '../patient-enrollment/Enrollme
 import { FieldByFieldCollector, type FieldDefinition } from '../patient-enrollment/FieldByFieldCollector';
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
 import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
+import { WhatsAppConsentAgent } from '../patient-enrollment/WhatsAppConsentAgent';
+import { useUniversalSaveResume } from '@/hooks/useUniversalSaveResume.tsx';
+import { useNPIVerification } from '@/hooks/useNPIVerification';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -156,9 +159,24 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
   const [consentSubStep, setConsentSubStep] = useState<'provider_info' | 'treatment_center' | 'patient_method' | 'provider_signature'>('provider_info');
   const [showSectionCompletion, setShowSectionCompletion] = useState(false);
   const [completedSectionData, setCompletedSectionData] = useState<{ sectionKey: string; completedAt: Date } | null>(null);
+  const [showWhatsAppConsent, setShowWhatsAppConsent] = useState(false);
+  const [npiSearchQuery, setNpiSearchQuery] = useState<string>('');
+  const [npiSearchType, setNpiSearchType] = useState<'npi' | 'name' | 'organization'>('npi');
   
   const { toast } = useToast();
   const signatureRef = useRef<SignatureCanvas | null>(null);
+  
+  // Universal Save Resume integration for cross-agent resume
+  const {
+    saveProgress: saveUniversalProgress,
+    resumeSession: resumeUniversalSession,
+    hasExistingSession,
+    sessionData: universalSessionData,
+    manualSave: manualUniversalSave
+  } = useUniversalSaveResume('patient_enrollment', 'ai_agent');
+  
+  // NPI Verification hook
+  const { verifyCredentials, isVerifying, validateNPIFormat } = useNPIVerification();
   
   // Generate unique patient ID
   const patientId = patientEnrollmentSession?.patient_id || `${Date.now().toString()}-${Math.random().toString(36).substr(2, 9)}`;
@@ -328,6 +346,20 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
         .from('patient_enrollments')
         .update(progressUpdate)
         .eq('id', patientId);
+
+      // Also update universal save system for cross-agent resume capability
+      await saveUniversalProgress(
+        sectionMapping.sectionKey,
+        { ...collectedData, ...data },
+        progress,
+        {
+          agent_type: 'mcp_stepwise',
+          module_type: moduleType,
+          enrollment_source: enrollmentSource,
+          current_step_index: currentStepIndex,
+          session_id: mcpSession?.sessionId
+        }
+      );
 
     } catch (error) {
       console.error('Real-time update error:', error);
