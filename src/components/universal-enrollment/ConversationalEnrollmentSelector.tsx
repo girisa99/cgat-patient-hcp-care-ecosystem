@@ -240,11 +240,14 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   };
 
   if (selectedMethod === 'mcp_stepwise') {
+    // Generate a proper UUID for new enrollment
+    const enrollmentId = crypto.randomUUID();
+    
     return (
       <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
         <SmartMCPStepwiseAgent
           moduleType={moduleType}
-          patientId="new-enrollment"
+          patientId={enrollmentId}
           enrollmentSource="mcp"
           onComplete={onComplete || (() => {})}
         />
