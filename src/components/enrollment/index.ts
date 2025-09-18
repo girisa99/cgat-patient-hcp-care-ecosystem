@@ -3,8 +3,8 @@
  * Exports all enrollment-related components including enhanced versions
  */
 
-// Enhanced MCP Agent
-export { MCPStepwiseEnrollmentAgent } from './MCPStepwiseEnrollmentAgent';
+// Enhanced MCP Agent - Smart Field Routing
+export { SmartMCPStepwiseAgent } from './SmartMCPStepwiseAgent';
 
 // Enhanced Conversational Agent
 export { EnhancedFloatingConversationalAgent } from './EnhancedFloatingConversationalAgent';

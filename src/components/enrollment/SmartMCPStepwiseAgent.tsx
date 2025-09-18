@@ -1,0 +1,366 @@
+import React, { useState, useEffect } from "react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Progress } from "@/components/ui/progress";
+import { CheckCircle, Clock, AlertTriangle, Users, FileText, CreditCard, Activity, UserCheck, Send } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { useToast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { saveUniversalProgress, loadUniversalProgress } from "@/utils/universalSave";
+import { smartRouteFieldsToTables, normalizeCollectionMethod } from "@/utils/smartFieldRouting";
+import { EnrollmentForm } from "@/components/enrollment/EnrollmentForm";
+
+interface SmartMCPStepwiseAgentProps {
+  patientId: string;
+  moduleType: string;
+  enrollmentSource: string;
+  onComplete?: (data: any) => void;
+  onProgress?: (progress: number) => void;
+}
+
+export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
+  patientId,
+  moduleType,
+  enrollmentSource,
+  onComplete,
+  onProgress
+}) => {
+  const { toast } = useToast();
+  const [currentStepIndex, setCurrentStepIndex] = useState(0);
+  const [collectedData, setCollectedData] = useState<Record<string, any>>({});
+  const [isLoading, setIsLoading] = useState(false);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  // Enhanced enrollment steps with smart field mapping
+  const enrollmentSteps = [
+    {
+      key: 'consent_management',
+      title: 'Consent Management',
+      description: 'Patient consent and provider information',
+      icon: <FileText className="w-5 h-5" />,
+      requiredFields: ['consent_treatment', 'consent_privacy', 'provider_name'],
+      fields: [
+        'consent_treatment', 'consent_privacy', 'consent_communication',
+        'collection_method', 'patient_signature', 'provider_name', 
+        'provider_npi', 'provider_signature'
+      ]
+    },
+    {
+      key: 'patient_information',
+      title: 'Patient Information',
+      description: 'Basic patient details and demographics',
+      icon: <Users className="w-5 h-5" />,
+      requiredFields: ['patient_first_name', 'patient_last_name', 'patient_dob'],
+      fields: [
+        'patient_first_name', 'patient_last_name', 'patient_dob',
+        'patient_phone', 'patient_email', 'patient_address',
+        'emergency_contact_name', 'emergency_contact_phone'
+      ]
+    },
+    {
+      key: 'provider_treatment',
+      title: 'Provider & Treatment',
+      description: 'Healthcare provider and treatment details',
+      icon: <UserCheck className="w-5 h-5" />,
+      requiredFields: ['provider_specialty', 'treatment_type'],
+      fields: [
+        'provider_specialty', 'provider_phone', 'provider_email',
+        'treatment_type', 'treatment_frequency', 'treatment_start_date'
+      ]
+    },
+    {
+      key: 'insurance_information',
+      title: 'Insurance Information',
+      description: 'Insurance details and coverage',
+      icon: <CreditCard className="w-5 h-5" />,
+      requiredFields: ['insurance_provider', 'insurance_policy_number'],
+      fields: [
+        'insurance_provider', 'insurance_policy_number', 'insurance_group_number',
+        'insurance_subscriber_name', 'secondary_insurance_provider'
+      ]
+    },
+    {
+      key: 'clinical_treatment',
+      title: 'Clinical & Treatment',
+      description: 'Medical history and treatment plan',
+      icon: <Activity className="w-5 h-5" />,
+      requiredFields: ['primary_diagnosis'],
+      fields: [
+        'primary_diagnosis', 'medical_history', 'current_medications',
+        'allergies', 'treatment_goals', 'physician_name'
+      ]
+    },
+    {
+      key: 'submit',
+      title: 'Submit',
+      description: 'Final review and submission',
+      icon: <Send className="w-5 h-5" />,
+      requiredFields: ['final_patient_signature'],
+      fields: [
+        'final_patient_signature', 'submission_notes'
+      ]
+    }
+  ];
+
+  const currentStep = enrollmentSteps[currentStepIndex];
+
+  // Smart database update using field routing
+  const updateDatabase = async (data: Record<string, any>) => {
+    if (!patientId) return;
+
+    try {
+      console.log('=== SMART FIELD ROUTING ===');
+      console.log('Current step:', currentStep.key);
+      console.log('Form data:', data);
+      
+      // Normalize collection method for consent fields
+      if (data.collection_method) {
+        data.collection_method = normalizeCollectionMethod(data.collection_method);
+      }
+      
+      // Route fields to appropriate tables using smart mapping
+      const tableUpdates = smartRouteFieldsToTables(data);
+      console.log('Routed table updates:', tableUpdates);
+      
+      // Execute all table updates
+      for (const batch of tableUpdates) {
+        console.log(`Processing ${batch.tableName}:`, batch.data);
+        
+        if (batch.operation === 'update') {
+          const { error } = await supabase
+            .from(batch.tableName as any)
+            .update(batch.data)
+            .eq('id', patientId);
+            
+          if (error) {
+            console.error(`Update error for ${batch.tableName}:`, error);
+            throw error;
+          }
+        } else {
+          const { error } = await supabase
+            .from(batch.tableName as any)
+            .upsert({ ...batch.data, enrollment_id: patientId });
+            
+          if (error) {
+            console.error(`Upsert error for ${batch.tableName}:`, error);
+            throw error;
+          }
+        }
+      }
+
+      setCollectedData(prev => ({ ...prev, ...data }));
+      
+      // Update progress
+      const progress = Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100);
+      
+      const { error: progressError } = await supabase
+        .from('patient_enrollments')
+        .update({ 
+          current_step: currentStep.key,
+          progress_percentage: progress,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', patientId);
+        
+      if (progressError) {
+        console.error('Progress update error:', progressError);
+        throw progressError;
+      }
+
+      // Update universal save system
+      await saveUniversalProgress(
+        'smart-enrollment-agent',
+        patientId,
+        {
+          currentStep: currentStep.key,
+          completedSteps: enrollmentSteps.slice(0, currentStepIndex + 1).map(s => s.key),
+          formData: { ...collectedData, ...data },
+          progress: progress,
+          lastUpdated: Date.now(),
+          agent_type: 'smart_mcp_stepwise',
+          module_type: moduleType,
+          enrollment_source: enrollmentSource
+        }
+      );
+
+      onProgress?.(progress);
+      
+      console.log('Smart database update successful');
+
+    } catch (error) {
+      console.error('Smart routing update error:', error);
+      
+      toast({
+        title: "Update Error",
+        description: `Failed to save ${currentStep.title} data. Please try again.`,
+        variant: "destructive"
+      });
+      
+      throw error;
+    }
+  };
+
+  // Check step completion
+  const checkStepCompletion = (data: Record<string, any>): boolean => {
+    return currentStep.requiredFields.every((field: string) => {
+      return data[field] && data[field].toString().trim() !== '';
+    });
+  };
+
+  // Handle step navigation
+  const handleNext = async (stepData: Record<string, any>) => {
+    setIsLoading(true);
+    
+    try {
+      // Update database with smart routing
+      await updateDatabase(stepData);
+      
+      if (currentStepIndex < enrollmentSteps.length - 1) {
+        setCurrentStepIndex(prev => prev + 1);
+      } else {
+        // Final step - mark as completed
+        await supabase
+          .from('patient_enrollments')
+          .update({ 
+            status: 'completed',
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', patientId);
+          
+        setIsCompleted(true);
+        onComplete?.(collectedData);
+        
+        toast({
+          title: "Enrollment Complete!",
+          description: "Patient enrollment has been successfully submitted.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Navigation error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handlePrevious = () => {
+    if (currentStepIndex > 0) {
+      setCurrentStepIndex(prev => prev - 1);
+    }
+  };
+
+  // Load existing data on mount
+  useEffect(() => {
+    const loadExistingData = async () => {
+      try {
+        const universalData = await loadUniversalProgress('smart-enrollment-agent', patientId);
+        if (universalData) {
+          setCollectedData(universalData.formData || {});
+          const stepIndex = enrollmentSteps.findIndex(s => s.key === universalData.currentStep);
+          if (stepIndex >= 0) {
+            setCurrentStepIndex(stepIndex);
+          }
+        }
+      } catch (error) {
+        console.error('Failed to load existing data:', error);
+      }
+    };
+
+    if (patientId) {
+      loadExistingData();
+    }
+  }, [patientId]);
+
+  if (isCompleted) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardContent className="pt-6 text-center">
+          <CheckCircle className="w-16 h-16 text-green-500 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-green-700 mb-2">Enrollment Complete!</h2>
+          <p className="text-gray-600">
+            The patient enrollment has been successfully processed using smart field routing.
+          </p>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <div className="w-full max-w-4xl mx-auto space-y-6">
+      {/* Header */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            {currentStep.icon}
+            Smart MCP Stepwise Enrollment Agent
+          </CardTitle>
+          <CardDescription>
+            Advanced field-to-table routing system for accurate data management
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Progress value={(currentStepIndex / enrollmentSteps.length) * 100} className="mb-4" />
+          <div className="flex justify-between items-center text-sm text-gray-600">
+            <span>Step {currentStepIndex + 1} of {enrollmentSteps.length}</span>
+            <Badge variant={currentStepIndex === enrollmentSteps.length - 1 ? "default" : "secondary"}>
+              {currentStep.title}
+            </Badge>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Steps Navigation */}
+      <Card>
+        <CardContent className="pt-6">
+          <div className="flex justify-between items-center">
+            {enrollmentSteps.map((step, index) => (
+              <div key={step.key} className="flex flex-col items-center space-y-2">
+                <div className={`
+                  w-10 h-10 rounded-full flex items-center justify-center
+                  ${index <= currentStepIndex ? 'bg-primary text-primary-foreground' : 'bg-muted'}
+                `}>
+                  {index < currentStepIndex ? <CheckCircle className="w-5 h-5" /> : step.icon}
+                </div>
+                <span className={`text-xs font-medium ${index <= currentStepIndex ? 'text-primary' : 'text-muted-foreground'}`}>
+                  {step.title.split(' ')[0]}
+                </span>
+              </div>
+            ))}
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Current Step Form */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{currentStep.title}</CardTitle>
+          <CardDescription>{currentStep.description}</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <Alert className="mb-6">
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Using smart field routing - provider fields automatically go to provider table, 
+              patient fields to patient table, etc.
+            </AlertDescription>
+          </Alert>
+
+          <EnrollmentForm
+            step={currentStep.key}
+            fields={currentStep.fields}
+            requiredFields={currentStep.requiredFields}
+            initialData={collectedData}
+            onSubmit={handleNext}
+            onPrevious={currentStepIndex > 0 ? handlePrevious : undefined}
+            isLoading={isLoading}
+            checkCompletion={checkStepCompletion}
+          />
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
+
+export default SmartMCPStepwiseAgent;

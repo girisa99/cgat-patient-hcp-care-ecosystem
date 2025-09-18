@@ -36,7 +36,7 @@ import {
 import { SmartEnrollmentLauncher } from '../enrollment/SmartEnrollmentLauncher';
 import { EnhancedFloatingConversationalAgent } from '../enrollment/EnhancedFloatingConversationalAgent';
 import { EnhancedStructuredEnrollmentAgent } from '../enrollment/EnhancedStructuredEnrollmentAgent';
-import { MCPStepwiseEnrollmentAgent } from '../enrollment/MCPStepwiseEnrollmentAgent';
+import { SmartMCPStepwiseAgent } from '../enrollment/SmartMCPStepwiseAgent';
 import { useGlobalConversationalEnrollment } from '@/hooks/useGlobalConversationalEnrollment';
 import { EnrollmentErrorBoundary } from '../enrollment/EnrollmentErrorBoundary';
 import { EnrollmentAgentWorkflowCreator } from '../enrollment/EnrollmentAgentWorkflowCreator';
@@ -242,11 +242,11 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   if (selectedMethod === 'mcp_stepwise') {
     return (
       <EnrollmentErrorBoundary onBack={() => setSelectedMethod(null)}>
-        <MCPStepwiseEnrollmentAgent
+        <SmartMCPStepwiseAgent
           moduleType={moduleType}
+          patientId="new-enrollment"
           enrollmentSource="mcp"
           onComplete={onComplete || (() => {})}
-          onCancel={() => setSelectedMethod(null)}
         />
       </EnrollmentErrorBoundary>
     );
