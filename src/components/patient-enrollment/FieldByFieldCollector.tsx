@@ -125,7 +125,21 @@ export const FieldByFieldCollector: React.FC<FieldByFieldCollectorProps> = ({
 
     setIsValidating(true);
     
-    // Update form data
+    // Normalize empty strings to null for DB compatibility
+    let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+    
+    // NPI validation: only allow exactly 10 digits for DB persistence
+    const isNpiField = /npi$/i.test(fieldName);
+    if (isNpiField && dbValue) {
+      const digits = dbValue.toString().replace(/\D/g, '');
+      if (digits.length === 10) {
+        dbValue = digits; // Valid NPI
+      } else {
+        dbValue = value; // Keep for UI, but parent should handle DB skip
+      }
+    }
+
+    // Update form data (keep original value for UI)
     const newData = { ...formData, [fieldName]: value };
     setFormData(newData);
     
@@ -136,8 +150,8 @@ export const FieldByFieldCollector: React.FC<FieldByFieldCollectorProps> = ({
       [fieldName]: error || ''
     }));
     
-    // Notify parent
-    onFieldUpdate?.(fieldName, value);
+    // Notify parent with both UI and DB values
+    onFieldUpdate?.(fieldName, dbValue);
     
     setTimeout(() => setIsValidating(false), 300);
   };
