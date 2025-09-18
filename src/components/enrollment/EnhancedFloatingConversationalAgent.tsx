@@ -65,14 +65,25 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
       const { data: authUser } = await supabase.auth.getUser();
       if (!authUser.user?.id) return;
 
+      // Ensure valid UUID and session_id before DB insert
+      const validPatientId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patientId) 
+        ? patientId : crypto.randomUUID();
+      const validSessionId = sessionId || `conv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       await supabase.from('patient_enrollments').upsert({
-        id: patientId,
-        session_id: sessionId || `conv-${Date.now()}`,
+        id: validPatientId,
+        session_id: validSessionId,
         enrollment_status: 'in_progress',
         current_section: 'consent_management',
         progress_percentage: 0,
         enrollment_source: 'conversational',
-        metadata: { agent_type: 'conversational', module_type: moduleType },
+        metadata: { 
+          agent_type: 'conversational', 
+          module_type: moduleType,
+          completed_sections: [],
+          section_timestamps: {},
+          conversation_personality: 'professional'
+        },
         user_id: authUser.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -130,14 +141,10 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
         progressTracking: true
       });
 
-      // Check for section completion (mock implementation)
+      // Check for section completion and update database
       if (response && currentMessage.toLowerCase().includes('complete')) {
-        setCompletedSectionData({
-          sectionKey: getCurrentSection(),
-          completedAt: new Date(),
-          data: {}
-        });
-        setShowSectionCompletion(true);
+        const sectionKey = getCurrentSection();
+        await handleSectionComplete(sectionKey, response.extractedData || {});
       }
 
       setCurrentMessage('');
@@ -154,6 +161,59 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
   const getCurrentSection = () => {
     // Extract current section from session data
     return session?.currentSection || 'patient_information';
+  };
+
+  const handleSectionComplete = async (sectionKey: string, data: Record<string, any>) => {
+    try {
+      const { data: authUser } = await supabase.auth.getUser();
+      if (authUser.user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patientId)) {
+        // Clean data for DB persistence (normalize empty strings, validate NPIs)
+        const cleanedData = Object.fromEntries(
+          Object.entries(data).map(([key, value]) => {
+            let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+            
+            // NPI validation: only persist exactly 10 digits
+            if (/npi$/i.test(key) && dbValue) {
+              const digits = dbValue.toString().replace(/\D/g, '');
+              dbValue = digits.length === 10 ? digits : null;
+            }
+            
+            return [key, dbValue];
+          })
+        );
+
+        // Update patient enrollments with section completion
+        const sections = ['consent_management', 'patient_information', 'provider_information', 'insurance_information'];
+        const currentIndex = sections.indexOf(sectionKey);
+        const progress = Math.round(((currentIndex + 1) / sections.length) * 100);
+        const nextSection = sections[currentIndex + 1];
+
+        await supabase.from('patient_enrollments').update({
+          current_section: nextSection || 'completed',
+          progress_percentage: progress,
+          metadata: {
+            agent_type: 'conversational',
+            module_type: moduleType,
+            completed_sections: [sectionKey],
+            section_timestamps: {
+              [sectionKey]: new Date().toISOString()
+            },
+            section_data: { [sectionKey]: cleanedData },
+            conversation_personality: selectedPersonality
+          },
+          updated_at: new Date().toISOString()
+        }).eq('id', patientId);
+      }
+    } catch (error) {
+      console.error('Failed to update section completion:', error);
+    }
+
+    setCompletedSectionData({
+      sectionKey,
+      completedAt: new Date(),
+      data
+    });
+    setShowSectionCompletion(true);
   };
 
   const getPersonalityIcon = (personality: PersonalityMode) => {

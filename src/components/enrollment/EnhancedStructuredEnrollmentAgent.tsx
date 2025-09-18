@@ -69,14 +69,24 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
       const { data: authUser } = await supabase.auth.getUser();
       if (!authUser.user?.id) return;
 
+      // Ensure valid UUID and session_id before DB insert
+      const validPatientId = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patientId) 
+        ? patientId : crypto.randomUUID();
+      const validSessionId = sessionId || `struct-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+
       await supabase.from('patient_enrollments').upsert({
-        id: patientId,
-        session_id: sessionId,
+        id: validPatientId,
+        session_id: validSessionId,
         enrollment_status: 'in_progress',
         current_section: 'patient_information',
         progress_percentage: 0,
         enrollment_source: 'structured_ai',
-        metadata: { agent_type: 'structured', module_type: moduleType },
+        metadata: { 
+          agent_type: 'structured', 
+          module_type: moduleType,
+          completed_sections: [],
+          section_timestamps: {}
+        },
         user_id: authUser.user.id,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
@@ -346,13 +356,55 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
   const currentSection = sections[currentSectionIndex];
   const overallProgress = (completedSections.length / sections.length) * 100;
 
-  const handleSectionComplete = (sectionId: string, data: Record<string, any>) => {
+  const handleSectionComplete = async (sectionId: string, data: Record<string, any>) => {
     // Update section data
     setSectionData(prev => ({ ...prev, [sectionId]: data }));
     
     // Mark section as completed
     if (!completedSections.includes(sectionId)) {
       setCompletedSections(prev => [...prev, sectionId]);
+    }
+
+    // Persist section completion to database with DB constraint fixes
+    try {
+      const { data: authUser } = await supabase.auth.getUser();
+      if (authUser.user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(patientId)) {
+        const newCompletedSections = [...completedSections, sectionId];
+        const progress = Math.round((newCompletedSections.length / sections.length) * 100);
+        const nextSection = sections[currentSectionIndex + 1];
+
+        // Clean data for DB persistence (normalize empty strings, validate NPIs)
+        const cleanedData = Object.fromEntries(
+          Object.entries(data).map(([key, value]) => {
+            let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+            
+            // NPI validation: only persist exactly 10 digits
+            if (/npi$/i.test(key) && dbValue) {
+              const digits = dbValue.toString().replace(/\D/g, '');
+              dbValue = digits.length === 10 ? digits : null;
+            }
+            
+            return [key, dbValue];
+          })
+        );
+
+        await supabase.from('patient_enrollments').update({
+          current_section: nextSection?.id || sectionId,
+          progress_percentage: progress,
+          metadata: {
+            agent_type: 'structured',
+            module_type: moduleType,
+            completed_sections: newCompletedSections,
+            section_timestamps: {
+              [sectionId]: new Date().toISOString()
+            },
+            section_data: { [sectionId]: cleanedData }
+          },
+          updated_at: new Date().toISOString()
+        }).eq('id', patientId);
+      }
+    } catch (error) {
+      console.error('Failed to update section completion:', error);
     }
 
     // Prepare completion modal data
@@ -479,11 +531,25 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
                     fields={currentSection.fields}
                     initialData={sectionData[currentSection.id] || {}}
                     onFieldUpdate={(fieldName, value) => {
+                      // Apply universal DB constraint fixes before updating state
+                      let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+                      
+                      // NPI validation: only allow exactly 10 digits for DB persistence
+                      const isNpiField = /npi$/i.test(fieldName);
+                      if (isNpiField && dbValue) {
+                        const digits = dbValue.toString().replace(/\D/g, '');
+                        if (digits.length !== 10) {
+                          dbValue = value; // Keep for UI validation, but won't persist invalid NPI
+                        } else {
+                          dbValue = digits; // Valid NPI for DB
+                        }
+                      }
+                      
                       setSectionData(prev => ({
                         ...prev,
                         [currentSection.id]: {
                           ...prev[currentSection.id],
-                          [fieldName]: value
+                          [fieldName]: dbValue
                         }
                       }));
                     }}

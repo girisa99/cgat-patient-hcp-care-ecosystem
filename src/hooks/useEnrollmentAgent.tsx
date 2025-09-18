@@ -41,10 +41,30 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
 
     try {
       const instanceId = crypto.randomUUID();
+      const sessionId = `hook-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
       const sections = getSectionsForModule(moduleType);
 
-      // TODO: Create database record for tracking once tables are finalized
-      // For now, using local state only
+      // Create database record with proper UUID and constraint handling
+      const { data: authUser } = await supabase.auth.getUser();
+      if (authUser.user?.id) {
+        await supabase.from('patient_enrollments').upsert({
+          id: instanceId,
+          session_id: sessionId,
+          enrollment_status: 'in_progress',
+          current_section: sections[0],
+          progress_percentage: 0,
+          enrollment_source: 'ai_agent_hook',
+          metadata: { 
+            agent_type: 'hook_managed', 
+            module_type: moduleType,
+            completed_sections: [],
+            section_timestamps: {}
+          },
+          user_id: authUser.user.id,
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        });
+      }
 
       const newSession: EnrollmentSession = {
         instanceId,
@@ -81,11 +101,26 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
     if (!currentSession) return;
 
     try {
+      // Apply universal DB constraint fixes
+      const cleanedData = Object.fromEntries(
+        Object.entries(data).map(([key, value]) => {
+          let dbValue = (typeof value === 'string' && value.trim() === '') ? null : value;
+          
+          // NPI validation: only allow exactly 10 digits for DB persistence
+          if (/npi$/i.test(key) && dbValue) {
+            const digits = dbValue.toString().replace(/\D/g, '');
+            dbValue = digits.length === 10 ? digits : null;
+          }
+          
+          return [key, dbValue];
+        })
+      );
+
       const updatedFormData = {
         ...currentSession.formData,
         [sectionName]: {
           ...currentSession.formData[sectionName],
-          ...data
+          ...cleanedData
         }
       };
 
@@ -94,8 +129,20 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
         formData: updatedFormData
       } : null);
 
-      // TODO: Update database once tables are finalized
-      // For now, using local state only
+      // Update database with proper UUID validation
+      const { data: authUser } = await supabase.auth.getUser();
+      if (authUser.user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(currentSession.instanceId)) {
+        await supabase.from('patient_enrollments').update({
+          metadata: {
+            agent_type: 'hook_managed',
+            module_type: currentSession.moduleType,
+            completed_sections: currentSession.completedSections,
+            section_data: { [sectionName]: cleanedData },
+            section_timestamps: {}
+          } as any,
+          updated_at: new Date().toISOString()
+        }).eq('id', currentSession.instanceId);
+      }
 
       // Only trigger NPI verification if explicitly enabled and not skipped
       if (!options?.skipNPIVerification && 
@@ -172,6 +219,7 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
       const allSections = getSectionsForModule(currentSession.moduleType);
       const currentIndex = allSections.indexOf(sectionName);
       const nextSection = allSections[currentIndex + 1];
+      const progress = Math.round((updatedCompletedSections.length / allSections.length) * 100);
 
       setCurrentSession(prev => prev ? {
         ...prev,
@@ -179,7 +227,23 @@ export const useEnrollmentAgent = (): UseEnrollmentAgentReturn => {
         currentSection: nextSection || sectionName
       } : null);
 
-      // TODO: Update database progress once tables are finalized
+      // Update database progress with proper UUID validation
+      const { data: authUser } = await supabase.auth.getUser();
+      if (authUser.user?.id && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(currentSession.instanceId)) {
+        await supabase.from('patient_enrollments').update({
+          current_section: nextSection || 'completed',
+          progress_percentage: progress,
+          metadata: {
+            agent_type: 'hook_managed',
+            module_type: currentSession.moduleType,
+            completed_sections: updatedCompletedSections,
+            section_timestamps: {
+              [sectionName]: new Date().toISOString()
+            }
+          } as any,
+          updated_at: new Date().toISOString()
+        }).eq('id', currentSession.instanceId);
+      }
 
       toast({
         title: "Section Completed",
