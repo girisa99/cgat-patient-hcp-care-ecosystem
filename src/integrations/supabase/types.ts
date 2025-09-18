@@ -4544,6 +4544,7 @@ export type Database = {
           consent_to_treatment: boolean | null
           created_at: string
           enrollment_id: string
+          facility_id: string | null
           final_signature: string | null
           final_signature_date: string | null
           financial_responsibility: boolean | null
@@ -4553,6 +4554,7 @@ export type Database = {
           marketing_consent: boolean | null
           patient_signature: string | null
           privacy_consent: boolean | null
+          provider_id: string | null
           provider_name: string | null
           provider_npi: string | null
           provider_signature: string | null
@@ -4571,6 +4573,7 @@ export type Database = {
           consent_to_treatment?: boolean | null
           created_at?: string
           enrollment_id: string
+          facility_id?: string | null
           final_signature?: string | null
           final_signature_date?: string | null
           financial_responsibility?: boolean | null
@@ -4580,6 +4583,7 @@ export type Database = {
           marketing_consent?: boolean | null
           patient_signature?: string | null
           privacy_consent?: boolean | null
+          provider_id?: string | null
           provider_name?: string | null
           provider_npi?: string | null
           provider_signature?: string | null
@@ -4598,6 +4602,7 @@ export type Database = {
           consent_to_treatment?: boolean | null
           created_at?: string
           enrollment_id?: string
+          facility_id?: string | null
           final_signature?: string | null
           final_signature_date?: string | null
           financial_responsibility?: boolean | null
@@ -4607,6 +4612,7 @@ export type Database = {
           marketing_consent?: boolean | null
           patient_signature?: string | null
           privacy_consent?: boolean | null
+          provider_id?: string | null
           provider_name?: string | null
           provider_npi?: string | null
           provider_signature?: string | null
@@ -4624,6 +4630,20 @@ export type Database = {
             columns: ["enrollment_id"]
             isOneToOne: false
             referencedRelation: "patient_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_consent_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_consent_provider_id_fkey"
+            columns: ["provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
             referencedColumns: ["id"]
           },
         ]
@@ -5077,12 +5097,15 @@ export type Database = {
           diagnosis_codes: Json | null
           enrollment_id: string
           facility_address: string | null
+          facility_id: string | null
           facility_npi: string | null
           id: string
           npi_verification_status: string | null
           pcp_npi: string | null
           pcp_phone: string | null
+          pcp_provider_id: string | null
           primary_care_physician: string | null
+          referring_provider_id: string | null
           referring_provider_name: string | null
           referring_provider_npi: string | null
           referring_provider_phone: string | null
@@ -5099,12 +5122,15 @@ export type Database = {
           diagnosis_codes?: Json | null
           enrollment_id: string
           facility_address?: string | null
+          facility_id?: string | null
           facility_npi?: string | null
           id?: string
           npi_verification_status?: string | null
           pcp_npi?: string | null
           pcp_phone?: string | null
+          pcp_provider_id?: string | null
           primary_care_physician?: string | null
+          referring_provider_id?: string | null
           referring_provider_name?: string | null
           referring_provider_npi?: string | null
           referring_provider_phone?: string | null
@@ -5121,12 +5147,15 @@ export type Database = {
           diagnosis_codes?: Json | null
           enrollment_id?: string
           facility_address?: string | null
+          facility_id?: string | null
           facility_npi?: string | null
           id?: string
           npi_verification_status?: string | null
           pcp_npi?: string | null
           pcp_phone?: string | null
+          pcp_provider_id?: string | null
           primary_care_physician?: string | null
+          referring_provider_id?: string | null
           referring_provider_name?: string | null
           referring_provider_npi?: string | null
           referring_provider_phone?: string | null
@@ -5142,6 +5171,27 @@ export type Database = {
             columns: ["enrollment_id"]
             isOneToOne: false
             referencedRelation: "patient_enrollments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_provider_info_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_provider_info_pcp_provider_id_fkey"
+            columns: ["pcp_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "enrollment_provider_info_referring_provider_id_fkey"
+            columns: ["referring_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
             referencedColumns: ["id"]
           },
         ]
@@ -8938,10 +8988,12 @@ export type Database = {
           current_section: string
           enrollment_source: string | null
           enrollment_status: string
+          facility_id: string | null
           id: string
           metadata: Json | null
           pdf_file_path: string | null
           pdf_generated: boolean | null
+          primary_provider_id: string | null
           progress_percentage: number | null
           session_id: string
           signature_data: Json | null
@@ -8959,10 +9011,12 @@ export type Database = {
           current_section?: string
           enrollment_source?: string | null
           enrollment_status?: string
+          facility_id?: string | null
           id?: string
           metadata?: Json | null
           pdf_file_path?: string | null
           pdf_generated?: boolean | null
+          primary_provider_id?: string | null
           progress_percentage?: number | null
           session_id: string
           signature_data?: Json | null
@@ -8980,10 +9034,12 @@ export type Database = {
           current_section?: string
           enrollment_source?: string | null
           enrollment_status?: string
+          facility_id?: string | null
           id?: string
           metadata?: Json | null
           pdf_file_path?: string | null
           pdf_generated?: boolean | null
+          primary_provider_id?: string | null
           progress_percentage?: number | null
           session_id?: string
           signature_data?: Json | null
@@ -8994,7 +9050,22 @@ export type Database = {
           user_id?: string | null
           verification_method?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "patient_enrollments_facility_id_fkey"
+            columns: ["facility_id"]
+            isOneToOne: false
+            referencedRelation: "facilities"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "patient_enrollments_primary_provider_id_fkey"
+            columns: ["primary_provider_id"]
+            isOneToOne: false
+            referencedRelation: "service_providers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       permissions: {
         Row: {

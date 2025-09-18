@@ -13,6 +13,8 @@ import { smartRouteFieldsToTables, normalizeCollectionMethod, SMART_FIELD_MAPPIN
 import { EnrollmentForm } from "@/components/enrollment/EnrollmentForm";
 import { enrollmentDebugger } from "@/utils/enrollmentDebugger";
 import { EnrollmentSystemTester } from "@/components/enrollment/EnrollmentSystemTester";
+import { TreatmentCenterSelector } from "@/components/enrollment/TreatmentCenterSelector";
+import { ProviderSelector } from "@/components/enrollment/ProviderSelector";
 
 interface SmartMCPStepwiseAgentProps {
   patientId: string;
@@ -40,13 +42,14 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     {
       key: 'consent_management',
       title: 'Consent Management',
-      description: 'Patient consent and provider information',
+      description: 'Patient consent, treatment center, and provider information',
       icon: <FileText className="w-5 h-5" />,
-      requiredFields: ['consent_treatment', 'consent_privacy', 'provider_name'],
+      requiredFields: ['consent_treatment', 'consent_privacy', 'treatment_center_id', 'provider_name'],
       fields: [
         'consent_treatment', 'consent_privacy', 'consent_communication',
-        'collection_method', 'patient_signature', 'provider_name', 
-        'provider_npi', 'provider_signature'
+        'collection_method', 'patient_signature', 'treatment_center_id', 
+        'treatment_center', 'treatment_center_npi', 'provider_id',
+        'provider_name', 'provider_npi', 'provider_signature'
       ]
     },
     {

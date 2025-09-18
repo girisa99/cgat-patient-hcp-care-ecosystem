@@ -30,16 +30,26 @@ export const SMART_FIELD_MAPPINGS: SmartFieldMapping[] = [
   { fieldKey: 'patient_signature', fieldType: 'signature', destinationTable: 'enrollment_consent', destinationColumn: 'patient_signature' },
   { fieldKey: 'signature_date', fieldType: 'signature', destinationTable: 'enrollment_consent', destinationColumn: 'signature_date', validation: 'date' },
   
-  // Provider fields that appear in consent section
-  { fieldKey: 'provider_name', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'provider_name' },
-  { fieldKey: 'provider_npi', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'npi_number', validation: 'npi' },
-  { fieldKey: 'provider_license', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'license_number' },
-  { fieldKey: 'provider_signature', fieldType: 'signature', destinationTable: 'enrollment_provider_info', destinationColumn: 'provider_signature' },
+  // NEW: Treatment center/facility selection (UUID)
+  { fieldKey: 'treatment_center_id', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'facility_id', validation: 'uuid' },
+  { fieldKey: 'treatment_center', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'treatment_center' },
+  { fieldKey: 'treatment_center_npi', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'treatment_center_npi', validation: 'npi' },
+  
+  // Provider fields that appear in consent section (UUID references)
+  { fieldKey: 'provider_id', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'provider_id', validation: 'uuid' },
+  { fieldKey: 'provider_name', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'provider_name' },
+  { fieldKey: 'provider_npi', fieldType: 'provider', destinationTable: 'enrollment_consent', destinationColumn: 'provider_npi', validation: 'npi' },
+  { fieldKey: 'provider_signature', fieldType: 'signature', destinationTable: 'enrollment_consent', destinationColumn: 'provider_signature' },
 
   // === PATIENT INFORMATION SECTION ===
   { fieldKey: 'patient_first_name', fieldType: 'patient', destinationTable: 'patient_enrollments', destinationColumn: 'patient_first_name', required: true },
   { fieldKey: 'patient_last_name', fieldType: 'patient', destinationTable: 'patient_enrollments', destinationColumn: 'patient_last_name', required: true },
   { fieldKey: 'patient_dob', fieldType: 'patient', destinationTable: 'patient_enrollments', destinationColumn: 'patient_dob', validation: 'date' },
+  
+  // NEW: Add facility and provider UUID references to patient enrollments
+  { fieldKey: 'primary_facility_id', fieldType: 'provider', destinationTable: 'patient_enrollments', destinationColumn: 'facility_id', validation: 'uuid' },
+  { fieldKey: 'primary_provider_id', fieldType: 'provider', destinationTable: 'patient_enrollments', destinationColumn: 'primary_provider_id', validation: 'uuid' },
+  
   { fieldKey: 'patient_ssn', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'ssn' },
   { fieldKey: 'patient_phone', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'phone_number', validation: 'phone' },
   { fieldKey: 'patient_email', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'email', validation: 'email' },
@@ -52,10 +62,16 @@ export const SMART_FIELD_MAPPINGS: SmartFieldMapping[] = [
   { fieldKey: 'emergency_contact_relationship', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'emergency_contact_relationship' },
 
   // === PROVIDER AND TREATMENT SECTION ===
+  // Enhanced with UUID references
+  { fieldKey: 'referring_provider_id', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'referring_provider_id', validation: 'uuid' },
+  { fieldKey: 'pcp_provider_id', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'pcp_provider_id', validation: 'uuid' },
+  { fieldKey: 'facility_id', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'facility_id', validation: 'uuid' },
+  
+  // Legacy text fields (for compatibility)
   { fieldKey: 'provider_specialty', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'specialty' },
   { fieldKey: 'provider_phone', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'phone', validation: 'phone' },
   { fieldKey: 'provider_email', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'email', validation: 'email' },
-  { fieldKey: 'provider_facility', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'facility_name' },
+  { fieldKey: 'provider_facility', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'treatment_facility' },
   { fieldKey: 'provider_address', fieldType: 'provider', destinationTable: 'enrollment_provider_info', destinationColumn: 'facility_address' },
   
   // Treatment fields that appear in provider section
