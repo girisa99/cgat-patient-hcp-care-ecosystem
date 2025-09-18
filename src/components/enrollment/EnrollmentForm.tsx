@@ -8,7 +8,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { CalendarDays, AlertTriangle, CheckCircle, Expand, Minimize } from "lucide-react";
-import { getExpandedFields, calculateSectionCompletion } from "@/utils/conditionalFieldExpansion";
+import { getExpandedFields, calculateSectionCompletion, FIELD_EXPANSION_RULES } from "@/utils/conditionalFieldExpansion";
+import { ENHANCED_FIELD_EXPANSION_RULES } from "@/utils/extendedConditionalFields";
 
 interface EnrollmentFormProps {
   step: string;
@@ -45,8 +46,47 @@ export const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
   }, [initialData]);
 
   // Get conditional fields based on current form data
+  const getCombinedExpandedFields = (sectionKey: string, formData: Record<string, any>) => {
+    // Get basic conditional fields
+    const basicExpansion = getExpandedFields(sectionKey, formData);
+    
+    // Get enhanced conditional fields
+    const enhancedRules = ENHANCED_FIELD_EXPANSION_RULES.find(rule => rule.section === sectionKey);
+    let enhancedFields: string[] = [];
+    let enhancedRequired: string[] = [];
+    
+    if (enhancedRules) {
+      enhancedRules.scenarios.forEach(scenario => {
+        const conditionsMet = Object.entries(scenario.conditions).every(([key, expectedValue]) => {
+          const formValue = formData[key];
+          
+          if (Array.isArray(expectedValue)) {
+            return expectedValue.includes(formValue);
+          }
+          
+          if (typeof expectedValue === 'boolean') {
+            return !!formValue === expectedValue;
+          }
+          
+          return formValue === expectedValue;
+        });
+        
+        if (conditionsMet) {
+          enhancedFields.push(...scenario.additionalFields);
+          enhancedRequired.push(...scenario.requiredFields);
+        }
+      });
+    }
+    
+    // Combine all fields
+    const allFields = [...new Set([...basicExpansion.fields, ...enhancedFields])];
+    const allRequired = [...new Set([...basicExpansion.requiredFields, ...enhancedRequired])];
+    
+    return { fields: allFields, requiredFields: allRequired };
+  };
+
   const { fields: expandedFields, requiredFields: conditionalRequired } = enableConditionalFields && sectionKey 
-    ? getExpandedFields(sectionKey, formData) 
+    ? getCombinedExpandedFields(sectionKey, formData) 
     : { fields: fields, requiredFields: [] };
 
   // Combine original and conditional fields
@@ -152,11 +192,58 @@ export const EnrollmentForm: React.FC<EnrollmentFormProps> = ({
       chronic_conditions_list: { type: 'textarea', label: 'Chronic Conditions List' },
       psychiatric_history: { type: 'textarea', label: 'Psychiatric History' },
       substance_use_history: { type: 'textarea', label: 'Substance Use History' },
-      pain_scale_rating: { 
+      // Enhanced insurance fields
+      insurance_type: { 
         type: 'select', 
-        label: 'Pain Scale (1-10)',
-        options: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
-      }
+        label: 'Insurance Type',
+        options: ['commercial', 'medicare', 'medicaid', 'va_benefits', 'self_pay']
+      },
+      dual_eligible: { type: 'checkbox', label: 'Dual Eligible (Medicare & Medicaid)', description: 'Check if eligible for both Medicare and Medicaid' },
+      medicare_part_a_effective_date: { type: 'date', label: 'Medicare Part A Effective Date' },
+      medicare_part_b_effective_date: { type: 'date', label: 'Medicare Part B Effective Date' },
+      medicare_beneficiary_id: { type: 'text', label: 'Medicare Beneficiary ID' },
+      medicaid_recipient_id: { type: 'text', label: 'Medicaid Recipient ID' },
+      state_medicaid_program: { type: 'text', label: 'State Medicaid Program' },
+      employer_group_name: { type: 'text', label: 'Employer Group Name' },
+      deductible_amount: { type: 'text', label: 'Deductible Amount' },
+      pharmacy_benefit_manager_name: { type: 'text', label: 'Pharmacy Benefit Manager' },
+      pharmacy_member_id_number: { type: 'text', label: 'Pharmacy Member ID' },
+      
+      // Enhanced clinical fields
+      primary_substance_used: { 
+        type: 'select', 
+        label: 'Primary Substance Used',
+        options: ['alcohol', 'opioids', 'cocaine', 'methamphetamine', 'marijuana', 'prescription_drugs', 'other']
+      },
+      last_use_date: { type: 'date', label: 'Date of Last Use' },
+      addiction_severity_index_score: { type: 'text', label: 'Addiction Severity Index Score' },
+      psychiatric_diagnosis_history: { type: 'textarea', label: 'Psychiatric Diagnosis History' },
+      current_mood_symptoms: { type: 'textarea', label: 'Current Mood Symptoms' },
+      suicide_attempt_history: { 
+        type: 'select', 
+        label: 'Suicide Attempt History',
+        options: ['none', 'past_attempts', 'recent_ideation', 'current_risk']
+      },
+      pain_onset_date: { type: 'date', label: 'Pain Onset Date' },
+      pain_intensity_current: { 
+        type: 'select', 
+        label: 'Current Pain Intensity (0-10)',
+        options: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10']
+      },
+      pain_location_primary: { type: 'text', label: 'Primary Pain Location' },
+      mini_mental_state_exam_score: { type: 'text', label: 'Mini Mental State Exam Score' },
+      activities_daily_living_score: { type: 'text', label: 'Activities of Daily Living Score' },
+      fall_risk_assessment: { 
+        type: 'select', 
+        label: 'Fall Risk Assessment',
+        options: ['low', 'moderate', 'high', 'very_high']
+      },
+      
+      // Enhanced provider fields
+      primary_care_physician_name: { type: 'text', label: 'Primary Care Physician Name' },
+      case_manager_name: { type: 'text', label: 'Case Manager Name' },
+      treatment_center_license_number: { type: 'text', label: 'Treatment Center License Number' },
+      medical_director_name: { type: 'text', label: 'Medical Director Name' }
     };
     
     return configs[fieldKey] || { type: 'text', label: fieldKey.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) };

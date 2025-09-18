@@ -12,8 +12,7 @@ import { saveUniversalProgress, loadUniversalProgress } from "@/utils/universalS
 import { smartRouteFieldsToTables, normalizeCollectionMethod, SMART_FIELD_MAPPINGS } from "@/utils/smartFieldRouting";
 import { EnrollmentForm } from "@/components/enrollment/EnrollmentForm";
 import { enrollmentDebugger } from "@/utils/enrollmentDebugger";
-import { EnrollmentDebugPanel } from "@/components/enrollment/EnrollmentDebugPanel";
-import { EnrollmentErrorDiagnostics } from "@/components/enrollment/EnrollmentErrorDiagnostics";
+import { EnrollmentSystemTester } from "@/components/enrollment/EnrollmentSystemTester";
 
 interface SmartMCPStepwiseAgentProps {
   patientId: string;
@@ -375,10 +374,9 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
           </CardContent>
         </Card>
 
-        {/* Debug Panel */}
-        <div className="mt-6 space-y-6">
-          <EnrollmentErrorDiagnostics />
-          <EnrollmentDebugPanel />
+        {/* Debug and Testing System */}
+        <div className="mt-6">
+          <EnrollmentSystemTester />
         </div>
     </div>
   );
