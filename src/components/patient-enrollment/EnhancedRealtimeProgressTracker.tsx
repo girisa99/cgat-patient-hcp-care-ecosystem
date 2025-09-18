@@ -461,7 +461,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
         { name: 'provider_name', displayName: 'Provider Name', required: true },
         { name: 'provider_npi', displayName: 'Provider NPI', required: true },
         { name: 'treatment_center', displayName: 'Treatment Center', required: true },
-        { name: 'patient_consent_method', displayName: 'Consent Method', required: true },
+        { name: 'collection_method', displayName: 'Consent Method', required: true },
         { name: 'provider_signature', displayName: 'Provider Signature', required: true }
       ],
       patient_information: [
