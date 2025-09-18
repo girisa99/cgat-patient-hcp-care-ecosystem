@@ -122,7 +122,7 @@ export const EnrollmentErrorDiagnostics: React.FC = () => {
           user_id: userId,
           session_id: `diagnostic-${Date.now()}`,
           enrollment_source: 'diagnostic_test',
-          enrollment_status: 'draft',
+          enrollment_status: 'in_progress',
           current_section: 'consent_management',
           progress_percentage: 0,
           created_at: new Date().toISOString(),
@@ -178,7 +178,7 @@ export const EnrollmentErrorDiagnostics: React.FC = () => {
             user_id: userId, // Required by RLS
             session_id: `diagnostic-test-${Date.now()}`,
             enrollment_source: 'diagnostic_test',
-            enrollment_status: 'draft',
+            enrollment_status: 'in_progress',
             current_section: 'test',
             metadata: { test: true, diagnostic: true }
           })
