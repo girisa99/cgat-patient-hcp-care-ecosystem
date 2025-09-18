@@ -477,6 +477,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
                   
                   {/* Field-by-Field Collector for MCP Stepwise */}
                   <FieldByFieldCollector
+                    key={currentStep.id}
                     sectionTitle={currentStep.name}
                     sectionDescription={currentStep.description}
                     fields={convertToFieldDefinitions(currentStep.id as EnrollmentSectionKey)}

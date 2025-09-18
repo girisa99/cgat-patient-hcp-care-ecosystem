@@ -100,7 +100,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
         onProgressUpdate?.(initialProgress);
       }
 
-      // Set up real-time subscription
+      // Set up real-time subscription for all related tables
       const channel = supabase
         .channel(`enrollment_progress_${patientId}`)
         .on(
@@ -111,8 +111,32 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             table: 'patient_enrollments',
             filter: `id=eq.${patientId}`
           },
-          (payload) => {
-            handleRealtimeUpdate(payload);
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'enrollment_consent',
+            filter: `patient_id=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
+          }
+        )
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'enrollment_patient_info',
+            filter: `patient_id=eq.${patientId}`
+          },
+          async (payload) => {
+            await handleRealtimeUpdate(payload);
           }
         )
         .subscribe();
@@ -136,21 +160,34 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
 
   const loadProgressData = async (): Promise<RealtimeProgress | null> => {
     try {
-      const { data: enrollment, error } = await supabase
+      // Base enrollment row
+      const { data: enrollment, error: enrollmentError } = await supabase
         .from('patient_enrollments')
         .select('*')
         .eq('id', patientId)
         .single();
 
-      if (error) throw error;
+      if (enrollmentError) throw enrollmentError;
 
-      // Build progress object from enrollment data
+      // Load section-specific data and merge so progress can be computed correctly
+      const [{ data: consentRow }, { data: patientInfoRow }] = await Promise.all([
+        supabase.from('enrollment_consent').select('*').eq('patient_id', patientId).limit(1).maybeSingle?.() ?? supabase.from('enrollment_consent').select('*').eq('patient_id', patientId).limit(1).single(),
+        supabase.from('enrollment_patient_info').select('*').eq('patient_id', patientId).limit(1).maybeSingle?.() ?? supabase.from('enrollment_patient_info').select('*').eq('patient_id', patientId).limit(1).single()
+      ]);
+
+      // Some drivers don't have maybeSingle; guard with try/catch to ignore 406
+      const safeConsent = consentRow || {};
+      const safePatientInfo = patientInfoRow || {};
+
+      const merged = { ...enrollment, ...safeConsent, ...safePatientInfo };
+
+      // Build progress object from merged data
       const progressData: RealtimeProgress = {
         patientId,
         sessionId,
         enrollmentStatus: (enrollment.enrollment_status as 'in_progress' | 'completed' | 'paused' | 'error') || 'in_progress',
         currentSection: enrollment.current_section || 'submission_method',
-        sections: buildSectionStatus(enrollment),
+        sections: buildSectionStatus(merged),
         overallProgress: enrollment.progress_percentage || 0,
         lastActivity: enrollment.updated_at,
         criticalIssues: [],
