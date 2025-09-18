@@ -90,8 +90,12 @@ const handler = async (req: Request): Promise<Response> => {
       case 'email':
         // Using Twilio SendGrid for email
         const sendGridApiKey = Deno.env.get('SENDGRID_API_KEY');
+        const fromEmail = Deno.env.get('SENDGRID_FROM_EMAIL');
         if (!sendGridApiKey) {
           throw new Error('SendGrid API key not configured');
+        }
+        if (!fromEmail) {
+          throw new Error('SendGrid from email not configured');
         }
 
         response = await fetch('https://api.sendgrid.com/v3/mail/send', {
@@ -102,7 +106,7 @@ const handler = async (req: Request): Promise<Response> => {
           },
           body: JSON.stringify({
             personalizations: [{ to: [{ email: to }] }],
-            from: { email: 'notifications@yourdomain.com', name: 'Healthcare Portal' },
+            from: { email: fromEmail, name: 'Healthcare Portal' },
             subject: subject || 'Healthcare Portal Notification',
             content: [{ type: 'text/plain', value: message }],
           }),
