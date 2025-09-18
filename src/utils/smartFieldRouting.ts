@@ -42,18 +42,18 @@ export const SMART_FIELD_MAPPINGS: SmartFieldMapping[] = [
   { fieldKey: 'provider_signature', fieldType: 'signature', destinationTable: 'enrollment_consent', destinationColumn: 'provider_signature' },
 
   // === PATIENT INFORMATION SECTION ===
-  { fieldKey: 'patient_first_name', fieldType: 'patient', destinationTable: 'patient_enrollments', destinationColumn: 'patient_first_name', required: true },
-  { fieldKey: 'patient_last_name', fieldType: 'patient', destinationTable: 'patient_enrollments', destinationColumn: 'patient_last_name', required: true },
-  { fieldKey: 'patient_dob', fieldType: 'patient', destinationTable: 'patient_enrollments', destinationColumn: 'patient_dob', validation: 'date' },
+  { fieldKey: 'patient_first_name', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'first_name', required: true },
+  { fieldKey: 'patient_last_name', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'last_name', required: true },
+  { fieldKey: 'patient_dob', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'date_of_birth', validation: 'date' },
   
   // NEW: Add facility and provider UUID references to patient enrollments
   { fieldKey: 'primary_facility_id', fieldType: 'provider', destinationTable: 'patient_enrollments', destinationColumn: 'facility_id', validation: 'uuid' },
   { fieldKey: 'primary_provider_id', fieldType: 'provider', destinationTable: 'patient_enrollments', destinationColumn: 'primary_provider_id', validation: 'uuid' },
   
   { fieldKey: 'patient_ssn', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'ssn' },
-  { fieldKey: 'patient_phone', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'phone_number', validation: 'phone' },
+  { fieldKey: 'patient_phone', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'phone', validation: 'phone' },
   { fieldKey: 'patient_email', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'email', validation: 'email' },
-  { fieldKey: 'patient_address', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'address' },
+  { fieldKey: 'patient_address', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'address_line1' },
   { fieldKey: 'patient_city', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'city' },
   { fieldKey: 'patient_state', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'state' },
   { fieldKey: 'patient_zip', fieldType: 'patient', destinationTable: 'enrollment_patient_info', destinationColumn: 'zip_code' },
