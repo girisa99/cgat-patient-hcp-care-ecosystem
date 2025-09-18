@@ -506,30 +506,43 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
     return (completed / required.length) * 100;
   };
 
-  const handleRealtimeUpdate = useCallback((payload: any) => {
+  const handleRealtimeUpdate = useCallback(async (payload: any) => {
     console.log('Realtime update received:', payload);
-    
-    if (payload.new) {
-      const updatedProgress = buildProgressFromPayload(payload.new);
-      setProgress(updatedProgress);
-      onProgressUpdate?.(updatedProgress);
-      
-      // Check for section completion
-      const completedSections = payload.new.metadata?.completed_sections || [];
-      const previousSections = progress?.sections.filter(s => s.isCompleted).map(s => s.sectionKey) || [];
-      const newCompletions = completedSections.filter((s: string) => !previousSections.includes(s));
-      
-      newCompletions.forEach((sectionKey: string) => {
-        onSectionComplete?.(sectionKey);
-        toast({
-          title: "Section Completed! 🎉",
-          description: `${getSectionTitle(sectionKey)} has been completed successfully.`,
-        });
-      });
-    }
+    try {
+      // Only trust patient_enrollments for authoritative progress/current_section
+      if ((payload as any)?.table === 'patient_enrollments') {
+        if (payload.new) {
+          const updatedProgress = buildProgressFromPayload(payload.new);
+          setProgress(updatedProgress);
+          onProgressUpdate?.(updatedProgress);
 
-    updateConnectionStatus('connected');
-    setLastSync(new Date());
+          // Detect newly completed sections
+          const completedSections = payload.new.metadata?.completed_sections || [];
+          const previousSections = progress?.sections.filter(s => s.isCompleted).map(s => s.sectionKey) || [];
+          const newCompletions = completedSections.filter((s: string) => !previousSections.includes(s));
+
+          newCompletions.forEach((sectionKey: string) => {
+            onSectionComplete?.(sectionKey);
+            toast({
+              title: "Section Completed! 🎉",
+              description: `${getSectionTitle(sectionKey)} has been completed successfully.`,
+            });
+          });
+        }
+      } else {
+        // For updates from other tables, reload from patient_enrollments to avoid stale current_section
+        const latest = await loadProgressData();
+        if (latest) {
+          setProgress(prev => ({ ...latest, connectionStatus: prev?.connectionStatus || 'connected' }));
+          onProgressUpdate?.(latest);
+        }
+      }
+
+      updateConnectionStatus('connected');
+      setLastSync(new Date());
+    } catch (err) {
+      console.error('Realtime handler error:', err);
+    }
   }, [progress, onProgressUpdate, onSectionComplete, toast]);
 
   const buildProgressFromPayload = (data: any): RealtimeProgress => {
@@ -575,8 +588,18 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
     }
   };
 
-  const handleManualSync = () => {
-    syncProgressToDashboard();
+  const refreshProgress = async () => {
+    const latest = await loadProgressData();
+    if (latest) {
+      setProgress(latest);
+      onProgressUpdate?.(latest);
+      setLastSync(new Date());
+    }
+  };
+
+  const handleManualSync = async () => {
+    await refreshProgress();
+    await syncProgressToDashboard();
   };
 
   const getCurrentSection = () => {
