@@ -139,6 +139,21 @@ export const EnrollmentRealtimeProvider: React.FC<{ children: React.ReactNode }>
           } else if (table === 'enrollment_clinical_info') {
             tabId = 'treatment_clinical';
             sectionProgress = calculateFieldProgress(instanceData, ['primary_diagnosis', 'treatment_goals']);
+          } else if (table === 'enrollment_collaborations') {
+            tabId = 'consent_mode';
+            sectionProgress = calculateFieldProgress(instanceData, ['collaboration_type', 'participant_role']);
+          } else if (table === 'enrollment_real_time_sync') {
+            tabId = instanceData.section_name || 'consent_mode';
+            sectionProgress = instanceData.sync_status === 'completed' ? 100 : 50;
+          } else if (table === 'enrollment_templates') {
+            tabId = 'consent_mode';
+            sectionProgress = instanceData.is_active ? 25 : 10;
+          } else if (table === 'enrollment_treatment_plan') {
+            tabId = 'treatment_clinical';
+            sectionProgress = calculateFieldProgress(instanceData, ['treatment_plan', 'goals', 'duration']);
+          } else if (table === 'whatsapp_enrollment_sessions') {
+            tabId = instanceData.current_section || 'consent_mode';
+            sectionProgress = instanceData.enrollment_mode === 'completed' ? 100 : 50;
           } else if (table === 'enrollment_documents') {
             // Document uploads can affect multiple sections
             tabId = instanceData.section_type || 'submit';

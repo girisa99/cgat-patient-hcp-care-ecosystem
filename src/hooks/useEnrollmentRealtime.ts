@@ -53,57 +53,86 @@ export const useEnrollmentRealtime = (sessionId?: string) => {
 
     const newChannel = supabase
       .channel(`enrollment_${sessionChannel}`)
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'agent_conversations'
-      }, (payload: any) => {
-        handleRealtimeUpdate({
-          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-          table: 'agent_conversations',
-          old: payload.old,
-          new: payload.new,
-          timestamp: new Date().toISOString()
-        });
+      // Core enrollment tables
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'patient_enrollments' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'patient_enrollments', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
       })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'enrollment_instances'
-      }, (payload: any) => {
-        handleRealtimeUpdate({
-          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-          table: 'enrollment_instances',
-          old: payload.old,
-          new: payload.new,
-          timestamp: new Date().toISOString()
-        });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_consent' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_consent', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
       })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'insurance_document_uploads'
-      }, (payload: any) => {
-        handleRealtimeUpdate({
-          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-          table: 'insurance_document_uploads',
-          old: payload.old,
-          new: payload.new,
-          timestamp: new Date().toISOString()
-        });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_patient_info' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_patient_info', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
       })
-      .on('postgres_changes', {
-        event: '*',
-        schema: 'public',
-        table: 'insurance_coverages'
-      }, (payload: any) => {
-        handleRealtimeUpdate({
-          eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE',
-          table: 'insurance_coverages',
-          old: payload.old,
-          new: payload.new,
-          timestamp: new Date().toISOString()
-        });
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_provider_info' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_provider_info', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_insurance_info' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_insurance_info', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_clinical_info' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_clinical_info', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_documents' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_documents', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_instances' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_instances', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_collaborations' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_collaborations', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_real_time_sync' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_real_time_sync', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_templates' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_templates', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'enrollment_treatment_plan' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'enrollment_treatment_plan', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'whatsapp_enrollment_sessions' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'whatsapp_enrollment_sessions', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      // Insurance related tables
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'insurance_document_uploads' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'insurance_document_uploads', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'insurance_coverages' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'insurance_coverages', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      // AI and Conversational tables
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_conversations' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'agent_conversations', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversation_messages' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'conversation_messages', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'conversation_sessions' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'conversation_sessions', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'multi_model_conversations' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'multi_model_conversations', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_sessions' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'agent_sessions', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_workflows' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'agent_workflows', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_actions' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'agent_actions', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_communications' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'agent_communications', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_performance_metrics' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'agent_performance_metrics', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_health_checks' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'agent_health_checks', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'agent_audit_logs' }, (payload: any) => {
+        handleRealtimeUpdate({ eventType: payload.eventType as 'INSERT' | 'UPDATE' | 'DELETE', table: 'agent_audit_logs', old: payload.old, new: payload.new, timestamp: new Date().toISOString() });
       })
       .on('presence', { event: 'sync' }, () => {
         const presenceState = newChannel.presenceState();
