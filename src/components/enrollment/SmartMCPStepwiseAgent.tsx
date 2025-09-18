@@ -160,6 +160,9 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
       // Normalize collection method for consent fields
       if (data.collection_method) {
         data.collection_method = normalizeCollectionMethod(data.collection_method);
+      } else if (currentStep.key === 'consent_management') {
+        // Set default collection method for consent step to prevent constraint violations
+        data.collection_method = 'digital';
       }
       
       // Route fields to appropriate tables using smart mapping
