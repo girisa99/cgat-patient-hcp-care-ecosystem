@@ -24,6 +24,7 @@ const handler = async (req: Request): Promise<Response> => {
     const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
     const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
     const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+    const twilioWhatsAppNumber = Deno.env.get('TWILIO_WHATSAPP_NUMBER');
 
     if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
       throw new Error('Missing Twilio credentials');
@@ -53,6 +54,9 @@ const handler = async (req: Request): Promise<Response> => {
         break;
 
       case 'whatsapp':
+        if (!twilioWhatsAppNumber) {
+          throw new Error('WhatsApp number not configured');
+        }
         response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`, {
           method: 'POST',
           headers: {
@@ -60,7 +64,7 @@ const handler = async (req: Request): Promise<Response> => {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-            From: `whatsapp:${twilioPhoneNumber}`,
+            From: `whatsapp:${twilioWhatsAppNumber}`,
             To: `whatsapp:${to}`,
             Body: message,
           }),
