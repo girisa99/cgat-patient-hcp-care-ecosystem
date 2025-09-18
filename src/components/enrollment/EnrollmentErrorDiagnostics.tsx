@@ -145,9 +145,11 @@ export const EnrollmentErrorDiagnostics: React.FC = () => {
       const { data: patientTest, error: patientError } = await supabase
         .from('patient_enrollments')
         .insert({
+          session_id: `diagnostic-test-${Date.now()}`,
           enrollment_source: 'diagnostic_test',
-          status: 'test',
-          metadata: { test: true }
+          enrollment_status: 'draft',
+          current_section: 'test',
+          metadata: { test: true, diagnostic: true }
         })
         .select();
 
