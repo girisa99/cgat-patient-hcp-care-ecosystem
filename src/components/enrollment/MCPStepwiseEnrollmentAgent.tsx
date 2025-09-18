@@ -327,7 +327,7 @@ export const MCPStepwiseEnrollmentAgent: React.FC<MCPStepwiseEnrollmentAgentProp
           .from(sectionMapping.destinationTable)
           .upsert({
             ...updateData,
-            [sectionMapping.primaryKey]: patientId
+            enrollment_id: patientId
           });
       }
 

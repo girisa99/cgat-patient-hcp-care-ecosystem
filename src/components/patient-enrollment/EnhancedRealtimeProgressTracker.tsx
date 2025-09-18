@@ -121,7 +121,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             event: '*',
             schema: 'public',
             table: 'enrollment_consent',
-            filter: `patient_id=eq.${patientId}`
+            filter: `enrollment_id=eq.${patientId}`
           },
           async (payload) => {
             await handleRealtimeUpdate(payload);
@@ -133,7 +133,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             event: '*',
             schema: 'public',
             table: 'enrollment_patient_info',
-            filter: `patient_id=eq.${patientId}`
+            filter: `enrollment_id=eq.${patientId}`
           },
           async (payload) => {
             await handleRealtimeUpdate(payload);
@@ -145,7 +145,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             event: '*',
             schema: 'public',
             table: 'enrollment_provider_info',
-            filter: `patient_id=eq.${patientId}`
+            filter: `enrollment_id=eq.${patientId}`
           },
           async (payload) => {
             await handleRealtimeUpdate(payload);
@@ -157,7 +157,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             event: '*',
             schema: 'public',
             table: 'enrollment_insurance_info',
-            filter: `patient_id=eq.${patientId}`
+            filter: `enrollment_id=eq.${patientId}`
           },
           async (payload) => {
             await handleRealtimeUpdate(payload);
@@ -169,7 +169,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             event: '*',
             schema: 'public',
             table: 'enrollment_clinical_info',
-            filter: `patient_id=eq.${patientId}`
+            filter: `enrollment_id=eq.${patientId}`
           },
           async (payload) => {
             await handleRealtimeUpdate(payload);
@@ -181,7 +181,7 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
             event: '*',
             schema: 'public',
             table: 'enrollment_documents',
-            filter: `patient_id=eq.${patientId}`
+            filter: `enrollment_id=eq.${patientId}`
           },
           async (payload) => {
             await handleRealtimeUpdate(payload);
@@ -368,11 +368,11 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
       if (enrollmentError) throw enrollmentError;
 
       // Load section-specific tables individually to keep types simple
-      const consentRes: any = await (supabase as any).from('enrollment_consent').select('*').eq('patient_id', patientId).maybeSingle();
-      const patientInfoRes: any = await (supabase as any).from('enrollment_patient_info').select('*').eq('patient_id', patientId).maybeSingle();
-      const providerInfoRes: any = await (supabase as any).from('enrollment_provider_info').select('*').eq('patient_id', patientId).maybeSingle();
-      const insuranceInfoRes: any = await (supabase as any).from('enrollment_insurance_info').select('*').eq('patient_id', patientId).maybeSingle();
-      const clinicalInfoRes: any = await (supabase as any).from('enrollment_clinical_info').select('*').eq('patient_id', patientId).maybeSingle();
+      const consentRes: any = await (supabase as any).from('enrollment_consent').select('*').eq('enrollment_id', patientId).maybeSingle();
+      const patientInfoRes: any = await (supabase as any).from('enrollment_patient_info').select('*').eq('enrollment_id', patientId).maybeSingle();
+      const providerInfoRes: any = await (supabase as any).from('enrollment_provider_info').select('*').eq('enrollment_id', patientId).maybeSingle();
+      const insuranceInfoRes: any = await (supabase as any).from('enrollment_insurance_info').select('*').eq('enrollment_id', patientId).maybeSingle();
+      const clinicalInfoRes: any = await (supabase as any).from('enrollment_clinical_info').select('*').eq('enrollment_id', patientId).maybeSingle();
 
       const consentData = consentRes?.data;
       const patientInfoData = patientInfoRes?.data;
@@ -483,13 +483,13 @@ export const EnhancedRealtimeProgressTracker: React.FC<EnhancedRealtimeProgressT
         { name: 'facility_npi', displayName: 'Facility NPI', required: false }
       ],
       insurance_information: [
-        { name: 'insurance_provider', displayName: 'Insurance Provider', required: true },
-        { name: 'member_id', displayName: 'Member ID', required: true },
-        { name: 'policy_holder', displayName: 'Policy Holder', required: true },
-        { name: 'group_number', displayName: 'Group Number', required: false }
+        { name: 'primary_insurance_name', displayName: 'Insurance Provider', required: true },
+        { name: 'primary_policy_number', displayName: 'Member ID', required: true },
+        { name: 'primary_subscriber_name', displayName: 'Policy Holder', required: true },
+        { name: 'primary_group_number', displayName: 'Group Number', required: false }
       ],
       clinical_treatment: [
-        { name: 'primary_diagnosis', displayName: 'Primary Diagnosis', required: true },
+        { name: 'chief_complaint', displayName: 'Primary Diagnosis', required: true },
         { name: 'treatment_goals', displayName: 'Treatment Goals', required: true }
       ],
       final_submit: [
