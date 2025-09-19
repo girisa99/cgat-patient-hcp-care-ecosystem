@@ -611,14 +611,29 @@ async function updateEnrollmentVerificationStatus(supabase: any, enrollmentId: s
 
 // Validate required fields based on verification type
 function validateRequiredFieldsByType(request: NPIVerificationRequest): { isValid: boolean; missingFields: string[] } {
-  const requiredByType = {
-    provider: ['providerName', 'providerType'],
-    treatment_center: ['sectionData.treatmentCenterName'],
-    referral_network: ['sectionData.referralNetworkName']
-  };
-
-  const required = requiredByType[request.verificationType] || [];
   const missing: string[] = [];
+
+  // For provider verification
+  if (request.verificationType === 'provider') {
+    if (!request.providerName && !request.sectionData?.providerName) {
+      missing.push('providerName');
+    }
+    // providerType is optional - we can default it
+  }
+
+  // For treatment center verification  
+  if (request.verificationType === 'treatment_center') {
+    if (!request.sectionData?.treatmentCenterName) {
+      missing.push('treatmentCenterName');
+    }
+  }
+
+  // For referral network verification
+  if (request.verificationType === 'referral_network') {
+    if (!request.sectionData?.referralNetworkName) {
+      missing.push('referralNetworkName'); 
+    }
+  }
 
   for (const field of required) {
     if (field.includes('.')) {
@@ -636,8 +651,10 @@ function validateRequiredFieldsByType(request: NPIVerificationRequest): { isVali
   }
 
   // At least one search criteria required
-  if (!request.npi && !request.providerSearch) {
-    missing.push('npi OR providerSearch');
+  if (!request.npi && !request.providerSearch && 
+      !request.providerName && !request.sectionData?.providerName &&
+      !request.sectionData?.treatmentCenterName && !request.sectionData?.referralNetworkName) {
+    missing.push('npi OR providerSearch OR providerName');
   }
 
   return {

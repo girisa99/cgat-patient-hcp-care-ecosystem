@@ -60,6 +60,13 @@ interface ProviderData {
   // Verification Status
   verificationStatus: 'pending' | 'verified' | 'failed';
   verifiedAt?: string;
+  
+  // Missing Status Fields from extraction
+  providerVerificationStatus?: 'pending' | 'verified' | 'failed' | 'not_verified';
+  treatmentCenterVerificationStatus?: 'pending' | 'verified' | 'failed' | 'not_verified';
+  referralNetworkVerificationStatus?: 'pending' | 'verified' | 'failed' | 'not_verified';
+  credentialingStatus?: 'pending' | 'in_progress' | 'completed' | 'failed';
+  overallStatus?: 'incomplete' | 'in_progress' | 'completed' | 'verified';
 }
 
 interface EnhancedNPIVerificationFormProps {
@@ -110,6 +117,14 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     taxonomy: '',
     
     verificationStatus: 'pending',
+    
+    // Initialize status fields
+    providerVerificationStatus: 'not_verified',
+    treatmentCenterVerificationStatus: 'not_verified', 
+    referralNetworkVerificationStatus: 'not_verified',
+    credentialingStatus: 'pending',
+    overallStatus: 'incomplete',
+    
     ...initialData
   });
 
@@ -141,9 +156,13 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
 
       const { data, error } = await supabase.functions.invoke('verify-npi-credentials', {
         body: {
-          npiNumber: formData.npiNumber,
+          verificationType: 'provider',
+          npi: formData.npiNumber,
           providerName: formData.providerName,
-          verificationType: 'provider'
+          providerType: formData.providerType || 'individual',
+          sectionData: {
+            providerName: formData.providerName
+          }
         }
       });
 
@@ -157,6 +176,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
           ...prev,
           ...data.providerInfo,
           verificationStatus: 'verified',
+          providerVerificationStatus: 'verified',
           verifiedAt: new Date().toISOString()
         }));
 
@@ -168,7 +188,8 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
       } else {
         setFormData(prev => ({
           ...prev,
-          verificationStatus: 'failed'
+          verificationStatus: 'failed',
+          providerVerificationStatus: 'failed'
         }));
 
         toast({
@@ -187,7 +208,8 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
 
       setFormData(prev => ({
         ...prev,
-        verificationStatus: 'failed'
+        verificationStatus: 'failed',
+        providerVerificationStatus: 'failed'
       }));
     } finally {
       setIsVerifying(false);
@@ -209,9 +231,13 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     try {
       const { data, error } = await supabase.functions.invoke('verify-npi-credentials', {
         body: {
-          npiNumber: formData.facilityNPI,
-          facilityName: formData.facilityName,
-          verificationType: 'facility'
+          verificationType: 'treatment_center',
+          npi: formData.facilityNPI,
+          providerType: 'organization',
+          sectionData: {
+            treatmentCenterName: formData.facilityName,
+            facilityType: formData.facilityType
+          }
         }
       });
 
@@ -222,6 +248,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
           ...prev,
           ...data.facilityInfo,
           verificationStatus: 'verified',
+          treatmentCenterVerificationStatus: 'verified',
           verifiedAt: new Date().toISOString()
         }));
 
@@ -258,8 +285,12 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     try {
       const { data, error } = await supabase.functions.invoke('verify-npi-credentials', {
         body: {
-          networkName: formData.referralNetworkName,
-          verificationType: 'network'
+          verificationType: 'referral_network',
+          providerType: 'organization',
+          sectionData: {
+            referralNetworkName: formData.referralNetworkName,
+            networkType: formData.referralNetworkType
+          }
         }
       });
 
@@ -270,6 +301,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
           ...prev,
           ...data.networkInfo,
           verificationStatus: 'verified',
+          referralNetworkVerificationStatus: 'verified',
           verifiedAt: new Date().toISOString()
         }));
 
@@ -392,7 +424,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
       <div className="flex justify-end">
         <Button 
           onClick={handleVerifyProvider}
-          disabled={!formData.providerName || !formData.providerType || isVerifying}
+          disabled={!formData.providerName || isVerifying}
           className="flex items-center gap-2"
         >
           {isVerifying ? (
@@ -540,7 +572,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
       <div className="flex justify-end">
         <Button 
           onClick={handleVerifyTreatmentCenter}
-          disabled={!formData.facilityName || !formData.facilityNPI || isVerifying}
+          disabled={!formData.facilityName || isVerifying}
           className="flex items-center gap-2"
         >
           {isVerifying ? (

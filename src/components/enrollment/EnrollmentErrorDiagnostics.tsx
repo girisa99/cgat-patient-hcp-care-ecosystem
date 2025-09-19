@@ -160,11 +160,56 @@ export const EnrollmentErrorDiagnostics: React.FC = () => {
         setTestResults([...results]);
       }
 
-      // Test 5: Patient Enrollment Insert Test
+      // Test 5: NPI Verification Edge Function Test
+      results.push({ test: 'NPI Verification Edge Function', status: 'running' });
+      setTestResults([...results]);
+
+      try {
+        const { data: npiTest, error: npiError } = await supabase.functions.invoke('verify-npi-credentials', {
+          body: {
+            verificationType: 'provider',
+            providerName: 'Test Provider',
+            npi: '1234567890',
+            providerType: 'individual'
+          }
+        });
+
+        if (npiError) {
+          results[results.length - 1] = { 
+            test: 'NPI Verification Edge Function', 
+            status: 'failed', 
+            error: npiError.message 
+          };
+        } else {
+          results[results.length - 1] = { 
+            test: 'NPI Verification Edge Function', 
+            status: 'passed',
+            details: 'Edge function is responding correctly'
+          };
+        }
+      } catch (error: any) {
+        results[results.length - 1] = { 
+          test: 'NPI Verification Edge Function', 
+          status: 'failed', 
+          error: `Edge function error: ${error.message}` 
+        };
+      }
+      setTestResults([...results]);
+
+      // Test 6: Database Insert Response Test  
+      results.push({ test: 'Database Insert Response', status: 'running' });
+      setTestResults([...results]);
+
+      // Test 7: Patient Enrollment Insert Test
       results.push({ test: 'Patient Enrollment Insert', status: 'running' });
       setTestResults([...results]);
 
       if (!userId) {
+        results[results.length - 2] = { 
+          test: 'Database Insert Response', 
+          status: 'failed', 
+          error: 'Not authenticated: user_id required for RLS' 
+        };
         results[results.length - 1] = { 
           test: 'Patient Enrollment Insert', 
           status: 'failed', 
@@ -172,6 +217,31 @@ export const EnrollmentErrorDiagnostics: React.FC = () => {
         };
         setTestResults([...results]);
       } else {
+        // Test database insert response time
+        const insertStartTime = Date.now();
+        
+        // Simple connectivity test
+        const { data: quickTest, error: quickError } = await supabase
+          .from('patient_enrollments')
+          .select('count')
+          .limit(1);
+
+        const responseTime = Date.now() - insertStartTime;
+        
+        if (quickError) {
+          results[results.length - 2] = { 
+            test: 'Database Insert Response', 
+            status: 'failed', 
+            error: `DB response error: ${quickError.message}` 
+          };
+        } else {
+          results[results.length - 2] = { 
+            test: 'Database Insert Response', 
+            status: 'passed',
+            details: `Response time: ${responseTime}ms`
+          };
+        }
+        setTestResults([...results]);
         const { data: patientTest, error: patientError } = await supabase
           .from('patient_enrollments')
           .insert({
