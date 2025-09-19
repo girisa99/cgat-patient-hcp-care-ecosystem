@@ -3,7 +3,7 @@ import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { useRoleBasedNavigation } from '@/hooks/useRoleBasedNavigation';
 import { Card, CardContent } from '@/components/ui/card';
-import { PatientManagementTable } from '@/components/patients/PatientManagementTable';
+import { EnhancedPatientDashboard } from '@/components/patients/EnhancedPatientDashboard';
 
 const PatientPage: React.FC = () => {
   console.log('🏥 Patient page - Enhanced with real-time enrollment tracking');
@@ -25,7 +25,7 @@ const PatientPage: React.FC = () => {
 
   return (
     <AppLayout title="Patient Management">
-      <PatientManagementTable />
+      <EnhancedPatientDashboard />
     </AppLayout>
   );
 };

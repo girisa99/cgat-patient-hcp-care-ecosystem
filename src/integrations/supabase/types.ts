@@ -9269,6 +9269,7 @@ export type Database = {
           emergency_contact_relationship: string | null
           enrollment_progress: number | null
           enrollment_status: string | null
+          enrollment_type: string | null
           ethnicity: string | null
           facility_id: string | null
           family_medical_history: string | null
@@ -9331,6 +9332,7 @@ export type Database = {
           emergency_contact_relationship?: string | null
           enrollment_progress?: number | null
           enrollment_status?: string | null
+          enrollment_type?: string | null
           ethnicity?: string | null
           facility_id?: string | null
           family_medical_history?: string | null
@@ -9393,6 +9395,7 @@ export type Database = {
           emergency_contact_relationship?: string | null
           enrollment_progress?: number | null
           enrollment_status?: string | null
+          enrollment_type?: string | null
           ethnicity?: string | null
           facility_id?: string | null
           family_medical_history?: string | null
@@ -11318,6 +11321,7 @@ export type Database = {
           dba_name: string | null
           dea_number: string | null
           dea_registration_copy_uploaded: boolean | null
+          enrollment_type: string | null
           estimated_monthly_purchases: number | null
           federal_tax_id: string | null
           financial_statements_uploaded: boolean | null
@@ -11400,6 +11404,7 @@ export type Database = {
           dba_name?: string | null
           dea_number?: string | null
           dea_registration_copy_uploaded?: boolean | null
+          enrollment_type?: string | null
           estimated_monthly_purchases?: number | null
           federal_tax_id?: string | null
           financial_statements_uploaded?: boolean | null
@@ -11482,6 +11487,7 @@ export type Database = {
           dba_name?: string | null
           dea_number?: string | null
           dea_registration_copy_uploaded?: boolean | null
+          enrollment_type?: string | null
           estimated_monthly_purchases?: number | null
           federal_tax_id?: string | null
           financial_statements_uploaded?: boolean | null
@@ -14243,6 +14249,12 @@ export type Database = {
         | "fda_inspection_ready"
         | "state_board_compliance"
       distributor_type: "amerisource_bergen" | "cardinal_health" | "mckesson"
+      enrollment_type_enum:
+        | "not_selected"
+        | "mcp"
+        | "conversational"
+        | "ai_structure"
+        | "online"
       facility_type:
         | "treatmentFacility"
         | "referralFacility"
@@ -14515,6 +14527,13 @@ export const Constants = {
         "state_board_compliance",
       ],
       distributor_type: ["amerisource_bergen", "cardinal_health", "mckesson"],
+      enrollment_type_enum: [
+        "not_selected",
+        "mcp",
+        "conversational",
+        "ai_structure",
+        "online",
+      ],
       facility_type: [
         "treatmentFacility",
         "referralFacility",
