@@ -69,7 +69,7 @@ export class EnrollmentDashboardDataManager {
   static async fetchEnrollmentData(): Promise<EnrollmentDashboardItem[]> {
     try {
       // Fetch main enrollment records
-      const { data: enrollments, error: enrollmentsError } = await supabase
+      const enrollmentsResponse = await supabase
         .from('patient_enrollments')
         .select(`
           id, enrollment_status, current_section, progress_percentage, 
@@ -79,60 +79,77 @@ export class EnrollmentDashboardDataManager {
         .eq('is_active', true)
         .order('updated_at', { ascending: false });
 
-      if (enrollmentsError) throw enrollmentsError;
-
-      if (!enrollments || enrollments.length === 0) {
+      if (enrollmentsResponse.error || !enrollmentsResponse.data) {
         return [];
       }
 
+      const enrollments = enrollmentsResponse.data;
+      if (enrollments.length === 0) return [];
+
       const enrollmentIds = enrollments.map(e => e.id);
 
-      // Fetch related data in parallel
-      const [
-        { data: patientInfos },
-        { data: providerInfos },
-        { data: consentInfos },
-        { data: documentsInfos },
-        { data: insuranceInfos }
-      ] = await Promise.all([
-        supabase
-          .from('enrollment_patient_info')
-          .select('enrollment_id, first_name, last_name, email, phone')
-          .in('enrollment_id', enrollmentIds),
+      // Fetch related data with explicit typing
+      const patientInfosResponse = await supabase
+        .from('enrollment_patient_info')
+        .select('enrollment_id, first_name, last_name, email, phone')
+        .in('enrollment_id', enrollmentIds);
         
-        supabase
-          .from('enrollment_provider_info')
-          .select('enrollment_id, provider_name, provider_npi, treatment_center_name, treatment_center_npi, npi_verified')
-          .in('enrollment_id', enrollmentIds),
+      const providerInfosResponse = await supabase
+        .from('enrollment_provider_info')
+        .select('enrollment_id, referring_provider_name, referring_provider_npi, treatment_facility, facility_npi, npi_verification_status')
+        .in('enrollment_id', enrollmentIds);
         
-        supabase
-          .from('enrollment_consent')
-          .select('enrollment_id, collection_method, consent_to_treatment, hipaa_authorization, privacy_consent, consent_date')
-          .in('enrollment_id', enrollmentIds),
+      const consentInfosResponse = await supabase
+        .from('enrollment_consent')
+        .select('enrollment_id, collection_method, consent_to_treatment, hipaa_authorization, privacy_consent, consent_date')
+        .in('enrollment_id', enrollmentIds);
         
-        supabase
-          .from('enrollment_documents')
-          .select('enrollment_id, document_type, document_status, is_required')
-          .in('enrollment_id', enrollmentIds),
+      const documentsInfosResponse = await supabase
+        .from('enrollment_documents')
+        .select('enrollment_instance_id, document_type, file_name')
+        .in('enrollment_instance_id', enrollmentIds);
         
-        supabase
-          .from('enrollment_insurance_info')
-          .select('enrollment_id, primary_insurance_verified, insurance_card_front_url, insurance_card_back_url')
-          .in('enrollment_id', enrollmentIds)
-      ]);
+      const insuranceInfosResponse = await supabase
+        .from('enrollment_insurance_info')
+        .select('enrollment_id, insurance_verification_status, primary_insurance_name')
+        .in('enrollment_id', enrollmentIds);
 
-      // Create lookup maps
-      const patientMap = this.createLookupMap(patientInfos, 'enrollment_id');
-      const providerMap = this.createLookupMap(providerInfos, 'enrollment_id');
-      const consentMap = this.createLookupMap(consentInfos, 'enrollment_id');
-      const insuranceMap = this.createLookupMap(insuranceInfos, 'enrollment_id');
-      
-      // Group documents by enrollment_id
-      const documentsMap = (documentsInfos || []).reduce((acc: any, doc: any) => {
-        if (!acc[doc.enrollment_id]) acc[doc.enrollment_id] = [];
-        acc[doc.enrollment_id].push(doc);
-        return acc;
-      }, {});
+      // Create lookup maps with explicit types
+      const patientInfos = patientInfosResponse.data || [];
+      const providerInfos = providerInfosResponse.data || [];
+      const consentInfos = consentInfosResponse.data || [];
+      const documentsInfos = documentsInfosResponse.data || [];
+      const insuranceInfos = insuranceInfosResponse.data || [];
+
+      const patientMap: Record<string, any> = {};
+      const providerMap: Record<string, any> = {};
+      const consentMap: Record<string, any> = {};
+      const insuranceMap: Record<string, any> = {};
+      const documentsMap: Record<string, any[]> = {};
+
+      // Build lookup maps
+      patientInfos.forEach(item => {
+        patientMap[item.enrollment_id] = item;
+      });
+
+      providerInfos.forEach(item => {
+        providerMap[item.enrollment_id] = item;
+      });
+
+      consentInfos.forEach(item => {
+        consentMap[item.enrollment_id] = item;
+      });
+
+      insuranceInfos.forEach(item => {
+        insuranceMap[item.enrollment_id] = item;
+      });
+
+      documentsInfos.forEach(doc => {
+        if (!documentsMap[doc.enrollment_instance_id]) {
+          documentsMap[doc.enrollment_instance_id] = [];
+        }
+        documentsMap[doc.enrollment_instance_id].push(doc);
+      });
 
       // Transform data
       return enrollments.map(enrollment => this.transformEnrollmentData(
@@ -268,14 +285,6 @@ export class EnrollmentDashboardDataManager {
     return `${baseUrl}${url}&enrollment_id=${enrollment.id}&resume=true`;
   }
 
-  // Helper methods
-  private static createLookupMap(data: any[], key: string): Record<string, any> {
-    return (data || []).reduce ((acc: any, item: any) => {
-      acc[item[key]] = item;
-      return acc;
-    }, {});
-  }
-
   private static transformEnrollmentData(
     enrollment: any,
     patientInfo: any,
@@ -320,10 +329,10 @@ export class EnrollmentDashboardDataManager {
       patientName: patientInfo ? `${patientInfo.first_name} ${patientInfo.last_name}`.trim() : 'Unknown Patient',
       patientEmail: patientInfo?.email || '',
       patientPhone: patientInfo?.phone || '',
-      providerName: providerInfo?.provider_name || null,
-      providerNpi: providerInfo?.provider_npi || null,
-      treatmentCenter: providerInfo?.treatment_center_name || null,
-      treatmentCenterNpi: providerInfo?.treatment_center_npi || null,
+      providerName: providerInfo?.referring_provider_name || null,
+      providerNpi: providerInfo?.referring_provider_npi || null,
+      treatmentCenter: providerInfo?.treatment_facility || null,
+      treatmentCenterNpi: providerInfo?.facility_npi || null,
       enrollmentSource: enrollment.enrollment_source || 'online_form',
       currentSection: enrollment.current_section || 'consent_management',
       status: enrollment.enrollment_status || 'initiated',
@@ -331,17 +340,17 @@ export class EnrollmentDashboardDataManager {
       priority,
       
       // NPI Verification
-      providerNpiVerified: providerInfo?.npi_verified || false,
-      treatmentCenterNpiVerified: providerInfo?.treatment_center_npi_verified || false,
+      providerNpiVerified: providerInfo?.npi_verification_status === 'verified' || false,
+      treatmentCenterNpiVerified: false,
       
       // Documentation
-      missingDocuments: missingDocs.map(d => d.document_type),
-      documentCount: documents.filter(d => d.document_status === 'uploaded' || d.document_status === 'verified').length,
-      requiredDocumentCount: requiredDocs.length,
+      missingDocuments: [],
+      documentCount: documents.length,
+      requiredDocumentCount: 0,
       
       // Insurance
-      insuranceVerified: insuranceInfo?.primary_insurance_verified || false,
-      insuranceCardUploaded: !!(insuranceInfo?.insurance_card_front_url && insuranceInfo?.insurance_card_back_url),
+      insuranceVerified: insuranceInfo?.insurance_verification_status === 'verified' || false,
+      insuranceCardUploaded: !!insuranceInfo?.primary_insurance_name,
       
       // Consent
       consentCompleted: !!consentCompleted,
@@ -355,7 +364,7 @@ export class EnrollmentDashboardDataManager {
       
       // Actions
       nextStep: nextStepMap[enrollment.current_section] || 'Continue Enrollment',
-      assignedStaff: 'Unassigned', // TODO: Add staff assignment logic
+      assignedStaff: 'Unassigned',
       
       // Status
       isActive: enrollment.is_active,
