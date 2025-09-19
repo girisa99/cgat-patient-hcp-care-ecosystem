@@ -10,6 +10,7 @@ import { PatientEnrollmentTemplateManager } from '@/components/patient-enrollmen
 import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalAgentConfigManager';
 import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoiceManager';
 import { ContextAwareEnrollmentOptions } from '@/components/context-aware-enrollment/ContextAwareEnrollmentOptions';
+import { ConversationalEnrollmentSelector } from '@/components/universal-enrollment/ConversationalEnrollmentSelector';
 
 import { 
   UserPlus, 
@@ -26,7 +27,8 @@ import {
   Workflow,
   Settings,
   Mic,
-  RefreshCw
+  RefreshCw,
+  Bot
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
@@ -70,6 +72,8 @@ export default function PatientOnboarding() {
   const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
   const [selectedAgentType, setSelectedAgentType] = useState<string>('');
   const [channelData, setChannelData] = useState<Record<string, any>>({});
+  const [showAIAgentSelector, setShowAIAgentSelector] = useState(false);
+  const [showEnrollmentOptions, setShowEnrollmentOptions] = useState(false);
   const location = useLocation();
   // Method selection
   const [showMethodDialog, setShowMethodDialog] = useState(false);
@@ -198,7 +202,24 @@ export default function PatientOnboarding() {
 
   // Event handlers
   const handleNewEnrollment = () => {
-    setShowMethodDialog(true);
+    setShowEnrollmentOptions(true);
+  };
+
+  const handleAIAgentClick = () => {
+    setShowAIAgentSelector(true);
+  };
+
+  const handleAgentSelect = (moduleType: string) => {
+    console.log('AI Agent selected for module:', moduleType);
+    setShowAIAgentSelector(false);
+  };
+
+  const handleTraditionalSelect = (option: string) => {
+    console.log('Traditional option selected:', option);
+    setShowEnrollmentOptions(false);
+    if (option === 'online-form') {
+      setCurrentView('new_enrollment');
+    }
   };
 
   const handleViewPatient = (patient: PatientOnboarding) => {
@@ -379,13 +400,19 @@ export default function PatientOnboarding() {
           <div>
             <h1 className="text-3xl font-bold tracking-tight">Patient Onboarding Dashboard</h1>
             <p className="text-muted-foreground">
-              Manage patient enrollment processes and workflows
+              Manage patient enrollment processes and workflows with AI agents, OCR, and online forms
             </p>
           </div>
-          <Button onClick={handleNewEnrollment}>
-            <Plus className="mr-2 h-4 w-4" />
-            New Enrollment
-          </Button>
+          <div className="flex space-x-2">
+            <Button onClick={handleAIAgentClick} variant="default">
+              <Bot className="mr-2 h-4 w-4" />
+              AI Agent
+            </Button>
+            <Button onClick={handleNewEnrollment} variant="outline">
+              <Plus className="mr-2 h-4 w-4" />
+              New Enrollment
+            </Button>
+          </div>
         </div>
 
         {/* Stats Overview */}
@@ -608,6 +635,36 @@ export default function PatientOnboarding() {
                 <div className="text-sm opacity-90">Let our AI guide the enrollment process</div>
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* AI Agent Selector Modal */}
+        <Dialog open={showAIAgentSelector} onOpenChange={setShowAIAgentSelector}>
+          <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>AI Agent Selection</DialogTitle>
+            </DialogHeader>
+            <ConversationalEnrollmentSelector
+              moduleType="patient"
+              onComplete={(result) => {
+                console.log('AI Agent enrollment completed:', result);
+                setShowAIAgentSelector(false);
+                loadLiveData(); // Refresh the dashboard
+              }}
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* Enrollment Options Modal */}
+        <Dialog open={showEnrollmentOptions} onOpenChange={setShowEnrollmentOptions}>
+          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Enrollment Options</DialogTitle>
+            </DialogHeader>
+            <ContextAwareEnrollmentOptions
+              onAgentSelect={handleAgentSelect}
+              onTraditionalSelect={handleTraditionalSelect}
+            />
           </DialogContent>
         </Dialog>
 
