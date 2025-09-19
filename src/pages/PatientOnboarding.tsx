@@ -96,10 +96,6 @@ export default function PatientOnboarding() {
           ),
           enrollment_provider_info (
             specialty
-          ),
-          profiles (
-            first_name,
-            last_name
           )
         `)
         .order('created_at', { ascending: false })
@@ -114,7 +110,7 @@ export default function PatientOnboarding() {
       const transformedData: PatientOnboarding[] = (enrollments || []).map((enrollment: any) => {
         const patientInfo = enrollment.enrollment_patient_info;
         const providerInfo = enrollment.enrollment_provider_info;
-        const assignedStaff = enrollment.profiles;
+        const assignedStaffName = 'Unassigned';
         
         // Map enrollment status to UI status
         const statusMap: Record<string, PatientOnboarding['status']> = {
@@ -151,7 +147,7 @@ export default function PatientOnboarding() {
           startDate: new Date(enrollment.created_at).toLocaleDateString(),
           completedSteps: Math.floor((enrollment.progress_percentage || 0) / 20), // Assuming 5 total steps
           totalSteps: 5,
-          assignedStaff: assignedStaff ? `${assignedStaff.first_name || ''} ${assignedStaff.last_name || ''}`.trim() : 'Unassigned',
+          assignedStaff: assignedStaffName,
           priority,
           nextStep: nextStepMap[enrollment.current_section] || 'Assessment pending'
         };
