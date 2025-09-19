@@ -227,28 +227,28 @@ export const EnhancedProviderFormWithConfirmation: React.FC<EnhancedProviderForm
         </div>
       )}
 
-      {/* Enhanced Provider Form */}
-      {(verificationMethod === 'manual' || isVerificationComplete || (!verificationMethod && !showConfirmationModal)) && (
-        <div className="space-y-4">
-          {isVerificationComplete && (
-            <Alert>
-              <CheckCircle className="h-4 w-4" />
-              <AlertDescription className="flex items-center justify-between">
-                <span>Information auto-filled from NPI verification. Review and edit as needed.</span>
-                <Button variant="outline" size="sm" onClick={resetVerification}>
-                  <RefreshCw className="h-3 w-3 mr-1" />
-                  Re-verify
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          <EnhancedProviderForm
-            onSubmit={handleFormSubmit}
-            initialData={providerData}
-          />
-        </div>
-      )}
+        {/* Enhanced Provider Form */}
+        {(verificationMethod === 'manual' || isVerificationComplete || (!verificationMethod && !showConfirmationModal)) && (
+          <div className="space-y-4">
+            {isVerificationComplete && (
+              <Alert>
+                <CheckCircle className="h-4 w-4" />
+                <AlertDescription className="flex items-center justify-between">
+                  <span>Information auto-filled from NPI verification. Review and edit as needed.</span>
+                  <Button variant="outline" size="sm" onClick={resetVerification}>
+                    <RefreshCw className="h-3 w-3 mr-1" />
+                    Re-verify
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            
+            <EnhancedProviderForm
+              onSubmit={handleFormSubmit}
+              initialData={providerData}
+            />
+          </div>
+        )}
 
       {/* Confirmation Modal */}
       <NPIVerificationConfirmationModal

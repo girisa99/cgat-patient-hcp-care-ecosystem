@@ -16,6 +16,7 @@ import { EnrollmentSystemTester } from "@/components/enrollment/EnrollmentSystem
 import { TreatmentCenterSelector } from "@/components/enrollment/TreatmentCenterSelector";
 import { ProviderSelector } from "@/components/enrollment/ProviderSelector";
 import { EnhancedProviderFormWithConfirmation } from "@/components/enrollment/EnhancedProviderFormWithConfirmation";
+import { ComprehensiveProviderVerification } from "@/components/enrollment/ComprehensiveProviderVerification";
 import { WhatsAppConsentSender } from "@/components/enrollment/WhatsAppConsentSender";
 
 interface SmartMCPStepwiseAgentProps {
@@ -404,10 +405,10 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
               </AlertDescription>
             </Alert>
 
-            {/* Show enhanced provider form with NPI verification for provider step */}
+            {/* Show comprehensive provider verification for provider step */}
             {currentStep.key === 'provider_treatment' ? (
               <div className="space-y-6">
-                <EnhancedProviderFormWithConfirmation
+                <ComprehensiveProviderVerification
                   onSubmit={handleNext}
                   initialData={collectedData}
                   sectionType="provider"
