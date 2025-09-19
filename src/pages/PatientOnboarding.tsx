@@ -12,6 +12,11 @@ import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoi
 import { ContextAwareEnrollmentOptions } from '@/components/context-aware-enrollment/ContextAwareEnrollmentOptions';
 import { ConversationalEnrollmentSelector } from '@/components/universal-enrollment/ConversationalEnrollmentSelector';
 import { EnrollmentDashboardDataManager, EnrollmentDashboardItem } from '@/components/enrollment/EnrollmentDashboardDataManager';
+import { 
+  SmartMCPStepwiseAgent,
+  EnhancedFloatingConversationalAgent,
+  EnhancedStructuredEnrollmentAgent
+} from '@/components/enrollment';
 
 import { 
   UserPlus, 
@@ -45,7 +50,6 @@ import { toast } from 'sonner';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { SmartMCPStepwiseAgent } from '@/components/enrollment/SmartMCPStepwiseAgent';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 
@@ -418,7 +422,6 @@ const PatientOnboarding: React.FC = () => {
           {workspaceMethod === 'structured' && selectedEnrollmentId && (
             <EnhancedStructuredEnrollmentAgent
               moduleType="patient"
-              enrollmentId={selectedEnrollmentId}
               onComplete={() => {
                 setCurrentView('dashboard');
                 loadLiveData();
@@ -429,7 +432,6 @@ const PatientOnboarding: React.FC = () => {
           {workspaceMethod === 'conversational' && selectedEnrollmentId && (
             <EnhancedFloatingConversationalAgent
               moduleType="patient"
-              enrollmentId={selectedEnrollmentId}
               onComplete={() => {
                 setCurrentView('dashboard');
                 loadLiveData();
