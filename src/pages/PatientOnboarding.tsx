@@ -142,6 +142,13 @@ const PatientOnboarding: React.FC = () => {
     const resume = params.get('resume');
     const mode = params.get('mode');
 
+    // Handle online form method
+    if (method === 'form') {
+      setCurrentView('workspace');
+      setWorkspaceMethod('structured');
+      return;
+    }
+
     if (eid) {
       setSelectedEnrollmentId(eid);
       const found = patients.find(p => p.id === eid);
@@ -422,12 +429,17 @@ const PatientOnboarding: React.FC = () => {
             />
           )}
 
-          {workspaceMethod === 'structured' && selectedEnrollmentId && (
-            <EnhancedStructuredEnrollmentAgent
-              moduleType="patient"
-              onComplete={() => {
+          {workspaceMethod === 'structured' && (
+            <PatientEnrollmentForm 
+              channelType="online"
+              onSubmit={() => {
+                toast({
+                  title: "Enrollment Complete",
+                  description: "Patient enrollment has been successfully submitted."
+                });
                 setCurrentView('dashboard');
                 loadLiveData();
+                navigate('/patient-onboarding');
               }}
             />
           )}
@@ -889,7 +901,7 @@ const PatientOnboarding: React.FC = () => {
               <Button 
                 onClick={() => {
                   setShowEnrollmentOptions(false);
-                  setCurrentView('new_enrollment');
+                  navigate('/enrollment-workspace?method=form');
                 }}
                 className="h-20 text-left flex-col items-start"
               >
