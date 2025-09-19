@@ -74,10 +74,8 @@ export default function PatientOnboarding() {
   const [channelData, setChannelData] = useState<Record<string, any>>({});
   const [showAIAgentSelector, setShowAIAgentSelector] = useState(false);
   const [showEnrollmentOptions, setShowEnrollmentOptions] = useState(false);
-  const location = useLocation();
-  // Method selection
-  const [showMethodDialog, setShowMethodDialog] = useState(false);
-  const [currentEnrollmentId, setCurrentEnrollmentId] = useState<string | null>(null);
+  // State for controlling popups  
+  const [hasAutoLaunchedAI, setHasAutoLaunchedAI] = useState(false);
 
   // Load live data from database
   useEffect(() => {
@@ -605,7 +603,7 @@ export default function PatientOnboarding() {
         </Card>
 
         {/* Method Selection Dialog */}
-        <Dialog open={showMethodDialog} onOpenChange={setShowMethodDialog}>
+        <Dialog open={showEnrollmentOptions} onOpenChange={setShowEnrollmentOptions}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Choose Enrollment Method</DialogTitle>
@@ -613,7 +611,7 @@ export default function PatientOnboarding() {
             <div className="grid gap-4 py-4">
               <Button 
                 onClick={() => {
-                  setShowMethodDialog(false);
+                  setShowEnrollmentOptions(false);
                   setCurrentView('new_enrollment');
                 }}
                 className="h-20 text-left flex-col items-start"
@@ -625,7 +623,7 @@ export default function PatientOnboarding() {
               <Button 
                 variant="outline"
                 onClick={() => {
-                  setShowMethodDialog(false);
+                  setShowEnrollmentOptions(false);
                   // Navigate to AI-powered enrollment
                   window.location.href = '/patient-onboarding?method=ai';
                 }}

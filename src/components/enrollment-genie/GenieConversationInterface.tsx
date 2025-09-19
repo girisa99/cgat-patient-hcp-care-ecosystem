@@ -363,19 +363,64 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
             </div>
             
             <div className="flex items-center gap-1">
-              <Button variant="ghost" size="sm" onClick={() => setShowModelSelector(true)}>
+              {/* Model Selection Toggle */}
+              <Select value={currentMode} onValueChange={handleModeChange}>
+                <SelectTrigger className="w-20 h-8 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="single">Single</SelectItem>
+                  <SelectItem value="multi">Multi</SelectItem>
+                  <SelectItem value="system">System</SelectItem>
+                </SelectContent>
+              </Select>
+              
+              {/* Action Buttons */}
+              <Button variant="ghost" size="sm" onClick={() => {
+                // Create a new conversation
+                resetConversation();
+                showSuccess('New conversation started', 'Your previous conversation is saved in history');
+              }} title="New Conversation">
+                <MessageSquare className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => {
+                // Save current session state
+                if (state.messages.length > 0) {
+                  try {
+                    const sessionData = {
+                      conversationId: state.conversationId,
+                      messages: state.messages,
+                      timestamp: new Date().toISOString(),
+                      mode: state.selectedMode,
+                      model: state.selectedModel
+                    };
+                    localStorage.setItem(`genie_session_${state.conversationId}`, JSON.stringify(sessionData));
+                    showSuccess('Session saved', 'Your conversation has been saved to local storage');
+                  } catch (error) {
+                    showError('Save failed', 'Unable to save session');
+                  }
+                } else {
+                  showError('Nothing to save', 'Start a conversation first');
+                }
+              }} title="Save Session">
+                <Database className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => window.location.reload()} title="Refresh">
+                <span className="text-sm">⟲</span>
+              </Button>
+              <Button variant="ghost" size="sm" onClick={() => setShowModelSelector(true)} title="Settings">
                 <Settings className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setShowSessionManager(true)}>
+              <Button variant="ghost" size="sm" onClick={() => setShowSessionManager(true)} title="History">
                 <History className="h-4 w-4" />
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setIsMinimized(!isMinimized)}>
+              <Button variant="ghost" size="sm" onClick={() => setIsMinimized(!isMinimized)} title="Minimize">
                 <span className="text-sm">_</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={() => setIsMaximized(!isMaximized)}>
+              <Button variant="ghost" size="sm" onClick={() => setIsMaximized(!isMaximized)} title="Maximize">
                 <span className="text-sm">□</span>
               </Button>
-              <Button variant="ghost" size="sm" onClick={onClose}>
+              <Button variant="ghost" size="sm" onClick={onClose} title="Close">
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -383,7 +428,7 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
 
           {!isMinimized && (
             <>
-              {/* Context Status Bar */}
+              {/* Context Status Bar with Stepwise Agent Access */}
               <div className="px-3 py-2 bg-muted/20 border-b">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
@@ -408,17 +453,26 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                     )}
                   </div>
                   
-                  <Select value={currentMode} onValueChange={handleModeChange}>
-                    <SelectTrigger className="w-24 h-6 text-xs">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="system">System</SelectItem>
-                      <SelectItem value="single">Single</SelectItem>
-                      <SelectItem value="multi">Multi</SelectItem>
-                      <SelectItem value="publish">Publish</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex items-center gap-2">
+                    {context === 'patient-enrollment' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-6 text-xs px-2"
+                        onClick={() => {
+                          if (confirm('Switch to specialized MCP Stepwise Agent? This will start a new enrollment session with advanced capabilities. Your current Genie conversation will be saved.')) {
+                            navigateSafe('/patient-onboarding?agent=mcp');
+                            onClose();
+                          }
+                        }}
+                      >
+                        → MCP Stepwise
+                      </Button>
+                    )}
+                    <Badge variant="outline" className="text-xs">
+                      {currentMode === 'single' ? '1 Model' : currentMode === 'multi' ? `${selectedModels.length} Models` : currentMode.toUpperCase()}
+                    </Badge>
+                  </div>
                 </div>
               </div>
 
@@ -474,10 +528,53 @@ export const GenieConversationInterface: React.FC<GenieConversationInterfaceProp
                       </div>
                     )}
 
-                    {/* Direct CTA to patient onboarding */}
-                    <div className="mt-6">
-                      <Button size="sm" onClick={() => { navigateSafe('/patient-onboarding?flow=ai'); onClose(); }}>
-                        Start step-wise AI Enrollment
+                    {/* Enhanced CTA to patient onboarding with stepwise transition */}
+                    <div className="mt-6 space-y-3">
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 dark:from-blue-950/20 dark:to-purple-950/20 rounded-lg p-4 border">
+                        <h5 className="font-medium text-sm mb-2 flex items-center gap-2">
+                          <Bot className="h-4 w-4 text-primary" />
+                          Advanced AI Enrollment Agents
+                        </h5>
+                        <p className="text-xs text-muted-foreground mb-3">
+                          Switch to specialized enrollment agents with advanced capabilities
+                        </p>
+                        <div className="flex gap-2 flex-wrap">
+                          <Button size="sm" onClick={() => { 
+                            if (confirm('This will start a new MCP-powered enrollment session. Your current Genie conversation will remain saved. Continue?')) {
+                              navigateSafe('/patient-onboarding?flow=mcp'); 
+                              onClose(); 
+                            }
+                          }} className="bg-green-600 hover:bg-green-700">
+                            MCP Stepwise Agent
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { 
+                            if (confirm('This will start a new conversational enrollment session. Your current Genie conversation will remain saved. Continue?')) {
+                              navigateSafe('/patient-onboarding?flow=conversational'); 
+                              onClose(); 
+                            }
+                          }}>
+                            Conversational AI
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => { 
+                            if (confirm('This will start a new structured enrollment session. Your current Genie conversation will remain saved. Continue?')) {
+                              navigateSafe('/patient-onboarding?flow=structured'); 
+                              onClose(); 
+                            }
+                          }}>
+                            AI Structure Agent
+                          </Button>
+                        </div>
+                        <p className="text-xs text-amber-600 dark:text-amber-400 mt-2 flex items-center gap-1">
+                          <span>⚠️</span>
+                          Note: Switching will start a new specialized session
+                        </p>
+                      </div>
+                      
+                      <Button size="sm" variant="ghost" onClick={() => { 
+                        navigateSafe('/patient-onboarding'); 
+                        onClose(); 
+                      }} className="w-full">
+                        View All Enrollment Options
                       </Button>
                     </div>
                   </div>
