@@ -126,28 +126,39 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
         const userId = authUser.user?.id;
         if (!userId || !patientId) return;
 
-        // First, create the main enrollment record with user_id (required by RLS)
-        const { error } = await supabase.from('patient_enrollments').upsert({
-          id: patientId,
-          user_id: userId, // CRITICAL: Required for RLS to allow related table inserts
-          session_id: `mcp-${Date.now()}`,
-          enrollment_source: enrollmentSource || 'mcp',
-          enrollment_status: 'in_progress',
-          current_section: 'consent_management',
-          progress_percentage: 0,
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        });
-        
-        if (error) {
-          console.error('Init enrollment record error:', error);
-          toast({
-            title: "Initialization Error", 
-            description: "Failed to initialize enrollment. Please refresh and try again.",
-            variant: "destructive"
+        // Check if enrollment already exists to prevent duplicates on refresh
+        const { data: existingEnrollment } = await supabase
+          .from('patient_enrollments')
+          .select('session_id, created_at')
+          .eq('id', patientId)
+          .maybeSingle();
+
+        // Only create if it doesn't exist
+        if (!existingEnrollment) {
+          const { error } = await supabase.from('patient_enrollments').insert({
+            id: patientId,
+            user_id: userId, // CRITICAL: Required for RLS to allow related table inserts
+            session_id: `mcp-${patientId.slice(-8)}-${Date.now()}`, // Stable session ID
+            enrollment_source: enrollmentSource || 'mcp',
+            enrollment_status: 'in_progress',
+            current_section: 'consent_management',
+            progress_percentage: 0,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
           });
+          
+          if (error) {
+            console.error('Init enrollment record error:', error);
+            toast({
+              title: "Initialization Error", 
+              description: "Failed to initialize enrollment. Please refresh and try again.",
+              variant: "destructive"
+            });
+          } else {
+            console.log('✅ Successfully created new patient enrollment record with user_id:', userId);
+          }
         } else {
-          console.log('✅ Successfully initialized patient enrollment record with user_id:', userId);
+          console.log('✅ Found existing enrollment, skipping creation to prevent duplicates');
         }
       } catch (e) {
         console.error('Init enrollment record failed:', e);
