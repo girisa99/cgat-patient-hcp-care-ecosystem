@@ -149,21 +149,27 @@ export const smartRouteFieldsToTables = (formData: Record<string, any>): TableBa
     // Guard: strip unknown columns for patient_enrollments to prevent 400s
     if (tableName === 'patient_enrollments') {
       const allowed = new Set([
-        'submission_notes',
+        // Core columns that actually exist in patient_enrollments
+        'session_id',
+        'user_id',
+        'tenant_id',
         'enrollment_status',
-        'facility_id',
-        'primary_provider_id',
         'current_section',
         'progress_percentage',
+        'created_at',
         'updated_at',
         'completed_at',
         'signed_at',
-        'patient_signature',
-        'provider_signature',
+        'signature_data',
         'pdf_generated',
         'pdf_file_path',
-        'enrollment_notes',
-        'priority'
+        'metadata',
+        'enrollment_source',
+        'submission_method',
+        'verification_method',
+        'agent_channel',
+        'facility_id',
+        'primary_provider_id'
       ]);
       Object.keys(data).forEach((k) => {
         if (!allowed.has(k)) delete (data as any)[k];
