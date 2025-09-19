@@ -450,7 +450,7 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
           }}
           completedSection={{
             sectionKey: completedSectionData.sectionKey,
-            sectionTitle: "Patient Information", // Mock data
+            sectionTitle: "Patient Information",
             description: "Basic patient demographics and contact information",
             completedFields: 5,
             totalFields: 8,

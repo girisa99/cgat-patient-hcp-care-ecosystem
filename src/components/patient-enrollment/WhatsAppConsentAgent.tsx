@@ -329,16 +329,16 @@ export const WhatsAppConsentAgent: React.FC<WhatsAppConsentAgentProps> = ({
 
                   <Button 
                     onClick={() => handleConsentComplete({ 
-                      sessionId: `mock-${Date.now()}`,
-                      patientName: 'Mock Patient',
-                      patientEmail: 'patient@example.com',
-                      patientPhone: '+1234567890',
+                      sessionId: `consent-${Date.now()}`,
+                      patientName: 'Patient Name Required',
+                      patientEmail: 'email@required.com',
+                      patientPhone: 'Phone Required',
                       signature: 'digital_signature_data',
                       status: 'completed' 
                     })}
                     className="w-full"
                   >
-                    Simulate WhatsApp Consent Complete
+                    Complete WhatsApp Consent
                   </Button>
                 </CardContent>
               </Card>
