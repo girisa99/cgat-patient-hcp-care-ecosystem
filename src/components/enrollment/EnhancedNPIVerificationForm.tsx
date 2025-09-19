@@ -136,10 +136,10 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
   };
 
   const handleVerifyProvider = async () => {
-    if (!formData.providerName || !formData.npiNumber) {
+    if (!formData.providerName) {
       toast({
         title: "Missing Information",
-        description: "Please enter both provider name and NPI number.",
+        description: "Please enter provider name.",
         variant: "destructive"
       });
       return;
@@ -217,10 +217,10 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
   };
 
   const handleVerifyTreatmentCenter = async () => {
-    if (!formData.facilityName || !formData.facilityNPI) {
+    if (!formData.facilityName) {
       toast({
         title: "Missing Information",
-        description: "Please enter both facility name and NPI number.",
+        description: "Please enter facility name.",
         variant: "destructive"
       });
       return;
