@@ -44,11 +44,15 @@ interface ProviderData {
   treatmentCenterName: string;
   treatmentCenterNPI: string;
   facilityType: string;
+  facilityStatus?: string;
+  facilityLicenseExpiry?: string;
   
   // Referral Network Information
   referralNetworkName: string;
   referralNetworkNPI: string;
   networkType: string;
+  networkStatus?: string;
+  networkLicenseExpiry?: string;
   
   // Contact Information
   primaryPhone: string;
@@ -61,7 +65,9 @@ interface ProviderData {
   // Credentialing Information
   medicalLicenseNumber: string;
   licenseState: string;
+  licenseExpiry?: string;
   deaNumber: string;
+  deaExpiry?: string;
   taxonomy: string;
   specialization: string;
   
@@ -134,8 +140,32 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     return npiRegex.test(npi);
   };
 
-  const handleNPIVerification = async () => {
-    if (!validateNPIFormat(formData.npiNumber)) {
+  const handleNPIVerification = async (verificationType: 'provider' | 'treatment_center' | 'referral_network' = 'provider') => {
+    const npiField = verificationType === 'provider' ? 'npiNumber' : 
+                     verificationType === 'treatment_center' ? 'treatmentCenterNPI' : 'referralNetworkNPI';
+    const nameField = verificationType === 'provider' ? 'providerName' : 
+                      verificationType === 'treatment_center' ? 'treatmentCenterName' : 'referralNetworkName';
+
+    if (!formData[npiField] && verificationType === 'provider') {
+      toast({
+        title: "Invalid NPI Format",
+        description: "NPI must be exactly 10 digits",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (!formData[nameField]) {
+      toast({
+        title: "Missing Information", 
+        description: `Please enter ${verificationType.replace('_', ' ')} name`,
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const npiValue = formData[npiField];
+    if (npiValue && !validateNPIFormat(npiValue)) {
       toast({
         title: "Invalid NPI Format",
         description: "NPI must be exactly 10 digits",
@@ -151,7 +181,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
       // Step 1: NPI Registry Lookup (20%)
       setVerificationProgress(20);
       const npiResponse = await supabase.functions.invoke('verify-npi', {
-        body: { npi: formData.npiNumber }
+        body: { npi: npiValue || formData.npiNumber }
       });
 
       if (npiResponse.error) {
@@ -189,7 +219,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
       const { error: saveError } = await supabase
         .from('npi_verification_results')
         .upsert({
-          npi: formData.npiNumber,
+          npi: npiValue || formData.npiNumber,
           provider_type: extractedData.providerType,
           verification_data: npiData,
           verification_status: 'verified',
@@ -253,6 +283,10 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     }
   };
 
+  const handleProviderVerification = () => handleNPIVerification('provider');
+  const handleTreatmentCenterVerification = () => handleNPIVerification('treatment_center');
+  const handleReferralNetworkVerification = () => handleNPIVerification('referral_network');
+
   const handleInputChange = (field: keyof ProviderData, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -269,7 +303,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             id="providerName"
             value={formData.providerName}
             onChange={(e) => handleInputChange('providerName', e.target.value)}
-            placeholder="Enter provider name"
+            placeholder="Dr. Sarah Michelle Johnson, MD"
           />
         </div>
         
@@ -280,7 +314,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             onValueChange={(value: 'individual' | 'organization') => handleInputChange('providerType', value)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select provider type" />
+              <SelectValue placeholder="Individual Provider (Type 1)" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="individual">Individual Provider (Type 1)</SelectItem>
@@ -300,9 +334,10 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
               maxLength={10}
             />
             <Button 
-              onClick={handleNPIVerification}
-              disabled={isVerifying || !formData.npiNumber}
+              onClick={handleProviderVerification}
+              disabled={isVerifying || !formData.providerName || !formData.providerType}
               size="sm"
+              className="whitespace-nowrap"
             >
               {isVerifying ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
@@ -320,7 +355,35 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             id="specialization"
             value={formData.specialization}
             onChange={(e) => handleInputChange('specialization', e.target.value)}
-            placeholder="Medical specialization"
+            placeholder="Primary Care Physician"
+          />
+        </div>
+
+        {/* Provider Status and Contact Info */}
+        <div className="space-y-2">
+          <Label htmlFor="providerStatus">Provider Status</Label>
+          <Select 
+            value={formData.verificationStatus === 'verified' ? 'active' : 'pending'} 
+            onValueChange={(value) => handleInputChange('verificationStatus', value === 'active' ? 'verified' : 'pending')}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="pending">Pending Verification</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="licenseExpiry">License Expiry Date</Label>
+          <Input
+            id="licenseExpiry"
+            type="date"
+            value={formData.verifiedAt ? formData.verifiedAt.split('T')[0] : ''}
+            onChange={(e) => handleInputChange('verifiedAt', e.target.value ? new Date(e.target.value).toISOString() : '')}
           />
         </div>
       </div>
@@ -348,6 +411,13 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
 
   const renderTreatmentCenterTab = () => (
     <div className="space-y-6">
+      <Alert>
+        <Building className="h-4 w-4" />
+        <AlertDescription>
+          Treatment Center information for organizational providers and facility credentialing.
+        </AlertDescription>
+      </Alert>
+
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label htmlFor="treatmentCenterName">Treatment Center Name *</Label>
@@ -355,19 +425,34 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             id="treatmentCenterName"
             value={formData.treatmentCenterName}
             onChange={(e) => handleInputChange('treatmentCenterName', e.target.value)}
-            placeholder="Enter treatment center name"
+            placeholder="Lone Star Recovery Center"
           />
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="treatmentCenterNPI">Treatment Center NPI (Type 2)</Label>
-          <Input
-            id="treatmentCenterNPI"
-            value={formData.treatmentCenterNPI}
-            onChange={(e) => handleInputChange('treatmentCenterNPI', e.target.value)}
-            placeholder="Enter treatment center NPI"
-            maxLength={10}
-          />
+          <div className="flex gap-2">
+            <Input
+              id="treatmentCenterNPI"
+              value={formData.treatmentCenterNPI}
+              onChange={(e) => handleInputChange('treatmentCenterNPI', e.target.value)}
+              placeholder="Enter treatment center NPI"
+              maxLength={10}
+            />
+            <Button 
+              onClick={handleTreatmentCenterVerification}
+              disabled={isVerifying || !formData.treatmentCenterName || !formData.treatmentCenterNPI}
+              size="sm"
+              className="whitespace-nowrap"
+            >
+              {isVerifying ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <ShieldCheck className="h-4 w-4" />
+              )}
+              Verify
+            </Button>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -377,7 +462,7 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             onValueChange={(value) => handleInputChange('facilityType', value)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Select facility type" />
+              <SelectValue placeholder="Treatment Center" />
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="hospital">Hospital</SelectItem>
@@ -387,6 +472,33 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
               <SelectItem value="outpatient">Outpatient Facility</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="facilityStatus">Facility Status</Label>
+          <Select 
+            value="active"
+            onValueChange={(value) => handleInputChange('facilityStatus', value)}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Select status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Active</SelectItem>
+              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="pending">Pending Verification</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="facilityLicenseExpiry">Facility License Expiry</Label>
+          <Input
+            id="facilityLicenseExpiry"
+            type="date"
+            onChange={(e) => handleInputChange('facilityLicenseExpiry', e.target.value)}
+            placeholder="License expiration date"
+          />
         </div>
       </div>
     </div>
