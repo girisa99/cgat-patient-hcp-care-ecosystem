@@ -209,7 +209,19 @@ const PatientOnboarding: React.FC = () => {
       return;
     }
 
-    const continueUrl = `/enrollment-workspace?enrollment_id=${patient.id}&resume=true`;
+    // Build continue URL based on enrollment source
+    const baseUrl = window.location.origin;
+    const sourceMap = {
+      'mcp': '/enrollment-workspace?method=mcp',
+      'conversational_ai': '/enrollment-workspace?method=conversational',
+      'ai_structure': '/enrollment-workspace?method=structured',
+      'online_form': '/enrollment-workspace?method=form',
+      'diagnostic_test': '/enrollment-workspace?method=diagnostic'
+    } as const;
+    
+    const url = sourceMap[patient.enrollmentSource] || '/enrollment-workspace';
+    const continueUrl = `${baseUrl}${url}&enrollment_id=${patient.id}&resume=true`;
+    
     window.location.href = continueUrl;
   };
 
@@ -221,10 +233,23 @@ const PatientOnboarding: React.FC = () => {
 
   const handleDeactivatePatient = async (patient: PatientOnboarding) => {
     try {
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      
+      if (!userId) {
+        toast({
+          title: "Authentication Error",
+          description: "Please log in to perform this action.",
+          variant: "destructive"
+        });
+        return;
+      }
+
       await EnrollmentDashboardDataManager.deactivateEnrollment(
         patient.id,
         'Deactivated from dashboard',
-        'system' // TODO: Replace with actual user ID
+        userId
       );
       
       toast({
