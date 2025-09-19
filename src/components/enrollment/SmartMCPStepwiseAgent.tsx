@@ -411,7 +411,7 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
                   onSubmit={handleNext}
                   initialData={collectedData}
                   sectionType="provider"
-                  autoTriggerConfirmation={false}
+                  autoTriggerConfirmation={true}
                 />
                 {currentStepIndex > 0 && (
                   <Button 

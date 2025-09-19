@@ -228,7 +228,7 @@ export const EnhancedProviderFormWithConfirmation: React.FC<EnhancedProviderForm
       )}
 
       {/* Enhanced Provider Form */}
-      {(verificationMethod === 'manual' || isVerificationComplete) && (
+      {(verificationMethod === 'manual' || isVerificationComplete || (!verificationMethod && !showConfirmationModal)) && (
         <div className="space-y-4">
           {isVerificationComplete && (
             <Alert>
