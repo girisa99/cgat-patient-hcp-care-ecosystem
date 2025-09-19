@@ -11,6 +11,7 @@ import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalA
 import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoiceManager';
 import { ContextAwareEnrollmentOptions } from '@/components/context-aware-enrollment/ContextAwareEnrollmentOptions';
 import { ConversationalEnrollmentSelector } from '@/components/universal-enrollment/ConversationalEnrollmentSelector';
+import { EnrollmentDashboardDataManager, EnrollmentDashboardItem } from '@/components/enrollment/EnrollmentDashboardDataManager';
 
 import { 
   UserPlus, 
@@ -28,7 +29,16 @@ import {
   Settings,
   Mic,
   RefreshCw,
-  Bot
+  Bot,
+  Edit,
+  Trash2,
+  PauseCircle,
+  PlayCircle,
+  AlertTriangle,
+  Shield,
+  FileCheck,
+  CreditCard,
+  User
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
@@ -37,45 +47,72 @@ import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SmartMCPStepwiseAgent } from '@/components/enrollment/SmartMCPStepwiseAgent';
 import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '@/hooks/use-toast';
 
 interface PatientOnboarding {
   id: string;
-  patientName: string;
+  name: string;
   email: string;
   phone: string;
-  status: 'initiated' | 'in_progress' | 'documents_pending' | 'completed' | 'on_hold';
+  status: 'initiated' | 'in_progress' | 'docs_pending' | 'completed' | 'on_hold';
   progress: number;
   startDate: string;
   completedSteps: number;
   totalSteps: number;
   assignedStaff: string;
-  priority: 'low' | 'medium' | 'high';
+  priority: 'high' | 'medium' | 'low';
   nextStep: string;
+  
+  // Enrollment-specific fields
+  enrollmentSource?: 'mcp' | 'conversational_ai' | 'ai_structure' | 'online_form' | 'diagnostic_test';
+  providerName?: string | null;
+  providerNpi?: string | null;
+  treatmentCenter?: string | null;
+  treatmentCenterNpi?: string | null;
+  providerNpiVerified?: boolean;
+  treatmentCenterNpiVerified?: boolean;
+  missingDocuments?: string[];
+  documentCount?: number;
+  requiredDocumentCount?: number;
+  insuranceVerified?: boolean;
+  insuranceCardUploaded?: boolean;
+  consentCompleted?: boolean;
+  consentMethod?: string | null;
+  consentPending?: boolean;
+  isActive?: boolean;
+  deactivatedBy?: string | null;
+  deactivationReason?: string | null;
 }
 
-export default function PatientOnboarding() {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState<string>('all');
-  
-  // Live data state - moved inside component
-  const [liveOnboarding, setLiveOnboarding] = useState<PatientOnboarding[]>([]);
-  const [liveStats, setLiveStats] = useState({
+interface OnboardingStats {
+  total: number;
+  initiated: number;
+  inProgress: number;
+  completed: number;
+  documentsPending: number;
+  onHold: number;
+}
+
+const PatientOnboarding: React.FC = () => {
+  const [currentView, setCurrentView] = useState<'dashboard' | 'new_enrollment' | 'mcp_stepwise'>('dashboard');
+  const [patients, setPatients] = useState<PatientOnboarding[]>([]);
+  const [onboardingStats, setOnboardingStats] = useState<OnboardingStats>({
     total: 0,
     initiated: 0,
     inProgress: 0,
-    documentsPending: 0,
     completed: 0,
+    documentsPending: 0,
     onHold: 0
   });
-  const [isLoading, setIsLoading] = useState(true);
-  const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow' | 'templates' | 'agent_config' | 'voice_channels'>('list');
-  const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
-  const [selectedAgentType, setSelectedAgentType] = useState<string>('');
-  const [channelData, setChannelData] = useState<Record<string, any>>({});
-  const [showAIAgentSelector, setShowAIAgentSelector] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'all' | 'initiated' | 'in_progress' | 'docs_pending' | 'completed' | 'on_hold'>('all');
   const [showEnrollmentOptions, setShowEnrollmentOptions] = useState(false);
-  // State for controlling popups  
-  const [hasAutoLaunchedAI, setHasAutoLaunchedAI] = useState(false);
+  const [showAIAgentSelector, setShowAIAgentSelector] = useState(false);
+  const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
+  
+  const location = useLocation();
+  const { toast } = useToast();
 
   // Load live data from database
   useEffect(() => {
@@ -86,117 +123,67 @@ export default function PatientOnboarding() {
     try {
       setIsLoading(true);
       
-      // Fetch enrollments only (no nested selects to avoid schema mismatch)
-      const { data: enrollments, error: enrollmentsError } = await supabase
-        .from('patient_enrollments')
-        .select(`id, enrollment_status, current_section, progress_percentage, created_at, updated_at, completed_at`)
-        .order('created_at', { ascending: false })
-        .limit(50);
+      // Use the new enrollment dashboard data manager
+      const [enrollmentData, stats] = await Promise.all([
+        EnrollmentDashboardDataManager.fetchEnrollmentData(),
+        EnrollmentDashboardDataManager.fetchEnrollmentStats()
+      ]);
+      
+      // Transform to PatientOnboarding interface format
+      const transformedData: PatientOnboarding[] = enrollmentData.map(enrollment => ({
+        id: enrollment.id,
+        name: enrollment.patientName,
+        email: enrollment.patientEmail,
+        phone: enrollment.patientPhone,
+        status: enrollment.status,
+        priority: enrollment.priority,
+        progress: enrollment.progressPercentage,
+        completedSteps: Math.floor(enrollment.progressPercentage / 20), // Estimate based on 5 main sections
+        totalSteps: 5,
+        startDate: new Date(enrollment.createdAt).toLocaleDateString(),
+        assignedStaff: enrollment.assignedStaff,
+        nextStep: enrollment.nextStep,
+        enrollmentSource: enrollment.enrollmentSource,
+        providerName: enrollment.providerName,
+        providerNpi: enrollment.providerNpi,
+        treatmentCenter: enrollment.treatmentCenter,
+        treatmentCenterNpi: enrollment.treatmentCenterNpi,
+        providerNpiVerified: enrollment.providerNpiVerified,
+        treatmentCenterNpiVerified: enrollment.treatmentCenterNpiVerified,
+        missingDocuments: enrollment.missingDocuments,
+        documentCount: enrollment.documentCount,
+        requiredDocumentCount: enrollment.requiredDocumentCount,
+        insuranceVerified: enrollment.insuranceVerified,
+        insuranceCardUploaded: enrollment.insuranceCardUploaded,
+        consentCompleted: enrollment.consentCompleted,
+        consentMethod: enrollment.consentMethod,
+        consentPending: enrollment.consentPending,
+        isActive: enrollment.isActive,
+        deactivatedBy: enrollment.deactivatedBy,
+        deactivationReason: enrollment.deactivationReason
+      }));
 
-      if (enrollmentsError) {
-        console.error('Error fetching enrollments:', enrollmentsError);
-        return;
-      }
-
-      const ids = (enrollments || []).map((e: any) => e.id);
-
-      // Fetch patient info in bulk
-      const { data: patientInfos } = ids.length
-        ? await supabase
-            .from('enrollment_patient_info')
-            .select('enrollment_id, first_name, last_name, email, phone')
-            .in('enrollment_id', ids)
-        : { data: [], error: null } as any;
-
-      // Fetch provider info in bulk (select all available fields to avoid column errors)
-      const { data: providerInfos } = ids.length
-        ? await supabase
-            .from('enrollment_provider_info')
-            .select('*')
-            .in('enrollment_id', ids)
-        : { data: [], error: null } as any;
-
-      const patientInfoMap = Object.fromEntries((patientInfos || []).map((p: any) => [p.enrollment_id, p]));
-      const providerInfoMap = Object.fromEntries((providerInfos || []).map((p: any) => [p.enrollment_id, p]));
-
-      // Transform data to match interface
-      const transformedData: PatientOnboarding[] = (enrollments || []).map((enrollment: any) => {
-        const patientInfo = patientInfoMap[enrollment.id];
-        const providerInfo = providerInfoMap[enrollment.id];
-        const assignedStaffName = 'Unassigned';
-        
-        // Map enrollment status to UI status
-        const statusMap: Record<string, PatientOnboarding['status']> = {
-          'initiated': 'initiated',
-          'in_progress': 'in_progress',
-          'docs_pending': 'documents_pending',
-          'completed': 'completed',
-          'on_hold': 'on_hold'
-        };
-
-        // Determine priority based on progress and time
-        const daysSinceCreated = Math.floor((Date.now() - new Date(enrollment.created_at).getTime()) / (1000 * 60 * 60 * 24));
-        let priority: PatientOnboarding['priority'] = 'medium';
-        if (enrollment.progress_percentage < 30 && daysSinceCreated > 3) priority = 'high';
-        else if (enrollment.progress_percentage > 70) priority = 'low';
-
-        // Determine next step based on current section
-        const nextStepMap: Record<string, string> = {
-          'consent_management': 'Patient Information Collection',
-          'patient_information': 'Provider & Treatment Details',
-          'provider_treatment': 'Insurance Verification',
-          'insurance_information': 'Clinical Assessment',
-          'clinical_treatment': 'Final Review & Submission',
-          'submit': 'Enrollment Complete'
-        };
-
-        return {
-          id: enrollment.id,
-          patientName: patientInfo ? `${patientInfo.first_name || 'Patient'} ${patientInfo.last_name || 'Name Pending'}` : 'Patient Name Pending',
-          email: patientInfo?.email || 'Email pending',
-          phone: patientInfo?.phone || 'Phone pending',
-          status: statusMap[enrollment.enrollment_status] || 'initiated',
-          progress: enrollment.progress_percentage || 0,
-          startDate: new Date(enrollment.created_at).toLocaleDateString(),
-          completedSteps: Math.floor((enrollment.progress_percentage || 0) / 20), // Assuming 5 steps total
-          totalSteps: 5,
-          assignedStaff: assignedStaffName,
-          priority,
-          nextStep: nextStepMap[enrollment.current_section] || 'Assessment pending'
-        };
-      });
-
-      setLiveOnboarding(transformedData);
-
-      // Calculate stats
-      const stats = {
-        total: transformedData.length,
-        initiated: transformedData.filter(p => p.status === 'initiated').length,
-        inProgress: transformedData.filter(p => p.status === 'in_progress').length,
-        documentsPending: transformedData.filter(p => p.status === 'documents_pending').length,
-        completed: transformedData.filter(p => p.status === 'completed').length,
-        onHold: transformedData.filter(p => p.status === 'on_hold').length,
-      };
-      setLiveStats(stats);
-
+      setPatients(transformedData);
+      setOnboardingStats(stats);
     } catch (error) {
-      console.error('Error loading live data:', error);
-      toast.error('Failed to load enrollment data');
+      console.error('Error loading dashboard data:', error);
+      toast({
+        title: "Error Loading Data",
+        description: "Failed to load enrollment dashboard data. Please try again.",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   // Filter patients based on search and status
-  const filteredOnboarding = liveOnboarding.filter((patient) => {
-    const matchesSearch = patient.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+  const filteredPatients = patients.filter((patient) => {
+    const matchesSearch = patient.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          patient.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus = statusFilter === 'all' || patient.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
-
-  // Calculate stats for display
-  const onboardingStats = liveStats;
 
   // Event handlers
   const handleNewEnrollment = () => {
@@ -207,192 +194,155 @@ export default function PatientOnboarding() {
     setShowAIAgentSelector(true);
   };
 
-  const handleAgentSelect = (moduleType: string) => {
-    console.log('AI Agent selected for module:', moduleType);
-    setShowAIAgentSelector(false);
-  };
-
-  const handleTraditionalSelect = (option: string) => {
-    console.log('Traditional option selected:', option);
-    setShowEnrollmentOptions(false);
-    if (option === 'online-form') {
-      setCurrentView('new_enrollment');
-    }
-  };
-
   const handleViewPatient = (patient: PatientOnboarding) => {
-    console.log('View patient:', patient);
-    // Add view logic here
-    toast.info(`Viewing details for ${patient.patientName}`);
+    setSelectedPatient(patient);
+    // Could open a detailed view modal
   };
 
   const handleContinueWorkflow = (patient: PatientOnboarding) => {
-    setSelectedPatient(patient);
-    setCurrentView('workflow');
+    if (!patient.enrollmentSource) {
+      toast({
+        title: "Cannot Continue",
+        description: "Unable to determine enrollment source. Please start a new enrollment.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    const continueUrl = `/patient-onboarding?enrollment_id=${patient.id}&resume=true`;
+    window.location.href = continueUrl;
   };
 
-  const handleBackToList = () => {
-    setCurrentView('list');
-    setSelectedPatient(null);
-    loadLiveData(); // Refresh data when returning to list
+  const handleEditPatient = (patient: PatientOnboarding) => {
+    // Navigate to edit mode
+    const editUrl = `/patient-onboarding?enrollment_id=${patient.id}&mode=edit`;
+    window.location.href = editUrl;
   };
 
-  const handleViewTemplates = () => {
-    setCurrentView('templates');
+  const handleDeactivatePatient = async (patient: PatientOnboarding) => {
+    try {
+      await EnrollmentDashboardDataManager.deactivateEnrollment(
+        patient.id,
+        'Deactivated from dashboard',
+        'system' // TODO: Replace with actual user ID
+      );
+      
+      toast({
+        title: "Patient Deactivated",
+        description: `${patient.name}'s enrollment has been deactivated.`,
+      });
+      
+      loadLiveData(); // Refresh data
+    } catch (error) {
+      console.error('Error deactivating patient:', error);
+      toast({
+        title: "Error",
+        description: "Failed to deactivate patient enrollment.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleViewAgentConfig = () => {
-    setCurrentView('agent_config');
+  const handleReactivatePatient = async (patient: PatientOnboarding) => {
+    try {
+      await EnrollmentDashboardDataManager.reactivateEnrollment(patient.id);
+      
+      toast({
+        title: "Patient Reactivated",
+        description: `${patient.name}'s enrollment has been reactivated.`,
+      });
+      
+      loadLiveData(); // Refresh data
+    } catch (error) {
+      console.error('Error reactivating patient:', error);
+      toast({
+        title: "Error", 
+        description: "Failed to reactivate patient enrollment.",
+        variant: "destructive"
+      });
+    }
   };
 
-  const handleViewVoiceChannels = () => {
-    setCurrentView('voice_channels');
-  };
+  const getSourceBadge = (source?: string) => {
+    if (!source) return null;
+    
+    const sourceLabels = {
+      'mcp': 'MCP Stepwise',
+      'conversational_ai': 'Conversational AI',
+      'ai_structure': 'AI Structure',
+      'online_form': 'Online Form',
+      'diagnostic_test': 'Diagnostic Test'
+    };
 
-  if (currentView === 'templates') {
     return (
-      <AppLayout title="Enrollment Templates">
-        <div className="flex-1 space-y-6 p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Enrollment Templates & Workflows</h1>
-              <p className="text-muted-foreground">
-                Manage workflow templates with visualization for all agent types
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleBackToList}>
-              Back to List
-            </Button>
-          </div>
-
-          <PatientEnrollmentTemplateManager
-            onTemplateSelect={(template) => {
-              console.log('Template selected:', template);
-              toast.success('Template ready for deployment');
-            }}
-          />
-        </div>
-      </AppLayout>
+      <Badge variant="outline" className="text-xs">
+        {sourceLabels[source as keyof typeof sourceLabels] || source}
+      </Badge>
     );
-  }
+  };
 
-  if (currentView === 'voice_channels') {
-    return (
-      <AppLayout title="Voice Channel Management">
-        <div className="flex-1 space-y-6 p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Voice Channel Management</h1>
-              <p className="text-muted-foreground">
-                Manage voice interactions across all channels with ElevenLabs and Hugging Face integration
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleBackToList}>
-              Back to List
-            </Button>
-          </div>
-
-          <ChannelVoiceManager
-            onChannelData={(channel, data) => {
-              setChannelData(prev => ({
-                ...prev,
-                [channel]: data
-              }));
-              console.log('Channel data updated:', channel, data);
-            }}
-          />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  if (currentView === 'agent_config') {
-    return (
-      <AppLayout title="Agent Configuration">
-        <div className="flex-1 space-y-6 p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Universal Agent Configuration</h1>
-              <p className="text-muted-foreground">
-                Configure conversational AI, audit trails, and deployment for all agent types
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleBackToList}>
-              Back to List
-            </Button>
-          </div>
-
-          <UniversalAgentConfigManager
-            selectedAgentType={selectedAgentType}
-            onAgentTypeSelect={(agentType) => {
-              setSelectedAgentType(agentType.id);
-              console.log('Agent type selected:', agentType);
-            }}
-          />
-        </div>
-      </AppLayout>
-    );
-  }
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed': return <CheckCircle2 className="h-4 w-4 text-green-500" />;
+      case 'in_progress': return <Clock className="h-4 w-4 text-blue-500" />;
+      case 'documents_pending': return <FileText className="h-4 w-4 text-orange-500" />;
+      case 'on_hold': return <AlertCircle className="h-4 w-4 text-red-500" />;
+      default: return <RefreshCw className="h-4 w-4 text-gray-500" />;
+    }
+  };
 
   if (currentView === 'new_enrollment') {
     return (
-      <AppLayout title="New Patient Enrollment">
-        <div className="flex-1 space-y-6 p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">New Patient Enrollment</h1>
-              <p className="text-muted-foreground">
-                Complete the enrollment process for a new patient
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleBackToList}>
-              Back to List
+      <AppLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentView('dashboard')}
+              className="mb-4"
+            >
+              ← Back to Dashboard
             </Button>
           </div>
-
-          <PatientEnrollmentForm
-            channelType="online"
+          <ContextAwareEnrollmentOptions 
+            onAgentSelect={() => {}}
+            onTraditionalSelect={() => {}}
           />
         </div>
       </AppLayout>
     );
   }
 
-  if (currentView === 'workflow' && selectedPatient) {
+  if (currentView === 'mcp_stepwise') {
     return (
-      <AppLayout title="Enrollment Workflow">
-        <div className="flex-1 space-y-6 p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Collaborative Enrollment Workflow</h1>
-              <p className="text-muted-foreground">
-                Patient: {selectedPatient.patientName} (ID: {selectedPatient.id})
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleBackToList}>
-              Back to List
+      <AppLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={() => setCurrentView('dashboard')}
+              className="mb-4"
+            >
+              ← Back to Dashboard
             </Button>
           </div>
-
-          <CollaborativeEnrollmentWorkflow
-            enrollmentId={selectedPatient.id}
-            patientData={{
-              patientName: selectedPatient.patientName,
-              email: selectedPatient.email,
-              phone: selectedPatient.phone
+          <SmartMCPStepwiseAgent
+            patientId="new"
+            moduleType="patient"
+            enrollmentSource="mcp"
+            onComplete={() => {
+              setCurrentView('dashboard');
+              loadLiveData();
             }}
-            submissionMethod="online"
-            currentUserRole="intake_coordinator"
           />
         </div>
       </AppLayout>
     );
   }
 
-  // Main dashboard view with integrated patient management
   return (
-    <AppLayout title="Patient Onboarding & Management">
-      <div className="flex-1 space-y-6 p-4 md:p-6">
+    <AppLayout>
+      <div className="container mx-auto px-4 py-8 space-y-6">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
@@ -498,6 +448,13 @@ export default function PatientOnboarding() {
               All
             </Button>
             <Button
+              variant={statusFilter === 'initiated' ? 'default' : 'outline'}
+              onClick={() => setStatusFilter('initiated')}
+              size="sm"
+            >
+              Initiated
+            </Button>
+            <Button
               variant={statusFilter === 'in_progress' ? 'default' : 'outline'}
               onClick={() => setStatusFilter('in_progress')}
               size="sm"
@@ -505,8 +462,8 @@ export default function PatientOnboarding() {
               In Progress
             </Button>
             <Button
-              variant={statusFilter === 'documents_pending' ? 'default' : 'outline'}
-              onClick={() => setStatusFilter('documents_pending')}
+              variant={statusFilter === 'docs_pending' ? 'default' : 'outline'}
+              onClick={() => setStatusFilter('docs_pending')}
               size="sm"
             >
               Docs Pending
@@ -518,82 +475,201 @@ export default function PatientOnboarding() {
             >
               Completed
             </Button>
+            <Button
+              variant={statusFilter === 'on_hold' ? 'default' : 'outline'}
+              onClick={() => setStatusFilter('on_hold')}
+              size="sm"
+            >
+              On Hold
+            </Button>
           </div>
         </div>
 
-        {/* Patient List */}
+        {/* Patients List */}
         <Card>
           <CardHeader>
-            <CardTitle>Patient Enrollment Status</CardTitle>
+            <CardTitle>Patient Enrollments</CardTitle>
             <CardDescription>
-              Track and manage patient onboarding progress
+              Manage and track patient enrollment progress
             </CardDescription>
           </CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">Loading enrollment data...</div>
-            ) : filteredOnboarding.length === 0 ? (
+            ) : filteredPatients.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No patients found matching the current filters.
+                No patient enrollments found. Start a new enrollment to get started.
               </div>
             ) : (
               <div className="space-y-4">
-                {filteredOnboarding.map((patient) => (
-                  <div
-                    key={patient.id}
-                    className="flex items-center justify-between rounded-lg border p-4"
-                  >
-                    <div className="flex-1 space-y-1">
-                      <div className="flex items-center space-x-2">
-                        <h3 className="font-semibold">{patient.patientName}</h3>
-                        <Badge variant={
-                          patient.priority === 'high' ? 'destructive' :
-                          patient.priority === 'medium' ? 'default' : 'secondary'
-                        }>
-                          {patient.priority}
-                        </Badge>
-                        <Badge variant={
-                          patient.status === 'completed' ? 'default' :
-                          patient.status === 'in_progress' ? 'secondary' :
-                          patient.status === 'documents_pending' ? 'outline' :
-                          'destructive'
-                        }>
-                          {patient.status.replace('_', ' ')}
-                        </Badge>
+                {filteredPatients.map((patient) => (
+                  <div key={patient.id} className="p-6 border rounded-lg bg-card">
+                    <div className="flex items-start justify-between">
+                      <div className="space-y-2 flex-1">
+                        <div className="flex items-center space-x-3">
+                          <h3 className="text-lg font-semibold">{patient.name}</h3>
+                          {getSourceBadge(patient.enrollmentSource)}
+                          <Badge variant={
+                            patient.priority === 'high' ? 'destructive' :
+                            patient.priority === 'medium' ? 'default' : 'secondary'
+                          }>
+                            {patient.priority}
+                          </Badge>
+                          <Badge variant={
+                            patient.status === 'completed' ? 'default' :
+                            patient.status === 'in_progress' ? 'secondary' :
+                            patient.status === 'docs_pending' ? 'outline' :
+                            'destructive'
+                          }>
+                            {getStatusIcon(patient.status)}
+                            {patient.status.replace('_', ' ')}
+                          </Badge>
+                          {!patient.isActive && (
+                            <Badge variant="destructive">
+                              <PauseCircle className="h-3 w-3 mr-1" />
+                              Deactivated
+                            </Badge>
+                          )}
+                        </div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-sm">
+                          <div>
+                            <span className="font-medium">Contact:</span>
+                            <div className="text-muted-foreground">
+                              <div>{patient.email}</div>
+                              <div>{patient.phone}</div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <span className="font-medium">Provider:</span>
+                            <div className="text-muted-foreground">
+                              <div>{patient.providerName || 'Not assigned'}</div>
+                              <div className="flex items-center space-x-1">
+                                <span>NPI: {patient.providerNpi || 'Pending'}</span>
+                                {patient.providerNpiVerified && <Shield className="h-3 w-3 text-green-500" />}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <span className="font-medium">Treatment Center:</span>
+                            <div className="text-muted-foreground">
+                              <div>{patient.treatmentCenter || 'Not assigned'}</div>
+                              <div className="flex items-center space-x-1">
+                                <span>NPI: {patient.treatmentCenterNpi || 'Pending'}</span>
+                                {patient.treatmentCenterNpiVerified && <Shield className="h-3 w-3 text-green-500" />}
+                              </div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <span className="font-medium">Status Summary:</span>
+                            <div className="flex items-center space-x-2 text-muted-foreground">
+                              <div className="flex items-center space-x-1">
+                                <FileCheck className="h-3 w-3" />
+                                <span>{patient.documentCount || 0}/{patient.requiredDocumentCount || 0}</span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <CreditCard className="h-3 w-3" />
+                                <span className={patient.insuranceVerified ? 'text-green-500' : ''}>
+                                  {patient.insuranceVerified ? 'Verified' : 'Pending'}
+                                </span>
+                              </div>
+                              <div className="flex items-center space-x-1">
+                                <User className="h-3 w-3" />
+                                <span className={patient.consentCompleted ? 'text-green-500' : patient.consentPending ? 'text-orange-500' : ''}>
+                                  {patient.consentCompleted ? 'Complete' : patient.consentPending ? 'Pending' : 'Not Started'}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center space-x-2">
+                          <Progress value={patient.progress} className="flex-1" />
+                          <span className="text-sm text-muted-foreground">
+                            {patient.completedSteps}/{patient.totalSteps} steps ({patient.progress}%)
+                          </span>
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                          <div className="text-sm text-muted-foreground">
+                            <span>Started: {patient.startDate}</span>
+                            <span className="mx-2">•</span>
+                            <span>Assigned: {patient.assignedStaff}</span>
+                            {patient.deactivationReason && (
+                              <>
+                                <span className="mx-2">•</span>
+                                <span className="text-red-600">Reason: {patient.deactivationReason}</span>
+                              </>
+                            )}
+                          </div>
+                          <p className="text-sm">
+                            <strong>Next:</strong> {patient.nextStep}
+                          </p>
+                        </div>
+
+                        {patient.missingDocuments && patient.missingDocuments.length > 0 && (
+                          <div className="mt-2 p-2 bg-orange-50 border border-orange-200 rounded">
+                            <div className="flex items-center space-x-1 text-orange-800">
+                              <AlertTriangle className="h-4 w-4" />
+                              <span className="font-medium">Missing Documents:</span>
+                              <span>{patient.missingDocuments.join(', ')}</span>
+                            </div>
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
-                        <span>{patient.email}</span>
-                        <span>{patient.phone}</span>
-                        <span>Started: {patient.startDate}</span>
-                        <span>Assigned: {patient.assignedStaff}</span>
+                      
+                      <div className="flex flex-col space-y-2 ml-4">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleViewPatient(patient)}
+                        >
+                          <Eye className="mr-2 h-4 w-4" />
+                          View
+                        </Button>
+                        
+                        {patient.isActive ? (
+                          <>
+                            <Button
+                              size="sm"
+                              onClick={() => handleContinueWorkflow(patient)}
+                            >
+                              <Workflow className="mr-2 h-4 w-4" />
+                              Continue
+                            </Button>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleEditPatient(patient)}
+                            >
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </Button>
+                            
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleDeactivatePatient(patient)}
+                            >
+                              <PauseCircle className="mr-2 h-4 w-4" />
+                              Deactivate
+                            </Button>
+                          </>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleReactivatePatient(patient)}
+                          >
+                            <PlayCircle className="mr-2 h-4 w-4" />
+                            Reactivate
+                          </Button>
+                        )}
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Progress value={patient.progress} className="flex-1" />
-                        <span className="text-sm text-muted-foreground">
-                          {patient.completedSteps}/{patient.totalSteps} steps ({patient.progress}%)
-                        </span>
-                      </div>
-                      <p className="text-sm">
-                        <strong>Next:</strong> {patient.nextStep}
-                      </p>
-                    </div>
-                    
-                    <div className="flex space-x-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleViewPatient(patient)}
-                      >
-                        <Eye className="mr-2 h-4 w-4" />
-                        View
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleContinueWorkflow(patient)}
-                      >
-                        <Workflow className="mr-2 h-4 w-4" />
-                        Continue
-                      </Button>
                     </div>
                   </div>
                 ))}
@@ -601,6 +677,48 @@ export default function PatientOnboarding() {
             )}
           </CardContent>
         </Card>
+
+        {/* Bottom Management Tools */}
+        <div className="grid gap-6 md:grid-cols-3">
+          {/* Template Management */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5" />
+                Manage Templates
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <PatientEnrollmentTemplateManager />
+            </CardContent>
+          </Card>
+          
+          {/* Agent Configuration */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Agent Configuration
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UniversalAgentConfigManager />
+            </CardContent>
+          </Card>
+          
+          {/* Voice Channels */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Mic className="h-5 w-5" />
+                Voice Channels
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <ChannelVoiceManager />
+            </CardContent>
+          </Card>
+        </div>
 
         {/* Method Selection Dialog */}
         <Dialog open={showEnrollmentOptions} onOpenChange={setShowEnrollmentOptions}>
@@ -616,21 +734,32 @@ export default function PatientOnboarding() {
                 }}
                 className="h-20 text-left flex-col items-start"
               >
-                <div className="font-semibold">Standard Form Enrollment</div>
-                <div className="text-sm opacity-90">Complete enrollment using our standard form interface</div>
+                <div className="font-semibold">Online Form</div>
+                <div className="text-sm opacity-90">Complete enrollment using online forms</div>
               </Button>
               
               <Button 
                 variant="outline"
                 onClick={() => {
                   setShowEnrollmentOptions(false);
-                  // Navigate to AI-powered enrollment
-                  window.location.href = '/patient-onboarding?method=ai';
+                  window.location.href = '/patient-onboarding?method=pdf';
                 }}
                 className="h-20 text-left flex-col items-start"
               >
-                <div className="font-semibold">AI-Powered Enrollment</div>
-                <div className="text-sm opacity-90">Let our AI guide the enrollment process</div>
+                <div className="font-semibold">Fill & Submit PDF</div>
+                <div className="text-sm opacity-90">Upload and complete PDF forms</div>
+              </Button>
+              
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  setShowEnrollmentOptions(false);
+                  window.location.href = '/patient-onboarding?method=ocr';
+                }}
+                className="h-20 text-left flex-col items-start"
+              >
+                <div className="font-semibold">Fill & Fax (OCR)</div>
+                <div className="text-sm opacity-90">Scan and process documents with OCR</div>
               </Button>
             </div>
           </DialogContent>
@@ -652,38 +781,9 @@ export default function PatientOnboarding() {
             />
           </DialogContent>
         </Dialog>
-
-        {/* Enrollment Options Modal */}
-        <Dialog open={showEnrollmentOptions} onOpenChange={setShowEnrollmentOptions}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Enrollment Options</DialogTitle>
-            </DialogHeader>
-            <ContextAwareEnrollmentOptions
-              onAgentSelect={handleAgentSelect}
-              onTraditionalSelect={handleTraditionalSelect}
-            />
-          </DialogContent>
-        </Dialog>
-
-        {/* Additional Action Buttons */}
-        <div className="flex justify-between">
-          <div className="flex space-x-2">
-            <Button variant="outline" onClick={handleViewTemplates}>
-              <FileText className="mr-2 h-4 w-4" />
-              Manage Templates
-            </Button>
-            <Button variant="outline" onClick={handleViewAgentConfig}>
-              <Settings className="mr-2 h-4 w-4" />
-              Agent Configuration
-            </Button>
-            <Button variant="outline" onClick={handleViewVoiceChannels}>
-              <Mic className="mr-2 h-4 w-4" />
-              Voice Channels
-            </Button>
-          </div>
-        </div>
       </div>
     </AppLayout>
   );
-}
+};
+
+export default PatientOnboarding;
