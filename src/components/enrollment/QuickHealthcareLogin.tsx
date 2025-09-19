@@ -12,13 +12,15 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Shield, UserPlus, LogIn, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useMasterAuth } from "@/hooks/useMasterAuth";
 
 export const QuickHealthcareLogin: React.FC = () => {
   const [email, setEmail] = useState('healthcare.provider@test.com');
   const [password, setPassword] = useState('Healthcare123!');
   const [isLoading, setIsLoading] = useState(false);
   const [authStatus, setAuthStatus] = useState<string>('');
-  const { toast } = useToast();
+const { toast } = useToast();
+  const { refreshAuth } = useMasterAuth();
 
   const createAndLoginHealthcareProvider = async () => {
     setIsLoading(true);
@@ -78,10 +80,9 @@ export const QuickHealthcareLogin: React.FC = () => {
           description: `Logged in as healthcare provider: ${session.user.email}`,
         });
 
-        // Refresh the page to update auth context
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Refresh auth context without full reload
+        await refreshAuth();
+        setAuthStatus('Session updated. You can continue.');
       } else {
         setAuthStatus('Login appeared successful but no session found');
       }
@@ -123,10 +124,9 @@ export const QuickHealthcareLogin: React.FC = () => {
           description: `Welcome back, ${data.user.email}!`,
         });
         
-        // Refresh to update auth context
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
+        // Refresh auth context without full reload
+        await refreshAuth();
+        setAuthStatus('Session updated. You can continue.');
       }
     } catch (error: any) {
       setAuthStatus(`Error: ${error.message}`);
