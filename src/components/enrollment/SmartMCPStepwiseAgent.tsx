@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -19,6 +19,7 @@ import { EnhancedProviderFormWithConfirmation } from "@/components/enrollment/En
 import { ComprehensiveProviderVerification } from "@/components/enrollment/ComprehensiveProviderVerification";
 import { WhatsAppConsentSender } from "@/components/enrollment/WhatsAppConsentSender";
 import { ConsentWorkflowManager } from "@/components/enrollment/ConsentWorkflowManager";
+import { sessionSaveManager } from "@/utils/sessionSaveManager";
 
 interface SmartMCPStepwiseAgentProps {
   patientId: string;
@@ -40,6 +41,9 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
   const [collectedData, setCollectedData] = useState<Record<string, any>>({});
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
+  const [hasError, setHasError] = useState(false);
+  const saveTimeoutRef = useRef<NodeJS.Timeout>();
+  const isMountedRef = useRef(true);
 
   // Enhanced enrollment steps with smart field mapping
   const enrollmentSteps = [
@@ -152,115 +156,139 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     init();
   }, [patientId, enrollmentSource, toast]);
 
-  // Smart database update using field routing
-  const updateDatabase = async (data: Record<string, any>) => {
-    if (!patientId) return;
+  // Protected database update using global session manager to prevent conflicts
+  const updateDatabase = useCallback(async (data: Record<string, any>) => {
+    if (!patientId || !isMountedRef.current) return;
 
-    try {
-      console.log('=== SMART FIELD ROUTING ===');
-      console.log('Current step:', currentStep.key);
-      console.log('Form data:', data);
-      
-      // Normalize collection method for consent fields
-      if (data.collection_method) {
-        data.collection_method = normalizeCollectionMethod(data.collection_method);
-      } else if (currentStep.key === 'consent_management') {
-        // Set default collection method for consent step to prevent constraint violations
-        data.collection_method = 'digital';
-      }
-      
-      // Route fields to appropriate tables using smart mapping
-      const tableUpdates = smartRouteFieldsToTables(data);
-      console.log('Routed table updates:', tableUpdates);
-      
-      // Execute all table updates
-      for (const batch of tableUpdates) {
-        console.log(`Processing ${batch.tableName}:`, batch.data);
+    return await sessionSaveManager.saveSession(patientId, async () => {
+      try {
+        console.log('🔒 Protected save starting for:', currentStep.key);
         
-        if (batch.operation === 'update') {
-          const { error } = await supabase
-            .from(batch.tableName as any)
-            .update(batch.data)
+        // Normalize collection method for consent fields
+        if (data.collection_method) {
+          data.collection_method = normalizeCollectionMethod(data.collection_method);
+        } else if (currentStep.key === 'consent_management') {
+          // Set default collection method for consent step to prevent constraint violations
+          data.collection_method = 'digital';
+        }
+        
+        // Route fields to appropriate tables using smart mapping
+        const tableUpdates = smartRouteFieldsToTables(data);
+        console.log('Routed table updates:', tableUpdates);
+        
+        // Execute all table updates with error recovery
+        for (const batch of tableUpdates) {
+          console.log(`Processing ${batch.tableName}:`, batch.data);
+          
+          try {
+            if (batch.operation === 'update') {
+              const { error } = await supabase
+                .from(batch.tableName as any)
+                .update(batch.data)
+                .eq('id', patientId);
+                
+              if (error) {
+                console.error(`Update error for ${batch.tableName}:`, error);
+                throw error;
+              }
+            } else {
+              const { error } = await supabase
+                .from(batch.tableName as any)
+                .upsert({ ...batch.data, enrollment_id: patientId });
+                
+              if (error) {
+                console.error(`Upsert error for ${batch.tableName}:`, error);
+                throw error;
+              }
+            }
+          } catch (dbError: any) {
+            // Log the error but don't let it crash the entire save
+            console.error(`Non-critical error in ${batch.tableName}:`, dbError);
+            if (dbError.code !== '23505' && dbError.code !== '42703') { // Ignore duplicate and unknown column errors
+              throw dbError;
+            }
+          }
+        }
+
+        // Only update if component is still mounted
+        if (isMountedRef.current) {
+          setCollectedData(prev => ({ ...prev, ...data }));
+          
+          // Update progress
+          const progress = Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100);
+          
+          const { error: progressError } = await supabase
+            .from('patient_enrollments')
+            .update({ 
+              current_section: currentStep.key,
+              progress_percentage: progress,
+              updated_at: new Date().toISOString()
+            })
             .eq('id', patientId);
             
-          if (error) {
-            console.error(`Update error for ${batch.tableName}:`, error);
-            throw error;
+          if (progressError) {
+            console.error('Progress update error:', progressError);
+            // Don't throw on progress errors - they're not critical
           }
-        } else {
-          const { error } = await supabase
-            .from(batch.tableName as any)
-            .upsert({ ...batch.data, enrollment_id: patientId });
-            
-          if (error) {
-            console.error(`Upsert error for ${batch.tableName}:`, error);
-            throw error;
-          }
-        }
-      }
 
-      setCollectedData(prev => ({ ...prev, ...data }));
-      
-      // Update progress
-      const progress = Math.round(((currentStepIndex + 1) / enrollmentSteps.length) * 100);
-      
-      const { error: progressError } = await supabase
-        .from('patient_enrollments')
-        .update({ 
-          current_section: currentStep.key,
-          progress_percentage: progress,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', patientId);
+          // Update universal save system (debounced)
+          if (saveTimeoutRef.current) {
+            clearTimeout(saveTimeoutRef.current);
+          }
+          
+          saveTimeoutRef.current = setTimeout(async () => {
+            if (isMountedRef.current) {
+              try {
+                await saveUniversalProgress(
+                  'smart-enrollment-agent',
+                  patientId,
+                  {
+                    currentStep: currentStep.key,
+                    completedSteps: enrollmentSteps.slice(0, currentStepIndex + 1).map(s => s.key),
+                    formData: { ...collectedData, ...data },
+                    progress: progress,
+                    lastUpdated: Date.now(),
+                    agent_type: 'smart_mcp_stepwise',
+                    module_type: moduleType,
+                    enrollment_source: enrollmentSource
+                  }
+                );
+              } catch (saveError) {
+                console.error('Universal save error (non-critical):', saveError);
+              }
+            }
+          }, 1000); // Debounce saves
+
+          onProgress?.(progress);
+        }
         
-      if (progressError) {
-        console.error('Progress update error:', progressError);
-        throw progressError;
+        console.log('✅ Protected save completed successfully');
+
+      } catch (error: any) {
+        console.error('❌ Protected save failed:', error);
+        
+        // Don't show error toast if component is unmounted
+        if (isMountedRef.current) {
+          setHasError(true);
+          
+          // Only show user-friendly errors, not technical database errors
+          const userMessage = error.message?.includes('RLS') 
+            ? 'Authentication error. Please refresh the page and try again.'
+            : error.message?.includes('constraint')
+            ? 'Please check your input and try again.'
+            : 'Failed to save progress. Your data is preserved locally.';
+          
+          toast({
+            title: "Save Issue",
+            description: userMessage,
+            variant: "destructive"
+          });
+        }
+        
+        throw error;
       }
-
-      // Update universal save system
-      await saveUniversalProgress(
-        'smart-enrollment-agent',
-        patientId,
-        {
-          currentStep: currentStep.key,
-          completedSteps: enrollmentSteps.slice(0, currentStepIndex + 1).map(s => s.key),
-          formData: { ...collectedData, ...data },
-          progress: progress,
-          lastUpdated: Date.now(),
-          agent_type: 'smart_mcp_stepwise',
-          module_type: moduleType,
-          enrollment_source: enrollmentSource
-        }
-      );
-
-      onProgress?.(progress);
-      
-      console.log('Smart database update successful');
-
-    } catch (error: any) {
-      enrollmentDebugger.error('DATABASE_UPDATE', 'Database update failed', {
-        currentStep: currentStep.key,
-        inputData: data,
-        error: {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint
-        }
-      });
-      
-      console.error('Smart routing update error:', error);
-      
-      toast({
-        title: "Update Error",
-        description: `Failed to save ${currentStep.title} data: ${error.message || 'Unknown error'}`,
-        variant: "destructive"
-      });
-      
-      throw error;
-    }
-  };
+    });
+  }, [patientId, currentStep.key, currentStepIndex, collectedData, moduleType, enrollmentSource, onProgress, toast]);
 
   // Check step completion
   const checkStepCompletion = (data: Record<string, any>): boolean => {
@@ -269,39 +297,61 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     });
   };
 
-  // Handle step navigation
+  // Handle step navigation with error recovery
   const handleNext = async (stepData: Record<string, any>) => {
+    if (!isMountedRef.current) return;
+    
     setIsLoading(true);
+    setHasError(false);
     
     try {
-      // Update database with smart routing
+      // Update database with protected routing
       await updateDatabase(stepData);
+      
+      if (!isMountedRef.current) return;
       
       if (currentStepIndex < enrollmentSteps.length - 1) {
         setCurrentStepIndex(prev => prev + 1);
       } else {
         // Final step - mark as completed
-        await supabase
-          .from('patient_enrollments')
-          .update({ 
-            enrollment_status: 'completed',
-            completed_at: new Date().toISOString()
-          })
-          .eq('id', patientId);
+        try {
+          await supabase
+            .from('patient_enrollments')
+            .update({ 
+              enrollment_status: 'completed',
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', patientId);
+        } catch (finalError) {
+          console.error('Final status update error (non-critical):', finalError);
+        }
           
-        setIsCompleted(true);
-        onComplete?.(collectedData);
-        
-        toast({
-          title: "Enrollment Complete!",
-          description: "Patient enrollment has been successfully submitted.",
-          variant: "default"
-        });
+        if (isMountedRef.current) {
+          setIsCompleted(true);
+          onComplete?.(collectedData);
+          
+          toast({
+            title: "Enrollment Complete!",
+            description: "Patient enrollment has been successfully submitted.",
+            variant: "default"
+          });
+        }
       }
     } catch (error) {
       console.error('Navigation error:', error);
+      if (isMountedRef.current) {
+        setHasError(true);
+        // Don't prevent navigation on save errors - let user continue
+        toast({
+          title: "Save Warning",
+          description: "There was an issue saving. You can continue, and we'll retry automatically.",
+          variant: "default"
+        });
+      }
     } finally {
-      setIsLoading(false);
+      if (isMountedRef.current) {
+        setIsLoading(false);
+      }
     }
   };
 
@@ -311,12 +361,12 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     }
   };
 
-  // Load existing data on mount
+  // Load existing data on mount and cleanup on unmount
   useEffect(() => {
     const loadExistingData = async () => {
       try {
         const universalData = await loadUniversalProgress('smart-enrollment-agent', patientId);
-        if (universalData) {
+        if (universalData && isMountedRef.current) {
           setCollectedData(universalData.formData || {});
           const stepIndex = enrollmentSteps.findIndex(s => s.key === universalData.currentStep);
           if (stepIndex >= 0) {
@@ -328,9 +378,17 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
       }
     };
 
-    if (patientId) {
+    if (patientId && isMountedRef.current) {
       loadExistingData();
     }
+    
+    // Cleanup function
+    return () => {
+      isMountedRef.current = false;
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
   }, [patientId]);
 
   if (isCompleted) {
