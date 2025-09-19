@@ -410,7 +410,22 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
               <div className="space-y-6">
                 <ComprehensiveProviderVerification
                   onSubmit={handleNext}
-                  initialData={collectedData}
+                  initialData={{
+                    ...collectedData,
+                    // Auto-populate from consent step data
+                    provider_name: collectedData.provider_name,
+                    provider_npi: collectedData.provider_npi,
+                    treatment_center: collectedData.treatment_center,
+                    treatment_center_npi: collectedData.treatment_center_npi,
+                    // Add cross-tab validation metadata
+                    _crossTabSource: 'consent_management',
+                    _consentStepData: {
+                      provider_name: collectedData.provider_name,
+                      provider_npi: collectedData.provider_npi,
+                      treatment_center: collectedData.treatment_center,
+                      treatment_center_npi: collectedData.treatment_center_npi
+                    }
+                  }}
                   sectionType="provider"
                   autoTriggerConfirmation={true}
                 />

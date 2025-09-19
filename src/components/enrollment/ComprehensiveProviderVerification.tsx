@@ -22,6 +22,7 @@ import {
 import { EnhancedNPIVerificationForm } from './EnhancedNPIVerificationForm';
 import { EnhancedProviderForm } from './EnhancedProviderForm';
 import { NPIVerificationConfirmationModal } from './NPIVerificationConfirmationModal';
+import { CrossTabValidationHelper } from './CrossTabValidationHelper';
 
 interface ComprehensiveProviderVerificationProps {
   onSubmit: (data: any) => void;
@@ -41,6 +42,14 @@ export const ComprehensiveProviderVerification: React.FC<ComprehensiveProviderVe
   const [isVerificationComplete, setIsVerificationComplete] = useState(false);
   const [providerData, setProviderData] = useState(initialData);
   const [activeVerificationTab, setActiveVerificationTab] = useState('provider');
+  
+  // Extract consent step data for cross-tab validation
+  const consentData = initialData?._consentStepData || {
+    provider_name: initialData?.provider_name,
+    provider_npi: initialData?.provider_npi,
+    treatment_center: initialData?.treatment_center,
+    treatment_center_npi: initialData?.treatment_center_npi
+  };
 
   // Show confirmation modal on component mount if auto-trigger is enabled
   useEffect(() => {
@@ -83,8 +92,32 @@ export const ComprehensiveProviderVerification: React.FC<ComprehensiveProviderVe
     setShowConfirmationModal(true);
   };
 
+  const handleCrossTabSync = (field: string, value: string) => {
+    setProviderData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleCrossTabValidate = () => {
+    // Trigger validation logic
+    console.log('Cross-tab validation requested');
+  };
+
   return (
     <div className="space-y-6">
+      {/* Cross-Tab Validation Helper */}
+      {consentData && Object.keys(consentData).some(key => consentData[key as keyof typeof consentData]) && (
+        <div className="mb-6">
+          <CrossTabValidationHelper
+            consentData={consentData}
+            currentData={providerData}
+            onSync={handleCrossTabSync}
+            onValidate={handleCrossTabValidate}
+          />
+        </div>
+      )}
+
       {/* Method Selection Status */}
       {verificationMethod && (
         <Card>

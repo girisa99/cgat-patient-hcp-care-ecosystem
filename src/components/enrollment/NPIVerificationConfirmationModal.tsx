@@ -209,17 +209,78 @@ export const NPIVerificationConfirmationModal: React.FC<NPIVerificationConfirmat
           </div>
 
           {selectedMethod === 'verify' && (
-            <div className="p-3 border rounded-lg bg-blue-50 dark:bg-blue-950">
-              <div className="flex items-start gap-2">
-                <AlertTriangle className="h-4 w-4 text-blue-600 mt-0.5" />
-                <div className="text-sm">
-                  <p className="font-medium text-blue-800 dark:text-blue-200">What happens with NPI verification:</p>
-                  <ul className="mt-1 space-y-1 text-blue-700 dark:text-blue-300">
-                    <li>• NPI number is verified against national registry</li>
-                    <li>• Provider details are automatically extracted and filled</li>
-                    <li>• License and credential status is checked</li>
-                    <li>• You can still edit any auto-filled information</li>
-                  </ul>
+            <div className="space-y-4">
+              <div className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+                <div className="flex items-start gap-3">
+                  <ShieldCheck className="h-5 w-5 text-blue-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
+                      🤖 NPI Verification Agent Process:
+                    </p>
+                    
+                    <div className="space-y-3">
+                      <div>
+                        <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Phase 1: NPI Registry Verification</p>
+                        <ul className="space-y-1 text-blue-600 dark:text-blue-400 text-xs ml-2">
+                          <li>• ✅ Validate NPI format (10-digit)</li>
+                          <li>• ✅ Query NPPES national registry</li>
+                          <li>• ✅ Verify provider is active status</li>
+                          <li>• ✅ Extract official provider name</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Phase 2: Credential & License Verification</p>
+                        <ul className="space-y-1 text-blue-600 dark:text-blue-400 text-xs ml-2">
+                          <li>• 🔍 Extract specialty/taxonomy codes</li>
+                          <li>• 🔍 Verify education & certification status</li>
+                          <li>• 🔍 Check license numbers & expiration</li>
+                          <li>• 🔍 Validate DEA numbers (if applicable)</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Phase 3: Practice & Facility Information</p>
+                        <ul className="space-y-1 text-blue-600 dark:text-blue-400 text-xs ml-2">
+                          <li>• 🏥 Auto-fill practice addresses</li>
+                          <li>• 🏥 Extract phone & contact details</li>
+                          <li>• 🏥 Identify facility affiliations</li>
+                          <li>• 🏥 Cross-reference treatment center data</li>
+                        </ul>
+                      </div>
+                      
+                      <div>
+                        <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Phase 4: Database Integration & Validation</p>
+                        <ul className="space-y-1 text-blue-600 dark:text-blue-400 text-xs ml-2">
+                          <li>• 💾 Generate UUID-based records</li>
+                          <li>• 💾 Apply PostgreSQL constraints</li>
+                          <li>• 💾 Cross-validate with consent data</li>
+                          <li>• 💾 Enable manual override options</li>
+                        </ul>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-3 p-2 bg-white/50 dark:bg-black/20 rounded border-l-2 border-green-500">
+                      <p className="text-xs font-medium text-green-700 dark:text-green-300">
+                        ⏱️ Estimated Time: 30-60 seconds for verification + auto-fill
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="p-3 border rounded-lg bg-amber-50 dark:bg-amber-950/20">
+                <div className="flex items-start gap-2">
+                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
+                  <div className="text-sm">
+                    <p className="font-medium text-amber-800 dark:text-amber-200">Cross-Tab Data Consistency:</p>
+                    <ul className="mt-1 space-y-1 text-amber-700 dark:text-amber-300">
+                      <li>• Will use provider info from consent step as starting point</li>
+                      <li>• Verifies consistency between consent and provider sections</li>
+                      <li>• Updates both consent and provider records simultaneously</li>
+                      <li>• Flags any discrepancies for your review</li>
+                    </ul>
+                  </div>
                 </div>
               </div>
             </div>
