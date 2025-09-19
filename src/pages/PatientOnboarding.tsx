@@ -42,7 +42,7 @@ import {
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SmartMCPStepwiseAgent } from '@/components/enrollment/SmartMCPStepwiseAgent';
@@ -94,7 +94,7 @@ interface OnboardingStats {
 }
 
 const PatientOnboarding: React.FC = () => {
-  const [currentView, setCurrentView] = useState<'dashboard' | 'new_enrollment' | 'mcp_stepwise'>('dashboard');
+  const [currentView, setCurrentView] = useState<'dashboard' | 'new_enrollment' | 'mcp_stepwise' | 'workspace'>('dashboard');
   const [patients, setPatients] = useState<PatientOnboarding[]>([]);
   const [onboardingStats, setOnboardingStats] = useState<OnboardingStats>({
     total: 0,
@@ -110,8 +110,10 @@ const PatientOnboarding: React.FC = () => {
   const [showEnrollmentOptions, setShowEnrollmentOptions] = useState(false);
   const [showAIAgentSelector, setShowAIAgentSelector] = useState(false);
   const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
+  const [selectedEnrollmentId, setSelectedEnrollmentId] = useState<string | null>(null);
   
   const location = useLocation();
+  const navigate = useNavigate();
   const { toast } = useToast();
 
   // Load live data from database
@@ -210,25 +212,22 @@ const PatientOnboarding: React.FC = () => {
     }
 
     // Build continue URL based on enrollment source
-    const baseUrl = window.location.origin;
-    const sourceMap = {
-      'mcp': '/enrollment-workspace?method=mcp',
-      'conversational_ai': '/enrollment-workspace?method=conversational',
-      'ai_structure': '/enrollment-workspace?method=structured',
-      'online_form': '/enrollment-workspace?method=form',
-      'diagnostic_test': '/enrollment-workspace?method=diagnostic'
+    const methodMap = {
+      mcp: 'mcp',
+      conversational_ai: 'conversational',
+      ai_structure: 'structured',
+      online_form: 'form',
+      diagnostic_test: 'diagnostic',
     } as const;
-    
-    const url = sourceMap[patient.enrollmentSource] || '/enrollment-workspace';
-    const continueUrl = `${baseUrl}${url}&enrollment_id=${patient.id}&resume=true`;
-    
-    window.location.href = continueUrl;
+
+    const method = methodMap[patient.enrollmentSource] || 'form';
+    const params = new URLSearchParams({ enrollment_id: patient.id, resume: 'true', method });
+    navigate(`/enrollment-workspace?${params.toString()}`);
   };
 
   const handleEditPatient = (patient: PatientOnboarding) => {
-    // Navigate to edit mode
-    const editUrl = `/enrollment-workspace?enrollment_id=${patient.id}&mode=edit`;
-    window.location.href = editUrl;
+    const params = new URLSearchParams({ enrollment_id: patient.id, mode: 'edit' });
+    navigate(`/enrollment-workspace?${params.toString()}`);
   };
 
   const handleDeactivatePatient = async (patient: PatientOnboarding) => {
