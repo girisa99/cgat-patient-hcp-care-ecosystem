@@ -344,6 +344,36 @@ const getPriorityColor = (priority: PatientOnboarding['priority']) => {
     );
   }
 
+  if (currentView === 'new_enrollment') {
+    return (
+      <AppLayout title="New Patient Enrollment">
+        <div className="flex-1 space-y-6 p-4 md:p-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">New Patient Enrollment</h1>
+              <p className="text-muted-foreground">
+                Complete the enrollment process for a new patient
+              </p>
+            </div>
+            <Button variant="outline" onClick={handleBackToList}>
+              Back to List
+            </Button>
+          </div>
+
+          <PatientEnrollmentForm
+            onSubmit={(data) => {
+              console.log('Enrollment completed:', data);
+              toast.success('Patient enrollment completed successfully!');
+              handleBackToList();
+              loadLiveData(); // Refresh the list
+            }}
+            channelType="online"
+          />
+        </div>
+      </AppLayout>
+    );
+  }
+
   if (currentView === 'workflow' && selectedPatient) {
     return (
       <AppLayout title="Enrollment Workflow">
