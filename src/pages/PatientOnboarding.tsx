@@ -119,13 +119,16 @@ const PatientOnboarding: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { toast } = useToast();
-
+ 
   // Workspace and preference state
   const [showPreferencePrompt, setShowPreferencePrompt] = useState(false);
   const [pendingAction, setPendingAction] = useState<'continue' | 'edit' | null>(null);
   const [workspaceMethod, setWorkspaceMethod] = useState<'mcp' | 'conversational' | 'structured' | null>(null);
-
-
+ 
+  // Management dialogs state
+  const [showTemplatesDialog, setShowTemplatesDialog] = useState(false);
+  const [showAgentConfigDialog, setShowAgentConfigDialog] = useState(false);
+  const [showVoiceChannelsDialog, setShowVoiceChannelsDialog] = useState(false);
   // Load live data from database
   useEffect(() => {
     loadLiveData();
@@ -791,8 +794,9 @@ const PatientOnboarding: React.FC = () => {
                 Manage Templates
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <PatientEnrollmentTemplateManager />
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">Choose from pre-configured enrollment workflows for different agent types.</p>
+              <Button size="sm" onClick={() => setShowTemplatesDialog(true)}>Open Templates</Button>
             </CardContent>
           </Card>
           
@@ -804,8 +808,9 @@ const PatientOnboarding: React.FC = () => {
                 Agent Configuration
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <UniversalAgentConfigManager />
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">Configure conversational AI, audit trails, and deployment options.</p>
+              <Button size="sm" onClick={() => setShowAgentConfigDialog(true)}>Open Agent Config</Button>
             </CardContent>
           </Card>
           
@@ -817,11 +822,40 @@ const PatientOnboarding: React.FC = () => {
                 Voice Channels
               </CardTitle>
             </CardHeader>
-            <CardContent>
-              <ChannelVoiceManager />
+            <CardContent className="space-y-3">
+              <p className="text-sm text-muted-foreground">Manage voice interactions and channels for your agents.</p>
+              <Button size="sm" onClick={() => setShowVoiceChannelsDialog(true)}>Open Voice Manager</Button>
             </CardContent>
           </Card>
         </div>
+
+        {/* Managers as Dialogs */}
+        <Dialog open={showTemplatesDialog} onOpenChange={setShowTemplatesDialog}>
+          <DialogContent className="max-w-5xl">
+            <DialogHeader>
+              <DialogTitle>Manage Templates</DialogTitle>
+            </DialogHeader>
+            <PatientEnrollmentTemplateManager />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showAgentConfigDialog} onOpenChange={setShowAgentConfigDialog}>
+          <DialogContent className="max-w-5xl">
+            <DialogHeader>
+              <DialogTitle>Agent Configuration</DialogTitle>
+            </DialogHeader>
+            <UniversalAgentConfigManager />
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={showVoiceChannelsDialog} onOpenChange={setShowVoiceChannelsDialog}>
+          <DialogContent className="max-w-4xl">
+            <DialogHeader>
+              <DialogTitle>Voice Channels</DialogTitle>
+            </DialogHeader>
+            <ChannelVoiceManager />
+          </DialogContent>
+        </Dialog>
 
         {/* Patient View Dialog */}
         <Dialog open={!!selectedPatient} onOpenChange={(open) => !open && setSelectedPatient(null)}>
