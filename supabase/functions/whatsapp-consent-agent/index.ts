@@ -69,6 +69,10 @@ serve(async (req) => {
         return await createConsentSession(payload, supabase);
       case 'initiate_consent':
         return await initiateConsentProcess(payload, supabase);
+      case 'send_consent_link':
+        return await sendConsentLink(payload, supabase);
+      case 'check_status':
+        return await checkConsentStatus(payload, supabase);
       case 'process_message':
         return await processWhatsAppMessage(payload, supabase);
       case 'handle_voice':
@@ -489,5 +493,87 @@ async function triggerN8nWorkflow(webhookUrl: string, data: any) {
     console.log('n8n workflow triggered successfully');
   } catch (error) {
     console.error('Failed to trigger n8n workflow:', error);
+  }
+}
+
+async function sendConsentLink(payload: any, supabase: any) {
+  const { phone_number, consent_link, patient_name, provider_name, treatment_center, message_template } = payload;
+
+  console.log('Sending consent link via WhatsApp to:', phone_number);
+
+  try {
+    const message = `${message_template.greeting}
+
+${message_template.intro}
+
+${message_template.instruction}
+
+🔗 ${consent_link}
+
+${message_template.footer}
+
+${message_template.compliance_note}`;
+
+    await sendWhatsAppMessage(phone_number, message);
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        message: 'Consent link sent successfully',
+        phone_number,
+        consent_link
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Failed to send consent link:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to send consent link'
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
+  }
+}
+
+async function checkConsentStatus(payload: any, supabase: any) {
+  const { session_id } = payload;
+
+  console.log('Checking consent status for session:', session_id);
+
+  try {
+    const { data: session, error } = await supabase
+      .from('whatsapp_consent_sessions')
+      .select('*')
+      .eq('id', session_id)
+      .single();
+
+    if (error) throw error;
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        status: session.status,
+        session_data: session.session_data,
+        completed_at: session.completed_at
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Failed to check consent status:', error);
+    return new Response(
+      JSON.stringify({ 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to check consent status'
+      }),
+      { 
+        status: 500,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+      }
+    );
   }
 }

@@ -89,12 +89,11 @@ export const WhatsAppConsentSender: React.FC<WhatsAppConsentSenderProps> = ({
       const sessionId = session?.data?.id || `temp-${Date.now()}`;
       setConsentSessionId(sessionId);
 
-      // Send WhatsApp message with consent link
+      // Send consent link via WhatsApp using the enhanced function
       const { data: messageResult, error: messageError } = await supabase.functions.invoke('whatsapp-consent-agent', {
         body: {
           action: 'send_consent_link',
           phone_number: phoneNumber,
-          session_id: sessionId,
           consent_link: link,
           patient_name: patientName,
           provider_name: providerName,
@@ -103,7 +102,6 @@ export const WhatsAppConsentSender: React.FC<WhatsAppConsentSenderProps> = ({
             greeting: `Hello ${patientName || 'there'}!`,
             intro: `This is a secure consent request from ${providerName} at ${treatmentCenter}.`,
             instruction: 'Please click the link below to review and provide your consent for treatment:',
-            link: link,
             footer: 'This link is secure and will expire in 24 hours. If you have any questions, please contact your healthcare provider.',
             compliance_note: 'By clicking this link, you acknowledge that you understand this is for medical consent purposes.'
           }
@@ -112,10 +110,9 @@ export const WhatsAppConsentSender: React.FC<WhatsAppConsentSenderProps> = ({
 
       if (messageError) {
         console.error('Message sending error:', messageError);
-        // Don't throw here - the session was created successfully
         toast({
           title: "Consent Link Generated",
-          description: "WhatsApp service unavailable, but consent link has been created. Please share manually if needed.",
+          description: "WhatsApp service may be unavailable, but consent link has been created. Please share manually if needed.",
           variant: "default"
         });
       } else {

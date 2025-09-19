@@ -30,6 +30,7 @@ import {
 import AppLayout from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
 import { useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PatientOnboarding {
   id: string;
@@ -46,50 +47,160 @@ interface PatientOnboarding {
   nextStep: string;
 }
 
-const mockOnboarding: PatientOnboarding[] = [
-  {
-    id: 'ONB-001',
-    patientName: 'Sarah Wilson',
-    email: 'sarah.wilson@email.com',
-    phone: '(555) 123-4567',
-    status: 'in_progress',
-    progress: 60,
-    startDate: '2024-01-15',
-    completedSteps: 3,
-    totalSteps: 5,
-    assignedStaff: 'Dr. Smith',
-    priority: 'high',
-    nextStep: 'Medical History Review'
-  },
-  {
-    id: 'ONB-002',
-    patientName: 'Michael Chen',
-    email: 'michael.chen@email.com',
-    phone: '(555) 234-5678',
-    status: 'documents_pending',
-    progress: 40,
-    startDate: '2024-01-14',
-    completedSteps: 2,
-    totalSteps: 5,
-    assignedStaff: 'Nurse Johnson',
-    priority: 'medium',
-    nextStep: 'Insurance Verification'
-  },
-  {
-    id: 'ONB-003',
-    patientName: 'Emma Rodriguez',
-    email: 'emma.rodriguez@email.com',
-    phone: '(555) 345-6789',
-    status: 'completed',
-    progress: 100,
-    startDate: '2024-01-10',
-    completedSteps: 5,
-    totalSteps: 5,
-    assignedStaff: 'Dr. Anderson',
-    priority: 'low',
-    nextStep: 'Treatment Planning'
-  }
-];
+// Live data state
+const [liveOnboarding, setLiveOnboarding] = useState<PatientOnboarding[]>([]);
+const [liveStats, setLiveStats] = useState({
+  total: 0,
+  initiated: 0,
+  inProgress: 0,
+  documentsPending: 0,
+  completed: 0,
+  onHold: 0
+});
+const [isLoading, setIsLoading] = useState(true);
+
+export default function PatientOnboarding() {
+  const [searchTerm, setSearchTerm] = React.useState('');
+  const [statusFilter, setStatusFilter] = React.useState<string>('all');
+  const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow' | 'templates' | 'agent_config' | 'voice_channels'>('list');
+  const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
+  const [selectedAgentType, setSelectedAgentType] = useState<string>('');
+  const [channelData, setChannelData] = useState<Record<string, any>>({});
+  const location = useLocation();
+
+  // Load live data from database
+  useEffect(() => {
+    loadLiveData();
+  }, []);
+
+  const loadLiveData = async () => {
+    try {
+      setIsLoading(true);
+      
+      // Fetch patient enrollments with related data
+      const { data: enrollments, error } = await supabase
+        .from('patient_enrollments')
+        .select(`
+          id,
+          enrollment_status,
+          current_section,
+          progress_percentage,
+          created_at,
+          updated_at,
+          completed_at,
+          enrollment_patient_info (
+            first_name,
+            last_name,
+            email,
+            phone
+          ),
+          enrollment_provider_info (
+            specialty
+          ),
+          profiles (
+            first_name,
+            last_name
+          )
+        `)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      if (error) {
+        console.error('Error fetching enrollments:', error);
+        return;
+      }
+
+      // Transform data to match interface
+      const transformedData: PatientOnboarding[] = (enrollments || []).map((enrollment: any) => {
+        const patientInfo = enrollment.enrollment_patient_info;
+        const providerInfo = enrollment.enrollment_provider_info;
+        const assignedStaff = enrollment.profiles;
+        
+        // Map enrollment status to UI status
+        const statusMap: Record<string, PatientOnboarding['status']> = {
+          'initiated': 'initiated',
+          'in_progress': 'in_progress',
+          'docs_pending': 'documents_pending',
+          'completed': 'completed',
+          'on_hold': 'on_hold'
+        };
+
+        // Determine priority based on progress and time
+        const daysSinceCreated = Math.floor((Date.now() - new Date(enrollment.created_at).getTime()) / (1000 * 60 * 60 * 24));
+        let priority: PatientOnboarding['priority'] = 'medium';
+        if (enrollment.progress_percentage < 30 && daysSinceCreated > 3) priority = 'high';
+        else if (enrollment.progress_percentage > 70) priority = 'low';
+
+        // Determine next step based on current section
+        const nextStepMap: Record<string, string> = {
+          'consent_management': 'Patient Information Collection',
+          'patient_information': 'Provider & Treatment Details',
+          'provider_treatment': 'Insurance Verification',
+          'insurance_information': 'Clinical Assessment',
+          'clinical_treatment': 'Final Review & Submission',
+          'submit': 'Enrollment Complete'
+        };
+
+        return {
+          id: enrollment.id,
+          patientName: patientInfo ? `${patientInfo.first_name || ''} ${patientInfo.last_name || ''}`.trim() : 'Patient Name Pending',
+          email: patientInfo?.email || 'Email pending',
+          phone: patientInfo?.phone || 'Phone pending',
+          status: statusMap[enrollment.enrollment_status] || 'initiated',
+          progress: enrollment.progress_percentage || 0,
+          startDate: new Date(enrollment.created_at).toLocaleDateString(),
+          completedSteps: Math.floor((enrollment.progress_percentage || 0) / 20), // Assuming 5 total steps
+          totalSteps: 5,
+          assignedStaff: assignedStaff ? `${assignedStaff.first_name || ''} ${assignedStaff.last_name || ''}`.trim() : 'Unassigned',
+          priority,
+          nextStep: nextStepMap[enrollment.current_section] || 'Assessment pending'
+        };
+      });
+
+      setLiveOnboarding(transformedData);
+
+      // Calculate live stats
+      const stats = {
+        total: transformedData.length,
+        initiated: transformedData.filter(o => o.status === 'initiated').length,
+        inProgress: transformedData.filter(o => o.status === 'in_progress').length,
+        documentsPending: transformedData.filter(o => o.status === 'documents_pending').length,
+        completed: transformedData.filter(o => o.status === 'completed').length,
+        onHold: transformedData.filter(o => o.status === 'on_hold').length
+      };
+      setLiveStats(stats);
+
+    } catch (error) {
+      console.error('Failed to load live enrollment data:', error);
+      toast.error('Failed to load enrollment data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Auto-open New Enrollment based on navigation intent
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(location.search);
+      const flow = params.get('flow');
+      const start = (location.state as any)?.startEnrollment;
+      if (flow === 'ai' || flow === 'form' || start) {
+        setCurrentView('new_enrollment');
+      }
+    } catch (e) {
+      console.warn('Failed to parse navigation state/query for PatientOnboarding');
+    }
+  }, [location]);
+
+  const filteredOnboarding = liveOnboarding.filter(item => {
+    const matchesSearch = item.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         item.id.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
+    return matchesSearch && matchesStatus;
+  });
+
+  const onboardingStats = liveStats;
 
 const getStatusIcon = (status: PatientOnboarding['status']) => {
   switch (status) {
@@ -119,46 +230,6 @@ const getPriorityColor = (priority: PatientOnboarding['priority']) => {
   }
 };
 
-export default function PatientOnboarding() {
-  const [searchTerm, setSearchTerm] = React.useState('');
-  const [statusFilter, setStatusFilter] = React.useState<string>('all');
-  const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow' | 'templates' | 'agent_config' | 'voice_channels'>('list');
-  const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
-  const [selectedAgentType, setSelectedAgentType] = useState<string>('');
-  const [channelData, setChannelData] = useState<Record<string, any>>({});
-  const location = useLocation();
-
-  // Auto-open New Enrollment based on navigation intent
-  useEffect(() => {
-    try {
-      const params = new URLSearchParams(location.search);
-      const flow = params.get('flow');
-      const start = (location.state as any)?.startEnrollment;
-      if (flow === 'ai' || flow === 'form' || start) {
-        setCurrentView('new_enrollment');
-      }
-    } catch (e) {
-      console.warn('Failed to parse navigation state/query for PatientOnboarding');
-    }
-  }, [location]);
-
-  const filteredOnboarding = mockOnboarding.filter(item => {
-    const matchesSearch = item.patientName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         item.id.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    return matchesSearch && matchesStatus;
-  });
-
-  const onboardingStats = {
-    total: mockOnboarding.length,
-    initiated: mockOnboarding.filter(o => o.status === 'initiated').length,
-    inProgress: mockOnboarding.filter(o => o.status === 'in_progress').length,
-    documentsPending: mockOnboarding.filter(o => o.status === 'documents_pending').length,
-    completed: mockOnboarding.filter(o => o.status === 'completed').length,
-    onHold: mockOnboarding.filter(o => o.status === 'on_hold').length
-  };
-
   // Handle view switching
   const handleNewEnrollment = () => {
     setCurrentView('new_enrollment');
@@ -173,6 +244,7 @@ export default function PatientOnboarding() {
   const handleBackToList = () => {
     setCurrentView('list');
     setSelectedPatient(null);
+    loadLiveData(); // Refresh data when returning to list
   };
 
   const handleViewTemplates = () => {
@@ -186,42 +258,6 @@ export default function PatientOnboarding() {
   const handleViewVoiceChannels = () => {
     setCurrentView('voice_channels');
   };
-
-  // Render different views based on current state
-  if (currentView === 'new_enrollment') {
-    return (
-      <AppLayout title="Patient Enrollment">
-        <div className="flex-1 space-y-6 p-4 md:p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">Patient Enrollment</h1>
-              <p className="text-muted-foreground">
-                Choose your preferred enrollment method
-              </p>
-            </div>
-            <Button variant="outline" onClick={handleBackToList}>
-              Back to List
-            </Button>
-          </div>
-
-          <ContextAwareEnrollmentOptions
-            onAgentSelect={(moduleType) => {
-              console.log('🚀 AI Agent selected for module:', moduleType);
-              toast.success('AI Assistant Configuration Loaded', {
-                description: 'Template dashboard, workflows, NPI verification, and credentialing agents are ready'
-              });
-            }}
-            onTraditionalSelect={(option) => {
-              console.log('📝 Traditional option selected:', option);
-              toast.success(`${option} enrollment workflow initiated`, {
-                description: 'Choose from online form, PDF download, or fax submission with OCR'
-              });
-            }}
-          />
-        </div>
-      </AppLayout>
-    );
-  }
 
   if (currentView === 'templates') {
     return (
@@ -517,10 +553,32 @@ export default function PatientOnboarding() {
           ))}
         </div>
 
-        {filteredOnboarding.length === 0 && (
+        {filteredOnboarding.length === 0 && !isLoading && (
           <Card>
             <CardContent className="text-center py-8">
-              <p className="text-muted-foreground">No patient onboarding records found.</p>
+              <p className="text-muted-foreground">
+                {searchTerm || statusFilter !== 'all' 
+                  ? 'No patient onboarding records match your filters.' 
+                  : 'No patient onboarding records found. Create your first enrollment to get started.'
+                }
+              </p>
+              {!searchTerm && statusFilter === 'all' && (
+                <Button className="mt-4" onClick={handleNewEnrollment}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Start New Enrollment
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {isLoading && (
+          <Card>
+            <CardContent className="text-center py-8">
+              <div className="flex items-center justify-center gap-2">
+                <Clock className="h-4 w-4 animate-spin" />
+                <p className="text-muted-foreground">Loading enrollment data...</p>
+              </div>
             </CardContent>
           </Card>
         )}

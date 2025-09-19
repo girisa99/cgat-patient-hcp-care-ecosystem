@@ -15,6 +15,8 @@ import { enrollmentDebugger } from "@/utils/enrollmentDebugger";
 import { EnrollmentSystemTester } from "@/components/enrollment/EnrollmentSystemTester";
 import { TreatmentCenterSelector } from "@/components/enrollment/TreatmentCenterSelector";
 import { ProviderSelector } from "@/components/enrollment/ProviderSelector";
+import { EnhancedProviderFormWithConfirmation } from "@/components/enrollment/EnhancedProviderFormWithConfirmation";
+import { WhatsAppConsentSender } from "@/components/enrollment/WhatsAppConsentSender";
 
 interface SmartMCPStepwiseAgentProps {
   patientId: string;
@@ -67,11 +69,11 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     {
       key: 'provider_treatment',
       title: 'Provider & Treatment',
-      description: 'Healthcare provider and treatment details',
+      description: 'Healthcare provider credentials with NPI verification',
       icon: <UserCheck className="w-5 h-5" />,
       requiredFields: ['provider_specialty', 'treatment_type'],
       fields: [
-        'provider_specialty', 'provider_phone', 'provider_email',
+        'provider_npi', 'provider_name', 'provider_specialty', 'provider_phone', 'provider_email',
         'treatment_type', 'treatment_frequency', 'treatment_start_date'
       ]
     },
@@ -402,18 +404,84 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
               </AlertDescription>
             </Alert>
 
-            <EnrollmentForm
-              step={currentStep.key}
-              fields={currentStep.fields}
-              requiredFields={currentStep.requiredFields}
-              initialData={collectedData}
-              onSubmit={handleNext}
-              onPrevious={currentStepIndex > 0 ? handlePrevious : undefined}
-              isLoading={isLoading}
-              checkCompletion={checkStepCompletion}
-              enableConditionalFields={true}
-              sectionKey={currentStep.key}
-            />
+            {/* Show enhanced provider form with NPI verification for provider step */}
+            {currentStep.key === 'provider_treatment' ? (
+              <div className="space-y-6">
+                <EnhancedProviderFormWithConfirmation
+                  onSubmit={handleNext}
+                  initialData={collectedData}
+                  sectionType="provider"
+                  autoTriggerConfirmation={false}
+                />
+                {currentStepIndex > 0 && (
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={handlePrevious}
+                    disabled={isLoading}
+                  >
+                    Previous
+                  </Button>
+                )}
+              </div>
+            ) : currentStep.key === 'consent_management' ? (
+              <div className="space-y-6">
+                <EnrollmentForm
+                  step={currentStep.key}
+                  fields={currentStep.fields}
+                  requiredFields={currentStep.requiredFields}
+                  initialData={collectedData}
+                  onSubmit={handleNext}
+                  onPrevious={currentStepIndex > 0 ? handlePrevious : undefined}
+                  isLoading={isLoading}
+                  checkCompletion={checkStepCompletion}
+                  enableConditionalFields={true}
+                  sectionKey={currentStep.key}
+                />
+                
+                {/* Show consent delivery options when collection method is selected */}
+                {collectedData.collection_method && ['whatsapp', 'sms', 'email', 'voice'].includes(collectedData.collection_method) && (
+                  <div className="mt-6 p-4 border border-blue-200 rounded-lg bg-blue-50/30">
+                    <h4 className="font-medium mb-3">Send Consent Link</h4>
+                    <WhatsAppConsentSender
+                      patientPhone={collectedData.patient_phone}
+                      patientName={`${collectedData.patient_first_name || ''} ${collectedData.patient_last_name || ''}`.trim()}
+                      providerName={collectedData.provider_name}
+                      treatmentCenter={collectedData.treatment_center}
+                      enrollmentId={patientId}
+                      onConsentSent={(sessionId) => {
+                        console.log('Consent sent, session:', sessionId);
+                        toast({
+                          title: "Consent Link Sent",
+                          description: "Patient will receive consent instructions via their preferred method.",
+                        });
+                      }}
+                      onConsentComplete={(data) => {
+                        console.log('Consent completed:', data);
+                        setCollectedData(prev => ({ ...prev, consent_completed: true }));
+                        toast({
+                          title: "Consent Completed",
+                          description: "Patient has successfully provided consent.",
+                        });
+                      }}
+                    />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <EnrollmentForm
+                step={currentStep.key}
+                fields={currentStep.fields}
+                requiredFields={currentStep.requiredFields}
+                initialData={collectedData}
+                onSubmit={handleNext}
+                onPrevious={currentStepIndex > 0 ? handlePrevious : undefined}
+                isLoading={isLoading}
+                checkCompletion={checkStepCompletion}
+                enableConditionalFields={true}
+                sectionKey={currentStep.key}
+              />
+            )}
           </CardContent>
         </Card>
 
