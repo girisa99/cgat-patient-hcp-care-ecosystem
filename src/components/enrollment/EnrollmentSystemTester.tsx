@@ -25,6 +25,7 @@ import { EnrollmentDebugPanel } from './EnrollmentDebugPanel';
 import { enrollmentDebugger } from '@/utils/enrollmentDebugger';
 import { getEnhancedFieldStatistics } from '@/utils/extendedConditionalFields';
 import { AuthStatusChecker } from './AuthStatusChecker';
+import { QuickHealthcareLogin } from './QuickHealthcareLogin';
 
 export const EnrollmentSystemTester: React.FC = () => {
   const [testPatientId, setTestPatientId] = useState('');
@@ -100,7 +101,10 @@ export const EnrollmentSystemTester: React.FC = () => {
             </TabsList>
 
             <TabsContent value="auth-check">
-              <AuthStatusChecker />
+              <div className="space-y-4">
+                <AuthStatusChecker />
+                <QuickHealthcareLogin />
+              </div>
             </TabsContent>
 
             <TabsContent value="live-test" className="space-y-4">
