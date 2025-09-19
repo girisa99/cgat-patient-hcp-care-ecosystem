@@ -788,3 +788,5 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     </Card>
   );
 };
+
+export default EnhancedNPIVerificationForm;
