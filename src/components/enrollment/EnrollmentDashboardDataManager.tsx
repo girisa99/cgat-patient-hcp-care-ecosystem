@@ -68,8 +68,10 @@ export class EnrollmentDashboardDataManager {
    */
   static async fetchEnrollmentData(): Promise<EnrollmentDashboardItem[]> {
     try {
+      // Use untyped client locally to avoid TS deep instantiation issues
+      const sb: any = supabase;
       // Fetch main enrollment records
-      const enrollmentsResponse = await supabase
+      const enrollmentsResponse = await sb
         .from('patient_enrollments')
         .select(`
           id, enrollment_status, current_section, progress_percentage, 
@@ -89,7 +91,7 @@ export class EnrollmentDashboardDataManager {
       const enrollmentIds = enrollments.map(e => e.id);
 
       // Fetch related data with explicit typing
-      const patientInfosResponse = await supabase
+      const patientInfosResponse = await sb
         .from('enrollment_patient_info')
         .select('enrollment_id, first_name, last_name, email, phone')
         .in('enrollment_id', enrollmentIds);
@@ -274,14 +276,14 @@ export class EnrollmentDashboardDataManager {
   static getEnrollmentContinueUrl(enrollment: EnrollmentDashboardItem): string {
     const baseUrl = window.location.origin;
     const sourceMap = {
-      'mcp': '/patient-onboarding?method=mcp',
-      'conversational_ai': '/patient-onboarding?method=conversational',
-      'ai_structure': '/patient-onboarding?method=structured',
-      'online_form': '/patient-onboarding?method=form',
-      'diagnostic_test': '/patient-onboarding?method=diagnostic'
-    };
+      'mcp': '/enrollment-workspace?method=mcp',
+      'conversational_ai': '/enrollment-workspace?method=conversational',
+      'ai_structure': '/enrollment-workspace?method=structured',
+      'online_form': '/enrollment-workspace?method=form',
+      'diagnostic_test': '/enrollment-workspace?method=diagnostic'
+    } as const;
     
-    const url = sourceMap[enrollment.enrollmentSource] || '/patient-onboarding';
+    const url = sourceMap[enrollment.enrollmentSource] || '/enrollment-workspace';
     return `${baseUrl}${url}&enrollment_id=${enrollment.id}&resume=true`;
   }
 

@@ -209,13 +209,13 @@ const PatientOnboarding: React.FC = () => {
       return;
     }
 
-    const continueUrl = `/patient-onboarding?enrollment_id=${patient.id}&resume=true`;
+    const continueUrl = `/enrollment-workspace?enrollment_id=${patient.id}&resume=true`;
     window.location.href = continueUrl;
   };
 
   const handleEditPatient = (patient: PatientOnboarding) => {
     // Navigate to edit mode
-    const editUrl = `/patient-onboarding?enrollment_id=${patient.id}&mode=edit`;
+    const editUrl = `/enrollment-workspace?enrollment_id=${patient.id}&mode=edit`;
     window.location.href = editUrl;
   };
 
@@ -719,6 +719,28 @@ const PatientOnboarding: React.FC = () => {
             </CardContent>
           </Card>
         </div>
+
+        {/* Patient View Dialog */}
+        <Dialog open={!!selectedPatient} onOpenChange={(open) => !open && setSelectedPatient(null)}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Patient Enrollment Details</DialogTitle>
+            </DialogHeader>
+            {selectedPatient && (
+              <div className="space-y-3 text-sm">
+                <div><strong>Name:</strong> {selectedPatient.name}</div>
+                <div><strong>Email:</strong> {selectedPatient.email}</div>
+                <div><strong>Phone:</strong> {selectedPatient.phone}</div>
+                <div><strong>Status:</strong> {selectedPatient.status}</div>
+                <div><strong>Next step:</strong> {selectedPatient.nextStep}</div>
+                <div className="flex gap-2 pt-2">
+                  <Button size="sm" onClick={() => handleContinueWorkflow(selectedPatient)}>Continue</Button>
+                  <Button size="sm" variant="outline" onClick={() => handleEditPatient(selectedPatient)}>Edit</Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
 
         {/* Method Selection Dialog */}
         <Dialog open={showEnrollmentOptions} onOpenChange={setShowEnrollmentOptions}>
