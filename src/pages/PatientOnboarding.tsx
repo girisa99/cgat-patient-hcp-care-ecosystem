@@ -94,15 +94,8 @@ const [currentEnrollmentId, setCurrentEnrollmentId] = useState<string | null>(nu
           created_at,
           updated_at,
           completed_at,
-          enrollment_patient_info (
-            first_name,
-            last_name,
-            email,
-            phone
-          ),
-          enrollment_provider_info (
-            specialty
-          )
+          enrollment_patient_info (*),
+          enrollment_provider_info (*)
         `)
         .order('created_at', { ascending: false })
         .limit(50);
