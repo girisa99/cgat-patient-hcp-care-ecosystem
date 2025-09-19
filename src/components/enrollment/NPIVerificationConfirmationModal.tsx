@@ -69,7 +69,7 @@ export const NPIVerificationConfirmationModal: React.FC<NPIVerificationConfirmat
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-hidden">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <User className="h-5 w-5" />
@@ -77,7 +77,7 @@ export const NPIVerificationConfirmationModal: React.FC<NPIVerificationConfirmat
           </DialogTitle>
         </DialogHeader>
 
-        <div className="space-y-6">
+        <div className="space-y-4 overflow-y-auto max-h-[calc(85vh-140px)] pr-2">
           <p className="text-muted-foreground">
             Choose how you'd like to enter {sectionType} information. Our NPI verification agent can auto-fill most fields to save you time.
           </p>
@@ -209,77 +209,49 @@ export const NPIVerificationConfirmationModal: React.FC<NPIVerificationConfirmat
           </div>
 
           {selectedMethod === 'verify' && (
-            <div className="space-y-4">
-              <div className="p-4 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
-                <div className="flex items-start gap-3">
-                  <ShieldCheck className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div className="space-y-3">
+              <div className="p-3 border rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950">
+                <div className="flex items-start gap-2">
+                  <ShieldCheck className="h-4 w-4 text-blue-600 mt-0.5" />
                   <div className="text-sm">
                     <p className="font-semibold text-blue-800 dark:text-blue-200 mb-2">
-                      🤖 NPI Verification Agent Process:
+                      🤖 NPI Verification Process:
                     </p>
                     
-                    <div className="space-y-3">
+                    <div className="grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Phase 1: NPI Registry Verification</p>
-                        <ul className="space-y-1 text-blue-600 dark:text-blue-400 text-xs ml-2">
-                          <li>• ✅ Validate NPI format (10-digit)</li>
-                          <li>• ✅ Query NPPES national registry</li>
-                          <li>• ✅ Verify provider is active status</li>
-                          <li>• ✅ Extract official provider name</li>
+                        <p className="font-medium text-blue-700 dark:text-blue-300">Phase 1: Registry Check</p>
+                        <ul className="text-blue-600 dark:text-blue-400 space-y-0.5">
+                          <li>• Validate NPI format</li>
+                          <li>• Query NPPES registry</li>
+                          <li>• Verify active status</li>
                         </ul>
                       </div>
-                      
                       <div>
-                        <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Phase 2: Credential & License Verification</p>
-                        <ul className="space-y-1 text-blue-600 dark:text-blue-400 text-xs ml-2">
-                          <li>• 🔍 Extract specialty/taxonomy codes</li>
-                          <li>• 🔍 Verify education & certification status</li>
-                          <li>• 🔍 Check license numbers & expiration</li>
-                          <li>• 🔍 Validate DEA numbers (if applicable)</li>
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Phase 3: Practice & Facility Information</p>
-                        <ul className="space-y-1 text-blue-600 dark:text-blue-400 text-xs ml-2">
-                          <li>• 🏥 Auto-fill practice addresses</li>
-                          <li>• 🏥 Extract phone & contact details</li>
-                          <li>• 🏥 Identify facility affiliations</li>
-                          <li>• 🏥 Cross-reference treatment center data</li>
-                        </ul>
-                      </div>
-                      
-                      <div>
-                        <p className="font-medium text-blue-700 dark:text-blue-300 mb-1">Phase 4: Database Integration & Validation</p>
-                        <ul className="space-y-1 text-blue-600 dark:text-blue-400 text-xs ml-2">
-                          <li>• 💾 Generate UUID-based records</li>
-                          <li>• 💾 Apply PostgreSQL constraints</li>
-                          <li>• 💾 Cross-validate with consent data</li>
-                          <li>• 💾 Enable manual override options</li>
+                        <p className="font-medium text-blue-700 dark:text-blue-300">Phase 2: Auto-Fill</p>
+                        <ul className="text-blue-600 dark:text-blue-400 space-y-0.5">
+                          <li>• Extract provider details</li>
+                          <li>• Fill practice information</li>
+                          <li>• Cross-validate data</li>
                         </ul>
                       </div>
                     </div>
                     
-                    <div className="mt-3 p-2 bg-white/50 dark:bg-black/20 rounded border-l-2 border-green-500">
+                    <div className="mt-2 p-2 bg-white/50 dark:bg-black/20 rounded border-l-2 border-green-500">
                       <p className="text-xs font-medium text-green-700 dark:text-green-300">
-                        ⏱️ Estimated Time: 30-60 seconds for verification + auto-fill
+                        ⏱️ Time: 30-60 seconds • Auto-fills ~30 fields
                       </p>
                     </div>
                   </div>
                 </div>
               </div>
               
-              <div className="p-3 border rounded-lg bg-amber-50 dark:bg-amber-950/20">
+              <div className="p-2 border rounded-lg bg-amber-50 dark:bg-amber-950/20">
                 <div className="flex items-start gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-600 mt-0.5" />
-                  <div className="text-sm">
-                    <p className="font-medium text-amber-800 dark:text-amber-200">Cross-Tab Data Consistency:</p>
-                    <ul className="mt-1 space-y-1 text-amber-700 dark:text-amber-300">
-                      <li>• Will use provider info from consent step as starting point</li>
-                      <li>• Verifies consistency between consent and provider sections</li>
-                      <li>• Updates both consent and provider records simultaneously</li>
-                      <li>• Flags any discrepancies for your review</li>
-                    </ul>
+                  <AlertTriangle className="h-3 w-3 text-amber-600 mt-0.5" />
+                  <div className="text-xs">
+                    <p className="font-medium text-amber-800 dark:text-amber-200">Referral & Treatment Center Integration:</p>
+                    <p className="text-amber-700 dark:text-amber-300">Will capture provider-treatment center associations and referral relationships automatically.</p>
                   </div>
                 </div>
               </div>

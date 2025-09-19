@@ -67,10 +67,13 @@ interface ProviderFormData {
   opioidTreatmentLicense: string;
   specializedTraining: string;
 
-  // Referral Network (+3 fields)
+  // Referral Network (+6 fields)
   referralNetworkId: string;
   preferredReferralPartners: string;
   referralAgreements: string;
+  associatedTreatmentCenters: string;
+  referralSourceProvider: string;
+  referralSourceTreatmentCenter: string;
 }
 
 interface EnhancedProviderFormProps {
@@ -129,6 +132,9 @@ export const EnhancedProviderForm: React.FC<EnhancedProviderFormProps> = ({
     referralNetworkId: '',
     preferredReferralPartners: '',
     referralAgreements: '',
+    associatedTreatmentCenters: '',
+    referralSourceProvider: '',
+    referralSourceTreatmentCenter: '',
     ...initialData
   });
 
@@ -337,7 +343,7 @@ export const EnhancedProviderForm: React.FC<EnhancedProviderFormProps> = ({
                 </div>
                 <Button
                   onClick={handleNPIVerification}
-                  disabled={!formData.npi || isVerifying}
+                  disabled={!formData.npi || formData.npi.length < 10 || isVerifying}
                   className="mt-6"
                 >
                   {isVerifying ? (
@@ -708,6 +714,43 @@ export const EnhancedProviderForm: React.FC<EnhancedProviderFormProps> = ({
                 onChange={(e) => updateFormData('referralAgreements', e.target.value)}
                 placeholder="Active referral agreements"
               />
+            </div>
+
+            <Separator />
+
+            <div className="space-y-4">
+              <h4 className="font-medium text-sm">Referral Source Information</h4>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label htmlFor="referralSourceProvider">Referring Provider</Label>
+                  <Input
+                    id="referralSourceProvider"
+                    value={formData.referralSourceProvider}
+                    onChange={(e) => updateFormData('referralSourceProvider', e.target.value)}
+                    placeholder="Provider making the referral"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="referralSourceTreatmentCenter">Referring Treatment Center</Label>
+                  <Input
+                    id="referralSourceTreatmentCenter"
+                    value={formData.referralSourceTreatmentCenter}
+                    onChange={(e) => updateFormData('referralSourceTreatmentCenter', e.target.value)}
+                    placeholder="Treatment center making referral"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <Label htmlFor="associatedTreatmentCenters">Associated Treatment Centers</Label>
+                <Input
+                  id="associatedTreatmentCenters"
+                  value={formData.associatedTreatmentCenters}
+                  onChange={(e) => updateFormData('associatedTreatmentCenters', e.target.value)}
+                  placeholder="Treatment centers this provider is associated with"
+                />
+              </div>
             </div>
           </TabsContent>
         </Tabs>

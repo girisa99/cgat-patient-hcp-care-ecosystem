@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { useEnrollmentAgent } from '@/hooks/useEnrollmentAgent';
 import { useMasterToast } from '@/hooks/useMasterToast';
+import { useOnboardingDataPrefill } from '@/hooks/useOnboardingDataPrefill';
 
 interface ProviderFormData {
   firstName: string;
@@ -66,7 +67,9 @@ interface ProviderFormData {
   specializedTraining: string;
   referralNetworkId: string;
   preferredReferralPartners: string;
-  referralAgreements: string;
+  associatedTreatmentCenters: string;
+  referralSourceProvider: string;
+  referralSourceTreatmentCenter: string;
   // Verification metadata
   enableNPIVerification?: boolean;
   npiVerified?: boolean;
@@ -93,6 +96,7 @@ export const EnhancedProviderFormWithConfirmation: React.FC<EnhancedProviderForm
 
   const { updateSection, currentSession } = useEnrollmentAgent();
   const { showSuccess, showInfo } = useMasterToast();
+  const { prefillData } = useOnboardingDataPrefill();
 
   // Show confirmation modal on component mount if auto-trigger is enabled
   useEffect(() => {
@@ -109,6 +113,29 @@ export const EnhancedProviderFormWithConfirmation: React.FC<EnhancedProviderForm
     }
 
     setVerificationMethod(choice.method);
+    
+    // If automatic verification is selected, prefill with existing data
+    if (choice.method === 'verify') {
+      // Try to get prefill data from onboarding hook
+      try {
+        if (initialData.firstName && initialData.lastName && prefillData.providers) {
+          // Attempt to find matching provider data
+          const matchingProvider = prefillData.providers.find(p => 
+            p.name.toLowerCase().includes(initialData.firstName.toLowerCase()) &&
+            p.name.toLowerCase().includes(initialData.lastName.toLowerCase())
+          );
+          if (matchingProvider) {
+            setProviderData(prev => ({
+              ...prev,
+              email: matchingProvider.email,
+              phone: matchingProvider.phone
+            }));
+          }
+        }
+      } catch (error) {
+        console.warn('Could not prefill provider data:', error);
+      }
+    }
     
     // Update enrollment session with user preference
     if (currentSession) {
