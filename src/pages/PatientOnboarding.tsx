@@ -116,10 +116,40 @@ const PatientOnboarding: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
 
+  // Workspace and preference state
+  const [showPreferencePrompt, setShowPreferencePrompt] = useState(false);
+  const [pendingAction, setPendingAction] = useState<'continue' | 'edit' | null>(null);
+  const [workspaceMethod, setWorkspaceMethod] = useState<'mcp' | 'conversational' | 'structured' | null>(null);
+
+
   // Load live data from database
   useEffect(() => {
     loadLiveData();
   }, []);
+
+  // Detect query params to open workspace or preference prompt without full reload
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const eid = params.get('enrollment_id');
+    const method = params.get('method');
+    const resume = params.get('resume');
+    const mode = params.get('mode');
+
+    if (eid) {
+      setSelectedEnrollmentId(eid);
+      const found = patients.find(p => p.id === eid);
+      if (found) setSelectedPatient(found);
+    }
+
+    if (method) {
+      const normalized = method === 'conversational' ? 'conversational' : method === 'structured' ? 'structured' : 'mcp';
+      setWorkspaceMethod(normalized);
+      if (resume === 'true' || mode === 'edit') {
+        setCurrentView('workspace');
+      }
+    }
+  }, [location.search, patients]);
+
 
   const loadLiveData = async () => {
     try {
@@ -198,7 +228,14 @@ const PatientOnboarding: React.FC = () => {
 
   const handleViewPatient = (patient: PatientOnboarding) => {
     setSelectedPatient(patient);
-    // Could open a detailed view modal
+    // Open details dialog
+  };
+
+  const openPreferencePrompt = (patient: PatientOnboarding, action: 'continue' | 'edit') => {
+    setSelectedPatient(patient);
+    setSelectedEnrollmentId(patient.id);
+    setPendingAction(action);
+    setShowPreferencePrompt(true);
   };
 
   const handleContinueWorkflow = (patient: PatientOnboarding) => {
@@ -210,24 +247,11 @@ const PatientOnboarding: React.FC = () => {
       });
       return;
     }
-
-    // Build continue URL based on enrollment source
-    const methodMap = {
-      mcp: 'mcp',
-      conversational_ai: 'conversational',
-      ai_structure: 'structured',
-      online_form: 'form',
-      diagnostic_test: 'diagnostic',
-    } as const;
-
-    const method = methodMap[patient.enrollmentSource] || 'form';
-    const params = new URLSearchParams({ enrollment_id: patient.id, resume: 'true', method });
-    navigate(`/enrollment-workspace?${params.toString()}`);
+    openPreferencePrompt(patient, 'continue');
   };
 
   const handleEditPatient = (patient: PatientOnboarding) => {
-    const params = new URLSearchParams({ enrollment_id: patient.id, mode: 'edit' });
-    navigate(`/enrollment-workspace?${params.toString()}`);
+    openPreferencePrompt(patient, 'edit');
   };
 
   const handleDeactivatePatient = async (patient: PatientOnboarding) => {
@@ -359,6 +383,59 @@ const PatientOnboarding: React.FC = () => {
               loadLiveData();
             }}
           />
+        </div>
+      </AppLayout>
+    );
+  }
+
+  // Workspace view for continuing/editing specific enrollment with chosen method
+  if (currentView === 'workspace') {
+    return (
+      <AppLayout>
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-6">
+            <Button
+              variant="outline"
+              onClick={() => { setCurrentView('dashboard'); navigate('/patient-onboarding'); }}
+              className="mb-4"
+            >
+              ← Back to Dashboard
+            </Button>
+          </div>
+
+          {workspaceMethod === 'mcp' && selectedEnrollmentId && (
+            <SmartMCPStepwiseAgent
+              patientId={selectedEnrollmentId}
+              moduleType="patient"
+              enrollmentSource="mcp"
+              onComplete={() => {
+                setCurrentView('dashboard');
+                loadLiveData();
+              }}
+            />
+          )}
+
+          {workspaceMethod === 'structured' && selectedEnrollmentId && (
+            <EnhancedStructuredEnrollmentAgent
+              moduleType="patient"
+              enrollmentId={selectedEnrollmentId}
+              onComplete={() => {
+                setCurrentView('dashboard');
+                loadLiveData();
+              }}
+            />
+          )}
+
+          {workspaceMethod === 'conversational' && selectedEnrollmentId && (
+            <EnhancedFloatingConversationalAgent
+              moduleType="patient"
+              enrollmentId={selectedEnrollmentId}
+              onComplete={() => {
+                setCurrentView('dashboard');
+                loadLiveData();
+              }}
+            />
+          )}
         </div>
       </AppLayout>
     );
