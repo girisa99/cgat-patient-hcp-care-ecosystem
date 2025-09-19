@@ -1,75 +1,61 @@
-/**
- * ENHANCED NPI VERIFICATION FORM
- * Comprehensive provider, treatment center, and referral network verification
- * Follows online form sequence with proper database UUID standards
- */
 import React, { useState, useEffect } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Separator } from "@/components/ui/separator";
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Separator } from '@/components/ui/separator';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   User, 
   Building, 
   Network, 
-  ShieldCheck, 
   CheckCircle2, 
-  AlertCircle, 
-  Loader2,
-  MapPin,
-  Phone,
-  Mail,
+  AlertTriangle, 
   Award,
-  FileText,
-  Clock
+  Loader2,
+  Shield
 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { v4 as uuidv4 } from 'uuid';
 
 interface ProviderData {
-  // Primary Provider Information
+  // Provider Information
   providerName: string;
-  providerType: 'individual' | 'organization';
+  providerType: string;
   npiNumber: string;
-  npiType: '1' | '2'; // Type 1: Individual, Type 2: Organization/Treatment Center
+  taxId: string;
+  specialty: string;
+  licenseNumber: string;
+  licenseState: string;
+  licenseExpiry: string;
+  boardCertification: string;
+  providerStatus: string;
   
   // Treatment Center Information
-  treatmentCenterName: string;
-  treatmentCenterNPI: string;
+  facilityName: string;
   facilityType: string;
-  facilityStatus?: string;
-  facilityLicenseExpiry?: string;
+  facilityNPI: string;
+  facilityAddress: string;
+  facilityCity: string;
+  facilityState: string;
+  facilityZip: string;
+  facilityPhone: string;
+  facilityLicenseNumber: string;
+  facilityLicenseExpiry: string;
+  facilityStatus: string;
   
   // Referral Network Information
   referralNetworkName: string;
-  referralNetworkNPI: string;
-  networkType: string;
-  networkStatus?: string;
-  networkLicenseExpiry?: string;
-  
-  // Contact Information
-  primaryPhone: string;
-  primaryEmail: string;
-  businessAddress: string;
-  city: string;
-  state: string;
-  zipCode: string;
+  referralNetworkType: string;
+  referralNetworkId: string;
   
   // Credentialing Information
   medicalLicenseNumber: string;
-  licenseState: string;
-  licenseExpiry?: string;
   deaNumber: string;
-  deaExpiry?: string;
   taxonomy: string;
-  specialization: string;
   
   // Verification Status
   verificationStatus: 'pending' | 'verified' | 'failed';
@@ -93,53 +79,40 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
   const [verificationProgress, setVerificationProgress] = useState(0);
   const [formData, setFormData] = useState<ProviderData>({
     providerName: '',
-    providerType: 'individual',
+    providerType: '',
     npiNumber: '',
-    npiType: '1',
-    treatmentCenterName: '',
-    treatmentCenterNPI: '',
-    facilityType: '',
-    referralNetworkName: '',
-    referralNetworkNPI: '',
-    networkType: '',
-    primaryPhone: '',
-    primaryEmail: '',
-    businessAddress: '',
-    city: '',
-    state: '',
-    zipCode: '',
-    medicalLicenseNumber: '',
+    taxId: '',
+    specialty: '',
+    licenseNumber: '',
     licenseState: '',
+    licenseExpiry: '',
+    boardCertification: '',
+    providerStatus: 'active',
+    
+    facilityName: '',
+    facilityType: '',
+    facilityNPI: '',
+    facilityAddress: '',
+    facilityCity: '',
+    facilityState: '',
+    facilityZip: '',
+    facilityPhone: '',
+    facilityLicenseNumber: '',
+    facilityLicenseExpiry: '',
+    facilityStatus: 'active',
+    
+    referralNetworkName: '',
+    referralNetworkType: '',
+    referralNetworkId: '',
+    
+    medicalLicenseNumber: '',
     deaNumber: '',
     taxonomy: '',
-    specialization: '',
+    
     verificationStatus: 'pending',
     ...initialData
   });
 
-  const [verificationResults, setVerificationResults] = useState<any>(null);
-
-  useEffect(() => {
-    if (autoTriggerVerification && formData.npiNumber) {
-      handleNPIVerification();
-    }
-  }, [autoTriggerVerification]);
-
-  const validateUUID = (uuid: string): boolean => {
-    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-    return uuidRegex.test(uuid);
-  };
-
-  const generateUUID = (): string => {
-    return uuidv4();
-  };
-
-  const validateNPIFormat = (npi: string): boolean => {
-    // NPI must be exactly 10 digits
-    const npiRegex = /^\d{10}$/;
-    return npiRegex.test(npi);
-  };
-
   const handleInputChange = (field: keyof ProviderData, value: string) => {
     setFormData(prev => ({
       ...prev,
@@ -147,162 +120,11 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     }));
   };
 
-    try {
-      // Step 1: NPI Registry Lookup (20%)
-      setVerificationProgress(20);
-      const npiResponse = await supabase.functions.invoke('verify-npi', {
-        body: { npi: npiValue || formData.npiNumber }
-      });
-
-      if (npiResponse.error) {
-        throw new Error(npiResponse.error.message);
-      }
-
-      const npiData = npiResponse.data;
-      
-      if (!npiData.verified) {
-        throw new Error(npiData.error || 'NPI verification failed');
-      }
-
-      // Step 2: Provider Details Extraction (40%)
-      setVerificationProgress(40);
-      const extractedData = {
-        ...formData,
-        providerName: npiData.name || formData.providerName,
-        providerType: npiData.provider_type?.toLowerCase() === 'individual' ? 'individual' : 'organization' as 'individual' | 'organization',
-        npiType: npiData.provider_type?.toLowerCase() === 'individual' ? '1' : '2' as '1' | '2',
-        primaryPhone: npiData.practice_address?.telephone_number || formData.primaryPhone,
-        businessAddress: npiData.practice_address?.address_1 || formData.businessAddress,
-        city: npiData.practice_address?.city || formData.city,
-        state: npiData.practice_address?.state || formData.state,
-        zipCode: npiData.practice_address?.postal_code || formData.zipCode,
-        taxonomy: npiData.primary_taxonomy?.code || formData.taxonomy,
-        specialization: npiData.primary_taxonomy?.description || formData.specialization,
-        verificationStatus: 'verified' as const,
-        verifiedAt: new Date().toISOString()
-      };
-
-      // Step 3: Database Save with UUID Standards (60%)
-      setVerificationProgress(60);
-      const verificationId = generateUUID();
-      
-      const { error: saveError } = await supabase
-        .from('npi_verification_results')
-        .upsert({
-          npi: npiValue || formData.npiNumber,
-          provider_type: extractedData.providerType,
-          verification_data: npiData,
-          verification_status: 'verified',
-          verified_at: extractedData.verifiedAt,
-          confidence_score: 100
-        });
-
-      if (saveError) {
-        console.error('Database save error:', saveError);
-        // Continue with verification but warn user
-        toast({
-          title: "Warning",
-          description: "Verification successful but data save failed. Please contact support.",
-          variant: "default"
-        });
-      }
-
-      // Step 4: Treatment Center Verification (80%)
-      setVerificationProgress(80);
-      if (extractedData.treatmentCenterNPI && validateNPIFormat(extractedData.treatmentCenterNPI)) {
-        const treatmentCenterResponse = await supabase.functions.invoke('verify-npi', {
-          body: { npi: extractedData.treatmentCenterNPI }
-        });
-
-        if (treatmentCenterResponse.data?.verified) {
-          extractedData.treatmentCenterName = treatmentCenterResponse.data.name || extractedData.treatmentCenterName;
-        }
-      }
-
-      // Step 5: Final Integration (100%)
-      setVerificationProgress(100);
-      
-      setFormData(extractedData);
-      setVerificationResults(npiData);
-
-      toast({
-        title: "Verification Complete",
-        description: "Provider information has been successfully verified and auto-filled",
-        variant: "default"
-      });
-
-      // Call completion callback
-      if (onVerificationComplete) {
-        onVerificationComplete(extractedData);
-      }
-
-    } catch (error: any) {
-      console.error('NPI Verification error:', error);
-      toast({
-        title: "Verification Failed",
-        description: error.message || 'Unable to verify NPI. Please check the number and try again.',
-        variant: "destructive"
-      });
-      
-      setFormData(prev => ({
-        ...prev,
-        verificationStatus: 'failed'
-      }));
-    } finally {
-      setIsVerifying(false);
-    }
-  };
-
-  const handleProviderVerification = () => {
-    handleNPIVerification('provider');
-  };
-  
-  const handleTreatmentCenterVerification = () => {
-    handleNPIVerification('treatment_center');
-  };
-  
-  const handleReferralNetworkVerification = () => {
-    handleNPIVerification('referral_network');
-  };
-
-  const handleInputChange = (field: keyof ProviderData, value: string) => {
-    setFormData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-  };
-
-  // Enhanced verification with new system
-  const handleNPIVerification = async (verificationType: 'provider' | 'treatment_center' | 'referral_network' = 'provider') => {
-    const sectionData = {
-      providerName: formData.providerName,
-      treatmentCenterName: formData.treatmentCenterName,
-      referralNetworkName: formData.referralNetworkName
-    };
-
-    // Validate required data for verification type
-    if (verificationType === 'provider' && !formData.providerName) {
+  const handleVerifyProvider = async () => {
+    if (!formData.providerName || !formData.npiNumber) {
       toast({
         title: "Missing Information",
-        description: "Please enter provider name before verification",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (verificationType === 'treatment_center' && !formData.treatmentCenterName) {
-      toast({
-        title: "Missing Information", 
-        description: "Please enter treatment center name before verification",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (verificationType === 'referral_network' && !formData.referralNetworkName) {
-      toast({
-        title: "Missing Information",
-        description: "Please enter referral network name before verification", 
+        description: "Please enter both provider name and NPI number.",
         variant: "destructive"
       });
       return;
@@ -312,102 +134,158 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     setVerificationProgress(0);
 
     try {
-      const verificationRequest = {
-        verificationType,
-        npi: verificationType === 'provider' ? formData.npiNumber : 
-             verificationType === 'treatment_center' ? formData.treatmentCenterNPI : 
-             formData.referralNetworkNPI,
-        providerType: formData.providerType,
-        sectionData,
-        providerSearch: !formData.npiNumber && verificationType === 'provider' ? {
-          firstName: formData.providerName.split(' ')[0],
-          lastName: formData.providerName.split(' ').slice(1).join(' '),
-          organizationName: formData.providerType === 'organization' ? formData.providerName : undefined
-        } : {
-          organizationName: verificationType === 'treatment_center' ? formData.treatmentCenterName : formData.referralNetworkName
+      // Show progress updates
+      const progressInterval = setInterval(() => {
+        setVerificationProgress(prev => Math.min(prev + 10, 90));
+      }, 500);
+
+      const { data, error } = await supabase.functions.invoke('verify-npi-credentials', {
+        body: {
+          npiNumber: formData.npiNumber,
+          providerName: formData.providerName,
+          verificationType: 'provider'
         }
-      };
-
-      setVerificationProgress(20);
-      
-      console.log(`🔍 Starting ${verificationType} verification:`, verificationRequest);
-
-      const { data: result, error } = await supabase.functions.invoke('verify-npi-credentials', {
-        body: verificationRequest
       });
 
-      setVerificationProgress(60);
+      clearInterval(progressInterval);
+      setVerificationProgress(100);
 
-      if (error) {
-        throw new Error(error.message);
-      }
+      if (error) throw error;
 
-      if (!result.success) {
-        throw new Error(result.error || 'Verification failed');
-      }
-
-      const verification = result.verification;
-      setVerificationProgress(80);
-
-      if (verification.verificationStatus === 'needs_disambiguation') {
-        // Handle disambiguation - show alternatives to user
-        toast({
-          title: "Multiple Matches Found",
-          description: `Found ${verification.alternativeMatches?.length || 0} potential matches. Please provide more specific information.`,
-          variant: "default"
-        });
-
-        // You could show a disambiguation dialog here
-        setVerificationResults({ 
-          ...verification, 
-          needsDisambiguation: true 
-        });
-        return;
-      }
-
-      if (verification.isValid && verification.mappedFields) {
-        // Auto-fill form with mapped data
+      if (data?.verified) {
         setFormData(prev => ({
           ...prev,
-          ...verification.mappedFields,
+          ...data.providerInfo,
           verificationStatus: 'verified',
-          verifiedAt: verification.verifiedAt
+          verifiedAt: new Date().toISOString()
         }));
 
-        setVerificationProgress(100);
-        setVerificationResults(verification);
-
         toast({
-          title: "Verification Complete",
-          description: `${verificationType.replace('_', ' ')} information verified and auto-filled successfully`,
+          title: "Verification Successful",
+          description: "Provider information has been verified and auto-filled.",
           variant: "default"
         });
-
-        // Call completion callback with enhanced data
-        if (onVerificationComplete) {
-          onVerificationComplete({
-            ...formData,
-            ...verification.mappedFields,
-            verification: verification,
-            verificationType
-          });
-        }
       } else {
-        throw new Error(verification.issues.join(', ') || 'Verification failed');
-      }
+        setFormData(prev => ({
+          ...prev,
+          verificationStatus: 'failed'
+        }));
 
-    } catch (error: any) {
-      console.error('NPI Verification error:', error);
+        toast({
+          title: "Verification Failed",
+          description: data?.message || "Unable to verify provider information.",
+          variant: "destructive"
+        });
+      }
+    } catch (error) {
+      console.error('Verification error:', error);
       toast({
-        title: "Verification Failed",
-        description: error.message || 'Unable to verify. Please check information and try again.',
+        title: "Verification Error",
+        description: "An error occurred during verification. Please try again.",
         variant: "destructive"
       });
-      
+
       setFormData(prev => ({
         ...prev,
         verificationStatus: 'failed'
       }));
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyTreatmentCenter = async () => {
+    if (!formData.facilityName || !formData.facilityNPI) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter both facility name and NPI number.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsVerifying(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-npi-credentials', {
+        body: {
+          npiNumber: formData.facilityNPI,
+          facilityName: formData.facilityName,
+          verificationType: 'facility'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.verified) {
+        setFormData(prev => ({
+          ...prev,
+          ...data.facilityInfo,
+          verificationStatus: 'verified',
+          verifiedAt: new Date().toISOString()
+        }));
+
+        toast({
+          title: "Treatment Center Verified",
+          description: "Facility information has been verified and auto-filled.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Treatment center verification error:', error);
+      toast({
+        title: "Verification Error",
+        description: "Unable to verify treatment center information.",
+        variant: "destructive"
+      });
+    } finally {
+      setIsVerifying(false);
+    }
+  };
+
+  const handleVerifyReferralNetwork = async () => {
+    if (!formData.referralNetworkName) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter referral network name.",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsVerifying(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke('verify-npi-credentials', {
+        body: {
+          networkName: formData.referralNetworkName,
+          verificationType: 'network'
+        }
+      });
+
+      if (error) throw error;
+
+      if (data?.verified) {
+        setFormData(prev => ({
+          ...prev,
+          ...data.networkInfo,
+          verificationStatus: 'verified',
+          verifiedAt: new Date().toISOString()
+        }));
+
+        toast({
+          title: "Referral Network Verified",
+          description: "Network information has been verified and auto-filled.",
+          variant: "default"
+        });
+      }
+    } catch (error) {
+      console.error('Referral network verification error:', error);
+      toast({
+        title: "Verification Error",
+        description: "Unable to verify referral network information.",
+        variant: "destructive"
+      });
     } finally {
       setIsVerifying(false);
     }
@@ -425,65 +303,79 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             placeholder="Dr. Sarah Michelle Johnson, MD"
           />
         </div>
-        
+
         <div className="space-y-2">
           <Label htmlFor="providerType">Provider Type *</Label>
-          <Select 
-            value={formData.providerType} 
-            onValueChange={(value: 'individual' | 'organization') => handleInputChange('providerType', value)}
+          <Select
+            value={formData.providerType}
+            onValueChange={(value) => handleInputChange('providerType', value)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Individual Provider (Type 1)" />
+              <SelectValue placeholder="Select provider type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="individual">Individual Provider (Type 1)</SelectItem>
-              <SelectItem value="organization">Organization/Treatment Center (Type 2)</SelectItem>
+              <SelectItem value="individual">Individual Provider</SelectItem>
+              <SelectItem value="organization">Organization</SelectItem>
+              <SelectItem value="facility">Facility</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
           <Label htmlFor="npiNumber">NPI Number *</Label>
-          <div className="flex gap-2">
-            <Input
-              id="npiNumber"
-              value={formData.npiNumber}
-              onChange={(e) => handleInputChange('npiNumber', e.target.value)}
-              placeholder="Enter 10-digit NPI"
-              maxLength={10}
-            />
-            <Button 
-              onClick={handleProviderVerification}
-              disabled={isVerifying || !formData.providerName || !formData.providerType}
-              size="sm"
-              className="whitespace-nowrap"
-            >
-              {isVerifying ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ShieldCheck className="h-4 w-4" />
-              )}
-              Verify
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="specialization">Specialization</Label>
           <Input
-            id="specialization"
-            value={formData.specialization}
-            onChange={(e) => handleInputChange('specialization', e.target.value)}
-            placeholder="Primary Care Physician"
+            id="npiNumber"
+            value={formData.npiNumber}
+            onChange={(e) => handleInputChange('npiNumber', e.target.value)}
+            placeholder="1234567890"
           />
         </div>
 
-        {/* Provider Status and Contact Info */}
+        <div className="space-y-2">
+          <Label htmlFor="specialty">Specialty</Label>
+          <Input
+            id="specialty"
+            value={formData.specialty}
+            onChange={(e) => handleInputChange('specialty', e.target.value)}
+            placeholder="Addiction Medicine"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="licenseNumber">License Number</Label>
+          <Input
+            id="licenseNumber"
+            value={formData.licenseNumber}
+            onChange={(e) => handleInputChange('licenseNumber', e.target.value)}
+            placeholder="Enter license number"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="licenseState">License State</Label>
+          <Input
+            id="licenseState"
+            value={formData.licenseState}
+            onChange={(e) => handleInputChange('licenseState', e.target.value)}
+            placeholder="CA"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="licenseExpiry">License Expiry Date</Label>
+          <Input
+            id="licenseExpiry"
+            value={formData.licenseExpiry}
+            type="date"
+            onChange={(e) => handleInputChange('licenseExpiry', e.target.value)}
+          />
+        </div>
+
         <div className="space-y-2">
           <Label htmlFor="providerStatus">Provider Status</Label>
-          <Select 
-            value={formData.verificationStatus === 'verified' ? 'active' : 'pending'} 
-            onValueChange={(value) => handleInputChange('verificationStatus', value === 'active' ? 'verified' : 'pending')}
+          <Select
+            value={formData.providerStatus}
+            onValueChange={(value) => handleInputChange('providerStatus', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select status" />
@@ -491,34 +383,34 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             <SelectContent>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="pending">Pending Verification</SelectItem>
+              <SelectItem value="suspended">Suspended</SelectItem>
             </SelectContent>
           </Select>
         </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="licenseExpiry">License Expiry Date</Label>
-          <Input
-            id="licenseExpiry"
-            type="date"
-            value={formData.verifiedAt ? formData.verifiedAt.split('T')[0] : ''}
-            onChange={(e) => handleInputChange('verifiedAt', e.target.value ? new Date(e.target.value).toISOString() : '')}
-          />
-        </div>
       </div>
 
-      {isVerifying && (
-        <div className="space-y-2">
-          <div className="flex items-center justify-between text-sm">
-            <span>Verifying provider information...</span>
-            <span>{verificationProgress}%</span>
-          </div>
-          <Progress value={verificationProgress} className="w-full" />
-        </div>
-      )}
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleVerifyProvider}
+          disabled={!formData.providerName || !formData.providerType || isVerifying}
+          className="flex items-center gap-2"
+        >
+          {isVerifying ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Verifying Provider...
+            </>
+          ) : (
+            <>
+              <Shield className="h-4 w-4" />
+              Verify Provider
+            </>
+          )}
+        </Button>
+      </div>
 
-      {verificationResults && (
-        <Alert>
+      {formData.verificationStatus === 'verified' && (
+        <Alert className="border-green-200 bg-green-50">
           <CheckCircle2 className="h-4 w-4" />
           <AlertDescription>
             Provider verified successfully. Information has been auto-filled from the NPI registry.
@@ -539,64 +431,98 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label htmlFor="treatmentCenterName">Treatment Center Name *</Label>
+          <Label htmlFor="facilityName">Facility Name *</Label>
           <Input
-            id="treatmentCenterName"
-            value={formData.treatmentCenterName}
-            onChange={(e) => handleInputChange('treatmentCenterName', e.target.value)}
-            placeholder="Lone Star Recovery Center"
+            id="facilityName"
+            value={formData.facilityName}
+            onChange={(e) => handleInputChange('facilityName', e.target.value)}
+            placeholder="Sunrise Recovery Center"
           />
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="treatmentCenterNPI">Treatment Center NPI (Type 2)</Label>
-          <div className="flex gap-2">
-            <Input
-              id="treatmentCenterNPI"
-              value={formData.treatmentCenterNPI}
-              onChange={(e) => handleInputChange('treatmentCenterNPI', e.target.value)}
-              placeholder="Enter treatment center NPI"
-              maxLength={10}
-            />
-            <Button 
-              onClick={handleTreatmentCenterVerification}
-              disabled={isVerifying || !formData.treatmentCenterName || !formData.treatmentCenterNPI}
-              size="sm"
-              className="whitespace-nowrap"
-            >
-              {isVerifying ? (
-                <Loader2 className="h-4 w-4 animate-spin" />
-              ) : (
-                <ShieldCheck className="h-4 w-4" />
-              )}
-              Verify
-            </Button>
-          </div>
-        </div>
-
-        <div className="space-y-2">
           <Label htmlFor="facilityType">Facility Type</Label>
-          <Select 
-            value={formData.facilityType} 
+          <Select
+            value={formData.facilityType}
             onValueChange={(value) => handleInputChange('facilityType', value)}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Treatment Center" />
+              <SelectValue placeholder="Select facility type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="hospital">Hospital</SelectItem>
-              <SelectItem value="clinic">Clinic</SelectItem>
-              <SelectItem value="treatment_center">Treatment Center</SelectItem>
-              <SelectItem value="rehabilitation">Rehabilitation Facility</SelectItem>
-              <SelectItem value="outpatient">Outpatient Facility</SelectItem>
+              <SelectItem value="inpatient">Inpatient Treatment</SelectItem>
+              <SelectItem value="outpatient">Outpatient Treatment</SelectItem>
+              <SelectItem value="residential">Residential Treatment</SelectItem>
+              <SelectItem value="detox">Detoxification Center</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
         <div className="space-y-2">
+          <Label htmlFor="facilityNPI">Facility NPI *</Label>
+          <Input
+            id="facilityNPI"
+            value={formData.facilityNPI}
+            onChange={(e) => handleInputChange('facilityNPI', e.target.value)}
+            placeholder="1234567890"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="facilityAddress">Address</Label>
+          <Input
+            id="facilityAddress"
+            value={formData.facilityAddress}
+            onChange={(e) => handleInputChange('facilityAddress', e.target.value)}
+            placeholder="123 Recovery Lane"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="facilityCity">City</Label>
+          <Input
+            id="facilityCity"
+            value={formData.facilityCity}
+            onChange={(e) => handleInputChange('facilityCity', e.target.value)}
+            placeholder="Los Angeles"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="facilityState">State</Label>
+          <Input
+            id="facilityState"
+            value={formData.facilityState}
+            onChange={(e) => handleInputChange('facilityState', e.target.value)}
+            placeholder="CA"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="facilityLicenseNumber">Facility License Number</Label>
+          <Input
+            id="facilityLicenseNumber"
+            value={formData.facilityLicenseNumber}
+            onChange={(e) => handleInputChange('facilityLicenseNumber', e.target.value)}
+            placeholder="Enter facility license number"
+          />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="facilityLicenseExpiry">License Expiry Date</Label>
+          <Input
+            id="facilityLicenseExpiry"
+            value={formData.facilityLicenseExpiry}
+            type="date"
+            onChange={(e) => handleInputChange('facilityLicenseExpiry', e.target.value)}
+            placeholder="License expiration date"
+          />
+        </div>
+
+        <div className="space-y-2">
           <Label htmlFor="facilityStatus">Facility Status</Label>
-          <Select 
-            value="active"
+          <Select
+            value={formData.facilityStatus}
             onValueChange={(value) => handleInputChange('facilityStatus', value)}
           >
             <SelectTrigger>
@@ -605,20 +531,30 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             <SelectContent>
               <SelectItem value="active">Active</SelectItem>
               <SelectItem value="inactive">Inactive</SelectItem>
-              <SelectItem value="pending">Pending Verification</SelectItem>
+              <SelectItem value="suspended">Suspended</SelectItem>
             </SelectContent>
           </Select>
         </div>
+      </div>
 
-        <div className="space-y-2">
-          <Label htmlFor="facilityLicenseExpiry">Facility License Expiry</Label>
-          <Input
-            id="facilityLicenseExpiry"
-            type="date"
-            onChange={(e) => handleInputChange('facilityLicenseExpiry', e.target.value)}
-            placeholder="License expiration date"
-          />
-        </div>
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleVerifyTreatmentCenter}
+          disabled={!formData.facilityName || !formData.facilityNPI || isVerifying}
+          className="flex items-center gap-2"
+        >
+          {isVerifying ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Verifying Treatment Center...
+            </>
+          ) : (
+            <>
+              <Shield className="h-4 w-4" />
+              Verify Treatment Center
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
@@ -637,33 +573,43 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="referralNetworkNPI">Referral Network NPI</Label>
-          <Input
-            id="referralNetworkNPI"
-            value={formData.referralNetworkNPI}
-            onChange={(e) => handleInputChange('referralNetworkNPI', e.target.value)}
-            placeholder="Enter referral network NPI"
-            maxLength={10}
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="networkType">Network Type</Label>
-          <Select 
-            value={formData.networkType} 
-            onValueChange={(value) => handleInputChange('networkType', value)}
+          <Label htmlFor="referralNetworkType">Network Type</Label>
+          <Select
+            value={formData.referralNetworkType}
+            onValueChange={(value) => handleInputChange('referralNetworkType', value)}
           >
             <SelectTrigger>
               <SelectValue placeholder="Select network type" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ppo">PPO Network</SelectItem>
+              <SelectItem value="preferred">Preferred Provider Network</SelectItem>
               <SelectItem value="hmo">HMO Network</SelectItem>
+              <SelectItem value="ppo">PPO Network</SelectItem>
               <SelectItem value="ace">ACE Network</SelectItem>
               <SelectItem value="independent">Independent Network</SelectItem>
             </SelectContent>
           </Select>
         </div>
+      </div>
+
+      <div className="flex justify-end">
+        <Button 
+          onClick={handleVerifyReferralNetwork}
+          disabled={!formData.referralNetworkName || isVerifying}
+          className="flex items-center gap-2"
+        >
+          {isVerifying ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Verifying Network...
+            </>
+          ) : (
+            <>
+              <Shield className="h-4 w-4" />
+              Verify Network
+            </>
+          )}
+        </Button>
       </div>
     </div>
   );
@@ -678,16 +624,6 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
             value={formData.medicalLicenseNumber}
             onChange={(e) => handleInputChange('medicalLicenseNumber', e.target.value)}
             placeholder="Enter medical license number"
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="licenseState">License State</Label>
-          <Input
-            id="licenseState"
-            value={formData.licenseState}
-            onChange={(e) => handleInputChange('licenseState', e.target.value)}
-            placeholder="Enter license state"
           />
         </div>
 
