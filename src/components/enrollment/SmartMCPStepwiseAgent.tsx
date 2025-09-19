@@ -18,6 +18,7 @@ import { ProviderSelector } from "@/components/enrollment/ProviderSelector";
 import { EnhancedProviderFormWithConfirmation } from "@/components/enrollment/EnhancedProviderFormWithConfirmation";
 import { ComprehensiveProviderVerification } from "@/components/enrollment/ComprehensiveProviderVerification";
 import { WhatsAppConsentSender } from "@/components/enrollment/WhatsAppConsentSender";
+import { ConsentWorkflowManager } from "@/components/enrollment/ConsentWorkflowManager";
 
 interface SmartMCPStepwiseAgentProps {
   patientId: string;
@@ -455,33 +456,39 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
                   sectionKey={currentStep.key}
                 />
                 
-                {/* Show consent delivery options when collection method is selected */}
+                {/* Show automated consent workflow when collection method is selected */}
                 {collectedData.collection_method && ['whatsapp', 'sms', 'email', 'voice'].includes(collectedData.collection_method) && (
-                  <div className="mt-6 p-4 border border-blue-200 rounded-lg bg-blue-50/30">
-                    <h4 className="font-medium mb-3">Send Consent Link</h4>
-                    <WhatsAppConsentSender
-                      patientPhone={collectedData.patient_phone}
-                      patientName={`${collectedData.patient_first_name || ''} ${collectedData.patient_last_name || ''}`.trim()}
-                      providerName={collectedData.provider_name}
-                      treatmentCenter={collectedData.treatment_center}
-                      enrollmentId={patientId}
-                      onConsentSent={(sessionId) => {
-                        console.log('Consent sent, session:', sessionId);
-                        toast({
-                          title: "Consent Link Sent",
-                          description: "Patient will receive consent instructions via their preferred method.",
-                        });
-                      }}
-                      onConsentComplete={(data) => {
-                        console.log('Consent completed:', data);
-                        setCollectedData(prev => ({ ...prev, consent_completed: true }));
-                        toast({
-                          title: "Consent Completed",
-                          description: "Patient has successfully provided consent.",
-                        });
-                      }}
-                    />
-                  </div>
+                  <ConsentWorkflowManager
+                    collectionMethod={collectedData.collection_method}
+                    patientData={{
+                      firstName: collectedData.patient_first_name || '',
+                      lastName: collectedData.patient_last_name || '',
+                      cellPhone: collectedData.patient_phone || '',
+                      email: collectedData.patient_email || ''
+                    }}
+                    providerData={{
+                      name: collectedData.provider_name || '',
+                      phone: collectedData.provider_phone || '',
+                      email: collectedData.provider_email || '',
+                      treatmentCenter: collectedData.treatment_center || ''
+                    }}
+                    enrollmentId={patientId}
+                    onConsentInitiated={(sessionId, method) => {
+                      console.log('Consent initiated:', sessionId, method);
+                      toast({
+                        title: "Consent Process Started",
+                        description: `Patient will receive consent instructions via ${method.toUpperCase()}. Process is now pending completion.`,
+                      });
+                    }}
+                    onConsentComplete={(data) => {
+                      console.log('Consent completed:', data);
+                      setCollectedData(prev => ({ ...prev, consent_completed: true, consent_status: 'obtained' }));
+                      toast({
+                        title: "Consent Completed",
+                        description: "Patient has successfully provided consent. Enrollment can proceed.",
+                      });
+                    }}
+                  />
                 )}
               </div>
             ) : (

@@ -69,8 +69,11 @@ serve(async (req) => {
         return await createConsentSession(payload, supabase);
       case 'initiate_consent':
         return await initiateConsentProcess(payload, supabase);
+      case 'automated_consent_initiation':
+        return await handleAutomatedConsentInitiation(payload, supabase);
       case 'send_consent_link':
         return await sendConsentLink(payload, supabase);
+      case 'check_consent_status':
       case 'check_status':
         return await checkConsentStatus(payload, supabase);
       case 'process_message':
@@ -472,6 +475,219 @@ async function extractConsentFromTranscription(transcription: string) {
   );
 
   return { consent_given };
+}
+
+async function handleAutomatedConsentInitiation(payload: any, supabase: any) {
+  const { patientData, providerData, locationType, consentMethod, mcpIntegration, conversationalAI } = payload;
+  
+  console.log('Handling automated consent initiation:', payload);
+  
+  try {
+    // Create session
+    const sessionId = crypto.randomUUID();
+    const sessionData = {
+      id: sessionId,
+      enrollment_id: patientData.enrollmentId || null,
+      phone_number: patientData.phone,
+      patient_name: patientData.name,
+      provider_name: providerData?.name || 'Unknown Provider',
+      treatment_center: providerData?.treatmentCenter || 'Healthcare Center',
+      location_type: locationType || 'remote',
+      consent_method: consentMethod || 'whatsapp_chat',
+      status: 'in_progress',
+      session_data: {
+        initiated_at: new Date().toISOString(),
+        patient_info: patientData,
+        provider_info: providerData,
+        mcp_integration: mcpIntegration,
+        conversational_ai: conversationalAI,
+        location_context: getLocationContext(locationType || 'remote')
+      }
+    };
+
+    // Insert session
+    const { data: session, error: sessionError } = await supabase
+      .from('whatsapp_consent_sessions')
+      .insert(sessionData)
+      .select()
+      .single();
+
+    if (sessionError) throw sessionError;
+
+    // Send initial message based on consent method
+    if (consentMethod.includes('whatsapp')) {
+      const initialMessage = generateInitialMessage(locationType || 'remote', consentMethod);
+      await sendWhatsAppMessage(patientData.phone, initialMessage);
+    } else if (consentMethod === 'sms') {
+      await sendSMSMessage(patientData.phone, generateSMSMessage(patientData, providerData));
+    } else if (consentMethod === 'voice') {
+      await initiateVoiceCall(patientData.phone, patientData, providerData);
+    } else if (consentMethod === 'email') {
+      await sendEmailConsent(patientData.email, patientData, providerData);
+    }
+
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        sessionId,
+        status: 'initiated',
+        message: `Consent process initiated via ${consentMethod}` 
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+
+  } catch (error) {
+    console.error('Error in automated consent initiation:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+async function checkConsentStatus(payload: any, supabase: any) {
+  const { sessionId } = payload;
+  
+  try {
+    const { data: session, error } = await supabase
+      .from('whatsapp_consent_sessions')
+      .select('*')
+      .eq('id', sessionId)
+      .single();
+
+    if (error) throw error;
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        consentStatus: session.status,
+        consentGiven: session.status === 'completed',
+        method: session.consent_method,
+        location: session.location_type,
+        patientData: session.session_data?.patient_info,
+        timestamp: session.completed_at || session.created_at
+      }),
+      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  } catch (error) {
+    console.error('Error checking consent status:', error);
+    return new Response(
+      JSON.stringify({ error: error.message }),
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+    );
+  }
+}
+
+async function sendSMSMessage(phoneNumber: string, message: string) {
+  console.log('Sending SMS to:', phoneNumber);
+  
+  try {
+    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+
+    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+      console.error('Missing Twilio credentials for SMS');
+      return;
+    }
+
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Messages.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        From: twilioPhoneNumber,
+        To: phoneNumber,
+        Body: message,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Twilio SMS API error: ${response.statusText}`);
+    }
+
+    console.log('SMS sent successfully');
+  } catch (error) {
+    console.error('Failed to send SMS:', error);
+  }
+}
+
+async function initiateVoiceCall(phoneNumber: string, patientData: any, providerData: any) {
+  console.log('Initiating voice call to:', phoneNumber);
+  
+  try {
+    const twilioAccountSid = Deno.env.get('TWILIO_ACCOUNT_SID');
+    const twilioAuthToken = Deno.env.get('TWILIO_AUTH_TOKEN');
+    const twilioPhoneNumber = Deno.env.get('TWILIO_PHONE_NUMBER');
+
+    if (!twilioAccountSid || !twilioAuthToken || !twilioPhoneNumber) {
+      console.error('Missing Twilio credentials for voice');
+      return;
+    }
+
+    const twimlMessage = generateVoiceMessage(patientData, providerData);
+    const twimlUrl = `https://twimlets.com/message?Message%5B0%5D=${encodeURIComponent(twimlMessage)}`;
+
+    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioAccountSid}/Calls.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Basic ${btoa(`${twilioAccountSid}:${twilioAuthToken}`)}`,
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        From: twilioPhoneNumber,
+        To: phoneNumber,
+        Url: twimlUrl,
+      }),
+    });
+
+    if (!response.ok) {
+      throw new Error(`Twilio Voice API error: ${response.statusText}`);
+    }
+
+    console.log('Voice call initiated successfully');
+  } catch (error) {
+    console.error('Failed to initiate voice call:', error);
+  }
+}
+
+async function sendEmailConsent(email: string, patientData: any, providerData: any) {
+  console.log('Sending email consent to:', email);
+  
+  try {
+    // This would integrate with your email service (SendGrid, etc.)
+    const emailPayload = {
+      to: email,
+      subject: `Healthcare Consent Required - ${providerData?.treatmentCenter || 'Healthcare Center'}`,
+      html: generateEmailTemplate(patientData, providerData)
+    };
+
+    // Use your email service here
+    console.log('Email consent payload ready:', emailPayload);
+    
+  } catch (error) {
+    console.error('Failed to send email consent:', error);
+  }
+}
+
+function generateSMSMessage(patientData: any, providerData: any) {
+  return `Hi ${patientData.name}! ${providerData?.treatmentCenter || 'Your healthcare provider'} needs your consent for treatment. Please click this link to provide your consent: [CONSENT_LINK]. Reply STOP to opt out.`;
+}
+
+function generateVoiceMessage(patientData: any, providerData: any) {
+  return `Hello ${patientData.name}. This is an automated call from ${providerData?.treatmentCenter || 'your healthcare provider'}. We need your consent for treatment. Please stay on the line to provide your consent, or you can also complete this process online.`;
+}
+
+function generateEmailTemplate(patientData: any, providerData: any) {
+  return `
+    <h2>Healthcare Consent Required</h2>
+    <p>Dear ${patientData.name},</p>
+    <p>${providerData?.treatmentCenter || 'Your healthcare provider'} requires your consent to proceed with treatment.</p>
+    <p><a href="[CONSENT_LINK]" style="background: #007bff; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;">Provide Consent</a></p>
+    <p>Thank you,<br/>${providerData?.name || 'Healthcare Team'}</p>
+  `;
 }
 
 async function triggerN8nWorkflow(webhookUrl: string, data: any) {
