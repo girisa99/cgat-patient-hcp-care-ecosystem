@@ -31,6 +31,9 @@ import AppLayout from '@/components/layout/AppLayout';
 import { toast } from 'sonner';
 import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { SmartMCPStepwiseAgent } from '@/components/enrollment/SmartMCPStepwiseAgent';
+import { v4 as uuidv4 } from 'uuid';
 
 interface PatientOnboarding {
   id: string;
@@ -65,8 +68,11 @@ export default function PatientOnboarding() {
   const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow' | 'templates' | 'agent_config' | 'voice_channels'>('list');
   const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
   const [selectedAgentType, setSelectedAgentType] = useState<string>('');
-  const [channelData, setChannelData] = useState<Record<string, any>>({});
-  const location = useLocation();
+const [channelData, setChannelData] = useState<Record<string, any>>({});
+const location = useLocation();
+// Method selection
+const [showMethodDialog, setShowMethodDialog] = useState(false);
+const [currentEnrollmentId, setCurrentEnrollmentId] = useState<string | null>(null);
 
   // Load live data from database
   useEffect(() => {
