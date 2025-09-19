@@ -83,32 +83,43 @@ const [currentEnrollmentId, setCurrentEnrollmentId] = useState<string | null>(nu
     try {
       setIsLoading(true);
       
-      // Fetch patient enrollments with related data
-      const { data: enrollments, error } = await supabase
+      // Fetch enrollments only (no nested selects to avoid schema mismatch)
+      const { data: enrollments, error: enrollmentsError } = await supabase
         .from('patient_enrollments')
-        .select(`
-          id,
-          enrollment_status,
-          current_section,
-          progress_percentage,
-          created_at,
-          updated_at,
-          completed_at,
-          enrollment_patient_info (*),
-          enrollment_provider_info (*)
-        `)
+        .select(`id, enrollment_status, current_section, progress_percentage, created_at, updated_at, completed_at`)
         .order('created_at', { ascending: false })
         .limit(50);
 
-      if (error) {
-        console.error('Error fetching enrollments:', error);
+      if (enrollmentsError) {
+        console.error('Error fetching enrollments:', enrollmentsError);
         return;
       }
 
+      const ids = (enrollments || []).map((e: any) => e.id);
+
+      // Fetch patient info in bulk
+      const { data: patientInfos } = ids.length
+        ? await supabase
+            .from('enrollment_patient_info')
+            .select('enrollment_id, first_name, last_name, email, phone')
+            .in('enrollment_id', ids)
+        : { data: [], error: null } as any;
+
+      // Fetch provider info in bulk (select all available fields to avoid column errors)
+      const { data: providerInfos } = ids.length
+        ? await supabase
+            .from('enrollment_provider_info')
+            .select('*')
+            .in('enrollment_id', ids)
+        : { data: [], error: null } as any;
+
+      const patientInfoMap = Object.fromEntries((patientInfos || []).map((p: any) => [p.enrollment_id, p]));
+      const providerInfoMap = Object.fromEntries((providerInfos || []).map((p: any) => [p.enrollment_id, p]));
+
       // Transform data to match interface
       const transformedData: PatientOnboarding[] = (enrollments || []).map((enrollment: any) => {
-        const patientInfo = enrollment.enrollment_patient_info;
-        const providerInfo = enrollment.enrollment_provider_info;
+        const patientInfo = patientInfoMap[enrollment.id];
+        const providerInfo = providerInfoMap[enrollment.id];
         const assignedStaffName = 'Unassigned';
         
         // Map enrollment status to UI status
