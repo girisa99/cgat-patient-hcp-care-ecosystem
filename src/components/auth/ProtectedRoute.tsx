@@ -1,4 +1,4 @@
-import { ReactNode, useEffect } from 'react';
+import { ReactNode, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useTenantContext, useFacilityScope } from '@/contexts/TenantContext';
@@ -28,6 +28,8 @@ const ProtectedRoute = ({
   const { currentFacility, isSuperAdmin, isLoadingFacilities } = useTenantContext();
   const { canRead, canWrite, canAdmin } = useFacilityScope();
   const navigate = useNavigate();
+  const redirectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const hadAuthenticatedRef = useRef<boolean>(false);
 
   // CRITICAL: Use normalized roles to prevent role mismatch issues
   const normalizedUserRoles = normalizeRoles(userRoles);
@@ -75,24 +77,52 @@ const ProtectedRoute = ({
 
   const hasValidFacilityAccess = hasFacilityAccess();
 
+  // Track if user was authenticated before (grace period on token refresh)
   useEffect(() => {
-    // Only redirect if not loading and not authenticated
-    if (!isLoading && !isLoadingFacilities && !isAuthenticated) {
-      console.log('🔄 Redirecting to login for authentication...');
-      navigate('/login', { replace: true });
-      return;
+    if (isAuthenticated) {
+      hadAuthenticatedRef.current = true;
     }
-    // Wait for roles to load before enforcing role checks
-    if (rolesStillLoading) {
-      console.log('⏳ Waiting for roles to load before access check...');
-      return;
+  }, [isAuthenticated]);
+
+  useEffect(() => {
+    const clearTimer = () => {
+      if (redirectTimeoutRef.current) {
+        clearTimeout(redirectTimeoutRef.current);
+        redirectTimeoutRef.current = null;
+      }
+    };
+
+    // While loading anything, never redirect
+    if (isLoading || isLoadingFacilities || rolesStillLoading) {
+      clearTimer();
+    } else if (!isAuthenticated) {
+      // If user was previously authenticated, wait a bit for session refresh to avoid false redirects
+      const delay = hadAuthenticatedRef.current ? 2500 : 0;
+      clearTimer();
+      if (delay === 0) {
+        navigate('/login', { replace: true });
+      } else {
+        redirectTimeoutRef.current = setTimeout(() => {
+          if (!isAuthenticated) {
+            navigate('/login', { replace: true });
+          }
+        }, delay);
+      }
+    } else if (!hasRequiredRole || !hasValidFacilityAccess) {
+      // Debounce permission-based redirects to avoid brief role/facility flaps
+      clearTimer();
+      redirectTimeoutRef.current = setTimeout(() => {
+        if (!hasRequiredRole || !hasValidFacilityAccess) {
+          navigate('/', { replace: true });
+        }
+      }, 1500);
+    } else {
+      // All good, ensure no pending redirect remains
+      clearTimer();
     }
-    // Check role and facility access after authentication
-    if (!isLoading && !isLoadingFacilities && isAuthenticated && (!hasRequiredRole || !hasValidFacilityAccess)) {
-      console.log('🚫 Insufficient permissions, redirecting to home...');
-      navigate('/', { replace: true });
-    }
-  }, [isLoading, isLoadingFacilities, isAuthenticated, rolesStillLoading, hasRequiredRole, hasValidFacilityAccess, navigate]);
+
+    return () => clearTimer();
+  }, [isLoading, isLoadingFacilities, rolesStillLoading, isAuthenticated, hasRequiredRole, hasValidFacilityAccess, navigate]);
 
   // Show loading spinner while checking auth, roles, and facilities
   if (isLoading || isLoadingFacilities || rolesStillLoading) {
