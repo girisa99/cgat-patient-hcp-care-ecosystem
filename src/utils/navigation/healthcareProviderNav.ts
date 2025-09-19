@@ -27,6 +27,12 @@ export const healthcareProviderNavItems = [
     description: "Manage patient medication orders and prescriptions"
   },
   {
+    title: "Patient Management",
+    url: "/patients",
+    icon: Stethoscope,
+    description: "Enhanced patient dashboard with enrollment tracking and management"
+  },
+  {
     title: "Patient Onboarding",
     url: "/patient-onboarding",
     icon: UserCheck,

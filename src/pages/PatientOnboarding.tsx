@@ -10,8 +10,6 @@ import { PatientEnrollmentTemplateManager } from '@/components/patient-enrollmen
 import { UniversalAgentConfigManager } from '@/components/agent-types/UniversalAgentConfigManager';
 import { ChannelVoiceManager } from '@/components/channel-integration/ChannelVoiceManager';
 import { ContextAwareEnrollmentOptions } from '@/components/context-aware-enrollment/ContextAwareEnrollmentOptions';
-import { PatientNavigationHelper } from '@/components/navigation/PatientNavigationHelper';
-import { IntegratedPatientEnrollmentDashboard } from '@/components/patients/IntegratedPatientEnrollmentDashboard';
 
 import { 
   UserPlus, 
@@ -376,11 +374,208 @@ export default function PatientOnboarding() {
   return (
     <AppLayout title="Patient Onboarding & Management">
       <div className="flex-1 space-y-6 p-4 md:p-6">
-        {/* Navigation Helper */}
-        <PatientNavigationHelper />
-        
-        {/* Integrated Patient Dashboard */}
-        <IntegratedPatientEnrollmentDashboard />
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">Patient Onboarding Dashboard</h1>
+            <p className="text-muted-foreground">
+              Manage patient enrollment processes and workflows
+            </p>
+          </div>
+          <Button onClick={handleNewEnrollment}>
+            <Plus className="mr-2 h-4 w-4" />
+            New Enrollment
+          </Button>
+        </div>
+
+        {/* Stats Overview */}
+        <div className="grid gap-4 md:grid-cols-3 lg:grid-cols-6">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Enrolled</CardTitle>
+              <UserPlus className="h-4 w-4 text-muted-foreground" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.total}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">In Progress</CardTitle>
+              <Clock className="h-4 w-4 text-yellow-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.inProgress}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Completed</CardTitle>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.completed}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Docs Pending</CardTitle>
+              <FileText className="h-4 w-4 text-orange-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.documentsPending}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">On Hold</CardTitle>
+              <AlertCircle className="h-4 w-4 text-red-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.onHold}</div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Initiated</CardTitle>
+              <RefreshCw className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">{onboardingStats.initiated}</div>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Filters and Search */}
+        <div className="flex flex-col space-y-4 md:flex-row md:space-y-0 md:space-x-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                placeholder="Search patients..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              variant={statusFilter === 'all' ? 'default' : 'outline'}
+              onClick={() => setStatusFilter('all')}
+              size="sm"
+            >
+              All
+            </Button>
+            <Button
+              variant={statusFilter === 'in_progress' ? 'default' : 'outline'}
+              onClick={() => setStatusFilter('in_progress')}
+              size="sm"
+            >
+              In Progress
+            </Button>
+            <Button
+              variant={statusFilter === 'documents_pending' ? 'default' : 'outline'}
+              onClick={() => setStatusFilter('documents_pending')}
+              size="sm"
+            >
+              Docs Pending
+            </Button>
+            <Button
+              variant={statusFilter === 'completed' ? 'default' : 'outline'}
+              onClick={() => setStatusFilter('completed')}
+              size="sm"
+            >
+              Completed
+            </Button>
+          </div>
+        </div>
+
+        {/* Patient List */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Patient Enrollment Status</CardTitle>
+            <CardDescription>
+              Track and manage patient onboarding progress
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {isLoading ? (
+              <div className="text-center py-8">Loading enrollment data...</div>
+            ) : filteredOnboarding.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No patients found matching the current filters.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredOnboarding.map((patient) => (
+                  <div
+                    key={patient.id}
+                    className="flex items-center justify-between rounded-lg border p-4"
+                  >
+                    <div className="flex-1 space-y-1">
+                      <div className="flex items-center space-x-2">
+                        <h3 className="font-semibold">{patient.patientName}</h3>
+                        <Badge variant={
+                          patient.priority === 'high' ? 'destructive' :
+                          patient.priority === 'medium' ? 'default' : 'secondary'
+                        }>
+                          {patient.priority}
+                        </Badge>
+                        <Badge variant={
+                          patient.status === 'completed' ? 'default' :
+                          patient.status === 'in_progress' ? 'secondary' :
+                          patient.status === 'documents_pending' ? 'outline' :
+                          'destructive'
+                        }>
+                          {patient.status.replace('_', ' ')}
+                        </Badge>
+                      </div>
+                      <div className="flex items-center space-x-4 text-sm text-muted-foreground">
+                        <span>{patient.email}</span>
+                        <span>{patient.phone}</span>
+                        <span>Started: {patient.startDate}</span>
+                        <span>Assigned: {patient.assignedStaff}</span>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Progress value={patient.progress} className="flex-1" />
+                        <span className="text-sm text-muted-foreground">
+                          {patient.completedSteps}/{patient.totalSteps} steps ({patient.progress}%)
+                        </span>
+                      </div>
+                      <p className="text-sm">
+                        <strong>Next:</strong> {patient.nextStep}
+                      </p>
+                    </div>
+                    
+                    <div className="flex space-x-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => handleViewPatient(patient)}
+                      >
+                        <Eye className="mr-2 h-4 w-4" />
+                        View
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleContinueWorkflow(patient)}
+                      >
+                        <Workflow className="mr-2 h-4 w-4" />
+                        Continue
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
 
         {/* Method Selection Dialog */}
         <Dialog open={showMethodDialog} onOpenChange={setShowMethodDialog}>
