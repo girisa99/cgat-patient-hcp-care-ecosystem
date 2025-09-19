@@ -8986,10 +8986,14 @@ export type Database = {
           completed_at: string | null
           created_at: string
           current_section: string
+          deactivated_at: string | null
+          deactivated_by: string | null
+          deactivation_reason: string | null
           enrollment_source: string | null
           enrollment_status: string
           facility_id: string | null
           id: string
+          is_active: boolean | null
           metadata: Json | null
           pdf_file_path: string | null
           pdf_generated: boolean | null
@@ -9009,10 +9013,14 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           current_section?: string
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          deactivation_reason?: string | null
           enrollment_source?: string | null
           enrollment_status?: string
           facility_id?: string | null
           id?: string
+          is_active?: boolean | null
           metadata?: Json | null
           pdf_file_path?: string | null
           pdf_generated?: boolean | null
@@ -9032,10 +9040,14 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           current_section?: string
+          deactivated_at?: string | null
+          deactivated_by?: string | null
+          deactivation_reason?: string | null
           enrollment_source?: string | null
           enrollment_status?: string
           facility_id?: string | null
           id?: string
+          is_active?: boolean | null
           metadata?: Json | null
           pdf_file_path?: string | null
           pdf_generated?: boolean | null
@@ -13786,6 +13798,10 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      bulk_deactivate_patient_enrollments: {
+        Args: { p_enrollment_ids: string[]; p_reason?: string }
+        Returns: Json
+      }
       calculate_enrollment_progress: {
         Args: { enrollment_uuid: string }
         Returns: number
@@ -13851,6 +13867,10 @@ export type Database = {
           p_last_name: string
           p_user_id: string
         }
+        Returns: Json
+      }
+      deactivate_patient_enrollment: {
+        Args: { p_enrollment_id: string; p_reason?: string }
         Returns: Json
       }
       detect_schema_from_data: {
