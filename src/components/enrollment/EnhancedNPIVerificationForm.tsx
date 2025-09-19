@@ -140,42 +140,12 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     return npiRegex.test(npi);
   };
 
-  const handleNPIVerification = async (verificationType: 'provider' | 'treatment_center' | 'referral_network' = 'provider') => {
-    const npiField = verificationType === 'provider' ? 'npiNumber' : 
-                     verificationType === 'treatment_center' ? 'treatmentCenterNPI' : 'referralNetworkNPI';
-    const nameField = verificationType === 'provider' ? 'providerName' : 
-                      verificationType === 'treatment_center' ? 'treatmentCenterName' : 'referralNetworkName';
-
-    if (!formData[npiField] && verificationType === 'provider') {
-      toast({
-        title: "Invalid NPI Format",
-        description: "NPI must be exactly 10 digits",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    if (!formData[nameField]) {
-      toast({
-        title: "Missing Information", 
-        description: `Please enter ${verificationType.replace('_', ' ')} name`,
-        variant: "destructive"
-      });
-      return;
-    }
-
-    const npiValue = formData[npiField];
-    if (npiValue && !validateNPIFormat(npiValue)) {
-      toast({
-        title: "Invalid NPI Format",
-        description: "NPI must be exactly 10 digits",
-        variant: "destructive"
-      });
-      return;
-    }
-
-    setIsVerifying(true);
-    setVerificationProgress(0);
+  const handleInputChange = (field: keyof ProviderData, value: string) => {
+    setFormData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
 
     try {
       // Step 1: NPI Registry Lookup (20%)
@@ -283,15 +253,164 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
     }
   };
 
-  const handleProviderVerification = () => handleNPIVerification('provider');
-  const handleTreatmentCenterVerification = () => handleNPIVerification('treatment_center');
-  const handleReferralNetworkVerification = () => handleNPIVerification('referral_network');
+  const handleProviderVerification = () => {
+    handleNPIVerification('provider');
+  };
+  
+  const handleTreatmentCenterVerification = () => {
+    handleNPIVerification('treatment_center');
+  };
+  
+  const handleReferralNetworkVerification = () => {
+    handleNPIVerification('referral_network');
+  };
 
   const handleInputChange = (field: keyof ProviderData, value: string) => {
     setFormData(prev => ({
       ...prev,
       [field]: value
     }));
+  };
+
+  // Enhanced verification with new system
+  const handleNPIVerification = async (verificationType: 'provider' | 'treatment_center' | 'referral_network' = 'provider') => {
+    const sectionData = {
+      providerName: formData.providerName,
+      treatmentCenterName: formData.treatmentCenterName,
+      referralNetworkName: formData.referralNetworkName
+    };
+
+    // Validate required data for verification type
+    if (verificationType === 'provider' && !formData.providerName) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter provider name before verification",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (verificationType === 'treatment_center' && !formData.treatmentCenterName) {
+      toast({
+        title: "Missing Information", 
+        description: "Please enter treatment center name before verification",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    if (verificationType === 'referral_network' && !formData.referralNetworkName) {
+      toast({
+        title: "Missing Information",
+        description: "Please enter referral network name before verification", 
+        variant: "destructive"
+      });
+      return;
+    }
+
+    setIsVerifying(true);
+    setVerificationProgress(0);
+
+    try {
+      const verificationRequest = {
+        verificationType,
+        npi: verificationType === 'provider' ? formData.npiNumber : 
+             verificationType === 'treatment_center' ? formData.treatmentCenterNPI : 
+             formData.referralNetworkNPI,
+        providerType: formData.providerType,
+        sectionData,
+        providerSearch: !formData.npiNumber && verificationType === 'provider' ? {
+          firstName: formData.providerName.split(' ')[0],
+          lastName: formData.providerName.split(' ').slice(1).join(' '),
+          organizationName: formData.providerType === 'organization' ? formData.providerName : undefined
+        } : {
+          organizationName: verificationType === 'treatment_center' ? formData.treatmentCenterName : formData.referralNetworkName
+        }
+      };
+
+      setVerificationProgress(20);
+      
+      console.log(`🔍 Starting ${verificationType} verification:`, verificationRequest);
+
+      const { data: result, error } = await supabase.functions.invoke('verify-npi-credentials', {
+        body: verificationRequest
+      });
+
+      setVerificationProgress(60);
+
+      if (error) {
+        throw new Error(error.message);
+      }
+
+      if (!result.success) {
+        throw new Error(result.error || 'Verification failed');
+      }
+
+      const verification = result.verification;
+      setVerificationProgress(80);
+
+      if (verification.verificationStatus === 'needs_disambiguation') {
+        // Handle disambiguation - show alternatives to user
+        toast({
+          title: "Multiple Matches Found",
+          description: `Found ${verification.alternativeMatches?.length || 0} potential matches. Please provide more specific information.`,
+          variant: "default"
+        });
+
+        // You could show a disambiguation dialog here
+        setVerificationResults({ 
+          ...verification, 
+          needsDisambiguation: true 
+        });
+        return;
+      }
+
+      if (verification.isValid && verification.mappedFields) {
+        // Auto-fill form with mapped data
+        setFormData(prev => ({
+          ...prev,
+          ...verification.mappedFields,
+          verificationStatus: 'verified',
+          verifiedAt: verification.verifiedAt
+        }));
+
+        setVerificationProgress(100);
+        setVerificationResults(verification);
+
+        toast({
+          title: "Verification Complete",
+          description: `${verificationType.replace('_', ' ')} information verified and auto-filled successfully`,
+          variant: "default"
+        });
+
+        // Call completion callback with enhanced data
+        if (onVerificationComplete) {
+          onVerificationComplete({
+            ...formData,
+            ...verification.mappedFields,
+            verification: verification,
+            verificationType
+          });
+        }
+      } else {
+        throw new Error(verification.issues.join(', ') || 'Verification failed');
+      }
+
+    } catch (error: any) {
+      console.error('NPI Verification error:', error);
+      toast({
+        title: "Verification Failed",
+        description: error.message || 'Unable to verify. Please check information and try again.',
+        variant: "destructive"
+      });
+      
+      setFormData(prev => ({
+        ...prev,
+        verificationStatus: 'failed'
+      }));
+    } finally {
+      setIsVerifying(false);
+    }
   };
 
   const renderProviderTab = () => (
