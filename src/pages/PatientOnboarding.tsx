@@ -33,7 +33,7 @@ import { useLocation } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { SmartMCPStepwiseAgent } from '@/components/enrollment/SmartMCPStepwiseAgent';
-import { v4 as uuidv4 } from 'uuid';
+import { PatientNavigationHelper } from '@/components/navigation/PatientNavigationHelper';
 
 interface PatientOnboarding {
   id: string;
@@ -416,11 +416,14 @@ const getPriorityColor = (priority: PatientOnboarding['priority']) => {
   return (
     <AppLayout title="Patient Onboarding">
       <div className="flex-1 space-y-6 p-4 md:p-6">
+        {/* Navigation Helper */}
+        <PatientNavigationHelper />
+        
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">Patient Onboarding</h1>
+            <h1 className="text-3xl font-bold tracking-tight">Patient Onboarding Workflow</h1>
             <p className="text-muted-foreground">
-              Start new patient enrollment process
+              Monitor enrollment processes • For patient management with names/CRUD, use Patient Dashboard
             </p>
           </div>
           <Button onClick={handleNewEnrollment}>
