@@ -280,8 +280,10 @@ export const ConversationalEnrollmentSelector: React.FC<ConversationalEnrollment
   }
 
   if (selectedMethod === 'traditional') {
-    // Close modal and let the user continue with the existing form on the page
+    // Navigate to the traditional enrollment form and close modal
+    navigate('/enrollment-workspace?method=form');
     closeEnrollment();
+    onComplete && onComplete({ method: 'traditional', navigated: true });
     return null;
   }
 
