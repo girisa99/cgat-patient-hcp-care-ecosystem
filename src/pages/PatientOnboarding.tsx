@@ -47,21 +47,21 @@ interface PatientOnboarding {
   nextStep: string;
 }
 
-// Live data state
-const [liveOnboarding, setLiveOnboarding] = useState<PatientOnboarding[]>([]);
-const [liveStats, setLiveStats] = useState({
-  total: 0,
-  initiated: 0,
-  inProgress: 0,
-  documentsPending: 0,
-  completed: 0,
-  onHold: 0
-});
-const [isLoading, setIsLoading] = useState(true);
-
 export default function PatientOnboarding() {
   const [searchTerm, setSearchTerm] = React.useState('');
   const [statusFilter, setStatusFilter] = React.useState<string>('all');
+  
+  // Live data state - moved inside component
+  const [liveOnboarding, setLiveOnboarding] = useState<PatientOnboarding[]>([]);
+  const [liveStats, setLiveStats] = useState({
+    total: 0,
+    initiated: 0,
+    inProgress: 0,
+    documentsPending: 0,
+    completed: 0,
+    onHold: 0
+  });
+  const [isLoading, setIsLoading] = useState(true);
   const [currentView, setCurrentView] = useState<'list' | 'new_enrollment' | 'workflow' | 'templates' | 'agent_config' | 'voice_channels'>('list');
   const [selectedPatient, setSelectedPatient] = useState<PatientOnboarding | null>(null);
   const [selectedAgentType, setSelectedAgentType] = useState<string>('');
