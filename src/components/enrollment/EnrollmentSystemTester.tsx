@@ -24,6 +24,7 @@ import { EnrollmentErrorDiagnostics } from './EnrollmentErrorDiagnostics';
 import { EnrollmentDebugPanel } from './EnrollmentDebugPanel';
 import { enrollmentDebugger } from '@/utils/enrollmentDebugger';
 import { getEnhancedFieldStatistics } from '@/utils/extendedConditionalFields';
+import { AuthStatusChecker } from './AuthStatusChecker';
 
 export const EnrollmentSystemTester: React.FC = () => {
   const [testPatientId, setTestPatientId] = useState('');
@@ -91,11 +92,16 @@ export const EnrollmentSystemTester: React.FC = () => {
           </Alert>
 
           <Tabs defaultValue="live-test" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="auth-check">Auth Status</TabsTrigger>
               <TabsTrigger value="live-test">Live Test</TabsTrigger>
               <TabsTrigger value="diagnostics">System Diagnostics</TabsTrigger>
               <TabsTrigger value="debug-logs">Debug Logs</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="auth-check">
+              <AuthStatusChecker />
+            </TabsContent>
 
             <TabsContent value="live-test" className="space-y-4">
               <div className="flex items-center space-x-4">
