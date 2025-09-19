@@ -94,10 +94,10 @@ export const ConditionalFieldRenderer: React.FC<ConditionalFieldRendererProps> =
               <SelectValue placeholder="Select collection method..." />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="digital">Digital/Electronic</SelectItem>
-              <SelectItem value="in_person">In-Person</SelectItem>
-              <SelectItem value="phone">Phone Consultation</SelectItem>
-              <SelectItem value="mail">Mail/Postal</SelectItem>
+              <SelectItem value="whatsapp">WhatsApp</SelectItem>
+              <SelectItem value="sms">SMS/Text Message</SelectItem>
+              <SelectItem value="email">Email</SelectItem>
+              <SelectItem value="voice">Voice Call</SelectItem>
               <SelectItem value="facility_specific">Facility-Specific Process</SelectItem>
               <SelectItem value="provider_guided">Provider-Guided Process</SelectItem>
             </SelectContent>
