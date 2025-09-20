@@ -31,6 +31,8 @@ export const NPIVerificationDemoTrigger: React.FC = () => {
     return value.length > 0 ? 'POPULATED' : 'EMPTY';
   };
 
+  console.log('✅ NPIVerificationDemoTrigger is rendering');
+  
   return (
     <div className="space-y-6 p-6">
       <div className="text-center space-y-2">
