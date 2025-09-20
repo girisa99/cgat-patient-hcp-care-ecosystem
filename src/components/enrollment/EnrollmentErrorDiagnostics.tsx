@@ -196,52 +196,154 @@ export const EnrollmentErrorDiagnostics: React.FC = () => {
       }
       setTestResults([...results]);
 
-      // Test 6: Database Insert Response Test  
-      results.push({ test: 'Database Insert Response', status: 'running' });
+      // Test 6: Database Write Operations Test for New Tables
+      results.push({ test: 'Provider Enrollments Table Write', status: 'running' });
       setTestResults([...results]);
 
-      // Test 7: Patient Enrollment Insert Test
+      if (!userId) {
+        results[results.length - 1] = { 
+          test: 'Provider Enrollments Table Write', 
+          status: 'failed', 
+          error: 'Not authenticated: user_id required for RLS' 
+        };
+      } else {
+        try {
+          const testProviderData = {
+            enrollment_id: 'test-' + Date.now(),
+            user_id: userId,
+            provider_name: 'Test Provider',
+            provider_type: 'individual',
+            npi_number: '1234567890',
+            provider_verification_status: 'verified'
+          };
+
+          const { data: insertData, error: insertError } = await supabase
+            .from('provider_enrollments')
+            .insert(testProviderData)
+            .select();
+
+          if (insertError) {
+            results[results.length - 1] = { 
+              test: 'Provider Enrollments Table Write', 
+              status: 'failed', 
+              error: insertError.message 
+            };
+          } else {
+            results[results.length - 1] = { 
+              test: 'Provider Enrollments Table Write', 
+              status: 'passed',
+              details: `Successfully wrote to provider_enrollments table with ID: ${insertData[0].id}`
+            };
+
+            // Clean up test data
+            await supabase.from('provider_enrollments').delete().eq('id', insertData[0].id);
+          }
+        } catch (error: any) {
+          results[results.length - 1] = { 
+            test: 'Provider Enrollments Table Write', 
+            status: 'failed', 
+            error: error.message 
+          };
+        }
+      }
+      setTestResults([...results]);
+
+      // Test 7: Treatment Center Enrollments Table Write
+      results.push({ test: 'Treatment Center Enrollments Table Write', status: 'running' });
+      setTestResults([...results]);
+
+      if (!userId) {
+        results[results.length - 1] = { 
+          test: 'Treatment Center Enrollments Table Write', 
+          status: 'failed', 
+          error: 'Not authenticated: user_id required for RLS' 
+        };
+      } else {
+        try {
+          const testTreatmentData = {
+            enrollment_id: 'test-' + Date.now(),
+            user_id: userId,
+            facility_name: 'Test Treatment Center',
+            facility_type: 'outpatient',
+            treatment_center_verification_status: 'verified'
+          };
+
+          const { data: insertData, error: insertError } = await supabase
+            .from('treatment_center_enrollments')
+            .insert(testTreatmentData)
+            .select();
+
+          if (insertError) {
+            results[results.length - 1] = { 
+              test: 'Treatment Center Enrollments Table Write', 
+              status: 'failed', 
+              error: insertError.message 
+            };
+          } else {
+            results[results.length - 1] = { 
+              test: 'Treatment Center Enrollments Table Write', 
+              status: 'passed',
+              details: `Successfully wrote to treatment_center_enrollments table with ID: ${insertData[0].id}`
+            };
+
+            // Clean up test data
+            await supabase.from('treatment_center_enrollments').delete().eq('id', insertData[0].id);
+          }
+        } catch (error: any) {
+          results[results.length - 1] = { 
+            test: 'Treatment Center Enrollments Table Write', 
+            status: 'failed', 
+            error: error.message 
+          };
+        }
+      }
+      setTestResults([...results]);
+
+      // Test 8: Database Response Time Test  
+      results.push({ test: 'Database Response Time', status: 'running' });
+      setTestResults([...results]);
+
+      try {
+        const startTime = Date.now();
+        const { data: dbData, error: dbError } = await supabase
+          .from('provider_enrollments')
+          .select('id')
+          .limit(1);
+        
+        const responseTime = Date.now() - startTime;
+        
+        if (dbError) {
+          results[results.length - 1] = { 
+            test: 'Database Response Time', 
+            status: 'failed', 
+            error: dbError.message 
+          };
+        } else {
+          results[results.length - 1] = { 
+            test: 'Database Response Time', 
+            status: responseTime < 1000 ? 'passed' : 'warning',
+            details: `Database responded in ${responseTime}ms${responseTime >= 1000 ? ' (slow)' : ' (good)'}`
+          };
+        }
+      } catch (error: any) {
+        results[results.length - 1] = { 
+          test: 'Database Response Time', 
+          status: 'failed', 
+          error: error.message 
+        };
+      }
+      setTestResults([...results]);
+      // Test 9: Patient Enrollment Insert Test
       results.push({ test: 'Patient Enrollment Insert', status: 'running' });
       setTestResults([...results]);
 
       if (!userId) {
-        results[results.length - 2] = { 
-          test: 'Database Insert Response', 
-          status: 'failed', 
-          error: 'Not authenticated: user_id required for RLS' 
-        };
         results[results.length - 1] = { 
           test: 'Patient Enrollment Insert', 
           status: 'failed', 
           error: 'Not authenticated: user_id required for RLS' 
         };
-        setTestResults([...results]);
       } else {
-        // Test database insert response time
-        const insertStartTime = Date.now();
-        
-        // Simple connectivity test
-        const { data: quickTest, error: quickError } = await supabase
-          .from('patient_enrollments')
-          .select('count')
-          .limit(1);
-
-        const responseTime = Date.now() - insertStartTime;
-        
-        if (quickError) {
-          results[results.length - 2] = { 
-            test: 'Database Insert Response', 
-            status: 'failed', 
-            error: `DB response error: ${quickError.message}` 
-          };
-        } else {
-          results[results.length - 2] = { 
-            test: 'Database Insert Response', 
-            status: 'passed',
-            details: `Response time: ${responseTime}ms`
-          };
-        }
-        setTestResults([...results]);
         const { data: patientTest, error: patientError } = await supabase
           .from('patient_enrollments')
           .insert({

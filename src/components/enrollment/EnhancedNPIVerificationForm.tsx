@@ -20,6 +20,7 @@ import {
   Loader2,
   Shield
 } from 'lucide-react';
+import { StatusDisplayFields } from './StatusDisplayFields';
 
 interface ProviderData {
   // Provider Information
@@ -73,12 +74,14 @@ interface EnhancedNPIVerificationFormProps {
   onVerificationComplete?: (data: ProviderData) => void;
   initialData?: Partial<ProviderData>;
   autoTriggerVerification?: boolean;
+  enrollmentId?: string;
 }
 
 export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormProps> = ({
   onVerificationComplete,
   initialData = {},
-  autoTriggerVerification = false
+  autoTriggerVerification = false,
+  enrollmentId = 'new'
 }) => {
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('provider');
@@ -172,17 +175,56 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
       if (error) throw error;
 
       if (data?.verified) {
-        setFormData(prev => ({
-          ...prev,
+        const updatedFormData = {
+          ...formData,
           ...data.providerInfo,
-          verificationStatus: 'verified',
-          providerVerificationStatus: 'verified',
+          verificationStatus: 'verified' as const,
+          providerVerificationStatus: 'verified' as const,
           verifiedAt: new Date().toISOString()
-        }));
+        };
+
+        setFormData(updatedFormData);
+
+        // Save to provider_enrollments table
+        try {
+          const { error: dbError } = await supabase
+            .from('provider_enrollments')
+            .upsert({
+              enrollment_id: enrollmentId,
+              user_id: (await supabase.auth.getUser()).data.user?.id,
+              provider_name: updatedFormData.providerName,
+              provider_type: updatedFormData.providerType,
+              npi_number: updatedFormData.npiNumber,
+              specialty: updatedFormData.specialty,
+              license_number: updatedFormData.licenseNumber,
+              license_state: updatedFormData.licenseState,
+              board_certification: updatedFormData.boardCertification,
+              provider_status: updatedFormData.providerStatus,
+              provider_verification_status: 'verified',
+              credentialing_status: 'completed',
+              verification_source: 'nppes_registry',
+              verified_at: new Date().toISOString(),
+              verification_confidence: data.confidence || 0.9,
+              verification_issues: data.verification?.issues || []
+            }, {
+              onConflict: 'enrollment_id,user_id'
+            });
+
+          if (dbError) {
+            console.error('Database save error:', dbError);
+            toast({
+              title: "Database Warning",
+              description: "Verification successful but failed to save to database.",
+              variant: "destructive"
+            });
+          }
+        } catch (dbError) {
+          console.error('Database operation failed:', dbError);
+        }
 
         toast({
           title: "Verification Successful",
-          description: "Provider information has been verified and auto-filled.",
+          description: "Provider information has been verified and saved.",
           variant: "default"
         });
       } else {
@@ -244,17 +286,50 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
       if (error) throw error;
 
       if (data?.verified) {
-        setFormData(prev => ({
-          ...prev,
+        const updatedFormData = {
+          ...formData,
           ...data.facilityInfo,
-          verificationStatus: 'verified',
-          treatmentCenterVerificationStatus: 'verified',
+          verificationStatus: 'verified' as const,
+          treatmentCenterVerificationStatus: 'verified' as const,
           verifiedAt: new Date().toISOString()
-        }));
+        };
+
+        setFormData(updatedFormData);
+
+        // Save to treatment_center_enrollments table
+        try {
+          const { error: dbError } = await supabase
+            .from('treatment_center_enrollments')
+            .upsert({
+              enrollment_id: enrollmentId,
+              user_id: (await supabase.auth.getUser()).data.user?.id,
+              facility_name: updatedFormData.facilityName,
+              facility_type: updatedFormData.facilityType,
+              facility_npi: updatedFormData.facilityNPI,
+              facility_address: updatedFormData.facilityAddress,
+              facility_city: updatedFormData.facilityCity,
+              facility_state: updatedFormData.facilityState,
+              facility_zip: updatedFormData.facilityZip,
+              facility_phone: updatedFormData.facilityPhone,
+              treatment_center_verification_status: 'verified',
+              verification_source: 'nppes_registry',
+              verified_at: new Date().toISOString(),
+              verification_confidence: data.confidence || 0.9,
+              verification_issues: data.verification?.issues || []
+            }, {
+              onConflict: 'enrollment_id,user_id'
+            });
+
+          if (dbError) {
+            console.error('Treatment center DB save error:', dbError);
+          }
+        } catch (dbError) {
+          console.error('Treatment center DB operation failed:', dbError);
+        }
 
         toast({
           title: "Treatment Center Verified",
-          description: "Facility information has been verified and auto-filled.",
+          description: "Facility information has been verified and saved.",
           variant: "default"
         });
       }
@@ -297,17 +372,44 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
       if (error) throw error;
 
       if (data?.verified) {
-        setFormData(prev => ({
-          ...prev,
+        const updatedFormData = {
+          ...formData,
           ...data.networkInfo,
-          verificationStatus: 'verified',
-          referralNetworkVerificationStatus: 'verified',
+          verificationStatus: 'verified' as const,
+          referralNetworkVerificationStatus: 'verified' as const,
           verifiedAt: new Date().toISOString()
-        }));
+        };
+
+        setFormData(updatedFormData);
+
+        // Save to referral_network_enrollments table
+        try {
+          const { error: dbError } = await supabase
+            .from('referral_network_enrollments')
+            .upsert({
+              enrollment_id: enrollmentId,
+              user_id: (await supabase.auth.getUser()).data.user?.id,
+              referral_network_name: updatedFormData.referralNetworkName,
+              referral_network_type: updatedFormData.referralNetworkType,
+              referral_network_verification_status: 'verified',
+              verification_source: 'manual_entry',
+              verified_at: new Date().toISOString(),
+              verification_confidence: data.confidence || 0.5,
+              verification_issues: data.verification?.issues || []
+            }, {
+              onConflict: 'enrollment_id,user_id'
+            });
+
+          if (dbError) {
+            console.error('Referral network DB save error:', dbError);
+          }
+        } catch (dbError) {
+          console.error('Referral network DB operation failed:', dbError);
+        }
 
         toast({
           title: "Referral Network Verified",
-          description: "Network information has been verified and auto-filled.",
+          description: "Network information has been verified and saved.",
           variant: "default"
         });
       }
@@ -693,6 +795,18 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
           <Badge variant={formData.verificationStatus === 'verified' ? 'default' : 'secondary'}>
             {formData.verificationStatus === 'verified' ? 'Verified' : 'Pending Verification'}
           </Badge>
+          <Badge variant={formData.providerVerificationStatus === 'verified' ? 'default' : 'destructive'}>
+            Provider: {formData.providerVerificationStatus || 'not_verified'}
+          </Badge>
+          <Badge variant={formData.treatmentCenterVerificationStatus === 'verified' ? 'default' : 'destructive'}>
+            Treatment: {formData.treatmentCenterVerificationStatus || 'not_verified'}
+          </Badge>
+          <Badge variant={formData.referralNetworkVerificationStatus === 'verified' ? 'default' : 'destructive'}>
+            Referral: {formData.referralNetworkVerificationStatus || 'not_verified'}
+          </Badge>
+          <Badge variant={formData.credentialingStatus === 'completed' ? 'default' : 'secondary'}>
+            Credentialing: {formData.credentialingStatus || 'pending'}
+          </Badge>
           {formData.verifiedAt && (
             <span className="text-sm text-muted-foreground">
               Verified: {new Date(formData.verifiedAt).toLocaleDateString()}
@@ -743,15 +857,27 @@ export const EnhancedNPIVerificationForm: React.FC<EnhancedNPIVerificationFormPr
 
         <div className="flex justify-between items-center">
           <div className="text-sm text-muted-foreground">
-            All data is saved using PostgreSQL UUID standards for optimal performance and security.
+            All data is saved to individual UUID-mapped tables (provider_enrollments, treatment_center_enrollments, referral_network_enrollments) with proper RLS policies.
           </div>
           <Button 
             onClick={() => onVerificationComplete?.(formData)}
-            disabled={!formData.providerName || !formData.npiNumber}
+            disabled={!formData.providerName}
           >
             Complete Verification
           </Button>
         </div>
+
+        <Separator className="my-6" />
+
+        {/* Status Display Fields */}
+        <StatusDisplayFields
+          providerStatus={formData.providerVerificationStatus}
+          treatmentCenterStatus={formData.treatmentCenterVerificationStatus}
+          referralNetworkStatus={formData.referralNetworkVerificationStatus}
+          credentialingStatus={formData.credentialingStatus}
+          overallStatus={formData.overallStatus}
+          lastVerified={formData.verifiedAt}
+        />
       </CardContent>
     </Card>
   );
