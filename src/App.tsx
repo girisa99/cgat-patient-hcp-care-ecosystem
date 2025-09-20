@@ -321,7 +321,7 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/npi-demo" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser', 'onboardingTeam']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser', 'onboardingTeam', 'healthcareProvider']}>
                       <NPIDemo />
                     </ProtectedRoute>
                   } />
