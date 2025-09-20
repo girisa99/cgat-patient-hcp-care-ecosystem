@@ -19,6 +19,7 @@ import { EnhancedProviderFormWithConfirmation } from "@/components/enrollment/En
 import { ComprehensiveProviderVerification } from "@/components/enrollment/ComprehensiveProviderVerification";
 import { WhatsAppConsentSender } from "@/components/enrollment/WhatsAppConsentSender";
 import { ConsentWorkflowManager } from "@/components/enrollment/ConsentWorkflowManager";
+import { RealTimeNPIVerification } from "@/components/enrollment/RealTimeNPIVerification";
 import { sessionSaveManager } from "@/utils/sessionSaveManager";
 
 interface SmartMCPStepwiseAgentProps {
@@ -475,29 +476,33 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
               </AlertDescription>
             </Alert>
 
-            {/* Show comprehensive provider verification for provider step */}
+            {/* Show real-time NPI verification for provider step */}
             {currentStep.key === 'provider_treatment' ? (
               <div className="space-y-6">
-                <ComprehensiveProviderVerification
-                  onSubmit={handleNext}
-                  initialData={{
-                    ...collectedData,
-                    // Auto-populate from consent step data
-                    provider_name: collectedData.provider_name,
-                    provider_npi: collectedData.provider_npi,
-                    treatment_center: collectedData.treatment_center,
-                    treatment_center_npi: collectedData.treatment_center_npi,
-                    // Add cross-tab validation metadata
-                    _crossTabSource: 'consent_management',
-                    _consentStepData: {
-                      provider_name: collectedData.provider_name,
-                      provider_npi: collectedData.provider_npi,
-                      treatment_center: collectedData.treatment_center,
-                      treatment_center_npi: collectedData.treatment_center_npi
-                    }
+                <RealTimeNPIVerification
+                  onVerificationComplete={(verifiedData) => {
+                    // Auto-populate form data with verified information
+                    const updatedData = {
+                      ...collectedData,
+                      provider_name: verifiedData.providerName,
+                      provider_npi: verifiedData.npi,
+                      provider_specialty: verifiedData.specialty,
+                      provider_phone: verifiedData.phone,
+                      provider_address: verifiedData.address,
+                      provider_credentials: verifiedData.credentials?.join(', ') || '',
+                      verification_status: 'verified',
+                      verification_timestamp: new Date().toISOString()
+                    };
+                    
+                    // Automatically proceed to next step with verified data
+                    handleNext(updatedData);
                   }}
-                  sectionType="provider"
-                  autoTriggerConfirmation={true}
+                  initialData={{
+                    providerName: collectedData.provider_name,
+                    treatmentCenter: collectedData.treatment_center,
+                    referralNetwork: collectedData.referral_network,
+                    npi: collectedData.provider_npi
+                  }}
                 />
                 {currentStepIndex > 0 && (
                   <Button 
@@ -505,6 +510,7 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
                     variant="outline" 
                     onClick={handlePrevious}
                     disabled={isLoading}
+                    className="mt-4"
                   >
                     Previous
                   </Button>

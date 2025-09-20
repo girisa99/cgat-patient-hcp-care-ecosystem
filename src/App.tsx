@@ -45,7 +45,7 @@ import SystemIntegration from '@/pages/SystemIntegration';
 import OrderManagement from '@/pages/OrderManagement';
 import PatientOnboarding from '@/pages/PatientOnboarding';
 import PatientOnboardingWhatsApp from '@/pages/PatientOnboardingWhatsApp';
-import NPIDemo from '@/pages/NPIDemo';
+
 
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
 import TherapySelection from '@/pages/TherapySelection';
@@ -318,11 +318,6 @@ const AppContent = () => {
                           }))
                         ))}
                       </Suspense>
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/npi-demo" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'demoUser', 'onboardingTeam', 'healthcareProvider']}>
-                      <NPIDemo />
                     </ProtectedRoute>
                   } />
                 </>
