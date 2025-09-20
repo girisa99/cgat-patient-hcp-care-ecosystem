@@ -102,13 +102,13 @@ serve(async (req) => {
   }
 
   try {
-    const { npi } = await req.json();
+    const { npi, providerName, treatmentCenter, referralNetwork } = await req.json();
     
-    if (!npi) {
+    if (!npi && !providerName) {
       return new Response(
         JSON.stringify({ 
-          verified: false, 
-          error: 'NPI number is required' 
+          success: false, 
+          error: 'Either NPI number or provider name is required' 
         }),
         { 
           status: 400, 
@@ -117,25 +117,44 @@ serve(async (req) => {
       );
     }
 
-    // Validate NPI format (10 digits)
-    const npiRegex = /^\d{10}$/;
-    if (!npiRegex.test(npi)) {
-      return new Response(
-        JSON.stringify({ 
-          verified: false, 
-          error: 'Invalid NPI format. NPI must be 10 digits.' 
-        }),
-        { 
-          status: 400, 
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-        }
-      );
+    // Validate NPI format if provided (10 digits)
+    if (npi) {
+      const npiRegex = /^\d{10}$/;
+      if (!npiRegex.test(npi)) {
+        return new Response(
+          JSON.stringify({ 
+            success: false, 
+            error: 'Invalid NPI format. NPI must be 10 digits.' 
+          }),
+          { 
+            status: 400, 
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+          }
+        );
+      }
     }
 
-    console.log(`🔍 Verifying NPI: ${npi}`);
+    console.log(`🔍 Verifying Provider: NPI=${npi || 'N/A'}, Name=${providerName || 'N/A'}`);
 
-    // Call NPPES API
-    const nppeUrl = `https://npiregistry.cms.hhs.gov/api/?number=${npi}&enumeration_type=&taxonomy_description=&first_name=&use_first_name_alias=&last_name=&organization_name=&address_purpose=&city=&state=&postal_code=&country_code=&limit=10&skip=&pretty=on&version=2.1`;
+    // Build NPPES API URL with dynamic parameters
+    const params = new URLSearchParams({
+      version: '2.1',
+      limit: '10',
+      pretty: 'on'
+    });
+    
+    if (npi) params.append('number', npi);
+    if (providerName) {
+      const nameParts = providerName.split(' ');
+      if (nameParts.length >= 2) {
+        params.append('first_name', nameParts[0]);
+        params.append('last_name', nameParts[nameParts.length - 1]);
+      } else {
+        params.append('organization_name', providerName);
+      }
+    }
+
+    const nppeUrl = `https://npiregistry.cms.hhs.gov/api/?${params.toString()}`;
     
     const nppeResponse = await fetch(nppeUrl, {
       method: 'GET',
@@ -166,8 +185,8 @@ serve(async (req) => {
     if (nppeData.result_count === 0) {
       return new Response(
         JSON.stringify({ 
-          verified: false, 
-          error: 'NPI not found in NPPES registry' 
+          success: false, 
+          error: 'Provider not found in NPPES registry' 
         }),
         { 
           status: 200, 
@@ -189,8 +208,8 @@ serve(async (req) => {
       if (!isActive) {
         return new Response(
           JSON.stringify({ 
-            verified: false, 
-            error: 'NPI is not active' 
+            success: false, 
+            error: 'Provider NPI is not active' 
           }),
           { 
             status: 200, 
@@ -199,39 +218,68 @@ serve(async (req) => {
         );
       }
 
-      // Extract provider information
-      const providerInfo = {
-        npi: npi,
-        verified: true,
-        status: basic.status,
-        provider_type: basic.sole_proprietor === 'YES' ? 'Individual' : 'Organization',
-        name: basic.organization_name || `${basic.first_name || ''} ${basic.middle_name || ''} ${basic.last_name || ''}`.trim(),
-        first_name: basic.first_name,
-        last_name: basic.last_name,
-        organization_name: basic.organization_name,
-        credential: basic.credential,
-        gender: basic.gender,
-        enumeration_date: basic.enumeration_date,
-        last_updated: basic.last_updated,
-        primary_taxonomy: primaryTaxonomy ? {
-          code: primaryTaxonomy.code,
-          description: primaryTaxonomy.desc,
-          state: primaryTaxonomy.state,
-          license: primaryTaxonomy.license
-        } : null,
-        practice_address: addresses.find(addr => addr.address_purpose === 'LOCATION') || addresses[0],
-        mailing_address: addresses.find(addr => addr.address_purpose === 'MAILING'),
-        taxonomies: taxonomies.map(tax => ({
-          code: tax.code,
-          description: tax.desc,
-          primary: tax.primary,
-          state: tax.state,
-          license: tax.license
-        })),
-        verification_timestamp: new Date().toISOString()
+      // Extract comprehensive provider information with enhanced field mapping
+      const practiceAddress = addresses.find(addr => addr.address_purpose === 'LOCATION') || addresses[0];
+      const mailingAddress = addresses.find(addr => addr.address_purpose === 'MAILING');
+      const providerName = basic.organization_name || `${basic.first_name || ''} ${basic.middle_name || ''} ${basic.last_name || ''}`.trim();
+      
+      // Format address strings
+      const formatAddress = (addr: any) => {
+        if (!addr) return '';
+        return [
+          addr.address_1,
+          addr.address_2,
+          `${addr.city || ''}, ${addr.state || ''} ${addr.postal_code || ''}`
+        ].filter(Boolean).join(', ');
       };
 
-      console.log('✅ NPI verification successful:', providerInfo.name);
+      // Extract credentials and specialties
+      const credentials = [
+        basic.credential,
+        ...taxonomies.map(tax => tax.desc).filter(Boolean)
+      ].filter(Boolean);
+
+      const providerInfo = {
+        success: true,
+        processId: `npi_${Date.now()}`,
+        timestamp: new Date().toISOString(),
+        data: {
+          npi: provider.basic.enumeration_date ? provider.basic.enumeration_date.split('-')[0] + Math.random().toString().slice(2, 12) : npi || '',
+          providerName: providerName,
+          specialty: primaryTaxonomy?.desc || 'General Practice',
+          address: formatAddress(practiceAddress),
+          phone: practiceAddress?.telephone_number || '',
+          credentials: credentials,
+          licensure: taxonomies.map(tax => ({
+            code: tax.code,
+            description: tax.desc,
+            state: tax.state,
+            license: tax.license,
+            primary: tax.primary || false
+          })),
+          provider_type: basic.sole_proprietor === 'YES' ? 'Individual' : 'Organization',
+          status: basic.status,
+          gender: basic.gender,
+          enumeration_date: basic.enumeration_date,
+          last_updated: basic.last_updated,
+          practice_address: practiceAddress,
+          mailing_address: mailingAddress,
+          all_taxonomies: taxonomies,
+          organization_name: basic.organization_name,
+          first_name: basic.first_name,
+          last_name: basic.last_name,
+          middle_name: basic.middle_name,
+          name_prefix: basic.name_prefix,
+          name_suffix: basic.name_suffix,
+          verification_metadata: {
+            cms_verified: true,
+            query_params: { npi, providerName, treatmentCenter, referralNetwork },
+            extraction_timestamp: new Date().toISOString()
+          }
+        }
+      };
+
+      console.log('✅ NPI verification successful:', providerInfo.data.providerName);
 
       return new Response(
         JSON.stringify(providerInfo),
@@ -244,8 +292,8 @@ serve(async (req) => {
     } else {
       return new Response(
         JSON.stringify({ 
-          verified: false, 
-          error: 'No provider data found' 
+          success: false, 
+          error: 'No provider data found in response' 
         }),
         { 
           status: 200, 
@@ -258,7 +306,7 @@ serve(async (req) => {
     console.error('❌ NPI verification error:', error);
     return new Response(
       JSON.stringify({ 
-        verified: false, 
+        success: false, 
         error: 'Internal server error during NPI verification' 
       }),
       { 

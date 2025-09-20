@@ -153,15 +153,22 @@ export const RealTimeNPIVerification: React.FC<RealTimeNPIVerificationProps> = (
       setRealTimeProgress(85);
       addDbOperation('Storing verification record in database...');
 
-      // Store verification in npi_verification_results table (using correct schema)
+      // Store comprehensive verification data in database
       const { error: dbError } = await supabase
         .from('npi_verification_results')
         .insert({
           npi: verificationResult.data?.npi || '',
-          provider_type: 'individual',
+          provider_type: verificationResult.data?.provider_type || 'individual',
           verification_status: verificationResult.success ? 'verified' : 'failed',
           verification_data: verificationResult.data,
-          verified_at: verificationResult.success ? new Date().toISOString() : null
+          provider_name: verificationResult.data?.providerName,
+          specialty: verificationResult.data?.specialty,
+          practice_address: verificationResult.data?.practice_address,
+          mailing_address: verificationResult.data?.mailing_address,
+          credentials: verificationResult.data?.credentials || [],
+          taxonomies: verificationResult.data?.all_taxonomies || [],
+          verified_at: verificationResult.success ? new Date().toISOString() : null,
+          verified_by: (await supabase.auth.getUser()).data.user?.id
         });
 
       if (dbError) {
