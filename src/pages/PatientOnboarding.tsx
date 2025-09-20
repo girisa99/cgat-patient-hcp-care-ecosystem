@@ -470,6 +470,10 @@ const PatientOnboarding: React.FC = () => {
             </p>
           </div>
           <div className="flex space-x-2">
+            <Button onClick={() => navigate('/npi-demo')} variant="secondary">
+              <CreditCard className="mr-2 h-4 w-4" />
+              NPI Verification Demo
+            </Button>
             <Button onClick={handleAIAgentClick} variant="default">
               <Bot className="mr-2 h-4 w-4" />
               AI Agent
