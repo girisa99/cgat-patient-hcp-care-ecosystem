@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { DashboardManagementTable } from '@/components/dashboard/DashboardManagementTable';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, UserCheck, Activity, Bot, TestTube } from 'lucide-react';
+import { ShoppingCart, UserCheck, Activity, Bot, TestTube, CreditCard } from 'lucide-react';
 import { normalizeRoles, hasAnyRole } from '@/utils/roles';
 
 const Index: React.FC = () => {
@@ -88,6 +88,15 @@ const Index: React.FC = () => {
               <div>
                 <h3 className="font-semibold">Testing Suite</h3>
                 <p className="text-sm text-muted-foreground">Provider-specific validation tools</p>
+              </div>
+            </CardContent>
+          </Card>
+          <Card onClick={() => navigate('/npi-demo')} className="cursor-pointer hover:shadow-sm transition-shadow">
+            <CardContent className="p-6 flex items-center gap-4">
+              <CreditCard className="h-6 w-6" />
+              <div>
+                <h3 className="font-semibold">NPI Verification Demo</h3>
+                <p className="text-sm text-muted-foreground">Agent trigger and workflow demonstration</p>
               </div>
             </CardContent>
           </Card>
