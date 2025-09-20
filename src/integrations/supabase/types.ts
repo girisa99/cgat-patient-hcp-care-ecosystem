@@ -9486,6 +9486,105 @@ export type Database = {
         }
         Relationships: []
       }
+      provider_enrollments: {
+        Row: {
+          board_certification: string | null
+          created_at: string
+          credentialing_status: string | null
+          dea_number: string | null
+          enrollment_id: string
+          id: string
+          license_expiry: string | null
+          license_number: string | null
+          license_state: string | null
+          medical_license_number: string | null
+          npi_number: string | null
+          provider_address: string | null
+          provider_city: string | null
+          provider_email: string | null
+          provider_name: string
+          provider_phone: string | null
+          provider_state: string | null
+          provider_status: string | null
+          provider_type: string
+          provider_verification_status: string | null
+          provider_zip: string | null
+          specialty: string | null
+          tax_id: string | null
+          taxonomy_code: string | null
+          updated_at: string
+          user_id: string | null
+          verification_confidence: number | null
+          verification_issues: Json | null
+          verification_source: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          board_certification?: string | null
+          created_at?: string
+          credentialing_status?: string | null
+          dea_number?: string | null
+          enrollment_id: string
+          id?: string
+          license_expiry?: string | null
+          license_number?: string | null
+          license_state?: string | null
+          medical_license_number?: string | null
+          npi_number?: string | null
+          provider_address?: string | null
+          provider_city?: string | null
+          provider_email?: string | null
+          provider_name: string
+          provider_phone?: string | null
+          provider_state?: string | null
+          provider_status?: string | null
+          provider_type: string
+          provider_verification_status?: string | null
+          provider_zip?: string | null
+          specialty?: string | null
+          tax_id?: string | null
+          taxonomy_code?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verification_confidence?: number | null
+          verification_issues?: Json | null
+          verification_source?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          board_certification?: string | null
+          created_at?: string
+          credentialing_status?: string | null
+          dea_number?: string | null
+          enrollment_id?: string
+          id?: string
+          license_expiry?: string | null
+          license_number?: string | null
+          license_state?: string | null
+          medical_license_number?: string | null
+          npi_number?: string | null
+          provider_address?: string | null
+          provider_city?: string | null
+          provider_email?: string | null
+          provider_name?: string
+          provider_phone?: string | null
+          provider_state?: string | null
+          provider_status?: string | null
+          provider_type?: string
+          provider_verification_status?: string | null
+          provider_zip?: string | null
+          specialty?: string | null
+          tax_id?: string | null
+          taxonomy_code?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verification_confidence?: number | null
+          verification_issues?: Json | null
+          verification_source?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
+      }
       provider_profiles: {
         Row: {
           advanced_therapy_details: string | null
@@ -9874,6 +9973,63 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      referral_network_enrollments: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          id: string
+          network_contact_person: string | null
+          network_email: string | null
+          network_phone: string | null
+          referral_network_id: string | null
+          referral_network_name: string
+          referral_network_type: string | null
+          referral_network_verification_status: string | null
+          updated_at: string
+          user_id: string | null
+          verification_confidence: number | null
+          verification_issues: Json | null
+          verification_source: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          id?: string
+          network_contact_person?: string | null
+          network_email?: string | null
+          network_phone?: string | null
+          referral_network_id?: string | null
+          referral_network_name: string
+          referral_network_type?: string | null
+          referral_network_verification_status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verification_confidence?: number | null
+          verification_issues?: Json | null
+          verification_source?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          id?: string
+          network_contact_person?: string | null
+          network_email?: string | null
+          network_phone?: string | null
+          referral_network_id?: string | null
+          referral_network_name?: string
+          referral_network_type?: string | null
+          referral_network_verification_status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verification_confidence?: number | null
+          verification_issues?: Json | null
+          verification_source?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
       }
       role_api_access: {
         Row: {
@@ -11293,6 +11449,81 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      treatment_center_enrollments: {
+        Row: {
+          created_at: string
+          enrollment_id: string
+          facility_address: string | null
+          facility_city: string | null
+          facility_email: string | null
+          facility_license_expiry: string | null
+          facility_license_number: string | null
+          facility_name: string
+          facility_npi: string | null
+          facility_phone: string | null
+          facility_state: string | null
+          facility_status: string | null
+          facility_type: string | null
+          facility_zip: string | null
+          id: string
+          treatment_center_verification_status: string | null
+          updated_at: string
+          user_id: string | null
+          verification_confidence: number | null
+          verification_issues: Json | null
+          verification_source: string | null
+          verified_at: string | null
+        }
+        Insert: {
+          created_at?: string
+          enrollment_id: string
+          facility_address?: string | null
+          facility_city?: string | null
+          facility_email?: string | null
+          facility_license_expiry?: string | null
+          facility_license_number?: string | null
+          facility_name: string
+          facility_npi?: string | null
+          facility_phone?: string | null
+          facility_state?: string | null
+          facility_status?: string | null
+          facility_type?: string | null
+          facility_zip?: string | null
+          id?: string
+          treatment_center_verification_status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verification_confidence?: number | null
+          verification_issues?: Json | null
+          verification_source?: string | null
+          verified_at?: string | null
+        }
+        Update: {
+          created_at?: string
+          enrollment_id?: string
+          facility_address?: string | null
+          facility_city?: string | null
+          facility_email?: string | null
+          facility_license_expiry?: string | null
+          facility_license_number?: string | null
+          facility_name?: string
+          facility_npi?: string | null
+          facility_phone?: string | null
+          facility_state?: string | null
+          facility_status?: string | null
+          facility_type?: string | null
+          facility_zip?: string | null
+          id?: string
+          treatment_center_verification_status?: string | null
+          updated_at?: string
+          user_id?: string | null
+          verification_confidence?: number | null
+          verification_issues?: Json | null
+          verification_source?: string | null
+          verified_at?: string | null
+        }
+        Relationships: []
       }
       treatment_center_onboarding: {
         Row: {
