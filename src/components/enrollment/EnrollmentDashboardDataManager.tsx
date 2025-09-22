@@ -78,7 +78,6 @@ export class EnrollmentDashboardDataManager {
           enrollment_source, created_at, updated_at, session_id,
           is_active, deactivated_by, deactivation_reason
         `)
-        .eq('is_active', true)
         .order('updated_at', { ascending: false });
 
       if (enrollmentsResponse.error || !enrollmentsResponse.data) {
@@ -177,7 +176,7 @@ export class EnrollmentDashboardDataManager {
       const { data: enrollments, error } = await supabase
         .from('patient_enrollments')
         .select('enrollment_status')
-        .eq('is_active', true);
+        
 
       if (error) throw error;
 

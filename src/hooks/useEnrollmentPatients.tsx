@@ -58,7 +58,7 @@ export const useEnrollmentPatients = () => {
             zip_code
           )
         `)
-        .eq('is_active', true)
+        
         .order('created_at', { ascending: false });
 
       if (enrollmentError) {
