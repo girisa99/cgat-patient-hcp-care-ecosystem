@@ -28,6 +28,7 @@ interface EnhancedPatient {
   created_at: string;
   is_active?: boolean;
   current_section?: string;
+  source_type?: 'enrollment' | 'profile';
 }
 
 export const EnhancedPatientDashboard: React.FC = () => {
@@ -63,7 +64,8 @@ export const EnhancedPatientDashboard: React.FC = () => {
     session_id: enrollment.session_id,
     created_at: enrollment.created_at,
     is_active: enrollment.is_active,
-    current_section: enrollment.current_section
+    current_section: enrollment.current_section,
+    source_type: enrollment.source_type
   }));
   
   const stats = getEnrollmentStats();
@@ -71,12 +73,17 @@ export const EnhancedPatientDashboard: React.FC = () => {
   console.log('🏥 Enhanced Patient Dashboard - Using enrollment tables for patient data');
 
   // Enrollment source display helper
-  const getEnrollmentSourceDisplay = (source: string) => {
+  const getEnrollmentSourceDisplay = (source: string, sourceType?: string) => {
+    if (sourceType === 'profile') {
+      return { label: 'Profile Registration', color: 'bg-emerald-100 text-emerald-800' };
+    }
+    
     switch (source) {
       case 'mcp': return { label: 'MCP Agent', color: 'bg-blue-100 text-blue-800' };
       case 'conversational': return { label: 'Conversational AI', color: 'bg-green-100 text-green-800' };
       case 'diagnostic_test': return { label: 'Diagnostic Test', color: 'bg-purple-100 text-purple-800' };
       case 'online': return { label: 'Online Form', color: 'bg-orange-100 text-orange-800' };
+      case 'profile_registration': return { label: 'Profile Registration', color: 'bg-emerald-100 text-emerald-800' };
       default: return { label: 'Unknown Source', color: 'bg-gray-100 text-gray-600' };
     }
   };
@@ -161,8 +168,8 @@ export const EnhancedPatientDashboard: React.FC = () => {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{stats.withInfo}</div>
-            <div className="text-sm text-muted-foreground">With Patient Info</div>
+            <div className="text-2xl font-bold text-purple-600">{stats.fromProfile}</div>
+            <div className="text-sm text-muted-foreground">From Profiles</div>
           </CardContent>
         </Card>
       </div>
@@ -207,7 +214,7 @@ export const EnhancedPatientDashboard: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {patients.map((patient) => {
-                  const enrollmentSource = getEnrollmentSourceDisplay(patient.enrollment_source || 'unknown');
+                  const enrollmentSource = getEnrollmentSourceDisplay(patient.enrollment_source || 'unknown', patient.source_type);
                   const progressPercentage = patient.progress_percentage || 0;
                   
                   return (
@@ -223,6 +230,11 @@ export const EnhancedPatientDashboard: React.FC = () => {
                               <Badge variant={patient.is_active !== false ? 'default' : 'secondary'}>
                                 {patient.is_active !== false ? 'Active' : 'Inactive'}
                               </Badge>
+                              {patient.source_type === 'profile' && (
+                                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
+                                  Profile Patient
+                                </Badge>
+                              )}
                             </div>
                             
                             <div className="text-sm text-muted-foreground mb-3">
@@ -328,13 +340,13 @@ export const EnhancedPatientDashboard: React.FC = () => {
       <Card className="border-0 shadow-sm bg-green-50 border-green-200">
         <CardContent className="p-4">
           <div className="text-sm text-green-700">
-            <p><strong>✅ Patient Enrollment Dashboard (Using Enrollment Tables):</strong></p>
+            <p><strong>✅ Combined Patient Dashboard (All Patients Restored):</strong></p>
             <ul className="mt-2 space-y-1">
-              <li>• Patient data from enrollment tables with patient info</li>
-              <li>• Enrollment sources: MCP Agent, Conversational AI, Diagnostic Test</li>
-              <li>• Real enrollment status and progress tracking</li>
-              <li>• Session IDs and current sections displayed</li>
-              <li>• Deactivation and status management</li>
+              <li>• Shows ALL patients: enrollment-based + profile-based</li>
+              <li>• Profile patients: {stats.fromProfile} (from user registration)</li>
+              <li>• Enrollment patients: {stats.fromEnrollment} (from enrollment flow)</li>
+              <li>• Real patient names and information displayed</li>
+              <li>• Multiple sources: MCP Agent, Profile Registration, Diagnostic Test</li>
             </ul>
           </div>
         </CardContent>
