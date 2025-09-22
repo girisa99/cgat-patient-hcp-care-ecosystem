@@ -58,7 +58,8 @@ export const useEnrollmentPatients = () => {
             zip_code
           )
         `)
-        
+        .eq('is_active', true)
+        .eq('enrollment_status', 'in_progress')
         .order('created_at', { ascending: false });
 
       if (enrollmentError) {
