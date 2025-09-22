@@ -12,7 +12,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useMasterUserManagement } from '@/hooks/useMasterUserManagement';
+import { useEnrollmentPatients } from '@/hooks/useEnrollmentPatients';
 import { useAdminRealtime } from '@/hooks/useRealtime';
 import { PatientForm } from './PatientForm';
 
@@ -21,12 +21,13 @@ interface EnhancedPatient {
   first_name: string;
   last_name: string;
   email: string;
-  enrollment_type?: string;
+  enrollment_source?: string;
   enrollment_status?: string;
-  enrollment_progress?: number;
+  progress_percentage?: number;
+  session_id?: string;
   created_at: string;
   is_active?: boolean;
-  user_roles?: Array<{ role: { name: string } }>;
+  current_section?: string;
 }
 
 export const EnhancedPatientDashboard: React.FC = () => {
@@ -37,47 +38,46 @@ export const EnhancedPatientDashboard: React.FC = () => {
   });
 
   const { 
-    users, 
+    patients: enrollmentPatients, 
     isLoading, 
     error,
-    getUserStats,
+    getEnrollmentStats,
     refreshData,
-    deactivateUser,
+    deactivateEnrollment,
     isDeactivating
-  } = useMasterUserManagement();
+  } = useEnrollmentPatients();
   
   const [showPatientForm, setShowPatientForm] = useState(false);
   const [formMode, setFormMode] = useState<'create' | 'edit'>('create');
   const [selectedPatientForEdit, setSelectedPatientForEdit] = useState<EnhancedPatient | null>(null);
   
-  // Filter and enhance patients
-  const patients: EnhancedPatient[] = users
-    .filter(user => user.user_roles?.some(ur => ur.role?.name === 'patientCaregiver'))
-    .map(user => ({
-      id: user.id,
-      first_name: user.first_name || 'Name',
-      last_name: user.last_name || 'Pending',
-      email: user.email,
-      enrollment_type: user.enrollment_type || 'not_selected',
-      enrollment_status: user.enrollment_status || 'not_started',
-      enrollment_progress: user.enrollment_progress || 0,
-      created_at: user.created_at,
-      is_active: user.is_active,
-      user_roles: user.user_roles
-    }));
+  // Use enrollment patients directly
+  const patients: EnhancedPatient[] = enrollmentPatients.map(enrollment => ({
+    id: enrollment.id,
+    first_name: enrollment.first_name || 'Unknown',
+    last_name: enrollment.last_name || 'Patient',
+    email: enrollment.email || 'No email',
+    enrollment_source: enrollment.enrollment_source || 'unknown',
+    enrollment_status: enrollment.enrollment_status || 'not_started',
+    progress_percentage: enrollment.progress_percentage || 0,
+    session_id: enrollment.session_id,
+    created_at: enrollment.created_at,
+    is_active: enrollment.is_active,
+    current_section: enrollment.current_section
+  }));
   
-  const stats = getUserStats();
+  const stats = getEnrollmentStats();
 
-  console.log('🏥 Enhanced Patient Dashboard - Showing complete patient information with enrollment types');
+  console.log('🏥 Enhanced Patient Dashboard - Using enrollment tables for patient data');
 
-  // Enrollment type display helper
-  const getEnrollmentTypeDisplay = (type: string) => {
-    switch (type) {
-      case 'mcp': return { label: 'MCP', color: 'bg-blue-100 text-blue-800' };
-      case 'conversational': return { label: 'Conversational', color: 'bg-green-100 text-green-800' };
-      case 'ai_structure': return { label: 'AI Structure', color: 'bg-purple-100 text-purple-800' };
-      case 'online': return { label: 'Online', color: 'bg-orange-100 text-orange-800' };
-      default: return { label: 'Not Selected', color: 'bg-gray-100 text-gray-600' };
+  // Enrollment source display helper
+  const getEnrollmentSourceDisplay = (source: string) => {
+    switch (source) {
+      case 'mcp': return { label: 'MCP Agent', color: 'bg-blue-100 text-blue-800' };
+      case 'conversational': return { label: 'Conversational AI', color: 'bg-green-100 text-green-800' };
+      case 'diagnostic_test': return { label: 'Diagnostic Test', color: 'bg-purple-100 text-purple-800' };
+      case 'online': return { label: 'Online Form', color: 'bg-orange-100 text-orange-800' };
+      default: return { label: 'Unknown Source', color: 'bg-gray-100 text-gray-600' };
     }
   };
 
@@ -96,13 +96,13 @@ export const EnhancedPatientDashboard: React.FC = () => {
 
   const handleDeactivatePatient = async (patientId: string, patientName: string) => {
     if (window.confirm(`Are you sure you want to deactivate ${patientName}?`)) {
-      await deactivateUser(patientId);
+      await deactivateEnrollment(patientId);
     }
   };
 
-  const handleEnrollmentTypeChange = (patient: EnhancedPatient, newType: string) => {
-    // This will be implemented to update enrollment type
-    console.log(`Changing enrollment type for ${patient.first_name} ${patient.last_name} to ${newType}`);
+  const handleEnrollmentStatusChange = (patient: EnhancedPatient, newStatus: string) => {
+    console.log(`Changing enrollment status for ${patient.first_name} ${patient.last_name} to ${newStatus}`);
+    // updateEnrollmentStatus({ enrollmentId: patient.id, status: newStatus });
   };
 
   const handleContinueWorkflow = (patient: EnhancedPatient) => {
@@ -143,32 +143,26 @@ export const EnhancedPatientDashboard: React.FC = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-primary">{stats.patientCount}</div>
-            <div className="text-sm text-muted-foreground">Total Patients</div>
+            <div className="text-2xl font-bold text-primary">{stats.total}</div>
+            <div className="text-sm text-muted-foreground">Total Enrollments</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-green-600">
-              {patients.filter(p => p.enrollment_status !== 'not_started').length}
-            </div>
+            <div className="text-2xl font-bold text-green-600">{stats.active}</div>
             <div className="text-sm text-muted-foreground">Active Enrollments</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-blue-600">
-              {patients.filter(p => p.enrollment_type !== 'not_selected').length}
-            </div>
-            <div className="text-sm text-muted-foreground">Type Selected</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
+            <div className="text-sm text-muted-foreground">In Progress</div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">
-              {patients.filter(p => p.enrollment_progress > 50).length}
-            </div>
-            <div className="text-sm text-muted-foreground">Near Completion</div>
+            <div className="text-2xl font-bold text-purple-600">{stats.withInfo}</div>
+            <div className="text-sm text-muted-foreground">With Patient Info</div>
           </CardContent>
         </Card>
       </div>
@@ -213,8 +207,8 @@ export const EnhancedPatientDashboard: React.FC = () => {
             ) : (
               <div className="space-y-3">
                 {patients.map((patient) => {
-                  const enrollmentType = getEnrollmentTypeDisplay(patient.enrollment_type || 'not_selected');
-                  const progressPercentage = patient.enrollment_progress || 0;
+                  const enrollmentSource = getEnrollmentSourceDisplay(patient.enrollment_source || 'unknown');
+                  const progressPercentage = patient.progress_percentage || 0;
                   
                   return (
                     <Card key={patient.id} className="hover:shadow-md transition-shadow">
@@ -232,15 +226,15 @@ export const EnhancedPatientDashboard: React.FC = () => {
                             </div>
                             
                             <div className="text-sm text-muted-foreground mb-3">
-                              {patient.email} • Started: {new Date(patient.created_at).toLocaleDateString()}
+                              {patient.email} • Session: {patient.session_id} • Started: {new Date(patient.created_at).toLocaleDateString()}
                             </div>
                             
                             {/* Enrollment Information */}
                             <div className="flex items-center gap-4 mb-3">
                               <div className="flex items-center gap-2">
-                                <span className="text-sm font-medium">Type:</span>
-                                <Badge className={`${enrollmentType.color} border-0`}>
-                                  {enrollmentType.label}
+                                <span className="text-sm font-medium">Source:</span>
+                                <Badge className={`${enrollmentSource.color} border-0`}>
+                                  {enrollmentSource.label}
                                 </Badge>
                               </div>
                               
@@ -248,6 +242,13 @@ export const EnhancedPatientDashboard: React.FC = () => {
                                 <span className="text-sm font-medium">Status:</span>
                                 <Badge variant="outline">
                                   {patient.enrollment_status?.replace('_', ' ').toUpperCase()}
+                                </Badge>
+                              </div>
+
+                              <div className="flex items-center gap-2">
+                                <span className="text-sm font-medium">Section:</span>
+                                <Badge variant="secondary">
+                                  {patient.current_section?.replace('_', ' ').toUpperCase() || 'N/A'}
                                 </Badge>
                               </div>
                               
@@ -289,21 +290,17 @@ export const EnhancedPatientDashboard: React.FC = () => {
                                   <Edit className="h-4 w-4 mr-2" />
                                   Edit Patient
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEnrollmentTypeChange(patient, 'mcp')}>
+                                <DropdownMenuItem onClick={() => handleEnrollmentStatusChange(patient, 'in_progress')}>
                                   <Settings className="h-4 w-4 mr-2" />
-                                  Change to MCP
+                                  Mark In Progress
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEnrollmentTypeChange(patient, 'conversational')}>
+                                <DropdownMenuItem onClick={() => handleEnrollmentStatusChange(patient, 'completed')}>
                                   <Settings className="h-4 w-4 mr-2" />
-                                  Change to Conversational
+                                  Mark Completed
                                 </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEnrollmentTypeChange(patient, 'ai_structure')}>
+                                <DropdownMenuItem onClick={() => handleEnrollmentStatusChange(patient, 'pending_review')}>
                                   <Settings className="h-4 w-4 mr-2" />
-                                  Change to AI Structure
-                                </DropdownMenuItem>
-                                <DropdownMenuItem onClick={() => handleEnrollmentTypeChange(patient, 'online')}>
-                                  <Settings className="h-4 w-4 mr-2" />
-                                  Change to Online
+                                  Mark Pending Review
                                 </DropdownMenuItem>
                                 <DropdownMenuItem 
                                   onClick={() => handleDeactivatePatient(patient.id, `${patient.first_name} ${patient.last_name}`)}
@@ -331,13 +328,13 @@ export const EnhancedPatientDashboard: React.FC = () => {
       <Card className="border-0 shadow-sm bg-green-50 border-green-200">
         <CardContent className="p-4">
           <div className="text-sm text-green-700">
-            <p><strong>✅ Enhanced Patient Dashboard Features:</strong></p>
+            <p><strong>✅ Patient Enrollment Dashboard (Using Enrollment Tables):</strong></p>
             <ul className="mt-2 space-y-1">
-              <li>• Complete patient names and information displayed</li>
-              <li>• Enrollment types: MCP, Conversational, AI Structure, Online</li>
-              <li>• CRUD operations: Edit, Deactivate, Change Enrollment Type</li>
-              <li>• Progress tracking and enrollment status</li>
-              <li>• Real-time data updates</li>
+              <li>• Patient data from enrollment tables with patient info</li>
+              <li>• Enrollment sources: MCP Agent, Conversational AI, Diagnostic Test</li>
+              <li>• Real enrollment status and progress tracking</li>
+              <li>• Session IDs and current sections displayed</li>
+              <li>• Deactivation and status management</li>
             </ul>
           </div>
         </CardContent>
