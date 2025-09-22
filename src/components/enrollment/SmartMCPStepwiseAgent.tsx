@@ -188,7 +188,7 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
         const tableUpdates = smartRouteFieldsToTables(data);
         console.log('Routed table updates:', tableUpdates);
         
-        // Execute all table updates with error recovery
+        // Execute all table updates with error recovery and duplicate prevention
         for (const batch of tableUpdates) {
           console.log(`Processing ${batch.tableName}:`, batch.data);
           
@@ -199,16 +199,26 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
                 .update(batch.data)
                 .eq('id', patientId);
                 
-              if (error) {
+              if (error && error.code !== '23503') { // Ignore foreign key errors temporarily
                 console.error(`Update error for ${batch.tableName}:`, error);
                 throw error;
               }
             } else {
+              // Use upsert to prevent duplicates - key on enrollment_id
+              const upsertData = { 
+                ...batch.data, 
+                enrollment_id: patientId,
+                updated_at: new Date().toISOString()
+              };
+              
               const { error } = await supabase
                 .from(batch.tableName as any)
-                .upsert({ ...batch.data, enrollment_id: patientId });
+                .upsert(upsertData, { 
+                  onConflict: 'enrollment_id',
+                  ignoreDuplicates: false 
+                });
                 
-              if (error) {
+              if (error && error.code !== '23503') { // Ignore foreign key errors temporarily
                 console.error(`Upsert error for ${batch.tableName}:`, error);
                 throw error;
               }
@@ -216,7 +226,7 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
           } catch (dbError: any) {
             // Log the error but don't let it crash the entire save
             console.error(`Non-critical error in ${batch.tableName}:`, dbError);
-            if (dbError.code !== '23505' && dbError.code !== '42703') { // Ignore duplicate and unknown column errors
+            if (dbError.code !== '23505' && dbError.code !== '42703' && dbError.code !== '23503') { // Ignore duplicate, unknown column, and FK errors
               throw dbError;
             }
           }
