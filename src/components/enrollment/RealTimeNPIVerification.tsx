@@ -42,6 +42,11 @@ interface VerificationResult {
     phone: string;
     credentials: string[];
     licensure: any[];
+    status?: string;
+    provider_type?: string;
+    gender?: string;
+    enumeration_date?: string;
+    last_updated?: string;
   };
   error?: string;
   processId: string;
@@ -130,8 +135,10 @@ export const RealTimeNPIVerification: React.FC<RealTimeNPIVerificationProps> = (
       });
 
       if (error) {
-        updateWorkflowStep('cms_query', 'failed', error.message);
-        addDbOperation(`CMS query failed: ${error.message}`);
+        console.error('Edge function error:', error);
+        updateWorkflowStep('cms_query', 'failed', `Edge Function Error: ${error.message}`);
+        addDbOperation(`CMS query failed: Edge Function returned a non-2xx status code`);
+        addDbOperation(`Error: ${error.message}`);
         throw error;
       }
 
@@ -276,10 +283,11 @@ export const RealTimeNPIVerification: React.FC<RealTimeNPIVerificationProps> = (
         </CardHeader>
         <CardContent>
           <Tabs defaultValue="provider" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
+            <TabsList className="grid w-full grid-cols-4">
               <TabsTrigger value="provider">Provider</TabsTrigger>
               <TabsTrigger value="facility">Treatment Center</TabsTrigger>
               <TabsTrigger value="network">Referral Network</TabsTrigger>
+              <TabsTrigger value="credentialing">Credentialing</TabsTrigger>
             </TabsList>
             
             <TabsContent value="provider" className="space-y-4">
@@ -329,6 +337,53 @@ export const RealTimeNPIVerification: React.FC<RealTimeNPIVerificationProps> = (
                 />
               </div>
             </TabsContent>
+            
+            <TabsContent value="credentialing" className="space-y-4">
+              <div className="p-4 bg-blue-50 rounded-lg">
+                <h3 className="font-semibold text-blue-800 mb-2">Credentialing & Licensing Information</h3>
+                <p className="text-sm text-blue-600 mb-4">
+                  This section will be auto-populated after successful NPI verification and credentialing process.
+                </p>
+                {verificationResults?.success && verificationResults?.data && (
+                  <div className="space-y-3">
+                    <div>
+                      <Label className="text-sm font-medium text-blue-700">Professional Credentials</Label>
+                      <div className="p-2 bg-white rounded border">
+                        {verificationResults.data.credentials?.length > 0 
+                          ? verificationResults.data.credentials.join(', ')
+                          : 'No credentials found'
+                        }
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-blue-700">State Licenses & Taxonomies</Label>
+                      <div className="p-2 bg-white rounded border max-h-32 overflow-y-auto">
+                        {verificationResults.data.licensure?.length > 0 
+                          ? verificationResults.data.licensure.map((license: any, index: number) => (
+                              <div key={index} className="text-sm mb-2 p-2 bg-gray-50 rounded">
+                                <div><strong>Code:</strong> {license.code}</div>
+                                <div><strong>Description:</strong> {license.description}</div>
+                                {license.state && <div><strong>State:</strong> {license.state}</div>}
+                                {license.license && <div><strong>License:</strong> {license.license}</div>}
+                                {license.primary && <Badge className="mt-1 bg-green-100 text-green-800">Primary</Badge>}
+                              </div>
+                            ))
+                          : 'No licensing information found'
+                        }
+                      </div>
+                    </div>
+                    <div>
+                      <Label className="text-sm font-medium text-blue-700">Provider Status</Label>
+                      <div className="p-2 bg-white rounded border">
+                        <Badge className={verificationResults.data.status === 'A' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}>
+                          {verificationResults.data.status === 'A' ? 'Active' : 'Inactive'}
+                        </Badge>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
           </Tabs>
 
           <Button 
@@ -352,7 +407,7 @@ export const RealTimeNPIVerification: React.FC<RealTimeNPIVerificationProps> = (
       </Card>
 
       {/* Real-Time Workflow Visualization */}
-      {isVerifying && (
+      {(isVerifying || workflowSteps.some(step => step.status !== 'pending')) && (
         <Card>
           <CardHeader>
             <CardTitle>Real-Time Workflow Progress</CardTitle>
