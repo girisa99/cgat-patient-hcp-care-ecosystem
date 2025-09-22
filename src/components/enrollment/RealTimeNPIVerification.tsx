@@ -142,6 +142,12 @@ export const RealTimeNPIVerification: React.FC<RealTimeNPIVerificationProps> = (
         throw error;
       }
 
+      if (!verificationResult) {
+        throw new Error('No data returned from verification service');
+      }
+
+      console.log('Verification result:', verificationResult);
+
       updateWorkflowStep('cms_query', 'completed', 'NPPES registry queried successfully', 1.2);
       setRealTimeProgress(50);
       addDbOperation('CMS NPPES data retrieved successfully');

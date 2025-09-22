@@ -104,14 +104,16 @@ serve(async (req) => {
   try {
     const { npi, providerName, treatmentCenter, referralNetwork } = await req.json();
     
-    if (!npi && !providerName) {
+    console.log(`🔍 Verifying Provider: NPI=${npi || 'N/A'}, Name=${providerName || 'N/A'}, Treatment Center=${treatmentCenter || 'N/A'}, Referral Network=${referralNetwork || 'N/A'}`);
+    
+    if (!npi && !providerName && !treatmentCenter && !referralNetwork) {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Either NPI number or provider name is required' 
+          error: 'At least one search parameter is required (NPI, provider name, treatment center, or referral network)' 
         }),
         { 
-          status: 400, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
@@ -168,6 +170,8 @@ serve(async (req) => {
 
     const nppeUrl = `https://npiregistry.cms.hhs.gov/api/?${params.toString()}`;
     
+    console.log(`🔍 Making NPPES API call to: ${nppeUrl}`);
+    
     const nppeResponse = await fetch(nppeUrl, {
       method: 'GET',
       headers: {
@@ -176,15 +180,21 @@ serve(async (req) => {
       }
     });
 
+    console.log(`📡 NPPES API Response Status: ${nppeResponse.status}`);
+
     if (!nppeResponse.ok) {
       console.error('❌ NPPES API error:', nppeResponse.status, nppeResponse.statusText);
+      
+      // Return success with no results instead of error to prevent blocking
       return new Response(
         JSON.stringify({ 
-          verified: false, 
-          error: 'NPI verification service temporarily unavailable' 
+          success: false,
+          error: `NPPES API returned ${nppeResponse.status}: ${nppeResponse.statusText}`,
+          processId: `npi_${Date.now()}`,
+          timestamp: new Date().toISOString()
         }),
         { 
-          status: 503, 
+          status: 200, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' }
         }
       );
@@ -195,10 +205,13 @@ serve(async (req) => {
     console.log(`📊 NPPES Response - Result Count: ${nppeData.result_count}`);
 
     if (nppeData.result_count === 0) {
+      console.log('📊 No results found in NPPES registry');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'Provider not found in NPPES registry' 
+          error: 'Provider not found in NPPES registry',
+          processId: `npi_${Date.now()}`,
+          timestamp: new Date().toISOString()
         }),
         { 
           status: 200, 
@@ -218,10 +231,13 @@ serve(async (req) => {
       const isActive = basic.status === 'A';
       
       if (!isActive) {
+        console.log('⚠️ Provider NPI is not active');
         return new Response(
           JSON.stringify({ 
             success: false, 
-            error: 'Provider NPI is not active' 
+            error: 'Provider NPI is not active',
+            processId: `npi_${Date.now()}`,
+            timestamp: new Date().toISOString()
           }),
           { 
             status: 200, 
@@ -309,10 +325,13 @@ serve(async (req) => {
       );
 
     } else {
+      console.log('❌ No provider data found in NPPES response');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'No provider data found in response' 
+          error: 'No provider data found in response',
+          processId: `npi_${Date.now()}`,
+          timestamp: new Date().toISOString()
         }),
         { 
           status: 200, 
@@ -323,13 +342,17 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('❌ NPI verification error:', error);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: 'Internal server error during NPI verification' 
+        error: `Internal server error: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        processId: `npi_${Date.now()}`,
+        timestamp: new Date().toISOString()
       }),
       { 
-        status: 500, 
+        status: 200, 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
