@@ -168,8 +168,8 @@ export const EnhancedPatientDashboard: React.FC = () => {
         </Card>
         <Card>
           <CardContent className="p-4 text-center">
-            <div className="text-2xl font-bold text-purple-600">{stats.fromProfile}</div>
-            <div className="text-sm text-muted-foreground">From Profiles</div>
+            <div className="text-2xl font-bold text-purple-600">{stats.withInfo}</div>
+            <div className="text-sm text-muted-foreground">With Patient Info</div>
           </CardContent>
         </Card>
       </div>
@@ -230,11 +230,6 @@ export const EnhancedPatientDashboard: React.FC = () => {
                               <Badge variant={patient.is_active !== false ? 'default' : 'secondary'}>
                                 {patient.is_active !== false ? 'Active' : 'Inactive'}
                               </Badge>
-                              {patient.source_type === 'profile' && (
-                                <Badge variant="outline" className="bg-emerald-50 text-emerald-700 border-emerald-200">
-                                  Profile Patient
-                                </Badge>
-                              )}
                             </div>
                             
                             <div className="text-sm text-muted-foreground mb-3">
@@ -340,13 +335,12 @@ export const EnhancedPatientDashboard: React.FC = () => {
       <Card className="border-0 shadow-sm bg-green-50 border-green-200">
         <CardContent className="p-4">
           <div className="text-sm text-green-700">
-            <p><strong>✅ Combined Patient Dashboard (All Patients Restored):</strong></p>
+            <p><strong>✅ Patient Enrollment Dashboard:</strong></p>
             <ul className="mt-2 space-y-1">
-              <li>• Shows ALL patients: enrollment-based + profile-based</li>
-              <li>• Profile patients: {stats.fromProfile} (from user registration)</li>
-              <li>• Enrollment patients: {stats.fromEnrollment} (from enrollment flow)</li>
-              <li>• Real patient names and information displayed</li>
-              <li>• Multiple sources: MCP Agent, Profile Registration, Diagnostic Test</li>
+              <li>• Shows only enrollment-based patients</li>
+              <li>• Total enrolled patients: {stats.total}</li>
+              <li>• Real patient names and enrollment information displayed</li>
+              <li>• Sources: MCP Agent, Diagnostic Test, Manual Enrollment</li>
             </ul>
           </div>
         </CardContent>
