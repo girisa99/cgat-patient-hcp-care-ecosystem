@@ -225,7 +225,7 @@ export const EnhancedPatientDashboard: React.FC = () => {
                           <div className="flex-1">
                             <div className="flex items-center gap-3 mb-2">
                               <div className="font-semibold text-lg">
-                                {patient.first_name} {patient.last_name}
+                                Patient ID: {patient.session_id.slice(0, 8)} - {patient.first_name} {patient.last_name}
                               </div>
                               <Badge variant={patient.is_active !== false ? 'default' : 'secondary'}>
                                 {patient.is_active !== false ? 'Active' : 'Inactive'}
@@ -233,7 +233,7 @@ export const EnhancedPatientDashboard: React.FC = () => {
                             </div>
                             
                             <div className="text-sm text-muted-foreground mb-3">
-                              {patient.email} • Session: {patient.session_id} • Started: {new Date(patient.created_at).toLocaleDateString()}
+                              {patient.email} • Full ID: {patient.session_id} • Started: {new Date(patient.created_at).toLocaleDateString()}
                             </div>
                             
                             {/* Enrollment Information */}
