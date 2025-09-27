@@ -10119,6 +10119,78 @@ export type Database = {
           },
         ]
       }
+      public_conversations: {
+        Row: {
+          context_type: string
+          conversation_data: Json
+          created_at: string
+          escalation_requested: boolean | null
+          id: string
+          ip_address: unknown | null
+          metadata: Json | null
+          privacy_accepted: boolean | null
+          session_id: string
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          context_type?: string
+          conversation_data?: Json
+          created_at?: string
+          escalation_requested?: boolean | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          privacy_accepted?: boolean | null
+          session_id: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          context_type?: string
+          conversation_data?: Json
+          created_at?: string
+          escalation_requested?: boolean | null
+          id?: string
+          ip_address?: unknown | null
+          metadata?: Json | null
+          privacy_accepted?: boolean | null
+          session_id?: string
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      public_rate_limits: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: unknown
+          last_request: string
+          requests_count: number
+          window_start: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address: unknown
+          last_request?: string
+          requests_count?: number
+          window_start?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: unknown
+          last_request?: string
+          requests_count?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       questionnaire_sessions: {
         Row: {
           agent_recommendation: string | null
