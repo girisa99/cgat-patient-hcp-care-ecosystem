@@ -26,18 +26,23 @@ export const EnrollmentGenie: React.FC<UniversalConversationGenieProps> = ({
   onConversationComplete
 }) => {
   const { isAvailable: edgeFunctionsAvailable } = useEdgeFunctionAvailability();
-  const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
+  const { isAuthenticated, isLoading: authLoading, userRoles } = useMasterAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
+
+  // Check if user has required roles for Genie access
+  const hasRequiredRole = userRoles.some(role => 
+    ['superAdmin', 'onboardingTeam', 'healthcareProvider'].includes(role)
+  );
 
   const handleComplete = (data: any) => {
     setIsOpen(false);
     onConversationComplete?.(data);
   };
 
-  // Hide Genie entirely if edge functions are unavailable or user is not authenticated
-  if (!edgeFunctionsAvailable || !isAuthenticated || authLoading) {
+  // Hide Genie entirely if edge functions are unavailable, user is not authenticated, or lacks required role
+  if (!edgeFunctionsAvailable || !isAuthenticated || authLoading || !hasRequiredRole) {
     return null;
   }
 
