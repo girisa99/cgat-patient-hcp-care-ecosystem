@@ -35,7 +35,11 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
   console.log('🔐 MasterAuthForm component rendering (v2.0.0)...');
   const { isLoading: authLoading, refreshAuth, isAuthenticated } = useMasterAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(defaultTab);
+  
+  // Check if signup should be hidden based on domain
+  const hideSignupTab = window.location.hostname.includes('genieaiexpermentationhub.com');
+  
+  const [activeTab, setActiveTab] = useState<'login' | 'signup'>(hideSignupTab ? 'login' : defaultTab);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
@@ -242,6 +246,7 @@ export const MasterAuthForm: React.FC<MasterAuthFormProps> = ({
             onLogin={handleLogin}
             onSignup={handleSignup}
             onInputChange={handleInputChange}
+            hideSignupTab={hideSignupTab}
           />
           
           <div className="mt-8 text-center space-y-3">
