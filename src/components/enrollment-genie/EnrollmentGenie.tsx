@@ -12,6 +12,7 @@ import { Bot, Sparkles, X, MessageCircle, Users, Building2, Maximize2, Minimize2
 import { EnhancedEnrollmentInterface } from '@/components/patient-enrollment/EnhancedEnrollmentInterface';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useEdgeFunctionAvailability } from '@/hooks/useEdgeFunctionAvailability';
+import { useMasterAuth } from '@/hooks/useMasterAuth';
 
 interface UniversalConversationGenieProps {
   className?: string;
@@ -25,6 +26,7 @@ export const EnrollmentGenie: React.FC<UniversalConversationGenieProps> = ({
   onConversationComplete
 }) => {
   const { isAvailable: edgeFunctionsAvailable } = useEdgeFunctionAvailability();
+  const { isAuthenticated, isLoading: authLoading } = useMasterAuth();
   const [isOpen, setIsOpen] = useState(false);
   const [isHovered, setIsHovered] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
@@ -34,8 +36,8 @@ export const EnrollmentGenie: React.FC<UniversalConversationGenieProps> = ({
     onConversationComplete?.(data);
   };
 
-  // Hide Genie entirely if edge functions are unavailable
-  if (!edgeFunctionsAvailable) {
+  // Hide Genie entirely if edge functions are unavailable or user is not authenticated
+  if (!edgeFunctionsAvailable || !isAuthenticated || authLoading) {
     return null;
   }
 
