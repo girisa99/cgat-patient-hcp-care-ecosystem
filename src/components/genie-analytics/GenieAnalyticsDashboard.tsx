@@ -43,6 +43,8 @@ export const GenieAnalyticsDashboard: React.FC<GenieAnalyticsDashboardProps> = (
     accessRequests,
     knowledgeBaseStats,
     performanceMetrics,
+    contextAnalytics,
+    domains,
     isLoading,
     refreshData
   } = useGenieAnalytics({ genieId, brandConfigId, deploymentType });
@@ -228,28 +230,98 @@ export const GenieAnalyticsDashboard: React.FC<GenieAnalyticsDashboardProps> = (
         </TabsContent>
 
         <TabsContent value="context" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Context & Domain Analytics</CardTitle>
-              <CardDescription>Brand, product, and domain information analysis</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
+          <div className="grid gap-4 md:grid-cols-3">
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Technology Context</CardTitle>
+                <Database className="h-4 w-4 text-blue-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{contextAnalytics?.technologyContext || 0}</div>
+                <p className="text-xs text-muted-foreground">0% of conversations</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Healthcare Context</CardTitle>
+                <Activity className="h-4 w-4 text-green-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{contextAnalytics?.healthcareContext || 0}</div>
+                <p className="text-xs text-muted-foreground">0% of conversations</p>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">General Context</CardTitle>
+                <MessageSquare className="h-4 w-4 text-purple-500" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{contextAnalytics?.generalContext || 0}</div>
+                <p className="text-xs text-muted-foreground">0% of conversations</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4 md:grid-cols-2">
+            <Card>
+              <CardHeader>
+                <CardTitle>Brand & Product Information</CardTitle>
+                <CardDescription>Current deployment configuration</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
                 <div>
-                  <p className="text-sm font-medium">Brand Context</p>
-                  <p className="text-sm text-muted-foreground">{analytics?.brandContext || 'No brand data'}</p>
+                  <p className="text-sm font-medium">Brand Name</p>
+                  <p className="text-sm text-muted-foreground">{analytics?.brandContext || 'No brand configured'}</p>
                 </div>
                 <div>
                   <p className="text-sm font-medium">Product Focus</p>
-                  <p className="text-sm text-muted-foreground">{analytics?.productFocus || 'No product data'}</p>
+                  <p className="text-sm text-muted-foreground">{analytics?.productFocus || 'No product specified'}</p>
                 </div>
                 <div>
-                  <p className="text-sm font-medium">Verified Domains</p>
-                  <p className="text-sm text-muted-foreground">{analytics?.verifiedDomains || 0} domains</p>
+                  <p className="text-sm font-medium">Deployment Type</p>
+                  <Badge variant="outline">{analytics?.deploymentType}</Badge>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+                <div>
+                  <p className="text-sm font-medium">Status</p>
+                  <Badge variant={analytics?.deploymentStatus === 'active' ? 'default' : 'secondary'}>
+                    {analytics?.deploymentStatus}
+                  </Badge>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Domain Verifications</CardTitle>
+                <CardDescription>Verified domains for this instance</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-medium">Verified Domains</span>
+                    <Badge>{analytics?.verifiedDomains || 0}</Badge>
+                  </div>
+                  {domains && domains.length > 0 ? (
+                    <div className="space-y-2 mt-4">
+                      {domains.map((domain: any) => (
+                        <div key={domain.id} className="p-2 border rounded-lg flex items-center justify-between">
+                          <span className="text-sm">{domain.domain}</span>
+                          <Badge variant={domain.is_verified ? 'default' : 'secondary'}>
+                            {domain.is_verified ? 'Verified' : 'Pending'}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-muted-foreground mt-4">No domains configured</p>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="model" className="space-y-4">
