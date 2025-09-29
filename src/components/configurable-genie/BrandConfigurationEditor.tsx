@@ -29,6 +29,8 @@ import { motion } from 'framer-motion';
 import { GenieBrandConfig, useGenieBrandConfig } from '@/hooks/useGenieBrandConfig';
 import { GenieModelDropdown } from '@/components/genie/GenieModelDropdown';
 import { SelectedModelConfig } from '@/components/ai';
+import { KnowledgeBaseConfiguration } from './KnowledgeBaseConfiguration';
+import { ArrowLeft } from 'lucide-react';
 
 interface BrandConfigurationEditorProps {
   config?: GenieBrandConfig | null;
@@ -110,32 +112,45 @@ export const BrandConfigurationEditor: React.FC<BrandConfigurationEditorProps> =
   return (
     <div className="space-y-6 p-6 max-w-6xl mx-auto">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold">
-            {config ? 'Edit Configuration' : 'Create Configuration'}
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Configure your GENIE AI instance with custom branding, models, and features
-          </p>
-        </div>
-        <div className="flex gap-2">
-          <Button variant="outline" onClick={onCancel}>
-            <X className="h-4 w-4 mr-2" />
-            Cancel
-          </Button>
-          <Button onClick={handleSave} disabled={isLoading}>
-            <Save className="h-4 w-4 mr-2" />
-            {isLoading ? 'Saving...' : 'Save Configuration'}
-          </Button>
+      <div className="space-y-4">
+        <Button 
+          variant="ghost" 
+          size="sm"
+          onClick={onCancel}
+          className="flex items-center gap-2"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back to Configurations
+        </Button>
+        
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold">
+              {config ? 'Edit Configuration' : 'Create Configuration'}
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Configure your GENIE AI instance with custom branding, models, and features
+            </p>
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onCancel}>
+              <X className="h-4 w-4 mr-2" />
+              Cancel
+            </Button>
+            <Button onClick={handleSave} disabled={isLoading}>
+              <Save className="h-4 w-4 mr-2" />
+              {isLoading ? 'Saving...' : 'Save Configuration'}
+            </Button>
+          </div>
         </div>
       </div>
 
       <Tabs defaultValue="basic" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="basic">Basic</TabsTrigger>
           <TabsTrigger value="theme">Theme</TabsTrigger>
           <TabsTrigger value="models">Models</TabsTrigger>
+          <TabsTrigger value="knowledge">Knowledge</TabsTrigger>
           <TabsTrigger value="rag">RAG</TabsTrigger>
           <TabsTrigger value="mcp">MCP</TabsTrigger>
           <TabsTrigger value="deployment">Deploy</TabsTrigger>
@@ -194,13 +209,31 @@ export const BrandConfigurationEditor: React.FC<BrandConfigurationEditorProps> =
                 />
               </div>
 
-              <div className="flex items-center space-x-2">
-                <Switch
-                  id="is_active"
-                  checked={formData.is_active}
-                  onCheckedChange={(checked) => handleFieldChange('is_active', checked)}
-                />
-                <Label htmlFor="is_active">Active Configuration</Label>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="is_active"
+                    checked={formData.is_active}
+                    onCheckedChange={(checked) => handleFieldChange('is_active', checked)}
+                  />
+                  <Label htmlFor="is_active">Active Configuration</Label>
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="access_type">Access Type</Label>
+                  <Select
+                    value={formData.deployment_config.requireAuth ? 'internal' : 'public'}
+                    onValueChange={(value) => handleNestedFieldChange('deployment_config', 'requireAuth', value === 'internal')}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="public">Public Facing</SelectItem>
+                      <SelectItem value="internal">Internal (Authorized Users)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -424,6 +457,14 @@ export const BrandConfigurationEditor: React.FC<BrandConfigurationEditorProps> =
               </div>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        {/* Knowledge Base Configuration */}
+        <TabsContent value="knowledge" className="space-y-6">
+          <KnowledgeBaseConfiguration
+            selectedKnowledgeBaseIds={formData.rag_config.knowledgeBaseIds}
+            onKnowledgeBaseChange={(ids) => handleNestedFieldChange('rag_config', 'knowledgeBaseIds', ids)}
+          />
         </TabsContent>
 
         {/* RAG Configuration */}

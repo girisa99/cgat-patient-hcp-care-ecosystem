@@ -18,7 +18,10 @@ import {
   Trash2, 
   Plus,
   Eye,
-  ExternalLink
+  ExternalLink,
+  BarChart3,
+  Power,
+  PowerOff
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
@@ -86,6 +89,17 @@ export const BrandConfigurationManager: React.FC = () => {
   const handleShowDeployment = (config: GenieBrandConfig) => {
     setSelectedConfig(config);
     setShowDeployment(true);
+  };
+
+  const handleToggleActive = async (config: GenieBrandConfig) => {
+    updateBrandConfig({ 
+      id: config.id!, 
+      is_active: !config.is_active 
+    });
+  };
+
+  const handleViewAnalytics = (config: GenieBrandConfig) => {
+    window.location.href = `/genie-analytics/${config.id}`;
   };
 
   if (isCreating) {
@@ -255,12 +269,11 @@ export const BrandConfigurationManager: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="flex gap-1 pt-2">
+                  <div className="grid grid-cols-3 gap-1 pt-2">
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => handlePreview(config)}
-                      className="flex-1"
                     >
                       <Eye className="h-3 w-3 mr-1" />
                       Preview
@@ -268,9 +281,30 @@ export const BrandConfigurationManager: React.FC = () => {
                     <Button 
                       variant="outline" 
                       size="sm" 
+                      onClick={() => handleViewAnalytics(config)}
+                    >
+                      <BarChart3 className="h-3 w-3 mr-1" />
+                      Analytics
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={() => handleToggleActive(config)}
+                      disabled={isUpdating}
+                    >
+                      {config.is_active ? (
+                        <><PowerOff className="h-3 w-3 mr-1" />Deactivate</>
+                      ) : (
+                        <><Power className="h-3 w-3 mr-1" />Activate</>
+                      )}
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
                       onClick={() => handleEdit(config)}
                     >
-                      <Edit className="h-3 w-3" />
+                      <Edit className="h-3 w-3 mr-1" />
+                      Edit
                     </Button>
                     <Button 
                       variant="outline" 
@@ -278,23 +312,26 @@ export const BrandConfigurationManager: React.FC = () => {
                       onClick={() => handleClone(config)}
                       disabled={isCloning}
                     >
-                      <Copy className="h-3 w-3" />
+                      <Copy className="h-3 w-3 mr-1" />
+                      Clone
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => handleShowDeployment(config)}
                     >
-                      <Code className="h-3 w-3" />
+                      <Code className="h-3 w-3 mr-1" />
+                      Deploy
                     </Button>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       onClick={() => handleDelete(config)}
                       disabled={isDeleting}
-                      className="text-destructive hover:text-destructive"
+                      className="text-destructive hover:text-destructive col-span-3"
                     >
-                      <Trash2 className="h-3 w-3" />
+                      <Trash2 className="h-3 w-3 mr-1" />
+                      Delete Configuration
                     </Button>
                   </div>
                 </CardContent>

@@ -22,7 +22,7 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
       if (!params.brandConfigId) return null;
       const { data, error }: any = await supabase
         .from('genie_brand_configs')
-        .select('id, brand_name, product_name, industry, tagline, deployment_type, created_at')
+        .select('id, brand_name, business_unit, system_prompt, welcome_message, is_active, created_at')
         .eq('id', params.brandConfigId)
         .single();
       if (error) throw error;
