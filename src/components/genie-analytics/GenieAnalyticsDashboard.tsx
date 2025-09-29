@@ -72,7 +72,7 @@ export const GenieAnalyticsDashboard: React.FC<GenieAnalyticsDashboardProps> = (
             {deploymentType && <span className="ml-2">• Type: <span className="font-semibold">{deploymentType}</span></span>}
           </p>
         </div>
-        <Button onClick={refreshData} variant="outline">
+        <Button onClick={() => refreshData()} variant="outline">
           <RefreshCw className="h-4 w-4 mr-2" />
           Refresh Data
         </Button>
