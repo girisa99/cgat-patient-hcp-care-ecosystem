@@ -171,7 +171,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in data-processor function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       details: 'Data processing failed'
     }), {
       status: 500,

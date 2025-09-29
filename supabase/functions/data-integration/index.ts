@@ -149,7 +149,7 @@ serve(async (req) => {
     console.error('Data Integration Error:', error)
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error) 
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -163,12 +163,12 @@ async function autoMapFields(data: any, tableName: string) {
   const sourceFields = Object.keys(sampleRecord)
   
   // Get enrollment section from table name
-  const section = getEnrollmentSection(tableName)
+  const section = getEnrollmentSection(tableName) as keyof typeof ENROLLMENT_FIELD_MAPPINGS
   const sectionMappings = ENROLLMENT_FIELD_MAPPINGS[section] || {}
   
   const suggestions = sourceFields.map(field => {
     // Find best match from predefined mappings
-    const exactMatch = sectionMappings[field]
+    const exactMatch = sectionMappings[field as keyof typeof sectionMappings]
     if (exactMatch) {
       return { sourceField: field, targetField: exactMatch, confidence: 1.0, reason: 'exact_match' }
     }
@@ -220,7 +220,7 @@ async function importData(supabase: any, config: DataIntegrationConfig) {
       
       // Auto-map fields if enabled
       if (config.autoMapFields) {
-        const section = getEnrollmentSection(config.tableName)
+        const section = getEnrollmentSection(config.tableName) as keyof typeof ENROLLMENT_FIELD_MAPPINGS
         const sectionMappings = ENROLLMENT_FIELD_MAPPINGS[section] || {}
         recordData = transformData(recordData, sectionMappings)
       }
@@ -234,7 +234,7 @@ async function importData(supabase: any, config: DataIntegrationConfig) {
       success++
     } catch (error) {
       errors++
-      details.push({ row: i + 1, error: error.message })
+      details.push({ row: i + 1, error: error instanceof Error ? error.message : String(error) })
     }
   }
   
@@ -317,7 +317,7 @@ async function bulkUpdate(supabase: any, config: DataIntegrationConfig) {
       success++
     } catch (error) {
       errors++
-      details.push({ row: i + 1, error: error.message })
+      details.push({ row: i + 1, error: error instanceof Error ? error.message : String(error) })
     }
   }
   
