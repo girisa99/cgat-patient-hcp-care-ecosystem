@@ -41,7 +41,7 @@ serve(async (req) => {
     console.error('RAG processor error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to process RAG request'
+        error: error instanceof Error ? error.message : 'Failed to process RAG request'
       }),
       {
         status: 500,
@@ -185,7 +185,7 @@ async function processUrl(params: any) {
     );
 
   } catch (error) {
-    throw new Error(`URL processing failed: ${error.message}`);
+    throw new Error(`URL processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -310,8 +310,8 @@ async function webCrawl(params: any) {
   
   console.log(`Starting web crawl from: ${startUrl}`);
   
-  const crawledUrls = new Set();
-  const results = [];
+  const crawledUrls = new Set<string>();
+  const results: any[] = [];
   
   try {
     await crawlUrlRecursive(startUrl, crawledUrls, results, maxPages, category, userId);
@@ -328,7 +328,7 @@ async function webCrawl(params: any) {
       }
     );
   } catch (error) {
-    throw new Error(`Web crawl failed: ${error.message}`);
+    throw new Error(`Web crawl failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
   }
 }
 
@@ -407,7 +407,7 @@ function extractHealthcareTags(content: string): string[] {
 }
 
 function generateHealthcareRecommendations(query: string, entries: any[], context: any) {
-  const recommendations = [];
+  const recommendations: any[] = [];
   
   entries.forEach(entry => {
     if (entry.category === 'cell_therapy') {

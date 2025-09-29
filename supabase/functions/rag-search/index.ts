@@ -41,7 +41,7 @@ serve(async (req) => {
     
     // Search medical knowledge base
     for (const doc of mockKnowledgeBase.medical) {
-      const matchScore = searchTerms.reduce((score, term) => {
+      const matchScore = searchTerms.reduce((score: number, term: string) => {
         return score + (doc.content.toLowerCase().includes(term) ? 0.1 : 0) +
                       (doc.title.toLowerCase().includes(term) ? 0.2 : 0);
       }, doc.similarity);
@@ -65,7 +65,7 @@ serve(async (req) => {
     // Search general knowledge base if medical results are insufficient
     if (results.length < limit) {
       for (const doc of mockKnowledgeBase.general) {
-        const matchScore = searchTerms.reduce((score, term) => {
+        const matchScore = searchTerms.reduce((score: number, term: string) => {
           return score + (doc.content.toLowerCase().includes(term) ? 0.1 : 0) +
                         (doc.title.toLowerCase().includes(term) ? 0.2 : 0);
         }, doc.similarity);
@@ -110,7 +110,7 @@ serve(async (req) => {
     console.error('RAG search error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
         results: [] 
       }),
       { 

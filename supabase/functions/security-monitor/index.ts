@@ -55,7 +55,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Security monitor error:', error)
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Security monitor error' }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 400
@@ -267,7 +267,7 @@ async function checkSuspiciousAccess(supabase: any, accessData: any) {
   }
 
   // Check for new IP address
-  const uniqueIPs = new Set(recentLogs?.map(log => log.metadata?.ip_address).filter(Boolean))
+  const uniqueIPs = new Set(recentLogs?.map((log: any) => log.metadata?.ip_address).filter(Boolean))
   if (uniqueIPs.size > 3) {
     suspiciousScore += 20
     reasons.push(`Multiple IP addresses: ${uniqueIPs.size} different IPs`)

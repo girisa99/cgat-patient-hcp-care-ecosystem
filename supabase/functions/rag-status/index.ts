@@ -47,11 +47,11 @@ serve(async (req) => {
         available: false,
         documentsCount: 0,
         labelStudioConnected: false,
-        error: error.message || 'RAG status check failed'
+        error: error instanceof Error ? error.message : 'RAG status check failed'
       }),
       { 
         status: 500, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
       }
     );
   }
