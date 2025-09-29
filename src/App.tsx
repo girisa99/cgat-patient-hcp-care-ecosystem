@@ -136,7 +136,7 @@ const AppContent = () => {
                   {/* OnboardingTeam accessible routes */}
                   <Route path="/agents" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
-                      <Navigate to="/genie-management" replace />
+                      <GenieManagementPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/agents/canvas" element={
