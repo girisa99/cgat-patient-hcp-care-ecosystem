@@ -54,12 +54,12 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('❌ Enhanced WhatsApp Enrollment Error:', error);
-    console.error('❌ Error stack:', error.stack);
+    console.error('❌ Error stack:', error instanceof Error ? error.stack : 'No stack trace');
     return new Response(
       JSON.stringify({ 
         success: false,
-        error: error.message,
-        stack: error.stack 
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : 'No stack trace'
       }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
@@ -248,7 +248,7 @@ async function processConversation(payload: any) {
         break
     }
   } else if (session.current_step === 'personality_selection') {
-    const personalities = {
+    const personalities: Record<string, string> = {
       'friendly': 'friendly_professional',
       'humorous': 'humorous_warm', 
       'medical': 'medical_empathetic',
@@ -348,7 +348,7 @@ async function processDataCollection(session: any, userMessage: string, messageT
 }
 
 function getPersonalityResponse(personality: string, firstName: string): string {
-  const responses = {
+  const responses: Record<string, string> = {
     'friendly_professional': `Perfect, ${firstName}! I'll be your friendly and efficient assistant. Let's get started with your enrollment - I'll make sure everything goes smoothly! ✨`,
     'humorous_warm': `Awesome choice, ${firstName}! 😄 You picked the fun assistant! I promise to make this enrollment as entertaining as possible (while still being super helpful). Ready to have some fun with paperwork? 🎉`,
     'medical_empathetic': `Thank you, ${firstName}. I understand that medical enrollment can feel overwhelming. I'm here to guide you gently through each step, ensuring you feel comfortable and informed throughout the process. 💚`,
@@ -404,7 +404,7 @@ async function initializeRealtimeSync(sessionId: string, patientData: any) {
 
 async function syncCollectedData(sessionId: string, step: string, userMessage: string) {
   // Determine field based on step and update sync
-  const fieldMapping = {
+  const fieldMapping: Record<string, string> = {
     'collect_basic_info': 'firstName',
     'collect_contact': 'cellPhone',
     'collect_insurance': 'medicalInsurance',
@@ -475,7 +475,7 @@ async function getBusinessNumbers() {
   } catch (error) {
     console.error('❌ Error fetching business numbers:', error);
     return new Response(
-      JSON.stringify({ success: false, error: error.message }),
+      JSON.stringify({ success: false, error: error instanceof Error ? error.message : String(error) }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     )
   }
@@ -520,7 +520,7 @@ async function getAgentTypes() {
 }
 
 function getDefaultResponse(step: string, personality: string, firstName: string): string {
-  const responses = {
+  const responses: Record<string, string> = {
     'collect_basic_info': `Thanks ${firstName}! Let's verify your information. Is your full name spelled correctly as we have it?`,
     'collect_contact': `Great! Now let's confirm your contact details. Is ${firstName} the best phone number to reach you?`,
     'collect_insurance': `Perfect! Let's talk about your insurance. What's your insurance provider?`,
@@ -531,7 +531,7 @@ function getDefaultResponse(step: string, personality: string, firstName: string
 }
 
 function getNextStep(currentStep: string): string {
-  const stepFlow = {
+  const stepFlow: Record<string, string> = {
     'introduction': 'collect_basic_info',
     'personality_selection': 'collect_basic_info',
     'collect_basic_info': 'collect_contact',

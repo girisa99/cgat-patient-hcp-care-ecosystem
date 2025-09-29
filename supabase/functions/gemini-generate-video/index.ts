@@ -152,7 +152,7 @@ serve(async (req) => {
     console.error('💥 Error in gemini-generate-video function:', error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message || 'Unknown error occurred',
+      error: error instanceof Error ? error.message : 'Unknown error occurred',
       timestamp: new Date().toISOString()
     }), {
       status: 500,

@@ -45,9 +45,9 @@ serve(async (req) => {
     const nodeTypes = await nodeTypesResponse.json();
 
     // Build dynamic system prompt with real node types
-    const categorizedNodes = categories.map(cat => {
-      const categoryNodes = nodeTypes.filter(nt => nt.category_id === cat.id);
-      return `${cat.display_name}: ${categoryNodes.map(nt => `${nt.type_key} (${nt.display_name})`).join(', ')}`;
+    const categorizedNodes = categories.map((cat: any) => {
+      const categoryNodes = nodeTypes.filter((nt: any) => nt.category_id === cat.id);
+      return `${cat.display_name}: ${categoryNodes.map((nt: any) => `${nt.type_key} (${nt.display_name})`).join(', ')}`;
     }).join('\n');
 
     const systemPrompt = `You are an expert AI agent workflow designer. Based on the user's natural language description, generate a complete agent workflow with nodes and connections using the actual node types from our system.
@@ -300,7 +300,7 @@ Generate a workflow for: "${prompt}"`;
   } catch (error) {
     console.error('Error in generate-agent-from-prompt function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       details: 'Failed to generate agent from prompt'
     }), {
       status: 500,

@@ -96,7 +96,7 @@ verified and confirmed by the enrollee.`;
 }
 
 function getModuleTitle(moduleType: string): string {
-  const titles = {
+  const titles: Record<string, string> = {
     patient: 'Patient Enrollment',
     treatment_center: 'Treatment Center Onboarding',
     customer: 'Customer Registration',

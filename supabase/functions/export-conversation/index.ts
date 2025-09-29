@@ -103,7 +103,7 @@ serve(async (req) => {
     console.error('Export error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to export conversation'
+        error: error instanceof Error ? error.message : 'Failed to export conversation'
       }),
       {
         status: 500,
