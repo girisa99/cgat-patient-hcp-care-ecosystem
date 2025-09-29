@@ -149,6 +149,11 @@ const AppContent = () => {
                       <GenieManagementPage />
                     </ProtectedRoute>
                   } />
+                  <Route path="/genie-analytics/:genieId" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
+                      {React.createElement(React.lazy(() => import('@/pages/GenieAnalyticsPage')))}
+                    </ProtectedRoute>
+                  } />
                   <Route path="/configurable-genie" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
                       <ConfigurableGeniePage />

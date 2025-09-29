@@ -22,11 +22,13 @@ import { Progress } from '@/components/ui/progress';
 interface GenieInstanceCardProps {
   instance: GenieInstance;
   onViewDetails: (instance: GenieInstance) => void;
+  onViewAnalytics?: (instance: GenieInstance) => void;
 }
 
 export const GenieInstanceCard: React.FC<GenieInstanceCardProps> = ({
   instance,
-  onViewDetails
+  onViewDetails,
+  onViewAnalytics
 }) => {
   const dailyUsagePercent = (instance.rate_limit_info.daily_usage / instance.daily_limit) * 100;
   const hourlyUsagePercent = (instance.rate_limit_info.hourly_usage / instance.hourly_limit) * 100;
@@ -151,13 +153,24 @@ export const GenieInstanceCard: React.FC<GenieInstanceCardProps> = ({
         {/* Subscription Type */}
         <div className="flex items-center justify-between pt-2 border-t">
           <Badge variant="secondary">{instance.subscription_type}</Badge>
-          <Button 
-            variant="outline" 
-            size="sm"
-            onClick={() => onViewDetails(instance)}
-          >
-            View Details
-          </Button>
+          <div className="flex gap-2">
+            {onViewAnalytics && (
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => onViewAnalytics(instance)}
+              >
+                Analytics
+              </Button>
+            )}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => onViewDetails(instance)}
+            >
+              Details
+            </Button>
+          </div>
         </div>
 
         {/* Contact Info */}

@@ -66,6 +66,10 @@ export const GenieManagementDashboard: React.FC = () => {
     setShowDeploymentDialog(true);
   };
 
+  const handleViewAnalytics = (instance: GenieInstance) => {
+    window.location.href = `/genie-analytics/${instance.id}`;
+  };
+
   // Stats aggregation
   const stats = {
     total: genieInstances.length,
@@ -300,6 +304,7 @@ export const GenieManagementDashboard: React.FC = () => {
               key={instance.id}
               instance={instance}
               onViewDetails={handleViewDetails}
+              onViewAnalytics={handleViewAnalytics}
             />
           ))
         )}
