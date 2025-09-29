@@ -7697,17 +7697,25 @@ export type Database = {
           approval_notes: string | null
           category: string
           confidence_score: number | null
+          content_html: string | null
           content_type: string | null
+          content_url: string | null
           created_at: string
           created_by: string | null
           description: string | null
           embeddings: string | null
+          file_name: string | null
+          file_path: string | null
+          file_size: number | null
+          file_type: string | null
           healthcare_tags: string[] | null
           id: string
           is_active: boolean
+          is_static: boolean | null
           metadata: Json | null
           modality_type: string | null
           name: string
+          parent_static_entry: string | null
           processed_content: string | null
           raw_content: string | null
           regulatory_status: string | null
@@ -7723,17 +7731,25 @@ export type Database = {
           approval_notes?: string | null
           category: string
           confidence_score?: number | null
+          content_html?: string | null
           content_type?: string | null
+          content_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           embeddings?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
           healthcare_tags?: string[] | null
           id?: string
           is_active?: boolean
+          is_static?: boolean | null
           metadata?: Json | null
           modality_type?: string | null
           name: string
+          parent_static_entry?: string | null
           processed_content?: string | null
           raw_content?: string | null
           regulatory_status?: string | null
@@ -7749,17 +7765,25 @@ export type Database = {
           approval_notes?: string | null
           category?: string
           confidence_score?: number | null
+          content_html?: string | null
           content_type?: string | null
+          content_url?: string | null
           created_at?: string
           created_by?: string | null
           description?: string | null
           embeddings?: string | null
+          file_name?: string | null
+          file_path?: string | null
+          file_size?: number | null
+          file_type?: string | null
           healthcare_tags?: string[] | null
           id?: string
           is_active?: boolean
+          is_static?: boolean | null
           metadata?: Json | null
           modality_type?: string | null
           name?: string
+          parent_static_entry?: string | null
           processed_content?: string | null
           raw_content?: string | null
           regulatory_status?: string | null
