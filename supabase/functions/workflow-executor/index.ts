@@ -131,7 +131,7 @@ serve(async (req) => {
       if (arizeTraceId) {
         console.log('Arize trace failed:', arizeTraceId, {
           status: 'error',
-          error: executionError.message,
+          error: executionError instanceof Error ? executionError.message : 'Unknown error',
           executionTime
         });
       }
@@ -142,7 +142,10 @@ serve(async (req) => {
           .from('workflow_execution_logs')
           .update({
             execution_status: 'failed',
-            error_details: { message: executionError.message, stack: executionError.stack },
+            error_details: { 
+              message: executionError instanceof Error ? executionError.message : 'Unknown error',
+              stack: executionError instanceof Error ? executionError.stack : undefined
+            },
             execution_time_ms: executionTime,
             completed_at: new Date().toISOString(),
             arize_trace_id: arizeTraceId
@@ -154,7 +157,7 @@ serve(async (req) => {
     }
   } catch (error) {
     console.error('Error in workflow execution:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

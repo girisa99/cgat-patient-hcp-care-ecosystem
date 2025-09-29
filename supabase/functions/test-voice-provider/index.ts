@@ -107,8 +107,8 @@ serve(async (req) => {
       console.error(`Error testing ${provider.name}:`, error);
       testResult = {
         success: false,
-        message: `Test failed: ${error.message}`,
-        details: { error: error.message }
+        message: `Test failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        details: { error: error instanceof Error ? error.message : 'Unknown error' }
       };
     }
 
@@ -129,7 +129,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Internal server error',
-        details: error.message 
+        details: error instanceof Error ? error.message : 'Unknown error'
       }),
       { 
         status: 500, 

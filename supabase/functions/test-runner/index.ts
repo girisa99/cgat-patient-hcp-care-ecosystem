@@ -57,7 +57,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in test runner:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
@@ -110,10 +110,10 @@ async function runTest(testConfig: any, testData: any, executionParams: any) {
     const executionTime = Date.now() - startTime;
     const performanceMetrics = {
       execution_time_ms: executionTime,
-      memory_usage: process.memoryUsage ? process.memoryUsage() : {},
-      test_scenarios_completed: testResults.scenarios_completed || 0,
-      assertions_passed: testResults.assertions_passed || 0,
-      assertions_failed: testResults.assertions_failed || 0
+      memory_usage: {}, // Deno doesn't have process.memoryUsage()
+      test_scenarios_completed: (testResults as any).scenarios_completed || 0,
+      assertions_passed: (testResults as any).assertions_passed || 0,
+      assertions_failed: (testResults as any).assertions_failed || 0
     };
 
     // Update test execution record
@@ -143,7 +143,10 @@ async function runTest(testConfig: any, testData: any, executionParams: any) {
         .from('test_execution_results')
         .update({
           test_status: 'failed',
-          error_details: { message: error.message, stack: error.stack },
+          error_details: { 
+            message: error instanceof Error ? error.message : 'Unknown error',
+            stack: error instanceof Error ? error.stack : undefined
+          },
           completed_at: new Date().toISOString()
         })
         .eq('id', executionRecord.id);
@@ -162,7 +165,7 @@ async function runFlowTest(testConfig: any, testData: any, executionParams: any)
     scenarios_completed: 0,
     assertions_passed: 0,
     assertions_failed: 0,
-    scenario_results: []
+    scenario_results: [] as any[]
   };
 
   for (const scenario of scenarios) {
@@ -181,7 +184,7 @@ async function runFlowTest(testConfig: any, testData: any, executionParams: any)
       results.scenario_results.push({
         scenario_id: scenario.id,
         success: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
       results.assertions_failed++;
       results.success = false;
@@ -199,7 +202,7 @@ async function runResponseValidation(testConfig: any, testData: any) {
     success: true,
     assertions_passed: 0,
     assertions_failed: 0,
-    validation_results: []
+    validation_results: [] as any[]
   };
 
   for (const assertion of assertions) {
@@ -217,7 +220,7 @@ async function runResponseValidation(testConfig: any, testData: any) {
       results.validation_results.push({
         assertion_id: assertion.id,
         passed: false,
-        error: error.message
+        error: error instanceof Error ? error.message : 'Unknown error'
       });
       results.assertions_failed++;
       results.success = false;

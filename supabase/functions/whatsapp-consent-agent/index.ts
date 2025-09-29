@@ -89,7 +89,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('WhatsApp Consent Agent error:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       {
         status: 400,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -340,7 +340,7 @@ function getLocationContext(location_type: string) {
       signature_method: 'verbal_consent'
     }
   };
-  return contexts[location_type] || contexts.remote;
+  return (contexts as any)[location_type] || contexts.remote;
 }
 
 function generateInitialMessage(location_type: string, consent_method: string) {
@@ -539,44 +539,13 @@ async function handleAutomatedConsentInitiation(payload: any, supabase: any) {
   } catch (error) {
     console.error('Error in automated consent initiation:', error);
     return new Response(
-      JSON.stringify({ error: error.message }),
+      JSON.stringify({ error: error instanceof Error ? error.message : 'Unknown error' }),
       { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 }
 
-async function checkConsentStatus(payload: any, supabase: any) {
-  const { sessionId } = payload;
-  
-  try {
-    const { data: session, error } = await supabase
-      .from('whatsapp_consent_sessions')
-      .select('*')
-      .eq('id', sessionId)
-      .single();
-
-    if (error) throw error;
-
-    return new Response(
-      JSON.stringify({
-        success: true,
-        consentStatus: session.status,
-        consentGiven: session.status === 'completed',
-        method: session.consent_method,
-        location: session.location_type,
-        patientData: session.session_data?.patient_info,
-        timestamp: session.completed_at || session.created_at
-      }),
-      { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  } catch (error) {
-    console.error('Error checking consent status:', error);
-    return new Response(
-      JSON.stringify({ error: error.message }),
-      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-    );
-  }
-}
+// checkConsentStatus function moved to end of file to avoid duplication
 
 async function sendSMSMessage(phoneNumber: string, message: string) {
   console.log('Sending SMS to:', phoneNumber);

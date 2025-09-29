@@ -83,7 +83,7 @@ serve(async (req) => {
     console.error('Tool execution error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
+      error: error instanceof Error ? error.message : 'Unknown error',
       timestamp: new Date().toISOString(),
     }), {
       status: 500,
@@ -124,7 +124,7 @@ async function executeArxivSearch(input: any): Promise<any> {
   } catch (error) {
     return {
       error: 'Failed to search Arxiv',
-      details: error.message,
+      details: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }
@@ -194,7 +194,7 @@ async function executeCalculator(input: any): Promise<any> {
   } catch (error) {
     return {
       error: 'Invalid mathematical expression',
-      details: error.message,
+      details: error instanceof Error ? error.message : 'Unknown error',
     };
   }
 }

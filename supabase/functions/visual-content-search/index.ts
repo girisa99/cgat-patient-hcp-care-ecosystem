@@ -115,7 +115,7 @@ Deno.serve(async (req) => {
     );
   } catch (error) {
     console.error('visual-content-search error', error);
-    return new Response(JSON.stringify({ error: error?.message || 'Unexpected error', sources: [], totalFound: 0 }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : 'Unexpected error', sources: [], totalFound: 0 }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });

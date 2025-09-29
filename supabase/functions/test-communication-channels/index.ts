@@ -63,7 +63,7 @@ const handler = async (req: Request): Promise<Response> => {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-            From: twilioPhoneNumber,
+            From: twilioPhoneNumber as string,
             To: to,
             Body: `${message} - ${new Date().toISOString()}`,
           }),
@@ -96,7 +96,7 @@ const handler = async (req: Request): Promise<Response> => {
             'Content-Type': 'application/x-www-form-urlencoded',
           },
           body: new URLSearchParams({
-            From: twilioPhoneNumber,
+            From: twilioPhoneNumber as string,
             To: to,
             Url: twimlUrl,
           }),
