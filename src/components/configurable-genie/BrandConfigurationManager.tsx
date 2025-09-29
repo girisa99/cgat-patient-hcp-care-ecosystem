@@ -21,10 +21,13 @@ import {
   ExternalLink,
   BarChart3,
   Power,
-  PowerOff
+  PowerOff,
+  ArrowLeft
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
+import { Link } from 'react-router-dom';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 import { useGenieBrandConfig, GenieBrandConfig } from '@/hooks/useGenieBrandConfig';
 import { BrandConfigurationEditor } from './BrandConfigurationEditor';
@@ -102,19 +105,7 @@ export const BrandConfigurationManager: React.FC = () => {
     window.location.href = `/genie-analytics/${config.id}`;
   };
 
-  if (isCreating) {
-    return (
-      <BrandConfigurationEditor
-        config={selectedConfig}
-        onSave={handleSave}
-        onCancel={() => {
-          setIsCreating(false);
-          setSelectedConfig(null);
-        }}
-        isLoading={isCreatingConfig || isUpdating}
-      />
-    );
-  }
+// Editor is rendered in a sidebar sheet; no early return here
 
   if (showPreview && selectedConfig) {
     return (
@@ -142,9 +133,16 @@ export const BrandConfigurationManager: React.FC = () => {
 
   return (
     <div className="space-y-6 p-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
+          <div className="mb-2">
+            <Link to="/genie-management">
+              <Button variant="ghost" size="sm" className="flex items-center gap-2">
+                <ArrowLeft className="h-4 w-4" />
+                Back to Dashboard
+              </Button>
+            </Link>
+          </div>
           <h1 className="text-3xl font-bold">GENIE Brand Configurations</h1>
           <p className="text-muted-foreground mt-2">
             Manage configurable GENIE AI instances for different brands and business units
