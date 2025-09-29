@@ -45,6 +45,8 @@ import SystemIntegration from '@/pages/SystemIntegration';
 import OrderManagement from '@/pages/OrderManagement';
 import PatientOnboarding from '@/pages/PatientOnboarding';
 import PatientOnboardingWhatsApp from '@/pages/PatientOnboardingWhatsApp';
+import { ConfigurableGeniePage } from '@/pages/ConfigurableGeniePage';
+import GenieManagementPage from '@/pages/GenieManagementPage';
 
 
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
@@ -135,6 +137,16 @@ const AppContent = () => {
                   <Route path="/agents" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
                       <Agents />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/genie-management" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
+                      <GenieManagementPage />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/configurable-genie" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
+                      <ConfigurableGeniePage />
                     </ProtectedRoute>
                   } />
                   <Route path="/enterprise-analytics" element={
