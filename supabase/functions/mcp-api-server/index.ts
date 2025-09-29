@@ -86,7 +86,7 @@ serve(async (req) => {
     console.error('MCP API Server Error:', error)
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : String(error)
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -140,16 +140,21 @@ async function callExternalApi(endpoint: string, data: any, params: any, config:
 
   // Add authentication
   if (endpointConfig.auth) {
+    if (!requestOptions.headers) {
+      requestOptions.headers = {};
+    }
+    const headers = requestOptions.headers as Record<string, string>;
+    
     switch (endpointConfig.auth.type) {
       case 'bearer':
-        requestOptions.headers['Authorization'] = `Bearer ${endpointConfig.auth.token}`
-        break
+        headers['Authorization'] = `Bearer ${endpointConfig.auth.token || ''}`;
+        break;
       case 'api_key':
-        requestOptions.headers['X-API-Key'] = endpointConfig.auth.key
-        break
+        headers['X-API-Key'] = endpointConfig.auth.key || '';
+        break;
       case 'basic':
-        const credentials = btoa(`${endpointConfig.auth.username}:${endpointConfig.auth.password}`)
-        requestOptions.headers['Authorization'] = `Basic ${credentials}`
+        const credentials = btoa(`${endpointConfig.auth.username}:${endpointConfig.auth.password}`);
+        headers['Authorization'] = `Basic ${credentials}`;
         break
     }
   }
@@ -241,7 +246,7 @@ async function executeBatchCalls(calls: any[], config: McpApiConfig) {
       results.push({ 
         success: false, 
         endpoint: call.endpoint, 
-        error: error.message 
+        error: error instanceof Error ? error.message : String(error)
       })
     }
   }

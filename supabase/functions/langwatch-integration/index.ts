@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     console.error('LangWatch Integration Error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'LangWatch integration failed',
+        error: error instanceof Error ? error.message : 'LangWatch integration failed',
         success: false
       }),
       { 
@@ -66,6 +66,10 @@ Deno.serve(async (req) => {
 
 async function initializeLangWatch(userId: string, config: any) {
   console.log('Initializing LangWatch for user:', userId);
+  
+  if (!LANGWATCH_API_KEY) {
+    throw new Error('LangWatch API key not configured');
+  }
   
   // Test connection to LangWatch
   const response = await fetch('https://app.langwatch.ai/api/projects', {
@@ -99,6 +103,10 @@ async function initializeLangWatch(userId: string, config: any) {
 
 async function sendTrace(userId: string, traceData: any) {
   console.log('Sending trace to LangWatch for user:', userId);
+  
+  if (!LANGWATCH_API_KEY) {
+    throw new Error('LangWatch API key not configured');
+  }
   
   const payload = {
     trace_id: traceData.trace_id,
@@ -150,6 +158,10 @@ async function sendTrace(userId: string, traceData: any) {
 
 async function getAnalytics(userId: string) {
   console.log('Getting LangWatch analytics for user:', userId);
+  
+  if (!LANGWATCH_API_KEY) {
+    throw new Error('LangWatch API key not configured');
+  }
   
   // Get analytics from LangWatch
   const response = await fetch('https://app.langwatch.ai/api/analytics', {

@@ -9,7 +9,7 @@ export async function listAllUsers(supabase: any) {
   try {
     // Fetch users from auth.users (PRIMARY SOURCE)
     const authUsers = await fetchAllAuthUsers(supabase);
-    const userIds = authUsers.map(user => user.id);
+    const userIds = authUsers.map((user: any) => user.id);
 
     // Fetch supplementary data in parallel for better performance
     const [profiles, userRoles, facilityAccess] = await Promise.all([

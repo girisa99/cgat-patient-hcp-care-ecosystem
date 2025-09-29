@@ -28,7 +28,7 @@ serve(async (req) => {
       `Clinical Notes: Previous observations for "${query}" cases`,
       `Treatment Protocol: Standard procedures for "${query}" related conditions`,
     ].filter(annotation => 
-      query.toLowerCase().split(' ').some(term => 
+      query.toLowerCase().split(' ').some((term: string) => 
         annotation.toLowerCase().includes(term)
       )
     );
@@ -51,7 +51,7 @@ serve(async (req) => {
     console.error('Label Studio search error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
+        error: error instanceof Error ? error.message : 'Internal server error',
         annotations: [] 
       }),
       { 

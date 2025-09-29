@@ -118,7 +118,7 @@ serve(async (req) => {
     console.error('Healthcare AI Error:', error);
     return new Response(JSON.stringify({ 
       success: false,
-      error: error.message || 'Healthcare AI processing failed' 
+      error: error instanceof Error ? error.message : 'Healthcare AI processing failed'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

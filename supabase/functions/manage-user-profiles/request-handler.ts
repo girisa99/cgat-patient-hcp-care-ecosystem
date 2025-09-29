@@ -119,10 +119,10 @@ export const handleProfileRequest = async (supabase: any, user: any, action: str
     }
 
     // Combine auth users with profile and role data
-    const combinedUsers = authUsers.users.map((authUser) => {
-      const profile = profiles?.find(p => p.id === authUser.id);
-      const userRolesList = allUserRoles?.filter(ur => ur.user_id === authUser.id) || [];
-      const userFacility = profile?.facility_id ? facilities?.find(f => f.id === profile.facility_id) : null;
+    const combinedUsers = authUsers.users.map((authUser: any) => {
+      const profile = profiles?.find((p: any) => p.id === authUser.id);
+      const userRolesList = allUserRoles?.filter((ur: any) => ur.user_id === authUser.id) || [];
+      const userFacility = profile?.facility_id ? facilities?.find((f: any) => f.id === profile.facility_id) : null;
 
       return {
         id: authUser.id,

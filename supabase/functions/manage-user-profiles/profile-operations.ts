@@ -14,7 +14,7 @@ export async function updateProfile(supabase: any, targetUserId: string, profile
     console.log('✅ [MANAGE-USER-PROFILES] User validated in auth.users:', authUser.email);
   } catch (error) {
     console.error('❌ [MANAGE-USER-PROFILES] User validation failed:', error);
-    throw new Error(`User not found in auth.users: ${error.message}`);
+    throw new Error(`User not found in auth.users: ${error instanceof Error ? error.message : String(error)}`);
   }
 
   // Check if profile exists in supplementary table
