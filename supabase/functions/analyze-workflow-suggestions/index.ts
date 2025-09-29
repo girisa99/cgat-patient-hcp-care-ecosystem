@@ -59,7 +59,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in analyze-workflow-suggestions:', error);
     return new Response(JSON.stringify({ 
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       issues: [],
       suggestions: [],
       complexity: 'unknown',
@@ -75,7 +75,7 @@ serve(async (req) => {
 
 // AI-Enhanced Analysis using multiple providers
 async function performAIEnhancedAnalysis(nodes: any[], edges: any[], provider: string, generateCode: boolean) {
-  const analysis = await performComprehensiveAnalysis(nodes, edges);
+  const analysis: any = await performComprehensiveAnalysis(nodes, edges);
   
   if (generateCode && analysis.issues.length > 0) {
     const codeFixSuggestions = await generateCodeFixes(analysis.issues, provider);
@@ -370,8 +370,8 @@ async function performComprehensiveAnalysis(
 
   // Enhanced analysis features
   let connectionAnalysisResult = null;
-  let nodeSpecificFixes = [];
-  let templateNodes = [];
+  let nodeSpecificFixes: any[] = [];
+  let templateNodes: any[] = [];
 
   if (connectionAnalysis) {
     connectionAnalysisResult = analyzeConnectionFlow(nodes, edges);
@@ -536,7 +536,7 @@ function analyzeConnectionFlow(nodes: any[], edges: any[]) {
   });
   
   // Analyze flow paths
-  const flowPaths = [];
+  const flowPaths: any[] = [];
   const startNodes = nodes.filter(n => !edges.some(e => e.target === n.id));
   
   startNodes.forEach(startNode => {
@@ -579,7 +579,7 @@ function findBottlenecks(nodes: any[], edges: any[]) {
 }
 
 function generateNodeSpecificFixes(nodes: any[], edges: any[]) {
-  const fixes = [];
+  const fixes: any[] = [];
   
   for (const node of nodes) {
     const connectedNodes = edges.filter(e => e.source === node.id || e.target === node.id);
@@ -638,7 +638,7 @@ function analyzeNodeIssues(node: any, connections: any[], allNodes: any[]) {
 }
 
 function generateNodeFixes(node: any, issues: string[]) {
-  const fixes = [];
+  const fixes: any[] = [];
   
   issues.forEach(issue => {
     switch (issue) {

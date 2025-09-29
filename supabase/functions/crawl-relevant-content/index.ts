@@ -43,7 +43,7 @@ serve(async (req) => {
       );
     }
 
-    const crawledContent = [];
+    const crawledContent: any[] = [];
 
     // If Firecrawl API key is available, use it for better crawling
     if (firecrawlApiKey) {
@@ -83,7 +83,7 @@ serve(async (req) => {
             await basicFetch(url, crawledContent);
           }
         } catch (error) {
-          console.warn(`⚠️ [CRAWL-CONTENT] Error with Firecrawl for ${url}:`, error.message);
+          console.warn(`⚠️ [CRAWL-CONTENT] Error with Firecrawl for ${url}:`, error instanceof Error ? error.message : String(error));
           await basicFetch(url, crawledContent);
         }
       }
@@ -145,7 +145,7 @@ serve(async (req) => {
     console.error('❌ [CRAWL-CONTENT] Function error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to crawl content' 
+        error: (error instanceof Error ? error.message : 'Failed to crawl content') 
       }),
       {
         status: 500,
@@ -191,6 +191,6 @@ async function basicFetch(url: string, crawledContent: any[]) {
       }
     }
   } catch (error) {
-    console.warn(`⚠️ [CRAWL-CONTENT] Basic fetch failed for ${url}:`, error.message);
+    console.warn(`⚠️ [CRAWL-CONTENT] Basic fetch failed for ${url}:`, error instanceof Error ? error.message : String(error));
   }
 }

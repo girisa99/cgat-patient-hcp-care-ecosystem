@@ -88,7 +88,7 @@ serve(async (req) => {
     console.error('Error in ai-universal-processor:', error);
     
     const errorResponse = {
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString(),
       details: error instanceof Error ? error.stack : 'Unknown error'
     };

@@ -89,7 +89,7 @@ serve(async (req) => {
     console.error('❌ Claude AI Chat error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message,
+        error: (error instanceof Error ? error.message : String(error)),
         success: false,
         timestamp: new Date().toISOString()
       }),

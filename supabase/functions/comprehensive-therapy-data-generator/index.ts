@@ -57,7 +57,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         error: 'Failed to generate comprehensive therapy data',
-        details: error.message 
+        details: (error instanceof Error ? error.message : String(error)) 
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

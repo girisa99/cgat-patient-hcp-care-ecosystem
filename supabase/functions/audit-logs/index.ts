@@ -62,7 +62,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('📊 [AUDIT-LOGS] Audit logs fetched:', result.data?.length || 0);
 
     // Get unique user IDs from audit logs (excluding null values)
-    const userIds = [...new Set(result.data?.map(log => log.user_id).filter(Boolean))];
+    const userIds = [...new Set(result.data?.map((log: any) => log.user_id).filter(Boolean))] as string[];
     
     // Fetch user profiles using standardized utilities
     const userProfiles = await fetchUserProfiles(supabase, userIds);

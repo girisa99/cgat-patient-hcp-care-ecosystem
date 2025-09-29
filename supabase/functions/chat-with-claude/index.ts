@@ -57,7 +57,7 @@ serve(async (req) => {
   } catch (error) {
     console.error('Error in chat-with-claude function:', error);
     return new Response(JSON.stringify({ 
-      error: error.message || 'Failed to process Claude request',
+      error: (error instanceof Error ? error.message : 'Failed to process Claude request'),
       success: false 
     }), {
       status: 500,

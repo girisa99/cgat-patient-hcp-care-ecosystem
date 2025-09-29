@@ -50,7 +50,7 @@ Deno.serve(async (req) => {
     console.error('Arize Integration Error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Arize integration failed',
+        error: (error instanceof Error ? error.message : 'Arize integration failed'),
         success: false
       }),
       { 

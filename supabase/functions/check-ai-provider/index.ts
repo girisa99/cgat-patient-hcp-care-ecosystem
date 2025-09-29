@@ -54,7 +54,7 @@ Deno.serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Provider check failed',
+        error: (error instanceof Error ? error.message : 'Provider check failed'),
         available: false
       }),
       { 

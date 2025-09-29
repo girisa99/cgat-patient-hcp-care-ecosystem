@@ -299,7 +299,12 @@ async function identifyKnowledgeGaps(supabaseClient: any): Promise<any> {
     .select('*')
     .gte('created_at', new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
 
-  const knowledgeGaps = {
+  const knowledgeGaps: {
+    frequentQuestions: string[];
+    missingDocumentation: string[];
+    confusingConcepts: any[];
+    suggestedContent: any[];
+  } = {
     frequentQuestions: [],
     missingDocumentation: [],
     confusingConcepts: [],
