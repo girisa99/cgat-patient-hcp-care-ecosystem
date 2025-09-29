@@ -14,6 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
+      access_requests: {
+        Row: {
+          admin_notes: string | null
+          created_at: string
+          id: string
+          ip_address: string
+          request_reason: string
+          requested_at: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          updated_at: string
+          user_email: string
+          user_name: string | null
+        }
+        Insert: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          ip_address: string
+          request_reason: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_email: string
+          user_name?: string | null
+        }
+        Update: {
+          admin_notes?: string | null
+          created_at?: string
+          id?: string
+          ip_address?: string
+          request_reason?: string
+          requested_at?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          updated_at?: string
+          user_email?: string
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       action_execution_logs: {
         Row: {
           action_id: string
@@ -2738,6 +2783,45 @@ export type Database = {
           },
         ]
       }
+      approved_access_overrides: {
+        Row: {
+          additional_quota: Json | null
+          created_at: string
+          expires_at: string | null
+          granted_at: string
+          granted_by: string | null
+          id: string
+          ip_address: string
+          is_active: boolean | null
+          reason: string | null
+          user_email: string | null
+        }
+        Insert: {
+          additional_quota?: Json | null
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          ip_address: string
+          is_active?: boolean | null
+          reason?: string | null
+          user_email?: string | null
+        }
+        Update: {
+          additional_quota?: Json | null
+          created_at?: string
+          expires_at?: string | null
+          granted_at?: string
+          granted_by?: string | null
+          id?: string
+          ip_address?: string
+          is_active?: boolean | null
+          reason?: string | null
+          user_email?: string | null
+        }
+        Relationships: []
+      }
       arize_configurations: {
         Row: {
           api_endpoint: string | null
@@ -3658,6 +3742,93 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      conversation_sessions: {
+        Row: {
+          conversation_count: number
+          created_at: string
+          first_conversation_at: string
+          id: string
+          ip_address: unknown
+          is_restricted: boolean
+          last_conversation_at: string
+          restriction_reason: string | null
+          session_id: string
+          updated_at: string
+          user_email: string | null
+          user_name: string | null
+        }
+        Insert: {
+          conversation_count?: number
+          created_at?: string
+          first_conversation_at?: string
+          id?: string
+          ip_address: unknown
+          is_restricted?: boolean
+          last_conversation_at?: string
+          restriction_reason?: string | null
+          session_id: string
+          updated_at?: string
+          user_email?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          conversation_count?: number
+          created_at?: string
+          first_conversation_at?: string
+          id?: string
+          ip_address?: unknown
+          is_restricted?: boolean
+          last_conversation_at?: string
+          restriction_reason?: string | null
+          session_id?: string
+          updated_at?: string
+          user_email?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
+      conversation_tracking: {
+        Row: {
+          context: string
+          created_at: string
+          duration_minutes: number | null
+          ended_at: string | null
+          id: string
+          ip_address: unknown
+          is_completed: boolean
+          message_count: number
+          session_id: string
+          started_at: string
+          user_email: string | null
+        }
+        Insert: {
+          context: string
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          ip_address: unknown
+          is_completed?: boolean
+          message_count?: number
+          session_id: string
+          started_at?: string
+          user_email?: string | null
+        }
+        Update: {
+          context?: string
+          created_at?: string
+          duration_minutes?: number | null
+          ended_at?: string | null
+          id?: string
+          ip_address?: unknown
+          is_completed?: boolean
+          message_count?: number
+          session_id?: string
+          started_at?: string
+          user_email?: string | null
+        }
+        Relationships: []
       }
       credit_application_audit: {
         Row: {
@@ -6047,6 +6218,53 @@ export type Database = {
         }
         Relationships: []
       }
+      faq_entries: {
+        Row: {
+          answer: string
+          category_name: string
+          created_at: string
+          created_from_rag: boolean | null
+          display_order: number | null
+          id: string
+          is_active: boolean | null
+          knowledge_base_entry_id: string | null
+          question: string
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          category_name: string
+          created_at?: string
+          created_from_rag?: boolean | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          knowledge_base_entry_id?: string | null
+          question: string
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          category_name?: string
+          created_at?: string
+          created_from_rag?: boolean | null
+          display_order?: number | null
+          id?: string
+          is_active?: boolean | null
+          knowledge_base_entry_id?: string | null
+          question?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "faq_entries_knowledge_base_entry_id_fkey"
+            columns: ["knowledge_base_entry_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_base"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       feedback: {
         Row: {
           created_at: string
@@ -6166,6 +6384,163 @@ export type Database = {
           },
         ]
       }
+      genie_brand_configs: {
+        Row: {
+          brand_name: string
+          business_unit: string | null
+          created_at: string
+          created_by: string | null
+          deployment_config: Json
+          id: string
+          is_active: boolean
+          mcp_config: Json
+          model_config: Json
+          rag_config: Json
+          system_prompt: string | null
+          theme_config: Json
+          updated_at: string
+          welcome_message: string | null
+        }
+        Insert: {
+          brand_name: string
+          business_unit?: string | null
+          created_at?: string
+          created_by?: string | null
+          deployment_config?: Json
+          id?: string
+          is_active?: boolean
+          mcp_config?: Json
+          model_config?: Json
+          rag_config?: Json
+          system_prompt?: string | null
+          theme_config?: Json
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Update: {
+          brand_name?: string
+          business_unit?: string | null
+          created_at?: string
+          created_by?: string | null
+          deployment_config?: Json
+          id?: string
+          is_active?: boolean
+          mcp_config?: Json
+          model_config?: Json
+          rag_config?: Json
+          system_prompt?: string | null
+          theme_config?: Json
+          updated_at?: string
+          welcome_message?: string | null
+        }
+        Relationships: []
+      }
+      genie_brand_conversations: {
+        Row: {
+          brand_config_id: string
+          conversation_data: Json
+          created_at: string
+          duration_seconds: number | null
+          id: string
+          message_count: number
+          metadata: Json
+          models_used: string[] | null
+          session_id: string
+          status: string
+          topics_discussed: string[] | null
+          updated_at: string
+          user_identifier: string | null
+          user_satisfaction_score: number | null
+        }
+        Insert: {
+          brand_config_id: string
+          conversation_data?: Json
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          message_count?: number
+          metadata?: Json
+          models_used?: string[] | null
+          session_id: string
+          status?: string
+          topics_discussed?: string[] | null
+          updated_at?: string
+          user_identifier?: string | null
+          user_satisfaction_score?: number | null
+        }
+        Update: {
+          brand_config_id?: string
+          conversation_data?: Json
+          created_at?: string
+          duration_seconds?: number | null
+          id?: string
+          message_count?: number
+          metadata?: Json
+          models_used?: string[] | null
+          session_id?: string
+          status?: string
+          topics_discussed?: string[] | null
+          updated_at?: string
+          user_identifier?: string | null
+          user_satisfaction_score?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_brand_conversations_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_brand_knowledge_bases: {
+        Row: {
+          brand_config_id: string
+          created_at: string
+          description: string | null
+          document_urls: string[] | null
+          faq_entries: Json
+          id: string
+          indexing_config: Json
+          knowledge_entries: Json
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          brand_config_id: string
+          created_at?: string
+          description?: string | null
+          document_urls?: string[] | null
+          faq_entries?: Json
+          id?: string
+          indexing_config?: Json
+          knowledge_entries?: Json
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          brand_config_id?: string
+          created_at?: string
+          description?: string | null
+          document_urls?: string[] | null
+          faq_entries?: Json
+          id?: string
+          indexing_config?: Json
+          knowledge_entries?: Json
+          name?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_brand_knowledge_bases_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_configurations: {
         Row: {
           configuration_name: string | null
@@ -6255,6 +6630,59 @@ export type Database = {
           user_id?: string | null
         }
         Relationships: []
+      }
+      genie_deployment_embeds: {
+        Row: {
+          allowed_origins: string[] | null
+          api_key: string
+          brand_config_id: string
+          created_at: string
+          domain: string
+          embed_code: string
+          embed_type: string
+          id: string
+          is_active: boolean
+          last_used_at: string | null
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          allowed_origins?: string[] | null
+          api_key?: string
+          brand_config_id: string
+          created_at?: string
+          domain: string
+          embed_code: string
+          embed_type?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          allowed_origins?: string[] | null
+          api_key?: string
+          brand_config_id?: string
+          created_at?: string
+          domain?: string
+          embed_code?: string
+          embed_type?: string
+          id?: string
+          is_active?: boolean
+          last_used_at?: string | null
+          updated_at?: string
+          usage_count?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_deployment_embeds_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       imported_data: {
         Row: {
@@ -6851,7 +7279,9 @@ export type Database = {
       }
       knowledge_base: {
         Row: {
+          approval_notes: string | null
           category: string
+          confidence_score: number | null
           content_type: string | null
           created_at: string
           created_by: string | null
@@ -6866,13 +7296,18 @@ export type Database = {
           processed_content: string | null
           raw_content: string | null
           regulatory_status: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
           source_type: string
           source_url: string | null
+          status: string | null
           treatment_category: string | null
           updated_at: string
         }
         Insert: {
+          approval_notes?: string | null
           category: string
+          confidence_score?: number | null
           content_type?: string | null
           created_at?: string
           created_by?: string | null
@@ -6887,13 +7322,18 @@ export type Database = {
           processed_content?: string | null
           raw_content?: string | null
           regulatory_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           source_type: string
           source_url?: string | null
+          status?: string | null
           treatment_category?: string | null
           updated_at?: string
         }
         Update: {
+          approval_notes?: string | null
           category?: string
+          confidence_score?: number | null
           content_type?: string | null
           created_at?: string
           created_by?: string | null
@@ -6908,8 +7348,11 @@ export type Database = {
           processed_content?: string | null
           raw_content?: string | null
           regulatory_status?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
           source_type?: string
           source_url?: string | null
+          status?: string | null
           treatment_category?: string | null
           updated_at?: string
         }
@@ -10253,10 +10696,15 @@ export type Database = {
           created_at: string
           healthcare_context: Json | null
           id: string
+          knowledge_base_entry_id: string | null
           knowledge_base_ids: string[] | null
           next_best_actions: Json
           query_context: string
           recommendations: Json
+          review_notes: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string | null
           treatment_recommendations: Json | null
         }
         Insert: {
@@ -10266,10 +10714,15 @@ export type Database = {
           created_at?: string
           healthcare_context?: Json | null
           id?: string
+          knowledge_base_entry_id?: string | null
           knowledge_base_ids?: string[] | null
           next_best_actions: Json
           query_context: string
           recommendations: Json
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
           treatment_recommendations?: Json | null
         }
         Update: {
@@ -10279,10 +10732,15 @@ export type Database = {
           created_at?: string
           healthcare_context?: Json | null
           id?: string
+          knowledge_base_entry_id?: string | null
           knowledge_base_ids?: string[] | null
           next_best_actions?: Json
           query_context?: string
           recommendations?: Json
+          review_notes?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string | null
           treatment_recommendations?: Json | null
         }
         Relationships: [
@@ -10291,6 +10749,13 @@ export type Database = {
             columns: ["conversation_id"]
             isOneToOne: false
             referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "rag_recommendations_knowledge_base_entry_id_fkey"
+            columns: ["knowledge_base_entry_id"]
+            isOneToOne: false
+            referencedRelation: "knowledge_base"
             referencedColumns: ["id"]
           },
         ]
@@ -12292,6 +12757,36 @@ export type Database = {
           session_type?: string
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      usage_limits: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          limit_type: string
+          limit_value: number
+          time_window_hours: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          limit_type: string
+          limit_value: number
+          time_window_hours?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          limit_type?: string
+          limit_value?: number
+          time_window_hours?: number
+          updated_at?: string
         }
         Relationships: []
       }
@@ -14536,6 +15031,14 @@ export type Database = {
           | { p_enrollment_id: string }
         Returns: number
       }
+      check_access_override: {
+        Args: { p_ip_address: string; p_user_email?: string }
+        Returns: Json
+      }
+      check_conversation_limits: {
+        Args: { p_ip_address: unknown; p_user_email?: string }
+        Returns: Json
+      }
       check_duplicate_agent_name: {
         Args: { p_exclude_id?: string; p_name: string; p_user_id: string }
         Returns: boolean
@@ -14854,6 +15357,15 @@ export type Database = {
       optimize_slow_queries: {
         Args: Record<PropertyKey, never>
         Returns: undefined
+      }
+      process_rag_recommendation: {
+        Args: {
+          p_action: string
+          p_merge_with_entry_id?: string
+          p_recommendation_id: string
+          p_review_notes?: string
+        }
+        Returns: Json
       }
       progress_journey_stage: {
         Args: {
