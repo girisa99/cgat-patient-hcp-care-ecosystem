@@ -6595,6 +6595,87 @@ export type Database = {
         }
         Relationships: []
       }
+      genie_conversation_analytics: {
+        Row: {
+          average_response_time_ms: number | null
+          brand_config_id: string | null
+          conversation_id: string | null
+          cookies_accepted: boolean | null
+          created_at: string | null
+          deployment_type: string | null
+          ended_at: string | null
+          escalation_requested: boolean | null
+          id: string
+          message_count: number | null
+          metadata: Json | null
+          models_used: Json | null
+          privacy_consent_given: boolean | null
+          session_id: string
+          started_at: string | null
+          total_tokens_used: number | null
+          updated_at: string | null
+          user_agent: string | null
+          user_ip_address: unknown | null
+        }
+        Insert: {
+          average_response_time_ms?: number | null
+          brand_config_id?: string | null
+          conversation_id?: string | null
+          cookies_accepted?: boolean | null
+          created_at?: string | null
+          deployment_type?: string | null
+          ended_at?: string | null
+          escalation_requested?: boolean | null
+          id?: string
+          message_count?: number | null
+          metadata?: Json | null
+          models_used?: Json | null
+          privacy_consent_given?: boolean | null
+          session_id: string
+          started_at?: string | null
+          total_tokens_used?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_ip_address?: unknown | null
+        }
+        Update: {
+          average_response_time_ms?: number | null
+          brand_config_id?: string | null
+          conversation_id?: string | null
+          cookies_accepted?: boolean | null
+          created_at?: string | null
+          deployment_type?: string | null
+          ended_at?: string | null
+          escalation_requested?: boolean | null
+          id?: string
+          message_count?: number | null
+          metadata?: Json | null
+          models_used?: Json | null
+          privacy_consent_given?: boolean | null
+          session_id?: string
+          started_at?: string | null
+          total_tokens_used?: number | null
+          updated_at?: string | null
+          user_agent?: string | null
+          user_ip_address?: unknown | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_conversation_analytics_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "genie_conversation_analytics_conversation_id_fkey"
+            columns: ["conversation_id"]
+            isOneToOne: false
+            referencedRelation: "agent_conversations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_conversations: {
         Row: {
           configuration_snapshot: Json | null
@@ -6677,6 +6758,207 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "genie_deployment_embeds_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_deployments: {
+        Row: {
+          active_conversations: number | null
+          average_response_time_ms: number | null
+          brand_config_id: string
+          created_at: string | null
+          deployed_at: string | null
+          deployed_by: string | null
+          deployment_name: string
+          deployment_type: string
+          deployment_url: string | null
+          error_rate: number | null
+          health_status: string | null
+          id: string
+          is_active: boolean | null
+          last_health_check: string | null
+          metadata: Json | null
+          total_conversations: number | null
+          total_requests: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          active_conversations?: number | null
+          average_response_time_ms?: number | null
+          brand_config_id: string
+          created_at?: string | null
+          deployed_at?: string | null
+          deployed_by?: string | null
+          deployment_name: string
+          deployment_type: string
+          deployment_url?: string | null
+          error_rate?: number | null
+          health_status?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_health_check?: string | null
+          metadata?: Json | null
+          total_conversations?: number | null
+          total_requests?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          active_conversations?: number | null
+          average_response_time_ms?: number | null
+          brand_config_id?: string
+          created_at?: string | null
+          deployed_at?: string | null
+          deployed_by?: string | null
+          deployment_name?: string
+          deployment_type?: string
+          deployment_url?: string | null
+          error_rate?: number | null
+          health_status?: string | null
+          id?: string
+          is_active?: boolean | null
+          last_health_check?: string | null
+          metadata?: Json | null
+          total_conversations?: number | null
+          total_requests?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_deployments_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_ip_tracking: {
+        Row: {
+          blocked_count: number | null
+          brand_config_id: string | null
+          city: string | null
+          country_code: string | null
+          created_at: string | null
+          first_seen_at: string | null
+          id: string
+          ip_address: unknown
+          is_blacklisted: boolean | null
+          is_whitelisted: boolean | null
+          isp: string | null
+          last_blocked_at: string | null
+          last_seen_at: string | null
+          metadata: Json | null
+          region: string | null
+          reputation_score: number | null
+          total_conversations: number | null
+          total_requests: number | null
+          updated_at: string | null
+        }
+        Insert: {
+          blocked_count?: number | null
+          brand_config_id?: string | null
+          city?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          first_seen_at?: string | null
+          id?: string
+          ip_address: unknown
+          is_blacklisted?: boolean | null
+          is_whitelisted?: boolean | null
+          isp?: string | null
+          last_blocked_at?: string | null
+          last_seen_at?: string | null
+          metadata?: Json | null
+          region?: string | null
+          reputation_score?: number | null
+          total_conversations?: number | null
+          total_requests?: number | null
+          updated_at?: string | null
+        }
+        Update: {
+          blocked_count?: number | null
+          brand_config_id?: string | null
+          city?: string | null
+          country_code?: string | null
+          created_at?: string | null
+          first_seen_at?: string | null
+          id?: string
+          ip_address?: unknown
+          is_blacklisted?: boolean | null
+          is_whitelisted?: boolean | null
+          isp?: string | null
+          last_blocked_at?: string | null
+          last_seen_at?: string | null
+          metadata?: Json | null
+          region?: string | null
+          reputation_score?: number | null
+          total_conversations?: number | null
+          total_requests?: number | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_ip_tracking_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_rate_limits: {
+        Row: {
+          block_reason: string | null
+          blocked_until: string | null
+          brand_config_id: string | null
+          created_at: string | null
+          id: string
+          identifier: string
+          identifier_type: string
+          is_blocked: boolean | null
+          last_request_at: string | null
+          request_count: number | null
+          updated_at: string | null
+          window_end: string | null
+          window_start: string | null
+        }
+        Insert: {
+          block_reason?: string | null
+          blocked_until?: string | null
+          brand_config_id?: string | null
+          created_at?: string | null
+          id?: string
+          identifier: string
+          identifier_type: string
+          is_blocked?: boolean | null
+          last_request_at?: string | null
+          request_count?: number | null
+          updated_at?: string | null
+          window_end?: string | null
+          window_start?: string | null
+        }
+        Update: {
+          block_reason?: string | null
+          blocked_until?: string | null
+          brand_config_id?: string | null
+          created_at?: string | null
+          id?: string
+          identifier?: string
+          identifier_type?: string
+          is_blocked?: boolean | null
+          last_request_at?: string | null
+          request_count?: number | null
+          updated_at?: string | null
+          window_end?: string | null
+          window_start?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_rate_limits_brand_config_id_fkey"
             columns: ["brand_config_id"]
             isOneToOne: false
             referencedRelation: "genie_brand_configs"
