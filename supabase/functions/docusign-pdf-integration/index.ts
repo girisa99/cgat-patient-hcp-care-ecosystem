@@ -31,7 +31,7 @@ interface DocuSignRequest {
   recipientEmail?: string;
 }
 
-serve(async (req) => {
+serve(async (req): Promise<Response> => {
   console.log('📄 DocuSign PDF Integration - Request received');
   
   if (req.method === 'OPTIONS') {
@@ -115,13 +115,19 @@ serve(async (req) => {
     console.error('❌ DocuSign integration error:', error);
     return new Response(JSON.stringify({
       success: false,
-      error: error.message,
-      details: error.stack
+      error: error instanceof Error ? error.message : String(error),
+      details: error instanceof Error ? error.stack : 'No stack trace'
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
   }
+  
+  // Ensure function always returns a Response
+  return new Response(JSON.stringify({ success: false, error: 'Unknown error' }), {
+    status: 500,
+    headers: { ...corsHeaders, 'Content-Type': 'application/json' }
+  });
 });
 
 async function generateEnrollmentPDF(enrollmentData: EnrollmentFormData): Promise<Blob> {

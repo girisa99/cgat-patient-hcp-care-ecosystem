@@ -166,7 +166,7 @@ serve(async (req) => {
           JSON.stringify({
             envelope_id: envelopeId,
             status: currentStatus,
-            signers: envelope.signers.map(signer => ({
+            signers: envelope.signers.map((signer: any) => ({
               ...signer,
               status: currentStatus === 'completed' ? 'signed' : 'pending'
             }))
@@ -338,8 +338,8 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        details: error.stack 
+        error: error instanceof Error ? error.message : 'Internal server error',
+        details: error instanceof Error ? error.stack : 'No stack trace'
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
