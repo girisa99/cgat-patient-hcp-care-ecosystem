@@ -26,7 +26,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { format } from 'date-fns';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 import { useGenieBrandConfig, GenieBrandConfig } from '@/hooks/useGenieBrandConfig';
@@ -35,6 +35,7 @@ import { DeploymentCodeGenerator } from './DeploymentCodeGenerator';
 import { ConfigurationPreview } from './ConfigurationPreview';
 
 export const BrandConfigurationManager: React.FC = () => {
+  const navigate = useNavigate();
   const [selectedConfig, setSelectedConfig] = useState<GenieBrandConfig | null>(null);
   const [isCreating, setIsCreating] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
@@ -55,11 +56,13 @@ export const BrandConfigurationManager: React.FC = () => {
   } = useGenieBrandConfig();
 
   const handleCreateNew = () => {
+    console.log('[BrandConfig] Create new clicked');
     setSelectedConfig(null);
     setIsCreating(true);
   };
 
   const handleEdit = (config: GenieBrandConfig) => {
+    console.log('[BrandConfig] Edit clicked', config.id);
     setSelectedConfig(config);
     setIsCreating(true);
   };
@@ -85,6 +88,7 @@ export const BrandConfigurationManager: React.FC = () => {
   };
 
   const handlePreview = (config: GenieBrandConfig) => {
+    console.log('[BrandConfig] Preview clicked', config.id);
     setSelectedConfig(config);
     setShowPreview(true);
   };
@@ -102,7 +106,8 @@ export const BrandConfigurationManager: React.FC = () => {
   };
 
   const handleViewAnalytics = (config: GenieBrandConfig) => {
-    window.location.href = `/genie-analytics/${config.id}`;
+    console.log('[BrandConfig] Analytics clicked', config.id);
+    navigate(`/genie-analytics/${config.id}`);
   };
 
 // Editor is rendered in a sidebar sheet; no early return here
