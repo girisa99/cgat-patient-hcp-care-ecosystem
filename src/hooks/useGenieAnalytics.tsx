@@ -31,43 +31,22 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
     enabled: !!params.brandConfigId,
   });
 
-  // Fetch conversations based on deployment type
+  // Fetch conversation analytics (brand scoped)
   const { data: conversations, refetch: refetchConversations } = useQuery({
-    queryKey: ['conversations', params.brandConfigId, deploymentType],
+    queryKey: ['genie-conversation-analytics', params.brandConfigId],
     queryFn: async (): Promise<any[]> => {
       if (!params.brandConfigId) return [];
-      
       try {
-        // Map to appropriate table based on deployment type
-        if (deploymentType === 'public') {
-          // Public Genie - use agent_conversations
-          const { data, error } = await (supabase as any)
-            .from('agent_conversations')
-            .select('*')
-            .eq('agent_id', params.brandConfigId);
-          if (error) console.warn('Conversations fetch error:', error);
-          return data || [];
-        } else if (deploymentType === 'internal') {
-          // Internal Genie (Patient Enrollment) - use enrollment sessions
-          const { data, error } = await (supabase as any)
-            .from('enrollment_sessions')
-            .select('*')
-            .eq('facility_id', params.brandConfigId);
-          if (error) console.warn('Enrollment sessions fetch error:', error);
-          return data || [];
-        } else if (deploymentType === 'embedded') {
-          // Embedded Genie - use agent conversations
-          const { data, error } = await (supabase as any)
-            .from('agent_conversations')
-            .select('*')
-            .eq('agent_id', params.brandConfigId);
-          if (error) console.warn('Embedded conversations fetch error:', error);
-          return data || [];
-        }
+        const { data, error } = await (supabase as any)
+          .from('genie_conversation_analytics')
+          .select('*')
+          .eq('brand_config_id', params.brandConfigId)
+          .order('started_at', { ascending: false });
+        if (error) console.warn('Conversation analytics fetch error:', error);
+        return data || [];
       } catch (error) {
-        console.warn('Conversation query error:', error);
+        console.warn('Conversation analytics query error:', error);
       }
-      
       return [];
     },
     enabled: !!params.brandConfigId,
@@ -134,42 +113,21 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
     enabled: !!params.brandConfigId,
   });
 
-  // Fetch knowledge base stats based on deployment type
+  // Fetch knowledge base stats (global; reuse existing Public hub components)
   const { data: knowledgeBase } = useQuery({
-    queryKey: ['knowledge-base', params.brandConfigId, deploymentType],
+    queryKey: ['knowledge-base'],
     queryFn: async () => {
       try {
-        if (deploymentType === 'public') {
-          // Public Genie - use general knowledge_base
-          const { data, error } = await (supabase as any)
-            .from('knowledge_base')
-            .select('id, source_title, category, status')
-            .or(`brand_config_id.eq.${params.brandConfigId},brand_config_id.is.null`);
-          if (error) console.warn('Knowledge base fetch error:', error);
-          return data || [];
-        } else if (deploymentType === 'internal') {
-          // Internal Genie - use healthcare/facility specific knowledge
-          const { data, error } = await (supabase as any)
-            .from('knowledge_base')
-            .select('id, source_title, category, status')
-            .eq('facility_id', params.brandConfigId);
-          if (error) console.warn('Internal knowledge fetch error:', error);
-          return data || [];
-        } else if (deploymentType === 'embedded') {
-          // Embedded - use agent-specific knowledge
-          const { data, error } = await (supabase as any)
-            .from('agent_knowledge_bases')
-            .select('knowledge_base_id, knowledge_base(*)')
-            .eq('agent_id', params.brandConfigId);
-          if (error) console.warn('Embedded knowledge fetch error:', error);
-          return data?.map((kb: any) => kb.knowledge_base) || [];
-        }
+        const { data, error } = await (supabase as any)
+          .from('knowledge_base')
+          .select('id, name, category, status, is_static');
+        if (error) console.warn('Knowledge base fetch error:', error);
+        return data || [];
       } catch (error) {
         console.warn('Knowledge base query error:', error);
+        return [];
       }
-      return [];
     },
-    enabled: !!params.brandConfigId,
   });
 
   // Fetch IP tracking data
@@ -177,11 +135,11 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
     queryKey: ['genie-ip-tracking', params.brandConfigId],
     queryFn: async () => {
       if (!params.brandConfigId) return [];
-      const { data, error }: any = await supabase
+      const { data, error }: any = await (supabase as any)
         .from('genie_ip_tracking')
-        .select('ip_address, visit_count, last_seen_at')
+        .select('ip_address, total_requests, last_seen_at, is_whitelisted, is_blacklisted, country_code')
         .eq('brand_config_id', params.brandConfigId);
-      if (error) throw error;
+      if (error) console.warn('IP tracking fetch error:', error);
       return data || [];
     },
     enabled: !!params.brandConfigId,
@@ -191,16 +149,17 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
   const uniqueVisitors = ipTracking ? new Set(ipTracking.map((t: any) => t.ip_address)).size : 0;
   
   const totalMessages = conversations?.reduce((sum: number, conv: any) => {
-    const messages = Array.isArray(conv.messages) ? conv.messages.length : 0;
-    return sum + messages;
+    const count = typeof conv.message_count === 'number' ? conv.message_count : 0;
+    return sum + count;
   }, 0) || 0;
 
   const sessionsToday = conversations?.filter((c: any) => {
     const today = new Date().toDateString();
-    return new Date(c.created_at).toDateString() === today;
+    const started = c.started_at || c.created_at;
+    return started ? new Date(started).toDateString() === today : false;
   }).length || 0;
 
-  const verifiedDomainsCount = domains?.filter((d: any) => d.is_verified).length || 0;
+  const verifiedDomainsCount = domains?.filter((d: any) => d.verification_status === 'verified').length || 0;
 
   // Aggregate analytics
   const analytics = {
