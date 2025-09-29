@@ -132,8 +132,9 @@ export const BrandConfigurationManager: React.FC = () => {
   }
 
   return (
-    <div className="space-y-6 p-6">
-      <div className="flex items-center justify-between">
+    <>
+      <div className="space-y-6 p-6">
+        <div className="flex items-center justify-between">
         <div>
           <div className="mb-2">
             <Link to="/genie-management">
@@ -250,7 +251,9 @@ export const BrandConfigurationManager: React.FC = () => {
                     <Database className="h-4 w-4 text-muted-foreground" />
                     <div className="flex gap-1 flex-wrap">
                       {config.rag_config.enabled && (
-                        <Badge variant="outline" className="text-xs">RAG</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          RAG ({config.rag_config.knowledgeBaseIds?.length || 0} KB)
+                        </Badge>
                       )}
                       {config.mcp_config.enabled && (
                         <Badge variant="outline" className="text-xs">MCP</Badge>
@@ -259,6 +262,14 @@ export const BrandConfigurationManager: React.FC = () => {
                         <Badge variant="outline" className="text-xs">Analytics</Badge>
                       )}
                     </div>
+                  </div>
+
+                  {/* Access Type */}
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-4 w-4 text-muted-foreground" />
+                    <Badge variant={config.deployment_config.requireAuth ? 'default' : 'secondary'} className="text-xs">
+                      {config.deployment_config.requireAuth ? 'Internal' : 'Public'}
+                    </Badge>
                   </div>
 
                   {/* Meta info */}
@@ -336,8 +347,29 @@ export const BrandConfigurationManager: React.FC = () => {
               </Card>
             </motion.div>
           ))
-        )}
+          )}
+        </div>
       </div>
-    </div>
+
+      {/* Editor Sidebar Sheet */}
+    <Sheet open={isCreating} onOpenChange={(open) => {
+      if (!open) {
+        setIsCreating(false);
+        setSelectedConfig(null);
+      }
+    }}>
+      <SheetContent side="right" className="w-full sm:max-w-4xl overflow-y-auto">
+        <BrandConfigurationEditor
+          config={selectedConfig}
+          onSave={handleSave}
+          onCancel={() => {
+            setIsCreating(false);
+            setSelectedConfig(null);
+          }}
+          isLoading={isCreatingConfig || isUpdating}
+        />
+      </SheetContent>
+    </Sheet>
+    </>
   );
 };

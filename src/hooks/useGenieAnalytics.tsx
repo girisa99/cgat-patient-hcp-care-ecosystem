@@ -113,21 +113,47 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
     enabled: !!params.brandConfigId,
   });
 
-  // Fetch knowledge base stats (global; reuse existing Public hub components)
-  const { data: knowledgeBase } = useQuery({
-    queryKey: ['knowledge-base'],
+  // Fetch knowledge base entries linked to this brand config
+  const { data: knowledgeBase, isLoading: isLoadingKB } = useQuery({
+    queryKey: ['genie-knowledge-base', params.brandConfigId],
     queryFn: async () => {
+      if (!params.brandConfigId) return [];
+      
       try {
-        const { data, error } = await (supabase as any)
+        // First get the brand config to retrieve knowledge base IDs from rag_config
+        const { data: configData, error: configError } = await supabase
+          .from('genie_brand_configs')
+          .select('rag_config')
+          .eq('id', params.brandConfigId)
+          .single();
+        
+        if (configError || !configData?.rag_config) {
+          console.warn('Error fetching brand config:', configError);
+          return [];
+        }
+
+        const ragConfig = configData.rag_config as any;
+        const knowledgeBaseIds = ragConfig?.knowledgeBaseIds || [];
+        
+        if (knowledgeBaseIds.length === 0) return [];
+
+        // Fetch the actual knowledge base entries
+        const { data, error } = await supabase
           .from('knowledge_base')
-          .select('id, name, category, status, is_static');
-        if (error) console.warn('Knowledge base fetch error:', error);
+          .select('id, name, processed_content, content_type, healthcare_tags, metadata')
+          .in('id', knowledgeBaseIds);
+        
+        if (error) {
+          console.warn('Error fetching knowledge base:', error);
+          return [];
+        }
         return data || [];
       } catch (error) {
         console.warn('Knowledge base query error:', error);
         return [];
       }
     },
+    enabled: !!params.brandConfigId,
   });
 
   // Fetch IP tracking data
@@ -188,11 +214,11 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
   const knowledgeEntries = knowledgeBase || [];
   const knowledgeBaseStats = {
     totalEntries: knowledgeEntries.length,
-    activeEntries: knowledgeEntries.filter((k: any) => k.status === 'approved').length,
-    pendingEntries: knowledgeEntries.filter((k: any) => k.status === 'pending').length,
-    rejectedEntries: knowledgeEntries.filter((k: any) => k.status === 'rejected').length,
-    topics: [...new Set(knowledgeEntries.map((k: any) => k.category).filter(Boolean))],
-    mostQueried: knowledgeEntries.length > 0 ? knowledgeEntries[0]?.source_title || 'N/A' : 'N/A',
+    activeEntries: knowledgeEntries.filter((k: any) => k.metadata?.status === 'approved').length,
+    pendingEntries: knowledgeEntries.filter((k: any) => k.metadata?.status === 'pending').length,
+    rejectedEntries: knowledgeEntries.filter((k: any) => k.metadata?.status === 'rejected').length,
+    topics: [...new Set(knowledgeEntries.map((k: any) => k.healthcare_tags).flat().filter(Boolean))],
+    mostQueried: knowledgeEntries.length > 0 ? knowledgeEntries[0]?.name || 'N/A' : 'N/A',
   };
 
   // Performance metrics

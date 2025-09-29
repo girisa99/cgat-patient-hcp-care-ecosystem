@@ -25,12 +25,12 @@ import {
   Zap
 } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { SheetHeader, SheetTitle } from '@/components/ui/sheet';
 
 import { GenieBrandConfig, useGenieBrandConfig } from '@/hooks/useGenieBrandConfig';
 import { GenieModelDropdown } from '@/components/genie/GenieModelDropdown';
 import { SelectedModelConfig } from '@/components/ai';
 import { KnowledgeBaseConfiguration } from './KnowledgeBaseConfiguration';
-import { ArrowLeft } from 'lucide-react';
 
 interface BrandConfigurationEditorProps {
   config?: GenieBrandConfig | null;
@@ -51,9 +51,19 @@ export const BrandConfigurationEditor: React.FC<BrandConfigurationEditorProps> =
   );
   const [previewTheme, setPreviewTheme] = useState(false);
 
+  // Update formData when config changes (e.g., when editing existing config)
   useEffect(() => {
     if (config) {
-      setFormData(config);
+      // Ensure all nested objects are properly initialized
+      const updatedFormData = {
+        ...config,
+        theme_config: config.theme_config || getDefaultConfig().theme_config,
+        model_config: config.model_config || getDefaultConfig().model_config,
+        rag_config: config.rag_config || getDefaultConfig().rag_config,
+        deployment_config: config.deployment_config || getDefaultConfig().deployment_config,
+        mcp_config: config.mcp_config || getDefaultConfig().mcp_config,
+      };
+      setFormData(updatedFormData);
     }
   }, [config]);
 
@@ -110,39 +120,26 @@ export const BrandConfigurationEditor: React.FC<BrandConfigurationEditorProps> =
   }, [formData.theme_config, previewTheme]);
 
   return (
-    <div className="space-y-6 p-6 max-w-6xl mx-auto">
+    <div className="space-y-6">
       {/* Header */}
-      <div className="space-y-4">
-        <Button 
-          variant="ghost" 
-          size="sm"
-          onClick={onCancel}
-          className="flex items-center gap-2"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          Back to Configurations
+      <SheetHeader>
+        <SheetTitle>
+          {config ? 'Edit Configuration' : 'Create Configuration'}
+        </SheetTitle>
+        <p className="text-sm text-muted-foreground">
+          Configure your GENIE AI instance with custom branding, models, and features
+        </p>
+      </SheetHeader>
+
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={onCancel} className="flex-1">
+          <X className="h-4 w-4 mr-2" />
+          Cancel
         </Button>
-        
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-bold">
-              {config ? 'Edit Configuration' : 'Create Configuration'}
-            </h1>
-            <p className="text-muted-foreground mt-2">
-              Configure your GENIE AI instance with custom branding, models, and features
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" onClick={onCancel}>
-              <X className="h-4 w-4 mr-2" />
-              Cancel
-            </Button>
-            <Button onClick={handleSave} disabled={isLoading}>
-              <Save className="h-4 w-4 mr-2" />
-              {isLoading ? 'Saving...' : 'Save Configuration'}
-            </Button>
-          </div>
-        </div>
+        <Button onClick={handleSave} disabled={isLoading} className="flex-1">
+          <Save className="h-4 w-4 mr-2" />
+          {isLoading ? 'Saving...' : 'Save Configuration'}
+        </Button>
       </div>
 
       <Tabs defaultValue="basic" className="space-y-6">
@@ -462,7 +459,7 @@ export const BrandConfigurationEditor: React.FC<BrandConfigurationEditorProps> =
         {/* Knowledge Base Configuration */}
         <TabsContent value="knowledge" className="space-y-6">
           <KnowledgeBaseConfiguration
-            selectedKnowledgeBaseIds={formData.rag_config.knowledgeBaseIds}
+            selectedKnowledgeBaseIds={formData.rag_config?.knowledgeBaseIds || []}
             onKnowledgeBaseChange={(ids) => handleNestedFieldChange('rag_config', 'knowledgeBaseIds', ids)}
           />
         </TabsContent>
