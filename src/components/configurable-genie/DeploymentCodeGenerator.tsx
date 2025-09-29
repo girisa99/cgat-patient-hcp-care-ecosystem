@@ -218,7 +218,7 @@ console.log(response);`;
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Settings className="h-5 w-5" />
+            <Code className="h-5 w-5" />
             Deployment Settings
           </CardTitle>
         </CardHeader>
@@ -236,7 +236,7 @@ console.log(response);`;
             
             <div className="space-y-2">
               <Label htmlFor="embed_type">Embed Type</Label>
-              <Select value={embedType} onValueChange={setEmbedType}>
+              <Select value={embedType} onValueChange={(value) => setEmbedType(value as typeof embedType)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -251,7 +251,7 @@ console.log(response);`;
             
             <div className="space-y-2">
               <Label htmlFor="position">Position</Label>
-              <Select value={position} onValueChange={setPosition}>
+              <Select value={position} onValueChange={(value) => setPosition(value as typeof position)}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>

@@ -40,7 +40,7 @@ export const useConfigurableGenie = (options: ConfigurableGenieOptions = {}) => 
           .single();
         
         if (error) throw error;
-        return data as GenieBrandConfig;
+        return data as unknown as GenieBrandConfig;
       }
 
       if (options.embedKey) {
@@ -62,7 +62,7 @@ export const useConfigurableGenie = (options: ConfigurableGenieOptions = {}) => 
           .single();
         
         if (error) throw error;
-        return data as GenieBrandConfig;
+        return data as unknown as GenieBrandConfig;
       }
 
       if (options.brandName || options.businessUnit) {
@@ -83,7 +83,7 @@ export const useConfigurableGenie = (options: ConfigurableGenieOptions = {}) => 
         const { data, error } = await query.single();
         
         if (error) throw error;
-        return data as GenieBrandConfig;
+        return data as unknown as GenieBrandConfig;
       }
 
       // Default: get first active configuration
@@ -96,7 +96,7 @@ export const useConfigurableGenie = (options: ConfigurableGenieOptions = {}) => 
         .single();
       
       if (error) throw error;
-      return data as GenieBrandConfig;
+      return data as unknown as GenieBrandConfig;
     },
     enabled: Object.keys(options).length > 0
   });

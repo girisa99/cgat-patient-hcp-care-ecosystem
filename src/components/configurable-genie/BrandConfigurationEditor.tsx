@@ -381,8 +381,21 @@ export const BrandConfigurationEditor: React.FC<BrandConfigurationEditorProps> =
               <div className="space-y-2">
                 <Label>Default Models</Label>
                 <GenieModelDropdown
-                  selectedModels={formData.model_config.defaultModels}
-                  onModelsChange={handleModelConfigChange}
+                  selectedModels={formData.model_config.defaultModels.map(m => ({
+                    ...m,
+                    name: `${m.provider}/${m.model}`,
+                    role: 'primary' as const,
+                    weight: 1,
+                    category: m.category as 'llm' | 'mcp' | 'small' | 'vision'
+                  }))}
+                  onModelsChange={(models) => {
+                    const basicModels = models.map(m => ({
+                      provider: m.provider,
+                      model: m.model,
+                      category: m.category
+                    }));
+                    handleModelConfigChange(basicModels as any);
+                  }}
                   mode={formData.model_config.defaultMode}
                   maxSelections={formData.model_config.maxModels}
                 />

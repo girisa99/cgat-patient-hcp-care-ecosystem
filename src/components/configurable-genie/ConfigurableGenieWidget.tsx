@@ -214,7 +214,13 @@ export const ConfigurableGenieWidget: React.FC<ConfigurableGenieWidgetProps> = (
             isOpen={true}
             onClose={() => setIsOpen(false)}
             mode={modelConfig?.defaultMode || 'single'}
-            selectedModels={modelConfig?.defaultModels || []}
+            selectedModels={(modelConfig?.defaultModels || []).map(m => ({
+              ...m,
+              name: `${m.provider}/${m.model}`,
+              role: 'primary' as const,
+              weight: 1,
+              category: m.category as 'llm' | 'mcp' | 'small' | 'vision'
+            }))}
             userId={deployment?.requireAuth ? 'configured-user' : undefined}
           />
         </div>

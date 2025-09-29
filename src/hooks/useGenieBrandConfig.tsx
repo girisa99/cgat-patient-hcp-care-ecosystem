@@ -100,7 +100,7 @@ export const useGenieBrandConfig = () => {
         .order('created_at', { ascending: false });
       
       if (error) throw error;
-      return data as GenieBrandConfig[];
+      return data as unknown as GenieBrandConfig[];
     },
   });
 
@@ -116,7 +116,7 @@ export const useGenieBrandConfig = () => {
       console.error('Error fetching brand config:', error);
       return null;
     }
-    return data as GenieBrandConfig;
+    return data as unknown as GenieBrandConfig;
   };
 
   // Create brand configuration
@@ -124,12 +124,12 @@ export const useGenieBrandConfig = () => {
     mutationFn: async (config: Omit<GenieBrandConfig, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('genie_brand_configs')
-        .insert(config)
+        .insert(config as any)
         .select()
         .single();
       
       if (error) throw error;
-      return data as GenieBrandConfig;
+      return data as unknown as GenieBrandConfig;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['genie-brand-configs'] });
@@ -145,13 +145,13 @@ export const useGenieBrandConfig = () => {
     mutationFn: async ({ id, ...updates }: Partial<GenieBrandConfig> & { id: string }) => {
       const { data, error } = await supabase
         .from('genie_brand_configs')
-        .update(updates)
+        .update(updates as any)
         .eq('id', id)
         .select()
         .single();
       
       if (error) throw error;
-      return data as GenieBrandConfig;
+      return data as unknown as GenieBrandConfig;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['genie-brand-configs'] });
@@ -195,12 +195,12 @@ export const useGenieBrandConfig = () => {
 
       const { data, error } = await supabase
         .from('genie_brand_configs')
-        .insert(clonedConfig)
+        .insert(clonedConfig as any)
         .select()
         .single();
       
       if (error) throw error;
-      return data as GenieBrandConfig;
+      return data as unknown as GenieBrandConfig;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['genie-brand-configs'] });
@@ -242,8 +242,6 @@ export const useGenieBrandConfig = () => {
       .genie-accent {
         background-color: var(--genie-accent);
       }
-      
-      ${theme.customCSS || ''}
     `;
   };
 
