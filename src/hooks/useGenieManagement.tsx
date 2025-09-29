@@ -149,7 +149,8 @@ export const useGenieManagement = () => {
   });
 
   // Aggregate all data into comprehensive instances
-  const genieInstances: GenieInstance[] = (deployments || []).map((deployment: any) => {
+  // Include both deployments AND configs without deployments
+  const deploymentInstances: GenieInstance[] = (deployments || []).map((deployment: any) => {
     const config = brandConfigs?.find(c => c.id === deployment.brand_config_id);
     const stats = conversationStats?.filter(s => s.brand_config_id === deployment.brand_config_id) || [];
     const rateLimits = rateLimitData?.filter(r => r.brand_config_id === deployment.brand_config_id) || [];
@@ -203,6 +204,68 @@ export const useGenieManagement = () => {
       deployed_at: deployment.deployed_at,
     };
   });
+
+  // Add configs without deployments (like our newly seeded data)
+  const configOnlyInstances: GenieInstance[] = (brandConfigs || [])
+    .filter(config => !deployments?.some(d => d.brand_config_id === config.id))
+    .map((config: any) => {
+      const stats = conversationStats?.filter(s => s.brand_config_id === config.id) || [];
+      const rateLimits = rateLimitData?.filter(r => r.brand_config_id === config.id) || [];
+      const ips = ipTracking?.filter(i => i.brand_config_id === config.id) || [];
+      const domains = domainVerifications?.filter(d => d.brand_config_id === config.id) || [];
+      const options = deploymentOptions?.filter(o => o.brand_config_id === config.id) || [];
+
+      // Calculate daily and hourly usage
+      const now = new Date();
+      const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const hourStart = new Date(now.getTime() - 60 * 60 * 1000);
+      
+      const dailyUsage = rateLimits.filter(r => 
+        new Date(r.last_request_at) >= todayStart
+      ).reduce((sum, r) => sum + (r.request_count || 0), 0);
+      
+      const hourlyUsage = rateLimits.filter(r => 
+        new Date(r.last_request_at) >= hourStart
+      ).reduce((sum, r) => sum + (r.request_count || 0), 0);
+
+      // Extract deployment type from config's deployment_config jsonb
+      const deploymentType = config.deployment_config?.type || 'public';
+
+      return {
+        id: config.id,
+        brand_name: config.brand_name || 'Unknown',
+        business_unit: config.business_unit,
+        business_name: config.business_name,
+        product_name: config.product_name,
+        contact_person: config.contact_person,
+        contact_email: config.contact_email,
+        domain_name: config.domain_name,
+        deployment_type: deploymentType as 'public' | 'internal' | 'mcp' | 'embedded',
+        deployment_status: config.deployment_status || 'draft',
+        subscription_type: config.subscription_type || 'experimentation',
+        is_active: config.is_active,
+        total_conversations: stats.length,
+        active_conversations: 0, // No way to tell active from stats
+        daily_limit: config.daily_limit || 1000,
+        hourly_limit: config.hourly_limit || 100,
+        rate_limit_info: {
+          total_blocked: rateLimits.filter(r => r.is_blocked).length,
+          current_rate: rateLimits.reduce((sum, r) => sum + (r.request_count || 0), 0),
+          daily_usage: dailyUsage,
+          hourly_usage: hourlyUsage,
+        },
+        ip_tracking: {
+          unique_ips: ips.length,
+          blocked_ips: ips.filter(i => i.is_blacklisted).length,
+        },
+        domain_verified: domains.some(d => d.verification_status === 'verified'),
+        deployment_options: options.map(o => o.deployment_type),
+        created_at: config.created_at,
+        deployed_at: undefined,
+      };
+    });
+
+  const genieInstances = [...deploymentInstances, ...configOnlyInstances];
 
   // Health check function
   const checkHealth = async (deploymentId: string) => {

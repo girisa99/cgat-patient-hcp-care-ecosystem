@@ -25,7 +25,8 @@ import {
   Lock,
   Unlock,
   Code,
-  Search
+  Search,
+  Plus
 } from 'lucide-react';
 import { useGenieManagement, GenieInstance } from '@/hooks/useGenieManagement';
 import { Link } from 'react-router-dom';
@@ -68,12 +69,13 @@ export const GenieManagementDashboard: React.FC = () => {
   // Stats aggregation
   const stats = {
     total: genieInstances.length,
-    active: genieInstances.filter(i => i.is_active).length,
+    activeInstances: genieInstances.filter(i => i.is_active).length,
     public: genieInstances.filter(i => i.deployment_type === 'public').length,
     internal: genieInstances.filter(i => i.deployment_type === 'internal').length,
-    mcp: genieInstances.filter(i => i.deployment_type === 'mcp').length,
+    embedded: genieInstances.filter(i => i.deployment_type === 'embedded').length,
     totalConversations: genieInstances.reduce((sum, i) => sum + i.total_conversations, 0),
-    totalBlocked: rateLimitData?.filter(r => r.is_blocked).length || 0,
+    verifiedDomains: genieInstances.filter(i => i.domain_verified).length,
+    deploymentOptions: genieInstances.reduce((sum, i) => sum + i.deployment_options.length, 0),
   };
 
   const getDeploymentTypeIcon = (type: string) => {
@@ -122,6 +124,12 @@ export const GenieManagementDashboard: React.FC = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
+          <Link to="/agents/canvas">
+            <Button variant="outline">
+              <Bot className="h-4 w-4 mr-2" />
+              Agent Canvas
+            </Button>
+          </Link>
           <Link to="/configurable-genie">
             <Button>
               <Settings className="h-4 w-4 mr-2" />
@@ -150,7 +158,7 @@ export const GenieManagementDashboard: React.FC = () => {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-muted-foreground">Active</p>
-                <p className="text-2xl font-bold text-green-600">{stats.active}</p>
+                <p className="text-2xl font-bold text-green-600">{stats.activeInstances}</p>
               </div>
               <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
@@ -185,10 +193,10 @@ export const GenieManagementDashboard: React.FC = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">MCP</p>
-                <p className="text-2xl font-bold">{stats.mcp}</p>
+                <p className="text-sm text-muted-foreground">Embedded</p>
+                <p className="text-2xl font-bold">{stats.embedded}</p>
               </div>
-              <Zap className="h-8 w-8 text-green-600" />
+              <Bot className="h-8 w-8 text-orange-600" />
             </div>
           </CardContent>
         </Card>
@@ -209,10 +217,10 @@ export const GenieManagementDashboard: React.FC = () => {
           <CardContent className="pt-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-muted-foreground">Blocked</p>
-                <p className="text-2xl font-bold text-red-600">{stats.totalBlocked}</p>
+                <p className="text-sm text-muted-foreground">Verified Domains</p>
+                <p className="text-2xl font-bold text-green-600">{stats.verifiedDomains}</p>
               </div>
-              <Shield className="h-8 w-8 text-red-600" />
+              <CheckCircle className="h-8 w-8 text-green-600" />
             </div>
           </CardContent>
         </Card>
