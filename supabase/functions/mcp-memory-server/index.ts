@@ -106,7 +106,7 @@ serve(async (req) => {
     console.error('MCP Memory Server Error:', error)
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -177,8 +177,10 @@ async function retrieveData(key: string, partition: string, config: McpMemoryCon
   }
 
   // Update access statistics
-  entry.metadata.access_count = (entry.metadata.access_count || 0) + 1
-  entry.metadata.last_accessed = new Date().toISOString()
+  if (entry.metadata) {
+    entry.metadata.access_count = (entry.metadata.access_count || 0) + 1
+    entry.metadata.last_accessed = new Date().toISOString()
+  }
   
   updatePartitionStats(partition, 0, 0, Date.now())
 
@@ -310,7 +312,7 @@ function cleanExpiredEntries() {
 
 async function evictOldestEntries(partition: string, targetSizeMB: number) {
   const partitionPrefix = `${partition}:`
-  const entries = []
+  const entries: Array<[string, { data: any; compressed?: boolean; expires: number; partition: string; metadata?: Record<string, any> }]> = []
 
   for (const [key, entry] of memoryStore.entries()) {
     if (key.startsWith(partitionPrefix)) {
@@ -322,14 +324,14 @@ async function evictOldestEntries(partition: string, targetSizeMB: number) {
   entries.sort((a, b) => {
     const aTime = a[1].metadata?.last_accessed || a[1].metadata?.stored_at || 0
     const bTime = b[1].metadata?.last_accessed || b[1].metadata?.stored_at || 0
-    return new Date(aTime).getTime() - new Date(bTime).getTime()
+    return new Date(aTime as string).getTime() - new Date(bTime as string).getTime()
   })
 
   // Remove oldest entries until under target size
   let currentSize = getMemoryUsageMB()
   for (const [key] of entries) {
     if (currentSize <= targetSizeMB) break
-    memoryStore.delete(key)
+    memoryStore.delete(key as string)
     currentSize = getMemoryUsageMB()
   }
 }
@@ -371,7 +373,7 @@ async function compressPartition(partition: string, config: McpMemoryConfig) {
 }
 
 async function backupPartition(partition: string) {
-  const backup = {}
+  const backup: Record<string, any> = {}
   const partitionPrefix = `${partition}:`
 
   for (const [key, entry] of memoryStore.entries()) {

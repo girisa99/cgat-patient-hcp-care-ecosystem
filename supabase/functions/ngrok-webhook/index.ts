@@ -192,12 +192,12 @@ serve(async (req) => {
           return new Response(
             JSON.stringify({
               success: false,
-              error: error.message,
+              error: error instanceof Error ? error.message : 'Webhook test failed',
             }),
             { 
               headers: { 
                 ...corsHeaders, 
-                'Content-Type': 'application/json' 
+                'Content-Type': 'application/json'
               },
               status: 500
             }
@@ -250,12 +250,12 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         success: false,
-        error: error.message,
+        error: error instanceof Error ? error.message : 'Function error',
       }),
       { 
         headers: { 
           ...corsHeaders, 
-          'Content-Type': 'application/json' 
+          'Content-Type': 'application/json'
         },
         status: 500
       }

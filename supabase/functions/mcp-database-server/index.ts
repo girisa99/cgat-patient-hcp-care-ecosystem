@@ -90,7 +90,7 @@ serve(async (req) => {
     console.error('MCP Database Server Error:', error)
     return new Response(JSON.stringify({ 
       success: false, 
-      error: error.message 
+      error: error instanceof Error ? error.message : 'Unknown error'
     }), {
       status: 400,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
@@ -99,7 +99,7 @@ serve(async (req) => {
 })
 
 async function getTableSchemas(supabase: any, tables: string[], schema: string) {
-  const schemas = {}
+  const schemas: Record<string, any> = {}
   
   for (const table of tables) {
     const { data, error } = await supabase.rpc('get_complete_schema_info')
@@ -163,7 +163,7 @@ async function insertData(supabase: any, data: any, config: McpDatabaseConfig) {
   }
   
   // Apply default filters if configured
-  const enrichedRecords = records.map(record => ({
+  const enrichedRecords = records.map((record: any) => ({
     ...record,
     ...config.filters || {}
   }))

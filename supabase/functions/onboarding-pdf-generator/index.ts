@@ -162,12 +162,12 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        details: error.stack 
+        error: error instanceof Error ? error.message : 'Internal server error',
+        details: error instanceof Error ? error.stack : undefined
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-        status: 500 
+        status: 500
       }
     )
   }

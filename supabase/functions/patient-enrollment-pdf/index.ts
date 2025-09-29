@@ -645,11 +645,11 @@ serve(async (req) => {
                 <p><strong>Digital Signature Captured:</strong> Yes</p>
               </div>
 
-              ${patient.providerConsentDate ? `
+              ${(patient as any).providerConsentDate ? `
                 <div class="signature-section">
                   <h3>PROVIDER AUTHORIZATION</h3>
-                  <p><strong>Authorized By:</strong> ${patient.providerConsentBy}</p>
-                  <p><strong>Authorization Date:</strong> ${new Date(patient.providerConsentDate).toLocaleDateString()}</p>
+                  <p><strong>Authorized By:</strong> ${(patient as any).providerConsentBy}</p>
+                  <p><strong>Authorization Date:</strong> ${new Date((patient as any).providerConsentDate).toLocaleDateString()}</p>
                   <p><strong>Digital Signature Captured:</strong> Yes</p>
                 </div>
               ` : ''}
@@ -749,7 +749,7 @@ serve(async (req) => {
             <!-- Include all patient data sections here -->
             <div class="section">
               <div class="section-title">WORKFLOW COMPLETION SUMMARY</div>
-              ${collaborationSteps?.map(step => `
+              ${collaborationSteps?.map((step: any) => `
                 <div class="workflow-step">
                   <div class="step-completed">${step.title} - COMPLETED</div>
                   <p><strong>Assigned to:</strong> ${step.assignedRole}</p>
@@ -761,7 +761,7 @@ serve(async (req) => {
 
             <div class="section">
               <div class="section-title">TEAM SIGNATURES & APPROVALS</div>
-              ${signers?.map(signer => `
+              ${signers?.map((signer: any) => `
                 <div class="workflow-step">
                   <p><strong>Role:</strong> ${signer.role}</p>
                   <p><strong>Name:</strong> ${signer.name || 'Pending'}</p>
@@ -818,8 +818,8 @@ serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Internal server error',
-        details: error.stack 
+        error: error instanceof Error ? error.message : 'Internal server error',
+        details: error instanceof Error ? error.stack : undefined
       }),
       { 
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },

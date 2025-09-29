@@ -60,7 +60,7 @@ serve(async (req) => {
       method: 'error',
       error: {
         code: -32603,
-        message: error.message || 'Internal MCP error',
+        message: error instanceof Error ? error.message : 'Internal MCP error',
         data: { timestamp: new Date().toISOString() }
       }
     };
@@ -218,9 +218,9 @@ async function handleComplianceStatus(
 
   // Calculate compliance metrics
   const totalTests = testCases?.length || 0;
-  const passedTests = testCases?.filter(t => t.test_status === 'passed').length || 0;
-  const failedTests = testCases?.filter(t => t.test_status === 'failed').length || 0;
-  const pendingTests = testCases?.filter(t => t.test_status === 'pending').length || 0;
+  const passedTests = testCases?.filter((t: any) => t.test_status === 'passed').length || 0;
+  const failedTests = testCases?.filter((t: any) => t.test_status === 'failed').length || 0;
+  const pendingTests = testCases?.filter((t: any) => t.test_status === 'pending').length || 0;
 
   const complianceScore = totalTests > 0 ? (passedTests / totalTests) * 100 : 0;
 
