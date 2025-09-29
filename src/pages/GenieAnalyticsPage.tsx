@@ -23,7 +23,7 @@ export const GenieAnalyticsPage: React.FC = () => {
       
       const { data, error } = await supabase
         .from('genie_brand_configs')
-        .select('*')
+        .select('*, deployment_type')
         .eq('id', genieId)
         .single();
 

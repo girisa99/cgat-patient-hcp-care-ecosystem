@@ -12,6 +12,9 @@ interface GenieAnalyticsParams {
 }
 
 export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
+  // Determine deployment type
+  const deploymentType = params.deploymentType?.toLowerCase() || 'public';
+  
   // Fetch brand config details
   const { data: brandConfig } = useQuery({
     queryKey: ['genie-brand-config', params.brandConfigId],
@@ -28,11 +31,43 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
     enabled: !!params.brandConfigId,
   });
 
-  // Fetch conversations - Note: This table may not exist yet or has type issues
+  // Fetch conversations based on deployment type
   const { data: conversations, refetch: refetchConversations } = useQuery({
-    queryKey: ['genie-conversations', params.brandConfigId],
+    queryKey: ['conversations', params.brandConfigId, deploymentType],
     queryFn: async (): Promise<any[]> => {
-      // Temporarily return empty array until table structure is verified
+      if (!params.brandConfigId) return [];
+      
+      try {
+        // Map to appropriate table based on deployment type
+        if (deploymentType === 'public') {
+          // Public Genie - use agent_conversations
+          const { data, error } = await (supabase as any)
+            .from('agent_conversations')
+            .select('*')
+            .eq('agent_id', params.brandConfigId);
+          if (error) console.warn('Conversations fetch error:', error);
+          return data || [];
+        } else if (deploymentType === 'internal') {
+          // Internal Genie (Patient Enrollment) - use enrollment sessions
+          const { data, error } = await (supabase as any)
+            .from('enrollment_sessions')
+            .select('*')
+            .eq('facility_id', params.brandConfigId);
+          if (error) console.warn('Enrollment sessions fetch error:', error);
+          return data || [];
+        } else if (deploymentType === 'embedded') {
+          // Embedded Genie - use agent conversations
+          const { data, error } = await (supabase as any)
+            .from('agent_conversations')
+            .select('*')
+            .eq('agent_id', params.brandConfigId);
+          if (error) console.warn('Embedded conversations fetch error:', error);
+          return data || [];
+        }
+      } catch (error) {
+        console.warn('Conversation query error:', error);
+      }
+      
       return [];
     },
     enabled: !!params.brandConfigId,
@@ -69,29 +104,72 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
     enabled: !!params.brandConfigId,
   });
 
-  // Fetch access requests
+  // Fetch access requests based on deployment type
   const { data: accessRequests } = useQuery({
-    queryKey: ['access-requests'],
+    queryKey: ['access-requests', params.brandConfigId, deploymentType],
     queryFn: async () => {
-      const { data, error }: any = await supabase
-        .from('access_requests')
-        .select('id, user_email, status, requested_at')
-        .order('requested_at', { ascending: false });
-      if (error) throw error;
-      return data || [];
+      try {
+        if (deploymentType === 'public') {
+          // Public Genie - general access requests
+          const { data, error } = await (supabase as any)
+            .from('access_requests')
+            .select('id, user_email, status, requested_at')
+            .order('requested_at', { ascending: false });
+          if (error) console.warn('Access requests fetch error:', error);
+          return data || [];
+        } else if (deploymentType === 'internal') {
+          // Internal Genie - patient consent sessions
+          const { data, error } = await (supabase as any)
+            .from('whatsapp_consent_sessions')
+            .select('*')
+            .eq('facility_id', params.brandConfigId);
+          if (error) console.warn('Consent sessions fetch error:', error);
+          return data || [];
+        }
+      } catch (error) {
+        console.warn('Access requests query error:', error);
+      }
+      return [];
     },
+    enabled: !!params.brandConfigId,
   });
 
-  // Fetch knowledge base stats
+  // Fetch knowledge base stats based on deployment type
   const { data: knowledgeBase } = useQuery({
-    queryKey: ['knowledge-base'],
+    queryKey: ['knowledge-base', params.brandConfigId, deploymentType],
     queryFn: async () => {
-      const { data, error }: any = await supabase
-        .from('knowledge_base')
-        .select('id, source_title, category, status');
-      if (error) throw error;
-      return data || [];
+      try {
+        if (deploymentType === 'public') {
+          // Public Genie - use general knowledge_base
+          const { data, error } = await (supabase as any)
+            .from('knowledge_base')
+            .select('id, source_title, category, status')
+            .or(`brand_config_id.eq.${params.brandConfigId},brand_config_id.is.null`);
+          if (error) console.warn('Knowledge base fetch error:', error);
+          return data || [];
+        } else if (deploymentType === 'internal') {
+          // Internal Genie - use healthcare/facility specific knowledge
+          const { data, error } = await (supabase as any)
+            .from('knowledge_base')
+            .select('id, source_title, category, status')
+            .eq('facility_id', params.brandConfigId);
+          if (error) console.warn('Internal knowledge fetch error:', error);
+          return data || [];
+        } else if (deploymentType === 'embedded') {
+          // Embedded - use agent-specific knowledge
+          const { data, error } = await (supabase as any)
+            .from('agent_knowledge_bases')
+            .select('knowledge_base_id, knowledge_base(*)')
+            .eq('agent_id', params.brandConfigId);
+          if (error) console.warn('Embedded knowledge fetch error:', error);
+          return data?.map((kb: any) => kb.knowledge_base) || [];
+        }
+      } catch (error) {
+        console.warn('Knowledge base query error:', error);
+      }
+      return [];
     },
+    enabled: !!params.brandConfigId,
   });
 
   // Fetch IP tracking data
