@@ -200,7 +200,13 @@ export const BrandConfigurationManager: React.FC = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.2 }}
             >
-              <Card className="hover:shadow-lg transition-shadow">
+              <Card 
+                className="hover:shadow-lg transition-shadow cursor-pointer"
+                role="button"
+                tabIndex={0}
+                onKeyDown={(e) => { if (e.key === 'Enter') handleEdit(config); }}
+                onClick={() => handleEdit(config)}
+              >
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
@@ -283,71 +289,71 @@ export const BrandConfigurationManager: React.FC = () => {
                   </div>
 
                   {/* Actions */}
-                  <div className="grid grid-cols-3 gap-1 pt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handlePreview(config)}
-                    >
-                      <Eye className="h-3 w-3 mr-1" />
-                      Preview
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleViewAnalytics(config)}
-                    >
-                      <BarChart3 className="h-3 w-3 mr-1" />
-                      Analytics
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleToggleActive(config)}
-                      disabled={isUpdating}
-                    >
-                      {config.is_active ? (
-                        <><PowerOff className="h-3 w-3 mr-1" />Deactivate</>
-                      ) : (
-                        <><Power className="h-3 w-3 mr-1" />Activate</>
-                      )}
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleEdit(config)}
-                    >
-                      <Edit className="h-3 w-3 mr-1" />
-                      Edit
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleClone(config)}
-                      disabled={isCloning}
-                    >
-                      <Copy className="h-3 w-3 mr-1" />
-                      Clone
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleShowDeployment(config)}
-                    >
-                      <Code className="h-3 w-3 mr-1" />
-                      Deploy
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      onClick={() => handleDelete(config)}
-                      disabled={isDeleting}
-                      className="text-destructive hover:text-destructive col-span-3"
-                    >
-                      <Trash2 className="h-3 w-3 mr-1" />
-                      Delete Configuration
-                    </Button>
-                  </div>
+                    <div className="grid grid-cols-3 gap-1 pt-2">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handlePreview(config); }}
+                      >
+                        <Eye className="h-3 w-3 mr-1" />
+                        Preview
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handleViewAnalytics(config); }}
+                      >
+                        <BarChart3 className="h-3 w-3 mr-1" />
+                        Analytics
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handleToggleActive(config); }}
+                        disabled={isUpdating}
+                      >
+                        {config.is_active ? (
+                          <><PowerOff className="h-3 w-3 mr-1" />Deactivate</>
+                        ) : (
+                          <><Power className="h-3 w-3 mr-1" />Activate</>
+                        )}
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handleEdit(config); }}
+                      >
+                        <Edit className="h-3 w-3 mr-1" />
+                        Edit
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handleClone(config); }}
+                        disabled={isCloning}
+                      >
+                        <Copy className="h-3 w-3 mr-1" />
+                        Clone
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handleShowDeployment(config); }}
+                      >
+                        <Code className="h-3 w-3 mr-1" />
+                        Deploy
+                      </Button>
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handleDelete(config); }}
+                        disabled={isDeleting}
+                        className="text-destructive hover:text-destructive col-span-3"
+                      >
+                        <Trash2 className="h-3 w-3 mr-1" />
+                        Delete Configuration
+                      </Button>
+                    </div>
                 </CardContent>
               </Card>
             </motion.div>
