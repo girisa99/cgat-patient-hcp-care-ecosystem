@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Input } from '@/components/ui/input';
 import { 
   Bot, 
@@ -17,19 +16,21 @@ import {
   Globe,
   Users,
   Zap,
-  BarChart3,
   RefreshCw,
   Play,
   Pause,
   CheckCircle,
   AlertTriangle,
-  Clock,
   MessageSquare,
   Lock,
-  Unlock
+  Unlock,
+  Code,
+  Search
 } from 'lucide-react';
-import { useGenieManagement } from '@/hooks/useGenieManagement';
+import { useGenieManagement, GenieInstance } from '@/hooks/useGenieManagement';
 import { Link } from 'react-router-dom';
+import { GenieInstanceCard } from './GenieInstanceCard';
+import { DeploymentOptionsDialog } from './DeploymentOptionsDialog';
 
 export const GenieManagementDashboard: React.FC = () => {
   const {
@@ -37,6 +38,7 @@ export const GenieManagementDashboard: React.FC = () => {
     rateLimitData,
     ipTracking,
     isLoading,
+    generateDeploymentCode,
     checkHealth,
     toggleActive,
     updateIPReputation,
@@ -45,14 +47,23 @@ export const GenieManagementDashboard: React.FC = () => {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [deploymentFilter, setDeploymentFilter] = useState<'all' | 'public' | 'internal' | 'mcp' | 'embedded'>('all');
+  const [selectedInstance, setSelectedInstance] = useState<GenieInstance | null>(null);
+  const [showDeploymentDialog, setShowDeploymentDialog] = useState(false);
 
   // Filter instances
   const filteredInstances = genieInstances.filter(instance => {
     const matchesSearch = instance.brand_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         instance.business_unit?.toLowerCase().includes(searchQuery.toLowerCase());
+                         instance.business_unit?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         instance.business_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         instance.product_name?.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesFilter = deploymentFilter === 'all' || instance.deployment_type === deploymentFilter;
     return matchesSearch && matchesFilter;
   });
+
+  const handleViewDetails = (instance: GenieInstance) => {
+    setSelectedInstance(instance);
+    setShowDeploymentDialog(true);
+  };
 
   // Stats aggregation
   const stats = {
@@ -103,7 +114,7 @@ export const GenieManagementDashboard: React.FC = () => {
             Genie Management Dashboard
           </h1>
           <p className="text-muted-foreground mt-2">
-            Manage all Genie instances: Public, Internal, and MCP deployments
+            Monitor Genieaiexperimentationhub.tech - Public, Internal, MCP & Patient Onboarding deployments
           </p>
         </div>
         <div className="flex gap-2">
@@ -207,16 +218,19 @@ export const GenieManagementDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Search and Filters */}
       <Card>
         <CardContent className="pt-6">
           <div className="flex gap-4">
-            <Input
-              placeholder="Search by brand name or business unit..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="flex-1"
-            />
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by brand, business, product name..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
             <div className="flex gap-2">
               <Button
                 variant={deploymentFilter === 'all' ? 'default' : 'outline'}
@@ -250,101 +264,38 @@ export const GenieManagementDashboard: React.FC = () => {
         </CardContent>
       </Card>
 
-      {/* Instances Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Genie Instances</CardTitle>
-          <CardDescription>
-            All configured Genie instances with real-time status and metrics
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {filteredInstances.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground">
+      {/* Instances Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {filteredInstances.length === 0 ? (
+          <div className="col-span-full">
+            <Card>
+              <CardContent className="p-12 text-center">
                 <Bot className="h-16 w-16 mx-auto mb-4 opacity-20" />
-                <p>No Genie instances found</p>
+                <h3 className="text-lg font-semibold mb-2">
+                  {searchQuery ? 'No matching deployments' : 'No Genie Deployments'}
+                </h3>
+                <p className="text-muted-foreground">
+                  {searchQuery 
+                    ? 'Try adjusting your search criteria'
+                    : 'Create your first GENIE brand configuration to get started'
+                  }
+                </p>
                 <Link to="/configurable-genie">
                   <Button className="mt-4">Create First Instance</Button>
                 </Link>
-              </div>
-            ) : (
-              filteredInstances.map((instance) => (
-                <Card key={instance.id} className="hover:shadow-md transition-shadow">
-                  <CardContent className="pt-6">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          {getDeploymentTypeIcon(instance.deployment_type)}
-                          <h3 className="text-lg font-semibold">{instance.brand_name}</h3>
-                          <Badge className={getDeploymentTypeBadge(instance.deployment_type)}>
-                            {instance.deployment_type.toUpperCase()}
-                          </Badge>
-                          <Badge variant={instance.is_active ? 'default' : 'secondary'}>
-                            {instance.is_active ? 'Active' : 'Paused'}
-                          </Badge>
-                        </div>
-                        {instance.business_unit && (
-                          <p className="text-sm text-muted-foreground mb-4">
-                            Business Unit: {instance.business_unit}
-                          </p>
-                        )}
-                        
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
-                          <div>
-                            <p className="text-xs text-muted-foreground">Total Conversations</p>
-                            <p className="text-xl font-bold">{instance.total_conversations}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Active Now</p>
-                            <p className="text-xl font-bold text-green-600">{instance.active_conversations}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Rate Limited</p>
-                            <p className="text-xl font-bold text-orange-600">{instance.rate_limit_info.total_blocked}</p>
-                          </div>
-                          <div>
-                            <p className="text-xs text-muted-foreground">Unique IPs</p>
-                            <p className="text-xl font-bold">{instance.ip_tracking.unique_ips}</p>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col gap-2 ml-4">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => toggleActive(instance.id, instance.is_active)}
-                        >
-                          {instance.is_active ? (
-                            <><Pause className="h-4 w-4 mr-1" /> Pause</>
-                          ) : (
-                            <><Play className="h-4 w-4 mr-1" /> Activate</>
-                          )}
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => checkHealth(instance.id)}
-                        >
-                          <Activity className="h-4 w-4 mr-1" />
-                          Check Health
-                        </Button>
-                        <Link to={`/configurable-genie?id=${instance.id}`}>
-                          <Button variant="outline" size="sm" className="w-full">
-                            <Settings className="h-4 w-4 mr-1" />
-                            Configure
-                          </Button>
-                        </Link>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))
-            )}
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
+        ) : (
+          filteredInstances.map((instance) => (
+            <GenieInstanceCard
+              key={instance.id}
+              instance={instance}
+              onViewDetails={handleViewDetails}
+            />
+          ))
+        )}
+      </div>
 
       {/* IP Tracking Section */}
       <Card>
@@ -409,6 +360,17 @@ export const GenieManagementDashboard: React.FC = () => {
           </div>
         </CardContent>
       </Card>
+
+      {/* Deployment Options Dialog */}
+      <DeploymentOptionsDialog
+        instance={selectedInstance}
+        open={showDeploymentDialog}
+        onClose={() => {
+          setShowDeploymentDialog(false);
+          setSelectedInstance(null);
+        }}
+        onGenerateCode={generateDeploymentCode}
+      />
     </div>
   );
 };

@@ -6387,15 +6387,25 @@ export type Database = {
       genie_brand_configs: {
         Row: {
           brand_name: string
+          business_name: string | null
           business_unit: string | null
+          contact_email: string | null
+          contact_person: string | null
+          contact_phone: string | null
           created_at: string
           created_by: string | null
+          daily_limit: number | null
           deployment_config: Json
+          deployment_status: string | null
+          domain_name: string | null
+          hourly_limit: number | null
           id: string
           is_active: boolean
           mcp_config: Json
           model_config: Json
+          product_name: string | null
           rag_config: Json
+          subscription_type: string | null
           system_prompt: string | null
           theme_config: Json
           updated_at: string
@@ -6403,15 +6413,25 @@ export type Database = {
         }
         Insert: {
           brand_name: string
+          business_name?: string | null
           business_unit?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          daily_limit?: number | null
           deployment_config?: Json
+          deployment_status?: string | null
+          domain_name?: string | null
+          hourly_limit?: number | null
           id?: string
           is_active?: boolean
           mcp_config?: Json
           model_config?: Json
+          product_name?: string | null
           rag_config?: Json
+          subscription_type?: string | null
           system_prompt?: string | null
           theme_config?: Json
           updated_at?: string
@@ -6419,15 +6439,25 @@ export type Database = {
         }
         Update: {
           brand_name?: string
+          business_name?: string | null
           business_unit?: string | null
+          contact_email?: string | null
+          contact_person?: string | null
+          contact_phone?: string | null
           created_at?: string
           created_by?: string | null
+          daily_limit?: number | null
           deployment_config?: Json
+          deployment_status?: string | null
+          domain_name?: string | null
+          hourly_limit?: number | null
           id?: string
           is_active?: boolean
           mcp_config?: Json
           model_config?: Json
+          product_name?: string | null
           rag_config?: Json
+          subscription_type?: string | null
           system_prompt?: string | null
           theme_config?: Json
           updated_at?: string
@@ -6765,6 +6795,53 @@ export type Database = {
           },
         ]
       }
+      genie_deployment_options: {
+        Row: {
+          brand_config_id: string
+          code_generated: string | null
+          configuration: Json
+          created_at: string
+          deployment_type: string
+          id: string
+          is_active: boolean | null
+          last_used_at: string | null
+          updated_at: string
+          usage_count: number | null
+        }
+        Insert: {
+          brand_config_id: string
+          code_generated?: string | null
+          configuration?: Json
+          created_at?: string
+          deployment_type: string
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Update: {
+          brand_config_id?: string
+          code_generated?: string | null
+          configuration?: Json
+          created_at?: string
+          deployment_type?: string
+          id?: string
+          is_active?: boolean | null
+          last_used_at?: string | null
+          updated_at?: string
+          usage_count?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_deployment_options_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       genie_deployments: {
         Row: {
           active_conversations: number | null
@@ -6829,6 +6906,62 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "genie_deployments_brand_config_id_fkey"
+            columns: ["brand_config_id"]
+            isOneToOne: false
+            referencedRelation: "genie_brand_configs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      genie_domain_verifications: {
+        Row: {
+          approval_status: string | null
+          approved_at: string | null
+          approved_by: string | null
+          brand_config_id: string
+          business_justification: string | null
+          created_at: string
+          domain_name: string
+          id: string
+          updated_at: string
+          verification_method: string
+          verification_status: string
+          verification_token: string
+          verified_at: string | null
+        }
+        Insert: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          brand_config_id: string
+          business_justification?: string | null
+          created_at?: string
+          domain_name: string
+          id?: string
+          updated_at?: string
+          verification_method?: string
+          verification_status?: string
+          verification_token: string
+          verified_at?: string | null
+        }
+        Update: {
+          approval_status?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          brand_config_id?: string
+          business_justification?: string | null
+          created_at?: string
+          domain_name?: string
+          id?: string
+          updated_at?: string
+          verification_method?: string
+          verification_status?: string
+          verification_token?: string
+          verified_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "genie_domain_verifications_brand_config_id_fkey"
             columns: ["brand_config_id"]
             isOneToOne: false
             referencedRelation: "genie_brand_configs"
