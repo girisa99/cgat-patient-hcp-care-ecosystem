@@ -68,7 +68,7 @@ serve(async (req) => {
         
         try {
           // Use only one provider per therapy to speed up processing
-          const primaryProvider = workingProviders[0] || 'template';
+          const primaryProvider: string = workingProviders[0] || 'template';
           let allProducts = [];
 
           if (primaryProvider !== 'template') {
@@ -161,7 +161,7 @@ serve(async (req) => {
     })();
 
     // Race between processing and timeout
-    const results = await Promise.race([processingPromise, timeoutPromise]);
+    const results = await Promise.race([processingPromise, timeoutPromise]) as any[];
 
     return new Response(JSON.stringify({
       message: `Generated ${results.length} products using ${ai_providers.join(', ')} AI providers`,
@@ -174,7 +174,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Error in healthcare-agentic-orchestrator:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });

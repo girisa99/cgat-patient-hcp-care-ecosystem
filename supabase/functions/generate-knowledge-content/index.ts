@@ -135,7 +135,7 @@ Format the response as structured markdown with clear headings and sections.`;
     console.error('❌ [GENERATE-KNOWLEDGE] Function error:', error);
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Failed to generate knowledge content' 
+        error: error instanceof Error ? error.message : 'Failed to generate knowledge content'
       }),
       {
         status: 500,
