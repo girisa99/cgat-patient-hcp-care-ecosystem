@@ -94,7 +94,7 @@ const handler = async (req: Request): Promise<Response> => {
 
   } catch (error) {
     console.error('❌ [AUDIT-LOGS] Error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }), {
       status: 500,
       headers: { 'Content-Type': 'application/json', ...corsHeaders },
     });

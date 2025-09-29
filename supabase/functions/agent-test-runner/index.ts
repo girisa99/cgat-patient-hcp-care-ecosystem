@@ -97,7 +97,7 @@ serve(async (req) => {
           }
         } catch (error) {
           console.error(`Sample ${i} failed:`, error);
-          results.push({ error: error.message, processingTime: 0 });
+          results.push({ error: (error instanceof Error ? error.message : String(error)), processingTime: 0 });
         }
       }
     }
@@ -150,7 +150,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error('Test run error:', error);
-    return new Response(JSON.stringify({ error: error.message }), {
+    return new Response(JSON.stringify({ error: (error instanceof Error ? error.message : String(error)) }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' }
     });
@@ -256,7 +256,7 @@ async function processSample(sample: any, index: number, modelConfig: any, testR
     
     return {
       success: false,
-      error: error.message,
+      error: (error instanceof Error ? error.message : String(error)),
       processingTime,
       accuracy: 0,
       sampleIndex: index

@@ -79,8 +79,8 @@ Deno.serve(async (req) => {
     
     return new Response(
       JSON.stringify({ 
-        error: error.message || 'Image generation failed',
-        details: error.toString()
+        error: (error instanceof Error ? error.message : 'Image generation failed'),
+        details: String(error)
       }),
       { 
         status: 500, 
