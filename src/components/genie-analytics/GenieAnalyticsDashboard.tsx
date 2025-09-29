@@ -27,13 +27,15 @@ interface GenieAnalyticsDashboardProps {
   brandConfigId?: string;
   deploymentType?: string;
   showFilters?: boolean;
+  instanceName?: string;
 }
 
 export const GenieAnalyticsDashboard: React.FC<GenieAnalyticsDashboardProps> = ({
   genieId,
   brandConfigId,
   deploymentType,
-  showFilters = true
+  showFilters = true,
+  instanceName
 }) => {
   const {
     analytics,
@@ -60,9 +62,12 @@ export const GenieAnalyticsDashboard: React.FC<GenieAnalyticsDashboardProps> = (
       {/* Header */}
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold">Enhanced Genie Analytics Dashboard</h1>
+          <h1 className="text-3xl font-bold">
+            {instanceName ? `${instanceName} - Analytics` : 'Enhanced Genie Analytics Dashboard'}
+          </h1>
           <p className="text-muted-foreground">
             Complete view of users, conversations, session analytics, access requests, and engagement metrics
+            {deploymentType && <span className="ml-2">• Type: <span className="font-semibold">{deploymentType}</span></span>}
           </p>
         </div>
         <Button onClick={refreshData} variant="outline">

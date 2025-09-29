@@ -12,13 +12,24 @@ interface GenieAnalyticsParams {
 }
 
 export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
-  // Fetch conversations
+  // Fetch conversations - filter by brandConfigId or genieId
   const { data: conversations, refetch: refetchConversations } = useQuery({
     queryKey: ['genie-conversations', params.genieId, params.brandConfigId, params.deploymentType],
     queryFn: async () => {
+      const filters: any = {};
+      
+      if (params.brandConfigId) {
+        filters.brand_config_id = params.brandConfigId;
+      }
+      
+      if (params.deploymentType) {
+        filters.deployment_type = params.deploymentType;
+      }
+
       const query = supabase
         .from('genie_conversations')
         .select('*')
+        .match(filters)
         .order('created_at', { ascending: false });
 
       const { data, error } = await query;
@@ -54,14 +65,22 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
     },
   });
 
-  // Fetch conversation analytics
+  // Fetch conversation analytics - filter by brandConfigId
   const { data: conversationAnalytics } = useQuery({
-    queryKey: ['conversation-analytics'],
+    queryKey: ['conversation-analytics', params.brandConfigId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('genie_conversation_analytics')
-        .select('*');
+      const filters: any = {};
+      
+      if (params.brandConfigId) {
+        filters.brand_config_id = params.brandConfigId;
+      }
 
+      const query = supabase
+        .from('genie_conversation_analytics')
+        .select('*')
+        .match(filters);
+
+      const { data, error } = await query;
       if (error) throw error;
       return data || [];
     },

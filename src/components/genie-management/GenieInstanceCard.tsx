@@ -14,7 +14,8 @@ import {
   CheckCircle, 
   XCircle,
   TrendingUp,
-  AlertCircle
+  AlertCircle,
+  BarChart3
 } from 'lucide-react';
 import { GenieInstance } from '@/hooks/useGenieManagement';
 import { Progress } from '@/components/ui/progress';
@@ -50,11 +51,26 @@ export const GenieInstanceCard: React.FC<GenieInstanceCardProps> = ({
   };
 
   return (
-    <Card className="hover:shadow-lg transition-all">
+    <Card className="hover:shadow-lg transition-all border-l-4" style={{
+      borderLeftColor: instance.is_active ? '#22c55e' : '#94a3b8'
+    }}>
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-lg">{instance.brand_name}</CardTitle>
+            <div className="flex items-center gap-2">
+              <CardTitle className="text-lg">{instance.brand_name}</CardTitle>
+              {onViewAnalytics && (
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-6 w-6 p-0"
+                  onClick={() => onViewAnalytics(instance)}
+                  title="View Analytics"
+                >
+                  <BarChart3 className="h-4 w-4 text-blue-600" />
+                </Button>
+              )}
+            </div>
             {instance.product_name && (
               <p className="text-sm text-muted-foreground mt-1">{instance.product_name}</p>
             )}
@@ -156,10 +172,12 @@ export const GenieInstanceCard: React.FC<GenieInstanceCardProps> = ({
           <div className="flex gap-2">
             {onViewAnalytics && (
               <Button 
-                variant="outline" 
+                variant="default" 
                 size="sm"
                 onClick={() => onViewAnalytics(instance)}
+                className="bg-blue-600 hover:bg-blue-700"
               >
+                <BarChart3 className="h-4 w-4 mr-1" />
                 Analytics
               </Button>
             )}
