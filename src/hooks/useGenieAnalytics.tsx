@@ -59,7 +59,7 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
       if (!params.brandConfigId) return [];
       const { data, error }: any = await supabase
         .from('genie_domain_verifications')
-        .select('id, domain, is_verified, verification_status')
+        .select('id, verification_status')
         .eq('brand_config_id', params.brandConfigId);
       if (error) throw error;
       return data || [];
