@@ -120,7 +120,7 @@ export const GenieManagementDashboard: React.FC = () => {
             Genie Management Dashboard
           </h1>
           <p className="text-muted-foreground mt-2">
-            Monitor Genieaiexperimentationhub.tech - Public, Internal, MCP & Patient Onboarding deployments
+            Unified dashboard for Public Genie, Internal Genie, Patient Onboarding AI, and modular feature deployments
           </p>
         </div>
         <div className="flex gap-2">
@@ -128,6 +128,12 @@ export const GenieManagementDashboard: React.FC = () => {
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
           </Button>
+          <Link to="/patient-onboarding">
+            <Button variant="outline">
+              <Users className="h-4 w-4 mr-2" />
+              Patient Onboarding
+            </Button>
+          </Link>
           <Link to="/agents/canvas">
             <Button variant="outline">
               <Bot className="h-4 w-4 mr-2" />
