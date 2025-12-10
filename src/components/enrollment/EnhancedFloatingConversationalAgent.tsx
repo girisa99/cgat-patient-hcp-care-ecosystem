@@ -2,6 +2,7 @@
  * ENHANCED FLOATING CONVERSATIONAL AGENT
  * Enhanced conversational enrollment with field-by-field progress and section completions
  * P0: Now uses useEnrollmentUniversalAI for multi-model routing
+ * P2: Now integrates with Enrollment MCP Bridge for tool access
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,6 +23,7 @@ import {
 } from 'lucide-react';
 import { useConversationalEnrollment } from '@/hooks/useConversationalEnrollment';
 import { useEnrollmentUniversalAI, type EnrollmentContext, type PersonalityMode } from '@/hooks/useEnrollmentUniversalAI';
+import { useEnrollmentMCPBridge } from '@/hooks/useEnrollmentMCPBridge';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
@@ -75,6 +77,23 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
   const [completedSectionData, setCompletedSectionData] = useState<any>(null);
   const [patientId] = useState(() => crypto.randomUUID());
   const [sessionId, setSessionId] = useState('');
+
+  // P2: MCP Bridge integration for tool access
+  const mcpBridge = useEnrollmentMCPBridge({
+    config: {
+      enableNPIVerification: featureConfig?.npiVerification ?? true,
+      enableCredentialing: featureConfig?.credentialingWorkflow ?? true,
+      enableInsuranceVerification: true,
+      enableSmartRouting: featureConfig?.smartFieldRouting ?? true,
+      enableAnalytics: true
+    },
+    context: {
+      patientId,
+      sessionId: sessionId || deploymentId,
+      currentStep: session?.currentSection,
+      enrollmentData: session?.collectedData
+    }
+  });
 
   // Initialize database record on mount
   useEffect(() => {

@@ -2,6 +2,7 @@
  * ENHANCED STRUCTURED ENROLLMENT AGENT
  * Section-by-section AI guidance with field-by-field collection and enhanced UX
  * P0: Now uses useEnrollmentUniversalAI for multi-model routing
+ * P2: Now integrates with Enrollment MCP Bridge for tool access
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,6 +29,7 @@ import { FieldByFieldCollector, type FieldDefinition } from '../patient-enrollme
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
 import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
 import { useEnrollmentUniversalAI, type EnrollmentContext } from '@/hooks/useEnrollmentUniversalAI';
+import { useEnrollmentMCPBridge } from '@/hooks/useEnrollmentMCPBridge';
 import { EnrollmentAgentConfig } from '@/hooks/useEnrollmentAgentConfig';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
@@ -80,6 +82,23 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
     moduleType,
     personalityMode: featureConfig?.personalityMode || 'professional',
     provider: featureConfig?.aiProvider || 'gemini'
+  });
+
+  // P2: MCP Bridge integration for tool access
+  const mcpBridge = useEnrollmentMCPBridge({
+    config: {
+      enableNPIVerification: featureConfig?.npiVerification ?? true,
+      enableCredentialing: featureConfig?.credentialingWorkflow ?? true,
+      enableInsuranceVerification: true,
+      enableSmartRouting: featureConfig?.smartFieldRouting ?? true,
+      enableAnalytics: true
+    },
+    context: {
+      patientId,
+      sessionId,
+      currentStep: currentSectionIndex.toString(),
+      enrollmentData: sectionData
+    }
   });
 
   // Get current section context for AI
