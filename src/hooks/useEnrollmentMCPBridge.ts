@@ -1,6 +1,6 @@
 /**
  * React hook for Enrollment MCP Bridge integration
- * Provides MCP tool access within enrollment agent components
+ * Provides MCP tool access including real-time DB sync and CRM integration
  */
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -10,7 +10,7 @@ import {
   MCPToolResult,
   EnrollmentMCPBridge 
 } from '@/services/enrollmentMCPBridge';
-import { EnrollmentMCPContext } from '@/integrations/mcp/enrollment-server';
+import { EnrollmentMCPContext, DBSyncResult, CRMSyncResult } from '@/integrations/mcp/enrollment-server';
 
 interface UseEnrollmentMCPBridgeOptions {
   config?: MCPBridgeConfig;
@@ -29,36 +29,24 @@ interface UseEnrollmentMCPBridgeReturn {
   initialize: () => Promise<void>;
   setContext: (context: EnrollmentMCPContext) => void;
   
-  // Tools
+  // Core Tools
   verifyNPI: (npi: string) => Promise<MCPToolResult>;
-  validateInsurance: (data: {
-    member_id: string;
-    payer_name: string;
-    group_number?: string;
-    subscriber_dob?: string;
-  }) => Promise<MCPToolResult>;
-  checkCredentialing: (data: {
-    provider_npi: string;
-    specialty?: string;
-    state?: string;
-  }) => Promise<MCPToolResult>;
-  getSmartRouting: (data: {
-    current_section: string;
-    completed_fields?: string[];
-    patient_type?: 'new' | 'returning' | 'transfer';
-  }) => Promise<MCPToolResult>;
-  generateConsentForm: (data: {
-    consent_type: 'hipaa' | 'treatment' | 'billing' | 'research' | 'telehealth';
-    patient_name: string;
-    facility_id?: string;
-    language?: 'en' | 'es' | 'fr' | 'zh';
-  }) => Promise<MCPToolResult>;
-  trackAnalytics: (data: {
-    session_id: string;
-    event_type: 'step_started' | 'step_completed' | 'validation_error' | 'dropout' | 'completion';
-    metadata?: any;
-  }) => Promise<MCPToolResult>;
+  validateInsurance: (data: { member_id: string; payer_name: string; group_number?: string }) => Promise<MCPToolResult>;
+  checkCredentialing: (data: { provider_npi: string; specialty?: string }) => Promise<MCPToolResult>;
+  getSmartRouting: (data: { current_section: string; completed_fields?: string[] }) => Promise<MCPToolResult>;
+  trackAnalytics: (data: { session_id: string; event_type: string; metadata?: any }) => Promise<MCPToolResult>;
   executeTool: (toolName: string, args: any) => Promise<MCPToolResult>;
+  
+  // Real-time DB Sync
+  syncSectionToDatabase: (enrollmentId: string, section: string, data: Record<string, any>) => Promise<DBSyncResult>;
+  syncFieldToDatabase: (enrollmentId: string, section: string, fieldName: string, fieldValue: any) => Promise<DBSyncResult>;
+  updateEnrollmentProgress: (enrollmentId: string, currentSection: string, progressPercentage: number, additionalData?: Record<string, any>) => Promise<DBSyncResult>;
+  
+  // CRM Integration
+  syncToSalesforce: (enrollmentId: string, objectType: string, data: Record<string, any>) => Promise<CRMSyncResult>;
+  syncToVeeva: (enrollmentId: string, objectType: string, data: Record<string, any>, territory?: string) => Promise<CRMSyncResult>;
+  syncToHubSpot: (enrollmentId: string, objectType: string, data: Record<string, any>) => Promise<CRMSyncResult>;
+  syncToConfiguredCRM: (enrollmentId: string, data: Record<string, any>, objectType?: string) => Promise<CRMSyncResult | null>;
   
   // Info
   getAvailableTools: () => string[];
@@ -80,7 +68,6 @@ export const useEnrollmentMCPBridge = (
   
   const bridgeRef = useRef<EnrollmentMCPBridge | null>(null);
 
-  // Get or create bridge instance
   const getBridge = useCallback((): EnrollmentMCPBridge => {
     if (!bridgeRef.current) {
       bridgeRef.current = getEnrollmentMCPBridge(config);
@@ -88,13 +75,10 @@ export const useEnrollmentMCPBridge = (
     return bridgeRef.current;
   }, [config]);
 
-  // Initialize bridge
   const initialize = useCallback(async () => {
     if (isInitialized) return;
-    
     setIsLoading(true);
     setError(null);
-    
     try {
       const bridge = getBridge();
       await bridge.initialize();
@@ -106,31 +90,21 @@ export const useEnrollmentMCPBridge = (
     }
   }, [getBridge, isInitialized]);
 
-  // Auto-initialize on mount
   useEffect(() => {
-    if (autoInitialize) {
-      initialize();
-    }
+    if (autoInitialize) initialize();
   }, [autoInitialize, initialize]);
 
-  // Update context when it changes
   useEffect(() => {
     if (context && isInitialized) {
       getBridge().setContext(context);
     }
   }, [context, isInitialized, getBridge]);
 
-  // Set context
   const setContext = useCallback((ctx: EnrollmentMCPContext) => {
-    if (isInitialized) {
-      getBridge().setContext(ctx);
-    }
+    if (isInitialized) getBridge().setContext(ctx);
   }, [getBridge, isInitialized]);
 
-  // Helper to update history after tool execution
-  const executeAndTrack = useCallback(async (
-    executor: () => Promise<MCPToolResult>
-  ): Promise<MCPToolResult> => {
+  const executeAndTrack = useCallback(async <T>(executor: () => Promise<T>): Promise<T> => {
     setIsLoading(true);
     try {
       const result = await executor();
@@ -141,105 +115,61 @@ export const useEnrollmentMCPBridge = (
     }
   }, [getBridge]);
 
-  // Tool methods
-  const verifyNPI = useCallback((npi: string) => {
-    return executeAndTrack(() => getBridge().verifyNPI(npi));
-  }, [executeAndTrack, getBridge]);
+  // Core tools
+  const verifyNPI = useCallback((npi: string) => executeAndTrack(() => getBridge().verifyNPI(npi)), [executeAndTrack, getBridge]);
+  
+  const validateInsurance = useCallback((data: { member_id: string; payer_name: string; group_number?: string }) => 
+    executeAndTrack(() => getBridge().validateInsurance(data)), [executeAndTrack, getBridge]);
+  
+  const checkCredentialing = useCallback((data: { provider_npi: string; specialty?: string }) => 
+    executeAndTrack(() => getBridge().checkCredentialing(data)), [executeAndTrack, getBridge]);
+  
+  const getSmartRouting = useCallback((data: { current_section: string; completed_fields?: string[] }) => 
+    executeAndTrack(() => getBridge().getSmartRouting(data)), [executeAndTrack, getBridge]);
+  
+  const trackAnalytics = useCallback((data: { session_id: string; event_type: string; metadata?: any }) => 
+    executeAndTrack(() => getBridge().trackAnalytics(data)), [executeAndTrack, getBridge]);
+  
+  const executeTool = useCallback((toolName: string, args: any) => 
+    executeAndTrack(() => getBridge().executeTool(toolName, args)), [executeAndTrack, getBridge]);
 
-  const validateInsurance = useCallback((data: {
-    member_id: string;
-    payer_name: string;
-    group_number?: string;
-    subscriber_dob?: string;
-  }) => {
-    return executeAndTrack(() => getBridge().validateInsurance(data));
-  }, [executeAndTrack, getBridge]);
+  // Real-time DB Sync
+  const syncSectionToDatabase = useCallback((enrollmentId: string, section: string, data: Record<string, any>) => 
+    executeAndTrack(() => getBridge().syncSectionToDatabase(enrollmentId, section, data)), [executeAndTrack, getBridge]);
+  
+  const syncFieldToDatabase = useCallback((enrollmentId: string, section: string, fieldName: string, fieldValue: any) => 
+    executeAndTrack(() => getBridge().syncFieldToDatabase(enrollmentId, section, fieldName, fieldValue)), [executeAndTrack, getBridge]);
+  
+  const updateEnrollmentProgress = useCallback((enrollmentId: string, currentSection: string, progressPercentage: number, additionalData?: Record<string, any>) => 
+    executeAndTrack(() => getBridge().updateEnrollmentProgress(enrollmentId, currentSection, progressPercentage, additionalData)), [executeAndTrack, getBridge]);
 
-  const checkCredentialing = useCallback((data: {
-    provider_npi: string;
-    specialty?: string;
-    state?: string;
-  }) => {
-    return executeAndTrack(() => getBridge().checkCredentialing(data));
-  }, [executeAndTrack, getBridge]);
-
-  const getSmartRouting = useCallback((data: {
-    current_section: string;
-    completed_fields?: string[];
-    patient_type?: 'new' | 'returning' | 'transfer';
-  }) => {
-    return executeAndTrack(() => getBridge().getSmartRouting(data));
-  }, [executeAndTrack, getBridge]);
-
-  const generateConsentForm = useCallback((data: {
-    consent_type: 'hipaa' | 'treatment' | 'billing' | 'research' | 'telehealth';
-    patient_name: string;
-    facility_id?: string;
-    language?: 'en' | 'es' | 'fr' | 'zh';
-  }) => {
-    return executeAndTrack(() => getBridge().generateConsentForm(data));
-  }, [executeAndTrack, getBridge]);
-
-  const trackAnalytics = useCallback((data: {
-    session_id: string;
-    event_type: 'step_started' | 'step_completed' | 'validation_error' | 'dropout' | 'completion';
-    metadata?: any;
-  }) => {
-    return executeAndTrack(() => getBridge().trackAnalytics(data));
-  }, [executeAndTrack, getBridge]);
-
-  const executeTool = useCallback((toolName: string, args: any) => {
-    return executeAndTrack(() => getBridge().executeTool(toolName, args));
-  }, [executeAndTrack, getBridge]);
+  // CRM Integration
+  const syncToSalesforce = useCallback((enrollmentId: string, objectType: string, data: Record<string, any>) => 
+    executeAndTrack(() => getBridge().syncToSalesforce(enrollmentId, objectType, data)), [executeAndTrack, getBridge]);
+  
+  const syncToVeeva = useCallback((enrollmentId: string, objectType: string, data: Record<string, any>, territory?: string) => 
+    executeAndTrack(() => getBridge().syncToVeeva(enrollmentId, objectType, data, territory)), [executeAndTrack, getBridge]);
+  
+  const syncToHubSpot = useCallback((enrollmentId: string, objectType: string, data: Record<string, any>) => 
+    executeAndTrack(() => getBridge().syncToHubSpot(enrollmentId, objectType, data)), [executeAndTrack, getBridge]);
+  
+  const syncToConfiguredCRM = useCallback((enrollmentId: string, data: Record<string, any>, objectType?: string) => 
+    executeAndTrack(() => getBridge().syncToConfiguredCRM(enrollmentId, data, objectType)), [executeAndTrack, getBridge]);
 
   // Info methods
-  const getAvailableTools = useCallback(() => {
-    return getBridge().getAvailableTools();
-  }, [getBridge]);
-
-  const getServerInfo = useCallback(() => {
-    return getBridge().getServerInfo();
-  }, [getBridge]);
-
-  const getPrompts = useCallback(() => {
-    return getBridge().getPrompts();
-  }, [getBridge]);
-
-  const getResources = useCallback(() => {
-    return getBridge().getResources();
-  }, [getBridge]);
-
-  const clearHistory = useCallback(() => {
-    getBridge().clearHistory();
-    setExecutionHistory([]);
-  }, [getBridge]);
+  const getAvailableTools = useCallback(() => getBridge().getAvailableTools(), [getBridge]);
+  const getServerInfo = useCallback(() => getBridge().getServerInfo(), [getBridge]);
+  const getPrompts = useCallback(() => getBridge().getPrompts(), [getBridge]);
+  const getResources = useCallback(() => getBridge().getResources(), [getBridge]);
+  const clearHistory = useCallback(() => { getBridge().clearHistory(); setExecutionHistory([]); }, [getBridge]);
 
   return {
-    // State
-    isInitialized,
-    isLoading,
-    error,
-    executionHistory,
-    
-    // Actions
-    initialize,
-    setContext,
-    
-    // Tools
-    verifyNPI,
-    validateInsurance,
-    checkCredentialing,
-    getSmartRouting,
-    generateConsentForm,
-    trackAnalytics,
-    executeTool,
-    
-    // Info
-    getAvailableTools,
-    getServerInfo,
-    getPrompts,
-    getResources,
-    clearHistory
+    isInitialized, isLoading, error, executionHistory,
+    initialize, setContext,
+    verifyNPI, validateInsurance, checkCredentialing, getSmartRouting, trackAnalytics, executeTool,
+    syncSectionToDatabase, syncFieldToDatabase, updateEnrollmentProgress,
+    syncToSalesforce, syncToVeeva, syncToHubSpot, syncToConfiguredCRM,
+    getAvailableTools, getServerInfo, getPrompts, getResources, clearHistory
   };
 };
 
