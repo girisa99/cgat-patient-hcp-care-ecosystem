@@ -254,43 +254,6 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     return Array.from(found).slice(0, 5); // Limit to 5 agents
   }, []);
 
-  // Enhanced node types with multi-agent support
-  const baseNodeTypes: NodeTypes = useMemo(() => ({
-    custom: CustomNode,
-    enhanced: (props) => <EnhancedWorkflowNode {...props} />,
-    agent: (props) => <AgentNode {...props} />,
-    ai: (props) => <AIIntelligenceNode {...props} />,
-    'multi-agent': ({ data }: any) => (
-      <div className="px-4 py-3 rounded-xl min-w-[300px] shadow-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600">
-            <Users className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <div className="font-semibold text-sm">{data.label || 'Multi-Agent Team'}</div>
-            <div className="text-xs opacity-70">Orchestrated agents</div>
-            {data.agents && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {data.agents.slice(0, 3).map((agent: any, idx: number) => (
-                  <Badge key={idx} variant="secondary" className="text-xs">
-                    {agent.name || `Agent ${idx + 1}`}
-                  </Badge>
-                ))}
-                {data.agents.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{data.agents.length - 3} more
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        <Handle type="target" position={Position.Left} />
-        <Handle type="source" position={Position.Right} />
-      </div>
-    ),
-  }), []);
-
   // Node context menu handlers for right-click actions
   const handleConfigureNode = useCallback((nodeId: string, action: string) => {
     setConfigNodeInfo({
@@ -337,35 +300,45 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     }
   }, [setNodes, setEdges]);
 
-  // Wrap node types to enable right-click context menu & actions
-  const safeNodeTypes: NodeTypes = useMemo(() => {
-    const wrap = (Original: any) => React.memo((props: any) => (
-      <NodeContextMenu
-        nodeId={props.id}
-        nodeType={props.data?.type || 'default'}
-        onConfigureNode={handleConfigureNode}
-        onDeleteNode={handleDeleteNode}
-        onDuplicateNode={handleDuplicateNode}
-        onOpenChat={(nodeId, mode) => {
-          setSelectedNode(getNodes().find((n) => n.id === nodeId) || null);
-          setAIAssistMode(mode || 'configure');
-          setShowRightAIPanel(true);
-        }}
-      >
-        <Original {...props} />
-      </NodeContextMenu>
-    ));
-
-    return {
-      custom: wrap(CustomNode),
-      enhanced: wrap((props: any) => <EnhancedWorkflowNode {...props} />),
-      agent: wrap((props: any) => <AgentNode {...props} />),
-      ai: wrap((props: any) => <AIIntelligenceNode {...props} />),
-      'multi-agent': wrap((props: any) => (baseNodeTypes['multi-agent'] as any)(props)),
-    } as NodeTypes;
-  }, [handleConfigureNode, handleDeleteNode, handleDuplicateNode, getNodes, baseNodeTypes]);
-
+  // Stable edge types - defined outside useMemo with empty object
   const safeEdgeTypes: EdgeTypes = useMemo(() => ({}), []);
+
+  // Stable node types - CRITICAL: Must be memoized outside render to prevent React Flow warnings
+  const safeNodeTypes: NodeTypes = useMemo(() => ({
+    custom: CustomNode,
+    enhanced: EnhancedWorkflowNode,
+    agent: AgentNode,
+    ai: AIIntelligenceNode,
+    'multi-agent': ({ data }: any) => (
+      <div className="px-4 py-3 rounded-xl min-w-[300px] shadow-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
+        <div className="flex items-center gap-3">
+          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600">
+            <Users className="h-6 w-6" />
+          </div>
+          <div className="flex-1">
+            <div className="font-semibold text-sm">{data.label || 'Multi-Agent Team'}</div>
+            <div className="text-xs opacity-70">Orchestrated agents</div>
+            {data.agents && (
+              <div className="flex flex-wrap gap-1 mt-2">
+                {data.agents.slice(0, 3).map((agent: any, idx: number) => (
+                  <Badge key={idx} variant="secondary" className="text-xs">
+                    {agent.name || `Agent ${idx + 1}`}
+                  </Badge>
+                ))}
+                {data.agents.length > 3 && (
+                  <Badge variant="outline" className="text-xs">
+                    +{data.agents.length - 3} more
+                  </Badge>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+        <Handle type="target" position={Position.Left} />
+        <Handle type="source" position={Position.Right} />
+      </div>
+    ),
+  }), []);
 
   // Sync incoming initialNodes/initialEdges when they change
   useEffect(() => {
