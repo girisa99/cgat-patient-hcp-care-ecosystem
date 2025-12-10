@@ -26,6 +26,7 @@ import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
 import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
+import { EnrollmentAgentConfig } from '@/hooks/useEnrollmentAgentConfig';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -33,12 +34,17 @@ interface EnhancedFloatingConversationalAgentProps {
   moduleType: ModuleType;
   onComplete?: (result: any) => void;
   onCancel?: () => void;
+  // P1: Feature configuration from GenieFeatureSelector
+  featureConfig?: Partial<EnrollmentAgentConfig>;
+  deploymentId?: string;
 }
 
 export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConversationalAgentProps> = ({
   moduleType,
   onComplete,
-  onCancel
+  onCancel,
+  featureConfig,
+  deploymentId
 }) => {
   const { toast } = useToast();
   const {
@@ -50,8 +56,10 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
     endConversation
   } = useConversationalEnrollment();
 
-  // P0: Universal AI integration for multi-model routing
-  const [selectedPersonality, setSelectedPersonality] = useState<PersonalityMode>('professional');
+  // P0 + P1: Universal AI integration with feature-based configuration
+  const [selectedPersonality, setSelectedPersonality] = useState<PersonalityMode>(
+    featureConfig?.personalityMode || 'professional'
+  );
   const { 
     processEnrollmentMessage,
     isLoading: aiLoading,
@@ -59,7 +67,7 @@ export const EnhancedFloatingConversationalAgent: React.FC<EnhancedFloatingConve
   } = useEnrollmentUniversalAI({
     moduleType,
     personalityMode: selectedPersonality,
-    provider: 'gemini'
+    provider: featureConfig?.aiProvider || 'gemini'
   });
 
   const [currentMessage, setCurrentMessage] = useState('');
