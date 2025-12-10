@@ -74,6 +74,9 @@ export { useUnifiedAIAgent } from './useUnifiedAIAgent';
 // Agent-Conversation Engine Mappings (Real-time status, NPI, Credentialing, Enrollment)
 export { useAgentConversationEngines } from './useAgentConversationEngines';
 
+// Unified Channel Deployments (Channels + Engines + Real-time status)
+export { useUnifiedChannelDeployments } from './useUnifiedChannelDeployments';
+
 // Routing
 export { useSimpleRouting } from './useSimpleRouting';
 export { useIntelligentRouting } from './useIntelligentRouting';
