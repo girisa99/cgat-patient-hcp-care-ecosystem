@@ -1,8 +1,9 @@
 /**
  * UNIFIED AGENT ADMIN DASHBOARD
  * Central admin for managing all agent types, deployments, channels, branding
+ * Includes: Agent Registry, Conversation Engines, Channel Deployments, Real-time Status
  */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,8 +34,16 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
+  Radio,
+  Link2,
+  Server,
+  Cpu,
+  Shield,
+  FileText,
 } from 'lucide-react';
 import { useAgentRegistry } from '@/hooks/useAgentRegistry';
+import { useAgentConversationEngines } from '@/hooks/useAgentConversationEngines';
+import { useUnifiedChannelDeployments } from '@/hooks/useUnifiedChannelDeployments';
 import { AgentRegistration, EXTENDED_USE_CASE_TEMPLATES } from '@/services/agentUseCaseRegistry';
 import { useToast } from '@/hooks/use-toast';
 
@@ -44,6 +53,17 @@ const CHANNEL_OPTIONS = [
   { id: 'email', name: 'Email', icon: Mail },
   { id: 'whatsapp', name: 'WhatsApp', icon: MessageSquare },
   { id: 'voice-assistant', name: 'Voice Assistant', icon: Zap },
+  { id: 'sms', name: 'SMS', icon: MessageSquare },
+  { id: 'api', name: 'API', icon: Code },
+];
+
+const ENGINE_TEMPLATES = [
+  { id: 'npi-verification', name: 'NPI Verification', icon: Shield },
+  { id: 'credentialing', name: 'Credentialing', icon: FileText },
+  { id: 'enrollment-conversation', name: 'Enrollment Conversation', icon: Users },
+  { id: 'order-status', name: 'Order Status', icon: MessageSquare },
+  { id: 'treatment-onboarding', name: 'Treatment Onboarding', icon: Activity },
+  { id: 'manufacturing-onboarding', name: 'Manufacturing Onboarding', icon: Cpu },
 ];
 
 export const UnifiedAgentAdminDashboard: React.FC = () => {
@@ -63,8 +83,41 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
     isDeploying,
   } = useAgentRegistry();
 
+  // Conversation Engines Hook
+  const {
+    engines,
+    agentsWithEngines,
+    createEngine,
+    linkEngine,
+    createNPIAgent,
+    createEnrollmentAgent,
+    realTimeStatus,
+    isCreatingEngine,
+    isLinkingEngine,
+    engineTemplates,
+    refetchEngines,
+    refetchAgents,
+  } = useAgentConversationEngines();
+
+  // Channel Deployments Hook
+  const {
+    deploymentsWithDetails,
+    activeDeploymentsCount,
+    healthyDeploymentsCount,
+    totalDeployments,
+    deploy,
+    activate,
+    pause,
+    remove,
+    runHealthCheck,
+    isDeploying: isDeployingChannel,
+    refetchAll: refetchDeployments,
+  } = useUnifiedChannelDeployments();
+
+  const [activeTab, setActiveTab] = useState('agents');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showSnippetDialog, setShowSnippetDialog] = useState(false);
+  const [showCreateEngineDialog, setShowCreateEngineDialog] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AgentRegistration | null>(null);
   const [snippetFormat, setSnippetFormat] = useState<'javascript' | 'react' | 'python' | 'curl'>('javascript');
   const [newAgentForm, setNewAgentForm] = useState({
@@ -74,8 +127,11 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
     brandName: '',
     channels: [] as string[],
   });
+  const [selectedEngineTemplate, setSelectedEngineTemplate] = useState('');
+  const [selectedScreenMode, setSelectedScreenMode] = useState<'single' | 'split' | 'form-specific'>('single');
 
   const metrics = getAggregateMetrics();
+
 
   const handleCreateAgent = async () => {
     if (!newAgentForm.name || !newAgentForm.useCaseId) {
@@ -278,91 +334,441 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
         </Card>
       </div>
 
-      {/* Agents List */}
-      <Tabs defaultValue="all">
-        <TabsList>
-          <TabsTrigger value="all">All Agents ({agents?.length || 0})</TabsTrigger>
-          <TabsTrigger value="active">Active ({metrics.activeAgents})</TabsTrigger>
-          <TabsTrigger value="by-usecase">By Use Case</TabsTrigger>
+      {/* Main Tabs - Agents, Engines, Deployments, Mappings */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid grid-cols-5 w-full max-w-2xl">
+          <TabsTrigger value="agents">
+            <Bot className="h-4 w-4 mr-1" />
+            Agents
+          </TabsTrigger>
+          <TabsTrigger value="engines">
+            <Server className="h-4 w-4 mr-1" />
+            Engines
+          </TabsTrigger>
+          <TabsTrigger value="deployments">
+            <Globe className="h-4 w-4 mr-1" />
+            Deployments
+          </TabsTrigger>
+          <TabsTrigger value="mappings">
+            <Link2 className="h-4 w-4 mr-1" />
+            Mappings
+          </TabsTrigger>
+          <TabsTrigger value="realtime">
+            <Radio className="h-4 w-4 mr-1" />
+            Live Status
+          </TabsTrigger>
         </TabsList>
 
-        <TabsContent value="all" className="space-y-4">
-          {(agents || []).map(agent => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onToggleStatus={() => toggleStatus(agent.id, agent.status !== 'active')}
-              onShowSnippet={() => {
-                setSelectedAgent(agent);
-                setShowSnippetDialog(true);
-              }}
-              onDeploy={(channels) => deployToChannels(agent.id, channels)}
-              isDeploying={isDeploying}
-            />
-          ))}
-          {(!agents || agents.length === 0) && (
+        {/* AGENTS TAB */}
+        <TabsContent value="agents" className="space-y-4">
+          <Tabs defaultValue="all">
+            <TabsList>
+              <TabsTrigger value="all">All ({agents?.length || 0})</TabsTrigger>
+              <TabsTrigger value="active">Active ({metrics.activeAgents})</TabsTrigger>
+              <TabsTrigger value="by-usecase">By Use Case</TabsTrigger>
+            </TabsList>
+
+            <TabsContent value="all" className="space-y-4">
+              {(agents || []).map(agent => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  onToggleStatus={() => toggleStatus(agent.id, agent.status !== 'active')}
+                  onShowSnippet={() => {
+                    setSelectedAgent(agent);
+                    setShowSnippetDialog(true);
+                  }}
+                  onDeploy={(channels) => deployToChannels(agent.id, channels)}
+                  isDeploying={isDeploying}
+                />
+              ))}
+              {(!agents || agents.length === 0) && (
+                <Card>
+                  <CardContent className="py-12 text-center">
+                    <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">No agents registered yet</p>
+                    <Button className="mt-4" onClick={() => setShowCreateDialog(true)}>
+                      <Plus className="h-4 w-4 mr-2" />
+                      Create Your First Agent
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </TabsContent>
+
+            <TabsContent value="active" className="space-y-4">
+              {(agents || []).filter(a => a.status === 'active').map(agent => (
+                <AgentCard
+                  key={agent.id}
+                  agent={agent}
+                  onToggleStatus={() => toggleStatus(agent.id, false)}
+                  onShowSnippet={() => {
+                    setSelectedAgent(agent);
+                    setShowSnippetDialog(true);
+                  }}
+                  onDeploy={(channels) => deployToChannels(agent.id, channels)}
+                  isDeploying={isDeploying}
+                />
+              ))}
+            </TabsContent>
+
+            <TabsContent value="by-usecase" className="space-y-6">
+              {useCaseTemplates.map(uc => {
+                const ucAgents = (agents || []).filter(a => a.use_case_id === uc.id);
+                return (
+                  <div key={uc.id}>
+                    <div className="flex items-center gap-2 mb-3">
+                      <h3 className="font-semibold">{uc.name}</h3>
+                      <Badge variant="outline">{ucAgents.length}</Badge>
+                    </div>
+                    {ucAgents.length > 0 ? (
+                      <div className="space-y-2">
+                        {ucAgents.map(agent => (
+                          <AgentCard
+                            key={agent.id}
+                            agent={agent}
+                            compact
+                            onToggleStatus={() => toggleStatus(agent.id, agent.status !== 'active')}
+                            onShowSnippet={() => {
+                              setSelectedAgent(agent);
+                              setShowSnippetDialog(true);
+                            }}
+                            onDeploy={(channels) => deployToChannels(agent.id, channels)}
+                            isDeploying={isDeploying}
+                          />
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted-foreground">No agents for this use case</p>
+                    )}
+                    <Separator className="mt-4" />
+                  </div>
+                );
+              })}
+            </TabsContent>
+          </Tabs>
+        </TabsContent>
+
+        {/* ENGINES TAB */}
+        <TabsContent value="engines" className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold">Conversation Engines</h3>
+              <p className="text-sm text-muted-foreground">Manage conversation engines for different use cases</p>
+            </div>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={() => createNPIAgent({})}>
+                <Shield className="h-4 w-4 mr-2" />
+                NPI Registry Agent
+              </Button>
+              <Button variant="outline" onClick={() => createEnrollmentAgent({ screenMode: selectedScreenMode })}>
+                <Users className="h-4 w-4 mr-2" />
+                Enrollment Agent
+              </Button>
+              <Dialog open={showCreateEngineDialog} onOpenChange={setShowCreateEngineDialog}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <Plus className="h-4 w-4 mr-2" />
+                    Create Engine
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Create Conversation Engine</DialogTitle>
+                    <DialogDescription>Select a template to create a new engine</DialogDescription>
+                  </DialogHeader>
+                  <div className="space-y-4">
+                    <div>
+                      <Label>Engine Template</Label>
+                      <Select value={selectedEngineTemplate} onValueChange={setSelectedEngineTemplate}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select template" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {ENGINE_TEMPLATES.map(t => (
+                            <SelectItem key={t.id} value={t.id}>
+                              <div className="flex items-center gap-2">
+                                <t.icon className="h-4 w-4" />
+                                {t.name}
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Screen Mode (for Enrollment)</Label>
+                      <Select value={selectedScreenMode} onValueChange={(v: any) => setSelectedScreenMode(v)}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="default">Default</SelectItem>
+                          <SelectItem value="single">Single Panel</SelectItem>
+                          <SelectItem value="split">Split Screen</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      className="w-full"
+                      disabled={!selectedEngineTemplate || isCreatingEngine}
+                      onClick={async () => {
+                        await createEngine({ template: selectedEngineTemplate as any });
+                        setShowCreateEngineDialog(false);
+                        setSelectedEngineTemplate('');
+                      }}
+                    >
+                      {isCreatingEngine ? 'Creating...' : 'Create Engine'}
+                    </Button>
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+          
+          <div className="grid gap-4">
+            {(engines || []).map(engine => (
+              <Card key={engine.id}>
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        <Server className="h-5 w-5 text-primary" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{engine.name}</p>
+                        <p className="text-sm text-muted-foreground">{engine.engine_type}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={engine.is_active ? 'default' : 'outline'}>
+                        {engine.is_active ? 'Active' : 'Inactive'}
+                      </Badge>
+                      <Badge variant="outline">{engine.capabilities?.length || 0} capabilities</Badge>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {(!engines || engines.length === 0) && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Server className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No conversation engines yet</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* DEPLOYMENTS TAB */}
+        <TabsContent value="deployments" className="space-y-4">
+          <div className="grid grid-cols-3 gap-4 mb-4">
             <Card>
-              <CardContent className="py-12 text-center">
-                <Bot className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                <p className="text-muted-foreground">No agents registered yet</p>
-                <Button className="mt-4" onClick={() => setShowCreateDialog(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Create Your First Agent
-                </Button>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Deployments</p>
+                    <p className="text-2xl font-bold">{totalDeployments}</p>
+                  </div>
+                  <Globe className="h-8 w-8 text-muted-foreground" />
+                </div>
               </CardContent>
             </Card>
-          )}
-        </TabsContent>
-
-        <TabsContent value="active" className="space-y-4">
-          {(agents || []).filter(a => a.status === 'active').map(agent => (
-            <AgentCard
-              key={agent.id}
-              agent={agent}
-              onToggleStatus={() => toggleStatus(agent.id, false)}
-              onShowSnippet={() => {
-                setSelectedAgent(agent);
-                setShowSnippetDialog(true);
-              }}
-              onDeploy={(channels) => deployToChannels(agent.id, channels)}
-              isDeploying={isDeploying}
-            />
-          ))}
-        </TabsContent>
-
-        <TabsContent value="by-usecase" className="space-y-6">
-          {useCaseTemplates.map(uc => {
-            const ucAgents = (agents || []).filter(a => a.use_case_id === uc.id);
-            return (
-              <div key={uc.id}>
-                <div className="flex items-center gap-2 mb-3">
-                  <h3 className="font-semibold">{uc.name}</h3>
-                  <Badge variant="outline">{ucAgents.length}</Badge>
-                </div>
-                {ucAgents.length > 0 ? (
-                  <div className="space-y-2">
-                    {ucAgents.map(agent => (
-                      <AgentCard
-                        key={agent.id}
-                        agent={agent}
-                        compact
-                        onToggleStatus={() => toggleStatus(agent.id, agent.status !== 'active')}
-                        onShowSnippet={() => {
-                          setSelectedAgent(agent);
-                          setShowSnippetDialog(true);
-                        }}
-                        onDeploy={(channels) => deployToChannels(agent.id, channels)}
-                        isDeploying={isDeploying}
-                      />
-                    ))}
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Active</p>
+                    <p className="text-2xl font-bold text-green-600">{activeDeploymentsCount}</p>
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">No agents for this use case</p>
-                )}
-                <Separator className="mt-4" />
-              </div>
-            );
-          })}
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Healthy</p>
+                    <p className="text-2xl font-bold text-blue-600">{healthyDeploymentsCount}</p>
+                  </div>
+                  <Activity className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4">
+            {(deploymentsWithDetails || []).map(({ deployment, agent, primary_engine }) => (
+              <Card key={deployment.id}>
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-primary/10 rounded-lg">
+                        {deployment.channel_type === 'voice-call' ? <Phone className="h-5 w-5 text-primary" /> :
+                         deployment.channel_type === 'email' ? <Mail className="h-5 w-5 text-primary" /> :
+                         <MessageSquare className="h-5 w-5 text-primary" />}
+                      </div>
+                      <div>
+                        <p className="font-medium">{agent?.name || 'Unknown Agent'}</p>
+                        <p className="text-sm text-muted-foreground">{deployment.channel_type} • {deployment.channel_id}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Badge variant={deployment.deployment_status === 'active' ? 'default' : 'outline'}>
+                        {deployment.deployment_status}
+                      </Badge>
+                      <Badge variant={deployment.health_status === 'healthy' ? 'default' : 'destructive'}>
+                        {deployment.health_status}
+                      </Badge>
+                      <Button size="sm" variant="ghost" onClick={() => runHealthCheck(deployment.id)}>
+                        <Activity className="h-4 w-4" />
+                      </Button>
+                      {deployment.deployment_status === 'active' ? (
+                        <Button size="sm" variant="ghost" onClick={() => pause(deployment.id)}>
+                          <Pause className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button size="sm" variant="ghost" onClick={() => activate(deployment.id)}>
+                          <Play className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {(!deploymentsWithDetails || deploymentsWithDetails.length === 0) && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Globe className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No channel deployments yet</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* MAPPINGS TAB */}
+        <TabsContent value="mappings" className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="font-semibold">Agent-Engine Mappings</h3>
+              <p className="text-sm text-muted-foreground">View how agents are linked to conversation engines</p>
+            </div>
+          </div>
+          
+          <div className="grid gap-4">
+            {(agentsWithEngines || []).map(agentWithEngine => (
+              <Card key={agentWithEngine.id}>
+                <CardHeader className="pb-2">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Bot className="h-5 w-5" />
+                      {agentWithEngine.name}
+                    </CardTitle>
+                    <Badge variant={agentWithEngine.real_time_status.is_running ? 'default' : 'outline'}>
+                      {agentWithEngine.real_time_status.is_running ? 'Running' : 'Idle'}
+                    </Badge>
+                  </div>
+                  <CardDescription>{agentWithEngine.use_case}</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <p className="text-sm font-medium">Linked Engines:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {agentWithEngine.linked_engines.map(link => (
+                        <Badge key={link.engine.id} variant="outline" className="flex items-center gap-1">
+                          <Link2 className="h-3 w-3" />
+                          {link.engine.name} ({link.role})
+                        </Badge>
+                      ))}
+                      {agentWithEngine.linked_engines.length === 0 && (
+                        <span className="text-sm text-muted-foreground">No engines linked</span>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {(!agentsWithEngines || agentsWithEngines.length === 0) && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Link2 className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No agent-engine mappings yet</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        </TabsContent>
+
+        {/* LIVE STATUS TAB */}
+        <TabsContent value="realtime" className="space-y-4">
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Running Agents</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {agentsWithEngines?.filter(a => a.real_time_status.is_running).length || 0}
+                    </p>
+                  </div>
+                  <Radio className="h-8 w-8 text-green-500 animate-pulse" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Active Conversations</p>
+                    <p className="text-2xl font-bold">
+                      {agentsWithEngines?.reduce((sum, a) => sum + a.real_time_status.active_conversations, 0) || 0}
+                    </p>
+                  </div>
+                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <div className="grid gap-4">
+            {(agentsWithEngines || []).filter(a => a.real_time_status.is_running).map(agent => (
+              <Card key={agent.id} className="border-green-500/50">
+                <CardContent className="py-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="relative">
+                        <Bot className="h-8 w-8 text-green-500" />
+                        <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{agent.name}</p>
+                        <p className="text-sm text-muted-foreground">
+                          {agent.real_time_status.active_conversations} active • 
+                          Last: {agent.real_time_status.last_activity ? new Date(agent.real_time_status.last_activity).toLocaleTimeString() : 'N/A'}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm font-medium">{agent.use_case}</p>
+                      <p className="text-xs text-muted-foreground">{agent.linked_engines.length} engines linked</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+            {(!agentsWithEngines?.some(a => a.real_time_status.is_running)) && (
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <Radio className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <p className="text-muted-foreground">No agents currently running</p>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </TabsContent>
       </Tabs>
 
