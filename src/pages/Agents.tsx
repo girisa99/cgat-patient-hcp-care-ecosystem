@@ -102,7 +102,7 @@ import { ComprehensivePerformanceAnalyzer } from '@/components/performance/Compr
 import { QueryPerformanceOptimizer } from '@/components/performance/QueryPerformanceOptimizer';
 
 const AgentsInner = () => {
-  // State management
+  // Core state - simplified
   const [selectedMode, setSelectedMode] = useState<AgentMode | null>(() => {
     try {
       return (localStorage.getItem('agentBuilder_selectedMode') as AgentMode) || 'unified';
@@ -113,33 +113,15 @@ const AgentsInner = () => {
   const [showModeSelector, setShowModeSelector] = useState(false);
   const [showQuestionnaire, setShowQuestionnaire] = useState(false);
   const [hasCompletedQuestionnaire, setHasCompletedQuestionnaire] = useState(false);
-  const [visualWorkflowSubTab, setVisualWorkflowSubTab] = useState<'use-case' | 'journey' | 'builder' | 'ai-prompt'>('use-case');
-  const [selectedUseCase, setSelectedUseCase] = useState('');
-  const [journeyStages, setJourneyStages] = useState<any[]>([]);
-  const [wizardData, setWizardData] = useState<any>({});
-  const [agentBuilderTab, setAgentBuilderTab] = useState('agent-config');  
-  const [showPromptAssistant, setShowPromptAssistant] = useState(false);
+  const [visualWorkflowSubTab, setVisualWorkflowSubTab] = useState<'builder' | 'ai-prompt'>('ai-prompt');
   const [selectedNode, setSelectedNode] = useState<Node | null>(null);
-  const [showAssistant, setShowAssistant] = useState(false);
-  const [leftPanelTab, setLeftPanelTab] = useState<'palette' | 'access'>('palette');
   const [rightPanelTab, setRightPanelTab] = useState<'config' | 'libraries' | 'assistant'>('config');
-  const [isInlineConfigOpen, setInlineConfigOpen] = useState(false);
   const [workflowNodes, setWorkflowNodes] = useState<any[]>([]);
   const [workflowEdges, setWorkflowEdges] = useState<any[]>([]);
   const [showUnifiedAssist, setShowUnifiedAssist] = useState(false);
-  const [showAIAssist, setShowAIAssist] = useState(false);
-  const [showConfigPanel, setShowConfigPanel] = useState(false);
-  const [aiAssistMode, setAIAssistMode] = useState<'build' | 'generate' | 'test' | 'deploy' | 'configure'>('build');
-  const [selectedNodeData, setSelectedNodeData] = useState<any>(null);
-  const [showObservability, setShowObservability] = useState(false);
-  const [showAnimatedFlow, setShowAnimatedFlow] = useState(false);
   const [showTemplateGallery, setShowTemplateGallery] = useState(false);
   const [showSaveAsTemplate, setShowSaveAsTemplate] = useState(false);
   const [showDeploymentManager, setShowDeploymentManager] = useState(false);
-  const [showNodeCategories, setShowNodeCategories] = useState(true);
-  const [showLibrariesPanel, setShowLibrariesPanel] = useState(false);
-  const [showAdvancedFeatures, setShowAdvancedFeatures] = useState(false);
-  const [advancedFeatureTab, setAdvancedFeatureTab] = useState<'collaboration' | 'analytics' | 'enterprise' | 'assessment' | 'verification' | 'audit' | 'workflow-audit' | 'consolidated-audit'>('collaboration');
 
   const location = useLocation();
 
@@ -354,21 +336,6 @@ const AgentsInner = () => {
     }
   }, [userSessions, selectedMode]);
 
-  // Avoid opening the right panel when inline node config is requested and track inline state
-  useEffect(() => {
-    const openHandler = () => {};
-    const inlineOpen = () => setInlineConfigOpen(true);
-    const inlineClose = () => setInlineConfigOpen(false);
-    window.addEventListener('open-node-config', openHandler as EventListener);
-    window.addEventListener('inline-config-opened', inlineOpen as EventListener);
-    window.addEventListener('inline-config-closed', inlineClose as EventListener);
-    return () => {
-      window.removeEventListener('open-node-config', openHandler as EventListener);
-      window.removeEventListener('inline-config-opened', inlineOpen as EventListener);
-      window.removeEventListener('inline-config-closed', inlineClose as EventListener);
-    };
-  }, []);
-
   // Event handlers
   const handleQuestionnaireComplete = (data: any) => {
     setHasCompletedQuestionnaire(true);
@@ -383,13 +350,9 @@ const AgentsInner = () => {
     try { localStorage.setItem('agentBuilder_selectedMode', mode as any); } catch {}
     setShowModeSelector(false);
     
-    if (mode === 'unified') {
-      // Use unified workflow experience
-    } else if (mode === 'visual') {
-      setVisualWorkflowSubTab('use-case');
+    if (mode === 'visual') {
+      setVisualWorkflowSubTab('ai-prompt');
       setShowTemplateGallery(true);
-    } else if (mode === 'observability') {
-      // Switch to observability mode
     }
     
     const modeText = mode === 'unified' ? 'AI-Assisted Builder' : 
@@ -405,9 +368,6 @@ const AgentsInner = () => {
       if (!mode) return;
       setSelectedMode(mode);
       try { localStorage.setItem('agentBuilder_selectedMode', mode as any); } catch {}
-      if (mode === 'visual') {
-        setVisualWorkflowSubTab('use-case');
-      }
       const modeText = mode === 'unified' ? 'AI-Assisted Builder' : 
                        mode === 'visual' ? 'Visual Canvas' : 
                        mode === 'observability' ? 'Observability' : 'Builder';
@@ -416,31 +376,6 @@ const AgentsInner = () => {
     window.addEventListener('switch-agent-mode', handler as any);
     return () => window.removeEventListener('switch-agent-mode', handler as any);
   }, []);
-
-  const handleUseCaseSelect = (useCase: string) => {
-    setSelectedUseCase(useCase);
-    setVisualWorkflowSubTab('journey');
-    toast.success('Use case selected! Now define your journey stages.');
-    setShowUnifiedAssist(true);
-  };
-
-  const handleJourneyComplete = (stages: any[]) => {
-    setJourneyStages(stages);
-    setVisualWorkflowSubTab('builder');
-    toast.success('Journey stages defined! Now use the builder.');
-  };
-
-  const handleWizardComplete = (data: any) => {
-    setWizardData(data);
-    setVisualWorkflowSubTab('builder');
-    toast.success('Setup complete! Now use the visual builder.');
-  };
-
-  const handleAIAssistOpen = (mode: 'build' | 'generate' | 'test' | 'deploy' | 'configure', nodeId?: string) => {
-    setAIAssistMode(mode);
-    setSelectedNodeData(nodeId ? { id: nodeId } : null);
-    setShowAIAssist(true);
-  };
 
   // Avoid duplicate success toasts when canvas updates propagate
   const aiSuccessToastShown = React.useRef(false);
@@ -519,419 +454,232 @@ const AgentsInner = () => {
     }
   };
 
-  const handleNodeConfigOpen = (nodeData: any) => {
-    setSelectedNodeData(nodeData);
-    setShowConfigPanel(true);
-  };
 
-  const handleNodeConfigSave = (nodeData: any) => {
-    toast.success('Node configuration saved');
-    setShowConfigPanel(false);
-  };
-
-  // Genie AI Layout - Matching screenshot structure exactly
+  // Clean Visual Workflow Builder Layout
   const renderFlowiseLayout = () => {
-    console.log('[Agents] renderFlowiseLayout start');
     return (
       <div className="h-screen flex flex-col bg-background">
-        {/* Compact Top Header */}
-        <div className="h-10 border-b bg-card flex items-center justify-between px-4">
+        {/* Single Clean Header */}
+        <div className="h-12 border-b bg-card flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
-            <h1 className="text-sm font-semibold">Visual Workflow Builder</h1>
-            <Badge variant="secondary" className="text-xs">ADVANCED</Badge>
             <Button 
-              variant="outline" 
+              variant="ghost" 
               size="sm"
               onClick={() => setShowModeSelector(true)}
-              className="flex items-center gap-1 text-xs h-7 px-2"
+              className="flex items-center gap-1 text-xs h-8 px-2"
             >
               <ArrowLeft className="h-3 w-3" />
-              Switch Mode
+              Back
             </Button>
-          </div>
-          
-          <div className="flex items-center gap-1">
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowTemplateGallery(true)}>
-              <Database className="w-3 h-3 mr-1" />
-              Templates
-            </Button>
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowLibrariesPanel(!showLibrariesPanel)}>
-              <Network className="w-3 h-3 mr-1" />
-              Libraries
-            </Button>
-            <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => setShowSaveAsTemplate(true)} disabled={workflowNodes.length === 0}>
-              <SaveIcon className="w-3 h-3 mr-1" />
-              Save as Template
-            </Button>
-            <Button size="sm" className="h-7 px-2 text-xs bg-primary hover:bg-primary/90" onClick={() => setShowDeploymentManager(true)}>
-              <Play className="w-3 h-3 mr-1" />
-              Deploy
-            </Button>
-            <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white shadow-lg" onClick={() => setShowUnifiedAssist(!showUnifiedAssist)} disabled={disableAssist} title={assistTitle}>
-              <Sparkles className="w-3 h-3 mr-1" />
-              🚀 Unified AI Assist
-            </Button>
-            <Button size="sm" className="h-7 px-2 text-xs bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white shadow-lg" onClick={() => setShowAdvancedFeatures(!showAdvancedFeatures)}>
-              <Users className="w-3 h-3 mr-1" />
-              Advanced Features
-            </Button>
-            <Badge variant={isAIHealthy ? 'secondary' : 'destructive'} className="ml-2 text-xs">
-              AI: {isAIHealthy ? 'Healthy' : 'Offline'}
+            <div className="h-4 w-px bg-border" />
+            <h1 className="text-sm font-semibold">Workflow Builder</h1>
+            <Badge variant={isAIHealthy ? 'secondary' : 'destructive'} className="text-xs">
+              AI {isAIHealthy ? '●' : '○'}
             </Badge>
           </div>
+          
+          {/* Essential Actions Only */}
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 px-3 text-xs" 
+              onClick={() => setShowTemplateGallery(true)}
+            >
+              <Database className="w-3 h-3 mr-1.5" />
+              Templates
+            </Button>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="h-8 px-3 text-xs" 
+              onClick={() => setShowSaveAsTemplate(true)} 
+              disabled={workflowNodes.length === 0}
+            >
+              <SaveIcon className="w-3 h-3 mr-1.5" />
+              Save
+            </Button>
+            <Button 
+              size="sm" 
+              className="h-8 px-3 text-xs bg-primary hover:bg-primary/90" 
+              onClick={() => setShowDeploymentManager(true)}
+              disabled={workflowNodes.length === 0}
+            >
+              <Play className="w-3 h-3 mr-1.5" />
+              Deploy
+            </Button>
+            <div className="h-4 w-px bg-border" />
+            <Button 
+              size="sm" 
+              className="h-8 px-3 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white" 
+              onClick={() => setShowUnifiedAssist(!showUnifiedAssist)} 
+              disabled={disableAssist} 
+              title={assistTitle}
+            >
+              <Sparkles className="w-3 h-3 mr-1.5" />
+              AI Assist
+            </Button>
+          </div>
         </div>
 
-        {/* Main Content with Tabs */}
-        <div className="flex-1 flex flex-col overflow-hidden">
-          {/* Visual Mode Tabs */}
-          <div className="border-b bg-card px-4 py-2">
-            <div className="flex items-center justify-between mb-2">
-              <h2 className="text-lg font-semibold">Visual Workflow Builder</h2>
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setShowModeSelector(true)}
-                className="flex items-center gap-1 text-xs"
-              >
-                <ArrowLeft className="h-3 w-3" />
-                Switch Mode
-              </Button>
-            </div>
-            <div className="flex items-center gap-1">
-              <Button 
-                variant={visualWorkflowSubTab === 'use-case' ? 'default' : 'ghost'} 
-                size="sm" 
-                className="h-8 px-3 text-xs"
-                onClick={() => setVisualWorkflowSubTab('use-case')}
-              >
-                <Target className="w-3 h-3 mr-1" />
-                Use Case
-              </Button>
-              <Button 
-                variant={visualWorkflowSubTab === 'journey' ? 'default' : 'ghost'} 
-                size="sm" 
-                className="h-8 px-3 text-xs"
-                onClick={() => setVisualWorkflowSubTab('journey')}
-              >
-                <ArrowRight className="w-3 h-3 mr-1" />
-                Journey
-              </Button>
-              <Button 
-                variant={visualWorkflowSubTab === 'builder' ? 'default' : 'ghost'} 
-                size="sm" 
-                className="h-8 px-3 text-xs"
-                onClick={() => setVisualWorkflowSubTab('builder')}
-              >
-                <Brain className="w-3 h-3 mr-1" />
-                Builder
-              </Button>
-              <Button 
-                variant={visualWorkflowSubTab === 'ai-prompt' ? 'default' : 'ghost'} 
-                size="sm" 
-                className="h-8 px-3 text-xs"
-                onClick={() => setVisualWorkflowSubTab('ai-prompt')}
-              >
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI Prompt
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-8 px-3 text-xs bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white"
-                onClick={() => setShowUnifiedAssist(true)}
-              >
-                <Sparkles className="w-3 h-3 mr-1" />
-                AI Assistant
-              </Button>
-            </div>
-          </div>
-
-          {/* Tab Content */}
-          <div className="flex-1 overflow-hidden">
-            {/* Use Case Tab */}
-            {visualWorkflowSubTab === 'use-case' && (
-              <div className="h-full p-6">
-                <UseCaseSelector 
-                  selectedUseCase={selectedUseCase}
-                  onUseCaseChange={handleUseCaseSelect}
-                  selectedCategories={[]}
-                  selectedTopics={[]}
-                />
-              </div>
-            )}
-
-            {/* Journey Tab */}
-            {visualWorkflowSubTab === 'journey' && (
-              <div className="h-full p-6">
-                {selectedUseCase ? (
-                  <JourneyEditor
-                    useCase={selectedUseCase}
-                    onApplied={handleJourneyComplete}
-                  />
-                ) : (
-                  <div className="text-center py-8">
-                    <p className="text-muted-foreground">Please select a use case first</p>
-                  </div>
-                )}
-              </div>
-            )}
-
-            {/* AI Prompt Tab */}
-            {visualWorkflowSubTab === 'ai-prompt' && (
-              <div className="h-full p-6">
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 h-full">
-                  <div className="space-y-4">
-                    <Card>
-                      <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
-                          <Sparkles className="w-5 h-5" />
-                          AI Agent Builder
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
-                        <PromptBasedAgentGenerator 
-                          onGenerate={(agent) => {
-                            console.log('[Agents Prompt Tab] Raw agent data received:', agent);
-                            
-                            // Normalize nodes and edges for the canvas (support multiple response shapes)
-                            const nodesSource: any[] = (agent?.nodes
-                              || agent?.workflow?.nodes
-                              || agent?.data?.nodes
-                              || agent?.result?.nodes
-                              || []);
-                            const edgesSource: any[] = (agent?.edges
-                              || agent?.workflow?.edges
-                              || agent?.data?.edges
-                              || agent?.result?.edges
-                              || []);
-
-                            console.log('[Agents Prompt Tab] Extracted nodes:', nodesSource.length, 'edges:', edgesSource.length);
-
-                            if (!Array.isArray(nodesSource) || nodesSource.length === 0) {
-                              console.warn('[Agents] No nodes returned by AI generator. Raw payload:', agent);
-                              const details = (agent?.error || agent?.details || 'AI returned no workflow nodes');
-                              toast.error(typeof details === 'string' ? details : 'No nodes generated. Try another prompt or provider.');
-                              return;
-                            }
-
-                            const rawNodes = nodesSource.map((n: any, idx: number) => ({
-                              id: String(n.id || `node-${idx}-${Date.now()}`),
-                              type: 'enhanced',
-                              position: n.position || { x: 100 + (idx % 3) * 280, y: 120 + Math.floor(idx / 3) * 160 },
-                              data: {
-                                ...(n.data || {}),
-                                label: n.data?.label || n.label || n.name || n.display_name || `Node ${idx + 1}`,
-                                type_key: n.data?.type_key || (typeof n.type === 'string' ? n.type : 'node'),
-                                configuration: { ...(n.data?.configuration || n.configuration || {}) },
-                                isWorkflowNode: true,
-                              }
-                            }));
-
-                            let rawEdges = Array.isArray(edgesSource) ? edgesSource : [];
-                            if (!rawEdges.length && rawNodes.length > 1) {
-                              rawEdges = rawNodes.slice(0, -1).map((n: any, i: number) => ({
-                                id: `e-${n.id}-${rawNodes[i + 1].id}`,
-                                source: n.id,
-                                target: rawNodes[i + 1].id,
-                                type: 'smoothstep',
-                                animated: true,
-                              }));
-                            }
-
-                            console.log('[Agents Prompt Tab] Setting workflow nodes:', rawNodes.length, 'edges:', rawEdges.length);
-                            
-                            setWorkflowNodes(rawNodes);
-                            setWorkflowEdges(rawEdges);
-                            // Switch to canvas view
-                            setVisualWorkflowSubTab('builder');
-                            
-                            toast.success(`Generated ${rawNodes.length} nodes - switched to canvas view`);
-                          }}
-                        />
-                      </CardContent>
-                    </Card>
-                  </div>
-                  <div className="space-y-4">
-                    <Card className="flex-1">
-                      <CardHeader>
-                        <CardTitle>Generated Workflow Preview</CardTitle>
-                      </CardHeader>
-                      <CardContent className="h-64 overflow-auto">
-                        {workflowNodes.length > 0 ? (
-                          <div className="space-y-2">
-                            <p className="text-sm text-muted-foreground">
-                              {workflowNodes.length} nodes, {workflowEdges.length} connections
-                            </p>
-                            <div className="grid grid-cols-1 gap-2">
-                              {workflowNodes.slice(0, 5).map((node, idx) => (
-                                <div key={idx} className="p-2 border rounded text-xs">
-                                  <div className="font-medium">{node.data?.label || `Node ${idx + 1}`}</div>
-                                  <div className="text-muted-foreground">{node.type}</div>
-                                </div>
-                              ))}
-                              {workflowNodes.length > 5 && (
-                                <div className="text-xs text-muted-foreground">
-                                  ... and {workflowNodes.length - 5} more nodes
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ) : (
-                          <div className="text-center py-8 text-muted-foreground">
-                            <Sparkles className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                            <div className="flex gap-2 mt-4">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setShowTemplateGallery(true)}
-                                className="gap-2"
-                              >
-                                <Sparkles className="h-4 w-4" />
-                                Templates
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => setShowSaveAsTemplate(true)}
-                                disabled={workflowNodes.length === 0}
-                                className="gap-2"
-                              >
-                                <SaveIcon className="h-4 w-4" />
-                                Save as Template
-                              </Button>
-                            </div>
-                          </div>
-                        )}
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {/* Builder Tab */}
-            {visualWorkflowSubTab === 'builder' && (
-              <div className="h-[78vh] flex overflow-hidden bg-gray-50/50">
-                <ErrorBoundary fallbackComponent={({ error, retry }) => (
-                  <div className="absolute inset-0 flex items-center justify-center p-4">
-                    <div className="text-xs text-center space-y-2 max-w-lg">
-                      <div className="font-medium">Canvas failed to load</div>
-                      <div className="text-muted-foreground break-all mx-auto">{error?.message}</div>
-                      {error?.stack && (
-                        <pre className="text-left bg-muted/30 p-2 rounded max-h-48 overflow-auto whitespace-pre-wrap">{error.stack}</pre>
-                      )}
-                      <Button size="sm" variant="outline" onClick={retry}>Retry</Button>
-                    </div>
-                  </div>
-                )}>
-                  <SidebarProvider className="w-full h-full min-h-0">
-                    <div className="min-h-0 h-full flex w-full">
-                      
-            <FixedAdvancedReactFlow
-                        key={`consolidated-rf-${workflowNodes.length}-${workflowEdges.length}`}
-                        initialNodes={workflowNodes}
-                        initialEdges={workflowEdges}
-                        workflowType="visual"
-                        sessionId={currentSession?.id}
-                        fitParent={true}
-                        onNodeSelect={(node) => {
-                          setSelectedNode(node);
-                          setRightPanelTab('config');
-                          setShowPromptAssistant(false);
-                        }}
-                        onSave={handleFlowSave}
-                        onWorkflowUpdate={handleWorkflowUpdate}
-                        onNodeAdd={handleNodeGenerated}
-                        onNodeConfigSave={(nodes, edges) => {
-                          handleFlowSave({ nodes, edges });
-                        }}
-                        isAIHealthy={isAIHealthy}
-                      />
-                    </div>
-                  </SidebarProvider>
-                </ErrorBoundary>
-              </div>
+        {/* Simple 2-Tab Navigation */}
+        <div className="border-b bg-muted/30 px-4">
+          <div className="flex items-center gap-1 py-1">
+            <Button 
+              variant={visualWorkflowSubTab === 'ai-prompt' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="h-8 px-4 text-xs rounded-full"
+              onClick={() => setVisualWorkflowSubTab('ai-prompt')}
+            >
+              <Sparkles className="w-3 h-3 mr-1.5" />
+              1. Generate
+            </Button>
+            <ArrowRight className="w-3 h-3 text-muted-foreground" />
+            <Button 
+              variant={visualWorkflowSubTab === 'builder' ? 'default' : 'ghost'} 
+              size="sm" 
+              className="h-8 px-4 text-xs rounded-full"
+              onClick={() => setVisualWorkflowSubTab('builder')}
+            >
+              <Brain className="w-3 h-3 mr-1.5" />
+              2. Build
+            </Button>
+            {workflowNodes.length > 0 && (
+              <Badge variant="secondary" className="ml-2 text-xs">
+                {workflowNodes.length} nodes
+              </Badge>
             )}
           </div>
         </div>
 
-        {/* AI Assistant Panel (fixed positioning) */}
-        {false && (
-          <div className="fixed top-4 right-4 w-96 max-h-[80vh] border bg-card rounded-lg shadow-lg flex flex-col z-50">
-            <div className="p-4 border-b flex items-center justify-between">
-              <h3 className="font-semibold text-sm">AI Workflow Assistant</h3>
-              <Button 
-                type="button"
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowPromptAssistant(false)}
-                className="h-6 w-6 p-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            <div className="flex-1 overflow-auto p-4">
-              <div className="space-y-4">
-                <div>
-                  <Label className="text-xs font-medium">Conversation</Label>
-                  <p className="text-xs text-muted-foreground mb-3">
-                    Hi! I'm your AI assistant. I'll help guide you through building your workflow. What would you like to create?
+        {/* Content Area */}
+        <div className="flex-1 overflow-hidden">
+          {/* Generate Tab - AI Prompt */}
+          {visualWorkflowSubTab === 'ai-prompt' && (
+            <div className="h-full p-6 overflow-auto">
+              <div className="max-w-4xl mx-auto">
+                <div className="text-center mb-6">
+                  <h2 className="text-xl font-semibold mb-2">Generate Your Workflow</h2>
+                  <p className="text-sm text-muted-foreground">
+                    Describe what you want to build and AI will create the workflow for you
                   </p>
-                  <Textarea 
-                    placeholder="Describe your agent: e.g. Create a customer support agent that handles inquiries and escalates complex issues..."
-                    className="min-h-[80px] text-xs"
-                  />
-                </div>
-                <Button 
-                  className="w-full h-8"
-                  disabled={true}
-                  onClick={() => {
-                    // Remove placeholder functionality
-                    setShowPromptAssistant(false);
-                  }}
-                >
-                  <Sparkles className="w-3 h-3 mr-2" />
-                  Generate Workflow
-                </Button>
-                <div className="text-xs text-muted-foreground bg-secondary/20 p-3 rounded">
-                  <p className="font-medium mb-1">Smart Suggestions</p>
-                  <ul className="space-y-1">
-                    <li>• Add Decision Points (medium)</li>
-                    <li>• Add AI Agent (medium)</li>
-                  </ul>
                 </div>
                 
-                <div className="space-y-2 mt-4">
-                  <p className="text-xs font-medium">Smart Actions</p>
-                  <Button size="sm" variant="outline" className="w-full text-xs justify-start">
-                    <Lightbulb className="w-3 h-3 mr-1" />
-                    Suggest Workflow
+                <Card>
+                  <CardContent className="pt-6">
+                    <PromptBasedAgentGenerator 
+                      onGenerate={(agent) => {
+                        const nodesSource: any[] = (agent?.nodes || agent?.workflow?.nodes || agent?.data?.nodes || agent?.result?.nodes || []);
+                        const edgesSource: any[] = (agent?.edges || agent?.workflow?.edges || agent?.data?.edges || agent?.result?.edges || []);
+
+                        if (!Array.isArray(nodesSource) || nodesSource.length === 0) {
+                          toast.error('No nodes generated. Try a different prompt.');
+                          return;
+                        }
+
+                        const rawNodes = nodesSource.map((n: any, idx: number) => ({
+                          id: String(n.id || `node-${idx}-${Date.now()}`),
+                          type: 'enhanced',
+                          position: n.position || { x: 100 + (idx % 3) * 280, y: 120 + Math.floor(idx / 3) * 160 },
+                          data: {
+                            ...(n.data || {}),
+                            label: n.data?.label || n.label || n.name || n.display_name || `Node ${idx + 1}`,
+                            type_key: n.data?.type_key || (typeof n.type === 'string' ? n.type : 'node'),
+                            configuration: { ...(n.data?.configuration || n.configuration || {}) },
+                            isWorkflowNode: true,
+                          }
+                        }));
+
+                        let rawEdges = Array.isArray(edgesSource) ? edgesSource : [];
+                        if (!rawEdges.length && rawNodes.length > 1) {
+                          rawEdges = rawNodes.slice(0, -1).map((n: any, i: number) => ({
+                            id: `e-${n.id}-${rawNodes[i + 1].id}`,
+                            source: n.id,
+                            target: rawNodes[i + 1].id,
+                            type: 'smoothstep',
+                            animated: true,
+                          }));
+                        }
+                        
+                        setWorkflowNodes(rawNodes);
+                        setWorkflowEdges(rawEdges);
+                        setVisualWorkflowSubTab('builder');
+                        toast.success(`Generated ${rawNodes.length} nodes`);
+                      }}
+                    />
+                  </CardContent>
+                </Card>
+
+                {/* Quick Start Options */}
+                <div className="mt-6 flex items-center justify-center gap-4">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setShowTemplateGallery(true)}
+                    className="gap-2"
+                  >
+                    <Database className="h-4 w-4" />
+                    Start from Template
                   </Button>
-                  <Button size="sm" variant="outline" className="w-full text-xs justify-start">
-                    <ArrowRight className="w-3 h-3 mr-1" />
-                    Auto-Connect Nodes
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-full text-xs justify-start">
-                    <Database className="w-3 h-3 mr-1" />
-                    Generate Backend
-                  </Button>
-                  <Button size="sm" variant="outline" className="w-full text-xs justify-start">
-                    <Sparkles className="w-3 h-3 mr-1" />
-                    Optimize Flow
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setVisualWorkflowSubTab('builder')}
+                    className="gap-2"
+                  >
+                    <Brain className="h-4 w-4" />
+                    Build from Scratch
                   </Button>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* Template Gallery */}
+          {/* Builder Tab - Canvas */}
+          {visualWorkflowSubTab === 'builder' && (
+            <div className="h-full flex overflow-hidden">
+              <ErrorBoundary fallbackComponent={({ error, retry }) => (
+                <div className="flex-1 flex items-center justify-center p-4">
+                  <div className="text-center space-y-3">
+                    <div className="text-sm font-medium">Canvas failed to load</div>
+                    <div className="text-xs text-muted-foreground max-w-md">{error?.message}</div>
+                    <Button size="sm" variant="outline" onClick={retry}>Retry</Button>
+                  </div>
+                </div>
+              )}>
+                <SidebarProvider className="w-full h-full min-h-0">
+                  <div className="min-h-0 h-full flex w-full">
+                    <FixedAdvancedReactFlow
+                      key={`rf-${workflowNodes.length}-${workflowEdges.length}`}
+                      initialNodes={workflowNodes}
+                      initialEdges={workflowEdges}
+                      workflowType="visual"
+                      sessionId={currentSession?.id}
+                      fitParent={true}
+                      onNodeSelect={(node) => {
+                        setSelectedNode(node);
+                        setRightPanelTab('config');
+                      }}
+                      onSave={handleFlowSave}
+                      onWorkflowUpdate={handleWorkflowUpdate}
+                      onNodeAdd={handleNodeGenerated}
+                      onNodeConfigSave={(nodes, edges) => {
+                        handleFlowSave({ nodes, edges });
+                      }}
+                      isAIHealthy={isAIHealthy}
+                    />
+                  </div>
+                </SidebarProvider>
+              </ErrorBoundary>
+            </div>
+          )}
+        </div>
+
+        {/* Template Gallery Modal */}
         <TemplateGallery
           isOpen={showTemplateGallery}
           onClose={() => setShowTemplateGallery(false)}
           onTemplateSelect={(template) => {
-            console.log('[Agents] Template selected:', template);
-            // Use unified template integration to map to real nodes/edges and auto-connect
             templateManager.handleTemplateLoad(template);
           }}
         />
@@ -943,108 +691,68 @@ const AgentsInner = () => {
           nodes={workflowNodes}
           edges={workflowEdges}
           onSave={(templateId) => {
-            console.log('Template saved with ID:', templateId);
-            toast.success('Template saved! It will appear in the template gallery.');
+            toast.success('Template saved!');
           }}
         />
 
-        {/* Enhanced Deployment Manager */}
+        {/* Deployment Manager Modal */}
         {showDeploymentManager && (
           <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-            <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto">
-              <div className="mb-4 flex justify-end">
-                <Button variant="outline" size="sm" onClick={() => setShowDeploymentManager(false)}>
-                  <X className="h-4 w-4 mr-2" />
-                  Close
+            <div className="w-full max-w-4xl max-h-[90vh] overflow-y-auto bg-card rounded-lg border shadow-lg">
+              <div className="p-4 border-b flex items-center justify-between">
+                <h3 className="font-semibold">Deploy Workflow</h3>
+                <Button variant="ghost" size="sm" onClick={() => setShowDeploymentManager(false)}>
+                  <X className="h-4 w-4" />
                 </Button>
               </div>
               <EnhancedDeploymentManager
                 onDeploy={(config) => {
-                  console.log('[Agents] Enhanced deployment config:', config);
                   setShowDeploymentManager(false);
+                  toast.success('Workflow deployed!');
                 }}
               />
             </div>
           </div>
         )}
 
-        {/* Libraries Panel */}
-        {showLibrariesPanel && (
-          <div className="fixed top-14 right-4 w-80 h-[calc(100vh-80px)] border bg-card rounded-lg shadow-lg flex flex-col z-30">
+        {/* AI Assist Slide-over Panel */}
+        {showUnifiedAssist && (
+          <aside className="fixed inset-y-0 right-0 z-50 w-[min(480px,100vw)] border-l bg-card shadow-xl flex flex-col animate-slide-in-right">
             <div className="p-3 border-b flex items-center justify-between">
-              <h3 className="font-semibold text-sm">Libraries & Actions</h3>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => setShowLibrariesPanel(false)}
-                className="h-6 w-6 p-0"
-              >
+              <h3 className="font-semibold text-sm flex items-center gap-2">
+                <Sparkles className="w-4 h-4" />
+                AI Assistant
+              </h3>
+              <Button variant="ghost" size="sm" onClick={() => setShowUnifiedAssist(false)} className="h-7 w-7 p-0">
                 <X className="w-4 h-4" />
               </Button>
             </div>
-            <div className="flex-1 overflow-auto">
-              <LibrariesAndActions />
-            </div>
-          </div>
-        )}
-
-        {/* Unified AI Assist (non-blocking right panel) */}
-        {showUnifiedAssist && (
-          <aside className="fixed inset-y-0 right-0 z-[100] w-[min(560px,100vw)] border-l bg-card shadow-xl flex flex-col">
             <div className="flex-1 overflow-auto p-3">
               <UnifiedAgentAssist
                 workflowNodes={workflowNodes}
                 workflowEdges={workflowEdges}
                 selectedNode={selectedNode}
                 onAgentGenerated={(finalAgent: any) => {
-                  console.log('[UnifiedAssist] Raw agent data received:', finalAgent);
-                  
-                  // Normalize workflow shape from various generators
-                  const nodesSource: any[] = (finalAgent?.nodes
-                    || finalAgent?.workflow?.nodes
-                    || finalAgent?.data?.nodes
-                    || finalAgent?.result?.nodes
-                    || []);
-                  const edgesSource: any[] = (finalAgent?.edges
-                    || finalAgent?.workflow?.edges
-                    || finalAgent?.data?.edges
-                    || finalAgent?.result?.edges
-                    || []);
-
-                  console.log('[UnifiedAssist] Extracted nodes:', nodesSource.length, 'edges:', edgesSource.length);
+                  const nodesSource: any[] = (finalAgent?.nodes || finalAgent?.workflow?.nodes || finalAgent?.data?.nodes || finalAgent?.result?.nodes || []);
+                  const edgesSource: any[] = (finalAgent?.edges || finalAgent?.workflow?.edges || finalAgent?.data?.edges || finalAgent?.result?.edges || []);
 
                   if (!Array.isArray(nodesSource) || nodesSource.length === 0) {
-                    console.warn('[UnifiedAssist] No nodes returned. Raw payload:', finalAgent);
-                    const details = (finalAgent?.error || finalAgent?.details || 'AI returned no workflow nodes');
-                    toast.error(typeof details === 'string' ? details : 'No nodes generated. Try another prompt or provider.');
+                    toast.error('No nodes generated');
                     return;
                   }
 
                   const toEnhanced = (nodes: any[]) => (nodes || []).map((n, idx) => {
                     if (n.type === 'enhanced') return n;
                     const label = n.data?.label || n.label || n.name || 'Node';
-                    const lower = String(label).toLowerCase();
-                    const category = lower.includes('agent') ? 'ai-agents' : (lower.includes('vector') || lower.includes('api')) ? 'integrations' : 'data-processing';
                     return {
-                      id: String(n.id || `${lower.replace(/\s+/g,'-')}-${Date.now()}-${idx}`),
+                      id: String(n.id || `node-${Date.now()}-${idx}`),
                       type: 'enhanced',
                       position: n.position || { x: 100 + (idx % 3) * 280, y: 120 + Math.floor(idx / 3) * 160 },
                       data: {
                         ...(n.data || {}),
                         label,
-                        type_key: n.data?.type_key || (typeof n.type === 'string' ? n.type : 'node'),
-                        display_name: n.data?.display_name || label,
-                        description: n.data?.description || '',
-                        icon: n.data?.icon || (category==='ai-agents'?'bot':category==='integrations'?'globe':'database'),
-                        category,
-                        color: n.data?.color || (category === 'ai-agents' ? '#3b82f6' : category === 'integrations' ? '#10b981' : '#8b5cf6'),
-                        capabilities: n.data?.capabilities || [],
-                        requirements: n.data?.requirements || {},
-                        configuration: { ...(n.data?.configuration || n.configuration || {}) },
-                        tools: n.data?.tools || [],
-                        models: n.data?.models || [],
-                        aiAssistEnabled: true,
-                        supportedModes: ['build','generate','test','deploy','configure'],
+                        type_key: n.data?.type_key || 'node',
+                        configuration: { ...(n.data?.configuration || {}) },
                         isWorkflowNode: true
                       }
                     } as any;
@@ -1061,15 +769,12 @@ const AgentsInner = () => {
                       animated: true,
                     }));
                   }
-
-                  console.log('[UnifiedAssist] Final enhanced nodes:', enhancedNodes.length);
-                  console.log('[UnifiedAssist] Final edges:', finalEdges.length);
                   
                   setWorkflowNodes(enhancedNodes);
                   setWorkflowEdges(finalEdges);
                   setVisualWorkflowSubTab('builder');
                   setShowUnifiedAssist(false);
-                  toast.success(`Applied ${enhancedNodes.length} nodes to canvas`);
+                  toast.success(`Applied ${enhancedNodes.length} nodes`);
                 }}
                 onClose={() => setShowUnifiedAssist(false)}
               />
@@ -1189,129 +894,7 @@ const AgentsInner = () => {
     );
   }
 
-        {/* Advanced Features Panel */}
-        {showAdvancedFeatures && (
-          <div className="fixed inset-0 bg-background z-50 overflow-auto">
-            <div className="flex items-center justify-between p-4 border-b">
-              <h2 className="text-xl font-bold flex items-center gap-2">
-                <Users className="w-5 h-5" />
-                Advanced Features
-              </h2>
-              <Button 
-                variant="ghost" 
-                onClick={() => setShowAdvancedFeatures(false)}
-                className="h-8 w-8 p-0"
-              >
-                <X className="w-4 h-4" />
-              </Button>
-            </div>
-            
-            <div className="p-6">
-              <div className="flex gap-4 mb-6">
-                <Button 
-                  variant={advancedFeatureTab === 'collaboration' ? 'default' : 'outline'}
-                  onClick={() => setAdvancedFeatureTab('collaboration')}
-                >
-                  Real-time Collaboration
-                </Button>
-                <Button 
-                  variant={advancedFeatureTab === 'analytics' ? 'default' : 'outline'}
-                  onClick={() => setAdvancedFeatureTab('analytics')}
-                >
-                  Advanced Analytics
-                </Button>
-                <Button 
-                  variant={advancedFeatureTab === 'enterprise' ? 'default' : 'outline'}
-                  onClick={() => setAdvancedFeatureTab('enterprise')}
-                >
-                  Enterprise Features
-                </Button>
-                <Button 
-                  variant={advancedFeatureTab === 'assessment' ? 'default' : 'outline'}
-                  onClick={() => setAdvancedFeatureTab('assessment')}
-                >
-                  Gap Analysis
-                </Button>
-                <Button 
-                  variant={advancedFeatureTab === 'verification' ? 'default' : 'outline'}
-                  onClick={() => setAdvancedFeatureTab('verification')}
-                >
-                  Verification
-                </Button>
-                <Button 
-                  variant={advancedFeatureTab === 'audit' ? 'default' : 'outline'}
-                  onClick={() => setAdvancedFeatureTab('audit')}
-                >
-                  Functionality Audit
-                </Button>
-                <Button 
-                  variant={advancedFeatureTab === 'workflow-audit' ? 'default' : 'outline'}
-                  onClick={() => setAdvancedFeatureTab('workflow-audit')}
-                >
-                  Workflow Audit
-                </Button>
-                <Button 
-                  variant={advancedFeatureTab === 'consolidated-audit' ? 'default' : 'outline'}
-                  onClick={() => setAdvancedFeatureTab('consolidated-audit')}
-                >
-                  System Health
-                </Button>
-              </div>
-              
-              {advancedFeatureTab === 'collaboration' && (
-                <AdvancedCollaboration 
-                  sessionId={currentSessionId || 'default'}
-                  onWorkflowChange={(change) => {
-                    // Handle different types of workflow changes
-                    if (change.type === 'workflow_update' && change.data?.nodes && change.data?.edges) {
-                      handleWorkflowUpdate(change.data.nodes, change.data.edges);
-                    }
-                  }}
-                />
-              )}
-              {advancedFeatureTab === 'analytics' && (
-                <AdvancedAnalytics sessionId={currentSessionId} />
-              )}
-              {advancedFeatureTab === 'enterprise' && (
-                <EnterpriseFeatures />
-              )}
-              {advancedFeatureTab === 'assessment' && (
-                <div className="space-y-6">
-                  <ComprehensiveAgentAssessment />
-                  
-                  {/* Performance Analysis Section */}
-                  <div className="mt-8">
-                    <ComprehensivePerformanceAnalyzer />
-                  </div>
-                  
-                  {/* Query Performance Optimizer */}
-                  <div className="mt-8">
-                    <QueryPerformanceOptimizer />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <SystemImplementationStatus />
-                    <GapAnalysisReport />
-                  </div>
-                </div>
-              )}
-              {advancedFeatureTab === 'verification' && (
-                <ConsolidationVerification />
-              )}
-              {advancedFeatureTab === 'audit' && (
-                <ComprehensiveFunctionalityAudit />
-              )}
-              {advancedFeatureTab === 'workflow-audit' && (
-                <ComprehensiveWorkflowAudit />
-              )}
-              {advancedFeatureTab === 'consolidated-audit' && (
-                <ConsolidatedFunctionalityAudit />
-              )}
-            </div>
-          </div>
-        )}
-
-  // Main render - Genie AI Layout (Visual/Manual modes)
+  // Main render - Visual Canvas (default)
   return renderFlowiseLayout();
 };
 
