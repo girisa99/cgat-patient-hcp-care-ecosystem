@@ -207,7 +207,7 @@ export const useGenieManagement = () => {
 
   // Add configs without deployments (like our newly seeded data)
   const configOnlyInstances: GenieInstance[] = (brandConfigs || [])
-    .filter(config => !deployments?.some(d => d.brand_config_id === config.id))
+    .filter(config => !deployments?.some((d: any) => d.brand_config_id === config.id))
     .map((config: any) => {
       const stats = conversationStats?.filter(s => s.brand_config_id === config.id) || [];
       const rateLimits = rateLimitData?.filter(r => r.brand_config_id === config.id) || [];
@@ -273,9 +273,8 @@ export const useGenieManagement = () => {
       const { error } = await supabase
         .from('genie_deployments')
         .update({
-          health_status: 'healthy',
-          last_health_check: new Date().toISOString(),
-        })
+          updated_at: new Date().toISOString(),
+        } as any)
         .eq('id', deploymentId);
 
       if (error) throw error;

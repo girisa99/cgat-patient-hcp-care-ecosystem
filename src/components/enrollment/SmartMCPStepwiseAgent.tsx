@@ -1,8 +1,13 @@
+/**
+ * SMART MCP STEPWISE AGENT
+ * Advanced field-to-table routing system for accurate data management
+ * P0: Now uses useEnrollmentUniversalAI for multi-model routing
+ */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { CheckCircle, Clock, AlertTriangle, Users, FileText, CreditCard, Activity, UserCheck, Send } from "lucide-react";
+import { CheckCircle, Clock, AlertTriangle, Users, FileText, CreditCard, Activity, UserCheck, Send, Sparkles } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -21,6 +26,7 @@ import { WhatsAppConsentSender } from "@/components/enrollment/WhatsAppConsentSe
 import { ConsentWorkflowManager } from "@/components/enrollment/ConsentWorkflowManager";
 import { RealTimeNPIVerification } from "@/components/enrollment/RealTimeNPIVerification";
 import { sessionSaveManager } from "@/utils/sessionSaveManager";
+import { useEnrollmentUniversalAI, type EnrollmentContext } from "@/hooks/useEnrollmentUniversalAI";
 
 interface SmartMCPStepwiseAgentProps {
   patientId: string;
@@ -43,8 +49,22 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [isCompleted, setIsCompleted] = useState(false);
   const [hasError, setHasError] = useState(false);
+  const [aiStepGuidance, setAiStepGuidance] = useState<string>('');
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const isMountedRef = useRef(true);
+
+  // P0: Universal AI integration for multi-model routing
+  const { 
+    processEnrollmentMessage, 
+    validateFieldWithAI,
+    generateSectionSummary,
+    isLoading: aiLoading,
+    error: aiError 
+  } = useEnrollmentUniversalAI({
+    moduleType,
+    personalityMode: 'professional',
+    provider: 'gemini'
+  });
 
   // Enhanced enrollment steps with smart field mapping
   const enrollmentSteps = [
@@ -167,6 +187,41 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     };
     init();
   }, [patientId, enrollmentSource, toast]);
+
+  // P0: Fetch AI guidance when step changes
+  const getStepContext = useCallback((): EnrollmentContext => {
+    const stepMap: Record<string, EnrollmentContext> = {
+      'consent_management': 'consent_management',
+      'patient_information': 'patient_information',
+      'provider_treatment': 'provider_treatment',
+      'insurance_information': 'insurance_information',
+      'clinical_treatment': 'clinical_assessment',
+      'submit': 'review_submit'
+    };
+    return stepMap[currentStep?.key] || 'patient_information';
+  }, [currentStep]);
+
+  useEffect(() => {
+    const fetchStepGuidance = async () => {
+      if (!currentStep) return;
+      try {
+        const response = await processEnrollmentMessage(
+          `Provide brief guidance for completing the ${currentStep.title} step`,
+          getStepContext(),
+          'professional'
+        );
+        if (isMountedRef.current) {
+          setAiStepGuidance(response.content);
+        }
+      } catch (error) {
+        console.error('AI step guidance error:', error);
+        if (isMountedRef.current) {
+          setAiStepGuidance(currentStep.description);
+        }
+      }
+    };
+    fetchStepGuidance();
+  }, [currentStepIndex, currentStep, processEnrollmentMessage, getStepContext]);
 
   // Protected database update using global session manager to prevent conflicts
   const updateDatabase = useCallback(async (data: Record<string, any>) => {
