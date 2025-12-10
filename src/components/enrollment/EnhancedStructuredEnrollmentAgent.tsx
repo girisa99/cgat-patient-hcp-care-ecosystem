@@ -28,6 +28,7 @@ import { FieldByFieldCollector, type FieldDefinition } from '../patient-enrollme
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
 import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
 import { useEnrollmentUniversalAI, type EnrollmentContext } from '@/hooks/useEnrollmentUniversalAI';
+import { EnrollmentAgentConfig } from '@/hooks/useEnrollmentAgentConfig';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -46,12 +47,17 @@ interface EnhancedStructuredEnrollmentAgentProps {
   moduleType: ModuleType;
   onComplete?: (result: any) => void;
   onCancel?: () => void;
+  // P1: Feature configuration from GenieFeatureSelector
+  featureConfig?: Partial<EnrollmentAgentConfig>;
+  deploymentId?: string;
 }
 
 export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrollmentAgentProps> = ({
   moduleType,
   onComplete,
-  onCancel
+  onCancel,
+  featureConfig,
+  deploymentId
 }) => {
   const { toast } = useToast();
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
@@ -63,7 +69,7 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
   const [sessionId] = useState(() => crypto.randomUUID());
   const [aiGuidanceText, setAiGuidanceText] = useState<string>('');
 
-  // P0: Universal AI integration for multi-model routing
+  // P0 + P1: Universal AI integration with feature-based configuration
   const { 
     getFieldGuidance, 
     generateSectionSummary, 
@@ -72,8 +78,8 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
     error: aiError 
   } = useEnrollmentUniversalAI({
     moduleType,
-    personalityMode: 'professional',
-    provider: 'gemini'
+    personalityMode: featureConfig?.personalityMode || 'professional',
+    provider: featureConfig?.aiProvider || 'gemini'
   });
 
   // Get current section context for AI

@@ -28,12 +28,17 @@ import { RealTimeNPIVerification } from "@/components/enrollment/RealTimeNPIVeri
 import { sessionSaveManager } from "@/utils/sessionSaveManager";
 import { useEnrollmentUniversalAI, type EnrollmentContext } from "@/hooks/useEnrollmentUniversalAI";
 
+import { EnrollmentAgentConfig } from '@/hooks/useEnrollmentAgentConfig';
+
 interface SmartMCPStepwiseAgentProps {
   patientId: string;
   moduleType: string;
   enrollmentSource: string;
   onComplete?: (data: any) => void;
   onProgress?: (progress: number) => void;
+  // P1: Feature configuration from GenieFeatureSelector
+  featureConfig?: Partial<EnrollmentAgentConfig>;
+  deploymentId?: string;
 }
 
 export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
@@ -41,7 +46,9 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
   moduleType,
   enrollmentSource,
   onComplete,
-  onProgress
+  onProgress,
+  featureConfig,
+  deploymentId
 }) => {
   const { toast } = useToast();
   const [currentStepIndex, setCurrentStepIndex] = useState(0);
@@ -53,7 +60,7 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
   const saveTimeoutRef = useRef<NodeJS.Timeout>();
   const isMountedRef = useRef(true);
 
-  // P0: Universal AI integration for multi-model routing
+  // P0 + P1: Universal AI integration with feature-based configuration
   const { 
     processEnrollmentMessage, 
     validateFieldWithAI,
@@ -62,9 +69,15 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     error: aiError 
   } = useEnrollmentUniversalAI({
     moduleType,
-    personalityMode: 'professional',
-    provider: 'gemini'
+    personalityMode: featureConfig?.personalityMode || 'professional',
+    provider: featureConfig?.aiProvider || 'gemini'
   });
+
+  // P1: Feature flags from configuration
+  const enableNPIVerification = featureConfig?.npiVerification ?? true;
+  const enableCredentialing = featureConfig?.credentialingWorkflow ?? true;
+  const enableRealTimeValidation = featureConfig?.realTimeValidation ?? true;
+  const enableSmartFieldRouting = featureConfig?.smartFieldRouting ?? true;
 
   // Enhanced enrollment steps with smart field mapping
   const enrollmentSteps = [

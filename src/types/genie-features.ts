@@ -156,6 +156,28 @@ export interface GenieFeatureConfig {
     userBehaviorAnalysis?: boolean;
     costOptimization?: boolean;
   };
+
+  // Enrollment-Specific Features
+  enrollmentAgent?: {
+    enabled: boolean;
+    npiVerification?: boolean;
+    credentialingWorkflow?: boolean;
+    consentManagement?: boolean;
+    insuranceVerification?: boolean;
+    clinicalAssessment?: boolean;
+    documentGeneration?: boolean;
+    whatsappIntegration?: boolean;
+    voiceEnrollment?: boolean;
+    smartFieldRouting?: boolean;
+    realTimeValidation?: boolean;
+  };
+
+  enrollmentPersonality?: {
+    enabled: boolean;
+    mode?: 'professional' | 'empathetic' | 'casual' | 'humorous';
+    customPrompts?: boolean;
+    multiLanguage?: boolean;
+  };
 }
 
 export const GENIE_FEATURE_CATALOG: GenieFeature[] = [
@@ -337,6 +359,98 @@ export const GENIE_FEATURE_CATALOG: GenieFeature[] = [
     category: 'security',
     enabled: true,
     icon: 'Shield',
+  },
+
+  // Enrollment-Specific Features
+  {
+    id: 'npi_verification',
+    name: 'NPI Verification',
+    description: 'Real-time provider NPI validation via NPPES registry',
+    category: 'healthcare',
+    enabled: true,
+    icon: 'UserCheck',
+    dependencies: ['patient_onboarding'],
+  },
+  {
+    id: 'credentialing_workflow',
+    name: 'Credentialing Workflow',
+    description: 'Automated provider credentialing and license verification',
+    category: 'healthcare',
+    enabled: true,
+    icon: 'Shield',
+    dependencies: ['npi_verification'],
+  },
+  {
+    id: 'consent_management',
+    name: 'Consent Management',
+    description: 'Digital consent capture with signatures and audit trail',
+    category: 'healthcare',
+    enabled: true,
+    icon: 'FileText',
+    dependencies: ['patient_onboarding'],
+  },
+  {
+    id: 'insurance_verification',
+    name: 'Insurance Verification',
+    description: 'Real-time eligibility and benefits verification',
+    category: 'healthcare',
+    enabled: false,
+    icon: 'CreditCard',
+    dependencies: ['patient_onboarding'],
+    isPremium: true,
+  },
+  {
+    id: 'clinical_assessment',
+    name: 'Clinical Assessment',
+    description: 'AI-assisted medical history and symptom collection',
+    category: 'healthcare',
+    enabled: true,
+    icon: 'Activity',
+    dependencies: ['clinical_knowledge'],
+  },
+  {
+    id: 'smart_field_routing',
+    name: 'Smart Field Routing',
+    description: 'Intelligent field-to-table mapping for accurate data storage',
+    category: 'infrastructure',
+    enabled: true,
+    icon: 'Database',
+  },
+  {
+    id: 'real_time_validation',
+    name: 'Real-Time Validation',
+    description: 'AI-powered field validation as user types',
+    category: 'advanced',
+    enabled: true,
+    icon: 'Zap',
+    dependencies: ['multi_model_intelligence'],
+  },
+  {
+    id: 'enrollment_personality',
+    name: 'Enrollment Personality',
+    description: 'Configurable agent personality modes for enrollment flow',
+    category: 'conversation',
+    enabled: true,
+    icon: 'Sparkles',
+  },
+  {
+    id: 'document_generation',
+    name: 'Document Generation',
+    description: 'Auto-generate enrollment PDFs and reports',
+    category: 'integration',
+    enabled: false,
+    icon: 'FileText',
+    isPremium: true,
+  },
+  {
+    id: 'voice_enrollment',
+    name: 'Voice Enrollment',
+    description: 'Voice-guided enrollment with speech recognition',
+    category: 'advanced',
+    enabled: false,
+    icon: 'Mic',
+    dependencies: ['voice_conversation'],
+    isPremium: true,
   },
 ];
 
