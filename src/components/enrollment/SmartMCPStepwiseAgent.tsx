@@ -2,6 +2,7 @@
  * SMART MCP STEPWISE AGENT
  * Advanced field-to-table routing system for accurate data management
  * P0: Now uses useEnrollmentUniversalAI for multi-model routing
+ * P2: Now integrates with Enrollment MCP Bridge for tool access
  */
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -27,6 +28,7 @@ import { ConsentWorkflowManager } from "@/components/enrollment/ConsentWorkflowM
 import { RealTimeNPIVerification } from "@/components/enrollment/RealTimeNPIVerification";
 import { sessionSaveManager } from "@/utils/sessionSaveManager";
 import { useEnrollmentUniversalAI, type EnrollmentContext } from "@/hooks/useEnrollmentUniversalAI";
+import { useEnrollmentMCPBridge } from "@/hooks/useEnrollmentMCPBridge";
 
 import { EnrollmentAgentConfig } from '@/hooks/useEnrollmentAgentConfig';
 
@@ -71,6 +73,23 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
     moduleType,
     personalityMode: featureConfig?.personalityMode || 'professional',
     provider: featureConfig?.aiProvider || 'gemini'
+  });
+
+  // P2: MCP Bridge integration for tool access
+  const mcpBridge = useEnrollmentMCPBridge({
+    config: {
+      enableNPIVerification: featureConfig?.npiVerification ?? true,
+      enableCredentialing: featureConfig?.credentialingWorkflow ?? true,
+      enableInsuranceVerification: true,
+      enableSmartRouting: featureConfig?.smartFieldRouting ?? true,
+      enableAnalytics: true
+    },
+    context: {
+      patientId,
+      sessionId: deploymentId,
+      currentStep: currentStepIndex.toString(),
+      enrollmentData: collectedData
+    }
   });
 
   // P1: Feature flags from configuration
