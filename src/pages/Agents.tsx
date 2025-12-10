@@ -387,17 +387,14 @@ const AgentsInner = () => {
       // Use unified workflow experience
     } else if (mode === 'visual') {
       setVisualWorkflowSubTab('use-case');
-      // Auto-show template gallery and asset panel for visual mode
       setShowTemplateGallery(true);
-    } else if (mode === 'ecosystem') {
-      // Switch to ecosystem mode
-    } else {
-      setAgentBuilderTab('agent-config');
+    } else if (mode === 'observability') {
+      // Switch to observability mode
     }
     
-    const modeText = mode === 'unified' ? 'Unified Workflow' : 
-                     mode === 'visual' ? 'Visual Workflow' : 
-                     mode === 'ecosystem' ? 'Agent Ecosystem' : 'Manual Configuration';
+    const modeText = mode === 'unified' ? 'AI-Assisted Builder' : 
+                     mode === 'visual' ? 'Visual Canvas' : 
+                     mode === 'observability' ? 'Observability' : 'Builder';
     toast.success(`Switched to ${modeText} mode`);
   };
 
@@ -411,9 +408,9 @@ const AgentsInner = () => {
       if (mode === 'visual') {
         setVisualWorkflowSubTab('use-case');
       }
-      const modeText = mode === 'unified' ? 'Unified Workflow' : 
-                       mode === 'visual' ? 'Visual Workflow' : 
-                       mode === 'ecosystem' ? 'Agent Ecosystem' : 'Manual Configuration';
+      const modeText = mode === 'unified' ? 'AI-Assisted Builder' : 
+                       mode === 'visual' ? 'Visual Canvas' : 
+                       mode === 'observability' ? 'Observability' : 'Builder';
       toast.success(`Switched to ${modeText} mode`);
     };
     window.addEventListener('switch-agent-mode', handler as any);
@@ -1170,49 +1167,6 @@ const AgentsInner = () => {
     );
   }
 
-  // Consolidated Management mode
-  if (selectedMode === 'consolidated') {
-    return (
-      <AppLayout>
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <Button 
-              variant="outline" 
-              onClick={() => setShowModeSelector(true)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Mode Selection
-            </Button>
-          </div>
-          <ConsolidatedAgentDashboard />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // Agent Ecosystem Management mode
-  if (selectedMode === 'ecosystem') {
-    return (
-      <AppLayout>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Agent Ecosystem Dashboard</h1>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowModeSelector(true)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Mode Selection
-            </Button>
-          </div>
-          <AgentEcosystemDashboard />
-        </div>
-      </AppLayout>
-    );
-  }
-
   // AI Observability mode
   if (selectedMode === 'observability') {
     return (
@@ -1230,72 +1184,6 @@ const AgentsInner = () => {
             </Button>
           </div>
           <ObservabilityDashboard />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // Animated Flow Visualizer mode
-  if (selectedMode === 'animated-flow') {
-    return (
-      <AppLayout>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Animated Flow Visualizer</h1>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowModeSelector(true)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Mode Selection
-            </Button>
-          </div>
-          <AnimatedFlowVisualizer />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // Security & Compliance mode
-  if (selectedMode === 'security') {
-    return (
-      <AppLayout>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">Security & Compliance Dashboard</h1>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowModeSelector(true)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Mode Selection
-            </Button>
-          </div>
-          <AgentSecurityDashboard />
-        </div>
-      </AppLayout>
-    );
-  }
-
-  // AI Governance mode
-  if (selectedMode === 'governance') {
-    return (
-      <AppLayout>
-        <div className="p-4">
-          <div className="flex items-center justify-between mb-6">
-            <h1 className="text-2xl font-bold">AI Governance Dashboard</h1>
-            <Button 
-              variant="outline" 
-              onClick={() => setShowModeSelector(true)}
-              className="flex items-center gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Back to Mode Selection
-            </Button>
-          </div>
-          <AgentGovernanceDashboard />
         </div>
       </AppLayout>
     );
