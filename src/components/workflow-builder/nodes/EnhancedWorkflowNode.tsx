@@ -106,33 +106,38 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
   return (
     <div 
       className={`
-        relative bg-white rounded-lg border-2 shadow-lg min-w-[200px] max-w-[300px]
-        transition-all duration-200 hover:shadow-xl
-        ${selected ? 'border-primary shadow-primary/20' : 'border-border hover:border-primary/50'}
+        relative bg-card rounded-xl border-2 shadow-md min-w-[200px] max-w-[300px]
+        transition-all duration-300 ease-out workflow-node-enter
+        hover:shadow-xl hover:-translate-y-0.5
+        ${selected ? 'ring-2 ring-offset-2 ring-offset-background shadow-xl scale-[1.02]' : 'hover:border-primary/50'}
       `}
       style={{ 
-        borderColor: selected ? nodeColor : undefined,
-        boxShadow: selected ? `0 0 0 2px ${nodeColor}20` : undefined
-      }}
+        borderColor: selected ? nodeColor : 'hsl(var(--border))',
+        boxShadow: selected ? `0 0 0 2px ${nodeColor}20, 0 20px 25px -5px rgba(0,0,0,0.1)` : undefined,
+        '--node-color': nodeColor
+      } as React.CSSProperties}
     >
       {/* Node Toolbar */}
       {selected && (
-        <NodeToolbar isVisible position={Position.Top} className="flex gap-1">
-          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => {
-            window.dispatchEvent(new CustomEvent('duplicate-node', { detail: { nodeId: id } }));
-          }} aria-label="Duplicate node">
-            <Copy className="h-3 w-3" />
-          </Button>
-          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => {
-            window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }));
-          }} aria-label="Open configuration">
-            <Settings className="h-3 w-3" />
-          </Button>
-          <Button size="sm" variant="outline" className="h-8 px-2" onClick={() => {
-            window.dispatchEvent(new CustomEvent('delete-node', { detail: { nodeId: id } }));
-          }} aria-label="Delete node">
-            <Trash2 className="h-3 w-3" />
-          </Button>
+        <NodeToolbar isVisible position={Position.Top} className="animate-fade-in">
+          <div className="flex gap-1 bg-card/95 backdrop-blur-sm rounded-lg shadow-lg border border-border/50 p-1">
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={() => {
+              window.dispatchEvent(new CustomEvent('duplicate-node', { detail: { nodeId: id } }));
+            }} aria-label="Duplicate node">
+              <Copy className="h-3 w-3" />
+            </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={() => {
+              window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }));
+            }} aria-label="Open configuration">
+              <Settings className="h-3 w-3" />
+            </Button>
+            <div className="w-px h-5 bg-border my-auto" />
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-destructive/10 hover:text-destructive" onClick={() => {
+              window.dispatchEvent(new CustomEvent('delete-node', { detail: { nodeId: id } }));
+            }} aria-label="Delete node">
+              <Trash2 className="h-3 w-3" />
+            </Button>
+          </div>
         </NodeToolbar>
       )}
 
@@ -140,7 +145,7 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
       <Handle
         type="target"
         position={Position.Top}
-        className="w-3 h-3 border-2 border-white"
+        className="!w-3 !h-3 !border-2 !border-background transition-transform hover:scale-125"
         style={{ backgroundColor: nodeColor }}
       />
 
@@ -354,14 +359,32 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
       <Handle
         type="source"
         position={Position.Bottom}
-        className="w-3 h-3 border-2 border-white"
+        className="!w-3 !h-3 !border-2 !border-background transition-transform hover:scale-125"
+        style={{ backgroundColor: nodeColor }}
+      />
+
+      {/* Left Handle for horizontal connections */}
+      <Handle
+        type="target"
+        position={Position.Left}
+        id="left"
+        className="!w-2.5 !h-2.5 !border-2 !border-background !opacity-50 hover:!opacity-100 transition-all hover:scale-125"
+        style={{ backgroundColor: nodeColor }}
+      />
+
+      {/* Right Handle for horizontal connections */}
+      <Handle
+        type="source"
+        position={Position.Right}
+        id="right"
+        className="!w-2.5 !h-2.5 !border-2 !border-background !opacity-50 hover:!opacity-100 transition-all hover:scale-125"
         style={{ backgroundColor: nodeColor }}
       />
 
       {/* Connection Indicator */}
       {data.isWorkflowNode && (
         <div 
-          className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white"
+          className="absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-background animate-pulse"
           style={{ backgroundColor: nodeColor }}
           title="Workflow Node"
         />
