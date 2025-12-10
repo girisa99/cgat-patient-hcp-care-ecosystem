@@ -65,6 +65,9 @@ export { useEnrollmentMCPBridge } from './useEnrollmentMCPBridge';
 // Unified Agent Registry (Multi-UseCase Support)
 export { useAgentRegistry } from './useAgentRegistry';
 
+// Unified Agent Infrastructure Hub (Central Integration)
+export { useUnifiedAgentInfrastructure } from './useUnifiedAgentInfrastructure';
+
 // Routing
 export { useSimpleRouting } from './useSimpleRouting';
 export { useIntelligentRouting } from './useIntelligentRouting';
