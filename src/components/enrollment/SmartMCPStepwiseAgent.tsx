@@ -256,6 +256,7 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
   }, [currentStepIndex, currentStep, processEnrollmentMessage, getStepContext]);
 
   // Protected database update using global session manager to prevent conflicts
+  // P2: Now integrates with MCP bridge for real-time sync and CRM integration
   const updateDatabase = useCallback(async (data: Record<string, any>) => {
     if (!patientId || !isMountedRef.current) return;
 
@@ -263,11 +264,17 @@ export const SmartMCPStepwiseAgent: React.FC<SmartMCPStepwiseAgentProps> = ({
       try {
         console.log('🔒 Protected save starting for:', currentStep.key);
         
+        // P2: Sync section data via MCP bridge for real-time updates
+        if (mcpBridge.isInitialized) {
+          await mcpBridge.syncSectionToDatabase(patientId, currentStep.key, data);
+          // Track analytics event
+          await mcpBridge.trackAnalytics({ session_id: patientId, event_type: 'step_completed', metadata: { section: currentStep.key } });
+        }
+        
         // Normalize collection method for consent fields
         if (data.collection_method) {
           data.collection_method = normalizeCollectionMethod(data.collection_method);
         } else if (currentStep.key === 'consent_management') {
-          // Set default collection method for consent step to prevent constraint violations
           data.collection_method = 'digital';
         }
         
