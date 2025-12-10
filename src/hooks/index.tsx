@@ -68,6 +68,9 @@ export { useAgentRegistry } from './useAgentRegistry';
 // Unified Agent Infrastructure Hub (Central Integration)
 export { useUnifiedAgentInfrastructure } from './useUnifiedAgentInfrastructure';
 
+// Unified AI Agent (Single hook for all agent types - Genie, Enrollment, Order, etc.)
+export { useUnifiedAIAgent } from './useUnifiedAIAgent';
+
 // Routing
 export { useSimpleRouting } from './useSimpleRouting';
 export { useIntelligentRouting } from './useIntelligentRouting';
