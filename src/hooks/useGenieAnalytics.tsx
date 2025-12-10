@@ -70,9 +70,9 @@ export const useGenieAnalytics = (params: GenieAnalyticsParams = {}) => {
   // Fetch deployment info
   const { data: deployment } = useQuery({
     queryKey: ['genie-deployment', params.brandConfigId],
-    queryFn: async () => {
+    queryFn: async (): Promise<any> => {
       if (!params.brandConfigId) return null;
-      const { data, error }: any = await supabase
+      const { data, error } = await (supabase as any)
         .from('genie_deployments')
         .select('id, deployment_type, is_active, deployed_at')
         .eq('brand_config_id', params.brandConfigId)

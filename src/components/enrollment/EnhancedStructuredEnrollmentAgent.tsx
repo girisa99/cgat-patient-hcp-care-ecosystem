@@ -1,8 +1,9 @@
 /**
  * ENHANCED STRUCTURED ENROLLMENT AGENT
  * Section-by-section AI guidance with field-by-field collection and enhanced UX
+ * P0: Now uses useEnrollmentUniversalAI for multi-model routing
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,13 +19,15 @@ import {
   Heart,
   FileCheck,
   AlertCircle,
-  Zap
+  Zap,
+  Sparkles
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { FieldByFieldCollector, type FieldDefinition } from '../patient-enrollment/FieldByFieldCollector';
 import { EnhancedRealtimeProgressTracker } from '../patient-enrollment/EnhancedRealtimeProgressTracker';
 import { EnhancedSectionCompletionModal } from '../patient-enrollment/EnhancedSectionCompletionModal';
+import { useEnrollmentUniversalAI, type EnrollmentContext } from '@/hooks/useEnrollmentUniversalAI';
 
 type ModuleType = 'patient' | 'treatment_center' | 'customer' | 'manufacturer';
 
@@ -58,6 +61,57 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
   const [completedSectionData, setCompletedSectionData] = useState<any>(null);
   const [patientId] = useState(() => crypto.randomUUID());
   const [sessionId] = useState(() => crypto.randomUUID());
+  const [aiGuidanceText, setAiGuidanceText] = useState<string>('');
+
+  // P0: Universal AI integration for multi-model routing
+  const { 
+    getFieldGuidance, 
+    generateSectionSummary, 
+    processEnrollmentMessage,
+    isLoading: aiLoading,
+    error: aiError 
+  } = useEnrollmentUniversalAI({
+    moduleType,
+    personalityMode: 'professional',
+    provider: 'gemini'
+  });
+
+  // Get current section context for AI
+  const getCurrentSectionContext = useCallback((): EnrollmentContext => {
+    const sections = getEnrollmentSections();
+    const currentSection = sections[currentSectionIndex];
+    const sectionMap: Record<string, EnrollmentContext> = {
+      'patient_information': 'patient_information',
+      'provider_information': 'provider_treatment',
+      'insurance_information': 'insurance_information',
+      'clinical_assessment': 'clinical_assessment',
+      'consent_completion': 'consent_management'
+    };
+    return sectionMap[currentSection?.id] || 'patient_information';
+  }, [currentSectionIndex]);
+
+  // Fetch AI guidance when section changes
+  const fetchAIGuidance = useCallback(async () => {
+    const sections = getEnrollmentSections();
+    const currentSection = sections[currentSectionIndex];
+    if (currentSection) {
+      try {
+        const guidance = await processEnrollmentMessage(
+          `Provide a brief introduction for the ${currentSection.title} section`,
+          getCurrentSectionContext(),
+          'professional'
+        );
+        setAiGuidanceText(guidance.content);
+      } catch (error) {
+        console.error('AI guidance error:', error);
+        setAiGuidanceText(currentSection.aiGuidance);
+      }
+    }
+  }, [currentSectionIndex, processEnrollmentMessage, getCurrentSectionContext]);
+
+  useEffect(() => {
+    fetchAIGuidance();
+  }, [currentSectionIndex]);
 
   // Initialize database record on mount  
   useEffect(() => {
@@ -613,12 +667,26 @@ export const EnhancedStructuredEnrollmentAgent: React.FC<EnhancedStructuredEnrol
                 </TabsList>
 
                 <TabsContent value={currentSection.id} className="mt-6">
-                  {/* AI Guidance */}
+                  {/* AI Guidance - P0: Now powered by Universal AI */}
                   <Alert className="mb-6 border-blue-200 bg-blue-50">
-                    <Zap className="h-4 w-4 text-blue-600" />
+                    <div className="flex items-center gap-2">
+                      {aiLoading ? (
+                        <Clock className="h-4 w-4 text-blue-600 animate-pulse" />
+                      ) : (
+                        <Sparkles className="h-4 w-4 text-blue-600" />
+                      )}
+                    </div>
                     <AlertDescription className="text-blue-800">
-                      <div className="font-semibold">AI Guidance</div>
-                      <div className="text-sm mt-1">{currentSection.aiGuidance}</div>
+                      <div className="font-semibold flex items-center gap-2">
+                        AI Guidance
+                        <Badge variant="outline" className="text-xs">Universal AI</Badge>
+                      </div>
+                      <div className="text-sm mt-1">
+                        {aiLoading ? 'Generating guidance...' : (aiGuidanceText || currentSection.aiGuidance)}
+                      </div>
+                      {aiError && (
+                        <div className="text-xs text-red-500 mt-1">AI unavailable, using default guidance</div>
+                      )}
                     </AlertDescription>
                   </Alert>
 
