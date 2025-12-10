@@ -272,12 +272,12 @@ const ConsolidatedAdvancedReactFlowContent: React.FC<ConsolidatedAdvancedReactFl
     return Array.from(found).slice(0, 5); // Limit to 5 agents
   }, []);
 
-  // Enhanced node types with multi-agent support
+  // Enhanced node types with multi-agent support - STABLE references to prevent React Flow warnings
   const baseNodeTypes: NodeTypes = useMemo(() => ({
     custom: CustomNode,
-    enhanced: (props) => <EnhancedWorkflowNode {...props} />,
-    agent: (props) => <AgentNode {...props} />,
-    ai: (props) => <AIIntelligenceNode {...props} />,
+    enhanced: EnhancedWorkflowNode,
+    agent: AgentNode,
+    ai: AIIntelligenceNode,
     'multi-agent': ({ data }: any) => (
       <div className="px-4 py-3 rounded-xl min-w-[300px] shadow-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
         <div className="flex items-center gap-3">
