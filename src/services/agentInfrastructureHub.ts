@@ -8,6 +8,7 @@
  * - Stepwise Enrollment Agents
  * - Channel Deployments
  * - Agent Use Case Registry
+ * - Universal AI Connector (shared across all agents)
  */
 import { supabase } from '@/integrations/supabase/client';
 import { agentUseCaseRegistry, AgentRegistration, EXTENDED_USE_CASE_TEMPLATES } from './agentUseCaseRegistry';
@@ -60,6 +61,14 @@ export interface UnifiedAgentConfig {
   
   // P3: Deployment features
   deploymentFeatures: DeploymentFeatureConfig | null;
+  
+  // Screen mode configuration (shared with UnifiedAIConnector)
+  screenMode: 'default' | 'single' | 'split' | 'form-specific';
+  availableScreenModes: ('default' | 'single' | 'split' | 'form-specific')[];
+  
+  // AI Provider configuration (shared with useUniversalAI)
+  aiProvider: 'openai' | 'claude' | 'gemini';
+  aiModel?: string;
   
   // Channels
   channels: {
@@ -288,6 +297,20 @@ class UnifiedAgentInfrastructureHub {
         config: ch.config || {},
       }));
 
+      // Determine screen mode from features or use case defaults
+      const screenModeFromFeatures = (deploymentFeatures?.enabled_features || [])
+        .find(f => f.startsWith('screen_mode_'))?.replace('screen_mode_', '') as UnifiedAgentConfig['screenMode'] | undefined;
+      
+      const screenModeDefaults: Record<string, { default: UnifiedAgentConfig['screenMode']; available: UnifiedAgentConfig['availableScreenModes'] }> = {
+        patient_intake: { default: 'form-specific', available: ['default', 'single', 'split', 'form-specific'] },
+        enrollment: { default: 'form-specific', available: ['default', 'single', 'split', 'form-specific'] },
+        order_status: { default: 'single', available: ['default', 'single', 'split'] },
+        treatment_center_onboarding: { default: 'split', available: ['default', 'single', 'split', 'form-specific'] },
+        manufacturing_onboarding: { default: 'split', available: ['default', 'single', 'split', 'form-specific'] },
+      };
+      
+      const useCaseScreenConfig = screenModeDefaults[agent.use_case_id] || { default: 'default', available: ['default', 'single'] };
+
       return {
         agentId: agent.id,
         deploymentId: actualDeploymentId || '',
@@ -299,6 +322,10 @@ class UnifiedAgentInfrastructureHub {
         mcpConfig,
         mcpBridge,
         deploymentFeatures,
+        screenMode: screenModeFromFeatures || useCaseScreenConfig.default,
+        availableScreenModes: useCaseScreenConfig.available,
+        aiProvider: (deploymentFeatures?.ai_provider as 'openai' | 'claude' | 'gemini') || 'gemini',
+        aiModel: undefined, // Can be specified per deployment
         channels,
         branding: {
           brandName: agent.branding.brand_name,
