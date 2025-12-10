@@ -71,6 +71,9 @@ export { useUnifiedAgentInfrastructure } from './useUnifiedAgentInfrastructure';
 // Unified AI Agent (Single hook for all agent types - Genie, Enrollment, Order, etc.)
 export { useUnifiedAIAgent } from './useUnifiedAIAgent';
 
+// Agent-Conversation Engine Mappings (Real-time status, NPI, Credentialing, Enrollment)
+export { useAgentConversationEngines } from './useAgentConversationEngines';
+
 // Routing
 export { useSimpleRouting } from './useSimpleRouting';
 export { useIntelligentRouting } from './useIntelligentRouting';
