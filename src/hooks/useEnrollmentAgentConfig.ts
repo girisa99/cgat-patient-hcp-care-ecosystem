@@ -2,6 +2,7 @@
  * ENROLLMENT AGENT CONFIG HOOK
  * Manages feature configuration for enrollment agents using GenieFeatureSelector
  * P1 Implementation: Wire enrollment agents to feature selector system
+ * P3 Enhancement: Persist features per deployment via deploymentFeaturePersistence
  */
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useGenieConfiguration } from './useGenieConfiguration';
@@ -10,6 +11,7 @@ import {
   GENIE_FEATURE_CATALOG, 
   validateFeatureDependencies 
 } from '@/types/genie-features';
+import { deploymentFeaturePersistence, DeploymentFeatureConfig } from '@/services/deploymentFeaturePersistence';
 
 // Enrollment-specific feature IDs
 export const ENROLLMENT_FEATURE_IDS = [
@@ -72,8 +74,9 @@ export const useEnrollmentAgentConfig = (deploymentId?: string) => {
   const [personalityMode, setPersonalityMode] = useState<EnrollmentAgentConfig['personalityMode']>('professional');
   const [aiProvider, setAiProvider] = useState<EnrollmentAgentConfig['aiProvider']>('gemini');
   const [isValid, setIsValid] = useState(true);
+  const [isLoadedFromDeployment, setIsLoadedFromDeployment] = useState(false);
   
-  // Use genie configuration for loading/saving
+  // Use genie configuration for loading/saving (fallback)
   const genieConfig = useGenieConfiguration();
 
   // Get enrollment-specific features from catalog
@@ -90,15 +93,40 @@ export const useEnrollmentAgentConfig = (deploymentId?: string) => {
     return result;
   }, [enrollmentFeatures]);
 
-  // Sync with genie configuration when available
+  // P3: Load from deployment-specific configuration first
   useEffect(() => {
+    if (!deploymentId) return;
+    
+    const loadFromDeployment = async () => {
+      const config = await deploymentFeaturePersistence.loadDeploymentFeatures(deploymentId);
+      if (config) {
+        setIsLoadedFromDeployment(true);
+        if (config.enabled_features?.length) {
+          setEnabledFeatures(config.enabled_features);
+        }
+        if (config.personality_mode) {
+          setPersonalityMode(config.personality_mode as EnrollmentAgentConfig['personalityMode']);
+        }
+        if (config.ai_provider) {
+          setAiProvider(config.ai_provider as EnrollmentAgentConfig['aiProvider']);
+        }
+      }
+    };
+    
+    loadFromDeployment();
+  }, [deploymentId]);
+
+  // Fallback: Sync with genie configuration when deployment config not available
+  useEffect(() => {
+    if (isLoadedFromDeployment) return;
+    
     if (genieConfig.currentConfig && deploymentId) {
       const savedFeatures = genieConfig.currentConfig.enabled_features;
       if (savedFeatures && Array.isArray(savedFeatures)) {
         setEnabledFeatures(savedFeatures);
       }
     }
-  }, [genieConfig.currentConfig, deploymentId]);
+  }, [genieConfig.currentConfig, deploymentId, isLoadedFromDeployment]);
 
   // Toggle feature
   const toggleFeature = useCallback((featureId: string) => {
@@ -193,12 +221,20 @@ export const useEnrollmentAgentConfig = (deploymentId?: string) => {
     aiProvider,
   }), [enabledFeatures, isFeatureEnabled, personalityMode, aiProvider]);
 
-  // Save configuration to genie_configurations
+  // P3: Save configuration to genie_deployments.configuration
   const saveConfiguration = useCallback(async () => {
     if (!deploymentId) return { success: false, error: 'No deployment ID' };
     
     try {
-      // Find existing config or create new
+      // Primary: Save to deployment-specific configuration (P3)
+      const result = await deploymentFeaturePersistence.saveEnrollmentConfig(deploymentId, config);
+      
+      if (result.success) {
+        setIsLoadedFromDeployment(true);
+        return { success: true };
+      }
+      
+      // Fallback to genie_configurations if deployment save fails
       const existingConfig = genieConfig.configurations.find(c => c.configuration_name === deploymentId);
       
       if (existingConfig?.id) {
@@ -224,7 +260,7 @@ export const useEnrollmentAgentConfig = (deploymentId?: string) => {
     } catch (error) {
       return { success: false, error: String(error) };
     }
-  }, [deploymentId, enabledFeatures, genieConfig]);
+  }, [deploymentId, enabledFeatures, config, genieConfig]);
 
   return {
     // State
@@ -233,6 +269,7 @@ export const useEnrollmentAgentConfig = (deploymentId?: string) => {
     aiProvider,
     isValid,
     config,
+    isLoadedFromDeployment,
     
     // Available features
     enrollmentFeatures,
