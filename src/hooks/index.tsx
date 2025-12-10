@@ -62,6 +62,9 @@ export { useDeploymentFeatures } from './useDeploymentFeatures';
 export { useEnrollmentAgentConfig } from './useEnrollmentAgentConfig';
 export { useEnrollmentMCPBridge } from './useEnrollmentMCPBridge';
 
+// Unified Agent Registry (Multi-UseCase Support)
+export { useAgentRegistry } from './useAgentRegistry';
+
 // Routing
 export { useSimpleRouting } from './useSimpleRouting';
 export { useIntelligentRouting } from './useIntelligentRouting';
