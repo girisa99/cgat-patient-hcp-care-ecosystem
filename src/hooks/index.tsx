@@ -57,6 +57,11 @@ export { useExternalApiPublishing } from './useExternalApiPublishing';
 export { usePermissions } from './usePermissions';
 export { useUserManagementDialogs } from './useUserManagementDialogs';
 
+// Deployment & Enrollment Feature Persistence (P3)
+export { useDeploymentFeatures } from './useDeploymentFeatures';
+export { useEnrollmentAgentConfig } from './useEnrollmentAgentConfig';
+export { useEnrollmentMCPBridge } from './useEnrollmentMCPBridge';
+
 // Routing
 export { useSimpleRouting } from './useSimpleRouting';
 export { useIntelligentRouting } from './useIntelligentRouting';
