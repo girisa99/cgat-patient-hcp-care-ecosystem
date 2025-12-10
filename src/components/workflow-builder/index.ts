@@ -1,4 +1,4 @@
 export { CustomerJourneyBuilder } from './CustomerJourneyBuilder';
-export { AIWorkflowGenerator } from './AIWorkflowGenerator';
+export { AIWorkflowPrompt } from './AIWorkflowPrompt';
 export { NoCodeAgentConfigurator } from './NoCodeAgentConfigurator';
 export { IntegratedWorkflowBuilder } from './IntegratedWorkflowBuilder';
