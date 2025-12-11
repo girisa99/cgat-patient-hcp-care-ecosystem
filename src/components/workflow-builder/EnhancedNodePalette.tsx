@@ -100,7 +100,7 @@ const [internalSearch, setInternalSearch] = useState('');
   const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   const [selectedNodeType, setSelectedNodeType] = useState<string | null>(null);
   const [showAllCategories, setShowAllCategories] = useState(true);
-  const [designNav, setDesignNav] = useState<'layout' | 'nodes' | 'edges'>('layout');
+  // Removed unused designNav state - layout/nodes/edges buttons were redundant
 
   const rootRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
@@ -131,10 +131,7 @@ const [internalSearch, setInternalSearch] = useState('');
     }));
   };
 
-  const handleDesignNav = (tab: 'layout' | 'nodes' | 'edges') => {
-    setDesignNav(tab);
-    window.dispatchEvent(new CustomEvent('workflow-design-nav', { detail: { tab } }));
-  };
+  // Removed handleDesignNav - layout/nodes/edges section was redundant
 
   // Helper function to get provider group for templates
   const getTemplateProviderGroup = (templateNode: any) => {
@@ -502,24 +499,7 @@ return (
           </Button>
         </div>
 
-        {/* Workflow Design quick nav - Remove duplicate, only keep palette navigation */}
-        <div className="mt-1">
-          <div className="text-xs text-muted-foreground mb-1">Workflow Design</div>
-          <div className="flex flex-col gap-1">
-            <Button variant={designNav==='layout' ? 'secondary' : 'ghost'} size="sm" className="h-7 justify-start" onClick={() => handleDesignNav('layout')}>
-              <Workflow className="h-3 w-3 mr-2" /> Layout
-            </Button>
-            <Button variant={designNav==='nodes' ? 'secondary' : 'ghost'} size="sm" className="h-7 justify-start" onClick={() => handleDesignNav('nodes')}>
-              <Grid3X3 className="h-3 w-3 mr-2" /> Nodes
-            </Button>
-            <Button variant={designNav==='edges' ? 'secondary' : 'ghost'} size="sm" className="h-7 justify-start" onClick={() => handleDesignNav('edges')}>
-              <Link className="h-3 w-3 mr-2" /> Edges
-            </Button>
-          </div>
-          <div className="text-xs text-muted-foreground mt-2 p-2 bg-muted/20 rounded">
-            💡 Controls will appear in the main workflow area when selected
-          </div>
-        </div>
+        {/* Removed redundant Workflow Design nav - layout/nodes/edges buttons were not functional */}
         
         {!searchTerm && (
           <div className="text-xs text-muted-foreground bg-muted/30 rounded-lg p-2 mb-3">
