@@ -329,9 +329,10 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     showSuccess(`Added ${label} node`);
   }, [screenToFlowPosition, setNodes, showSuccess]);
 
-  // Handler for pane context menu (right-click on canvas)
+  // Handler for pane context menu - stores position for CanvasContextMenu
+  // Note: Do NOT call event.preventDefault() as it interferes with Radix ContextMenu
   const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
-    event.preventDefault();
+    // Store position for the context menu - Radix handles the rest
     setContextMenuPosition({ x: event.clientX, y: event.clientY });
   }, []);
 
@@ -886,7 +887,6 @@ Examples:
                 onEdgesChange={handleEdgesChange}
                 onConnect={onConnect}
                 onNodeClick={handleNodeClick}
-                onPaneContextMenu={handlePaneContextMenu}
                 onDrop={onDrop}
                 onDragOver={onDragOver}
                 nodeTypes={safeNodeTypes}
