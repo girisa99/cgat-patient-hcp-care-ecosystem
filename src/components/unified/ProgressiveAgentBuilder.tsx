@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -14,15 +15,41 @@ interface ProgressiveAgentBuilderProps {
   prefillPrompt?: string;
 }
 
+interface LocationState {
+  prefillPrompt?: string;
+  agentContext?: {
+    name: string;
+    description: string;
+    useCaseId: string;
+    useCase?: any;
+    brandName: string;
+    channels: string[];
+  };
+}
+
 export const ProgressiveAgentBuilder: React.FC<ProgressiveAgentBuilderProps> = ({ 
   step, 
   onComplete,
-  prefillPrompt 
+  prefillPrompt: propPrefillPrompt 
 }) => {
+  const location = useLocation();
+  const locationState = location.state as LocationState | null;
+  
+  // Use prefill from navigation state or props
+  const prefillPrompt = locationState?.prefillPrompt || propPrefillPrompt;
+  const agentContext = locationState?.agentContext;
+  
   const [currentStep, setCurrentStep] = useState(step || 'prompt');
   const [generatedAgent, setGeneratedAgent] = useState<any>(null);
   const [nodes, setNodes] = useState<any[]>([]);
   const [edges, setEdges] = useState<any[]>([]);
+
+  // Log context when coming from admin
+  useEffect(() => {
+    if (agentContext) {
+      console.log('📋 Agent context from admin:', agentContext);
+    }
+  }, [agentContext]);
 
   const handleAgentGeneration = (agentData: any) => {
     console.log('Generated agent:', agentData);

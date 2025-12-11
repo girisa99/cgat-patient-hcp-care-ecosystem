@@ -4,6 +4,7 @@
  * Includes: Agent Registry, Conversation Engines, Channel Deployments, Real-time Status
  */
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,6 +40,7 @@ import {
   Cpu,
   Shield,
   FileText,
+  Workflow,
 } from 'lucide-react';
 import { useAgentRegistry } from '@/hooks/useAgentRegistry';
 import { useAgentConversationEngines } from '@/hooks/useAgentConversationEngines';
@@ -67,6 +69,7 @@ const ENGINE_TEMPLATES = [
 
 export const UnifiedAgentAdminDashboard: React.FC = () => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const {
     agents,
     useCaseTemplates,
@@ -148,6 +151,38 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
     });
 
     setShowCreateDialog(false);
+    setNewAgentForm({ name: '', description: '', useCaseId: '', brandName: '', channels: [] });
+  };
+
+  const handleBuildInCanvas = () => {
+    if (!newAgentForm.name || !newAgentForm.useCaseId) {
+      toast({ variant: 'destructive', title: 'Please fill in Name and Use Case first' });
+      return;
+    }
+
+    // Find selected use case details
+    const selectedUseCase = useCaseTemplates.find(uc => uc.id === newAgentForm.useCaseId);
+    
+    // Build prefill prompt from form data
+    const prefillPrompt = `Create a ${selectedUseCase?.name || newAgentForm.useCaseId} agent named "${newAgentForm.name}". ${newAgentForm.description ? `Description: ${newAgentForm.description}.` : ''} ${newAgentForm.brandName ? `Brand: ${newAgentForm.brandName}.` : ''} ${newAgentForm.channels.length > 0 ? `Deploy to channels: ${newAgentForm.channels.join(', ')}.` : ''}`;
+
+    setShowCreateDialog(false);
+    
+    // Navigate to canvas with context
+    navigate('/agents', { 
+      state: { 
+        prefillPrompt,
+        agentContext: {
+          name: newAgentForm.name,
+          description: newAgentForm.description,
+          useCaseId: newAgentForm.useCaseId,
+          useCase: selectedUseCase,
+          brandName: newAgentForm.brandName,
+          channels: newAgentForm.channels,
+        }
+      }
+    });
+    
     setNewAgentForm({ name: '', description: '', useCaseId: '', brandName: '', channels: [] });
   };
 
@@ -273,13 +308,28 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                     ))}
                   </div>
                 </div>
-                <Button
-                  className="w-full"
-                  onClick={handleCreateAgent}
-                  disabled={isRegistering}
-                >
-                  {isRegistering ? 'Creating...' : 'Create Agent'}
-                </Button>
+                <Separator className="my-2" />
+                <div className="flex gap-2">
+                  <Button
+                    variant="outline"
+                    className="flex-1"
+                    onClick={handleCreateAgent}
+                    disabled={isRegistering}
+                  >
+                    {isRegistering ? 'Creating...' : 'Quick Create'}
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    onClick={handleBuildInCanvas}
+                    disabled={!newAgentForm.name || !newAgentForm.useCaseId}
+                  >
+                    <Workflow className="h-4 w-4 mr-2" />
+                    Build in Canvas
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground text-center">
+                  "Quick Create" saves agent directly. "Build in Canvas" opens visual workflow builder.
+                </p>
               </div>
             </DialogContent>
           </Dialog>
