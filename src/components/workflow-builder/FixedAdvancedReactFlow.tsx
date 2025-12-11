@@ -365,9 +365,15 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     if (initialEdges && initialEdges.length) {
       const processed = (initialEdges as any).map((e: any) => ({
         ...e,
-        animated: e.animated !== false,
-        style: { ...(e.style || {}), stroke: '#8b5cf6' },
-        markerEnd: e.markerEnd || { type: MarkerType.ArrowClosed },
+        animated: true,
+        type: 'smoothstep',
+        style: { 
+          ...(e.style || {}), 
+          stroke: '#8b5cf6',
+          strokeWidth: 2,
+          strokeDasharray: '5,5',
+        },
+        markerEnd: e.markerEnd || { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
       }));
       setEdges(processed as any);
     } else if ((initialNodes?.length || 0) > 1) {
@@ -377,8 +383,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
         target: (initialNodes as any)[idx + 1].id,
         type: 'smoothstep',
         animated: true,
-        style: { stroke: '#8b5cf6' },
-        markerEnd: { type: MarkerType.ArrowClosed },
+        style: { stroke: '#8b5cf6', strokeWidth: 2, strokeDasharray: '5,5' },
+        markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' },
       }));
       setEdges(auto as any);
     } else {
@@ -402,7 +408,13 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
 
   // Event Handlers
   const onConnect: OnConnect = useCallback((params) => {
-    const edge = { ...params, type: 'smoothstep', markerEnd: { type: MarkerType.ArrowClosed } };
+    const edge = { 
+      ...params, 
+      type: 'smoothstep', 
+      animated: true,
+      style: { stroke: '#8b5cf6', strokeWidth: 2, strokeDasharray: '5,5' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: '#8b5cf6' } 
+    };
     setEdges((eds) => addEdge(edge, eds));
   }, [setEdges]);
 
@@ -891,38 +903,6 @@ Examples:
           )}
         </div>
       </div>
-
-      {/* Panels only shown when not embedded (parent manages these) */}
-      {!embedded && (
-        <>
-          <RightDockedAIPanel
-            isOpen={showRightAIPanel}
-            onClose={() => setShowRightAIPanel(false)}
-            onWorkflowGenerated={handleWorkflowGenerated}
-          />
-
-          {showTemplateGallery && (
-            <TemplateGallery
-              isOpen={showTemplateGallery}
-              onClose={() => setShowTemplateGallery(false)}
-              onTemplateSelect={(template) => {
-                setShowTemplateGallery(false);
-              }}
-            />
-          )}
-
-          <SaveAsTemplateModal
-            isOpen={showSaveAsTemplate}
-            onClose={() => setShowSaveAsTemplate(false)}
-            nodes={getNodes()}
-            edges={getEdges()}
-            onSave={() => {
-              showSuccess('Workflow saved as template!');
-              setShowSaveAsTemplate(false);
-            }}
-          />
-        </>
-      )}
 
       {/* Node configuration always available */}
       {showConfigurator && configNodeInfo && (

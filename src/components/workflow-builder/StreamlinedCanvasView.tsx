@@ -79,10 +79,11 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
       {
         id: 'start-node',
         type: 'enhanced',
-        position: { x: 250, y: 50 },
+        position: { x: 150, y: 50 },
         data: {
           label: 'Start',
           type_key: 'trigger',
+          intent: 'Initiate workflow',
           configuration: {},
           isWorkflowNode: true,
         }
@@ -90,10 +91,11 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
       {
         id: 'agent-node',
         type: 'enhanced',
-        position: { x: 250, y: 180 },
+        position: { x: 150, y: 130 },
         data: {
           label: context.name || 'AI Agent',
           type_key: 'ai_agent',
+          intent: context.useCase?.description || 'Process user request',
           configuration: {
             name: context.name,
             description: context.description,
@@ -105,10 +107,11 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
       {
         id: 'response-node',
         type: 'enhanced',
-        position: { x: 250, y: 310 },
+        position: { x: 150, y: 210 },
         data: {
           label: 'Response',
           type_key: 'output',
+          intent: 'Return result to user',
           configuration: {},
           isWorkflowNode: true,
         }
@@ -116,8 +119,8 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
     ];
 
     const edges = [
-      { id: 'e-start-agent', source: 'start-node', target: 'agent-node', type: 'smoothstep', animated: true },
-      { id: 'e-agent-response', source: 'agent-node', target: 'response-node', type: 'smoothstep', animated: true },
+      { id: 'e-start-agent', source: 'start-node', target: 'agent-node', type: 'smoothstep', animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } },
+      { id: 'e-agent-response', source: 'agent-node', target: 'response-node', type: 'smoothstep', animated: true, style: { stroke: '#8b5cf6', strokeWidth: 2 } },
     ];
 
     return { nodes, edges };
