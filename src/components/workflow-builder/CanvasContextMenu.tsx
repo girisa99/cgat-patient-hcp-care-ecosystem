@@ -49,6 +49,7 @@ import {
   CloudCog
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { MULTI_AGENT_NODES, MULTI_AGENT_CATEGORIES } from './MultiAgentNodeRegistry';
 
 interface AgentContext {
   name?: string;
@@ -310,13 +311,24 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
     })).filter(cat => cat.nodes.length > 0 || cat.name.toLowerCase().includes(term));
   }, [categories, searchTerm]);
 
-  // Quick add nodes (most commonly used)
+  // Quick add nodes (most commonly used) - now includes multi-agent options
   const quickAddNodes = [
     { type: 'agent', category: 'ai-agents', label: 'AI Agent', icon: Bot },
+    { type: 'a2a_agent', category: 'multi-agent', label: 'A2A Agent', icon: Users },
+    { type: 'agent_team', category: 'multi-agent', label: 'Agent Team', icon: Users },
+    { type: 'react_loop', category: 'multi-agent', label: 'ReAct Loop', icon: Brain },
     { type: 'condition', category: 'workflow', label: 'Condition', icon: GitBranch },
-    { type: 'api', category: 'integration', label: 'API Call', icon: Zap },
     { type: 'knowledge_base', category: 'data', label: 'Knowledge Base', icon: Database },
-    { type: 'mcp_connector', category: 'mcp', label: 'MCP Connector', icon: Wrench },
+  ];
+
+  // Multi-agent specific nodes for submenu
+  const multiAgentQuickNodes = [
+    { type: 'a2a_agent', category: 'multi-agent', label: 'A2A Agent', icon: Users, description: 'Google A2A Protocol agent' },
+    { type: 'task_handoff', category: 'multi-agent', label: 'Task Handoff', icon: Zap, description: 'Transfer between agents' },
+    { type: 'agent_team', category: 'multi-agent', label: 'Agent Team', icon: Users, description: 'Coordinated agent team' },
+    { type: 'swarm_decision', category: 'multi-agent', label: 'Swarm Decision', icon: Brain, description: 'Collective intelligence' },
+    { type: 'react_loop', category: 'multi-agent', label: 'ReAct Loop', icon: Brain, description: 'Reasoning + Acting loop' },
+    { type: 'tool_chain', category: 'multi-agent', label: 'Tool Chain', icon: Zap, description: 'Sequential tool execution' },
   ];
 
   return (
@@ -352,6 +364,36 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
               {node.label}
             </ContextMenuItem>
           ))}
+        </div>
+
+        {/* Multi-Agent Quick Add */}
+        <div className="p-1 border-b">
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className="text-sm">
+              <Users className="mr-2 h-4 w-4 text-primary" />
+              Multi-Agent / A2A
+              <Badge variant="secondary" className="ml-auto text-xs bg-primary/10 text-primary">
+                New
+              </Badge>
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-56 bg-background border shadow-lg">
+              {multiAgentQuickNodes.map((node) => (
+                <ContextMenuItem
+                  key={node.type}
+                  onSelect={() => onAddNode(node.type, node.category, node.label, position)}
+                  className="flex flex-col items-start py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <node.icon className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">{node.label}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground ml-6">
+                    {node.description}
+                  </span>
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
         </div>
 
         <ContextMenuSeparator />
