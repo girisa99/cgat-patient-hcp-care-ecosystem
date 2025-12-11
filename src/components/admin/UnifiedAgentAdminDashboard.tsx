@@ -175,54 +175,58 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
   };
 
 
-  const handleCreateAgent = async () => {
+  // Unified handler for both Quick Create and Build in Canvas
+  // Both create the agent first, then navigate to canvas
+  const handleCreateAgent = async (navigateToCanvas: boolean = false) => {
     if (!newAgentForm.name || !newAgentForm.useCaseId) {
       toast({ variant: 'destructive', title: 'Missing required fields' });
       return;
     }
 
-    await registerAgent({
-      name: newAgentForm.name,
-      description: newAgentForm.description,
-      useCaseId: newAgentForm.useCaseId,
-      branding: { brand_name: newAgentForm.brandName || newAgentForm.name },
-      channels: newAgentForm.channels,
-    });
+    try {
+      const result = await registerAgent({
+        name: newAgentForm.name,
+        description: newAgentForm.description,
+        useCaseId: newAgentForm.useCaseId,
+        branding: { brand_name: newAgentForm.brandName || newAgentForm.name },
+        channels: newAgentForm.channels,
+      });
 
-    setShowCreateDialog(false);
-    setNewAgentForm({ name: '', description: '', useCaseId: '', brandName: '', channels: [] });
+      const selectedUseCase = useCaseTemplates.find(uc => uc.id === newAgentForm.useCaseId);
+      
+      setShowCreateDialog(false);
+      const formData = { ...newAgentForm };
+      setNewAgentForm({ name: '', description: '', useCaseId: '', brandName: '', channels: [] });
+
+      if (navigateToCanvas) {
+        // Navigate to canvas with agent context (agent already created in DB)
+        navigate('/agents/canvas', {
+          state: { 
+            agentId: (result as any)?.agentId || null,
+            prefillPrompt: `Build workflow for ${selectedUseCase?.name || formData.useCaseId} agent "${formData.name}".`,
+            agentContext: {
+              id: (result as any)?.agentId,
+              name: formData.name,
+              description: formData.description,
+              useCaseId: formData.useCaseId,
+              useCase: selectedUseCase,
+              brandName: formData.brandName,
+              channels: formData.channels,
+            }
+          }
+        });
+      }
+    } catch (error) {
+      console.error('Failed to create agent:', error);
+    }
   };
 
   const handleBuildInCanvas = () => {
-    if (!newAgentForm.name || !newAgentForm.useCaseId) {
-      toast({ variant: 'destructive', title: 'Please fill in Name and Use Case first' });
-      return;
-    }
+    handleCreateAgent(true);
+  };
 
-    // Find selected use case details
-    const selectedUseCase = useCaseTemplates.find(uc => uc.id === newAgentForm.useCaseId);
-    
-    // Build prefill prompt from form data
-    const prefillPrompt = `Create a ${selectedUseCase?.name || newAgentForm.useCaseId} agent named "${newAgentForm.name}". ${newAgentForm.description ? `Description: ${newAgentForm.description}.` : ''} ${newAgentForm.brandName ? `Brand: ${newAgentForm.brandName}.` : ''} ${newAgentForm.channels.length > 0 ? `Deploy to channels: ${newAgentForm.channels.join(', ')}.` : ''}`;
-
-    setShowCreateDialog(false);
-    
-    // Navigate to canvas with context
-    navigate('/agents/canvas', {
-      state: { 
-        prefillPrompt,
-        agentContext: {
-          name: newAgentForm.name,
-          description: newAgentForm.description,
-          useCaseId: newAgentForm.useCaseId,
-          useCase: selectedUseCase,
-          brandName: newAgentForm.brandName,
-          channels: newAgentForm.channels,
-        }
-      }
-    });
-    
-    setNewAgentForm({ name: '', description: '', useCaseId: '', brandName: '', channels: [] });
+  const handleQuickCreate = () => {
+    handleCreateAgent(false);
   };
 
   const handleCopySnippet = (code: string) => {
@@ -367,7 +371,7 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                   <Button
                     variant="outline"
                     className="flex-1"
-                    onClick={handleCreateAgent}
+                    onClick={handleQuickCreate}
                     disabled={isRegistering}
                   >
                     {isRegistering ? 'Creating...' : 'Quick Create'}
