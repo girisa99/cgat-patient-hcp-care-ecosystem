@@ -23,10 +23,13 @@ import {
   Link2,
   Play,
   Pause,
-  RefreshCw
+  RefreshCw,
+  BarChart3,
+  ExternalLink
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { useNavigate } from 'react-router-dom';
 
 interface ExecutionEvent {
   id: string;
@@ -50,6 +53,7 @@ export const DeploymentMonitor: React.FC<DeploymentMonitorProps> = ({
   onClose
 }) => {
   const { toast } = useToast();
+  const navigate = useNavigate();
   const [isMonitoring, setIsMonitoring] = useState(true);
   const [executionEvents, setExecutionEvents] = useState<ExecutionEvent[]>([]);
   const [stats, setStats] = useState({
@@ -354,6 +358,20 @@ export const DeploymentMonitor: React.FC<DeploymentMonitorProps> = ({
                 </div>
               ))
             )}
+            
+            {/* Analytics Dashboard Link */}
+            <div className="mt-4 pt-3 border-t">
+              <Button
+                variant="outline"
+                size="sm"
+                className="w-full text-xs"
+                onClick={() => navigate(`/genie-analytics/${agentId}`)}
+              >
+                <BarChart3 className="h-3 w-3 mr-2" />
+                View Analytics Dashboard
+                <ExternalLink className="h-3 w-3 ml-2" />
+              </Button>
+            </div>
           </div>
         </TabsContent>
       </Tabs>

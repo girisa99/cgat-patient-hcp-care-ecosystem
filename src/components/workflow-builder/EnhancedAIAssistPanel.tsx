@@ -573,7 +573,7 @@ Return ONLY the JSON array, no other text.`;
             <ScrollArea className="h-[280px]">
               <div className="space-y-3">
                 <p className="text-xs text-muted-foreground">
-                  Real-time performance metrics from Genie Analytics
+                  Real-time performance metrics for {agentContext.name || 'this agent'}
                 </p>
                 
                 <div className="grid grid-cols-2 gap-3">
@@ -605,14 +605,35 @@ Return ONLY the JSON array, no other text.`;
                   </div>
                 </div>
 
+                {/* Use Case Context */}
+                {agentContext.useCase && (
+                  <div className="p-3 rounded-lg border bg-primary/5">
+                    <p className="text-sm font-medium mb-1">Use Case</p>
+                    <p className="text-xs text-muted-foreground">
+                      {agentContext.useCase.name}
+                    </p>
+                    {agentContext.useCase.description && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {agentContext.useCase.description}
+                      </p>
+                    )}
+                  </div>
+                )}
+
                 <Button 
                   variant="outline" 
                   size="sm" 
                   className="w-full"
-                  onClick={() => window.open('/genie-analytics', '_blank')}
+                  onClick={() => {
+                    if (agentContext.id) {
+                      window.open(`/genie-analytics/${agentContext.id}`, '_blank');
+                    } else {
+                      window.open('/enterprise-analytics', '_blank');
+                    }
+                  }}
                 >
                   <BarChart3 className="h-4 w-4 mr-2" />
-                  Open Full Analytics
+                  Open Full Analytics Dashboard
                 </Button>
               </div>
             </ScrollArea>

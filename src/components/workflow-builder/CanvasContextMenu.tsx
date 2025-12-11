@@ -140,21 +140,40 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  // Get recommended nodes based on use case
+  // Get recommended nodes based on use case - UNIVERSAL for ALL use cases
   const getRecommendedNodes = useMemo(() => {
-    if (!agentContext?.useCase?.name) return [];
+    if (!agentContext?.useCase?.name) return ['agent', 'knowledge_base', 'api', 'database'];
     const useCase = agentContext.useCase.name.toLowerCase();
     
-    if (useCase.includes('patient') || useCase.includes('enrollment')) {
-      return ['patient_intake', 'npi_verification', 'hipaa_compliance', 'ehr_integration', 'knowledge_base'];
+    // Universal recommendation map for ALL use cases
+    const recommendationMap: { [key: string]: string[] } = {
+      'patient': ['patient_intake', 'npi_verification', 'hipaa_compliance', 'ehr_integration', 'knowledge_base', 'insurance_verification'],
+      'enrollment': ['patient_intake', 'document_processing', 'npi_verification', 'consent_form', 'notification'],
+      'order': ['database', 'notification', 'api', 'email', 'condition', 'status_update'],
+      'treatment': ['npi_verification', 'database', 'email', 'notification', 'compliance_check'],
+      'center': ['npi_verification', 'database', 'email', 'notification', 'document_processing'],
+      'manufacturing': ['api', 'database', 'webhook', 'email', 'compliance_check', 'inventory_check'],
+      'npi': ['npi_verification', 'api', 'database', 'validation', 'compliance_check'],
+      'credential': ['npi_verification', 'document_processing', 'database', 'compliance_check', 'notification'],
+      'insurance': ['insurance_verification', 'patient_intake', 'database', 'api', 'notification'],
+      'document': ['document_processing', 'ocr', 'database', 'transform', 'validation'],
+      'onboarding': ['patient_intake', 'npi_verification', 'database', 'notification', 'email'],
+      'verification': ['npi_verification', 'insurance_verification', 'api', 'validation', 'database'],
+      'compliance': ['hipaa_compliance', 'compliance_check', 'audit_log', 'document_processing', 'database'],
+      'analytics': ['database', 'transform', 'api', 'visualization', 'notification'],
+      'notification': ['email', 'sms', 'push_notification', 'webhook', 'condition'],
+      'workflow': ['condition', 'loop', 'parallel', 'transform', 'database'],
+    };
+    
+    // Find matching recommendations
+    for (const [key, recommendations] of Object.entries(recommendationMap)) {
+      if (useCase.includes(key)) {
+        return recommendations;
+      }
     }
-    if (useCase.includes('order')) {
-      return ['database', 'notification', 'api', 'email', 'condition'];
-    }
-    if (useCase.includes('treatment') || useCase.includes('center')) {
-      return ['npi_verification', 'database', 'email', 'notification'];
-    }
-    return ['agent', 'knowledge_base', 'api'];
+    
+    // Default recommendations
+    return ['agent', 'knowledge_base', 'api', 'database', 'notification'];
   }, [agentContext]);
 
   // Load categories and nodes from database
