@@ -54,7 +54,7 @@ export const IntegrationTargetSelector: React.FC<IntegrationTargetSelectorProps>
   const [targets, setTargets] = useState<IntegrationTarget[]>([]);
 
   useEffect(() => {
-    // Generate targets based on use case
+    // Generate universal targets that work for ALL use cases
     const workflowTargets: IntegrationTarget[] = [
       {
         id: 'patient-enrollment',
@@ -84,9 +84,42 @@ export const IntegrationTargetSelector: React.FC<IntegrationTargetSelectorProps>
         isEnabled: true,
       },
       {
+        id: 'manufacturing-onboarding',
+        name: 'Manufacturing Onboarding',
+        description: 'Manufacturing partner registration and compliance',
+        icon: <Building2 className="h-4 w-4" />,
+        category: 'workflow',
+        route: '/manufacturing-onboarding',
+        isEnabled: true,
+      },
+      {
+        id: 'npi-registry',
+        name: 'NPI Registry Verification',
+        description: 'Verify healthcare provider NPI numbers',
+        icon: <FileText className="h-4 w-4" />,
+        category: 'workflow',
+        isEnabled: true,
+      },
+      {
+        id: 'credentialing',
+        name: 'Provider Credentialing',
+        description: 'Healthcare provider credentialing workflow',
+        icon: <FileText className="h-4 w-4" />,
+        category: 'workflow',
+        isEnabled: true,
+      },
+      {
         id: 'document-processing',
         name: 'Document Processing',
         description: 'Handle document uploads, OCR, and validation',
+        icon: <FileText className="h-4 w-4" />,
+        category: 'workflow',
+        isEnabled: true,
+      },
+      {
+        id: 'insurance-verification',
+        name: 'Insurance Verification',
+        description: 'Verify patient insurance and benefits',
         icon: <FileText className="h-4 w-4" />,
         category: 'workflow',
         isEnabled: true,
@@ -126,21 +159,50 @@ export const IntegrationTargetSelector: React.FC<IntegrationTargetSelectorProps>
         category: 'channel',
         isEnabled: true,
       },
+      {
+        id: 'sms',
+        name: 'SMS/Text Messaging',
+        description: 'Send and receive SMS messages',
+        icon: <MessageSquare className="h-4 w-4" />,
+        category: 'channel',
+        isEnabled: true,
+      },
     ];
 
-    // Prioritize targets based on use case
+    // Prioritize targets based on use case (universal matching)
     let sortedTargets = [...workflowTargets, ...channelTargets];
     
     if (agentUseCase) {
       const useCaseLower = agentUseCase.toLowerCase();
-      if (useCaseLower.includes('patient') || useCaseLower.includes('enrollment')) {
-        sortedTargets = sortedTargets.sort((a, b) => 
-          a.id === 'patient-enrollment' ? -1 : b.id === 'patient-enrollment' ? 1 : 0
-        );
-      } else if (useCaseLower.includes('order')) {
-        sortedTargets = sortedTargets.sort((a, b) => 
-          a.id === 'order-management' ? -1 : b.id === 'order-management' ? 1 : 0
-        );
+      
+      // Match patterns for all use cases
+      const priorityMap: { [key: string]: string[] } = {
+        'patient': ['patient-enrollment', 'web-chat', 'insurance-verification'],
+        'enrollment': ['patient-enrollment', 'web-chat', 'document-processing'],
+        'order': ['order-management', 'web-chat', 'email', 'sms'],
+        'treatment': ['treatment-center-onboarding', 'web-chat', 'credentialing'],
+        'center': ['treatment-center-onboarding', 'web-chat'],
+        'manufacturing': ['manufacturing-onboarding', 'web-chat', 'api'],
+        'npi': ['npi-registry', 'api', 'credentialing'],
+        'credential': ['credentialing', 'npi-registry', 'document-processing'],
+        'insurance': ['insurance-verification', 'patient-enrollment', 'document-processing'],
+        'document': ['document-processing', 'api', 'email'],
+        'onboarding': ['patient-enrollment', 'treatment-center-onboarding', 'web-chat'],
+      };
+      
+      // Find matching priorities
+      for (const [key, priorities] of Object.entries(priorityMap)) {
+        if (useCaseLower.includes(key)) {
+          sortedTargets = sortedTargets.sort((a, b) => {
+            const aIndex = priorities.indexOf(a.id);
+            const bIndex = priorities.indexOf(b.id);
+            if (aIndex === -1 && bIndex === -1) return 0;
+            if (aIndex === -1) return 1;
+            if (bIndex === -1) return -1;
+            return aIndex - bIndex;
+          });
+          break;
+        }
       }
     }
 
@@ -155,18 +217,32 @@ export const IntegrationTargetSelector: React.FC<IntegrationTargetSelectorProps>
   };
 
   const getRecommendedTargets = () => {
-    if (!agentUseCase) return [];
+    if (!agentUseCase) return ['web-chat'];
     const useCaseLower = agentUseCase.toLowerCase();
     
-    if (useCaseLower.includes('patient') || useCaseLower.includes('enrollment')) {
-      return ['patient-enrollment', 'web-chat'];
+    // Universal recommendations for ALL use cases
+    const recommendationMap: { [key: string]: string[] } = {
+      'patient': ['patient-enrollment', 'web-chat', 'insurance-verification'],
+      'enrollment': ['patient-enrollment', 'web-chat'],
+      'order': ['order-management', 'web-chat', 'email', 'sms'],
+      'treatment': ['treatment-center-onboarding', 'web-chat'],
+      'center': ['treatment-center-onboarding', 'web-chat'],
+      'manufacturing': ['manufacturing-onboarding', 'api', 'web-chat'],
+      'npi': ['npi-registry', 'api', 'credentialing'],
+      'credential': ['credentialing', 'npi-registry', 'document-processing'],
+      'insurance': ['insurance-verification', 'patient-enrollment'],
+      'document': ['document-processing', 'api'],
+      'onboarding': ['patient-enrollment', 'web-chat'],
+      'verification': ['npi-registry', 'insurance-verification', 'api'],
+      'compliance': ['credentialing', 'document-processing', 'api'],
+    };
+    
+    for (const [key, recommendations] of Object.entries(recommendationMap)) {
+      if (useCaseLower.includes(key)) {
+        return recommendations;
+      }
     }
-    if (useCaseLower.includes('order')) {
-      return ['order-management', 'web-chat', 'email'];
-    }
-    if (useCaseLower.includes('treatment') || useCaseLower.includes('center')) {
-      return ['treatment-center-onboarding', 'web-chat'];
-    }
+    
     return ['web-chat'];
   };
 
