@@ -14,7 +14,7 @@ import {
   X,
   Brain
 } from 'lucide-react';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 // Import existing components
 import { ModeSelector, type AgentMode } from '@/components/agent-builder/ModeSelector';
@@ -22,6 +22,7 @@ import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builde
 import { IntelligentQuestionnaire } from '@/components/agent-builder/IntelligentQuestionnaire';
 import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBasedAgentGenerator';
 import { FixedAdvancedReactFlow } from '@/components/workflow-builder/FixedAdvancedReactFlow';
+import { StreamlinedCanvasView } from '@/components/workflow-builder/StreamlinedCanvasView';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
@@ -61,11 +62,13 @@ const AgentsInner = () => {
   const [showDeploymentManager, setShowDeploymentManager] = useState(false);
 
   const location = useLocation();
+  const navigate = useNavigate();
   
   // Get prefill context from navigation state (from admin dashboard)
-  const locationState = location.state as { prefillPrompt?: string; agentContext?: any } | null;
+  const locationState = location.state as { prefillPrompt?: string; agentContext?: any; agentId?: string } | null;
   const [prefillPrompt, setPrefillPrompt] = useState<string>(locationState?.prefillPrompt || '');
   const agentContext = locationState?.agentContext;
+  const [showStreamlinedView, setShowStreamlinedView] = useState(Boolean(agentContext));
 
   const { status: aiHealth, checkHealth, checking } = useAIServiceHealth();
   const isAIHealthy = aiHealth.overallHealthy;
@@ -704,6 +707,20 @@ const AgentsInner = () => {
           />
         </div>
       </AppLayout>
+    );
+  }
+
+  // Streamlined view when coming from Admin Dashboard
+  if (showStreamlinedView && agentContext) {
+    return (
+      <StreamlinedCanvasView 
+        agentContext={agentContext}
+        prefillPrompt={prefillPrompt}
+        onBack={() => {
+          setShowStreamlinedView(false);
+          navigate('/admin');
+        }}
+      />
     );
   }
 
