@@ -249,7 +249,7 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   <Route path="/architecture" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser', 'healthcareProvider', 'caseManager', 'nurse', 'provider']}>
                       <Suspense fallback={<PageLoading message="Loading architecture..." />}>
                         {React.createElement(React.lazy(() => import('@/pages/ArchitectureDiagram')))}
                       </Suspense>
