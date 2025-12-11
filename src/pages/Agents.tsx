@@ -61,6 +61,11 @@ const AgentsInner = () => {
   const [showDeploymentManager, setShowDeploymentManager] = useState(false);
 
   const location = useLocation();
+  
+  // Get prefill context from navigation state (from admin dashboard)
+  const locationState = location.state as { prefillPrompt?: string; agentContext?: any } | null;
+  const [prefillPrompt, setPrefillPrompt] = useState<string>(locationState?.prefillPrompt || '');
+  const agentContext = locationState?.agentContext;
 
   const { status: aiHealth, checkHealth, checking } = useAIServiceHealth();
   const isAIHealthy = aiHealth.overallHealthy;
@@ -71,6 +76,22 @@ const AgentsInner = () => {
   useEffect(() => {
     checkHealth();
   }, [checkHealth]);
+
+  // Handle navigation from admin with prefill context
+  useEffect(() => {
+    if (locationState?.prefillPrompt) {
+      console.log('📋 Received prefill from admin:', locationState.prefillPrompt);
+      setPrefillPrompt(locationState.prefillPrompt);
+      // Auto-navigate to generate tab with context
+      setSelectedMode('visual' as AgentMode);
+      setShowModeSelector(false);
+      setVisualWorkflowSubTab('ai-prompt');
+      toast.success('Agent context loaded - ready to generate workflow');
+    }
+    if (agentContext) {
+      console.log('📋 Agent context:', agentContext);
+    }
+  }, [locationState?.prefillPrompt, agentContext]);
 
   // Honor deep-links like /agents?from=enrollment&module=patient&open=builder
   useEffect(() => {
@@ -430,6 +451,7 @@ const AgentsInner = () => {
                 <Card>
                   <CardContent className="pt-6">
                     <PromptBasedAgentGenerator 
+                      prefillPrompt={prefillPrompt}
                       onGenerate={(agent) => {
                         const nodesSource: any[] = (agent?.nodes || agent?.workflow?.nodes || agent?.data?.nodes || agent?.result?.nodes || []);
                         const edgesSource: any[] = (agent?.edges || agent?.workflow?.edges || agent?.data?.edges || agent?.result?.edges || []);

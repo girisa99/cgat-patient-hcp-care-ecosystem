@@ -71,6 +71,7 @@ import { TemplateGallery } from '../unified-workflow/TemplateGallery';
 import { EnhancedNodeConfigurationPanel } from './EnhancedNodeConfigurationPanel';
 import { SaveAsTemplateModal } from './SaveAsTemplateModal';
 import { TestingConsolePanel } from './TestingConsolePanel';
+import { CanvasContextMenu } from './CanvasContextMenu';
 
 // Enhanced Props Interface
 export interface FixedAdvancedReactFlowProps {
@@ -203,6 +204,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   const [connectOnClick, setConnectOnClick] = useState(false);
   const [canvasOnly, setCanvasOnly] = useState(false);
   const [showMiniMap, setShowMiniMap] = useState(true);
+  const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // References and Hooks
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -286,6 +288,33 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
       setEdges(workflow.edges);
     }
   }, [setNodes, setEdges]);
+
+  // Handler for adding nodes from canvas context menu
+  const handleAddNodeFromContextMenu = useCallback((type: string, category: string, label: string, position: { x: number; y: number }) => {
+    const flowPosition = screenToFlowPosition(position);
+    const newNode: Node = {
+      id: `${type}-${Date.now()}`,
+      type: 'enhanced',
+      position: flowPosition,
+      data: {
+        label,
+        type_key: type,
+        category,
+        configuration: {},
+        isConfigured: false,
+        icon: type === 'agent' ? 'Bot' : type === 'api' ? 'Zap' : type === 'condition' ? 'GitBranch' : 'Circle',
+        color: category === 'ai-agents' ? '#8b5cf6' : category === 'workflow' ? '#10b981' : '#6b7280'
+      }
+    };
+    setNodes(nds => [...nds, newNode]);
+    showSuccess(`Added ${label} node`);
+  }, [screenToFlowPosition, setNodes, showSuccess]);
+
+  // Handler for pane context menu (right-click on canvas)
+  const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
+    event.preventDefault();
+    setContextMenuPosition({ x: event.clientX, y: event.clientY });
+  }, []);
 
   // Stable edge types - defined outside useMemo with empty object
   const safeEdgeTypes: EdgeTypes = useMemo(() => ({}), []);
@@ -802,31 +831,37 @@ Examples:
           </div>
         )}
         <div className="flex-1 relative min-w-0 z-0">
-          <ReactFlow
-            nodes={nodes}
-            edges={edges}
-            onNodesChange={handleNodesChange}
-            onEdgesChange={handleEdgesChange}
-            onConnect={onConnect}
-            onNodeClick={handleNodeClick}
-            onDrop={onDrop}
-            onDragOver={onDragOver}
-            nodeTypes={safeNodeTypes}
-            edgeTypes={safeEdgeTypes}
-            connectionMode={connectionMode}
-            snapToGrid={snapToGrid}
-            snapGrid={[15, 15]}
-            nodesDraggable={nodesDraggable}
-            nodesConnectable={true}
-            elementsSelectable={true}
-            panOnScrollMode={panOnScrollMode}
-            selectNodesOnDrag={false}
-            fitView
-            fitViewOptions={{ padding: 0.2 }}
-            multiSelectionKeyCode="Shift"
-            deleteKeyCode={["Backspace", "Delete"]}
-            className="bg-background z-0"
+          <CanvasContextMenu
+            position={contextMenuPosition}
+            onAddNode={handleAddNodeFromContextMenu}
           >
+            <div className="w-full h-full">
+              <ReactFlow
+                nodes={nodes}
+                edges={edges}
+                onNodesChange={handleNodesChange}
+                onEdgesChange={handleEdgesChange}
+                onConnect={onConnect}
+                onNodeClick={handleNodeClick}
+                onPaneContextMenu={handlePaneContextMenu}
+                onDrop={onDrop}
+                onDragOver={onDragOver}
+                nodeTypes={safeNodeTypes}
+                edgeTypes={safeEdgeTypes}
+                connectionMode={connectionMode}
+                snapToGrid={snapToGrid}
+                snapGrid={[15, 15]}
+                nodesDraggable={nodesDraggable}
+                nodesConnectable={true}
+                elementsSelectable={true}
+                panOnScrollMode={panOnScrollMode}
+                selectNodesOnDrag={false}
+                fitView
+                fitViewOptions={{ padding: 0.2 }}
+                multiSelectionKeyCode="Shift"
+                deleteKeyCode={["Backspace", "Delete"]}
+                className="bg-background z-0"
+              >
             <Background variant={backgroundVariant} gap={12} size={1} />
             <Controls />
             {showMiniMap && <MiniMap />}
@@ -838,7 +873,9 @@ Examples:
                 </Button>
               </Panel>
             )}
-          </ReactFlow>
+              </ReactFlow>
+            </div>
+          </CanvasContextMenu>
 
           {/* Testing Console */}
           {showTestConsole && (
