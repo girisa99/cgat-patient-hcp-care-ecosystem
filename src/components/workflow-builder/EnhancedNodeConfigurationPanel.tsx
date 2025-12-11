@@ -70,6 +70,16 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
   const [activeTab, setActiveTab] = useState('configuration');
   const [selectedTool, setSelectedTool] = useState<string>('');
   const [toolInputData, setToolInputData] = useState<string>('{}');
+  
+  // Knowledge Base state
+  const [kbSourceTable, setKbSourceTable] = useState<string>('');
+  const [kbSourceColumn, setKbSourceColumn] = useState<string>('');
+  
+  // Vector Store state
+  const [vectorStoreType, setVectorStoreType] = useState<string>('supabase');
+  const [embeddingModel, setEmbeddingModel] = useState<string>('text-embedding-3-small');
+  const [knowledgeName, setKnowledgeName] = useState<string>('');
+  const [vectorDescription, setVectorDescription] = useState<string>('');
 
   const {
     nodeConfig,
@@ -179,68 +189,179 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
               </TabsContent>
 
               <TabsContent value="tools" className="h-full">
-                <div className="p-4 space-y-6">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Zap className="h-5 w-5" />
-                        Execute Tools
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <div>
-                        <Label>Select Tool</Label>
-                        <Select value={selectedTool} onValueChange={setSelectedTool}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Choose a tool to execute" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {availableTools.map((tool) => (
-                              <SelectItem key={tool} value={tool}>
-                                {tool}
-                              </SelectItem>
+                <ScrollArea className="h-full">
+                  <div className="p-4 space-y-6">
+                    {/* MCP SDK Integration */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Settings className="h-5 w-5" />
+                          MCP SDK Configuration
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="flex items-center space-x-2">
+                          <Switch 
+                            id="mcp-enabled"
+                            checked={normalizedNode.data?.mcpEnabled}
+                            onCheckedChange={(checked) => {
+                              handleConfigurationChange({ 
+                                ...normalizedNode.data, 
+                                mcpEnabled: checked 
+                              });
+                            }}
+                          />
+                          <Label htmlFor="mcp-enabled">Enable MCP SDK</Label>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Data Sync Target</Label>
+                            <Select 
+                              value={normalizedNode.data?.mcpSyncTarget || ''}
+                              onValueChange={(value) => {
+                                handleConfigurationChange({ 
+                                  ...normalizedNode.data, 
+                                  mcpSyncTarget: value 
+                                });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select target" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="supabase">Supabase Database</SelectItem>
+                                <SelectItem value="external_api">External API</SelectItem>
+                                <SelectItem value="webhook">Webhook</SelectItem>
+                                <SelectItem value="salesforce">Salesforce CRM</SelectItem>
+                                <SelectItem value="hubspot">HubSpot</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Sync Mode</Label>
+                            <Select 
+                              value={normalizedNode.data?.mcpSyncMode || 'realtime'}
+                              onValueChange={(value) => {
+                                handleConfigurationChange({ 
+                                  ...normalizedNode.data, 
+                                  mcpSyncMode: value 
+                                });
+                              }}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="realtime">Real-time</SelectItem>
+                                <SelectItem value="batch">Batch</SelectItem>
+                                <SelectItem value="manual">Manual</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div>
+                          <Label>External Webhook URL</Label>
+                          <Input 
+                            placeholder="https://your-api.com/webhook" 
+                            value={normalizedNode.data?.webhookUrl || ''}
+                            onChange={(e) => {
+                              handleConfigurationChange({ 
+                                ...normalizedNode.data, 
+                                webhookUrl: e.target.value 
+                              });
+                            }}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Execute Tools */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Zap className="h-5 w-5" />
+                          Execute Tools
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Select Tool</Label>
+                          <Select value={selectedTool} onValueChange={setSelectedTool}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Choose a tool to execute" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {availableTools.length > 0 ? (
+                                availableTools.map((tool) => (
+                                  <SelectItem key={tool} value={tool}>
+                                    {tool}
+                                  </SelectItem>
+                                ))
+                              ) : (
+                                <>
+                                  <SelectItem value="npi_verification">NPI Verification</SelectItem>
+                                  <SelectItem value="insurance_validation">Insurance Validation</SelectItem>
+                                  <SelectItem value="sync_to_database">Sync to Database</SelectItem>
+                                  <SelectItem value="push_to_crm">Push to CRM</SelectItem>
+                                  <SelectItem value="send_notification">Send Notification</SelectItem>
+                                </>
+                              )}
+                            </SelectContent>
+                          </Select>
+                        </div>
+
+                        <div>
+                          <Label>Input Data (JSON)</Label>
+                          <Textarea
+                            value={toolInputData}
+                            onChange={(e) => setToolInputData(e.target.value)}
+                            placeholder='{"npi_number": "1234567890"}'
+                            className="font-mono text-sm"
+                            rows={6}
+                          />
+                        </div>
+
+                        <Button 
+                          onClick={handleToolExecution} 
+                          disabled={!selectedTool || isExecuting}
+                          className="w-full"
+                        >
+                          <Play className="h-4 w-4 mr-2" />
+                          {isExecuting ? 'Executing...' : 'Run Tool'}
+                        </Button>
+                      </CardContent>
+                    </Card>
+
+                    {/* Available Tools from Node + MCP */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Available Tools</CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        {nodeTools.length > 0 || mcpLikeTools.length > 0 ? (
+                          <div className="grid grid-cols-2 gap-2">
+                            {nodeTools.map((tool: any, index: number) => (
+                              <Badge key={`node-${index}`} variant="secondary" className="justify-center">
+                                {tool.name}
+                              </Badge>
                             ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-
-                      <div>
-                        <Label>Input Data (JSON)</Label>
-                        <Textarea
-                          value={toolInputData}
-                          onChange={(e) => setToolInputData(e.target.value)}
-                          placeholder='{"key": "value"}'
-                          className="font-mono text-sm"
-                          rows={6}
-                        />
-                      </div>
-
-                      <Button 
-                        onClick={handleToolExecution} 
-                        disabled={!selectedTool || isExecuting}
-                        className="w-full"
-                      >
-                        <Play className="h-4 w-4 mr-2" />
-                        {isExecuting ? 'Executing...' : 'Run Tool'}
-                      </Button>
-                    </CardContent>
-                  </Card>
-
-                  <Card>
-                    <CardHeader>
-                      <CardTitle>Available Tools</CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="grid grid-cols-2 gap-2">
-                        {nodeTools.map((tool: any, index: number) => (
-                          <Badge key={index} variant="secondary" className="justify-center">
-                            {tool.name}
-                          </Badge>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+                            {mcpLikeTools.map((tool: any, index: number) => (
+                              <Badge key={`mcp-${index}`} variant="outline" className="justify-center">
+                                {tool.name}
+                              </Badge>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-sm text-muted-foreground text-center py-4">
+                            No tools configured. Add tools via the Configuration tab.
+                          </p>
+                        )}
+                      </CardContent>
+                    </Card>
+                  </div>
+                </ScrollArea>
               </TabsContent>
 
               <TabsContent value="knowledge" className="h-full">
@@ -253,7 +374,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <Accordion type="single" collapsible>
+                      <Accordion type="single" collapsible defaultValue="document-stores">
                         <AccordionItem value="document-stores">
                           <AccordionTrigger>Document Stores</AccordionTrigger>
                           <AccordionContent>
@@ -261,7 +382,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <Label>Source Table</Label>
-                                  <Select>
+                                  <Select value={kbSourceTable} onValueChange={setKbSourceTable}>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select table" />
                                     </SelectTrigger>
@@ -276,7 +397,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                                 </div>
                                 <div>
                                   <Label>Source Column</Label>
-                                  <Select>
+                                  <Select value={kbSourceColumn} onValueChange={setKbSourceColumn}>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select column" />
                                     </SelectTrigger>
@@ -284,18 +405,27 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                                       <SelectItem value="content">content</SelectItem>
                                       <SelectItem value="description">description</SelectItem>
                                       <SelectItem value="data">data</SelectItem>
+                                      <SelectItem value="text">text</SelectItem>
+                                      <SelectItem value="body">body</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
                               </div>
                               <Button 
-                                onClick={() => saveKnowledgeConfig({
-                                  knowledge_type: 'document_store',
-                                  source_table: 'documents',
-                                  source_column: 'content',
-                                  configuration: {},
-                                })}
+                                onClick={() => {
+                                  if (!kbSourceTable || !kbSourceColumn) {
+                                    alert('Please select both table and column');
+                                    return;
+                                  }
+                                  saveKnowledgeConfig({
+                                    knowledge_type: 'document_store',
+                                    source_table: kbSourceTable,
+                                    source_column: kbSourceColumn,
+                                    configuration: {},
+                                  });
+                                }}
                                 size="sm"
+                                disabled={!kbSourceTable || !kbSourceColumn}
                               >
                                 <Plus className="h-4 w-4 mr-2" />
                                 Add Document Store
@@ -311,20 +441,25 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                               <div className="grid grid-cols-2 gap-4">
                                 <div>
                                   <Label>Embedding Model</Label>
-                                  <Select>
+                                  <Select value={embeddingModel} onValueChange={setEmbeddingModel}>
                                     <SelectTrigger>
                                       <SelectValue placeholder="Select model" />
                                     </SelectTrigger>
                                     <SelectContent>
                                       <SelectItem value="text-embedding-3-small">OpenAI Small</SelectItem>
                                       <SelectItem value="text-embedding-3-large">OpenAI Large</SelectItem>
-                                      <SelectItem value="claude-embed">Claude Embeddings</SelectItem>
+                                      <SelectItem value="text-embedding-ada-002">OpenAI Ada</SelectItem>
+                                      <SelectItem value="voyage-3">Voyage AI</SelectItem>
                                     </SelectContent>
                                   </Select>
                                 </div>
                                 <div>
                                   <Label>Collection Name</Label>
-                                  <Input placeholder="knowledge-base" />
+                                  <Input 
+                                    placeholder="knowledge-base" 
+                                    value={knowledgeName}
+                                    onChange={(e) => setKnowledgeName(e.target.value)}
+                                  />
                                 </div>
                               </div>
                               <div className="flex items-center space-x-2">
@@ -353,7 +488,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                       <div className="grid grid-cols-2 gap-4">
                         <div>
                           <Label>Vector Store Type</Label>
-                          <Select>
+                          <Select value={vectorStoreType} onValueChange={setVectorStoreType}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select vector store" />
                             </SelectTrigger>
@@ -362,19 +497,21 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                               <SelectItem value="pinecone">Pinecone</SelectItem>
                               <SelectItem value="weaviate">Weaviate</SelectItem>
                               <SelectItem value="chroma">Chroma</SelectItem>
+                              <SelectItem value="qdrant">Qdrant</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
                         <div>
                           <Label>Embedding Model</Label>
-                          <Select>
+                          <Select value={embeddingModel} onValueChange={setEmbeddingModel}>
                             <SelectTrigger>
                               <SelectValue placeholder="Select embedding model" />
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="text-embedding-3-small">OpenAI Small</SelectItem>
                               <SelectItem value="text-embedding-3-large">OpenAI Large</SelectItem>
-                              <SelectItem value="claude-embed">Claude Embeddings</SelectItem>
+                              <SelectItem value="text-embedding-ada-002">OpenAI Ada</SelectItem>
+                              <SelectItem value="voyage-3">Voyage AI</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
@@ -382,21 +519,37 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
 
                       <div>
                         <Label>Knowledge Name</Label>
-                        <Input placeholder="Enter knowledge base name" />
+                        <Input 
+                          placeholder="Enter knowledge base name" 
+                          value={knowledgeName}
+                          onChange={(e) => setKnowledgeName(e.target.value)}
+                        />
                       </div>
 
                       <div>
                         <Label>Description</Label>
-                        <Textarea placeholder="Describe this vector store configuration" />
+                        <Textarea 
+                          placeholder="Describe this vector store configuration" 
+                          value={vectorDescription}
+                          onChange={(e) => setVectorDescription(e.target.value)}
+                        />
                       </div>
 
                       <Button 
-                        onClick={() => saveVectorConfig({
-                          vector_store_type: 'supabase',
-                          embedding_model: 'text-embedding-3-small',
-                          knowledge_name: 'default-knowledge',
-                          configuration: {},
-                        })}
+                        onClick={() => {
+                          if (!knowledgeName) {
+                            alert('Please enter a knowledge base name');
+                            return;
+                          }
+                          saveVectorConfig({
+                            vector_store_type: vectorStoreType,
+                            embedding_model: embeddingModel,
+                            knowledge_name: knowledgeName,
+                            description: vectorDescription,
+                            configuration: {},
+                          });
+                        }}
+                        disabled={!knowledgeName}
                       >
                         <Save className="h-4 w-4 mr-2" />
                         Save Vector Configuration

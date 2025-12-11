@@ -336,13 +336,95 @@ export const HealthcareComplianceConfig: React.FC<HealthcareComplianceConfigProp
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* API Configuration Section */}
+        <div className="p-4 border rounded-lg bg-muted/30 space-y-4">
+          <h4 className="font-medium text-sm flex items-center gap-2">
+            <Shield className="h-4 w-4" />
+            API Configuration
+          </h4>
+          
+          <FormField
+            control={form.control}
+            name="apiEndpoint"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>NPI Registry API Endpoint *</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="https://npiregistry.cms.hhs.gov/api" 
+                    value={field.value || 'https://npiregistry.cms.hhs.gov/api'}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      onChange({ ...configuration, apiEndpoint: e.target.value });
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="apiKey"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>API Key (if required)</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="password"
+                    placeholder="Enter API key..." 
+                    value={field.value || ''}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      onChange({ ...configuration, apiKey: e.target.value });
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="apiVersion"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>API Version</FormLabel>
+                <Select 
+                  onValueChange={(value) => {
+                    field.onChange(value);
+                    onChange({ ...configuration, apiVersion: value });
+                  }} 
+                  defaultValue={field.value || '2.1'}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="2.0">v2.0</SelectItem>
+                    <SelectItem value="2.1">v2.1 (Latest)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </FormItem>
+            )}
+          />
+        </div>
+
         <FormField
           control={form.control}
           name="validationType"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Validation Type *</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || 'format'}>
+              <Select 
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  onChange({ ...configuration, validationType: value });
+                }} 
+                defaultValue={field.value || 'comprehensive'}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue />
@@ -364,7 +446,13 @@ export const HealthcareComplianceConfig: React.FC<HealthcareComplianceConfigProp
           render={({ field }) => (
             <FormItem>
               <FormLabel>NPI Type Filter</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value || 'both'}>
+              <Select 
+                onValueChange={(value) => {
+                  field.onChange(value);
+                  onChange({ ...configuration, npiType: value });
+                }} 
+                defaultValue={field.value || 'both'}
+              >
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue />
@@ -380,6 +468,69 @@ export const HealthcareComplianceConfig: React.FC<HealthcareComplianceConfigProp
           )}
         />
 
+        {/* MCP/Tool Integration */}
+        <div className="p-4 border rounded-lg space-y-4">
+          <h4 className="font-medium text-sm">Tool Integration</h4>
+          
+          <FormField
+            control={form.control}
+            name="enableMCPSync"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-2">
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      onChange({ ...configuration, enableMCPSync: checked });
+                    }}
+                  />
+                </FormControl>
+                <FormLabel>Enable MCP Data Sync</FormLabel>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="saveToDatabase"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-2">
+                <FormControl>
+                  <Switch
+                    checked={field.value !== false}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      onChange({ ...configuration, saveToDatabase: checked });
+                    }}
+                  />
+                </FormControl>
+                <FormLabel>Save Results to Database</FormLabel>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="externalWebhook"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>External Webhook (optional)</FormLabel>
+                <FormControl>
+                  <Input 
+                    placeholder="https://your-api.com/webhook" 
+                    value={field.value || ''}
+                    onChange={(e) => {
+                      field.onChange(e.target.value);
+                      onChange({ ...configuration, externalWebhook: e.target.value });
+                    }}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+        </div>
+
         <div className="grid grid-cols-2 gap-4">
           <FormField
             control={form.control}
@@ -389,7 +540,10 @@ export const HealthcareComplianceConfig: React.FC<HealthcareComplianceConfigProp
                 <FormControl>
                   <Switch
                     checked={field.value}
-                    onCheckedChange={field.onChange}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      onChange({ ...configuration, includeInactive: checked });
+                    }}
                   />
                 </FormControl>
                 <FormLabel>Include Inactive NPIs</FormLabel>
@@ -405,7 +559,10 @@ export const HealthcareComplianceConfig: React.FC<HealthcareComplianceConfigProp
                 <FormControl>
                   <Switch
                     checked={field.value !== false}
-                    onCheckedChange={field.onChange}
+                    onCheckedChange={(checked) => {
+                      field.onChange(checked);
+                      onChange({ ...configuration, includeDetails: checked });
+                    }}
                   />
                 </FormControl>
                 <FormLabel>Include Provider Details</FormLabel>
@@ -421,7 +578,15 @@ export const HealthcareComplianceConfig: React.FC<HealthcareComplianceConfigProp
             <FormItem>
               <FormLabel>Cache Duration (minutes)</FormLabel>
               <FormControl>
-                <Input type="number" placeholder="60" {...field} />
+                <Input 
+                  type="number" 
+                  placeholder="60" 
+                  value={field.value || 60}
+                  onChange={(e) => {
+                    field.onChange(e.target.value);
+                    onChange({ ...configuration, cacheDuration: parseInt(e.target.value) || 60 });
+                  }}
+                />
               </FormControl>
             </FormItem>
           )}
