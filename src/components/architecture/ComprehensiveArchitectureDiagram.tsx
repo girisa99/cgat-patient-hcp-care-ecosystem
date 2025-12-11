@@ -38,7 +38,9 @@ import {
   Terminal,
   Code,
   Package,
-  Plug
+  Plug,
+  Network,
+  RefreshCw
 } from 'lucide-react';
 
 // Tool/Service logos as styled components
@@ -323,6 +325,54 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
                 { name: 'Next Best Action' },
                 { name: 'Satisfaction' },
                 { name: 'Churn Prediction' }
+              ]}
+              variant="orange"
+            />
+          </div>
+
+          {/* NEW: Multi-Agent Architecture Row */}
+          <div className="grid grid-cols-4 gap-3">
+            <ArchitectureBlock
+              title="A2A Protocol"
+              icon={<Network className="h-4 w-4 text-indigo-400" />}
+              items={[
+                { name: 'Agent Cards' },
+                { name: 'Task Lifecycle' },
+                { name: 'SSE Streaming' },
+                { name: 'Task Handoff' }
+              ]}
+              variant="purple"
+            />
+            <ArchitectureBlock
+              title="Multi-Agent Orchestration"
+              icon={<Users className="h-4 w-4 text-emerald-400" />}
+              items={[
+                { name: 'Agent Teams' },
+                { name: 'Swarm Decision' },
+                { name: 'Tool Sharing' },
+                { name: 'Hierarchical' }
+              ]}
+              variant="green"
+            />
+            <ArchitectureBlock
+              title="Agentic AI"
+              icon={<RefreshCw className="h-4 w-4 text-red-400" />}
+              items={[
+                { name: 'ReAct Loop' },
+                { name: 'Tool Chain' },
+                { name: 'Self Reflection' },
+                { name: 'Goal Decomposition' }
+              ]}
+              variant="orange"
+            />
+            <ArchitectureBlock
+              title="Swarm Intelligence"
+              icon={<Brain className="h-4 w-4 text-amber-400" />}
+              items={[
+                { name: 'Weighted Voting' },
+                { name: 'Consensus Building' },
+                { name: 'Emergent Behavior' },
+                { name: 'Collective Decision' }
               ]}
               variant="orange"
             />

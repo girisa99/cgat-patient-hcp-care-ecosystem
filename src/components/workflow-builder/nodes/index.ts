@@ -23,6 +23,21 @@ import { TestingConfigurationNode } from './TestingConfigurationNode';
 import { DeploymentConfigurationNode } from './DeploymentConfigurationNode';
 import { DatabaseConfigurationNode } from './DatabaseConfigurationNode';
 
+// Multi-Agent Node Components
+import { 
+  MULTI_AGENT_NODE_TYPES,
+  A2AAgentNode,
+  TaskHandoffNode,
+  CommunicationHubNode,
+  AgentTeamNode,
+  SwarmDecisionNode,
+  ToolSharingNode,
+  ReActLoopNode,
+  ToolChainNode,
+  SelfReflectionNode,
+  GoalDecompositionNode
+} from './MultiAgentNodes';
+
 // Export all node types
 export { BaseWorkflowNode } from './BaseWorkflowNode';
 export { UseCaseNode } from './UseCaseNode';
@@ -43,6 +58,21 @@ export { HumanInputNode } from './HumanInputNode';
 export { AIModelConfigurationNode } from './AIModelConfigurationNode';
 export { FlowControlConfigurationNode } from './FlowControlConfigurationNode';
 export { HTTPConfigurationNode } from './HTTPConfigurationNode';
+
+// Export Multi-Agent nodes
+export { 
+  MULTI_AGENT_NODE_TYPES,
+  A2AAgentNode,
+  TaskHandoffNode,
+  CommunicationHubNode,
+  AgentTeamNode,
+  SwarmDecisionNode,
+  ToolSharingNode,
+  ReActLoopNode,
+  ToolChainNode,
+  SelfReflectionNode,
+  GoalDecompositionNode
+} from './MultiAgentNodes';
 
 // All nodes are now managed through the database-driven workflow_node_types table
 // This eliminates hardcoded registries and ensures consistency across the platform
