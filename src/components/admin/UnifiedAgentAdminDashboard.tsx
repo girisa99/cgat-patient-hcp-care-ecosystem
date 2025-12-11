@@ -45,6 +45,7 @@ import {
   MoreVertical,
   Edit,
   PlusCircle,
+  Layers,
 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAgentRegistry } from '@/hooks/useAgentRegistry';
@@ -266,6 +267,10 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
           <p className="text-muted-foreground">Manage all conversational agents and deployments</p>
         </div>
         <div className="flex gap-2">
+          <Button variant="outline" onClick={() => navigate('/architecture')}>
+            <Layers className="h-4 w-4 mr-2" />
+            Architecture
+          </Button>
           <Button variant="outline" onClick={() => refetch()}>
             <RefreshCw className="h-4 w-4 mr-2" />
             Refresh
