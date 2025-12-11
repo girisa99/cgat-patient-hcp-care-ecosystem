@@ -21,12 +21,94 @@ import {
   Microscope,
   Wrench,
   Server,
-  Cloud
+  Cloud,
+  Zap,
+  Link,
+  FileText,
+  Users,
+  Activity,
+  Lock,
+  GitBranch,
+  Bell,
+  Search,
+  Mic,
+  Video,
+  Mail,
+  Hash,
+  Terminal,
+  Code,
+  Package,
+  Plug
 } from 'lucide-react';
+
+// Tool/Service logos as styled components
+const LogoIcon: React.FC<{ name: string; className?: string }> = ({ name, className = '' }) => {
+  const logoStyles: Record<string, { bg: string; text: string; icon: string }> = {
+    // AI Models
+    'GPT-4o': { bg: 'bg-emerald-600', text: 'text-white', icon: 'O' },
+    'Claude 3': { bg: 'bg-orange-500', text: 'text-white', icon: 'C' },
+    'Gemini': { bg: 'bg-blue-500', text: 'text-white', icon: 'G' },
+    'Llama': { bg: 'bg-purple-600', text: 'text-white', icon: 'L' },
+    'Mistral': { bg: 'bg-cyan-600', text: 'text-white', icon: 'M' },
+    // Tools
+    'LangChain': { bg: 'bg-green-600', text: 'text-white', icon: '🦜' },
+    'LangWatch': { bg: 'bg-indigo-600', text: 'text-white', icon: 'LW' },
+    'Arize': { bg: 'bg-pink-600', text: 'text-white', icon: 'A' },
+    'Label Studio': { bg: 'bg-red-600', text: 'text-white', icon: 'LS' },
+    'W&B': { bg: 'bg-yellow-500', text: 'text-black', icon: 'W' },
+    // Integrations
+    'MCP SDK': { bg: 'bg-violet-600', text: 'text-white', icon: '⚡' },
+    'Miro': { bg: 'bg-yellow-400', text: 'text-black', icon: 'M' },
+    'n8n': { bg: 'bg-orange-600', text: 'text-white', icon: 'n8' },
+    'Notion': { bg: 'bg-slate-800', text: 'text-white', icon: 'N' },
+    'Linear': { bg: 'bg-indigo-500', text: 'text-white', icon: 'Li' },
+    'Zapier': { bg: 'bg-orange-500', text: 'text-white', icon: 'Z' },
+    // CRMs
+    'Salesforce': { bg: 'bg-blue-600', text: 'text-white', icon: 'SF' },
+    'HubSpot': { bg: 'bg-orange-600', text: 'text-white', icon: 'HS' },
+    'Veeva': { bg: 'bg-green-700', text: 'text-white', icon: 'V' },
+    // Platforms
+    'Supabase': { bg: 'bg-emerald-600', text: 'text-white', icon: '⚡' },
+    'WhatsApp': { bg: 'bg-green-500', text: 'text-white', icon: 'W' },
+    'Slack': { bg: 'bg-purple-700', text: 'text-white', icon: 'S' },
+    'Teams': { bg: 'bg-indigo-600', text: 'text-white', icon: 'T' },
+    'Alexa': { bg: 'bg-cyan-500', text: 'text-white', icon: 'A' },
+    'ElevenLabs': { bg: 'bg-slate-700', text: 'text-white', icon: '11' },
+  };
+
+  const style = logoStyles[name] || { bg: 'bg-slate-600', text: 'text-white', icon: name.charAt(0) };
+  
+  return (
+    <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold ${style.bg} ${style.text} ${className}`}>
+      {style.icon}
+    </div>
+  );
+};
+
+interface ToolItemProps {
+  name: string;
+  hasLogo?: boolean;
+}
+
+const ToolItem: React.FC<ToolItemProps> = ({ name, hasLogo = false }) => {
+  if (hasLogo) {
+    return (
+      <div className="flex items-center gap-1.5 bg-white/10 rounded px-2 py-1 border border-white/20">
+        <LogoIcon name={name} />
+        <span className="text-xs text-white/90">{name}</span>
+      </div>
+    );
+  }
+  return (
+    <Badge variant="secondary" className="text-xs bg-white/10 text-white/90 border-white/20">
+      {name}
+    </Badge>
+  );
+};
 
 interface ArchitectureBlockProps {
   title: string;
-  items: string[];
+  items: { name: string; hasLogo?: boolean }[];
   icon?: React.ReactNode;
   variant?: 'teal' | 'orange' | 'blue' | 'green' | 'purple' | 'gray';
   className?: string;
@@ -54,11 +136,9 @@ const ArchitectureBlock: React.FC<ArchitectureBlockProps> = ({
         {icon}
         <span className="font-semibold text-sm text-white">{title}</span>
       </div>
-      <div className="flex flex-wrap gap-1">
+      <div className="flex flex-wrap gap-1.5">
         {items.map((item, index) => (
-          <Badge key={index} variant="secondary" className="text-xs bg-white/10 text-white/90 border-white/20">
-            {item}
-          </Badge>
+          <ToolItem key={index} name={item.name} hasLogo={item.hasLogo} />
         ))}
       </div>
     </div>
@@ -86,31 +166,56 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
           <ArchitectureBlock
             title="Phone"
             icon={<Phone className="h-4 w-4 text-teal-400" />}
-            items={['Traditional IVR', 'Conversational IVR', 'Dialogflow']}
+            items={[
+              { name: 'Traditional IVR' },
+              { name: 'Conversational IVR' },
+              { name: 'Dialogflow' }
+            ]}
             variant="teal"
           />
           <ArchitectureBlock
             title="Voice Assistants"
-            icon={<MessageSquare className="h-4 w-4 text-teal-400" />}
-            items={['Amazon Alexa', 'Google Assistant', 'ElevenLabs', 'Apple Siri']}
+            icon={<Mic className="h-4 w-4 text-teal-400" />}
+            items={[
+              { name: 'Alexa', hasLogo: true },
+              { name: 'Google Assistant' },
+              { name: 'ElevenLabs', hasLogo: true },
+              { name: 'Apple Siri' }
+            ]}
             variant="teal"
           />
           <ArchitectureBlock
             title="Social/Messaging"
             icon={<MessageSquare className="h-4 w-4 text-teal-400" />}
-            items={['WhatsApp', 'Messenger', 'SMS', 'Slack', 'Teams']}
+            items={[
+              { name: 'WhatsApp', hasLogo: true },
+              { name: 'Messenger' },
+              { name: 'SMS' },
+              { name: 'Slack', hasLogo: true },
+              { name: 'Teams', hasLogo: true }
+            ]}
             variant="teal"
           />
           <ArchitectureBlock
             title="Mobile"
             icon={<Smartphone className="h-4 w-4 text-teal-400" />}
-            items={['iOS App', 'Android App', 'React Native', 'Flutter']}
+            items={[
+              { name: 'iOS App' },
+              { name: 'Android App' },
+              { name: 'React Native' },
+              { name: 'Flutter' }
+            ]}
             variant="teal"
           />
           <ArchitectureBlock
             title="Web"
             icon={<Monitor className="h-4 w-4 text-teal-400" />}
-            items={['Web Chat', 'Embedded Widget', 'Portal', 'Public Genie']}
+            items={[
+              { name: 'Web Chat' },
+              { name: 'Embedded Widget' },
+              { name: 'Portal' },
+              { name: 'Public Genie' }
+            ]}
             variant="teal"
           />
         </div>
@@ -125,25 +230,47 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
             <ArchitectureBlock
               title="Large Language Models"
               icon={<Cpu className="h-4 w-4 text-blue-400" />}
-              items={['GPT-4o', 'Claude 3', 'Gemini 2.5', 'Llama 3', 'Mistral']}
+              items={[
+                { name: 'GPT-4o', hasLogo: true },
+                { name: 'Claude 3', hasLogo: true },
+                { name: 'Gemini', hasLogo: true },
+                { name: 'Llama', hasLogo: true },
+                { name: 'Mistral', hasLogo: true }
+              ]}
               variant="blue"
             />
             <ArchitectureBlock
               title="Small Language Models"
               icon={<Sparkles className="h-4 w-4 text-blue-400" />}
-              items={['Phi-3 Mini', 'Gemma 2B', 'Qwen 0.5B', 'TinyLlama']}
+              items={[
+                { name: 'Phi-3 Mini' },
+                { name: 'Gemma 2B' },
+                { name: 'Qwen 0.5B' },
+                { name: 'TinyLlama' }
+              ]}
               variant="blue"
             />
             <ArchitectureBlock
               title="Vision Models"
               icon={<Eye className="h-4 w-4 text-blue-400" />}
-              items={['GPT-4o Vision', 'Claude Vision', 'Gemini Vision', 'LLaVA']}
+              items={[
+                { name: 'GPT-4o Vision' },
+                { name: 'Claude Vision' },
+                { name: 'Gemini Vision' },
+                { name: 'LLaVA' }
+              ]}
               variant="blue"
             />
             <ArchitectureBlock
               title="Health/Bio Models"
               icon={<Microscope className="h-4 w-4 text-blue-400" />}
-              items={['MedPaLM 2', 'BioMistral', 'ClinicalBERT', 'PubMedBERT', 'BioGPT']}
+              items={[
+                { name: 'MedPaLM 2' },
+                { name: 'BioMistral' },
+                { name: 'ClinicalBERT' },
+                { name: 'PubMedBERT' },
+                { name: 'BioGPT' }
+              ]}
               variant="blue"
             />
           </div>
@@ -153,25 +280,44 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
             <ArchitectureBlock
               title="Agent Augmentation"
               icon={<Bot className="h-4 w-4 text-green-400" />}
-              items={['CRM Integration', 'Knowledge Management', 'Context Memory']}
+              items={[
+                { name: 'CRM Integration' },
+                { name: 'Knowledge Mgmt' },
+                { name: 'Context Memory' }
+              ]}
               variant="green"
             />
             <ArchitectureBlock
               title="Conversation Engine"
               icon={<MessageSquare className="h-4 w-4 text-green-400" />}
-              items={['NPI Registry', 'Credentialing', 'Enrollment', 'Order Status']}
+              items={[
+                { name: 'NPI Registry' },
+                { name: 'Credentialing' },
+                { name: 'Enrollment' },
+                { name: 'Order Status' }
+              ]}
               variant="green"
             />
             <ArchitectureBlock
               title="Virtual Agent"
               icon={<Brain className="h-4 w-4 text-green-400" />}
-              items={['Dialogue Manager', 'Router', 'Universal KB', 'RAG Pipeline']}
+              items={[
+                { name: 'Dialogue Manager' },
+                { name: 'Router' },
+                { name: 'Universal KB' },
+                { name: 'RAG Pipeline' }
+              ]}
               variant="green"
             />
             <ArchitectureBlock
               title="Analytics Applications"
               icon={<BarChart3 className="h-4 w-4 text-orange-400" />}
-              items={['Journey Analytics', 'Next Best Action', 'Satisfaction', 'Churn']}
+              items={[
+                { name: 'Journey Analytics' },
+                { name: 'Next Best Action' },
+                { name: 'Satisfaction' },
+                { name: 'Churn Prediction' }
+              ]}
               variant="orange"
             />
           </div>
@@ -181,19 +327,38 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
             <ArchitectureBlock
               title="AI/ML Tools"
               icon={<Wrench className="h-4 w-4 text-purple-400" />}
-              items={['LangChain', 'LangWatch', 'Arize AI', 'Label Studio', 'Weights & Biases']}
+              items={[
+                { name: 'LangChain', hasLogo: true },
+                { name: 'LangWatch', hasLogo: true },
+                { name: 'Arize', hasLogo: true },
+                { name: 'Label Studio', hasLogo: true },
+                { name: 'W&B', hasLogo: true }
+              ]}
               variant="purple"
             />
             <ArchitectureBlock
               title="MCP SDK & Integrations"
-              icon={<Settings className="h-4 w-4 text-purple-400" />}
-              items={['MCP SDK', 'Miro', 'n8n', 'Notion', 'Linear', 'Zapier']}
+              icon={<Plug className="h-4 w-4 text-purple-400" />}
+              items={[
+                { name: 'MCP SDK', hasLogo: true },
+                { name: 'Miro', hasLogo: true },
+                { name: 'n8n', hasLogo: true },
+                { name: 'Notion', hasLogo: true },
+                { name: 'Linear', hasLogo: true },
+                { name: 'Zapier', hasLogo: true }
+              ]}
               variant="purple"
             />
             <ArchitectureBlock
               title="API Services / Middleware"
               icon={<Server className="h-4 w-4 text-purple-400" />}
-              items={['API Registry', 'Edge Functions', 'Webhooks', 'Rate Limiting', 'Auth']}
+              items={[
+                { name: 'API Registry' },
+                { name: 'Edge Functions' },
+                { name: 'Webhooks' },
+                { name: 'Rate Limiting' },
+                { name: 'Auth' }
+              ]}
               variant="purple"
             />
           </div>
@@ -203,25 +368,42 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
             <ArchitectureBlock
               title="Business Process Automation"
               icon={<Workflow className="h-4 w-4 text-teal-400" />}
-              items={['Workflow Engine', 'Case Management', 'RPA']}
+              items={[
+                { name: 'Workflow Engine' },
+                { name: 'Case Management' },
+                { name: 'RPA' }
+              ]}
               variant="teal"
             />
             <ArchitectureBlock
               title="Dashboard / Reports"
               icon={<BarChart3 className="h-4 w-4 text-orange-400" />}
-              items={['Insights', 'Operations', 'Reporting']}
+              items={[
+                { name: 'Insights' },
+                { name: 'Operations' },
+                { name: 'Reporting' }
+              ]}
               variant="orange"
             />
             <ArchitectureBlock
               title="Advanced Analytics"
               icon={<Brain className="h-4 w-4 text-orange-400" />}
-              items={['Cognitive', 'Predictive', 'Prescriptive', 'ML Pipeline']}
+              items={[
+                { name: 'Cognitive' },
+                { name: 'Predictive' },
+                { name: 'Prescriptive' },
+                { name: 'ML Pipeline' }
+              ]}
               variant="orange"
             />
             <ArchitectureBlock
               title="NLP Processing"
               icon={<MessageSquare className="h-4 w-4 text-orange-400" />}
-              items={['Entity Extraction', 'Sentiment', 'Intent Classification']}
+              items={[
+                { name: 'Entity Extraction' },
+                { name: 'Sentiment' },
+                { name: 'Intent Classification' }
+              ]}
               variant="orange"
             />
           </div>
@@ -239,31 +421,53 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
             <ArchitectureBlock
               title="Master Data"
               icon={<Database className="h-4 w-4 text-gray-400" />}
-              items={['Profiles', 'Organizations', 'Facilities']}
+              items={[
+                { name: 'Profiles' },
+                { name: 'Organizations' },
+                { name: 'Facilities' }
+              ]}
               variant="gray"
             />
             <ArchitectureBlock
               title="Interaction History"
               icon={<MessageSquare className="h-4 w-4 text-gray-400" />}
-              items={['Conversations', 'Sessions', 'Omni-channel']}
+              items={[
+                { name: 'Conversations' },
+                { name: 'Sessions' },
+                { name: 'Omni-channel' }
+              ]}
               variant="gray"
             />
             <ArchitectureBlock
               title="Knowledge Sources"
               icon={<Brain className="h-4 w-4 text-gray-400" />}
-              items={['Universal KB', 'Vector Store', 'Embeddings']}
+              items={[
+                { name: 'Universal KB' },
+                { name: 'Vector Store' },
+                { name: 'Embeddings' }
+              ]}
               variant="gray"
             />
             <ArchitectureBlock
               title="External Systems"
               icon={<Cloud className="h-4 w-4 text-gray-400" />}
-              items={['Salesforce', 'HubSpot', 'Veeva', 'EHR/EMR']}
+              items={[
+                { name: 'Salesforce', hasLogo: true },
+                { name: 'HubSpot', hasLogo: true },
+                { name: 'Veeva', hasLogo: true },
+                { name: 'EHR/EMR' }
+              ]}
               variant="gray"
             />
             <ArchitectureBlock
               title="Analytics Store"
               icon={<BarChart3 className="h-4 w-4 text-gray-400" />}
-              items={['Metrics', 'Traces', 'Logs', 'Performance']}
+              items={[
+                { name: 'Metrics' },
+                { name: 'Traces' },
+                { name: 'Logs' },
+                { name: 'Performance' }
+              ]}
               variant="gray"
             />
           </div>
@@ -277,26 +481,46 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
           <div className="grid grid-cols-4 gap-3">
             <ArchitectureBlock
               title="Supabase"
-              icon={<Database className="h-4 w-4 text-green-400" />}
-              items={['PostgreSQL', 'Auth', 'Storage', 'Realtime', 'Edge Functions']}
+              icon={<Zap className="h-4 w-4 text-green-400" />}
+              items={[
+                { name: 'PostgreSQL' },
+                { name: 'Auth' },
+                { name: 'Storage' },
+                { name: 'Realtime' },
+                { name: 'Edge Functions' }
+              ]}
               variant="green"
             />
             <ArchitectureBlock
               title="Deployment"
               icon={<Cloud className="h-4 w-4 text-blue-400" />}
-              items={['Channel Deploy', 'Agent Deploy', 'Version Control']}
+              items={[
+                { name: 'Channel Deploy' },
+                { name: 'Agent Deploy' },
+                { name: 'Version Control' }
+              ]}
               variant="blue"
             />
             <ArchitectureBlock
               title="Security"
               icon={<Shield className="h-4 w-4 text-orange-400" />}
-              items={['RLS Policies', 'HIPAA', 'Encryption', 'Audit Logs']}
+              items={[
+                { name: 'RLS Policies' },
+                { name: 'HIPAA' },
+                { name: 'Encryption' },
+                { name: 'Audit Logs' }
+              ]}
               variant="orange"
             />
             <ArchitectureBlock
               title="Monitoring"
-              icon={<BarChart3 className="h-4 w-4 text-purple-400" />}
-              items={['Genie Analytics', 'Observability', 'Alerts', 'Tracing']}
+              icon={<Activity className="h-4 w-4 text-purple-400" />}
+              items={[
+                { name: 'Genie Analytics' },
+                { name: 'Observability' },
+                { name: 'Alerts' },
+                { name: 'Tracing' }
+              ]}
               variant="purple"
             />
           </div>
