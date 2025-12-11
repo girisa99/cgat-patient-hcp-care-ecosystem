@@ -41,7 +41,12 @@ import {
   Shield,
   FileText,
   Workflow,
+  Trash2,
+  MoreVertical,
+  Edit,
+  PlusCircle,
 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAgentRegistry } from '@/hooks/useAgentRegistry';
 import { useAgentConversationEngines } from '@/hooks/useAgentConversationEngines';
 import { useUnifiedChannelDeployments } from '@/hooks/useUnifiedChannelDeployments';
@@ -121,6 +126,7 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [showSnippetDialog, setShowSnippetDialog] = useState(false);
   const [showCreateEngineDialog, setShowCreateEngineDialog] = useState(false);
+  const [showCreateUseCaseDialog, setShowCreateUseCaseDialog] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<AgentRegistration | null>(null);
   const [snippetFormat, setSnippetFormat] = useState<'javascript' | 'react' | 'python' | 'curl'>('javascript');
   const [newAgentForm, setNewAgentForm] = useState({
@@ -130,10 +136,43 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
     brandName: '',
     channels: [] as string[],
   });
+  const [newUseCaseForm, setNewUseCaseForm] = useState({
+    name: '',
+    description: '',
+    category: 'custom',
+  });
   const [selectedEngineTemplate, setSelectedEngineTemplate] = useState('');
   const [selectedScreenMode, setSelectedScreenMode] = useState<'single' | 'split' | 'form-specific'>('single');
+  const [customUseCases, setCustomUseCases] = useState<Array<{ id: string; name: string; category: string; description: string }>>([]);
 
   const metrics = getAggregateMetrics();
+
+  // Combined use cases (templates + custom)
+  const allUseCases = [...useCaseTemplates, ...customUseCases];
+
+  const handleCreateUseCase = () => {
+    if (!newUseCaseForm.name) {
+      toast({ variant: 'destructive', title: 'Use case name is required' });
+      return;
+    }
+    const newUseCase = {
+      id: `custom-${Date.now()}`,
+      name: newUseCaseForm.name,
+      description: newUseCaseForm.description,
+      category: newUseCaseForm.category,
+    };
+    setCustomUseCases(prev => [...prev, newUseCase]);
+    setNewAgentForm(f => ({ ...f, useCaseId: newUseCase.id }));
+    setShowCreateUseCaseDialog(false);
+    setNewUseCaseForm({ name: '', description: '', category: 'custom' });
+    toast({ title: 'Use case created', description: `"${newUseCase.name}" added` });
+  };
+
+  const handleDeleteAgent = async (agentId: string) => {
+    // For now, toggle to inactive/deleted status
+    await toggleStatus(agentId, false);
+    toast({ title: 'Agent disabled' });
+  };
 
 
   const handleCreateAgent = async () => {
@@ -244,24 +283,39 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Use Case *</Label>
-                  <Select
-                    value={newAgentForm.useCaseId}
-                    onValueChange={(v) => setNewAgentForm(f => ({ ...f, useCaseId: v }))}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select use case" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {useCaseTemplates.map(uc => (
-                        <SelectItem key={uc.id} value={uc.id}>
-                          <div className="flex flex-col">
-                            <span>{uc.name}</span>
-                            <span className="text-xs text-muted-foreground">{uc.category}</span>
+                  <div className="flex gap-2">
+                    <Select
+                      value={newAgentForm.useCaseId}
+                      onValueChange={(v) => {
+                        if (v === 'create-new') {
+                          setShowCreateUseCaseDialog(true);
+                        } else {
+                          setNewAgentForm(f => ({ ...f, useCaseId: v }));
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="flex-1">
+                        <SelectValue placeholder="Select use case" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="create-new" className="text-primary font-medium">
+                          <div className="flex items-center gap-2">
+                            <PlusCircle className="h-4 w-4" />
+                            Create New Use Case
                           </div>
                         </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                        <Separator className="my-1" />
+                        {allUseCases.map(uc => (
+                          <SelectItem key={uc.id} value={uc.id}>
+                            <div className="flex flex-col">
+                              <span>{uc.name}</span>
+                              <span className="text-xs text-muted-foreground">{uc.category}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                 </div>
                 <div>
                   <Label>Agent Name *</Label>
@@ -425,6 +479,15 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                     setShowSnippetDialog(true);
                   }}
                   onDeploy={(channels) => deployToChannels(agent.id, channels)}
+                  onDelete={() => handleDeleteAgent(agent.id)}
+                  onBuildInCanvas={() => {
+                    navigate('/agents', { 
+                      state: { 
+                        prefillPrompt: `Edit agent "${agent.name}" for ${agent.use_case?.name || 'custom'} use case.`,
+                        agentContext: { name: agent.name, useCaseId: agent.use_case_id }
+                      }
+                    });
+                  }}
                   isDeploying={isDeploying}
                 />
               ))}
@@ -453,6 +516,15 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                     setShowSnippetDialog(true);
                   }}
                   onDeploy={(channels) => deployToChannels(agent.id, channels)}
+                  onDelete={() => handleDeleteAgent(agent.id)}
+                  onBuildInCanvas={() => {
+                    navigate('/agents', { 
+                      state: { 
+                        prefillPrompt: `Edit agent "${agent.name}" for ${agent.use_case?.name || 'custom'} use case.`,
+                        agentContext: { name: agent.name, useCaseId: agent.use_case_id }
+                      }
+                    });
+                  }}
                   isDeploying={isDeploying}
                 />
               ))}
@@ -480,6 +552,15 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                               setShowSnippetDialog(true);
                             }}
                             onDeploy={(channels) => deployToChannels(agent.id, channels)}
+                            onDelete={() => handleDeleteAgent(agent.id)}
+                            onBuildInCanvas={() => {
+                              navigate('/agents', { 
+                                state: { 
+                                  prefillPrompt: `Edit agent "${agent.name}" for ${agent.use_case?.name || 'custom'} use case.`,
+                                  agentContext: { name: agent.name, useCaseId: agent.use_case_id }
+                                }
+                              });
+                            }}
                             isDeploying={isDeploying}
                           />
                         ))}
@@ -790,6 +871,58 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Create Use Case Dialog */}
+      <Dialog open={showCreateUseCaseDialog} onOpenChange={setShowCreateUseCaseDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Create New Use Case</DialogTitle>
+            <DialogDescription>
+              Define a custom use case for your agents
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Use Case Name *</Label>
+              <Input
+                value={newUseCaseForm.name}
+                onChange={(e) => setNewUseCaseForm(f => ({ ...f, name: e.target.value }))}
+                placeholder="e.g., Insurance Verification"
+              />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Input
+                value={newUseCaseForm.description}
+                onChange={(e) => setNewUseCaseForm(f => ({ ...f, description: e.target.value }))}
+                placeholder="Brief description of this use case"
+              />
+            </div>
+            <div>
+              <Label>Category</Label>
+              <Select
+                value={newUseCaseForm.category}
+                onValueChange={(v) => setNewUseCaseForm(f => ({ ...f, category: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="custom">Custom</SelectItem>
+                  <SelectItem value="healthcare">Healthcare</SelectItem>
+                  <SelectItem value="enrollment">Enrollment</SelectItem>
+                  <SelectItem value="support">Customer Support</SelectItem>
+                  <SelectItem value="operations">Operations</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button className="w-full" onClick={handleCreateUseCase}>
+              <Plus className="h-4 w-4 mr-2" />
+              Create Use Case
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
@@ -801,6 +934,8 @@ interface AgentCardProps {
   onToggleStatus: () => void;
   onShowSnippet: () => void;
   onDeploy: (channels: { channelType: string }[]) => void;
+  onDelete: () => void;
+  onBuildInCanvas: () => void;
   isDeploying: boolean;
 }
 
@@ -810,6 +945,8 @@ const AgentCard: React.FC<AgentCardProps> = ({
   onToggleStatus,
   onShowSnippet,
   onDeploy,
+  onDelete,
+  onBuildInCanvas,
   isDeploying,
 }) => {
   const [showDeployDialog, setShowDeployDialog] = useState(false);
@@ -926,6 +1063,41 @@ const AgentCard: React.FC<AgentCardProps> = ({
                 </div>
               </DialogContent>
             </Dialog>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button size="sm" variant="ghost">
+                  <MoreVertical className="h-4 w-4" />
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={onBuildInCanvas}>
+                  <Workflow className="h-4 w-4 mr-2" />
+                  Edit in Canvas
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onShowSnippet}>
+                  <Code className="h-4 w-4 mr-2" />
+                  View Code Snippet
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={onToggleStatus}>
+                  {agent.status === 'active' ? (
+                    <>
+                      <Pause className="h-4 w-4 mr-2" />
+                      Disable Agent
+                    </>
+                  ) : (
+                    <>
+                      <Play className="h-4 w-4 mr-2" />
+                      Enable Agent
+                    </>
+                  )}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={onDelete} className="text-destructive">
+                  <Trash2 className="h-4 w-4 mr-2" />
+                  Delete Agent
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </CardHeader>
