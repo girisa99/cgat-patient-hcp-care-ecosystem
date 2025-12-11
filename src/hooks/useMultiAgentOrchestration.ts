@@ -330,7 +330,7 @@ export const useMultiAgentOrchestration = (teamId?: string) => {
       // Record handoff
       await supabase
         .from('agent_communications')
-        .insert({
+        .insert([{
           from_agent_id: assignment.agentId,
           to_agent_id: toAgentId,
           message_type: 'handoff',
@@ -339,11 +339,11 @@ export const useMultiAgentOrchestration = (teamId?: string) => {
             originalAssignment: updatedAssignment,
             newAssignment,
             reason
-          },
+          } as any,
           conversation_id: team?.id,
           status: 'sent',
-          metadata: { handoff: true }
-        });
+          metadata: { handoff: true } as any
+        }]);
 
       setActiveAssignments(prev => {
         const newMap = new Map(prev);
@@ -508,17 +508,17 @@ export const useMultiAgentOrchestration = (teamId?: string) => {
       // Record memory update
       await supabase
         .from('agent_communications')
-        .insert({
+        .insert([{
           from_agent_id: agentId,
           message_type: 'notification',
           message_payload: {
             type: 'memory_update',
             entry: memoryEntry
-          },
+          } as any,
           conversation_id: team.id,
           status: 'processed',
-          metadata: { memoryUpdate: true }
-        });
+          metadata: { memoryUpdate: true } as any
+        }]);
 
       return memoryEntry;
     },

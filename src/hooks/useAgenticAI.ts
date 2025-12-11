@@ -372,16 +372,16 @@ export const useAgenticAI = (agentId?: string) => {
       if (agentId) {
         await supabase
           .from('agent_communications')
-          .insert({
+          .insert([{
             from_agent_id: agentId,
             message_type: 'notification',
             message_payload: {
               type: 'plan_created',
               plan
-            },
+            } as any,
             status: 'processed',
-            metadata: { isPlan: true }
-          });
+            metadata: { isPlan: true } as any
+          }]);
       }
 
       return plan;
