@@ -25,11 +25,15 @@ import {
   Plus,
   Trash2,
   Eye,
-  History
+  History,
+  Globe,
+  Cpu,
+  Sparkles
 } from 'lucide-react';
 import { useNodeConfiguration } from '@/hooks/useNodeConfiguration';
 import { DynamicConfigurationForm } from './DynamicConfigurationForm';
 import { useIntegrationOptions } from '@/hooks/useIntegrationOptions';
+import { useApiServices } from '@/hooks/useApiServices';
 import { format } from 'date-fns';
 
 interface EnhancedNodeConfigurationPanelProps {
@@ -80,6 +84,10 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
   const [embeddingModel, setEmbeddingModel] = useState<string>('text-embedding-3-small');
   const [knowledgeName, setKnowledgeName] = useState<string>('');
   const [vectorDescription, setVectorDescription] = useState<string>('');
+  
+  // API Services state
+  const [selectedApiService, setSelectedApiService] = useState<string>('');
+  const [selectedAIModel, setSelectedAIModel] = useState<string>('');
 
   const {
     nodeConfig,
@@ -93,6 +101,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
   } = useNodeConfiguration(normalizedNode.id, sessionId, workflowId);
 
   const { tables, mcpLikeTools } = useIntegrationOptions();
+  const { apiServices, isLoading: isLoadingApis } = useApiServices();
 
   const handleConfigurationChange = (newConfig: any) => {
     saveConfiguration({
@@ -162,8 +171,10 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
 
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-5">
+            <TabsList className="grid w-full grid-cols-7">
               <TabsTrigger value="configuration">Configuration</TabsTrigger>
+              <TabsTrigger value="api-services">API Services</TabsTrigger>
+              <TabsTrigger value="ai-models">AI Models</TabsTrigger>
               <TabsTrigger value="tools">Tools & Execution</TabsTrigger>
               <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
               <TabsTrigger value="vectors">Vector Store</TabsTrigger>
@@ -184,6 +195,294 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                       <Save className="h-4 w-4 mr-2" />
                       {isSaving ? 'Saving...' : 'Save Configuration'}
                     </Button>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
+              {/* API Services Tab */}
+              <TabsContent value="api-services" className="h-full">
+                <ScrollArea className="h-full p-4">
+                  <div className="space-y-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Globe className="h-5 w-5" />
+                          API Services Connection
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Select API Service</Label>
+                          <Select 
+                            value={selectedApiService} 
+                            onValueChange={(value) => {
+                              setSelectedApiService(value);
+                              handleConfigurationChange({ 
+                                ...normalizedNode.data, 
+                                apiServiceId: value 
+                              });
+                            }}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder={isLoadingApis ? "Loading..." : "Select an API service"} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {apiServices.map((service: any) => (
+                                <SelectItem key={service.id} value={service.id}>
+                                  <div className="flex items-center gap-2">
+                                    <Badge variant={service.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                                      {service.type}
+                                    </Badge>
+                                    {service.name}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        {selectedApiService && (
+                          <div className="border rounded-lg p-4 space-y-3">
+                            {(() => {
+                              const service = apiServices.find((s: any) => s.id === selectedApiService);
+                              return service ? (
+                                <>
+                                  <div className="flex items-center justify-between">
+                                    <span className="font-medium">{service.name}</span>
+                                    <Badge variant={service.status === 'active' ? 'default' : 'outline'}>
+                                      {service.status}
+                                    </Badge>
+                                  </div>
+                                  <div className="text-sm text-muted-foreground">{service.description}</div>
+                                  <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div>
+                                      <Label className="text-xs">Type</Label>
+                                      <p>{service.type}</p>
+                                    </div>
+                                    <div>
+                                      <Label className="text-xs">Rate Limit</Label>
+                                      <p>{service.rate_limit_requests_per_minute || 'N/A'}/min</p>
+                                    </div>
+                                  </div>
+                                </>
+                              ) : null;
+                            })()}
+                          </div>
+                        )}
+                        
+                        <Separator />
+                        
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Request Method</Label>
+                            <Select 
+                              value={normalizedNode.data?.apiMethod || 'GET'}
+                              onValueChange={(value) => handleConfigurationChange({ 
+                                ...normalizedNode.data, 
+                                apiMethod: value 
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="GET">GET</SelectItem>
+                                <SelectItem value="POST">POST</SelectItem>
+                                <SelectItem value="PUT">PUT</SelectItem>
+                                <SelectItem value="DELETE">DELETE</SelectItem>
+                                <SelectItem value="PATCH">PATCH</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Response Format</Label>
+                            <Select 
+                              value={normalizedNode.data?.responseFormat || 'json'}
+                              onValueChange={(value) => handleConfigurationChange({ 
+                                ...normalizedNode.data, 
+                                responseFormat: value 
+                              })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="json">JSON</SelectItem>
+                                <SelectItem value="xml">XML</SelectItem>
+                                <SelectItem value="text">Plain Text</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                        
+                        <div>
+                          <Label>Custom Headers (JSON)</Label>
+                          <Textarea 
+                            placeholder='{"Authorization": "Bearer token"}'
+                            value={normalizedNode.data?.customHeaders || ''}
+                            onChange={(e) => handleConfigurationChange({ 
+                              ...normalizedNode.data, 
+                              customHeaders: e.target.value 
+                            })}
+                            className="font-mono text-sm"
+                            rows={3}
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+              
+              {/* AI Models Tab */}
+              <TabsContent value="ai-models" className="h-full">
+                <ScrollArea className="h-full p-4">
+                  <div className="space-y-6">
+                    {/* LLM Models */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Cpu className="h-5 w-5" />
+                          Large Language Models (LLM)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Primary LLM</Label>
+                          <Select 
+                            value={normalizedNode.data?.llmModel || ''}
+                            onValueChange={(value) => handleConfigurationChange({ 
+                              ...normalizedNode.data, 
+                              llmModel: value 
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select LLM model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gpt-4o">OpenAI GPT-4o</SelectItem>
+                              <SelectItem value="gpt-4o-mini">OpenAI GPT-4o Mini</SelectItem>
+                              <SelectItem value="claude-3-sonnet">Claude 3 Sonnet</SelectItem>
+                              <SelectItem value="claude-3-haiku">Claude 3 Haiku</SelectItem>
+                              <SelectItem value="gemini-2.5-pro">Gemini 2.5 Pro</SelectItem>
+                              <SelectItem value="gemini-2.5-flash">Gemini 2.5 Flash</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Small Language Models */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Sparkles className="h-5 w-5" />
+                          Small Language Models (SLM)
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>SLM Model</Label>
+                          <Select 
+                            value={normalizedNode.data?.slmModel || ''}
+                            onValueChange={(value) => handleConfigurationChange({ 
+                              ...normalizedNode.data, 
+                              slmModel: value 
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select SLM model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="phi-3-mini">Microsoft Phi-3 Mini</SelectItem>
+                              <SelectItem value="llama-3.2-1b">Llama 3.2 1B</SelectItem>
+                              <SelectItem value="gemma-2-2b">Google Gemma 2 2B</SelectItem>
+                              <SelectItem value="mistral-7b">Mistral 7B</SelectItem>
+                              <SelectItem value="qwen-2-0.5b">Qwen 2 0.5B</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Vision Models */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Eye className="h-5 w-5" />
+                          Vision Models
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Vision Model</Label>
+                          <Select 
+                            value={normalizedNode.data?.visionModel || ''}
+                            onValueChange={(value) => handleConfigurationChange({ 
+                              ...normalizedNode.data, 
+                              visionModel: value 
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select vision model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="gpt-4o-vision">GPT-4o Vision</SelectItem>
+                              <SelectItem value="claude-3-vision">Claude 3 Vision</SelectItem>
+                              <SelectItem value="gemini-2.5-vision">Gemini 2.5 Vision</SelectItem>
+                              <SelectItem value="llava-1.6">LLaVA 1.6</SelectItem>
+                              <SelectItem value="cogvlm-2">CogVLM 2</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Health/Bio Models */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Brain className="h-5 w-5" />
+                          Health & Biomedical Models
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div>
+                          <Label>Health/Bio Model</Label>
+                          <Select 
+                            value={normalizedNode.data?.healthModel || ''}
+                            onValueChange={(value) => handleConfigurationChange({ 
+                              ...normalizedNode.data, 
+                              healthModel: value 
+                            })}
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select health/bio model" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="medpalm-2">MedPaLM 2</SelectItem>
+                              <SelectItem value="biomistral-7b">BioMistral 7B</SelectItem>
+                              <SelectItem value="pubmedbert">PubMedBERT</SelectItem>
+                              <SelectItem value="clinicalbert">ClinicalBERT</SelectItem>
+                              <SelectItem value="biogpt">BioGPT</SelectItem>
+                              <SelectItem value="meditron-70b">Meditron 70B</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex items-center space-x-2">
+                          <Switch 
+                            id="hipaa-compliant"
+                            checked={normalizedNode.data?.hipaaCompliant}
+                            onCheckedChange={(checked) => handleConfigurationChange({ 
+                              ...normalizedNode.data, 
+                              hipaaCompliant: checked 
+                            })}
+                          />
+                          <Label htmlFor="hipaa-compliant">HIPAA Compliant Processing</Label>
+                        </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </ScrollArea>
               </TabsContent>

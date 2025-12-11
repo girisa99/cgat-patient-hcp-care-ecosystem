@@ -248,6 +248,13 @@ const AppContent = () => {
                       <SystemIntegration />
                     </ProtectedRoute>
                   } />
+                  <Route path="/architecture" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'demoUser']}>
+                      <Suspense fallback={<PageLoading message="Loading architecture..." />}>
+                        {React.createElement(React.lazy(() => import('@/pages/ArchitectureDiagram')))}
+                      </Suspense>
+                    </ProtectedRoute>
+                  } />
                    <Route path="/ai-testing" element={
                      <ProtectedRoute requiredRoles={['superAdmin', 'onboardingTeam']}>
                        <Suspense fallback={<PageLoading message="Loading AI testing..." />}>
