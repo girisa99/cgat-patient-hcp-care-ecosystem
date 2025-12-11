@@ -256,12 +256,12 @@ class UnifiedAgentUseCaseRegistry {
    */
   async getAllRegisteredAgents(): Promise<AgentRegistration[]> {
     try {
-      // Fetch agents with deployments
+      // Fetch agents with deployments - specify FK to avoid ambiguity
       const { data: agents, error: agentsError } = await supabase
         .from('agents')
         .select(`
           *,
-          agent_channel_deployments (
+          agent_channel_deployments!agent_channel_deployments_agent_id_fkey (
             id,
             channel_id,
             channel_type,

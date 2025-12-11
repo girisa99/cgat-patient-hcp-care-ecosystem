@@ -242,7 +242,7 @@ class UnifiedChannelDeploymentService {
         .from('agent_channel_deployments')
         .select(`
           *,
-          agents (id, name, use_case, status)
+          agents!agent_channel_deployments_agent_id_fkey (id, name, use_case, status)
         `)
         .order('created_at', { ascending: false });
 
