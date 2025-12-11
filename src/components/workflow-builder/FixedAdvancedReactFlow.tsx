@@ -78,7 +78,7 @@ import {
 import { EnhancedNodePalette } from './EnhancedNodePalette';
 import { EnhancedNodeConfigurationPanel } from './EnhancedNodeConfigurationPanel';
 import { TestingConsolePanel } from './TestingConsolePanel';
-import { CanvasContextMenu } from './CanvasContextMenu';
+import { PaneContextMenu } from './PaneContextMenu';
 
 // Enhanced Props Interface
 export interface FixedAdvancedReactFlowProps {
@@ -212,6 +212,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   const [canvasOnly, setCanvasOnly] = useState(false);
   const [showMiniMap, setShowMiniMap] = useState(false); // Disabled by default - cleaner canvas
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
+  const [showPaneContextMenu, setShowPaneContextMenu] = useState(false);
 
   // References and Hooks
   const reactFlowWrapper = useRef<HTMLDivElement>(null);
@@ -329,12 +330,23 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     showSuccess(`Added ${label} node`);
   }, [screenToFlowPosition, setNodes, showSuccess]);
 
-  // Handler for pane context menu - stores position for CanvasContextMenu
-  // Note: Do NOT call event.preventDefault() as it interferes with Radix ContextMenu
+  // Handler for pane context menu - opens custom context menu
   const handlePaneContextMenu = useCallback((event: React.MouseEvent) => {
-    // Store position for the context menu - Radix handles the rest
+    event.preventDefault();
     setContextMenuPosition({ x: event.clientX, y: event.clientY });
+    setShowPaneContextMenu(true);
   }, []);
+
+  // Close pane context menu
+  const closePaneContextMenu = useCallback(() => {
+    setShowPaneContextMenu(false);
+  }, []);
+
+  // Handle add node from pane context menu
+  const handleAddNodeFromPaneMenu = useCallback((type: string, category: string, label: string, position: { x: number; y: number }) => {
+    handleAddNodeFromContextMenu(type, category, label, position);
+    setShowPaneContextMenu(false);
+  }, [handleAddNodeFromContextMenu]);
 
   // Stable edge types - defined outside useMemo with empty object
   const safeEdgeTypes: EdgeTypes = useMemo(() => ({}), []);
@@ -875,49 +887,54 @@ Examples:
           </div>
         )}
         <div className="flex-1 relative min-w-0 z-0">
-          <CanvasContextMenu
+          <div className="w-full h-full">
+            <ReactFlow
+              nodes={nodes}
+              edges={edges}
+              onNodesChange={handleNodesChange}
+              onEdgesChange={handleEdgesChange}
+              onConnect={onConnect}
+              onNodeClick={handleNodeClick}
+              onPaneContextMenu={handlePaneContextMenu}
+              onPaneClick={closePaneContextMenu}
+              onDrop={onDrop}
+              onDragOver={onDragOver}
+              nodeTypes={safeNodeTypes}
+              edgeTypes={safeEdgeTypes}
+              connectionMode={connectionMode}
+              snapToGrid={snapToGrid}
+              snapGrid={[15, 15]}
+              nodesDraggable={nodesDraggable}
+              nodesConnectable={true}
+              elementsSelectable={true}
+              panOnScrollMode={panOnScrollMode}
+              selectNodesOnDrag={false}
+              fitView
+              fitViewOptions={{ padding: 0.2 }}
+              multiSelectionKeyCode="Shift"
+              deleteKeyCode={["Backspace", "Delete"]}
+              className="bg-background z-0"
+            >
+              <Background variant={backgroundVariant} gap={12} size={1} />
+              <Controls />
+              
+              {canvasOnly && (
+                <Panel position="top-right">
+                  <Button size="sm" variant="outline" onClick={() => setCanvasOnly(false)}>
+                    <Minimize2 className="h-4 w-4" />
+                  </Button>
+                </Panel>
+              )}
+            </ReactFlow>
+          </div>
+
+          {/* Pane Context Menu - appears on right-click on canvas */}
+          <PaneContextMenu
+            isOpen={showPaneContextMenu}
             position={contextMenuPosition}
-            onAddNode={handleAddNodeFromContextMenu}
-          >
-            <div className="w-full h-full">
-              <ReactFlow
-                nodes={nodes}
-                edges={edges}
-                onNodesChange={handleNodesChange}
-                onEdgesChange={handleEdgesChange}
-                onConnect={onConnect}
-                onNodeClick={handleNodeClick}
-                onDrop={onDrop}
-                onDragOver={onDragOver}
-                nodeTypes={safeNodeTypes}
-                edgeTypes={safeEdgeTypes}
-                connectionMode={connectionMode}
-                snapToGrid={snapToGrid}
-                snapGrid={[15, 15]}
-                nodesDraggable={nodesDraggable}
-                nodesConnectable={true}
-                elementsSelectable={true}
-                panOnScrollMode={panOnScrollMode}
-                selectNodesOnDrag={false}
-                fitView
-                fitViewOptions={{ padding: 0.2 }}
-                multiSelectionKeyCode="Shift"
-                deleteKeyCode={["Backspace", "Delete"]}
-                className="bg-background z-0"
-              >
-            <Background variant={backgroundVariant} gap={12} size={1} />
-            <Controls />
-            
-            {canvasOnly && (
-              <Panel position="top-right">
-                <Button size="sm" variant="outline" onClick={() => setCanvasOnly(false)}>
-                  <Minimize2 className="h-4 w-4" />
-                </Button>
-              </Panel>
-            )}
-              </ReactFlow>
-            </div>
-          </CanvasContextMenu>
+            onClose={closePaneContextMenu}
+            onAddNode={handleAddNodeFromPaneMenu}
+          />
 
           {/* Testing Console */}
           {showTestConsole && (
