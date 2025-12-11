@@ -208,7 +208,7 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
     setShowCreateDialog(false);
     
     // Navigate to canvas with context
-    navigate('/agents', { 
+    navigate('/agents/canvas', {
       state: { 
         prefillPrompt,
         agentContext: {
@@ -481,12 +481,14 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                   onDeploy={(channels) => deployToChannels(agent.id, channels)}
                   onDelete={() => handleDeleteAgent(agent.id)}
                   onBuildInCanvas={() => {
-                    navigate('/agents', { 
+                    console.log('🚀 onBuildInCanvas triggered for agent:', agent.name);
+                    navigate('/agents/canvas', {
                       state: { 
                         prefillPrompt: `Edit agent "${agent.name}" for ${agent.use_case?.name || 'custom'} use case.`,
                         agentContext: { name: agent.name, useCaseId: agent.use_case_id }
                       }
                     });
+                    console.log('✅ Navigation called to /agents');
                   }}
                   isDeploying={isDeploying}
                 />
@@ -518,7 +520,7 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                   onDeploy={(channels) => deployToChannels(agent.id, channels)}
                   onDelete={() => handleDeleteAgent(agent.id)}
                   onBuildInCanvas={() => {
-                    navigate('/agents', { 
+                    navigate('/agents/canvas', {
                       state: { 
                         prefillPrompt: `Edit agent "${agent.name}" for ${agent.use_case?.name || 'custom'} use case.`,
                         agentContext: { name: agent.name, useCaseId: agent.use_case_id }
@@ -554,7 +556,7 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                             onDeploy={(channels) => deployToChannels(agent.id, channels)}
                             onDelete={() => handleDeleteAgent(agent.id)}
                             onBuildInCanvas={() => {
-                              navigate('/agents', { 
+                              navigate('/agents/canvas', {
                                 state: { 
                                   prefillPrompt: `Edit agent "${agent.name}" for ${agent.use_case?.name || 'custom'} use case.`,
                                   agentContext: { name: agent.name, useCaseId: agent.use_case_id }
@@ -1070,16 +1072,21 @@ const AgentCard: React.FC<AgentCardProps> = ({
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="bg-background border shadow-lg">
-                <DropdownMenuItem onSelect={onBuildInCanvas}>
+                <DropdownMenuItem 
+                  onSelect={() => {
+                    console.log('🎯 Edit in Canvas clicked');
+                    onBuildInCanvas();
+                  }}
+                >
                   <Workflow className="h-4 w-4 mr-2" />
                   Edit in Canvas
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onShowSnippet}>
+                <DropdownMenuItem onSelect={() => onShowSnippet()}>
                   <Code className="h-4 w-4 mr-2" />
                   View Code Snippet
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={onToggleStatus}>
+                <DropdownMenuItem onSelect={() => onToggleStatus()}>
                   {agent.status === 'active' ? (
                     <>
                       <Pause className="h-4 w-4 mr-2" />
@@ -1092,7 +1099,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
                     </>
                   )}
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={onDelete} className="text-destructive focus:text-destructive">
+                <DropdownMenuItem onSelect={() => onDelete()} className="text-destructive focus:text-destructive">
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete Agent
                 </DropdownMenuItem>
