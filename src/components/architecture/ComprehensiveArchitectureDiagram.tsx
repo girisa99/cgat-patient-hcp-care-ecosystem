@@ -46,10 +46,16 @@ const LogoIcon: React.FC<{ name: string; className?: string }> = ({ name, classN
   const logoStyles: Record<string, { bg: string; text: string; icon: string }> = {
     // AI Models
     'GPT-4o': { bg: 'bg-emerald-600', text: 'text-white', icon: 'O' },
+    'GPT-5': { bg: 'bg-emerald-700', text: 'text-white', icon: '5' },
     'Claude 3': { bg: 'bg-orange-500', text: 'text-white', icon: 'C' },
     'Gemini': { bg: 'bg-blue-500', text: 'text-white', icon: 'G' },
+    'Gemini 3': { bg: 'bg-blue-600', text: 'text-white', icon: 'G3' },
     'Llama': { bg: 'bg-purple-600', text: 'text-white', icon: 'L' },
     'Mistral': { bg: 'bg-cyan-600', text: 'text-white', icon: 'M' },
+    'Vertex AI': { bg: 'bg-blue-700', text: 'text-white', icon: 'V' },
+    // Development Platforms
+    'Lovable': { bg: 'bg-pink-500', text: 'text-white', icon: '💜' },
+    'Bolt': { bg: 'bg-yellow-500', text: 'text-black', icon: '⚡' },
     // Tools
     'LangChain': { bg: 'bg-green-600', text: 'text-white', icon: '🦜' },
     'LangWatch': { bg: 'bg-indigo-600', text: 'text-white', icon: 'LW' },
@@ -77,7 +83,6 @@ const LogoIcon: React.FC<{ name: string; className?: string }> = ({ name, classN
   };
 
   const style = logoStyles[name] || { bg: 'bg-slate-600', text: 'text-white', icon: name.charAt(0) };
-  
   return (
     <div className={`w-6 h-6 rounded flex items-center justify-center text-[10px] font-bold ${style.bg} ${style.text} ${className}`}>
       {style.icon}
@@ -231,11 +236,12 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
               title="Large Language Models"
               icon={<Cpu className="h-4 w-4 text-blue-400" />}
               items={[
-                { name: 'GPT-4o', hasLogo: true },
+                { name: 'GPT-5', hasLogo: true },
                 { name: 'Claude 3', hasLogo: true },
-                { name: 'Gemini', hasLogo: true },
+                { name: 'Gemini 3', hasLogo: true },
                 { name: 'Llama', hasLogo: true },
-                { name: 'Mistral', hasLogo: true }
+                { name: 'Mistral', hasLogo: true },
+                { name: 'Vertex AI', hasLogo: true }
               ]}
               variant="blue"
             />
@@ -323,7 +329,18 @@ export const ComprehensiveArchitectureDiagram: React.FC = () => {
           </div>
 
           {/* Tools & Middleware Row */}
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-4 gap-3">
+            <ArchitectureBlock
+              title="Dev Platforms"
+              icon={<Code className="h-4 w-4 text-purple-400" />}
+              items={[
+                { name: 'Lovable', hasLogo: true },
+                { name: 'Bolt', hasLogo: true },
+                { name: 'Cursor' },
+                { name: 'Replit' }
+              ]}
+              variant="purple"
+            />
             <ArchitectureBlock
               title="AI/ML Tools"
               icon={<Wrench className="h-4 w-4 text-purple-400" />}
