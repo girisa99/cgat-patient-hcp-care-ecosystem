@@ -203,7 +203,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   const [nodesDraggable, setNodesDraggable] = useState(true);
   const [connectOnClick, setConnectOnClick] = useState(false);
   const [canvasOnly, setCanvasOnly] = useState(false);
-  const [showMiniMap, setShowMiniMap] = useState(true);
+  const [showMiniMap, setShowMiniMap] = useState(false); // Disabled by default - cleaner canvas
   const [contextMenuPosition, setContextMenuPosition] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
 
   // References and Hooks
@@ -876,7 +876,6 @@ Examples:
               >
             <Background variant={backgroundVariant} gap={12} size={1} />
             <Controls />
-            {showMiniMap && <MiniMap />}
             
             {canvasOnly && (
               <Panel position="top-right">

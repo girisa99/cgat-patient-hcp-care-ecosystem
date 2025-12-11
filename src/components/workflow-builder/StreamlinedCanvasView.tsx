@@ -60,6 +60,31 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
+  
+  // Knowledge Base and RAG Configuration
+  const [knowledgeBaseConfig, setKnowledgeBaseConfig] = useState<{
+    enabled: boolean;
+    knowledgeBaseIds: string[];
+    contextWindow: number;
+  }>({
+    enabled: true,
+    knowledgeBaseIds: [],
+    contextWindow: 5,
+  });
+  
+  const [ragConfig, setRagConfig] = useState<{
+    enabled: boolean;
+    chunkSize: number;
+    overlapSize: number;
+    embeddingModel: string;
+    retrievalTopK: number;
+  }>({
+    enabled: true,
+    chunkSize: 500,
+    overlapSize: 50,
+    embeddingModel: 'text-embedding-ada-002',
+    retrievalTopK: 5,
+  });
 
   useEffect(() => {
     checkHealth();
@@ -142,7 +167,15 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
       const response = await generateResponse({
         provider: 'gemini',
         model: 'gemini-2.0-flash',
-        prompt: `Generate workflow nodes for: ${aiPrompt}. Agent context: ${agentContext.name} - ${agentContext.description || ''}. Return a JSON array of nodes with label, type (action/condition/output), and description.`,
+        prompt: `Generate workflow nodes for: ${aiPrompt}. Agent context: ${agentContext.name} - ${agentContext.description || ''}. 
+        
+Return a JSON array of nodes with these fields:
+- label: node display name
+- type: one of (action, condition, output, knowledge_base, rag_retrieval, api_call)
+- intent: short description of what this node does (required)
+- description: detailed explanation
+
+Example: [{"label": "Fetch Knowledge", "type": "knowledge_base", "intent": "Query KB for relevant context", "description": "..."}]`,
       });
 
       // Parse AI response to extract nodes
@@ -155,17 +188,23 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
             const newNodes = parsedNodes.map((n: any, idx: number) => ({
               id: `gen-${Date.now()}-${idx}`,
               type: 'enhanced',
-              position: { x: 400 + (idx % 3) * 200, y: 100 + Math.floor(idx / 3) * 150 },
+              position: { x: 400 + (idx % 3) * 180, y: 100 + Math.floor(idx / 3) * 120 },
               data: {
                 label: n.label || n.name || `Node ${idx + 1}`,
                 type_key: n.type || 'action',
-                configuration: n.configuration || {},
+                intent: n.intent || n.description || 'Process data',
+                configuration: {
+                  ...(n.configuration || {}),
+                  // Link KB/RAG config for relevant nodes
+                  ...(n.type === 'knowledge_base' && { knowledgeBaseConfig }),
+                  ...(n.type === 'rag_retrieval' && { ragConfig }),
+                },
                 isWorkflowNode: true,
               }
             }));
             setWorkflowNodes(prev => [...prev, ...newNodes]);
             setHasUnsavedChanges(true);
-            toast.success(`Added ${newNodes.length} nodes`);
+            toast.success(`Added ${newNodes.length} nodes with intent`);
           } else {
             // Fallback: create a single node from the prompt
             const newNode = {
@@ -175,6 +214,7 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
               data: {
                 label: aiPrompt.slice(0, 30),
                 type_key: 'action',
+                intent: aiPrompt,
                 configuration: { description: aiPrompt },
                 isWorkflowNode: true,
               }
@@ -209,7 +249,9 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
               workflow: {
                 nodes: workflowNodes,
                 edges: workflowEdges,
-              }
+              },
+              knowledgeBase: knowledgeBaseConfig,
+              ragConfig: ragConfig,
             },
             updated_at: new Date().toISOString(),
           })
@@ -230,7 +272,9 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
               workflow: {
                 nodes: workflowNodes,
                 edges: workflowEdges,
-              }
+              },
+              knowledgeBase: knowledgeBaseConfig,
+              ragConfig: ragConfig,
             },
             status: 'draft',
           });
@@ -244,6 +288,54 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
       toast.error(e?.message || 'Failed to save');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleDeploy = async () => {
+    // Save first
+    await handleSave();
+    
+    if (!agentContext.id) {
+      toast.error('Please save the agent first');
+      return;
+    }
+
+    try {
+      // Update agent status to active
+      const { error } = await supabase
+        .from('agents')
+        .update({
+          status: 'active',
+          deployment_config: {
+            deployed_at: new Date().toISOString(),
+            deployed_by: user?.id,
+            channels: agentContext.channels || ['web'],
+          },
+          updated_at: new Date().toISOString(),
+        })
+        .eq('id', agentContext.id);
+
+      if (error) throw error;
+
+      // Log analytics event
+      await supabase.from('agent_performance_metrics').insert({
+        agent_id: agentContext.id,
+        metric_type: 'deployment',
+        metric_value: 1,
+        metadata: {
+          event: 'agent_deployed',
+          workflow_nodes: workflowNodes.length,
+          workflow_edges: workflowEdges.length,
+        },
+      });
+
+      toast.success('Agent deployed successfully');
+      setShowDeployDialog(false);
+      
+      // Navigate back to admin
+      navigate('/admin', { state: { deployedAgentId: agentContext.id } });
+    } catch (e: any) {
+      toast.error(e?.message || 'Deployment failed');
     }
   };
 
@@ -405,7 +497,7 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
 
       {/* Deploy Dialog */}
       <Dialog open={showDeployDialog} onOpenChange={setShowDeployDialog}>
-        <DialogContent>
+        <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>Deploy {agentContext.name}</DialogTitle>
           </DialogHeader>
@@ -413,16 +505,35 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
             <p className="text-sm text-muted-foreground">
               Your agent workflow has {workflowNodes.length} nodes and is ready for deployment.
             </p>
-            <div className="flex gap-2">
+            
+            {/* KB/RAG Summary */}
+            <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">Knowledge Base:</span>
+                <Badge variant={knowledgeBaseConfig.enabled ? 'default' : 'secondary'}>
+                  {knowledgeBaseConfig.enabled ? 'Enabled' : 'Disabled'}
+                </Badge>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-muted-foreground">RAG Processing:</span>
+                <Badge variant={ragConfig.enabled ? 'default' : 'secondary'}>
+                  {ragConfig.enabled ? 'Enabled' : 'Disabled'}
+                </Badge>
+              </div>
+              {knowledgeBaseConfig.knowledgeBaseIds.length > 0 && (
+                <div className="text-xs text-muted-foreground">
+                  {knowledgeBaseConfig.knowledgeBaseIds.length} knowledge base(s) connected
+                </div>
+              )}
+            </div>
+            
+            <div className="flex gap-2 justify-end">
               <Button variant="outline" onClick={() => setShowDeployDialog(false)}>
                 Cancel
               </Button>
-              <Button onClick={() => {
-                toast.success('Deployment initiated');
-                setShowDeployDialog(false);
-              }}>
+              <Button onClick={handleDeploy}>
                 <Play className="h-4 w-4 mr-2" />
-                Deploy Now
+                Deploy & Return to Admin
               </Button>
             </div>
           </div>
