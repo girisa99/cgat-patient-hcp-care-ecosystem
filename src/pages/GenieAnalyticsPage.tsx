@@ -43,10 +43,10 @@ export const GenieAnalyticsPage: React.FC = () => {
   return (
     <AppLayout>
       <div className="space-y-4">
-        <Link to="/genie-management">
+        <Link to="/admin">
           <Button variant="ghost" size="sm">
             <ArrowLeft className="h-4 w-4 mr-2" />
-            Back to Genie Management
+            Back to Admin
           </Button>
         </Link>
         <GenieAnalyticsDashboard 
