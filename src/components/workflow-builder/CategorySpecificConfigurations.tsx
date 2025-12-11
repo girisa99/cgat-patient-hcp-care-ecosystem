@@ -9,7 +9,8 @@ import { Slider } from '@/components/ui/slider';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Plus, Trash2, Bot, Database, MessageCircle, Search, Globe, Zap, Mail, Calculator, FileText, Code, Settings, Clock, PenTool, Image, Volume2, Webhook, Filter, BarChart3, FileCheck, Users, Shield, AlertTriangle } from 'lucide-react';
+import { Plus, Trash2, Bot, Database, MessageCircle, Search, Globe, Zap, Mail, Calculator, FileText, Code, Settings, Clock, PenTool, Image, Volume2, Webhook, Filter, BarChart3, FileCheck, Users, Shield, AlertTriangle, Network } from 'lucide-react';
+import { MultiAgentNodeConfiguration } from './MultiAgentNodeConfiguration';
 
 // Import new configuration components
 import { DocumentLoadersConfig } from './configurations/DocumentLoadersConfig';
@@ -2353,6 +2354,12 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
     return <MCPProtocolConfig nodeType={nodeType} configuration={configuration} onChange={onChange} form={form} />;
   }
 
+  // Multi-Agent, A2A, Agentic AI, and Swarm node configurations
+  const multiAgentTypes = ['a2a_agent', 'task_handoff', 'communication_hub', 'agent_team', 'swarm_decision', 'tool_sharing', 'react_loop', 'tool_chain', 'self_reflection', 'goal_decomposition'];
+  if (multiAgentTypes.includes(nodeType)) {
+    return <MultiAgentNodeConfiguration nodeType={nodeType} configuration={configuration} onChange={onChange} />;
+  }
+
   // Main render logic based on category and node type
   switch (category) {
     case 'AI Agents':
@@ -2384,6 +2391,10 @@ export const CategorySpecificConfigurations: React.FC<CategoryConfigProps> = ({
     case 'Human Handoff':
     case 'human-handoff':
       return renderHumanHandoffConfiguration();
+
+    case 'Multi-Agent':
+    case 'multi-agent':
+      return <MultiAgentNodeConfiguration nodeType={nodeType} configuration={configuration} onChange={onChange} />;
     
     default:
       // Check for specific node types that need custom configuration
