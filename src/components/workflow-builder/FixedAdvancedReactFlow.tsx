@@ -47,26 +47,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ContextMenu, ContextMenuContent, ContextMenuItem, ContextMenuTrigger, ContextMenuSub, ContextMenuSubTrigger, ContextMenuSubContent } from '@/components/ui/context-menu';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Textarea } from '@/components/ui/textarea';
-import { SaveAsTemplateModal } from './SaveAsTemplateModal';
 
 // Icons
 import { 
-  Play, Pause, RotateCcw, Save, Download, Upload, Eye, Plus, Trash2, 
-  Settings, Zap, Bot, Users, AlertTriangle, Database, GitBranch,
-  Layout, Grid, Layers, Move, RotateCw, Maximize2, Copy, Edit,
-  Target, Link, Workflow, Activity, MousePointer, Hand, Square,
-  TestTube, Rocket, Sparkles, Brain, ChevronRight, X, Minimize2,
-  Lightbulb
+  Save, Plus, Users, Bot, Brain, Layout,
+  Database, 
+  Maximize2, Copy, Edit,
+  X, Minimize2
 } from 'lucide-react';
 
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
-import { SidebarProvider } from '@/components/ui/sidebar';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { useMasterToast } from '@/hooks/useMasterToast';
-import { useAgentSession } from '@/hooks/useAgentSession';
-import { useWorkflowManager } from '@/hooks/useWorkflowManager';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
-import { supabase } from '@/integrations/supabase/client';
 
 // Node Components
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
@@ -74,16 +67,10 @@ import { AgentNode } from './nodes/AgentNode';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { EnhancedNodePalette } from './EnhancedNodePalette';
 import { RightDockedAIPanel } from './RightDockedAIPanel';
-import { NodeContextMenu } from './NodeContextMenu';
-import { TestingConsolePanel } from './TestingConsolePanel';
 import { TemplateGallery } from '../unified-workflow/TemplateGallery';
-import { DynamicNodeConfiguration } from '../unified-workflow/DynamicNodeConfiguration';
 import { EnhancedNodeConfigurationPanel } from './EnhancedNodeConfigurationPanel';
-import { AnimatedFlowVisualizer } from '@/components/workflow-testing/AnimatedFlowVisualizer';
-import { IntelligentNodeRecommendations } from '@/components/workflow-intelligence/IntelligentNodeRecommendations';
-import { AnimatedProcessFlow } from '@/components/workflow-intelligence/AnimatedProcessFlow';
-
-const LazySmartNodeConfigurator = lazy(() => import('./SmartNodeConfigurator').then(m => ({ default: m.SmartNodeConfigurator })));
+import { SaveAsTemplateModal } from './SaveAsTemplateModal';
+import { TestingConsolePanel } from './TestingConsolePanel';
 
 // Enhanced Props Interface
 export interface FixedAdvancedReactFlowProps {
@@ -764,43 +751,13 @@ Examples:
 
   return (
     <div className={`w-full h-full flex flex-col ${className}`} ref={reactFlowWrapper}>
-      {/* Enhanced Toolbar */}
-      {!canvasOnly && (
+{/* Minimal Toolbar - only show when not embedded */}
+      {!embedded && !canvasOnly && (
         <div className="flex items-center justify-between p-2 bg-card border-b">
           <div className="flex items-center gap-2">
             <Button size="sm" variant="outline" onClick={generateStartEndWorkflow}>
               <Plus className="h-4 w-4 mr-1" />
-              Start & End
-            </Button>
-            
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setShowRightAIPanel(true)}
-              title="Generate workflow from AI prompt"
-            >
-              <Bot className="h-4 w-4 mr-1" />
-              AI Assistant
-            </Button>
-
-            <Button size="sm" variant="outline" onClick={() => setShowTestConsole(!showTestConsole)}>
-              <TestTube className="h-4 w-4 mr-1" />
-              Test
-            </Button>
-
-            <Button size="sm" variant="outline" onClick={() => setShowProcessFlow(!showProcessFlow)}>
-              <Activity className="h-4 w-4 mr-1" />
-              Animate
-            </Button>
-
-            <Button size="sm" variant="outline" onClick={() => setShowTemplateGallery(true)}>
-              <Layout className="h-4 w-4 mr-1" />
-              Templates
-            </Button>
-
-            <Button size="sm" variant="outline" onClick={() => setShowRecommendations(!showRecommendations)}>
-              <Lightbulb className="h-4 w-4 mr-1" />
-              Smart Tips
+              New
             </Button>
           </div>
 
@@ -814,39 +771,9 @@ Examples:
                 disabled={nodes.length === 0}
               >
                 <Save className="h-4 w-4 mr-1" />
-                Save Workflow
+                Save
               </Button>
             )}
-            
-            <Button 
-              size="sm" 
-              variant="outline" 
-              onClick={() => setShowSaveAsTemplate(true)}
-              disabled={nodes.length === 0}
-              title="Save current workflow as a reusable template"
-            >
-              <Database className="h-4 w-4 mr-1" />
-              Save as Template
-            </Button>
-            <Select 
-              defaultValue={typeof window !== 'undefined' ? (localStorage.getItem('agentBuilder_selectedMode') || 'unified') : 'unified'}
-              onValueChange={(val) => {
-                try { localStorage.setItem('agentBuilder_selectedMode', val); } catch {}
-                try { window.dispatchEvent(new CustomEvent('switch-agent-mode', { detail: val })); } catch {}
-              }}
-            >
-              <SelectTrigger className="h-8 w-[150px] text-xs">
-                <SelectValue placeholder="Mode" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="unified">Unified</SelectItem>
-                <SelectItem value="visual">Visual</SelectItem>
-                <SelectItem value="ecosystem">Ecosystem</SelectItem>
-              </SelectContent>
-            </Select>
-            <Badge variant="secondary" className="text-xs">
-              {categories.length} Categories | {nodeTypes.length} Node Types
-            </Badge>
             
             <Button size="sm" variant="outline" onClick={() => setCanvasOnly(true)}>
               <Maximize2 className="h-4 w-4" />
@@ -855,14 +782,15 @@ Examples:
         </div>
       )}
 
-      {/* Main Flow Area */}
+{/* Main Flow Area */}
       <div className="flex-1 relative flex min-h-0">
-        {!canvasOnly && (
-          <div className="w-64 md:w-72 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
+        {/* Node Library Sidebar - hidden when embedded */}
+        {!embedded && !canvasOnly && (
+          <div className="w-56 bg-background border-r flex flex-col min-h-0 overflow-y-auto pointer-events-auto z-10 animate-fade-in">
             <div className="h-full flex flex-col">
-              <div className="p-3 border-b bg-background">
-                <h3 className="font-semibold text-sm flex items-center gap-2">
-                  <Database className="h-4 w-4 text-primary" />
+              <div className="p-2 border-b bg-background">
+                <h3 className="font-medium text-xs flex items-center gap-2">
+                  <Database className="h-3 w-3 text-primary" />
                   Node Library
                 </h3>
               </div>
@@ -927,25 +855,39 @@ Examples:
         </div>
       </div>
 
-      {/* Right Docked AI Panel */}
-      <RightDockedAIPanel
-        isOpen={showRightAIPanel}
-        onClose={() => setShowRightAIPanel(false)}
-        onWorkflowGenerated={handleWorkflowGenerated}
-      />
+      {/* Panels only shown when not embedded (parent manages these) */}
+      {!embedded && (
+        <>
+          <RightDockedAIPanel
+            isOpen={showRightAIPanel}
+            onClose={() => setShowRightAIPanel(false)}
+            onWorkflowGenerated={handleWorkflowGenerated}
+          />
 
-      {/* Template Gallery */}
-      {showTemplateGallery && (
-        <TemplateGallery
-          isOpen={showTemplateGallery}
-          onClose={() => setShowTemplateGallery(false)}
-          onTemplateSelect={(template) => {
-            // Apply template logic here
-            setShowTemplateGallery(false);
-          }}
-        />
+          {showTemplateGallery && (
+            <TemplateGallery
+              isOpen={showTemplateGallery}
+              onClose={() => setShowTemplateGallery(false)}
+              onTemplateSelect={(template) => {
+                setShowTemplateGallery(false);
+              }}
+            />
+          )}
+
+          <SaveAsTemplateModal
+            isOpen={showSaveAsTemplate}
+            onClose={() => setShowSaveAsTemplate(false)}
+            nodes={getNodes()}
+            edges={getEdges()}
+            onSave={() => {
+              showSuccess('Workflow saved as template!');
+              setShowSaveAsTemplate(false);
+            }}
+          />
+        </>
       )}
 
+      {/* Node configuration always available */}
       {showConfigurator && configNodeInfo && (
         <EnhancedNodeConfigurationPanel
           isOpen={showConfigurator}
@@ -962,63 +904,6 @@ Examples:
           onTest={onNodeTest}
         />
       )}
-
-      {/* Save as Template Modal */}
-      <SaveAsTemplateModal
-        isOpen={showSaveAsTemplate}
-        onClose={() => setShowSaveAsTemplate(false)}
-        nodes={getNodes()}
-        edges={getEdges()}
-        onSave={(templateId) => {
-          showSuccess('Workflow saved as template successfully!');
-          setShowSaveAsTemplate(false);
-        }}
-      />
-
-      {/* Intelligent Node Recommendations */}
-      <IntelligentNodeRecommendations
-        nodes={nodes}
-        edges={edges}
-        isVisible={showRecommendations}
-        onToggle={() => setShowRecommendations(!showRecommendations)}
-        onRecommendationAccept={(recommendation) => {
-          const newNode = {
-            id: `rec-${Date.now()}`,
-            type: 'enhanced',
-            position: recommendation.position,
-            data: {
-              label: recommendation.displayName,
-              type_key: recommendation.nodeType,
-              category: recommendation.category,
-              configuration: {},
-              icon: recommendation.icon,
-              color: recommendation.color,
-              isConfigured: false
-            }
-          };
-          setNodes(prev => [...prev, newNode]);
-          onNodeAdd?.(newNode);
-        }}
-        onRecommendationGenerate={(prompt) => {
-          setAIPrompt(prompt);
-          setShowRightAIPanel(true);
-        }}
-      />
-
-      {/* Animated Process Flow */}
-      <AnimatedProcessFlow
-        nodes={nodes}
-        edges={edges}
-        isVisible={showProcessFlow}
-        onToggle={() => setShowProcessFlow(!showProcessFlow)}
-        onNodeExecuted={(nodeId, result) => {
-          console.log(`Node ${nodeId} executed:`, result);
-          if (onNodeTest) {
-            onNodeTest(nodeId, result);
-          }
-        }}
-        testData={{}}
-      />
 
     </div>
   );
