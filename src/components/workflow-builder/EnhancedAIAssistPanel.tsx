@@ -1,9 +1,9 @@
 /**
  * ENHANCED AI ASSIST PANEL
  * Multi-tab AI assistant for workflow canvas with context preservation
- * Supports: Generate, Analyze, MCP Tools, KB/RAG, Performance
+ * Supports: Architecture, Generate, Analyze, MCP Tools, KB/RAG, Performance
  */
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -11,6 +11,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Progress } from '@/components/ui/progress';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Sparkles, 
   X, 
@@ -28,12 +30,23 @@ import {
   Users,
   Network,
   RefreshCw,
-  Share2
+  Share2,
+  Cpu,
+  MessageSquare,
+  Plug,
+  ChevronDown,
+  ChevronRight,
+  Info
 } from 'lucide-react';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MULTI_AGENT_NODES, determineAgentArchitecture, getArchitectureInfo } from './MultiAgentNodeRegistry';
+import { 
+  agentArchitectureIntelligence, 
+  AgentArchitectureType,
+  ArchitectureRecommendation 
+} from '@/services/agentArchitectureIntelligence';
 
 interface AgentContext {
   id?: string;
