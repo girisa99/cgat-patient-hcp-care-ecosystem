@@ -100,8 +100,19 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
     isExecuting,
   } = useNodeConfiguration(normalizedNode.id, sessionId, workflowId);
 
-  const { tables, mcpLikeTools } = useIntegrationOptions();
+  const { tables, mcpLikeTools, mcpNodeTools, getColumnsForTable, getTextLikeColumns } = useIntegrationOptions();
   const { apiServices, isLoading: isLoadingApis } = useApiServices();
+  
+  // MCP SDK Tools state
+  const [mcpTools, setMcpTools] = useState<Array<{name: string; type: string; config: any}>>(
+    normalizedNode.data?.mcpTools || []
+  );
+  const [newToolName, setNewToolName] = useState('');
+  const [newToolType, setNewToolType] = useState('sync-field-to-db');
+
+  // Get columns for selected KB table
+  const kbTableColumns = getColumnsForTable(kbSourceTable);
+  const textColumns = getTextLikeColumns(kbSourceTable);
 
   const handleConfigurationChange = (newConfig: any) => {
     saveConfiguration({
@@ -534,6 +545,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                                 <SelectItem value="webhook">Webhook</SelectItem>
                                 <SelectItem value="salesforce">Salesforce CRM</SelectItem>
                                 <SelectItem value="hubspot">HubSpot</SelectItem>
+                                <SelectItem value="veeva">Veeva CRM</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
@@ -576,6 +588,99 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                       </CardContent>
                     </Card>
 
+                    {/* Add MCP SDK Tool */}
+                    <Card>
+                      <CardHeader>
+                        <CardTitle className="flex items-center gap-2">
+                          <Plus className="h-5 w-5" />
+                          Add MCP SDK Tool
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                          <div>
+                            <Label>Tool Type</Label>
+                            <Select value={newToolType} onValueChange={setNewToolType}>
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select tool type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="sync-field-to-db">Sync Field to Database</SelectItem>
+                                <SelectItem value="sync-section-to-db">Sync Section to Database</SelectItem>
+                                <SelectItem value="push-to-crm">Push to CRM</SelectItem>
+                                <SelectItem value="validate-npi">Validate NPI</SelectItem>
+                                <SelectItem value="validate-insurance">Validate Insurance</SelectItem>
+                                <SelectItem value="send-notification">Send Notification</SelectItem>
+                                <SelectItem value="webhook-trigger">Webhook Trigger</SelectItem>
+                                <SelectItem value="data-transform">Data Transform</SelectItem>
+                                <SelectItem value="custom">Custom Tool</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div>
+                            <Label>Tool Name</Label>
+                            <Input 
+                              placeholder="e.g., sync-patient-data" 
+                              value={newToolName}
+                              onChange={(e) => setNewToolName(e.target.value)}
+                            />
+                          </div>
+                        </div>
+                        <Button 
+                          onClick={() => {
+                            if (!newToolName.trim()) {
+                              alert('Please enter a tool name');
+                              return;
+                            }
+                            const updatedTools = [...mcpTools, { 
+                              name: newToolName, 
+                              type: newToolType,
+                              config: {}
+                            }];
+                            setMcpTools(updatedTools);
+                            handleConfigurationChange({ 
+                              ...normalizedNode.data, 
+                              mcpTools: updatedTools 
+                            });
+                            setNewToolName('');
+                          }}
+                          size="sm"
+                        >
+                          <Plus className="h-4 w-4 mr-2" />
+                          Add Tool
+                        </Button>
+                        
+                        {/* List of added tools */}
+                        {mcpTools.length > 0 && (
+                          <div className="space-y-2 mt-4">
+                            <Label>Configured Tools</Label>
+                            {mcpTools.map((tool, index) => (
+                              <div key={index} className="flex items-center justify-between p-2 border rounded">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="secondary">{tool.type}</Badge>
+                                  <span className="text-sm">{tool.name}</span>
+                                </div>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  onClick={() => {
+                                    const updatedTools = mcpTools.filter((_, i) => i !== index);
+                                    setMcpTools(updatedTools);
+                                    handleConfigurationChange({ 
+                                      ...normalizedNode.data, 
+                                      mcpTools: updatedTools 
+                                    });
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+
                     {/* Execute Tools */}
                     <Card>
                       <CardHeader>
@@ -592,13 +697,20 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                               <SelectValue placeholder="Choose a tool to execute" />
                             </SelectTrigger>
                             <SelectContent>
-                              {availableTools.length > 0 ? (
-                                availableTools.map((tool) => (
-                                  <SelectItem key={tool} value={tool}>
-                                    {tool}
-                                  </SelectItem>
-                                ))
-                              ) : (
+                              {/* User configured MCP tools */}
+                              {mcpTools.map((tool, index) => (
+                                <SelectItem key={`mcp-config-${index}`} value={tool.name}>
+                                  {tool.name} ({tool.type})
+                                </SelectItem>
+                              ))}
+                              {/* Node tools */}
+                              {availableTools.map((tool) => (
+                                <SelectItem key={tool} value={tool}>
+                                  {tool}
+                                </SelectItem>
+                              ))}
+                              {/* Default tools if none configured */}
+                              {mcpTools.length === 0 && availableTools.length === 0 && (
                                 <>
                                   <SelectItem value="npi_verification">NPI Verification</SelectItem>
                                   <SelectItem value="insurance_validation">Insurance Validation</SelectItem>
@@ -636,11 +748,16 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                     {/* Available Tools from Node + MCP */}
                     <Card>
                       <CardHeader>
-                        <CardTitle>Available Tools</CardTitle>
+                        <CardTitle>Available Tools & Integrations</CardTitle>
                       </CardHeader>
                       <CardContent>
-                        {nodeTools.length > 0 || mcpLikeTools.length > 0 ? (
+                        {nodeTools.length > 0 || mcpLikeTools.length > 0 || mcpTools.length > 0 ? (
                           <div className="grid grid-cols-2 gap-2">
+                            {mcpTools.map((tool, index) => (
+                              <Badge key={`user-${index}`} variant="default" className="justify-center">
+                                {tool.name}
+                              </Badge>
+                            ))}
                             {nodeTools.map((tool: any, index: number) => (
                               <Badge key={`node-${index}`} variant="secondary" className="justify-center">
                                 {tool.name}
@@ -654,7 +771,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                           </div>
                         ) : (
                           <p className="text-sm text-muted-foreground text-center py-4">
-                            No tools configured. Add tools via the Configuration tab.
+                            No tools configured. Add MCP SDK tools above or enable MCP SDK.
                           </p>
                         )}
                       </CardContent>
@@ -686,11 +803,20 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                                       <SelectValue placeholder="Select table" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      {tables.map((table) => (
-                                        <SelectItem key={table.table_name} value={table.table_name}>
-                                          {table.table_name}
-                                        </SelectItem>
-                                      ))}
+                                      {tables.length > 0 ? (
+                                        tables.map((table) => (
+                                          <SelectItem key={table.table_name} value={table.table_name}>
+                                            {table.table_name}
+                                          </SelectItem>
+                                        ))
+                                      ) : (
+                                        <>
+                                          <SelectItem value="knowledge_base">knowledge_base</SelectItem>
+                                          <SelectItem value="universal_knowledge_base">universal_knowledge_base</SelectItem>
+                                          <SelectItem value="agents">agents</SelectItem>
+                                          <SelectItem value="agent_templates">agent_templates</SelectItem>
+                                        </>
+                                      )}
                                     </SelectContent>
                                   </Select>
                                 </div>
@@ -701,11 +827,22 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
                                       <SelectValue placeholder="Select column" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                      <SelectItem value="content">content</SelectItem>
-                                      <SelectItem value="description">description</SelectItem>
-                                      <SelectItem value="data">data</SelectItem>
-                                      <SelectItem value="text">text</SelectItem>
-                                      <SelectItem value="body">body</SelectItem>
+                                      {kbTableColumns.length > 0 ? (
+                                        kbTableColumns.map((col) => (
+                                          <SelectItem key={col.column_name} value={col.column_name}>
+                                            {col.column_name} ({col.data_type})
+                                          </SelectItem>
+                                        ))
+                                      ) : (
+                                        <>
+                                          <SelectItem value="content">content</SelectItem>
+                                          <SelectItem value="description">description</SelectItem>
+                                          <SelectItem value="data">data</SelectItem>
+                                          <SelectItem value="text">text</SelectItem>
+                                          <SelectItem value="body">body</SelectItem>
+                                          <SelectItem value="name">name</SelectItem>
+                                        </>
+                                      )}
                                     </SelectContent>
                                   </Select>
                                 </div>
