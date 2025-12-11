@@ -2,104 +2,41 @@ import React, { useState, useEffect } from 'react';
 import { SaveAsTemplateModal } from '@/components/workflow-builder/SaveAsTemplateModal';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { 
-  Bot, 
-  Settings, 
-  Workflow, 
   ArrowRight,
   Database,
-  Zap,
   ArrowLeft,
-  Lightbulb,
-  MessageCircle,
-  Plus,
   Play,
   Save as SaveIcon,
   Sparkles,
-  ArrowUp,
-  ArrowDown,
   X,
-  Target,
-  Brain,
-  Network,
-  Users
+  Brain
 } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 
 // Import existing components
 import { ModeSelector, type AgentMode } from '@/components/agent-builder/ModeSelector';
-import { PromptAssistant } from '@/components/agent-builder/PromptAssistant';
 import { AgentBuilderProvider, useAgentBuilder } from '@/components/agent-builder/AgentBuilderProvider';
 import { IntelligentQuestionnaire } from '@/components/agent-builder/IntelligentQuestionnaire';
 import { PromptBasedAgentGenerator } from '@/components/agent-builder/PromptBasedAgentGenerator';
-import { UseCaseSelector } from '@/components/agentic/UseCaseSelector';
-import { JourneyEditor } from '@/components/agentic/JourneyEditor';
-import { StreamlinedAgentWizard } from '@/components/agentic/StreamlinedAgentWizard';
 import { FixedAdvancedReactFlow } from '@/components/workflow-builder/FixedAdvancedReactFlow';
-import { ModelManagementDashboard } from '@/components/ModelManagement/ModelManagementDashboard';
-import { EnhancedConnectorSystem } from '@/components/agentic/enhanced-connector/EnhancedConnectorSystem';
-import { ActionsTab } from '@/components/agentic/tabs/ActionsTab';
-import AgenticAPIEcosystem from '@/components/agent-deployment/AgenticAPIEcosystem';
 import AppLayout from '@/components/layout/AppLayout';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { useMasterToast } from '@/hooks/useMasterToast';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
-import { EnhancedJourneyDesigner } from '@/components/journey/EnhancedJourneyDesigner';
-import { AIModelSelector } from '@/components/agentic/AIModelSelector';
-import { AdvancedReactFlowWrapper } from '@/components/workflow-builder/AdvancedReactFlow';
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { NodeConfigurationPanel } from '@/components/workflow-builder/NodeConfigurationPanel';
-import { NodePalette } from '@/components/workflow-builder/NodePalette';
-import { WorkflowAssetPanel } from '@/components/workflow-builder/WorkflowAssetPanel';
-import { LibrariesAndActions } from '@/components/workflow-builder/LibrariesAndActions';
-import { ResizablePanel } from '@/components/workflow-builder/ResizablePanel';
-import { UnifiedAgentAssist } from '@/components/unified/UnifiedAgentAssist';
-import { UnifiedWorkflowExperience } from '@/components/unified-workflow/UnifiedWorkflowExperience';
-import { AIAssistIntegration } from '@/components/unified-workflow/AIAssistIntegration';
-import { ConfigurableNodePanel } from '@/components/unified-workflow/ConfigurableNodePanel';
-import { TemplateGallery } from '@/components/unified-workflow/TemplateGallery';
-import { EnhancedDeploymentManager } from '@/components/deployment/EnhancedDeploymentManager';
-import { DynamicNodeConfiguration } from '@/components/unified-workflow/DynamicNodeConfiguration';
 import { useTemplateIntegration } from '@/components/workflow-builder/TemplateIntegrationManager';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
-import { ConsolidationVerification } from '@/components/verification/ConsolidationVerification';
-import ComprehensiveFunctionalityAudit from '@/components/assessment/ComprehensiveFunctionalityAudit';
-import { ComprehensiveWorkflowAudit } from '@/components/assessment/ComprehensiveWorkflowAudit';
-import ConsolidatedFunctionalityAudit from '@/components/assessment/ConsolidatedFunctionalityAudit';
-
-// Import new Agent Ecosystem components
-import { AgentEcosystemDashboard, AgentOrchestrationEngine } from '@/components/agent-ecosystem';
-import { ConsolidatedAgentDashboard } from '@/components/agent-management';
-
-// Import Observability components
+import { TemplateGallery } from '@/components/unified-workflow/TemplateGallery';
+import { EnhancedDeploymentManager } from '@/components/deployment/EnhancedDeploymentManager';
 import { ObservabilityDashboard } from '@/components/observability/ObservabilityDashboard';
-import { AnimatedFlowVisualizer } from '@/components/observability/AnimatedFlowVisualizer';
+import { UnifiedAgentAssist } from '@/components/unified/UnifiedAgentAssist';
 
-// Import Security & Governance components  
-import { AgentSecurityDashboard } from '@/components/agent-security/AgentSecurityDashboard';
-import { AgentGovernanceDashboard } from '@/components/agent-governance/AgentGovernanceDashboard';
-
-import { ExpandedWorkflowAssetPanel } from '@/components/workflow-builder/ExpandedWorkflowAssetPanel';
 import { useAgentSession } from '@/hooks/useAgentSession';
 import { supabase } from '@/integrations/supabase/client';
-import { Node, ReactFlowProvider } from '@xyflow/react';
+import { Node } from '@xyflow/react';
 import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
-
-// Advanced features imports
-import AdvancedCollaboration from '@/components/collaboration/AdvancedCollaboration';
-import AdvancedAnalytics from '@/components/analytics/AdvancedAnalytics';
-import EnterpriseFeatures from '@/components/enterprise/EnterpriseFeatures';
-import { GapAnalysisReport } from '@/components/assessment/GapAnalysisReport';
-import { SystemImplementationStatus } from '@/components/assessment/SystemImplementationStatus';
-import { ComprehensiveAgentAssessment } from '@/components/assessment/ComprehensiveAgentAssessment';
-import { ComprehensivePerformanceAnalyzer } from '@/components/performance/ComprehensivePerformanceAnalyzer';
-import { QueryPerformanceOptimizer } from '@/components/performance/QueryPerformanceOptimizer';
 
 const AgentsInner = () => {
   // Core state - simplified
@@ -125,12 +62,6 @@ const AgentsInner = () => {
 
   const location = useLocation();
 
-  console.log('[Agents] state init', {
-    selectedMode,
-    showModeSelector,
-    showQuestionnaire
-  });
-
   const { status: aiHealth, checkHealth, checking } = useAIServiceHealth();
   const isAIHealthy = aiHealth.overallHealthy;
   const aiCheckComplete = Boolean(aiHealth.lastChecked);
@@ -155,9 +86,7 @@ const AgentsInner = () => {
         setSelectedMode('visual' as AgentMode);
       }
       
-      // Auto-load patient enrollment workflow if coming from enrollment
       if (from === 'enrollment' && moduleParam === 'patient') {
-        // This will be handled by the workflow builder component
         toast.success('Loading Patient Enrollment Workflow...');
       } else {
         toast.success('AI Agent Builder is ready');
@@ -171,7 +100,8 @@ const AgentsInner = () => {
         toast.info('Enrollment context detected');
       }
     }
-  }, [location.search]);
+  }, [location.search, selectedMode]);
+
   // Pick up any pending workflow generated outside /agents
   useEffect(() => {
     try {
@@ -259,19 +189,17 @@ const AgentsInner = () => {
     return () => window.removeEventListener('workflow-generated', handler as any);
   }, []);
 
-  const { userSessions, currentSessionId, currentSession, actions, setActions } = useAgentBuilder();
-  const { createSession, updateSession } = useAgentSession();
+  const { userSessions, currentSession } = useAgentBuilder();
   const { userRoles, user } = useMasterAuth();
-  const { nodeTypes, categories, isLoading: nodesLoading } = useWorkflowNodes();
+  const { nodeTypes } = useWorkflowNodes();
 
   // Use Template Integration to map templates to real nodes/edges and ensure connectors
   const templateManager = useTemplateIntegration({
     onWorkflowUpdate: (nodes, edges) => {
-      // Normalize node type for AdvancedReactFlow: render with enhanced node component
       const normalizedNodes = (nodes || []).map((n: any) => ({ ...n, type: 'enhanced' }));
       setWorkflowNodes(normalizedNodes);
       setWorkflowEdges(edges || []);
-      toast.success(`Template applied: ${normalizedNodes.length} nodes, ${(edges || []).length} connectors`);
+      toast.success(`Template applied: ${normalizedNodes.length} nodes`);
     },
     onTemplateLoaded: () => {
       setShowTemplateGallery(false);
@@ -286,6 +214,7 @@ const AgentsInner = () => {
         return;
       }
 
+      const currentSessionId = currentSession?.id;
       if (currentSessionId) {
         const { error } = await supabase
           .from('agent_sessions')
@@ -293,7 +222,7 @@ const AgentsInner = () => {
           .eq('id', currentSessionId)
           .eq('user_id', user.id);
         if (error) throw error;
-        toast.success('Workflow saved to your current session');
+        toast.success('Workflow saved');
       } else {
         const { error } = await supabase
           .from('agent_sessions')
@@ -316,7 +245,6 @@ const AgentsInner = () => {
     const completed = localStorage.getItem('agentBuilder_questionnaireCompleted') === 'true';
     setHasCompletedQuestionnaire(completed);
     
-    // Restore persisted mode once if available
     const storedMode = localStorage.getItem('agentBuilder_selectedMode') as AgentMode | null;
     if (!selectedMode && storedMode) {
       setSelectedMode(storedMode as any);
@@ -324,7 +252,6 @@ const AgentsInner = () => {
       return;
     }
 
-    // Only compute defaults when no mode chosen yet to avoid resets
     if (!selectedMode) {
       if (!completed && (userSessions?.length ?? 0) === 0) {
         setShowQuestionnaire(true);
@@ -336,8 +263,7 @@ const AgentsInner = () => {
     }
   }, [userSessions, selectedMode]);
 
-  // Event handlers
-  const handleQuestionnaireComplete = (data: any) => {
+  const handleQuestionnaireComplete = () => {
     setHasCompletedQuestionnaire(true);
     setShowQuestionnaire(false);
     setShowModeSelector(true);
@@ -377,89 +303,27 @@ const AgentsInner = () => {
     return () => window.removeEventListener('switch-agent-mode', handler as any);
   }, []);
 
-  // Avoid duplicate success toasts when canvas updates propagate
-  const aiSuccessToastShown = React.useRef(false);
-
-  // Receive full workflow objects from AI Assistant only
-  const handleAIGeneratedWorkflow = (workflow: any) => {
-    console.log('[Agents] AI generated workflow:', workflow);
-
-    // Normalize nodes → ensure ids, map to DB node types, and enforce enhanced renderer
-    const ensureId = (n: any, idx: number) => ({ ...n, id: String(n.id || `node-${idx}-${Date.now()}`) });
-    let rawNodes: any[] = Array.isArray(workflow?.nodes) ? workflow.nodes : [];
-    rawNodes = rawNodes.map(ensureId).map((n: any, idx: number) => {
-      const label = n.data?.label || n.label || n.name || n.display_name || `Node ${idx + 1}`;
-      const key = (n.data?.type_key || n.type || '').toString().toLowerCase().replace(/\s+/g, '_').replace(/-/g, '_');
-      const match = nodeTypes.find(nt =>
-        (nt.type_key || '').toLowerCase() === key ||
-        (nt.display_name || '').toLowerCase() === (label || '').toLowerCase()
-      );
-
-      return {
-        id: n.id,
-        type: 'enhanced',
-        position: n.position || { x: 100 + (idx % 3) * 280, y: 120 + Math.floor(idx / 3) * 160 },
-        data: {
-          ...(n.data || {}),
-          label,
-          type_key: match?.type_key || key || 'node',
-          category: match?.category || n.data?.category,
-          configuration: {
-            ...(match?.default_config || {}),
-            ...(n.data?.configuration || {}),
-          },
-          default_config: match?.default_config || {},
-          isWorkflowNode: true,
-          nodeTypeInfo: match // Include full database node type info
-        }
-      } as any;
-    });
-
-    // Build edges: use provided or sequential fallback
-    let rawEdges: any[] = Array.isArray(workflow?.edges) ? workflow.edges : [];
-    if (!rawEdges.length && rawNodes.length > 1) {
-      rawEdges = rawNodes.slice(0, -1).map((n: any, i: number) => ({
-        id: `e-${n.id}-${rawNodes[i + 1].id}`,
-        source: n.id,
-        target: rawNodes[i + 1].id,
-        type: 'smoothstep',
-        animated: true
-      }));
-    }
-
-    setWorkflowNodes(rawNodes);
-    setWorkflowEdges(rawEdges);
-    setShowUnifiedAssist(true);
-
-    if (!aiSuccessToastShown.current) {
-      toast.success(`Workflow ready: ${rawNodes.length} nodes, ${rawEdges.length} connectors`);
-      aiSuccessToastShown.current = true;
-    }
-  };
-  // Receive node/edge updates from the canvas (no toasts here)
-  const handleWorkflowUpdate = (nodes: any[], edges: any[]) => {
-    setWorkflowNodes(nodes || []);
-    setWorkflowEdges(edges || []);
-  };
   const handleNodeGenerated = (node: any) => {
-    console.log('[Agents] handleNodeGenerated called with:', node);
     if (node.nodes) {
       setWorkflowNodes(prev => [...prev, ...node.nodes]);
     } else {
       setWorkflowNodes(prev => [...prev, node]);
     }
-    // Only show success if not already shown by the component
     if (node && !node._successShown) {
-      toast.success('Node generated successfully!');
+      toast.success('Node generated!');
     }
   };
 
+  const handleWorkflowUpdate = (nodes: any[], edges: any[]) => {
+    setWorkflowNodes(nodes || []);
+    setWorkflowEdges(edges || []);
+  };
 
   // Clean Visual Workflow Builder Layout
   const renderFlowiseLayout = () => {
     return (
       <div className="h-screen flex flex-col bg-background">
-        {/* Single Clean Header */}
+        {/* Clean Header */}
         <div className="h-12 border-b bg-card flex items-center justify-between px-4">
           <div className="flex items-center gap-3">
             <Button 
@@ -478,7 +342,6 @@ const AgentsInner = () => {
             </Badge>
           </div>
           
-          {/* Essential Actions Only */}
           <div className="flex items-center gap-2">
             <Button 
               variant="outline" 
@@ -522,7 +385,7 @@ const AgentsInner = () => {
           </div>
         </div>
 
-        {/* Simple 2-Tab Navigation */}
+        {/* Simple 2-Step Navigation */}
         <div className="border-b bg-muted/30 px-4">
           <div className="flex items-center gap-1 py-1">
             <Button 
@@ -554,14 +417,13 @@ const AgentsInner = () => {
 
         {/* Content Area */}
         <div className="flex-1 overflow-hidden">
-          {/* Generate Tab - AI Prompt */}
           {visualWorkflowSubTab === 'ai-prompt' && (
             <div className="h-full p-6 overflow-auto">
               <div className="max-w-4xl mx-auto">
                 <div className="text-center mb-6">
                   <h2 className="text-xl font-semibold mb-2">Generate Your Workflow</h2>
                   <p className="text-sm text-muted-foreground">
-                    Describe what you want to build and AI will create the workflow for you
+                    Describe what you want to build and AI will create the workflow
                   </p>
                 </div>
                 
@@ -610,7 +472,6 @@ const AgentsInner = () => {
                   </CardContent>
                 </Card>
 
-                {/* Quick Start Options */}
                 <div className="mt-6 flex items-center justify-center gap-4">
                   <Button 
                     variant="outline" 
@@ -635,7 +496,6 @@ const AgentsInner = () => {
             </div>
           )}
 
-          {/* Builder Tab - Canvas */}
           {visualWorkflowSubTab === 'builder' && (
             <div className="h-full flex overflow-hidden">
               <ErrorBoundary fallbackComponent={({ error, retry }) => (
@@ -690,7 +550,7 @@ const AgentsInner = () => {
           onClose={() => setShowSaveAsTemplate(false)}
           nodes={workflowNodes}
           edges={workflowEdges}
-          onSave={(templateId) => {
+          onSave={() => {
             toast.success('Template saved!');
           }}
         />
@@ -706,7 +566,7 @@ const AgentsInner = () => {
                 </Button>
               </div>
               <EnhancedDeploymentManager
-                onDeploy={(config) => {
+                onDeploy={() => {
                   setShowDeploymentManager(false);
                   toast.success('Workflow deployed!');
                 }}
@@ -787,7 +647,6 @@ const AgentsInner = () => {
 
   // Show questionnaire if needed
   if (showQuestionnaire) {
-    console.log('[Agents] rendering Questionnaire branch');
     return (
       <AppLayout>
         <div className="p-6">
@@ -799,9 +658,8 @@ const AgentsInner = () => {
     );
   }
 
-  // Always allow switching back to mode selector
+  // Mode selector
   if (showModeSelector) {
-    console.log('[Agents] rendering ModeSelector branch', { selectedMode, showModeSelector });
     return (
       <AppLayout>
         <div className="p-6">
@@ -810,11 +668,9 @@ const AgentsInner = () => {
               <h1 className="text-2xl font-bold">Choose Your Building Approach</h1>
               <p className="text-muted-foreground">Select how you'd like to build your agent</p>
             </div>
-            <div className="flex items-center gap-2">
-              <Button variant="outline" onClick={() => handleModeSelect('visual' as any)} title="Skip straight to Visual Workflow">
-                Quick Start (Visual)
-              </Button>
-            </div>
+            <Button variant="outline" onClick={() => handleModeSelect('visual' as any)}>
+              Quick Start
+            </Button>
           </div>
 
           <ModeSelector 
@@ -828,48 +684,9 @@ const AgentsInner = () => {
     );
   }
 
-  // Main content based on selected mode
-  // Unified mode with consolidated component
+  // Unified mode - just show canvas directly
   if (selectedMode === 'unified') {
-    return (
-      <AppLayout>
-        <div className="h-[80vh] flex flex-col">
-          <div className="p-2 border-b flex items-center justify-between">
-            <h2 className="text-lg font-semibold">Unified Workflow Builder</h2>
-            <Button 
-              variant="outline" 
-              size="sm"
-              onClick={() => setShowModeSelector(true)}
-              className="flex items-center gap-1 text-xs"
-            >
-              <ArrowLeft className="h-3 w-3" />
-              Switch Mode
-            </Button>
-          </div>
-          <FixedAdvancedReactFlow
-            initialNodes={workflowNodes}
-            initialEdges={workflowEdges}
-            workflowType="visual"
-            sessionId={currentSession?.id}
-            onWorkflowUpdate={handleWorkflowUpdate}
-            onNodeAdd={handleNodeGenerated}
-            onNodeTest={(nodeId, result) => {
-              console.log('Node test result:', { nodeId, result });
-            }}
-            onNodeConfigSave={(nodes, edges) => {
-              handleFlowSave({ nodes, edges });
-            }}
-            isAIHealthy={isAIHealthy}
-            embedded={false}
-            onSave={handleFlowSave}
-            onNodeSelect={(node) => {
-              setSelectedNode(node);
-              setRightPanelTab('config');
-            }}
-          />
-        </div>
-      </AppLayout>
-    );
+    return renderFlowiseLayout();
   }
 
   // AI Observability mode
@@ -885,7 +702,7 @@ const AgentsInner = () => {
               className="flex items-center gap-2"
             >
               <ArrowLeft className="h-4 w-4" />
-              Back to Mode Selection
+              Back
             </Button>
           </div>
           <ObservabilityDashboard />
