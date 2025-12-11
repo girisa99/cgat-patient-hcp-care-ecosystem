@@ -35,9 +35,9 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
   
   // Hooks for all agent ecosystem data
   const { agents } = useAgents();
-  const { lifecycleStates, currentState, transitionState, canTransitionTo } = useAgentLifecycle(agentId);
-  const { deployments, deployToNode, isDeployedToNode } = useAgentDeploymentBridge(agentId);
-  const { performanceStats, healthSummary, performHealthCheck } = useAgentPerformanceMonitoring(agentId);
+  const { lifecycleState, lifecycleHistory, transition, canTransition } = useAgentLifecycle(agentId);
+  const { deployments, deployToNode, compatibleNodes } = useAgentDeploymentBridge(agentId);
+  const { performanceSummary, healthChecks, performHealthCheck } = useAgentPerformanceMonitoring(agentId);
 
   const currentAgent = agentId ? agents.find(a => a.id === agentId) : null;
   const displayAgents = agentId ? [currentAgent].filter(Boolean) : agents;
