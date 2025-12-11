@@ -61,10 +61,8 @@ import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { useMasterToast } from '@/hooks/useMasterToast';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 
-// Node Components
+// Node Components - EnhancedWorkflowNode is the universal node with delete/resize/context-menu for all 192+ nodes
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
-import { AgentNode } from './nodes/AgentNode';
-import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
 import { 
   A2AAgentNode,
   TaskHandoffNode,
@@ -78,10 +76,7 @@ import {
   GoalDecompositionNode
 } from './nodes/MultiAgentNodes';
 import { EnhancedNodePalette } from './EnhancedNodePalette';
-import { RightDockedAIPanel } from './RightDockedAIPanel';
-import { TemplateGallery } from '../unified-workflow/TemplateGallery';
 import { EnhancedNodeConfigurationPanel } from './EnhancedNodeConfigurationPanel';
-import { SaveAsTemplateModal } from './SaveAsTemplateModal';
 import { TestingConsolePanel } from './TestingConsolePanel';
 import { CanvasContextMenu } from './CanvasContextMenu';
 
@@ -344,11 +339,15 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   const safeEdgeTypes: EdgeTypes = useMemo(() => ({}), []);
 
   // Stable node types - CRITICAL: Must be memoized outside render to prevent React Flow warnings
+  // All node types route to EnhancedWorkflowNode for consistent delete/resize/context-menu functionality
   const safeNodeTypes: NodeTypes = useMemo(() => ({
-    custom: CustomNode,
+    // Default and custom types all use EnhancedWorkflowNode for full functionality
+    default: EnhancedWorkflowNode,
+    custom: EnhancedWorkflowNode,
     enhanced: EnhancedWorkflowNode,
-    agent: AgentNode,
-    ai: AIIntelligenceNode,
+    workflow: EnhancedWorkflowNode,
+    agent: EnhancedWorkflowNode,
+    ai: EnhancedWorkflowNode,
     // Multi-Agent / A2A Node Types
     a2a_agent: A2AAgentNode,
     task_handoff: TaskHandoffNode,
@@ -360,36 +359,8 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     tool_chain: ToolChainNode,
     self_reflection: SelfReflectionNode,
     goal_decomposition: GoalDecompositionNode,
-    // Legacy multi-agent fallback
-    'multi-agent': ({ data }: any) => (
-      <div className="px-4 py-3 rounded-xl min-w-[300px] shadow-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center bg-purple-100 text-purple-600">
-            <Users className="h-6 w-6" />
-          </div>
-          <div className="flex-1">
-            <div className="font-semibold text-sm">{data.label || 'Multi-Agent Team'}</div>
-            <div className="text-xs opacity-70">Orchestrated agents</div>
-            {data.agents && (
-              <div className="flex flex-wrap gap-1 mt-2">
-                {data.agents.slice(0, 3).map((agent: any, idx: number) => (
-                  <Badge key={idx} variant="secondary" className="text-xs">
-                    {agent.name || `Agent ${idx + 1}`}
-                  </Badge>
-                ))}
-                {data.agents.length > 3 && (
-                  <Badge variant="outline" className="text-xs">
-                    +{data.agents.length - 3} more
-                  </Badge>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        <Handle type="target" position={Position.Left} />
-        <Handle type="source" position={Position.Right} />
-      </div>
-    ),
+    // Legacy multi-agent fallback - also uses enhanced node with wrapper
+    'multi-agent': EnhancedWorkflowNode,
   }), []);
 
   // Sync incoming initialNodes/initialEdges when they change
