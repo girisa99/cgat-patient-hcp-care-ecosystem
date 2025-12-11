@@ -3,29 +3,25 @@
  * Simplified canvas when coming from Admin Dashboard
  * Shows only the builder - no confusing template/generate options
  */
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Textarea } from '@/components/ui/textarea';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { 
   ArrowLeft,
   Play,
   Save as SaveIcon,
   Sparkles,
-  Bot,
   CheckCircle,
-  Send,
-  X
+  Bot,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { FixedAdvancedReactFlow } from './FixedAdvancedReactFlow';
+import { EnhancedAIAssistPanel } from './EnhancedAIAssistPanel';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
-import { useUniversalAI } from '@/hooks/useUniversalAI';
 
 interface AgentContext {
   id?: string;
@@ -51,7 +47,6 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
   const navigate = useNavigate();
   const { user } = useMasterAuth();
   const { status: aiHealth, checkHealth } = useAIServiceHealth();
-  const { generateResponse, isLoading: isAILoading } = useUniversalAI();
   
   const [workflowNodes, setWorkflowNodes] = useState<any[]>([]);
   const [workflowEdges, setWorkflowEdges] = useState<any[]>([]);
@@ -59,7 +54,6 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
   const [showDeployDialog, setShowDeployDialog] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
-  const [aiPrompt, setAiPrompt] = useState('');
   
   // Knowledge Base and RAG Configuration
   const [knowledgeBaseConfig, setKnowledgeBaseConfig] = useState<{
@@ -157,81 +151,11 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
     setHasUnsavedChanges(true);
   };
 
-  const handleAIGenerate = async () => {
-    if (!aiPrompt.trim()) {
-      toast.error('Please enter a prompt');
-      return;
-    }
-
-    try {
-      const response = await generateResponse({
-        provider: 'gemini',
-        model: 'gemini-2.0-flash',
-        prompt: `Generate workflow nodes for: ${aiPrompt}. Agent context: ${agentContext.name} - ${agentContext.description || ''}. 
-        
-Return a JSON array of nodes with these fields:
-- label: node display name
-- type: one of (action, condition, output, knowledge_base, rag_retrieval, api_call)
-- intent: short description of what this node does (required)
-- description: detailed explanation
-
-Example: [{"label": "Fetch Knowledge", "type": "knowledge_base", "intent": "Query KB for relevant context", "description": "..."}]`,
-      });
-
-      // Parse AI response to extract nodes
-      if (response?.content) {
-        try {
-          // Try to extract JSON from response
-          const jsonMatch = response.content.match(/\[[\s\S]*\]/);
-          if (jsonMatch) {
-            const parsedNodes = JSON.parse(jsonMatch[0]);
-            const newNodes = parsedNodes.map((n: any, idx: number) => ({
-              id: `gen-${Date.now()}-${idx}`,
-              type: 'enhanced',
-              position: { x: 400 + (idx % 3) * 180, y: 100 + Math.floor(idx / 3) * 120 },
-              data: {
-                label: n.label || n.name || `Node ${idx + 1}`,
-                type_key: n.type || 'action',
-                intent: n.intent || n.description || 'Process data',
-                configuration: {
-                  ...(n.configuration || {}),
-                  // Link KB/RAG config for relevant nodes
-                  ...(n.type === 'knowledge_base' && { knowledgeBaseConfig }),
-                  ...(n.type === 'rag_retrieval' && { ragConfig }),
-                },
-                isWorkflowNode: true,
-              }
-            }));
-            setWorkflowNodes(prev => [...prev, ...newNodes]);
-            setHasUnsavedChanges(true);
-            toast.success(`Added ${newNodes.length} nodes with intent`);
-          } else {
-            // Fallback: create a single node from the prompt
-            const newNode = {
-              id: `gen-${Date.now()}`,
-              type: 'enhanced',
-              position: { x: 400, y: 200 },
-              data: {
-                label: aiPrompt.slice(0, 30),
-                type_key: 'action',
-                intent: aiPrompt,
-                configuration: { description: aiPrompt },
-                isWorkflowNode: true,
-              }
-            };
-            setWorkflowNodes(prev => [...prev, newNode]);
-            setHasUnsavedChanges(true);
-            toast.success('Added node from prompt');
-          }
-        } catch {
-          toast.error('Could not parse AI response');
-        }
-      }
-      setAiPrompt('');
-    } catch (e: any) {
-      toast.error('AI generation failed');
-    }
-  };
+  const handleNodesGenerated = useCallback((newNodes: any[]) => {
+    setWorkflowNodes(prev => [...prev, ...newNodes]);
+    setHasUnsavedChanges(true);
+    toast.success(`Added ${newNodes.length} node(s)`);
+  }, []);
 
   const handleSave = async () => {
     if (!user) {
@@ -446,53 +370,15 @@ Example: [{"label": "Fetch Knowledge", "type": "knowledge_base", "intent": "Quer
           onWorkflowUpdate={handleWorkflowUpdate}
         />
 
-        {/* AI Assist Panel */}
-        {showUnifiedAssist && (
-          <div className="absolute top-4 right-4 w-96 z-50">
-            <Card className="shadow-lg border-primary/20">
-              <CardHeader className="py-3 px-4 flex flex-row items-center justify-between">
-                <CardTitle className="text-sm flex items-center gap-2">
-                  <Sparkles className="h-4 w-4 text-primary" />
-                  AI Workflow Assistant
-                </CardTitle>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
-                  className="h-6 w-6 p-0"
-                  onClick={() => setShowUnifiedAssist(false)}
-                >
-                  <X className="h-4 w-4" />
-                </Button>
-              </CardHeader>
-              <CardContent className="px-4 pb-4 space-y-3">
-                <p className="text-xs text-muted-foreground">
-                  Describe nodes or workflow steps to add to your canvas
-                </p>
-                <Textarea 
-                  placeholder="e.g., Add a condition node to check user input, then branch to success or error handling..."
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  className="min-h-[80px] text-sm"
-                />
-                <Button 
-                  onClick={handleAIGenerate}
-                  disabled={isAILoading || !aiPrompt.trim()}
-                  className="w-full"
-                  size="sm"
-                >
-                  {isAILoading ? (
-                    'Generating...'
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" />
-                      Generate Nodes
-                    </>
-                  )}
-                </Button>
-              </CardContent>
-            </Card>
-          </div>
-        )}
+        {/* Enhanced AI Assist Panel */}
+        <EnhancedAIAssistPanel
+          isOpen={showUnifiedAssist}
+          onClose={() => setShowUnifiedAssist(false)}
+          agentContext={agentContext}
+          workflowNodes={workflowNodes}
+          workflowEdges={workflowEdges}
+          onNodesGenerated={handleNodesGenerated}
+        />
       </div>
 
       {/* Deploy Dialog */}
