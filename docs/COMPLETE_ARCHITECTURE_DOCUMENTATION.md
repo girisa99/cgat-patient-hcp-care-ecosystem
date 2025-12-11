@@ -278,6 +278,262 @@ Custom Hooks
 - **User Manual**: End-user documentation
 - **Administrator Guide**: System administration procedures
 
+## 🤖 AI Agent Architecture (NEW)
+
+### Agent Architecture Types
+
+The platform supports multiple agent architectures based on use case complexity:
+
+```mermaid
+flowchart TB
+    subgraph ArchitectureTypes["Agent Architecture Types"]
+        direction TB
+        
+        Single["🔹 Single Agent
+        Simple tasks, FAQ, basic chatbot"]
+        
+        Conversational["💬 Conversational Agent
+        Context-aware, memory, dialogue"]
+        
+        MCPSDK["🔌 MCP SDK Integration
+        Tool calling, CRM sync, APIs"]
+        
+        MultiAgent["👥 Multi-Agent System
+        Team coordination, parallel tasks"]
+        
+        A2A["🌐 A2A Protocol
+        Standardized agent communication"]
+        
+        Agentic["🧠 Agentic AI
+        Autonomous reasoning, planning"]
+        
+        Swarm["⚡ Swarm Intelligence
+        Collective decisions, consensus"]
+    end
+
+    subgraph Complexity["Complexity Level"]
+        Simple --> Moderate --> Complex --> Enterprise
+    end
+
+    Single --> Simple
+    Conversational --> Moderate
+    MCPSDK --> Moderate
+    MultiAgent --> Complex
+    A2A --> Complex
+    Agentic --> Enterprise
+    Swarm --> Enterprise
+```
+
+### Architecture Intelligence System
+
+```mermaid
+flowchart LR
+    subgraph Input["User Input"]
+        Description["Agent Description"]
+        UseCase["Use Case"]
+        Features["Requirements"]
+    end
+
+    subgraph Analysis["Intent Analysis"]
+        Keywords["Keyword Detection"]
+        Factors["Factor Analysis
+        • Autonomy
+        • Collaboration
+        • Integration
+        • Complexity"]
+    end
+
+    subgraph Scoring["Scoring Engine"]
+        KS["Keyword Score (30%)"]
+        US["Use Case Score (30%)"]
+        FS["Factor Score (40%)"]
+    end
+
+    subgraph Output["Recommendation"]
+        Primary["Primary Architecture"]
+        Alternatives["3 Alternatives"]
+        Confidence["Confidence %"]
+        Reasoning["Detailed Reasoning"]
+    end
+
+    Input --> Analysis --> Scoring --> Output
+```
+
+### Multi-Agent Orchestration Patterns
+
+```mermaid
+flowchart TB
+    subgraph Patterns["Orchestration Patterns"]
+        direction LR
+        
+        subgraph Hierarchical["Hierarchical"]
+            Coord1["Coordinator"] --> W1["Worker 1"]
+            Coord1 --> W2["Worker 2"]
+            Coord1 --> W3["Worker 3"]
+        end
+        
+        subgraph PeerToPeer["Peer-to-Peer"]
+            P1["Agent 1"] <--> P2["Agent 2"]
+            P2 <--> P3["Agent 3"]
+            P3 <--> P1
+        end
+        
+        subgraph Pipeline["Pipeline"]
+            S1["Stage 1"] --> S2["Stage 2"] --> S3["Stage 3"]
+        end
+        
+        subgraph SwarmP["Swarm"]
+            Hub["Decision Hub"]
+            A1["Agent"] --> Hub
+            A2["Agent"] --> Hub
+            A3["Agent"] --> Hub
+            Hub --> Decision["Consensus"]
+        end
+    end
+```
+
+### Agentic AI (ReAct) Architecture
+
+```mermaid
+flowchart TB
+    Goal["Complex Goal"] --> Decompose["Goal Decomposition"]
+    
+    subgraph ReActLoop["ReAct Loop"]
+        Think["🧠 Reasoning
+        Analyze situation"]
+        Act["⚡ Action
+        Select & execute tool"]
+        Observe["👁️ Observation
+        Capture results"]
+        Reflect["🔄 Reflection
+        Evaluate progress"]
+        
+        Think --> Act --> Observe --> Reflect --> Think
+    end
+    
+    Decompose --> ReActLoop
+    
+    subgraph Tools["Tool Chain"]
+        T1["Tool 1"]
+        T2["Tool 2"]
+        T3["Tool 3"]
+    end
+    
+    Act --> Tools
+    Tools --> Observe
+    
+    ReActLoop --> |"Goal Achieved"| Result["Final Result"]
+```
+
+### A2A Protocol Communication
+
+```mermaid
+sequenceDiagram
+    participant Client
+    participant Agent1 as A2A Agent 1
+    participant Hub as Communication Hub
+    participant Agent2 as A2A Agent 2
+    participant Agent3 as A2A Agent 3
+
+    Client->>Agent1: Send Task
+    Agent1->>Agent1: Process Agent Card
+    Agent1->>Hub: Task Handoff Request
+    
+    Hub->>Agent2: Route Task (SSE)
+    Hub->>Agent3: Route Task (SSE)
+    
+    Agent2-->>Hub: Partial Result
+    Agent3-->>Hub: Partial Result
+    
+    Hub->>Agent1: Aggregated Results
+    Agent1->>Client: Final Response
+```
+
+### Multi-Channel Deployment
+
+```mermaid
+flowchart TB
+    subgraph Config["Agent/Team Configuration"]
+        Agent["Configured Agent"]
+        Workflow["Workflow Definition"]
+    end
+
+    subgraph Deploy["Deployment Panel"]
+        Mode["Single / Team Mode"]
+        Pattern["Orchestration Pattern"]
+    end
+
+    Config --> Deploy
+
+    subgraph Channels["Target Channels"]
+        Web["🌐 Web Chat"]
+        Voice["📞 Voice"]
+        Email["📧 Email"]
+        SMS["💬 SMS"]
+        WA["📱 WhatsApp"]
+        API["🔌 API"]
+        Hook["🪝 Webhook"]
+        Slack["💼 Slack"]
+    end
+
+    Deploy --> Channels
+
+    subgraph DB["Database Tracking"]
+        Deployments["agent_channel_deployments"]
+        Metrics["agent_performance_metrics"]
+    end
+
+    Channels --> DB
+```
+
+### Core Hooks Architecture
+
+```mermaid
+flowchart TB
+    subgraph Hooks["Agent Ecosystem Hooks"]
+        useA2A["useA2AProtocol
+        • Agent Cards
+        • Task Lifecycle
+        • SSE Streaming"]
+        
+        useMulti["useMultiAgentOrchestration
+        • Team Management
+        • Task Assignment
+        • Swarm Decisions"]
+        
+        useAgentic["useAgenticAI
+        • ReAct Loops
+        • Planning
+        • Tool Chaining
+        • Self Reflection"]
+        
+        useLifecycle["useAgentLifecycle
+        • State Management
+        • Versioning
+        • Rollback"]
+        
+        useDeploy["useAgentDeploymentBridge
+        • Multi-Channel
+        • Health Checks"]
+        
+        usePerf["useAgentPerformanceMonitoring
+        • Metrics
+        • Analytics"]
+        
+        useCanvas["useMultiAgentCanvasIntegration
+        • Node Generation
+        • Workflow Execution"]
+    end
+
+    subgraph Integration["Integration Layer"]
+        Canvas["Canvas Builder"]
+        Admin["Admin Dashboard"]
+        AIAssist["AI Assist Panel"]
+    end
+
+    Hooks --> Integration
+```
+
 ## 🎯 Future Enhancements
 
 ### Planned Features
@@ -285,12 +541,15 @@ Custom Hooks
 2. **Mobile Application**: React Native companion app
 3. **API Gateway**: Enhanced API management
 4. **Microservices**: Service decomposition strategy
+5. **Advanced A2A**: Cross-platform agent federation
+6. **AutoGen Integration**: Microsoft AutoGen patterns
 
 ### Technical Improvements
 1. **Performance**: Further optimization strategies
 2. **Security**: Advanced threat detection
 3. **Scalability**: Global deployment capabilities
 4. **Integration**: Third-party system connectors
+5. **Agentic Workflows**: Enhanced autonomous capabilities
 
 ---
 
