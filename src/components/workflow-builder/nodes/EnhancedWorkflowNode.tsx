@@ -68,13 +68,16 @@ export interface EnhancedNodeData extends Record<string, unknown> {
   type_key?: string;
   display_name?: string;
   description?: string;
+  intent?: string; // Intent/purpose of the node
   icon?: string;
   color?: string;
   capabilities?: string[];
   requirements?: Record<string, any>;
   default_config?: Record<string, any>;
+  configuration?: Record<string, any>;
   category?: any;
   isWorkflowNode?: boolean;
+  isConfigured?: boolean;
 }
 
 interface EnhancedWorkflowNodeProps extends NodeProps {
@@ -213,8 +216,15 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
           )}
         </div>
 
+        {/* Intent - Primary description of what this node does */}
+        {data.intent && (
+          <p className="text-xs text-primary/80 italic mb-2 font-medium">
+            {data.intent}
+          </p>
+        )}
+
         {/* Description */}
-        {data.description && (
+        {data.description && !data.intent && (
           <p className="text-xs text-muted-foreground mb-2 line-clamp-2">
             {data.description}
           </p>
