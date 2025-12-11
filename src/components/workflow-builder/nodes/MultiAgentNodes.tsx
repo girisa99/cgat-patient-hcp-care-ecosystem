@@ -1,15 +1,24 @@
 /**
  * MULTI-AGENT NODE COMPONENTS
  * React components for A2A, Multi-Agent Orchestration, and Agentic AI nodes
+ * Enhanced with resize, delete, and right-click context menu support
  */
 
-import React, { memo } from 'react';
-import { Handle, Position } from '@xyflow/react';
+import React, { memo, useCallback } from 'react';
+import { Handle, Position, NodeResizer, NodeToolbar, useReactFlow } from '@xyflow/react';
 import { 
   Network, ArrowRightLeft, Radio, Users, Brain, Share2, 
-  RefreshCw, Link, Eye, GitBranch, Activity, Zap
+  RefreshCw, Link, Eye, GitBranch, Activity, Zap, Copy, Trash2, Settings, Play
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { 
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { cn } from '@/lib/utils';
 
 interface MultiAgentNodeData {
@@ -27,32 +36,111 @@ interface MultiAgentNodeData {
 }
 
 interface MultiAgentNodeProps {
+  id: string;
   data: MultiAgentNodeData;
   selected?: boolean;
 }
 
-// Base wrapper for all multi-agent nodes
+// Base wrapper for all multi-agent nodes with resize and context menu support
 const MultiAgentNodeWrapper: React.FC<{
+  id: string;
   children: React.ReactNode;
   color: string;
   selected?: boolean;
   status?: string;
-}> = ({ children, color, selected, status }) => (
-  <div 
-    className={cn(
-      "rounded-lg border-2 bg-card shadow-lg min-w-[200px] transition-all",
-      selected && "ring-2 ring-primary ring-offset-2",
-      status === 'running' && "animate-pulse"
-    )}
-    style={{ borderColor: color }}
-  >
-    {children}
-  </div>
-);
+}> = ({ id, children, color, selected, status }) => {
+  const { setNodes, setEdges, getNodes } = useReactFlow();
+
+  const handleDelete = useCallback(() => {
+    setNodes(nds => nds.filter(n => n.id !== id));
+    setEdges(eds => eds.filter(e => e.source !== id && e.target !== id));
+  }, [id, setNodes, setEdges]);
+
+  const handleDuplicate = useCallback(() => {
+    const node = getNodes().find(n => n.id === id);
+    if (node) {
+      const newId = `${id}-copy-${Date.now()}`;
+      const newNode = {
+        ...node,
+        id: newId,
+        position: { x: node.position.x + 50, y: node.position.y + 50 },
+        selected: false,
+      };
+      setNodes(nds => [...nds, newNode]);
+    }
+  }, [id, getNodes, setNodes]);
+
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className="relative">
+          <NodeResizer
+            minWidth={180}
+            minHeight={80}
+            maxWidth={400}
+            maxHeight={400}
+            isVisible={selected}
+            lineClassName="border-primary/50"
+            handleClassName="w-2 h-2 bg-background border border-primary rounded-sm"
+          />
+          
+          {selected && (
+            <NodeToolbar isVisible position={Position.Top} className="animate-fade-in">
+              <div className="flex gap-1 bg-card/95 backdrop-blur-sm rounded-lg shadow-lg border border-border/50 p-1">
+                <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={handleDuplicate}>
+                  <Copy className="h-3 w-3" />
+                </Button>
+                <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={() => {
+                  window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }));
+                }}>
+                  <Settings className="h-3 w-3" />
+                </Button>
+                <div className="w-px h-5 bg-border my-auto" />
+                <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-destructive/10 hover:text-destructive" onClick={handleDelete}>
+                  <Trash2 className="h-3 w-3" />
+                </Button>
+              </div>
+            </NodeToolbar>
+          )}
+          
+          <div 
+            className={cn(
+              "rounded-lg border-2 bg-card shadow-lg min-w-[180px] transition-all",
+              selected && "ring-2 ring-primary ring-offset-2",
+              status === 'running' && "animate-pulse"
+            )}
+            style={{ borderColor: color }}
+          >
+            {children}
+          </div>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem onClick={handleDuplicate}>
+          <Copy className="mr-2 h-4 w-4" />
+          Duplicate
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }))}>
+          <Settings className="mr-2 h-4 w-4" />
+          Configure
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('test-node', { detail: { nodeId: id } }))}>
+          <Play className="mr-2 h-4 w-4" />
+          Test Node
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
+  );
+};
 
 // A2A Agent Node
-export const A2AAgentNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#6366F1" selected={selected} status={data.status}>
+export const A2AAgentNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#6366F1" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Top} className="!bg-indigo-500 !w-3 !h-3" />
     <div className="p-3">
       <div className="flex items-center gap-2 mb-2">
@@ -79,8 +167,8 @@ export const A2AAgentNode = memo(({ data, selected }: MultiAgentNodeProps) => (
 ));
 
 // Task Handoff Node
-export const TaskHandoffNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#8B5CF6" selected={selected} status={data.status}>
+export const TaskHandoffNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#8B5CF6" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Left} className="!bg-violet-500 !w-3 !h-3" />
     <div className="p-3">
       <div className="flex items-center gap-2 mb-2">
@@ -98,8 +186,8 @@ export const TaskHandoffNode = memo(({ data, selected }: MultiAgentNodeProps) =>
 ));
 
 // Communication Hub Node
-export const CommunicationHubNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#EC4899" selected={selected} status={data.status}>
+export const CommunicationHubNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#EC4899" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Top} className="!bg-pink-500 !w-3 !h-3" />
     <Handle type="target" position={Position.Left} className="!bg-pink-500 !w-3 !h-3" id="left" />
     <div className="p-3">
@@ -122,8 +210,8 @@ export const CommunicationHubNode = memo(({ data, selected }: MultiAgentNodeProp
 ));
 
 // Agent Team Node
-export const AgentTeamNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#10B981" selected={selected} status={data.status}>
+export const AgentTeamNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#10B981" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Top} className="!bg-emerald-500 !w-3 !h-3" />
     <div className="p-3">
       <div className="flex items-center gap-2 mb-2">
@@ -154,8 +242,8 @@ export const AgentTeamNode = memo(({ data, selected }: MultiAgentNodeProps) => (
 ));
 
 // Swarm Decision Node
-export const SwarmDecisionNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#F59E0B" selected={selected} status={data.status}>
+export const SwarmDecisionNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#F59E0B" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Top} className="!bg-amber-500 !w-3 !h-3" />
     <Handle type="target" position={Position.Left} className="!bg-amber-500 !w-3 !h-3" id="left" />
     <Handle type="target" position={Position.Right} className="!bg-amber-500 !w-3 !h-3" id="right" />
@@ -188,8 +276,8 @@ export const SwarmDecisionNode = memo(({ data, selected }: MultiAgentNodeProps) 
 ));
 
 // Tool Sharing Node
-export const ToolSharingNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#06B6D4" selected={selected} status={data.status}>
+export const ToolSharingNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#06B6D4" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Top} className="!bg-cyan-500 !w-3 !h-3" />
     <div className="p-3">
       <div className="flex items-center gap-2 mb-2">
@@ -207,8 +295,8 @@ export const ToolSharingNode = memo(({ data, selected }: MultiAgentNodeProps) =>
 ));
 
 // ReAct Loop Node
-export const ReActLoopNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#EF4444" selected={selected} status={data.status}>
+export const ReActLoopNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#EF4444" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Top} className="!bg-red-500 !w-3 !h-3" />
     <div className="p-3">
       <div className="flex items-center gap-2 mb-2">
@@ -240,8 +328,8 @@ export const ReActLoopNode = memo(({ data, selected }: MultiAgentNodeProps) => (
 ));
 
 // Tool Chain Node
-export const ToolChainNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#14B8A6" selected={selected} status={data.status}>
+export const ToolChainNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#14B8A6" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Left} className="!bg-teal-500 !w-3 !h-3" />
     <div className="p-3">
       <div className="flex items-center gap-2 mb-2">
@@ -265,8 +353,8 @@ export const ToolChainNode = memo(({ data, selected }: MultiAgentNodeProps) => (
 ));
 
 // Self Reflection Node
-export const SelfReflectionNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#A855F7" selected={selected} status={data.status}>
+export const SelfReflectionNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#A855F7" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Top} className="!bg-purple-500 !w-3 !h-3" />
     <div className="p-3">
       <div className="flex items-center gap-2 mb-2">
@@ -284,8 +372,8 @@ export const SelfReflectionNode = memo(({ data, selected }: MultiAgentNodeProps)
 ));
 
 // Goal Decomposition Node
-export const GoalDecompositionNode = memo(({ data, selected }: MultiAgentNodeProps) => (
-  <MultiAgentNodeWrapper color="#F97316" selected={selected} status={data.status}>
+export const GoalDecompositionNode = memo(({ id, data, selected }: MultiAgentNodeProps) => (
+  <MultiAgentNodeWrapper id={id} color="#F97316" selected={selected} status={data.status}>
     <Handle type="target" position={Position.Top} className="!bg-orange-500 !w-3 !h-3" />
     <div className="p-3">
       <div className="flex items-center gap-2 mb-2">

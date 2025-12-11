@@ -1,8 +1,15 @@
-import React, { useState } from 'react';
-import { Handle, Position, NodeProps, NodeToolbar } from '@xyflow/react';
+import React, { useState, useCallback } from 'react';
+import { Handle, Position, NodeProps, NodeToolbar, NodeResizer, useReactFlow } from '@xyflow/react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
+import { 
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuItem,
+  ContextMenuSeparator,
+  ContextMenuTrigger,
+} from '@/components/ui/context-menu';
 import { 
   Settings, Copy, Trash2, Info, ChevronDown, ChevronUp, 
   Bot, Database, Brain, Zap, Eye, Link, Grid3X3, 
@@ -11,7 +18,7 @@ import {
   MessageCircle, Code, Cloud, Globe, Building, Flame,
   Twitter, Layers, Edit, Table, List, CheckCircle,
   Download, Upload, Scissors, Hash, StickyNote, Route,
-  UserCheck, Pill, Stethoscope, ShieldCheck, Activity
+  UserCheck, Pill, Stethoscope, ShieldCheck, Activity, Play
 } from 'lucide-react';
 
 const getIconComponent = (iconName: string) => {
@@ -92,6 +99,7 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
   const [isExpanded, setIsExpanded] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [nodeLabel, setNodeLabel] = useState(data.display_name || data.label || 'Node');
+  const { setNodes, setEdges, getNodes, getEdges } = useReactFlow();
 
   const IconComponent = getIconComponent(data.icon || 'settings');
   const nodeColor = data.color || '#6366f1';
@@ -103,30 +111,64 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
   const handleSaveLabel = (newLabel: string) => {
     setNodeLabel(newLabel);
     setIsEditing(false);
-    // Here you would typically update the node in the parent component
+    // Update node data
+    setNodes(nds => nds.map(n => n.id === id ? { ...n, data: { ...n.data, label: newLabel } } : n));
   };
 
+  // Direct delete handler
+  const handleDelete = useCallback(() => {
+    setNodes(nds => nds.filter(n => n.id !== id));
+    setEdges(eds => eds.filter(e => e.source !== id && e.target !== id));
+  }, [id, setNodes, setEdges]);
+
+  // Direct duplicate handler
+  const handleDuplicate = useCallback(() => {
+    const node = getNodes().find(n => n.id === id);
+    if (node) {
+      const newId = `${id}-copy-${Date.now()}`;
+      const newNode = {
+        ...node,
+        id: newId,
+        position: { x: node.position.x + 50, y: node.position.y + 50 },
+        selected: false,
+      };
+      setNodes(nds => [...nds, newNode]);
+    }
+  }, [id, getNodes, setNodes]);
+
   return (
-    <div 
-      className={`
-        relative bg-card rounded-xl border-2 shadow-md min-w-[200px] max-w-[300px]
-        transition-all duration-300 ease-out workflow-node-enter
-        hover:shadow-xl hover:-translate-y-0.5
-        ${selected ? 'ring-2 ring-offset-2 ring-offset-background shadow-xl scale-[1.02]' : 'hover:border-primary/50'}
-      `}
-      style={{ 
-        borderColor: selected ? nodeColor : 'hsl(var(--border))',
-        boxShadow: selected ? `0 0 0 2px ${nodeColor}20, 0 20px 25px -5px rgba(0,0,0,0.1)` : undefined,
-        '--node-color': nodeColor
-      } as React.CSSProperties}
-    >
+    <ContextMenu>
+      <ContextMenuTrigger asChild>
+        <div className="relative">
+          {/* Node Resizer - visible when selected */}
+          <NodeResizer
+            minWidth={180}
+            minHeight={100}
+            maxWidth={400}
+            maxHeight={500}
+            isVisible={selected}
+            lineClassName="border-primary/50"
+            handleClassName="w-2 h-2 bg-background border border-primary rounded-sm"
+          />
+          
+          <div 
+            className={`
+              relative bg-card rounded-xl border-2 shadow-md min-w-[180px]
+              transition-all duration-300 ease-out workflow-node-enter
+              hover:shadow-xl hover:-translate-y-0.5
+              ${selected ? 'ring-2 ring-offset-2 ring-offset-background shadow-xl' : 'hover:border-primary/50'}
+            `}
+            style={{ 
+              borderColor: selected ? nodeColor : 'hsl(var(--border))',
+              boxShadow: selected ? `0 0 0 2px ${nodeColor}20, 0 20px 25px -5px rgba(0,0,0,0.1)` : undefined,
+              '--node-color': nodeColor
+            } as React.CSSProperties}
+          >
       {/* Node Toolbar */}
       {selected && (
         <NodeToolbar isVisible position={Position.Top} className="animate-fade-in">
           <div className="flex gap-1 bg-card/95 backdrop-blur-sm rounded-lg shadow-lg border border-border/50 p-1">
-            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={() => {
-              window.dispatchEvent(new CustomEvent('duplicate-node', { detail: { nodeId: id } }));
-            }} aria-label="Duplicate node">
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={handleDuplicate} aria-label="Duplicate node">
               <Copy className="h-3 w-3" />
             </Button>
             <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-primary/10" onClick={() => {
@@ -134,10 +176,13 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
             }} aria-label="Open configuration">
               <Settings className="h-3 w-3" />
             </Button>
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-accent/30" onClick={() => {
+              window.dispatchEvent(new CustomEvent('test-node', { detail: { nodeId: id } }));
+            }} aria-label="Test node">
+              <Play className="h-3 w-3" />
+            </Button>
             <div className="w-px h-5 bg-border my-auto" />
-            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-destructive/10 hover:text-destructive" onClick={() => {
-              window.dispatchEvent(new CustomEvent('delete-node', { detail: { nodeId: id } }));
-            }} aria-label="Delete node">
+            <Button size="sm" variant="ghost" className="h-7 px-2 hover:bg-destructive/10 hover:text-destructive" onClick={handleDelete} aria-label="Delete node">
               <Trash2 className="h-3 w-3" />
             </Button>
           </div>
@@ -399,6 +444,28 @@ export const EnhancedWorkflowNode: React.FC<EnhancedWorkflowNodeProps> = ({
           title="Workflow Node"
         />
       )}
-    </div>
+          </div>
+        </div>
+      </ContextMenuTrigger>
+      <ContextMenuContent className="w-48">
+        <ContextMenuItem onClick={handleDuplicate}>
+          <Copy className="mr-2 h-4 w-4" />
+          Duplicate
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('open-node-config', { detail: { nodeId: id } }))}>
+          <Settings className="mr-2 h-4 w-4" />
+          Configure
+        </ContextMenuItem>
+        <ContextMenuItem onClick={() => window.dispatchEvent(new CustomEvent('test-node', { detail: { nodeId: id } }))}>
+          <Play className="mr-2 h-4 w-4" />
+          Test Node
+        </ContextMenuItem>
+        <ContextMenuSeparator />
+        <ContextMenuItem onClick={handleDelete} className="text-destructive focus:text-destructive">
+          <Trash2 className="mr-2 h-4 w-4" />
+          Delete
+        </ContextMenuItem>
+      </ContextMenuContent>
+    </ContextMenu>
   );
 };
