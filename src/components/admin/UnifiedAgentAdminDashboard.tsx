@@ -46,7 +46,9 @@ import {
   Edit,
   PlusCircle,
   Layers,
+  Network,
 } from 'lucide-react';
+import { getArchitectureInfo } from '@/components/workflow-builder/MultiAgentNodeRegistry';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useAgentRegistry } from '@/hooks/useAgentRegistry';
 import { useAgentConversationEngines } from '@/hooks/useAgentConversationEngines';
@@ -1008,7 +1010,24 @@ const AgentCard: React.FC<AgentCardProps> = ({
                 {agent.name}
                 {getStatusIcon(agent.status)}
               </CardTitle>
-              <CardDescription>{agent.description || agent.use_case.name}</CardDescription>
+              <CardDescription className="flex items-center gap-2">
+                {agent.description || agent.use_case.name}
+                {/* Agent Architecture Badge - read from configuration */}
+                {((agent as any).agent_type || (agent as any).configuration?.agent_type) && (
+                  <Badge 
+                    variant="outline" 
+                    className="ml-2 text-xs"
+                    style={{ 
+                      borderColor: getArchitectureInfo((agent as any).agent_type || (agent as any).configuration?.agent_type || 'single').color,
+                      color: getArchitectureInfo((agent as any).agent_type || (agent as any).configuration?.agent_type || 'single').color 
+                    }}
+                  >
+                    {((agent as any).agent_type || (agent as any).configuration?.agent_type) === 'a2a' && <Network className="h-3 w-3 mr-1" />}
+                    {((agent as any).agent_type || (agent as any).configuration?.agent_type) === 'multi-agent' && <Users className="h-3 w-3 mr-1" />}
+                    {getArchitectureInfo((agent as any).agent_type || (agent as any).configuration?.agent_type || 'single').label}
+                  </Badge>
+                )}
+              </CardDescription>
             </div>
           </div>
           <div className="flex gap-2">

@@ -24,11 +24,16 @@ import {
   AlertTriangle,
   Zap,
   Link2,
-  Bot
+  Bot,
+  Users,
+  Network,
+  RefreshCw,
+  Share2
 } from 'lucide-react';
 import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { MULTI_AGENT_NODES, determineAgentArchitecture, getArchitectureInfo } from './MultiAgentNodeRegistry';
 
 interface AgentContext {
   id?: string;
@@ -218,6 +223,36 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       });
     }
 
+    // Check for multi-agent capabilities
+    const hasMultiAgent = workflowNodes.some(n => 
+      ['a2a_agent', 'agent_team', 'swarm_decision', 'task_handoff'].includes(n.data.type_key)
+    );
+
+    if (!hasMultiAgent && workflowNodes.length >= 2) {
+      newSuggestions.push({
+        id: 'add-multi-agent',
+        type: 'recommendation',
+        title: 'Consider Multi-Agent Architecture',
+        description: 'Complex workflows benefit from specialized agent teams. Add A2A or Agent Team nodes.',
+        action: () => addRecommendedNode('agent_team')
+      });
+    }
+
+    // Check for agentic capabilities
+    const hasAgenticNodes = workflowNodes.some(n => 
+      ['react_loop', 'tool_chain', 'self_reflection'].includes(n.data.type_key)
+    );
+
+    if (!hasAgenticNodes && agentContext.useCase?.name?.toLowerCase().includes('autonom')) {
+      newSuggestions.push({
+        id: 'add-agentic',
+        type: 'recommendation',
+        title: 'Add Agentic AI Capabilities',
+        description: 'Enable autonomous reasoning with ReAct loops for goal-oriented behavior.',
+        action: () => addRecommendedNode('react_loop')
+      });
+    }
+
     setSuggestions(newSuggestions);
     setIsAnalyzing(false);
   }, [workflowNodes, workflowEdges, agentContext]);
@@ -228,7 +263,16 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'rag_retrieval': 'RAG Retrieval',
       'error_handler': 'Error Handler',
       'validation': 'Input Validation',
-      'mcp_connector': 'MCP Connector'
+      'mcp_connector': 'MCP Connector',
+      // Multi-agent nodes
+      'a2a_agent': 'A2A Agent',
+      'agent_team': 'Agent Team',
+      'task_handoff': 'Task Handoff',
+      'swarm_decision': 'Swarm Decision',
+      'react_loop': 'ReAct Loop',
+      'tool_chain': 'Tool Chain',
+      'self_reflection': 'Self Reflection',
+      'communication_hub': 'Communication Hub'
     };
 
     const nodeIntents: { [key: string]: string } = {
@@ -236,7 +280,16 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'rag_retrieval': 'Retrieve relevant documents using RAG',
       'error_handler': 'Handle errors and exceptions gracefully',
       'validation': 'Validate input data before processing',
-      'mcp_connector': 'Connect to external MCP tool'
+      'mcp_connector': 'Connect to external MCP tool',
+      // Multi-agent intents
+      'a2a_agent': 'A2A Protocol compliant agent with task lifecycle',
+      'agent_team': 'Coordinated team of specialized agents',
+      'task_handoff': 'Transfer task context between agents',
+      'swarm_decision': 'Collective decision using swarm intelligence',
+      'react_loop': 'Reasoning and acting loop for autonomous goals',
+      'tool_chain': 'Sequential tool execution with output chaining',
+      'self_reflection': 'Agent self-evaluation and strategy adjustment',
+      'communication_hub': 'Central message routing between agents'
     };
 
     const newNode: WorkflowNode = {

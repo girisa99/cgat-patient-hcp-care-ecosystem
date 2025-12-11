@@ -218,6 +218,7 @@ export const EnhancedNodeLibraryPanel: React.FC<EnhancedNodeLibraryPanelProps> =
   const categories = [
     { id: 'all', name: 'All Nodes', icon: <Layers className="w-4 h-4" /> },
     { id: 'Language Models', name: 'Language Models', icon: <Brain className="w-4 h-4" /> },
+    { id: 'Multi-Agent', name: 'Multi-Agent', icon: <Users className="w-4 h-4" /> },
     { id: 'MCP Servers', name: 'MCP Servers', icon: <Server className="w-4 h-4" /> },
     { id: 'Channels', name: 'Channels', icon: <MessageSquare className="w-4 h-4" /> },
     { id: 'APIs & Integrations', name: 'APIs & Integrations', icon: <Globe className="w-4 h-4" /> },
