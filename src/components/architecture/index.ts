@@ -1,0 +1,1 @@
+export { ComprehensiveArchitectureDiagram } from './ComprehensiveArchitectureDiagram';
