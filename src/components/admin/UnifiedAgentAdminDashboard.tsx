@@ -34,7 +34,6 @@ import {
   CheckCircle,
   AlertCircle,
   Clock,
-  Radio,
   Link2,
   Server,
   Cpu,
@@ -44,7 +43,6 @@ import {
 import { useAgentRegistry } from '@/hooks/useAgentRegistry';
 import { useAgentConversationEngines } from '@/hooks/useAgentConversationEngines';
 import { useUnifiedChannelDeployments } from '@/hooks/useUnifiedChannelDeployments';
-import { useUnifiedAgentInfrastructure } from '@/hooks/useUnifiedAgentInfrastructure';
 import { AgentRegistration, EXTENDED_USE_CASE_TEMPLATES } from '@/services/agentUseCaseRegistry';
 import { useToast } from '@/hooks/use-toast';
 
@@ -115,16 +113,6 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
     refetchAll: refetchDeployments,
   } = useUnifiedChannelDeployments();
 
-  // Infrastructure Status Hook (P0-P3)
-  const {
-    infrastructureStatus,
-    infrastructureStats,
-    isInfrastructureHealthy,
-    getUnhealthyComponents,
-    statusLoading,
-    refetchStatus,
-    refetchStats,
-  } = useUnifiedAgentInfrastructure();
 
   const [activeTab, setActiveTab] = useState('agents');
   const [showCreateDialog, setShowCreateDialog] = useState(false);
@@ -364,14 +352,6 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
           <TabsTrigger value="mappings" className="flex items-center gap-1.5 px-3">
             <Link2 className="h-4 w-4" />
             <span className="hidden sm:inline">Mappings</span>
-          </TabsTrigger>
-          <TabsTrigger value="realtime" className="flex items-center gap-1.5 px-3">
-            <Radio className="h-4 w-4" />
-            <span className="hidden sm:inline">Live</span>
-          </TabsTrigger>
-          <TabsTrigger value="infrastructure" className="flex items-center gap-1.5 px-3">
-            <Cpu className="h-4 w-4" />
-            <span className="hidden sm:inline">Infra</span>
           </TabsTrigger>
         </TabsList>
 
@@ -717,258 +697,6 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
               </Card>
             )}
           </div>
-        </TabsContent>
-
-        {/* LIVE STATUS TAB */}
-        <TabsContent value="realtime" className="space-y-4">
-          <div className="grid grid-cols-2 gap-4 mb-4">
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Running Agents</p>
-                    <p className="text-2xl font-bold text-green-600">
-                      {agentsWithEngines?.filter(a => a.real_time_status.is_running).length || 0}
-                    </p>
-                  </div>
-                  <Radio className="h-8 w-8 text-green-500 animate-pulse" />
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="pt-6">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Active Conversations</p>
-                    <p className="text-2xl font-bold">
-                      {agentsWithEngines?.reduce((sum, a) => sum + a.real_time_status.active_conversations, 0) || 0}
-                    </p>
-                  </div>
-                  <MessageSquare className="h-8 w-8 text-muted-foreground" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid gap-4">
-            {(agentsWithEngines || []).filter(a => a.real_time_status.is_running).map(agent => (
-              <Card key={agent.id} className="border-green-500/50">
-                <CardContent className="py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="relative">
-                        <Bot className="h-8 w-8 text-green-500" />
-                        <span className="absolute -top-1 -right-1 h-3 w-3 bg-green-500 rounded-full animate-pulse" />
-                      </div>
-                      <div>
-                        <p className="font-medium">{agent.name}</p>
-                        <p className="text-sm text-muted-foreground">
-                          {agent.real_time_status.active_conversations} active • 
-                          Last: {agent.real_time_status.last_activity ? new Date(agent.real_time_status.last_activity).toLocaleTimeString() : 'N/A'}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm font-medium">{agent.use_case}</p>
-                      <p className="text-xs text-muted-foreground">{agent.linked_engines.length} engines linked</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-            {(!agentsWithEngines?.some(a => a.real_time_status.is_running)) && (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Radio className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">No agents currently running</p>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </TabsContent>
-
-        {/* INFRASTRUCTURE TAB (P0-P3 Status) */}
-        <TabsContent value="infrastructure" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <div className="flex items-center justify-between">
-                <div>
-                  <CardTitle className="flex items-center gap-2">
-                    {isInfrastructureHealthy() ? (
-                      <CheckCircle className="h-6 w-6 text-green-500" />
-                    ) : (
-                      <AlertCircle className="h-6 w-6 text-yellow-500" />
-                    )}
-                    Infrastructure Status
-                  </CardTitle>
-                  <CardDescription>
-                    Unified Agent Infrastructure Health (P0-P3, MCP, Channels)
-                  </CardDescription>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    refetchStatus();
-                    refetchStats();
-                  }}
-                  disabled={statusLoading}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${statusLoading ? 'animate-spin' : ''}`} />
-                  Refresh
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {!isInfrastructureHealthy() && getUnhealthyComponents().length > 0 && (
-                <div className="mb-4 p-3 bg-destructive/10 text-destructive rounded-lg flex items-center gap-2">
-                  <AlertCircle className="h-4 w-4" />
-                  <span>{getUnhealthyComponents().length} component(s) need attention: {getUnhealthyComponents().join(', ')}</span>
-                </div>
-              )}
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {infrastructureStatus && Object.entries(infrastructureStatus).map(([key, status]) => {
-                  const componentInfo: Record<string, { name: string; description: string }> = {
-                    featureSelector: { name: 'Feature Selector (P0)', description: 'Genie feature catalog and selection' },
-                    mcpBridge: { name: 'MCP SDK Bridge (P2)', description: 'Model Context Protocol integration' },
-                    deploymentPersistence: { name: 'Deployment Persistence (P3)', description: 'Feature config storage per deployment' },
-                    channelDeployments: { name: 'Channel Deployments', description: 'Agent channel assignment system' },
-                    agentRegistry: { name: 'Agent Registry', description: 'Unified agent use case management' },
-                    database: { name: 'Supabase Database', description: 'Primary data storage' },
-                  };
-                  const info = componentInfo[key];
-                  return (
-                    <Card key={key} className="border">
-                      <CardContent className="pt-4">
-                        <div className="flex items-start justify-between">
-                          <div className="flex items-center gap-3">
-                            <div className={`p-2 rounded-lg ${status === 'connected' ? 'bg-green-100' : 'bg-muted'}`}>
-                              <Settings className={`h-5 w-5 ${status === 'connected' ? 'text-green-600' : 'text-muted-foreground'}`} />
-                            </div>
-                            <div>
-                              <p className="font-medium text-sm">{info?.name || key}</p>
-                              <p className="text-xs text-muted-foreground">{info?.description}</p>
-                            </div>
-                          </div>
-                          {status === 'connected' ? (
-                            <CheckCircle className="h-5 w-5 text-green-500" />
-                          ) : status === 'error' ? (
-                            <AlertCircle className="h-5 w-5 text-red-500" />
-                          ) : (
-                            <Clock className="h-5 w-5 text-yellow-500" />
-                          )}
-                        </div>
-                        <div className="mt-3">
-                          <Badge className={status === 'connected' ? 'bg-green-100 text-green-800' : status === 'error' ? 'bg-red-100 text-red-800' : ''} variant={status === 'connected' ? 'default' : status === 'error' ? 'destructive' : 'outline'}>
-                            {status === 'connected' ? 'Connected' : status === 'error' ? 'Error' : 'Disconnected'}
-                          </Badge>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* Statistics */}
-          {infrastructureStats && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Infrastructure Statistics</CardTitle>
-                <CardDescription>Aggregated metrics across all agents and deployments</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-bold">{infrastructureStats.totalAgents}</p>
-                    <p className="text-sm text-muted-foreground">Total Agents</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-bold text-green-600">{infrastructureStats.activeAgents}</p>
-                    <p className="text-sm text-muted-foreground">Active Agents</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-bold">{infrastructureStats.totalChannels}</p>
-                    <p className="text-sm text-muted-foreground">Total Channels</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-bold">{infrastructureStats.mcpToolsEnabled}</p>
-                    <p className="text-sm text-muted-foreground">MCP Tools</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-bold">{infrastructureStats.featuresConfigured}</p>
-                    <p className="text-sm text-muted-foreground">Features</p>
-                  </div>
-                  <div className="text-center p-4 bg-muted rounded-lg">
-                    <p className="text-2xl font-bold">{infrastructureStats.crmIntegrations.length}</p>
-                    <p className="text-sm text-muted-foreground">CRM Integrations</p>
-                  </div>
-                </div>
-
-                {infrastructureStats.crmIntegrations.length > 0 && (
-                  <div className="mt-4">
-                    <p className="text-sm font-medium mb-2">Connected CRMs:</p>
-                    <div className="flex gap-2">
-                      {infrastructureStats.crmIntegrations.map(crm => (
-                        <Badge key={crm} variant="secondary">{crm}</Badge>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Architecture Overview */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Architecture Overview</CardTitle>
-              <CardDescription>Single Source of Truth - How all systems connect</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="bg-muted p-4 rounded-lg">
-                <pre className="text-xs overflow-x-auto">
-{`┌─────────────────────────────────────────────────────────────────┐
-│                  UNIFIED AGENT INFRASTRUCTURE HUB                │
-├─────────────────────────────────────────────────────────────────┤
-│                                                                  │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │ P0: Feature  │    │ P1: Enrollment│    │ P2: MCP SDK  │       │
-│  │   Selector   │───▶│  Agent Config │───▶│    Bridge    │       │
-│  └──────────────┘    └──────────────┘    └──────────────┘       │
-│         │                   │                   │                │
-│         ▼                   ▼                   ▼                │
-│  ┌──────────────────────────────────────────────────────┐       │
-│  │         P3: Deployment Feature Persistence           │       │
-│  │            (genie_deployments.configuration)          │       │
-│  └──────────────────────────────────────────────────────┘       │
-│         │                   │                   │                │
-│         ▼                   ▼                   ▼                │
-│  ┌──────────────┐    ┌──────────────┐    ┌──────────────┐       │
-│  │   Channel    │    │   Branding   │    │ Rate Limits  │       │
-│  │ Deployments  │    │   Config     │    │  & Tokens    │       │
-│  └──────────────┘    └──────────────┘    └──────────────┘       │
-│         │                   │                   │                │
-│         └───────────────────┼───────────────────┘                │
-│                             ▼                                    │
-│  ┌──────────────────────────────────────────────────────┐       │
-│  │              Agent Use Case Registry                  │       │
-│  │  (Patient Intake, Order Status, Treatment Center,     │       │
-│  │   Manufacturing Onboarding, Custom Use Cases)         │       │
-│  └──────────────────────────────────────────────────────┘       │
-│                             │                                    │
-│                             ▼                                    │
-│  ┌──────────────────────────────────────────────────────┐       │
-│  │                   Supabase Database                   │       │
-│  │  (agents, genie_deployments, agent_channel_deployments)│       │
-│  └──────────────────────────────────────────────────────┘       │
-└─────────────────────────────────────────────────────────────────┘`}
-                </pre>
-              </div>
-            </CardContent>
-          </Card>
         </TabsContent>
       </Tabs>
 
