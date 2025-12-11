@@ -2,11 +2,13 @@
  * STREAMLINED CANVAS VIEW
  * Simplified canvas when coming from Admin Dashboard
  * Shows only the builder - no confusing template/generate options
+ * Includes real-time deployment monitoring and integration target selection
  */
 import React, { useState, useEffect, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   ArrowLeft,
   Play,
@@ -14,11 +16,15 @@ import {
   Sparkles,
   CheckCircle,
   Bot,
+  Activity,
+  Link2,
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { FixedAdvancedReactFlow } from './FixedAdvancedReactFlow';
 import { EnhancedAIAssistPanel } from './EnhancedAIAssistPanel';
+import { DeploymentMonitor } from './DeploymentMonitor';
+import { IntegrationTargetSelector } from './IntegrationTargetSelector';
 import { useAIServiceHealth } from '@/hooks/useAIServiceHealth';
 import { supabase } from '@/integrations/supabase/client';
 import { useMasterAuth } from '@/hooks/useMasterAuth';
@@ -52,8 +58,11 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
   const [workflowEdges, setWorkflowEdges] = useState<any[]>([]);
   const [showUnifiedAssist, setShowUnifiedAssist] = useState(false);
   const [showDeployDialog, setShowDeployDialog] = useState(false);
+  const [showDeploymentMonitor, setShowDeploymentMonitor] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isDeployed, setIsDeployed] = useState(false);
+  const [selectedIntegrationTargets, setSelectedIntegrationTargets] = useState<string[]>([]);
   
   // Knowledge Base and RAG Configuration
   const [knowledgeBaseConfig, setKnowledgeBaseConfig] = useState<{
@@ -225,7 +234,7 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
     }
 
     try {
-      // Update agent status to active
+      // Update agent status to active with integration targets
       const { error } = await supabase
         .from('agents')
         .update({
@@ -234,12 +243,42 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
             deployed_at: new Date().toISOString(),
             deployed_by: user?.id,
             channels: agentContext.channels || ['web'],
+            integration_targets: selectedIntegrationTargets,
+          },
+          configuration: {
+            workflow: { nodes: workflowNodes, edges: workflowEdges },
+            knowledgeBase: knowledgeBaseConfig,
+            ragConfig: ragConfig,
+            integrations: {
+              patient_enrollment: selectedIntegrationTargets.includes('patient-enrollment'),
+              order_management: selectedIntegrationTargets.includes('order-management'),
+              treatment_center: selectedIntegrationTargets.includes('treatment-center-onboarding'),
+              channels: selectedIntegrationTargets.filter(t => 
+                ['web-chat', 'voice-call', 'email', 'api'].includes(t)
+              ),
+            },
           },
           updated_at: new Date().toISOString(),
         })
         .eq('id', agentContext.id);
 
       if (error) throw error;
+
+      // Create channel deployments for selected channels
+      const channelTargets = selectedIntegrationTargets.filter(t => 
+        ['web-chat', 'voice-call', 'email', 'api'].includes(t)
+      );
+      
+      for (const channelType of channelTargets) {
+        await supabase.from('agent_channel_deployments').upsert({
+          agent_id: agentContext.id,
+          channel_id: `${channelType}-${agentContext.id}`,
+          channel_type: channelType,
+          deployment_status: 'active',
+          deployed_at: new Date().toISOString(),
+          created_by: user?.id,
+        }, { onConflict: 'agent_id,channel_id' });
+      }
 
       // Log analytics event
       await supabase.from('agent_performance_metrics').insert({
@@ -250,14 +289,17 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
           event: 'agent_deployed',
           workflow_nodes: workflowNodes.length,
           workflow_edges: workflowEdges.length,
+          integration_targets: selectedIntegrationTargets,
         },
       });
 
       toast.success('Agent deployed successfully');
       setShowDeployDialog(false);
+      setIsDeployed(true);
+      setShowDeploymentMonitor(true);
       
-      // Navigate back to admin
-      navigate('/admin', { state: { deployedAgentId: agentContext.id } });
+      // Don't navigate immediately - show monitor first
+      // User can click "Back to Admin" when ready
     } catch (e: any) {
       toast.error(e?.message || 'Deployment failed');
     }
@@ -356,8 +398,21 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
               </span>
             </>
           )}
-          <div className="ml-auto text-xs text-muted-foreground">
-            Right-click canvas to add nodes
+          <div className="ml-auto flex items-center gap-2">
+            {isDeployed && (
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-6 px-2 text-xs"
+                onClick={() => setShowDeploymentMonitor(!showDeploymentMonitor)}
+              >
+                <Activity className="h-3 w-3 mr-1" />
+                {showDeploymentMonitor ? 'Hide Monitor' : 'Show Monitor'}
+              </Button>
+            )}
+            <span className="text-xs text-muted-foreground">
+              Right-click canvas to add nodes
+            </span>
           </div>
         </div>
       </div>
@@ -379,50 +434,78 @@ export const StreamlinedCanvasView: React.FC<StreamlinedCanvasViewProps> = ({
           workflowEdges={workflowEdges}
           onNodesGenerated={handleNodesGenerated}
         />
+
+        {/* Real-time Deployment Monitor */}
+        {agentContext.id && (
+          <DeploymentMonitor
+            agentId={agentContext.id}
+            agentName={agentContext.name}
+            isOpen={showDeploymentMonitor}
+            onClose={() => setShowDeploymentMonitor(false)}
+          />
+        )}
       </div>
 
-      {/* Deploy Dialog */}
+      {/* Deploy Dialog with Integration Targets */}
       <Dialog open={showDeployDialog} onOpenChange={setShowDeployDialog}>
-        <DialogContent className="max-w-lg">
+        <DialogContent className="max-w-2xl max-h-[80vh]">
           <DialogHeader>
-            <DialogTitle>Deploy {agentContext.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              <Play className="h-5 w-5" />
+              Deploy {agentContext.name}
+            </DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <p className="text-sm text-muted-foreground">
-              Your agent workflow has {workflowNodes.length} nodes and is ready for deployment.
-            </p>
-            
-            {/* KB/RAG Summary */}
-            <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Knowledge Base:</span>
-                <Badge variant={knowledgeBaseConfig.enabled ? 'default' : 'secondary'}>
-                  {knowledgeBaseConfig.enabled ? 'Enabled' : 'Disabled'}
-                </Badge>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">RAG Processing:</span>
-                <Badge variant={ragConfig.enabled ? 'default' : 'secondary'}>
-                  {ragConfig.enabled ? 'Enabled' : 'Disabled'}
-                </Badge>
-              </div>
-              {knowledgeBaseConfig.knowledgeBaseIds.length > 0 && (
-                <div className="text-xs text-muted-foreground">
-                  {knowledgeBaseConfig.knowledgeBaseIds.length} knowledge base(s) connected
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-4 py-4 pr-4">
+              <p className="text-sm text-muted-foreground">
+                Your agent workflow has {workflowNodes.length} nodes and is ready for deployment.
+                Select where to integrate this agent.
+              </p>
+              
+              {/* Integration Target Selector */}
+              <IntegrationTargetSelector
+                agentId={agentContext.id || ''}
+                agentUseCase={agentContext.useCase?.name}
+                selectedTargets={selectedIntegrationTargets}
+                onSelectTargets={setSelectedIntegrationTargets}
+              />
+              
+              {/* KB/RAG Summary */}
+              <div className="space-y-2 p-3 bg-muted/50 rounded-lg">
+                <h4 className="text-sm font-medium flex items-center gap-2">
+                  <Link2 className="h-4 w-4" />
+                  Configuration Summary
+                </h4>
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">Knowledge Base:</span>
+                  <Badge variant={knowledgeBaseConfig.enabled ? 'default' : 'secondary'}>
+                    {knowledgeBaseConfig.enabled ? 'Enabled' : 'Disabled'}
+                  </Badge>
                 </div>
-              )}
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-muted-foreground">RAG Processing:</span>
+                  <Badge variant={ragConfig.enabled ? 'default' : 'secondary'}>
+                    {ragConfig.enabled ? 'Enabled' : 'Disabled'}
+                  </Badge>
+                </div>
+                {knowledgeBaseConfig.knowledgeBaseIds.length > 0 && (
+                  <div className="text-xs text-muted-foreground">
+                    {knowledgeBaseConfig.knowledgeBaseIds.length} knowledge base(s) connected
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-2 justify-end pt-2">
+                <Button variant="outline" onClick={() => setShowDeployDialog(false)}>
+                  Cancel
+                </Button>
+                <Button onClick={handleDeploy} disabled={selectedIntegrationTargets.length === 0}>
+                  <Play className="h-4 w-4 mr-2" />
+                  Deploy ({selectedIntegrationTargets.length} target{selectedIntegrationTargets.length !== 1 ? 's' : ''})
+                </Button>
+              </div>
             </div>
-            
-            <div className="flex gap-2 justify-end">
-              <Button variant="outline" onClick={() => setShowDeployDialog(false)}>
-                Cancel
-              </Button>
-              <Button onClick={handleDeploy}>
-                <Play className="h-4 w-4 mr-2" />
-                Deploy & Return to Admin
-              </Button>
-            </div>
-          </div>
+          </ScrollArea>
         </DialogContent>
       </Dialog>
     </div>

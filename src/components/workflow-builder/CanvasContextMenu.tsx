@@ -50,10 +50,17 @@ import {
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
+interface AgentContext {
+  name?: string;
+  useCase?: { name: string; description?: string };
+  useCaseId?: string;
+}
+
 interface CanvasContextMenuProps {
   children: React.ReactNode;
   position: { x: number; y: number };
   onAddNode: (type: string, category: string, label: string, position: { x: number; y: number }) => void;
+  agentContext?: AgentContext;
 }
 
 interface NodeCategory {
@@ -127,10 +134,28 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
   children,
   position,
   onAddNode,
+  agentContext,
 }) => {
   const [categories, setCategories] = useState<NodeCategory[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  // Get recommended nodes based on use case
+  const getRecommendedNodes = useMemo(() => {
+    if (!agentContext?.useCase?.name) return [];
+    const useCase = agentContext.useCase.name.toLowerCase();
+    
+    if (useCase.includes('patient') || useCase.includes('enrollment')) {
+      return ['patient_intake', 'npi_verification', 'hipaa_compliance', 'ehr_integration', 'knowledge_base'];
+    }
+    if (useCase.includes('order')) {
+      return ['database', 'notification', 'api', 'email', 'condition'];
+    }
+    if (useCase.includes('treatment') || useCase.includes('center')) {
+      return ['npi_verification', 'database', 'email', 'notification'];
+    }
+    return ['agent', 'knowledge_base', 'api'];
+  }, [agentContext]);
 
   // Load categories and nodes from database
   useEffect(() => {
