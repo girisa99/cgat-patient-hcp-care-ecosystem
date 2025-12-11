@@ -348,30 +348,30 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
 
       {/* Main Tabs - Agents, Engines, Deployments, Mappings, Live Status, Infrastructure */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-6 w-full max-w-3xl">
-          <TabsTrigger value="agents">
-            <Bot className="h-4 w-4 mr-1" />
-            Agents
+        <TabsList className="flex flex-wrap gap-1 h-auto p-1">
+          <TabsTrigger value="agents" className="flex items-center gap-1.5 px-3">
+            <Bot className="h-4 w-4" />
+            <span className="hidden sm:inline">Agents</span>
           </TabsTrigger>
-          <TabsTrigger value="engines">
-            <Server className="h-4 w-4 mr-1" />
-            Engines
+          <TabsTrigger value="engines" className="flex items-center gap-1.5 px-3">
+            <Server className="h-4 w-4" />
+            <span className="hidden sm:inline">Engines</span>
           </TabsTrigger>
-          <TabsTrigger value="deployments">
-            <Globe className="h-4 w-4 mr-1" />
-            Deployments
+          <TabsTrigger value="deployments" className="flex items-center gap-1.5 px-3">
+            <Globe className="h-4 w-4" />
+            <span className="hidden sm:inline">Deployments</span>
           </TabsTrigger>
-          <TabsTrigger value="mappings">
-            <Link2 className="h-4 w-4 mr-1" />
-            Mappings
+          <TabsTrigger value="mappings" className="flex items-center gap-1.5 px-3">
+            <Link2 className="h-4 w-4" />
+            <span className="hidden sm:inline">Mappings</span>
           </TabsTrigger>
-          <TabsTrigger value="realtime">
-            <Radio className="h-4 w-4 mr-1" />
-            Live
+          <TabsTrigger value="realtime" className="flex items-center gap-1.5 px-3">
+            <Radio className="h-4 w-4" />
+            <span className="hidden sm:inline">Live</span>
           </TabsTrigger>
-          <TabsTrigger value="infrastructure">
-            <Cpu className="h-4 w-4 mr-1" />
-            Infra
+          <TabsTrigger value="infrastructure" className="flex items-center gap-1.5 px-3">
+            <Cpu className="h-4 w-4" />
+            <span className="hidden sm:inline">Infra</span>
           </TabsTrigger>
         </TabsList>
 
