@@ -16,12 +16,11 @@ import {
   Clock,
   Bot,
   GitBranch,
-  MessageSquare,
   Workflow
 } from 'lucide-react';
 
 // Import our new hooks
-import { useAgentLifecycle } from '@/hooks/useAgentLifecycle';
+import { useAgentLifecycle, AgentLifecycleStatus } from '@/hooks/useAgentLifecycle';
 import { useAgentDeploymentBridge } from '@/hooks/useAgentDeploymentBridge';
 import { useAgentPerformanceMonitoring } from '@/hooks/useAgentPerformanceMonitoring';
 import { useAgents } from '@/hooks/useAgents';
@@ -36,7 +35,7 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
   // Hooks for all agent ecosystem data
   const { agents } = useAgents();
   const { lifecycleState, lifecycleHistory, transition, canTransition } = useAgentLifecycle(agentId);
-  const { deployments, deployToNode, compatibleNodes } = useAgentDeploymentBridge(agentId);
+  const { deployments, compatibleNodes } = useAgentDeploymentBridge(agentId);
   const { performanceSummary, healthChecks, performHealthCheck } = useAgentPerformanceMonitoring(agentId);
 
   const currentAgent = agentId ? agents.find(a => a.id === agentId) : null;
@@ -48,14 +47,17 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
       case 'healthy':
       case 'deployed':
       case 'production':
+      case 'active':
         return 'text-green-600 bg-green-100';
       case 'warning':
       case 'testing':
       case 'staging':
+      case 'degraded':
         return 'text-yellow-600 bg-yellow-100';
       case 'critical':
       case 'failed':
       case 'retired':
+      case 'unhealthy':
         return 'text-red-600 bg-red-100';
       default:
         return 'text-gray-600 bg-gray-100';
@@ -66,16 +68,23 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
     switch (status) {
       case 'healthy':
       case 'deployed':
+      case 'active':
         return <CheckCircle className="h-4 w-4" />;
       case 'warning':
+      case 'degraded':
         return <AlertTriangle className="h-4 w-4" />;
       case 'critical':
       case 'failed':
+      case 'unhealthy':
         return <XCircle className="h-4 w-4" />;
       default:
         return <Clock className="h-4 w-4" />;
     }
   };
+
+  // Derive health summary from healthChecks
+  const lastHealthCheck = healthChecks[0];
+  const healthStatus = lastHealthCheck?.health_status || 'unknown';
 
   const renderOverviewTab = () => (
     <div className="space-y-6">
@@ -114,13 +123,13 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className="flex items-center gap-2">
-              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(healthSummary.overall_status)}`}>
-                {getStatusIcon(healthSummary.overall_status)}
-                {healthSummary.overall_status || 'Unknown'}
+              <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${getStatusColor(healthStatus)}`}>
+                {getStatusIcon(healthStatus)}
+                {healthStatus}
               </span>
             </div>
             <p className="text-xs text-muted-foreground mt-1">
-              {healthSummary.checks_count} checks performed
+              {healthChecks.length} checks performed
             </p>
           </CardContent>
         </Card>
@@ -132,10 +141,10 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round(performanceStats.avgExecutionTime || 0)}ms
+              {performanceSummary.avgResponseTime || 0}ms
             </div>
             <p className="text-xs text-muted-foreground">
-              {performanceStats.totalMeasurements} measurements
+              {performanceSummary.recentMetrics.length} measurements
             </p>
           </CardContent>
         </Card>
@@ -165,9 +174,9 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
                     <Badge variant={agent.status === 'deployed' ? 'default' : 'secondary'}>
                       {agent.status}
                     </Badge>
-                    {agentId === agent.id && currentState && (
+                    {agentId === agent.id && lifecycleState && (
                       <Badge variant="outline">
-                        v{currentState.version}
+                        v{lifecycleState.version}
                       </Badge>
                     )}
                   </div>
@@ -193,7 +202,7 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
                     <div>
                       <div className="font-medium">Node: {deployment.workflow_node_id}</div>
                       <div className="text-sm text-muted-foreground">
-                        {new Date(deployment.created_at).toLocaleDateString()}
+                        {new Date(deployment.created_at || '').toLocaleDateString()}
                       </div>
                     </div>
                   </div>
@@ -224,43 +233,44 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {agentId && currentState ? (
+          {agentId && lifecycleState ? (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <div className="text-lg font-semibold">Current State: {currentState.status}</div>
-                  <div className="text-sm text-muted-foreground">Version: {currentState.version}</div>
+                  <div className="text-lg font-semibold">Current State: {lifecycleState.status}</div>
+                  <div className="text-sm text-muted-foreground">Version: {lifecycleState.version}</div>
                 </div>
-                <Badge className={getStatusColor(currentState.status)}>
-                  {currentState.status}
+                <Badge className={getStatusColor(lifecycleState.status)}>
+                  {lifecycleState.status}
                 </Badge>
               </div>
 
               {/* Lifecycle Actions */}
               <div className="flex gap-2 flex-wrap">
-                {(['testing', 'staging', 'production', 'retired'] as const).map((targetStatus) => (
-                  <Button
-                    key={targetStatus}
-                    variant={canTransitionTo(targetStatus) ? 'default' : 'secondary'}
-                    size="sm"
-                    disabled={!canTransitionTo(targetStatus)}
-                    onClick={() => transitionState({
-                      agentId: agentId!,
-                      newStatus: targetStatus,
-                      version: currentState.version,
-                      changeSummary: `Transition to ${targetStatus}`
-                    })}
-                  >
-                    Transition to {targetStatus}
-                  </Button>
-                ))}
+                {(['testing', 'deploying', 'deployed', 'active', 'retired'] as AgentLifecycleStatus[]).map((targetStatus) => {
+                  const canDoTransition = canTransition(lifecycleState.status, targetStatus);
+                  return (
+                    <Button
+                      key={targetStatus}
+                      variant={canDoTransition ? 'default' : 'secondary'}
+                      size="sm"
+                      disabled={!canDoTransition}
+                      onClick={() => transition({
+                        newStatus: targetStatus,
+                        reason: `Transition to ${targetStatus}`
+                      })}
+                    >
+                      Transition to {targetStatus}
+                    </Button>
+                  );
+                })}
               </div>
 
               {/* Lifecycle History */}
               <div className="border-t pt-4">
                 <h4 className="font-medium mb-3">Lifecycle History</h4>
                 <div className="space-y-2">
-                  {lifecycleStates.slice(0, 5).map((state) => (
+                  {lifecycleHistory.slice(0, 5).map((state) => (
                     <div key={state.id} className="flex items-center justify-between py-2 px-3 bg-muted rounded">
                       <div className="flex items-center gap-3">
                         <Badge variant="outline">{state.status}</Badge>
@@ -293,7 +303,7 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round(performanceStats.avgSuccessRate * 100) || 0}%
+              {performanceSummary.successRate || 0}%
             </div>
           </CardContent>
         </Card>
@@ -304,7 +314,7 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {Math.round(performanceStats.avgErrorRate * 100) || 0}%
+              {performanceSummary.errorRate || 0}%
             </div>
           </CardContent>
         </Card>
@@ -315,8 +325,8 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
           </CardHeader>
           <CardContent>
             <div className="text-sm">
-              {performanceStats.lastHealthCheck 
-                ? new Date(performanceStats.lastHealthCheck).toLocaleString()
+              {performanceSummary.lastHealthCheck 
+                ? new Date(performanceSummary.lastHealthCheck.created_at).toLocaleString()
                 : 'Never'
               }
             </div>
@@ -339,10 +349,7 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
                   key={checkType}
                   variant="outline"
                   size="sm"
-                  onClick={() => performHealthCheck({
-                    agentId: agentId,
-                    checkType: checkType
-                  })}
+                  onClick={() => performHealthCheck(checkType)}
                 >
                   Check {checkType}
                 </Button>
@@ -350,13 +357,16 @@ export const AgentEcosystemDashboard: React.FC<AgentEcosystemDashboardProps> = (
             </div>
 
             <div className="space-y-2">
-              <div className="text-sm font-medium">Health Status Distribution</div>
+              <div className="text-sm font-medium">Recent Health Checks</div>
               <div className="flex gap-2 flex-wrap">
-                {Object.entries(healthSummary.status_distribution || {}).map(([status, count]) => (
-                  <Badge key={status} className={getStatusColor(status)}>
-                    {status}: {count}
+                {healthChecks.slice(0, 5).map((check) => (
+                  <Badge key={check.id} className={getStatusColor(check.health_status)}>
+                    {check.check_type}: {check.health_status}
                   </Badge>
                 ))}
+                {healthChecks.length === 0 && (
+                  <span className="text-sm text-muted-foreground">No health checks yet</span>
+                )}
               </div>
             </div>
           </CardContent>
