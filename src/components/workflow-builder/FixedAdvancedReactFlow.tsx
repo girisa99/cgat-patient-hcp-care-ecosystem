@@ -658,15 +658,27 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     showSuccess(`Generated workflow with database nodes (${categories.length} categories, ${allNodes.length} nodes available)`);
   }, [categories, nodeTypesByCategory, setNodes, setEdges, showSuccess, showError]);
 
-  // Node drag and drop handler
+  // Node drag and drop handler - FIXED to properly parse drag data
   const onDrop = useCallback(
     (event: React.DragEvent) => {
       event.preventDefault();
 
-      const type = event.dataTransfer.getData('application/reactflow');
-      const nodeData = JSON.parse(event.dataTransfer.getData('application/json') || '{}');
+      const rawData = event.dataTransfer.getData('application/reactflow');
+      
+      if (!rawData) {
+        return;
+      }
 
-      if (typeof type === 'undefined' || !type) {
+      // Parse the drag data - it's stored as JSON in application/reactflow
+      let dragData: any;
+      try {
+        dragData = JSON.parse(rawData);
+      } catch {
+        // If not JSON, treat as simple type string (fallback)
+        dragData = { type: rawData };
+      }
+
+      if (!dragData || (!dragData.type && !dragData.nodeType)) {
         return;
       }
 
@@ -677,24 +689,36 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
           y: event.clientY - reactFlowBounds.top,
         });
 
+        // Extract node info from drag data
+        const nodeType = dragData.nodeType || {};
+        const label = dragData.label || nodeType.display_name || dragData.type || 'New Node';
+        const typeKey = dragData.type || nodeType.type_key || 'action';
+        const category = dragData.category || nodeType.category?.name || 'general';
+        const configuration = dragData.configuration || nodeType.default_config || {};
+        const icon = dragData.icon || nodeType.icon || 'Circle';
+        const color = nodeType.color || '#6b7280';
+        const intent = nodeType.description || '';
+
         const newNode = {
-          id: `${type}-${Date.now()}`,
+          id: `${typeKey}-${Date.now()}`,
           type: 'enhanced',
           position,
           data: {
-            label: nodeData.display_name || nodeData.label || type,
-            type_key: nodeData.type_key || type,
-            category: nodeData.category?.name || 'general',
-            configuration: nodeData.default_config || {},
-            icon: String(nodeData.icon || 'Circle'),
-            color: String(nodeData.color || '#6b7280'),
-            isConfigured: false
+            label,
+            type_key: typeKey,
+            category,
+            configuration,
+            icon: String(icon),
+            color: String(color),
+            intent,
+            isConfigured: false,
+            isWorkflowNode: true,
           },
         };
 
         setNodes((nds) => nds.concat(newNode));
         onNodeAdd?.(newNode);
-        showSuccess(`Added ${newNode.data.label} node`);
+        showSuccess(`Added ${label} node`);
       }
     },
     [screenToFlowPosition, setNodes, onNodeAdd, showSuccess]
