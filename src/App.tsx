@@ -46,7 +46,8 @@ import OrderManagement from '@/pages/OrderManagement';
 import PatientOnboarding from '@/pages/PatientOnboarding';
 import PatientOnboardingWhatsApp from '@/pages/PatientOnboardingWhatsApp';
 import { ConfigurableGeniePage } from '@/pages/ConfigurableGeniePage';
-import GenieManagementPage from '@/pages/GenieManagementPage';
+import { UnifiedAgentAdminDashboard } from '@/components/admin/UnifiedAgentAdminDashboard';
+import AppLayout from '@/components/layout/AppLayout';
 
 
 import OnboardingDashboard from '@/pages/OnboardingDashboard';
@@ -133,20 +134,17 @@ const AppContent = () => {
                     </ProtectedRoute>
                   } />
                   
-                  {/* OnboardingTeam accessible routes */}
-                  <Route path="/agents" element={
+                  {/* Admin - Single Source of Truth for all agent/genie management */}
+                  <Route path="/admin" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
-                      <GenieManagementPage />
+                      <AppLayout><UnifiedAgentAdminDashboard /></AppLayout>
                     </ProtectedRoute>
                   } />
+                  <Route path="/agents" element={<Navigate to="/admin" replace />} />
+                  <Route path="/genie-management" element={<Navigate to="/admin" replace />} />
                   <Route path="/agents/canvas" element={
                     <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
                       <Agents />
-                    </ProtectedRoute>
-                  } />
-                  <Route path="/genie-management" element={
-                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'onboardingTeam', 'healthcareProvider', 'demoUser']}>
-                      <GenieManagementPage />
                     </ProtectedRoute>
                   } />
                   <Route path="/genie-analytics/:genieId" element={
