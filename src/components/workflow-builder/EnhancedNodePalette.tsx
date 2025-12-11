@@ -7,7 +7,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/component
 import { 
   Workflow, ChevronDown, ChevronRight, Search, Info, 
   Bot, Database, Brain, Zap, Eye, Link, Grid3X3, 
-  Wrench, FileText, MessageSquare, Filter, Settings, GitBranch, Plus
+  Wrench, FileText, MessageSquare, Filter, Settings, GitBranch, Plus,
+  Users, Network, RefreshCw, Share2, Radio, ArrowRightLeft
 } from 'lucide-react';
 import { useWorkflowNodes } from '@/hooks/useWorkflowNodes';
 import { useWorkflowNodePopulation } from '@/hooks/useWorkflowNodePopulation';
@@ -32,11 +33,11 @@ const getIconComponent = (iconName: string) => {
     'settings': Settings,
     'git-branch': GitBranch,
     // New icons for comprehensive node support
-    'heart': Bot, // Using Bot as fallback for heart
-    'sparkles': Zap, // Using Zap as fallback for sparkles
+    'heart': Bot,
+    'sparkles': Zap,
     'search': Search,
-    'shield': Bot, // Using Bot as fallback for shield 
-    'terminal': Bot, // Using Bot as fallback for terminal
+    'shield': Bot,
+    'terminal': Bot,
     'message-circle': MessageSquare,
     'code': Settings,
     'cloud': Database,
@@ -55,6 +56,13 @@ const getIconComponent = (iconName: string) => {
     'hash': Filter,
     'sticky-note': FileText,
     'route': Link,
+    // Multi-Agent / A2A icons
+    'users': Users,
+    'network': Network,
+    'refresh-cw': RefreshCw,
+    'share-2': Share2,
+    'radio': Radio,
+    'arrow-right-left': ArrowRightLeft,
   };
   
   return iconMap[iconName] || Workflow;
@@ -389,6 +397,47 @@ const [internalSearch, setInternalSearch] = useState('');
         if (name.includes('staging') || name.includes('deploy')) return 6;
         if (name.includes('docker') || name.includes('kubernetes')) return 7;
         return 8;
+      };
+      
+      const priorityA = getPriority(a);
+      const priorityB = getPriority(b);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      
+      return (a.display_name || a.type_key).localeCompare(b.display_name || b.type_key);
+    }),
+    
+    // 9. Multi-Agent & A2A - Agent coordination, swarm, agentic AI
+    multi_agent: [
+      ...filteredNodeTypes.filter((nt) => match(nt, ['a2a','multi-agent','agent team','swarm','task handoff','communication hub','tool sharing','react loop','tool chain','self reflection','goal decomposition','orchestration','collective','consensus'])),
+      // Add static multi-agent nodes if not in DB yet
+      ...(filteredNodeTypes.some(nt => nt.type_key === 'a2a_agent') ? [] : [
+        { id: 'a2a_agent', type_key: 'a2a_agent', display_name: 'A2A Agent', description: 'Google A2A Protocol compliant agent', icon: 'network', color: '#6366F1', category: { name: 'multi-agent' } },
+        { id: 'task_handoff', type_key: 'task_handoff', display_name: 'Task Handoff', description: 'Transfer task context between agents', icon: 'arrow-right-left', color: '#8B5CF6', category: { name: 'multi-agent' } },
+        { id: 'communication_hub', type_key: 'communication_hub', display_name: 'Communication Hub', description: 'Central message routing for agents', icon: 'radio', color: '#EC4899', category: { name: 'multi-agent' } },
+        { id: 'agent_team', type_key: 'agent_team', display_name: 'Agent Team', description: 'Coordinated team of specialized agents', icon: 'users', color: '#10B981', category: { name: 'multi-agent' } },
+        { id: 'swarm_decision', type_key: 'swarm_decision', display_name: 'Swarm Decision', description: 'Collective decision using swarm intelligence', icon: 'brain', color: '#F59E0B', category: { name: 'multi-agent' } },
+        { id: 'tool_sharing', type_key: 'tool_sharing', display_name: 'Tool Sharing', description: 'Share tools between agents', icon: 'share-2', color: '#06B6D4', category: { name: 'multi-agent' } },
+        { id: 'react_loop', type_key: 'react_loop', display_name: 'ReAct Loop', description: 'Reasoning and acting loop', icon: 'refresh-cw', color: '#EF4444', category: { name: 'multi-agent' } },
+        { id: 'tool_chain', type_key: 'tool_chain', display_name: 'Tool Chain', description: 'Sequential tool execution', icon: 'link', color: '#14B8A6', category: { name: 'multi-agent' } },
+        { id: 'self_reflection', type_key: 'self_reflection', display_name: 'Self Reflection', description: 'Agent self-evaluation', icon: 'eye', color: '#A855F7', category: { name: 'multi-agent' } },
+        { id: 'goal_decomposition', type_key: 'goal_decomposition', display_name: 'Goal Decomposition', description: 'Break goals into sub-tasks', icon: 'git-branch', color: '#F97316', category: { name: 'multi-agent' } }
+      ] as any)
+    ].sort((a, b) => {
+      const getPriority = (node: any) => {
+        const name = (node.display_name || node.type_key).toLowerCase();
+        
+        // A2A -> Multi-Agent -> Swarm -> Agentic order
+        if (name.includes('a2a')) return 1;
+        if (name.includes('task handoff') || name.includes('task_handoff')) return 2;
+        if (name.includes('communication')) return 3;
+        if (name.includes('agent team') || name.includes('agent_team')) return 4;
+        if (name.includes('swarm')) return 5;
+        if (name.includes('tool sharing') || name.includes('tool_sharing')) return 6;
+        if (name.includes('react')) return 7;
+        if (name.includes('tool chain') || name.includes('tool_chain')) return 8;
+        if (name.includes('reflection')) return 9;
+        if (name.includes('goal')) return 10;
+        return 11;
       };
       
       const priorityA = getPriority(a);

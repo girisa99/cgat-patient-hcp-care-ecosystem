@@ -65,6 +65,18 @@ import { useUniversalAI } from '@/hooks/useUniversalAI';
 import { EnhancedWorkflowNode } from './nodes/EnhancedWorkflowNode';
 import { AgentNode } from './nodes/AgentNode';
 import { AIIntelligenceNode } from './nodes/AIIntelligenceNode';
+import { 
+  A2AAgentNode,
+  TaskHandoffNode,
+  CommunicationHubNode,
+  AgentTeamNode,
+  SwarmDecisionNode,
+  ToolSharingNode,
+  ReActLoopNode,
+  ToolChainNode,
+  SelfReflectionNode,
+  GoalDecompositionNode
+} from './nodes/MultiAgentNodes';
 import { EnhancedNodePalette } from './EnhancedNodePalette';
 import { RightDockedAIPanel } from './RightDockedAIPanel';
 import { TemplateGallery } from '../unified-workflow/TemplateGallery';
@@ -292,9 +304,21 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   // Handler for adding nodes from canvas context menu
   const handleAddNodeFromContextMenu = useCallback((type: string, category: string, label: string, position: { x: number; y: number }) => {
     const flowPosition = screenToFlowPosition(position);
+    
+    // Multi-agent node types that should use their dedicated component
+    const multiAgentTypes = ['a2a_agent', 'task_handoff', 'communication_hub', 'agent_team', 'swarm_decision', 'tool_sharing', 'react_loop', 'tool_chain', 'self_reflection', 'goal_decomposition'];
+    const isMultiAgent = multiAgentTypes.includes(type);
+    
+    // Color mapping for multi-agent nodes
+    const multiAgentColors: Record<string, string> = {
+      a2a_agent: '#6366F1', task_handoff: '#8B5CF6', communication_hub: '#EC4899',
+      agent_team: '#10B981', swarm_decision: '#F59E0B', tool_sharing: '#06B6D4',
+      react_loop: '#EF4444', tool_chain: '#14B8A6', self_reflection: '#A855F7', goal_decomposition: '#F97316'
+    };
+    
     const newNode: Node = {
       id: `${type}-${Date.now()}`,
-      type: 'enhanced',
+      type: isMultiAgent ? type : 'enhanced',
       position: flowPosition,
       data: {
         label,
@@ -303,7 +327,7 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
         configuration: {},
         isConfigured: false,
         icon: type === 'agent' ? 'Bot' : type === 'api' ? 'Zap' : type === 'condition' ? 'GitBranch' : 'Circle',
-        color: category === 'ai-agents' ? '#8b5cf6' : category === 'workflow' ? '#10b981' : '#6b7280'
+        color: isMultiAgent ? multiAgentColors[type] : (category === 'ai-agents' ? '#8b5cf6' : category === 'workflow' ? '#10b981' : '#6b7280')
       }
     };
     setNodes(nds => [...nds, newNode]);
@@ -325,6 +349,18 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     enhanced: EnhancedWorkflowNode,
     agent: AgentNode,
     ai: AIIntelligenceNode,
+    // Multi-Agent / A2A Node Types
+    a2a_agent: A2AAgentNode,
+    task_handoff: TaskHandoffNode,
+    communication_hub: CommunicationHubNode,
+    agent_team: AgentTeamNode,
+    swarm_decision: SwarmDecisionNode,
+    tool_sharing: ToolSharingNode,
+    react_loop: ReActLoopNode,
+    tool_chain: ToolChainNode,
+    self_reflection: SelfReflectionNode,
+    goal_decomposition: GoalDecompositionNode,
+    // Legacy multi-agent fallback
     'multi-agent': ({ data }: any) => (
       <div className="px-4 py-3 rounded-xl min-w-[300px] shadow-lg border-2 border-purple-200 bg-gradient-to-r from-purple-50 to-indigo-50">
         <div className="flex items-center gap-3">
