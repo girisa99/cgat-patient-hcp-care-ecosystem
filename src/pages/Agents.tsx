@@ -516,6 +516,7 @@ const AgentsInner = () => {
                       workflowType="visual"
                       sessionId={currentSession?.id}
                       fitParent={true}
+                      embedded={true}
                       onNodeSelect={(node) => {
                         setSelectedNode(node);
                         setRightPanelTab('config');
