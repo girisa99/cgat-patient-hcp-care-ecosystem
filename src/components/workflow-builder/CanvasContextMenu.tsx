@@ -321,14 +321,21 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
     { type: 'knowledge_base', category: 'data', label: 'Knowledge Base', icon: Database },
   ];
 
-  // Multi-agent specific nodes for submenu
+  // Multi-agent specific nodes for submenu - all 10 node types
   const multiAgentQuickNodes = [
-    { type: 'a2a_agent', category: 'multi-agent', label: 'A2A Agent', icon: Users, description: 'Google A2A Protocol agent' },
-    { type: 'task_handoff', category: 'multi-agent', label: 'Task Handoff', icon: Zap, description: 'Transfer between agents' },
-    { type: 'agent_team', category: 'multi-agent', label: 'Agent Team', icon: Users, description: 'Coordinated agent team' },
-    { type: 'swarm_decision', category: 'multi-agent', label: 'Swarm Decision', icon: Brain, description: 'Collective intelligence' },
-    { type: 'react_loop', category: 'multi-agent', label: 'ReAct Loop', icon: Brain, description: 'Reasoning + Acting loop' },
-    { type: 'tool_chain', category: 'multi-agent', label: 'Tool Chain', icon: Zap, description: 'Sequential tool execution' },
+    // A2A Protocol nodes
+    { type: 'a2a_agent', category: 'multi-agent', label: 'A2A Agent', icon: Users, description: 'Google A2A Protocol agent', subcategory: 'A2A Protocol' },
+    { type: 'task_handoff', category: 'multi-agent', label: 'Task Handoff', icon: Zap, description: 'Transfer between agents', subcategory: 'A2A Protocol' },
+    { type: 'communication_hub', category: 'multi-agent', label: 'Communication Hub', icon: Server, description: 'Central message routing', subcategory: 'A2A Protocol' },
+    // Multi-Agent Orchestration nodes
+    { type: 'agent_team', category: 'multi-agent', label: 'Agent Team', icon: Users, description: 'Coordinated agent team', subcategory: 'Orchestration' },
+    { type: 'swarm_decision', category: 'multi-agent', label: 'Swarm Decision', icon: Brain, description: 'Collective intelligence', subcategory: 'Orchestration' },
+    { type: 'tool_sharing', category: 'multi-agent', label: 'Tool Sharing', icon: Layers, description: 'Share tools between agents', subcategory: 'Orchestration' },
+    // Agentic AI nodes
+    { type: 'react_loop', category: 'multi-agent', label: 'ReAct Loop', icon: Brain, description: 'Reasoning + Acting loop', subcategory: 'Agentic AI' },
+    { type: 'tool_chain', category: 'multi-agent', label: 'Tool Chain', icon: Link2, description: 'Sequential tool execution', subcategory: 'Agentic AI' },
+    { type: 'self_reflection', category: 'multi-agent', label: 'Self Reflection', icon: Activity, description: 'Self-evaluation & adjustment', subcategory: 'Agentic AI' },
+    { type: 'goal_decomposition', category: 'multi-agent', label: 'Goal Decomposition', icon: GitBranch, description: 'Break goals into sub-tasks', subcategory: 'Agentic AI' },
   ];
 
   return (

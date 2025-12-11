@@ -277,15 +277,17 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'error_handler': 'Error Handler',
       'validation': 'Input Validation',
       'mcp_connector': 'MCP Connector',
-      // Multi-agent nodes
+      // Multi-agent nodes - all 10 types
       'a2a_agent': 'A2A Agent',
-      'agent_team': 'Agent Team',
       'task_handoff': 'Task Handoff',
+      'communication_hub': 'Communication Hub',
+      'agent_team': 'Agent Team',
       'swarm_decision': 'Swarm Decision',
+      'tool_sharing': 'Tool Sharing',
       'react_loop': 'ReAct Loop',
       'tool_chain': 'Tool Chain',
       'self_reflection': 'Self Reflection',
-      'communication_hub': 'Communication Hub'
+      'goal_decomposition': 'Goal Decomposition'
     };
 
     const nodeIntents: { [key: string]: string } = {
@@ -294,15 +296,17 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'error_handler': 'Handle errors and exceptions gracefully',
       'validation': 'Validate input data before processing',
       'mcp_connector': 'Connect to external MCP tool',
-      // Multi-agent intents
+      // Multi-agent intents - all 10 types
       'a2a_agent': 'A2A Protocol compliant agent with task lifecycle',
-      'agent_team': 'Coordinated team of specialized agents',
       'task_handoff': 'Transfer task context between agents',
+      'communication_hub': 'Central message routing between agents',
+      'agent_team': 'Coordinated team of specialized agents',
       'swarm_decision': 'Collective decision using swarm intelligence',
+      'tool_sharing': 'Share tools and capabilities between agents',
       'react_loop': 'Reasoning and acting loop for autonomous goals',
       'tool_chain': 'Sequential tool execution with output chaining',
       'self_reflection': 'Agent self-evaluation and strategy adjustment',
-      'communication_hub': 'Central message routing between agents'
+      'goal_decomposition': 'Break complex goals into achievable sub-tasks'
     };
 
     const newNode: WorkflowNode = {
