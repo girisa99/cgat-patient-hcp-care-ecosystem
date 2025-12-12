@@ -38,7 +38,8 @@ import {
   Target,
   Gauge,
   Award,
-  Zap as Lightning
+  Zap as Lightning,
+  Cpu
 } from 'lucide-react';
 import AppLayout from '@/components/layout/AppLayout';
 import { QuickConnectorCreator } from '@/components/agentic/enhanced-connector/QuickConnectorCreator';
@@ -88,10 +89,48 @@ export const Dashboard: React.FC = () => {
   const normalizedRoles = normalizeRoles(userRoles || []);
   const isHealthcareProvider = hasAnyRole(normalizedRoles, ['healthcareProvider']);
   
-  // Fetch data for healthcare provider dashboard
+  // Fetch data for healthcare provider dashboard - use consolidated data
   const { agents } = useAgents();
   const { deployments } = useAgentDeployments();
   const { patients } = usePatients();
+
+  // Fetch ALL agents from database (not just user-specific)
+  const { data: allAgents = [] } = useQuery({
+    queryKey: ['all-agents-dashboard'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agents')
+        .select('id, name, status, use_case, agent_type, created_at')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch ALL conversation engines from database
+  const { data: allEngines = [] } = useQuery({
+    queryKey: ['all-engines-dashboard'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('conversation_engines')
+        .select('id, name, engine_type, is_active, capabilities')
+        .order('created_at', { ascending: false });
+      if (error) throw error;
+      return data || [];
+    }
+  });
+
+  // Fetch agent-engine mappings
+  const { data: agentEngineMappings = [] } = useQuery({
+    queryKey: ['agent-engine-mappings-dashboard'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('agent_conversation_engines')
+        .select('id, agent_id, conversation_engine_id, role, is_active');
+      if (error) throw error;
+      return data || [];
+    }
+  });
 
   // Fetch orders data
   const { data: ordersData } = useQuery({
@@ -188,11 +227,25 @@ export const Dashboard: React.FC = () => {
     urgent: onboardingData?.filter(o => o.priority === 'high').length || 0
   };
 
+  // Use consolidated agent/engine data from database
   const agentStats = {
-    total: agents?.length || 0,
-    active: deployments?.filter(d => d.deployment_status === 'active').length || 0,
+    total: allAgents?.length || 0,
+    active: allAgents?.filter(a => a.status === 'active').length || 0,
     deployed: deployments?.length || 0,
     channels: [...new Set(deployments?.map(d => d.channel_type))].length || 0
+  };
+
+  const engineStats = {
+    total: allEngines?.length || 0,
+    active: allEngines?.filter(e => e.is_active).length || 0,
+    mcp: allEngines?.filter(e => e.engine_type === 'mcp').length || 0,
+    hybrid: allEngines?.filter(e => e.engine_type === 'hybrid').length || 0,
+    llm: allEngines?.filter(e => e.engine_type === 'llm').length || 0
+  };
+
+  const mappingStats = {
+    total: agentEngineMappings?.length || 0,
+    active: agentEngineMappings?.filter(m => m.is_active).length || 0
   };
 
   // Chart data for analytics
@@ -488,13 +541,16 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
               </CardContent>
             </Card>
             
-            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 hover-scale cursor-pointer animate-fade-in">
+            <Card 
+              className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-950 dark:to-purple-900 border-purple-200 dark:border-purple-800 hover-scale cursor-pointer animate-fade-in"
+              onClick={() => navigate('/admin')}
+            >
               <CardContent className="p-4">
                 <div className="flex items-center justify-between">
                   <div>
                     <p className="text-sm font-medium text-purple-600 dark:text-purple-400">AI Agents</p>
-                    <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{agentStats.active}</p>
-                    <p className="text-xs text-purple-600 dark:text-purple-400">{agentStats.deployed} deployed</p>
+                    <p className="text-3xl font-bold text-purple-900 dark:text-purple-100">{agentStats.total}</p>
+                    <p className="text-xs text-purple-600 dark:text-purple-400">{agentStats.active} active • {engineStats.total} engines</p>
                   </div>
                   <div className="h-12 w-12 bg-purple-600 dark:bg-purple-400 rounded-lg flex items-center justify-center">
                     <Bot className="h-6 w-6 text-white dark:text-purple-900" />
@@ -687,48 +743,77 @@ Complete technical implementation covering MCP, RAG, Small LLMs, Template Config
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <CardContent className="space-y-4">
-                    <div className="h-32 mb-4">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <BarChart data={agentPerformanceData}>
-                          <CartesianGrid strokeDasharray="3 3" opacity={0.3} />
-                          <XAxis dataKey="name" fontSize={10} />
-                          <YAxis fontSize={10} />
-                          <Tooltip />
-                          <Bar dataKey="active" fill="#8b5cf6" radius={[2, 2, 0, 0]} />
-                          <Bar dataKey="total" fill="#e5e7eb" radius={[2, 2, 0, 0]} />
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    
-                    {deployments && deployments.length > 0 && (
-                      <div className="border rounded-lg p-3 bg-muted/20">
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">Latest Deployment</span>
-                          <Badge variant="outline" className="text-xs">{deployments[0]?.channel_type}</Badge>
+                    {/* Agent & Engine Stats Grid */}
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="bg-purple-50 dark:bg-purple-950/50 p-3 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Total Agents</span>
+                          <Bot className="h-4 w-4 text-purple-600" />
                         </div>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Status:</span>
-                            <Badge variant={deployments[0]?.deployment_status === 'active' ? 'default' : 'secondary'}>
-                              {deployments[0]?.deployment_status}
-                            </Badge>
-                          </div>
-                          {deployments[0]?.health_status && (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Health:</span>
-                              <Badge variant="outline">{deployments[0]?.health_status}</Badge>
+                        <p className="text-2xl font-bold text-purple-600">{agentStats.total}</p>
+                      </div>
+                      <div className="bg-blue-50 dark:bg-blue-950/50 p-3 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Engines</span>
+                          <Cpu className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-blue-600">{engineStats.total}</p>
+                      </div>
+                      <div className="bg-green-50 dark:bg-green-950/50 p-3 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Active Agents</span>
+                          <CheckCircle className="h-4 w-4 text-green-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-green-600">{agentStats.active}</p>
+                      </div>
+                      <div className="bg-orange-50 dark:bg-orange-950/50 p-3 rounded-lg">
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm text-muted-foreground">Mappings</span>
+                          <Workflow className="h-4 w-4 text-orange-600" />
+                        </div>
+                        <p className="text-2xl font-bold text-orange-600">{mappingStats.total}</p>
+                      </div>
+                    </div>
+
+                    {/* Engine Type Breakdown */}
+                    <div className="border rounded-lg p-3 bg-muted/20">
+                      <p className="text-sm font-medium mb-2">Engine Types</p>
+                      <div className="flex flex-wrap gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          MCP: {engineStats.mcp}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          Hybrid: {engineStats.hybrid}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          LLM: {engineStats.llm}
+                        </Badge>
+                      </div>
+                    </div>
+
+                    {/* Recent Agents List */}
+                    {allAgents && allAgents.length > 0 && (
+                      <div className="border rounded-lg p-3 bg-muted/20">
+                        <p className="text-sm font-medium mb-2">Recent Agents</p>
+                        <div className="space-y-2 max-h-32 overflow-auto">
+                          {allAgents.slice(0, 3).map(agent => (
+                            <div key={agent.id} className="flex items-center justify-between text-sm">
+                              <span className="truncate">{agent.name}</span>
+                              <Badge variant={agent.status === 'active' ? 'default' : 'secondary'} className="text-xs">
+                                {agent.status || 'draft'}
+                              </Badge>
                             </div>
-                          )}
+                          ))}
                         </div>
                       </div>
                     )}
                     
                     <Button 
-                      onClick={() => navigate('/agents')} 
+                      onClick={() => navigate('/admin')} 
                       className="w-full bg-purple-600 hover:bg-purple-700 hover-scale"
                     >
                       <Bot className="h-4 w-4 mr-2" />
-                      Manage Agents
+                      Manage Agents & Engines
                     </Button>
                   </CardContent>
                 </CollapsibleContent>
