@@ -7,9 +7,21 @@ export { DocumentUploadProcessor } from './DocumentUploadProcessor';
 export { useDocumentProcessing } from '@/hooks/useDocumentProcessing';
 export type { 
   DocumentJob, 
+  DocumentType,
   ExtractedMetadata, 
   EntityExtraction, 
   FormFieldExtraction, 
   ProcessingConfig, 
-  FormMapping 
+  FormMapping,
+  ExtractedTable,
+  SignatureDetection,
+  DocumentClassification,
+  HandwrittenRegion,
+  BoundingBox,
+  ValidationRule,
+  ValidationStatus,
+  ValidationError,
+  ValidationWarning,
+  BatchProcessingResult,
+  ExportOptions
 } from '@/hooks/useDocumentProcessing';

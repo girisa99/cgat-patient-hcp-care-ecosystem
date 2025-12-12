@@ -13,7 +13,7 @@ export interface DocumentJob {
   file_name: string;
   file_path: string;
   mime_type: string;
-  status: 'uploaded' | 'processing' | 'completed' | 'error';
+  status: 'uploaded' | 'processing' | 'completed' | 'error' | 'needs_review';
   progress: number;
   current_stage: string;
   stage_message?: string;
@@ -23,6 +23,40 @@ export interface DocumentJob {
   created_at: string;
   completed_at?: string;
   error_message?: string;
+  document_type?: DocumentType;
+  validation_status?: ValidationStatus;
+  batch_id?: string;
+}
+
+export type DocumentType = 
+  | 'invoice' 
+  | 'receipt' 
+  | 'form' 
+  | 'contract' 
+  | 'medical_record' 
+  | 'insurance_card'
+  | 'prescription'
+  | 'lab_result'
+  | 'identification'
+  | 'unknown';
+
+export interface ValidationStatus {
+  isValid: boolean;
+  errors: ValidationError[];
+  warnings: ValidationWarning[];
+  requiresManualReview: boolean;
+}
+
+export interface ValidationError {
+  field: string;
+  message: string;
+  severity: 'error' | 'warning';
+}
+
+export interface ValidationWarning {
+  field: string;
+  message: string;
+  suggestion?: string;
 }
 
 export interface ExtractedMetadata {
@@ -36,25 +70,100 @@ export interface ExtractedMetadata {
   keywords?: string[];
   entities?: EntityExtraction[];
   formFields?: FormFieldExtraction[];
+  tables?: ExtractedTable[];
+  signatures?: SignatureDetection[];
+  documentClassification?: DocumentClassification;
+  handwrittenRegions?: HandwrittenRegion[];
 }
 
 export interface EntityExtraction {
   type: string;
   value: string;
   confidence: number;
+  boundingBox?: BoundingBox;
+  verified?: boolean;
 }
 
 export interface FormFieldExtraction {
   fieldName: string;
   value: string;
   confidence: number;
+  boundingBox?: BoundingBox;
+  fieldType?: 'text' | 'date' | 'number' | 'checkbox' | 'signature';
+  verified?: boolean;
+  originalValue?: string;
+}
+
+export interface ExtractedTable {
+  id: string;
+  rows: TableRow[];
+  headers?: string[];
+  confidence: number;
+  pageNumber?: number;
+}
+
+export interface TableRow {
+  cells: TableCell[];
+}
+
+export interface TableCell {
+  value: string;
+  confidence: number;
+  columnIndex: number;
+  rowIndex: number;
+}
+
+export interface SignatureDetection {
+  id: string;
+  detected: boolean;
+  boundingBox?: BoundingBox;
+  confidence: number;
+  signedBy?: string;
+  signedDate?: string;
+}
+
+export interface DocumentClassification {
+  type: DocumentType;
+  confidence: number;
+  alternativeTypes?: { type: DocumentType; confidence: number }[];
+}
+
+export interface HandwrittenRegion {
+  id: string;
+  text: string;
+  confidence: number;
+  boundingBox?: BoundingBox;
+}
+
+export interface BoundingBox {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  pageNumber?: number;
 }
 
 export interface ProcessingConfig {
   enableOCR?: boolean;
+  enableHandwritingRecognition?: boolean;
+  enableTableExtraction?: boolean;
+  enableSignatureDetection?: boolean;
+  enableDocumentClassification?: boolean;
   enableMetadataExtraction?: boolean;
   targetFormId?: string;
   extractionFields?: string[];
+  confidenceThreshold?: number;
+  validationRules?: ValidationRule[];
+  language?: string;
+}
+
+export interface ValidationRule {
+  fieldName: string;
+  type: 'required' | 'format' | 'range' | 'custom';
+  pattern?: string;
+  min?: number;
+  max?: number;
+  message?: string;
 }
 
 export interface FormMapping {
@@ -62,7 +171,25 @@ export interface FormMapping {
     value: string;
     confidence: number;
     source: string;
+    verified?: boolean;
+    originalValue?: string;
+    fieldType?: string;
   };
+}
+
+export interface BatchProcessingResult {
+  batchId: string;
+  totalDocuments: number;
+  processed: number;
+  failed: number;
+  jobs: DocumentJob[];
+}
+
+export interface ExportOptions {
+  format: 'json' | 'csv' | 'xlsx';
+  includeMetadata?: boolean;
+  includeRawText?: boolean;
+  fields?: string[];
 }
 
 export interface UseDocumentProcessingReturn {
@@ -73,14 +200,24 @@ export interface UseDocumentProcessingReturn {
   isProcessing: boolean;
   uploadProgress: number;
   formMapping: FormMapping | null;
+  batchProgress: { total: number; completed: number } | null;
   
   // Actions
   uploadDocument: (file: File, config?: ProcessingConfig) => Promise<string | null>;
+  uploadBatch: (files: File[], config?: ProcessingConfig) => Promise<BatchProcessingResult | null>;
   processDocument: (documentId: string) => Promise<boolean>;
   extractMetadata: (documentId: string) => Promise<ExtractedMetadata | null>;
   mapToForm: (documentId: string, targetFields: string[]) => Promise<FormMapping | null>;
   cancelJob: (documentId: string) => Promise<void>;
   clearJobs: () => void;
+  
+  // Verification & Editing
+  updateFieldValue: (documentId: string, fieldName: string, newValue: string) => Promise<boolean>;
+  verifyField: (documentId: string, fieldName: string) => Promise<boolean>;
+  flagForReview: (documentId: string, reason: string) => Promise<boolean>;
+  
+  // Export
+  exportResults: (documentId: string, options: ExportOptions) => Promise<Blob | null>;
   
   // Real-time subscription
   subscribeToJob: (documentId: string) => void;
@@ -345,6 +482,213 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     setFormMapping(null);
   }, []);
 
+  // Batch upload
+  const [batchProgress, setBatchProgress] = useState<{ total: number; completed: number } | null>(null);
+
+  const uploadBatch = useCallback(async (
+    files: File[], 
+    config?: ProcessingConfig
+  ): Promise<BatchProcessingResult | null> => {
+    const batchId = `batch_${Date.now()}`;
+    setBatchProgress({ total: files.length, completed: 0 });
+    
+    const results: DocumentJob[] = [];
+    let failed = 0;
+
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      try {
+        const documentId = await uploadDocument(file, { ...config });
+        if (documentId) {
+          const job = jobs.find(j => j.id === documentId);
+          if (job) results.push({ ...job, batch_id: batchId });
+        }
+      } catch (e) {
+        failed++;
+      }
+      setBatchProgress({ total: files.length, completed: i + 1 });
+    }
+
+    setBatchProgress(null);
+    await loadJobs();
+
+    return {
+      batchId,
+      totalDocuments: files.length,
+      processed: results.length,
+      failed,
+      jobs: results
+    };
+  }, [uploadDocument, jobs]);
+
+  // Update field value with verification
+  const updateFieldValue = useCallback(async (
+    documentId: string, 
+    fieldName: string, 
+    newValue: string
+  ): Promise<boolean> => {
+    try {
+      const { data: doc, error: fetchError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('extracted_metadata')
+        .eq('id', documentId)
+        .single();
+
+      if (fetchError || !doc) throw new Error('Document not found');
+
+      const metadata = doc.extracted_metadata || {};
+      const formFields = metadata.formFields || [];
+      const updatedFields = formFields.map((f: FormFieldExtraction) => 
+        f.fieldName === fieldName 
+          ? { ...f, value: newValue, verified: true, originalValue: f.originalValue || f.value }
+          : f
+      );
+
+      const { error: updateError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ 
+          extracted_metadata: { ...metadata, formFields: updatedFields }
+        })
+        .eq('id', documentId);
+
+      if (updateError) throw updateError;
+
+      // Update form mapping
+      if (formMapping && formMapping[fieldName]) {
+        setFormMapping({
+          ...formMapping,
+          [fieldName]: { 
+            ...formMapping[fieldName], 
+            value: newValue, 
+            verified: true,
+            originalValue: formMapping[fieldName].originalValue || formMapping[fieldName].value
+          }
+        });
+      }
+
+      await loadJobs();
+      toast.success(`Field "${fieldName}" updated`);
+      return true;
+    } catch (e) {
+      console.error('Update field error:', e);
+      toast.error(`Failed to update field: ${e instanceof Error ? e.message : 'Unknown error'}`);
+      return false;
+    }
+  }, [formMapping]);
+
+  // Verify field
+  const verifyField = useCallback(async (
+    documentId: string, 
+    fieldName: string
+  ): Promise<boolean> => {
+    try {
+      const { data: doc, error: fetchError } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('extracted_metadata')
+        .eq('id', documentId)
+        .single();
+
+      if (fetchError || !doc) throw new Error('Document not found');
+
+      const metadata = doc.extracted_metadata || {};
+      const formFields = metadata.formFields || [];
+      const updatedFields = formFields.map((f: FormFieldExtraction) => 
+        f.fieldName === fieldName ? { ...f, verified: true } : f
+      );
+
+      await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ 
+          extracted_metadata: { ...metadata, formFields: updatedFields }
+        })
+        .eq('id', documentId);
+
+      if (formMapping && formMapping[fieldName]) {
+        setFormMapping({
+          ...formMapping,
+          [fieldName]: { ...formMapping[fieldName], verified: true }
+        });
+      }
+
+      return true;
+    } catch (e) {
+      console.error('Verify field error:', e);
+      return false;
+    }
+  }, [formMapping]);
+
+  // Flag for manual review
+  const flagForReview = useCallback(async (
+    documentId: string, 
+    reason: string
+  ): Promise<boolean> => {
+    try {
+      await (supabase as any)
+        .from('document_processing_jobs')
+        .update({ 
+          status: 'needs_review',
+          stage_message: reason
+        })
+        .eq('id', documentId);
+
+      await loadJobs();
+      toast.info('Document flagged for review');
+      return true;
+    } catch (e) {
+      console.error('Flag for review error:', e);
+      return false;
+    }
+  }, []);
+
+  // Export results
+  const exportResults = useCallback(async (
+    documentId: string, 
+    options: ExportOptions
+  ): Promise<Blob | null> => {
+    try {
+      const { data: doc, error } = await (supabase as any)
+        .from('document_processing_jobs')
+        .select('*')
+        .eq('id', documentId)
+        .single();
+
+      if (error || !doc) throw new Error('Document not found');
+
+      let exportData: any;
+      const metadata = doc.extracted_metadata || {};
+
+      if (options.format === 'json') {
+        exportData = {
+          documentId: doc.id,
+          fileName: doc.file_name,
+          status: doc.status,
+          processedAt: doc.completed_at,
+          fields: options.fields 
+            ? metadata.formFields?.filter((f: FormFieldExtraction) => options.fields?.includes(f.fieldName))
+            : metadata.formFields,
+          entities: metadata.entities,
+          ...(options.includeMetadata && { metadata }),
+          ...(options.includeRawText && { extractedText: doc.extracted_text })
+        };
+        return new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      } else if (options.format === 'csv') {
+        const fields = metadata.formFields || [];
+        const headers = ['Field Name', 'Value', 'Confidence', 'Verified'];
+        const rows = fields.map((f: FormFieldExtraction) => 
+          [f.fieldName, f.value, (f.confidence * 100).toFixed(1) + '%', f.verified ? 'Yes' : 'No']
+        );
+        const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
+        return new Blob([csv], { type: 'text/csv' });
+      }
+
+      return null;
+    } catch (e) {
+      console.error('Export error:', e);
+      toast.error('Export failed');
+      return null;
+    }
+  }, []);
+
   return {
     jobs,
     activeJob,
@@ -352,12 +696,18 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     isProcessing,
     uploadProgress,
     formMapping,
+    batchProgress,
     uploadDocument,
+    uploadBatch,
     processDocument,
     extractMetadata,
     mapToForm,
     cancelJob,
     clearJobs,
+    updateFieldValue,
+    verifyField,
+    flagForReview,
+    exportResults,
     subscribeToJob,
     unsubscribeFromJob
   };
