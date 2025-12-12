@@ -54,6 +54,7 @@ export const useRoleBasedNavigation = () => {
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
       'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
       'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
+      'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Document processing page
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
       reports: ['superAdmin', 'caseManager', 'demoUser'], // Add demoUser for reporting demo
@@ -165,6 +166,7 @@ export const useRoleBasedNavigation = () => {
           modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
           'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
           'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
+          'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Document processing page
           'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
           'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
           'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment

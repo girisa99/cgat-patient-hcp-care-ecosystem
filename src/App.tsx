@@ -45,6 +45,7 @@ import SystemIntegration from '@/pages/SystemIntegration';
 import OrderManagement from '@/pages/OrderManagement';
 import PatientOnboarding from '@/pages/PatientOnboarding';
 import PatientOnboardingWhatsApp from '@/pages/PatientOnboardingWhatsApp';
+import DocumentProcessing from '@/pages/DocumentProcessing';
 import { ConfigurableGeniePage } from '@/pages/ConfigurableGeniePage';
 import { UnifiedAgentAdminDashboard } from '@/components/admin/UnifiedAgentAdminDashboard';
 import AppLayout from '@/components/layout/AppLayout';
@@ -201,6 +202,11 @@ const AppContent = () => {
                   <Route path="/enrollment-workspace" element={
                     <ProtectedRoute requiredRoles={['healthcareProvider', 'onboardingTeam', 'superAdmin', 'admin']}>
                       <PatientOnboarding />
+                    </ProtectedRoute>
+                  } />
+                  <Route path="/document-processing" element={
+                    <ProtectedRoute requiredRoles={['superAdmin', 'admin', 'healthcareProvider', 'onboardingTeam', 'demoUser']}>
+                      <DocumentProcessing />
                     </ProtectedRoute>
                   } />
                   <Route path="/data-import" element={
