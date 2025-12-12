@@ -236,6 +236,16 @@ export default function DocumentProcessing() {
   const [selectedFrequency, setSelectedFrequency] = useState('once daily');
   const [selectedDuration, setSelectedDuration] = useState('30 days');
   
+  // NDC-specific dosing info
+  const [ndcDosageInfo, setNdcDosageInfo] = useState<{
+    dose: string;
+    route: string;
+    frequency: string;
+    duration: string;
+    dosageForm: string;
+    strength: string;
+  } | null>(null);
+  
   const { calculateQuantityAndDaySupply, matchDrugToCode, checkControlledSubstance, parseSig } = useMedicationProcessing();
   
   const currentConfig = DOCUMENT_CONFIGS.find(c => c.id === selectedDocType)!;
@@ -398,15 +408,58 @@ export default function DocumentProcessing() {
     }
   }, [sigInstructions, parseSig]);
 
-  // Auto-search when sig changes
+  // Auto-update fields when NDC changes
   useEffect(() => {
-    if (drugSearchQuery && sigInstructions) {
-      const timer = setTimeout(() => {
-        handleDrugSearch();
-      }, 500);
-      return () => clearTimeout(timer);
+    if (selectedNdc && searchResults) {
+      const ndcOption = searchResults.ndcOptions.find(opt => opt.code === selectedNdc);
+      if (ndcOption) {
+        // Parse dosage form to determine dose format
+        const dosageForm = (ndcOption as any).dosageForm?.toLowerCase() || '';
+        const strength = searchResults.strength || '';
+        
+        // Determine dose based on dosage form
+        let dose = '1 tablet';
+        let route = 'by mouth (oral)';
+        
+        if (dosageForm.includes('tablet')) {
+          dose = '1 tablet';
+          route = 'by mouth (oral)';
+        } else if (dosageForm.includes('capsule')) {
+          dose = '1 capsule';
+          route = 'by mouth (oral)';
+        } else if (dosageForm.includes('injection') || dosageForm.includes('injectable')) {
+          dose = strength || '1 ml';
+          route = 'subcutaneous injection';
+        } else if (dosageForm.includes('cream') || dosageForm.includes('ointment') || dosageForm.includes('topical')) {
+          dose = 'Apply as directed';
+          route = 'topically (on skin)';
+        } else if (dosageForm.includes('solution') || dosageForm.includes('suspension')) {
+          dose = '5 ml';
+          route = 'by mouth (oral)';
+        } else if (dosageForm.includes('drop') || dosageForm.includes('ophthalmic')) {
+          dose = '1 drop';
+          route = 'both eyes';
+        } else if (dosageForm.includes('inhaler') || dosageForm.includes('inhalation')) {
+          dose = '2 puffs';
+          route = 'by inhalation';
+        }
+        
+        // Set the fields
+        setSelectedDose(dose);
+        setSelectedRoute(route);
+        
+        // Store NDC-specific info
+        setNdcDosageInfo({
+          dose,
+          route,
+          frequency: selectedFrequency,
+          duration: selectedDuration,
+          dosageForm: (ndcOption as any).dosageForm || 'Unknown',
+          strength
+        });
+      }
     }
-  }, [sigInstructions]);
+  }, [selectedNdc, searchResults]);
 
   // Document upload and auto-processing
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
@@ -866,18 +919,6 @@ export default function DocumentProcessing() {
                     </div>
                   </div>
 
-                  <div className="space-y-2">
-                    <Label>Sig / Instructions</Label>
-                    <Input 
-                      placeholder="e.g., Take 1 tablet twice daily for 30 days" 
-                      value={sigInstructions}
-                      onChange={(e) => setSigInstructions(e.target.value)}
-                    />
-                    <p className="text-xs text-muted-foreground">
-                      Supports: PO, BID, TID, QID, PRN, HS, AC, PC, QD, etc.
-                    </p>
-                  </div>
-
                   {/* Separate Dropdowns for Dose, Route, Frequency, Duration */}
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
@@ -937,25 +978,29 @@ export default function DocumentProcessing() {
                     </div>
                   </div>
 
-                  {/* Parsed SIG Translation Preview */}
-                  {(sigInstructions || searchResults) && (
-                    <Card className="bg-primary/5 border-primary/30">
-                      <CardContent className="pt-4 space-y-3">
-                        <div className="flex items-center gap-2">
-                          <Stethoscope className="h-4 w-4 text-primary" />
-                          <span className="font-medium text-sm">Prescription Summary</span>
+                  {/* Sig / Instructions - Read-only Summary */}
+                  <div className="space-y-2">
+                    <Label className="text-sm font-medium flex items-center gap-2">
+                      <Stethoscope className="h-4 w-4" />
+                      Sig / Instructions (Generated)
+                    </Label>
+                    <div className="p-3 bg-primary/5 border border-primary/30 rounded-lg">
+                      <p className="text-sm text-primary font-medium">
+                        Take {selectedDose} {selectedRoute} {selectedFrequency} for {selectedDuration}
+                      </p>
+                      {ndcDosageInfo && (
+                        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                          <Badge variant="outline" className="text-xs">{ndcDosageInfo.dosageForm}</Badge>
+                          {ndcDosageInfo.strength && (
+                            <Badge variant="secondary" className="text-xs">{ndcDosageInfo.strength}</Badge>
+                          )}
                         </div>
-                        <p className="text-sm text-primary font-medium">
-                          Take {selectedDose} {selectedRoute} {selectedFrequency} for {selectedDuration}
-                        </p>
-                        {parsedSig?.conditions && parsedSig.conditions.length > 0 && (
-                          <p className="text-xs text-muted-foreground">
-                            Conditions: {parsedSig.conditions.join(', ')}
-                          </p>
-                        )}
-                      </CardContent>
-                    </Card>
-                  )}
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Auto-generated from dropdown selections. Fields auto-update when NDC is selected.
+                    </p>
+                  </div>
 
                   {searchResults && (
                     <Card className="bg-muted/50 border-border">
