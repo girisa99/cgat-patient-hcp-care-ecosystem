@@ -643,6 +643,60 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
 
         {/* ENGINES TAB */}
         <TabsContent value="engines" className="space-y-4">
+          {/* Engine Metrics */}
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Total Engines</p>
+                    <p className="text-2xl font-bold">{engines?.length || 0}</p>
+                  </div>
+                  <Server className="h-8 w-8 text-muted-foreground" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Active</p>
+                    <p className="text-2xl font-bold text-green-600">
+                      {engines?.filter(e => e.is_active).length || 0}
+                    </p>
+                  </div>
+                  <CheckCircle className="h-8 w-8 text-green-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">MCP Engines</p>
+                    <p className="text-2xl font-bold text-blue-600">
+                      {engines?.filter(e => e.engine_type === 'mcp').length || 0}
+                    </p>
+                  </div>
+                  <Cpu className="h-8 w-8 text-blue-500" />
+                </div>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="pt-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-muted-foreground">Hybrid</p>
+                    <p className="text-2xl font-bold text-purple-600">
+                      {engines?.filter(e => e.engine_type === 'hybrid').length || 0}
+                    </p>
+                  </div>
+                  <Network className="h-8 w-8 text-purple-500" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="font-semibold">Conversation Engines</h3>
