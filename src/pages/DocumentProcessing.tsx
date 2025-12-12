@@ -142,14 +142,8 @@ const DOCUMENT_CONFIGS: DocumentConfig[] = [
     description: 'Prescriptions with medication auto-calculation',
     color: 'bg-red-500',
     targetFields: [
-      { key: 'medication', label: 'Medication', required: true },
-      { key: 'dosage', label: 'Dosage', required: true },
-      { key: 'frequency', label: 'Frequency', required: true },
-      { key: 'quantity', label: 'Quantity', required: true },
-      { key: 'days_supply', label: 'Days Supply', required: true },
       { key: 'refills', label: 'Refills' },
-      { key: 'ndc', label: 'NDC Code' },
-      { key: 'din', label: 'DIN Code' }
+      { key: 'ndc', label: 'NDC Code' }
     ],
     documentTypes: ['Prescription', 'E-Prescription', 'Refill Request']
   },
@@ -198,9 +192,7 @@ interface MedicationResult {
   daysSupply: number;
   dailyDose: number;
   ndc?: string;
-  din?: string;
   ndcOptions: { code: string; name: string; manufacturer: string }[];
-  dinOptions: { code: string; name: string; manufacturer: string }[];
   alternatives?: { name: string; ndc: string; inStock: boolean; stockQty: number }[];
   clinicalRecommendations?: { type: 'warning' | 'info' | 'error'; message: string }[];
   isControlled?: boolean;
@@ -291,9 +283,7 @@ export default function DocumentProcessing() {
           daysSupply: calculation.daysSupply,
           dailyDose: calculation.dailyDose,
           ndc: primaryNdc?.code,
-          din: undefined, // DIN is Canadian, not from US APIs
           ndcOptions,
-          dinOptions: [], // Would need Health Canada API for DIN
           alternatives: (data.alternatives || []).map((alt: any) => ({
             name: alt.name,
             ndc: alt.rxcui, // RxCUI as reference
@@ -396,20 +386,16 @@ export default function DocumentProcessing() {
         daysSupply: 30,
         dailyDose: 2,
         ndc: '0093-7214-01',
-        din: '02242845',
         ndcOptions: [
           { code: '0093-7214-01', name: 'Metformin HCl 500mg', manufacturer: 'Teva' },
           { code: '0378-0234-01', name: 'Metformin HCl 500mg', manufacturer: 'Mylan' }
-        ],
-        dinOptions: [
-          { code: '02242845', name: 'APO-Metformin 500mg', manufacturer: 'Apotex' }
         ],
         clinicalRecommendations: [
           { type: 'info', message: 'Take with food to reduce GI side effects' }
         ]
       }];
     }
-    
+
     const finalResult: ProcessingResult = {
       ...result,
       stage: 'complete',
@@ -736,7 +722,7 @@ export default function DocumentProcessing() {
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
-                      <Label>NDC/DIN Matching</Label>
+                      <Label>NDC Matching</Label>
                       <Switch defaultChecked />
                     </div>
                     <div className="flex items-center justify-between">
@@ -886,26 +872,6 @@ export default function DocumentProcessing() {
                       <p>Search for a drug to see NDC codes</p>
                     </div>
                   )}
-                </CardContent>
-              </Card>
-
-              {/* DIN Codes - Canada */}
-              <Card className="opacity-75">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Package className="h-5 w-5" />
-                    DIN Codes (Canada)
-                    <Badge variant="secondary" className="ml-2">Coming Soon</Badge>
-                  </CardTitle>
-                  <CardDescription>
-                    Drug Identification Numbers from Health Canada
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center py-8 text-muted-foreground">
-                    <p>Canadian DIN lookup requires Health Canada API integration</p>
-                    <p className="text-xs mt-2">Contact support to enable this feature</p>
-                  </div>
                 </CardContent>
               </Card>
 
