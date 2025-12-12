@@ -23,6 +23,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { 
   FileSearch, 
   Upload, 
@@ -223,9 +230,49 @@ export default function DocumentProcessing() {
   const [parsedSig, setParsedSig] = useState<any>(null);
   const [selectedRecommendation, setSelectedRecommendation] = useState<{ title: string; message: string; type: string } | null>(null);
   
+  // Separate editable fields for dose/route/frequency
+  const [selectedDose, setSelectedDose] = useState('1 tablet');
+  const [selectedRoute, setSelectedRoute] = useState('by mouth (oral)');
+  const [selectedFrequency, setSelectedFrequency] = useState('once daily');
+  const [selectedDuration, setSelectedDuration] = useState('30 days');
+  
   const { calculateQuantityAndDaySupply, matchDrugToCode, checkControlledSubstance, parseSig } = useMedicationProcessing();
   
   const currentConfig = DOCUMENT_CONFIGS.find(c => c.id === selectedDocType)!;
+  
+  // Dose options
+  const doseOptions = ['1 tablet', '2 tablets', '1 capsule', '2 capsules', '1 drop', '2 drops', '5 ml', '10 ml', '1 puff', '2 puffs'];
+  
+  // Route options
+  const routeOptions = [
+    { value: 'po', label: 'by mouth (oral)' },
+    { value: 'sl', label: 'under the tongue (sublingual)' },
+    { value: 'pr', label: 'rectally' },
+    { value: 'im', label: 'intramuscular injection' },
+    { value: 'iv', label: 'intravenous injection' },
+    { value: 'sc', label: 'subcutaneous injection' },
+    { value: 'top', label: 'topically (on skin)' },
+    { value: 'inh', label: 'by inhalation' },
+    { value: 'ou', label: 'both eyes' },
+    { value: 'au', label: 'both ears' },
+  ];
+  
+  // Frequency options
+  const frequencyOptions = [
+    { value: 'qd', label: 'once daily', timesPerDay: 1 },
+    { value: 'bid', label: 'twice daily', timesPerDay: 2 },
+    { value: 'tid', label: 'three times a day', timesPerDay: 3 },
+    { value: 'qid', label: 'four times a day', timesPerDay: 4 },
+    { value: 'q4h', label: 'every 4 hours', timesPerDay: 6 },
+    { value: 'q6h', label: 'every 6 hours', timesPerDay: 4 },
+    { value: 'q8h', label: 'every 8 hours', timesPerDay: 3 },
+    { value: 'q12h', label: 'every 12 hours', timesPerDay: 2 },
+    { value: 'hs', label: 'at bedtime', timesPerDay: 1 },
+    { value: 'prn', label: 'as needed', timesPerDay: 0 },
+  ];
+  
+  // Duration options
+  const durationOptions = ['7 days', '10 days', '14 days', '21 days', '30 days', '60 days', '90 days'];
 
   // Handle drug search with real OpenFDA + RxNorm API
   const handleDrugSearch = useCallback(async () => {
@@ -327,11 +374,25 @@ export default function DocumentProcessing() {
     }
   }, [drugSearchQuery, sigInstructions, calculateQuantityAndDaySupply]);
 
-  // Parse SIG when it changes
+  // Parse SIG when it changes and auto-populate dropdowns
   useEffect(() => {
     if (sigInstructions.trim()) {
       const parsed = parseSig(sigInstructions);
       setParsedSig(parsed);
+      
+      // Auto-populate dropdowns from parsed SIG
+      if (parsed.dose?.display) {
+        setSelectedDose(parsed.dose.display);
+      }
+      if (parsed.route?.meaning) {
+        setSelectedRoute(parsed.route.meaning);
+      }
+      if (parsed.frequency?.meaning) {
+        setSelectedFrequency(parsed.frequency.meaning);
+      }
+      if (parsed.duration?.display) {
+        setSelectedDuration(parsed.duration.display);
+      }
     } else {
       setParsedSig(null);
     }
@@ -817,53 +878,87 @@ export default function DocumentProcessing() {
                     </p>
                   </div>
 
-                  {/* Parsed SIG Display */}
-                  {parsedSig && (
-                    <Card className="bg-muted/50 border-border">
+                  {/* Separate Dropdowns for Dose, Route, Frequency, Duration */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Dose</Label>
+                      <Select value={selectedDose} onValueChange={setSelectedDose}>
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="Select dose" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {doseOptions.map((dose) => (
+                            <SelectItem key={dose} value={dose}>{dose}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Route</Label>
+                      <Select value={selectedRoute} onValueChange={setSelectedRoute}>
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="Select route" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {routeOptions.map((route) => (
+                            <SelectItem key={route.value} value={route.label}>{route.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Frequency</Label>
+                      <Select value={selectedFrequency} onValueChange={setSelectedFrequency}>
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="Select frequency" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {frequencyOptions.map((freq) => (
+                            <SelectItem key={freq.value} value={freq.label}>{freq.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    
+                    <div className="space-y-2">
+                      <Label className="text-xs font-medium">Duration</Label>
+                      <Select value={selectedDuration} onValueChange={setSelectedDuration}>
+                        <SelectTrigger className="bg-background">
+                          <SelectValue placeholder="Select duration" />
+                        </SelectTrigger>
+                        <SelectContent className="bg-background z-50">
+                          {durationOptions.map((dur) => (
+                            <SelectItem key={dur} value={dur}>{dur}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  {/* Parsed SIG Translation Preview */}
+                  {(sigInstructions || searchResults) && (
+                    <Card className="bg-primary/5 border-primary/30">
                       <CardContent className="pt-4 space-y-3">
                         <div className="flex items-center gap-2">
                           <Stethoscope className="h-4 w-4 text-primary" />
-                          <span className="font-medium text-sm">Parsed Instructions</span>
+                          <span className="font-medium text-sm">Prescription Summary</span>
                         </div>
-                        <p className="text-sm text-primary font-medium">{parsedSig.translation}</p>
-                        <div className="grid grid-cols-2 gap-3 text-sm">
-                          {parsedSig.dose && (
-                            <div>
-                              <span className="text-muted-foreground">Dose:</span>
-                              <span className="ml-2 font-medium">{parsedSig.dose.display || `${parsedSig.dose.amount} ${parsedSig.dose.unit}`}</span>
-                            </div>
-                          )}
-                          {parsedSig.route && (
-                            <div>
-                              <span className="text-muted-foreground">Route:</span>
-                              <span className="ml-2 font-medium">{parsedSig.route.meaning || parsedSig.route}</span>
-                            </div>
-                          )}
-                          {parsedSig.frequency && (
-                            <div>
-                              <span className="text-muted-foreground">Frequency:</span>
-                              <span className="ml-2 font-medium">{parsedSig.frequency.meaning || parsedSig.frequency}</span>
-                            </div>
-                          )}
-                          {parsedSig.duration && (
-                            <div>
-                              <span className="text-muted-foreground">Duration:</span>
-                              <span className="ml-2 font-medium">{parsedSig.duration.display || parsedSig.duration}</span>
-                            </div>
-                          )}
-                          {parsedSig.conditions && parsedSig.conditions.length > 0 && (
-                            <div className="col-span-2">
-                              <span className="text-muted-foreground">Conditions:</span>
-                              <span className="ml-2 font-medium">{parsedSig.conditions.join(', ')}</span>
-                            </div>
-                          )}
-                        </div>
+                        <p className="text-sm text-primary font-medium">
+                          Take {selectedDose} {selectedRoute} {selectedFrequency} for {selectedDuration}
+                        </p>
+                        {parsedSig?.conditions && parsedSig.conditions.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Conditions: {parsedSig.conditions.join(', ')}
+                          </p>
+                        )}
                       </CardContent>
                     </Card>
                   )}
 
                   {searchResults && (
-                    <Card className="bg-primary/5 border-primary/30">
+                    <Card className="bg-muted/50 border-border">
                       <CardContent className="pt-4 space-y-4">
                         <div className="flex items-center justify-between">
                           <div>
@@ -876,15 +971,15 @@ export default function DocumentProcessing() {
                         </div>
 
                         <div className="grid grid-cols-3 gap-4 text-center">
-                          <div className="p-3 bg-background rounded-lg">
+                          <div className="p-3 bg-background rounded-lg border">
                             <p className="text-3xl font-bold text-primary">{searchResults.calculatedQuantity}</p>
                             <p className="text-xs text-muted-foreground">Total Quantity</p>
                           </div>
-                          <div className="p-3 bg-background rounded-lg">
+                          <div className="p-3 bg-background rounded-lg border">
                             <p className="text-3xl font-bold text-primary">{searchResults.daysSupply}</p>
                             <p className="text-xs text-muted-foreground">Days Supply</p>
                           </div>
-                          <div className="p-3 bg-background rounded-lg">
+                          <div className="p-3 bg-background rounded-lg border">
                             <p className="text-3xl font-bold text-primary">{searchResults.dailyDose}</p>
                             <p className="text-xs text-muted-foreground">Daily Dose</p>
                           </div>
@@ -1155,7 +1250,10 @@ export default function DocumentProcessing() {
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle>Processing History</CardTitle>
-                    <CardDescription>Recent document processing jobs</CardDescription>
+                    <CardDescription>
+                      Track all processed documents with extracted fields, validation results, and processing timestamps.
+                      This log maintains an audit trail for compliance and allows you to review or re-export past documents.
+                    </CardDescription>
                   </div>
                   <Button variant="outline" size="sm">
                     <Download className="h-4 w-4 mr-2" />
@@ -1164,16 +1262,27 @@ export default function DocumentProcessing() {
                 </div>
               </CardHeader>
               <CardContent>
+                {/* Info about History Tab */}
+                <Alert className="mb-4">
+                  <History className="h-4 w-4" />
+                  <AlertDescription>
+                    The History tab stores all your document processing sessions. Each entry shows: document name, 
+                    workflow type (Patient Onboarding, Rx, etc.), extracted fields count, processing status, and timestamp.
+                    You can export this data for compliance audits or re-process documents as needed.
+                  </AlertDescription>
+                </Alert>
+                
                 {processingHistory.length === 0 ? (
                   <div className="text-center py-12 text-muted-foreground">
                     <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                    <p>No documents processed yet</p>
-                    <p className="text-sm">Upload a document to get started</p>
+                    <p className="font-medium">No documents processed yet</p>
+                    <p className="text-sm mt-1">Upload a document in the "Document Upload" tab to get started</p>
+                    <p className="text-xs mt-3">Processed documents will appear here with their extracted data and validation status</p>
                   </div>
                 ) : (
                   <div className="space-y-2">
                     {processingHistory.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50">
+                      <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
                         <div className="flex items-center gap-3">
                           <FileText className="h-8 w-8 text-muted-foreground" />
                           <div>
@@ -1186,6 +1295,9 @@ export default function DocumentProcessing() {
                         <div className="flex items-center gap-2">
                           <Badge variant="outline">{Object.keys(doc.extractedFields).length} fields</Badge>
                           <Badge className="bg-green-500">Complete</Badge>
+                          <Button variant="ghost" size="sm">
+                            <Eye className="h-4 w-4" />
+                          </Button>
                         </div>
                       </div>
                     ))}
