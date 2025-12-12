@@ -232,6 +232,17 @@ export default function DocumentProcessing() {
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);
+  const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  
+  // Processing settings (these control actual behavior)
+  const [enableOCR, setEnableOCR] = useState(true);
+  const [enableHandwriting, setEnableHandwriting] = useState(true);
+  const [enableTableExtraction, setEnableTableExtraction] = useState(true);
+  const [enableSignatureDetection, setEnableSignatureDetection] = useState(true);
+  const [enableAutoCalculateQty, setEnableAutoCalculateQty] = useState(true);
+  const [enableNdcMatching, setEnableNdcMatching] = useState(true);
+  const [enableClinicalRecommendations, setEnableClinicalRecommendations] = useState(true);
+  const [confidenceThreshold, setConfidenceThreshold] = useState(0.85);
   
   // Medication search state
   const [drugSearchQuery, setDrugSearchQuery] = useState('');
@@ -499,53 +510,63 @@ export default function DocumentProcessing() {
   }, [selectedDocType, isAutoProcessing]);
 
   const runAutoProcessing = async (result: ProcessingResult, file: File) => {
-    const stages: { stage: ProcessingStage; label: string; duration: number }[] = [
-      { stage: 'uploading', label: 'Uploading document...', duration: 500 },
-      { stage: 'ocr', label: 'Running OCR...', duration: 1500 },
-      { stage: 'extraction', label: 'Extracting data...', duration: 1200 },
-      { stage: 'mapping', label: 'Mapping fields...', duration: 800 },
-      { stage: 'validation', label: 'Validating results...', duration: 600 }
+    // Build stages based on enabled settings
+    const stages: { stage: ProcessingStage; label: string; duration: number; enabled: boolean }[] = [
+      { stage: 'uploading', label: 'Uploading document...', duration: 500, enabled: true },
+      { stage: 'ocr', label: enableOCR ? 'Running OCR...' : 'Skipping OCR...', duration: enableOCR ? 1500 : 300, enabled: true },
+      { stage: 'extraction', label: 'Extracting data...', duration: 1200, enabled: true },
+      { stage: 'mapping', label: 'Mapping fields...', duration: 800, enabled: true },
+      { stage: 'validation', label: 'Validating results...', duration: 600, enabled: true }
     ];
     
+    const enabledStages = stages.filter(s => s.enabled);
+    const progressPerStage = 100 / enabledStages.length;
     let currentProgress = 0;
     
-    for (const { stage, label, duration } of stages) {
+    for (const { stage, label, duration } of enabledStages) {
       setProcessingResult(prev => prev ? { ...prev, stage, progress: currentProgress } : null);
       toast.info(label);
       
       await new Promise(resolve => setTimeout(resolve, duration));
-      currentProgress += 20;
-      setProcessingResult(prev => prev ? { ...prev, progress: currentProgress } : null);
+      currentProgress += progressPerStage;
+      setProcessingResult(prev => prev ? { ...prev, progress: Math.min(currentProgress, 100) } : null);
     }
     
-    // Generate mock extracted data based on document type
+    // Generate extracted data based on document type and confidence threshold
     const extractedFields: Record<string, { value: string; confidence: number }> = {};
     currentConfig.targetFields.forEach(field => {
-      extractedFields[field.key] = {
-        value: generateMockValue(field.key),
-        confidence: Math.random() * 0.3 + 0.7 // 70-100%
-      };
+      const rawConfidence = Math.random() * 0.3 + 0.7; // 70-100%
+      // Only include fields that meet confidence threshold
+      if (rawConfidence >= confidenceThreshold) {
+        extractedFields[field.key] = {
+          value: generateMockValue(field.key),
+          confidence: rawConfidence
+        };
+      }
     });
     
-    // Generate medication data for prescription documents
+    // Generate medication data for prescription documents (respects settings)
     let medications: MedicationResult[] | undefined;
-    if (selectedDocType === 'prescription' || selectedDocType === 'order-management') {
+    if ((selectedDocType === 'prescription' || selectedDocType === 'order-management') && enableAutoCalculateQty) {
+      const sigText = 'Take 1 tablet twice daily with meals';
+      const calculation = calculateQuantityAndDaySupply(sigText);
+      
       medications = [{
         drugName: 'Metformin',
         genericName: 'Metformin HCl',
         strength: '500mg',
-        sig: 'Take 1 tablet twice daily with meals',
-        calculatedQuantity: 60,
-        daysSupply: 30,
-        dailyDose: 2,
-        ndc: '0093-7214-01',
-        ndcOptions: [
+        sig: sigText,
+        calculatedQuantity: calculation.totalQuantity,
+        daysSupply: calculation.daysSupply,
+        dailyDose: calculation.dailyDose,
+        ndc: enableNdcMatching ? '0093-7214-01' : undefined,
+        ndcOptions: enableNdcMatching ? [
           { code: '0093-7214-01', name: 'Metformin HCl 500mg', manufacturer: 'Teva' },
           { code: '0378-0234-01', name: 'Metformin HCl 500mg', manufacturer: 'Mylan' }
-        ],
-        clinicalRecommendations: [
+        ] : [],
+        clinicalRecommendations: enableClinicalRecommendations ? [
           { type: 'info', message: 'Take with food to reduce GI side effects' }
-        ]
+        ] : []
       }];
     }
 
@@ -556,16 +577,26 @@ export default function DocumentProcessing() {
       extractedFields,
       medications,
       validationResults: {
-        passed: Object.keys(extractedFields).filter(k => extractedFields[k].confidence > 0.85).length,
-        failed: Object.keys(extractedFields).filter(k => extractedFields[k].confidence < 0.7).length,
-        warnings: Object.keys(extractedFields).filter(k => extractedFields[k].confidence >= 0.7 && extractedFields[k].confidence <= 0.85).length
+        passed: Object.keys(extractedFields).filter(k => extractedFields[k].confidence >= confidenceThreshold).length,
+        failed: Object.keys(extractedFields).filter(k => extractedFields[k].confidence < confidenceThreshold * 0.8).length,
+        warnings: Object.keys(extractedFields).filter(k => 
+          extractedFields[k].confidence >= confidenceThreshold * 0.8 && 
+          extractedFields[k].confidence < confidenceThreshold
+        ).length
       },
       processedAt: new Date()
     };
     
     setProcessingResult(finalResult);
     setProcessingHistory(prev => [finalResult, ...prev]);
-    toast.success('Document processed successfully!');
+    
+    const settingsUsed = [];
+    if (enableOCR) settingsUsed.push('OCR');
+    if (enableHandwriting) settingsUsed.push('Handwriting');
+    if (enableTableExtraction) settingsUsed.push('Tables');
+    if (enableAutoCalculateQty) settingsUsed.push('Auto-Calc');
+    
+    toast.success(`Document processed! (${settingsUsed.join(', ')})`);
   };
 
   const generateMockValue = (key: string): string => {
@@ -644,7 +675,7 @@ export default function DocumentProcessing() {
                 onCheckedChange={setIsAutoProcessing}
               />
             </div>
-            <Button variant="outline">
+            <Button variant="outline" onClick={() => setShowSettingsDialog(true)}>
               <Settings className="h-4 w-4 mr-2" />
               Settings
             </Button>
@@ -859,19 +890,19 @@ export default function DocumentProcessing() {
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>OCR Extraction</Label>
-                      <Switch defaultChecked />
+                      <Switch checked={enableOCR} onCheckedChange={setEnableOCR} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label>Handwriting Recognition</Label>
-                      <Switch defaultChecked />
+                      <Switch checked={enableHandwriting} onCheckedChange={setEnableHandwriting} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label>Table Detection</Label>
-                      <Switch defaultChecked />
+                      <Switch checked={enableTableExtraction} onCheckedChange={setEnableTableExtraction} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label>Signature Detection</Label>
-                      <Switch defaultChecked />
+                      <Switch checked={enableSignatureDetection} onCheckedChange={setEnableSignatureDetection} />
                     </div>
                   </div>
                   
@@ -881,15 +912,15 @@ export default function DocumentProcessing() {
                     <h4 className="font-medium text-sm">Medication Features</h4>
                     <div className="flex items-center justify-between">
                       <Label>Auto-Calculate Qty</Label>
-                      <Switch defaultChecked />
+                      <Switch checked={enableAutoCalculateQty} onCheckedChange={setEnableAutoCalculateQty} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label>NDC Matching</Label>
-                      <Switch defaultChecked />
+                      <Switch checked={enableNdcMatching} onCheckedChange={setEnableNdcMatching} />
                     </div>
                     <div className="flex items-center justify-between">
                       <Label>Clinical Recommendations</Label>
-                      <Switch defaultChecked />
+                      <Switch checked={enableClinicalRecommendations} onCheckedChange={setEnableClinicalRecommendations} />
                     </div>
                   </div>
 
@@ -897,7 +928,14 @@ export default function DocumentProcessing() {
 
                   <div className="space-y-2">
                     <Label className="text-sm">Confidence Threshold</Label>
-                    <Input type="number" defaultValue="0.85" min="0" max="1" step="0.05" />
+                    <Input 
+                      type="number" 
+                      value={confidenceThreshold} 
+                      onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value) || 0.85)}
+                      min="0" 
+                      max="1" 
+                      step="0.05" 
+                    />
                   </div>
 
                   <div className="pt-2">
@@ -1373,6 +1411,119 @@ export default function DocumentProcessing() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Settings Dialog */}
+        <Dialog open={showSettingsDialog} onOpenChange={setShowSettingsDialog}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Document Processing Settings
+              </DialogTitle>
+              <DialogDescription>
+                Configure how documents are processed. These settings control the actual processing behavior.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-6 py-4">
+              {/* OCR & Extraction Settings */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Document Extraction</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div>
+                      <Label>OCR Processing</Label>
+                      <p className="text-xs text-muted-foreground">Extract text from images and scanned documents</p>
+                    </div>
+                    <Switch checked={enableOCR} onCheckedChange={setEnableOCR} />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div>
+                      <Label>Handwriting Recognition</Label>
+                      <p className="text-xs text-muted-foreground">Recognize handwritten text in documents</p>
+                    </div>
+                    <Switch checked={enableHandwriting} onCheckedChange={setEnableHandwriting} />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div>
+                      <Label>Table Extraction</Label>
+                      <p className="text-xs text-muted-foreground">Detect and extract tabular data</p>
+                    </div>
+                    <Switch checked={enableTableExtraction} onCheckedChange={setEnableTableExtraction} />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div>
+                      <Label>Signature Detection</Label>
+                      <p className="text-xs text-muted-foreground">Identify signature regions in documents</p>
+                    </div>
+                    <Switch checked={enableSignatureDetection} onCheckedChange={setEnableSignatureDetection} />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Medication Settings */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Medication Processing</h4>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div>
+                      <Label>Auto-Calculate Quantity</Label>
+                      <p className="text-xs text-muted-foreground">Calculate qty and days supply from SIG</p>
+                    </div>
+                    <Switch checked={enableAutoCalculateQty} onCheckedChange={setEnableAutoCalculateQty} />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div>
+                      <Label>NDC Matching</Label>
+                      <p className="text-xs text-muted-foreground">Auto-match medications to NDC codes</p>
+                    </div>
+                    <Switch checked={enableNdcMatching} onCheckedChange={setEnableNdcMatching} />
+                  </div>
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                    <div>
+                      <Label>Clinical Recommendations</Label>
+                      <p className="text-xs text-muted-foreground">Show drug interactions and warnings</p>
+                    </div>
+                    <Switch checked={enableClinicalRecommendations} onCheckedChange={setEnableClinicalRecommendations} />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Validation Settings */}
+              <div className="space-y-3">
+                <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Validation</h4>
+                <div className="space-y-2">
+                  <div className="p-2 rounded-lg hover:bg-muted/50">
+                    <Label className="text-sm">Confidence Threshold</Label>
+                    <p className="text-xs text-muted-foreground mb-2">Minimum confidence for field extraction</p>
+                    <Select 
+                      value={String(confidenceThreshold)} 
+                      onValueChange={(v) => setConfidenceThreshold(parseFloat(v))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0.5">50% - Low (More Fields)</SelectItem>
+                        <SelectItem value="0.7">70% - Medium</SelectItem>
+                        <SelectItem value="0.85">85% - High (Recommended)</SelectItem>
+                        <SelectItem value="0.95">95% - Very High (Fewer Errors)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-4">
+              <Button variant="outline" onClick={() => setShowSettingsDialog(false)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {/* Clinical Recommendation Dialog */}
         <Dialog open={!!selectedRecommendation} onOpenChange={() => setSelectedRecommendation(null)}>
