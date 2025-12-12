@@ -311,27 +311,52 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
     })).filter(cat => cat.nodes.length > 0 || cat.name.toLowerCase().includes(term));
   }, [categories, searchTerm]);
 
-  // Quick add nodes (most commonly used) - now includes multi-agent options
+  // Quick add nodes (most commonly used) - now includes multi-agent + document + agentic
   const quickAddNodes = [
     { type: 'agent', category: 'ai-agents', label: 'AI Agent', icon: Bot },
-    { type: 'a2a_agent', category: 'multi-agent', label: 'A2A Agent', icon: Users },
-    { type: 'agent_team', category: 'multi-agent', label: 'Agent Team', icon: Users },
+    { type: 'ocr_document', category: 'document_processing', label: 'OCR Document', icon: FileText },
+    { type: 'plan_execute', category: 'enhanced_agentic', label: 'Plan & Execute', icon: Brain },
     { type: 'react_loop', category: 'multi-agent', label: 'ReAct Loop', icon: Brain },
     { type: 'condition', category: 'workflow', label: 'Condition', icon: GitBranch },
     { type: 'knowledge_base', category: 'data', label: 'Knowledge Base', icon: Database },
   ];
 
+  // Document Processing nodes for submenu
+  const documentProcessingNodes = [
+    { type: 'ocr_document', category: 'document_processing', label: 'OCR Document', icon: FileText, description: 'Extract text from images/scans' },
+    { type: 'doc_ai', category: 'document_processing', label: 'Document AI', icon: FileText, description: 'Intelligent document analysis' },
+    { type: 'metadata_extraction', category: 'document_processing', label: 'Metadata Extraction', icon: FileText, description: 'Extract document metadata' },
+    { type: 'form_recognition', category: 'document_processing', label: 'Form Recognition', icon: FileText, description: 'Extract data from forms' },
+    { type: 'image_analysis', category: 'document_processing', label: 'Image Analysis', icon: FileText, description: 'Analyze image content' },
+    { type: 'document_validation', category: 'document_processing', label: 'Document Validation', icon: FileText, description: 'Validate document authenticity' },
+    { type: 'data_extraction', category: 'document_processing', label: 'Data Extraction', icon: Database, description: 'Extract structured data' },
+    { type: 'document_comparison', category: 'document_processing', label: 'Document Comparison', icon: FileText, description: 'Compare documents' },
+    { type: 'document_archive', category: 'document_processing', label: 'Document Archive', icon: FileText, description: 'Archive with versioning' },
+    { type: 'document_to_database', category: 'document_processing', label: 'Doc to Database', icon: Database, description: 'Push to database tables' },
+  ];
+
+  // Enhanced Agentic AI nodes for submenu
+  const enhancedAgenticNodes = [
+    { type: 'plan_execute', category: 'enhanced_agentic', label: 'Plan & Execute', icon: Brain, description: 'Plan-execute-reflect cycle' },
+    { type: 'reasoning_chain', category: 'enhanced_agentic', label: 'Reasoning Chain', icon: Link2, description: 'Chain of thought reasoning' },
+    { type: 'memory_context', category: 'enhanced_agentic', label: 'Memory & Context', icon: Brain, description: 'Contextual memory management' },
+    { type: 'critique_refinement', category: 'enhanced_agentic', label: 'Critique & Refinement', icon: Activity, description: 'Self-critique & improvement' },
+    { type: 'multi_perspective', category: 'enhanced_agentic', label: 'Multi-Perspective', icon: Users, description: 'Multiple viewpoint analysis' },
+    { type: 'knowledge_integration', category: 'enhanced_agentic', label: 'Knowledge Integration', icon: Database, description: 'Integrate multiple sources' },
+    { type: 'hypothesis_testing', category: 'enhanced_agentic', label: 'Hypothesis Testing', icon: Activity, description: 'Generate & test hypotheses' },
+    { type: 'skill_composition', category: 'enhanced_agentic', label: 'Skill Composition', icon: Layers, description: 'Compose complex skills' },
+    { type: 'adaptive_learning', category: 'enhanced_agentic', label: 'Adaptive Learning', icon: Brain, description: 'Learn from feedback' },
+    { type: 'workflow_orchestrator', category: 'enhanced_agentic', label: 'Workflow Orchestrator', icon: GitBranch, description: 'Orchestrate workflows' },
+  ];
+
   // Multi-agent specific nodes for submenu - all 10 node types
   const multiAgentQuickNodes = [
-    // A2A Protocol nodes
     { type: 'a2a_agent', category: 'multi-agent', label: 'A2A Agent', icon: Users, description: 'Google A2A Protocol agent', subcategory: 'A2A Protocol' },
     { type: 'task_handoff', category: 'multi-agent', label: 'Task Handoff', icon: Zap, description: 'Transfer between agents', subcategory: 'A2A Protocol' },
     { type: 'communication_hub', category: 'multi-agent', label: 'Communication Hub', icon: Server, description: 'Central message routing', subcategory: 'A2A Protocol' },
-    // Multi-Agent Orchestration nodes
     { type: 'agent_team', category: 'multi-agent', label: 'Agent Team', icon: Users, description: 'Coordinated agent team', subcategory: 'Orchestration' },
     { type: 'swarm_decision', category: 'multi-agent', label: 'Swarm Decision', icon: Brain, description: 'Collective intelligence', subcategory: 'Orchestration' },
     { type: 'tool_sharing', category: 'multi-agent', label: 'Tool Sharing', icon: Layers, description: 'Share tools between agents', subcategory: 'Orchestration' },
-    // Agentic AI nodes
     { type: 'react_loop', category: 'multi-agent', label: 'ReAct Loop', icon: Brain, description: 'Reasoning + Acting loop', subcategory: 'Agentic AI' },
     { type: 'tool_chain', category: 'multi-agent', label: 'Tool Chain', icon: Link2, description: 'Sequential tool execution', subcategory: 'Agentic AI' },
     { type: 'self_reflection', category: 'multi-agent', label: 'Self Reflection', icon: Activity, description: 'Self-evaluation & adjustment', subcategory: 'Agentic AI' },
@@ -373,6 +398,66 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
           ))}
         </div>
 
+        {/* Document Processing Quick Add */}
+        <div className="p-1 border-b">
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className="text-sm">
+              <FileText className="mr-2 h-4 w-4 text-emerald-600" />
+              Document Processing
+              <Badge variant="secondary" className="ml-auto text-xs bg-emerald-500/10 text-emerald-600">
+                10
+              </Badge>
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-56 bg-background border shadow-lg">
+              {documentProcessingNodes.map((node) => (
+                <ContextMenuItem
+                  key={node.type}
+                  onSelect={() => onAddNode(node.type, node.category, node.label, position)}
+                  className="flex flex-col items-start py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <node.icon className="h-4 w-4 text-emerald-600" />
+                    <span className="text-sm font-medium">{node.label}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground ml-6">
+                    {node.description}
+                  </span>
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        </div>
+
+        {/* Enhanced Agentic AI Quick Add */}
+        <div className="p-1 border-b">
+          <ContextMenuSub>
+            <ContextMenuSubTrigger className="text-sm">
+              <Brain className="mr-2 h-4 w-4 text-violet-600" />
+              Enhanced Agentic AI
+              <Badge variant="secondary" className="ml-auto text-xs bg-violet-500/10 text-violet-600">
+                10
+              </Badge>
+            </ContextMenuSubTrigger>
+            <ContextMenuSubContent className="w-56 bg-background border shadow-lg">
+              {enhancedAgenticNodes.map((node) => (
+                <ContextMenuItem
+                  key={node.type}
+                  onSelect={() => onAddNode(node.type, node.category, node.label, position)}
+                  className="flex flex-col items-start py-2"
+                >
+                  <div className="flex items-center gap-2">
+                    <node.icon className="h-4 w-4 text-violet-600" />
+                    <span className="text-sm font-medium">{node.label}</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground ml-6">
+                    {node.description}
+                  </span>
+                </ContextMenuItem>
+              ))}
+            </ContextMenuSubContent>
+          </ContextMenuSub>
+        </div>
+
         {/* Multi-Agent Quick Add */}
         <div className="p-1 border-b">
           <ContextMenuSub>
@@ -380,7 +465,7 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
               <Users className="mr-2 h-4 w-4 text-primary" />
               Multi-Agent / A2A
               <Badge variant="secondary" className="ml-auto text-xs bg-primary/10 text-primary">
-                New
+                10
               </Badge>
             </ContextMenuSubTrigger>
             <ContextMenuSubContent className="w-56 bg-background border shadow-lg">

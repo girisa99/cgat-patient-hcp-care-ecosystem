@@ -75,6 +75,30 @@ import {
   SelfReflectionNode,
   GoalDecompositionNode
 } from './nodes/MultiAgentNodes';
+import {
+  OCRDocumentNode,
+  DocAINode,
+  MetadataExtractionNode,
+  FormRecognitionNode,
+  ImageAnalysisNode,
+  DocumentValidationNode,
+  DataExtractionNode,
+  DocumentComparisonNode,
+  DocumentArchiveNode,
+  DocumentToDatabaseNode
+} from './nodes/DocumentProcessingNodes';
+import {
+  PlanExecuteNode,
+  ReasoningChainNode,
+  MemoryContextNode,
+  CritiqueRefinementNode,
+  MultiPerspectiveNode,
+  KnowledgeIntegrationNode,
+  HypothesisTestingNode,
+  SkillCompositionNode,
+  AdaptiveLearningNode,
+  WorkflowOrchestratorNode
+} from './nodes/EnhancedAgenticNodes';
 import { EnhancedNodePalette } from './EnhancedNodePalette';
 import { EnhancedNodeConfigurationPanel } from './EnhancedNodeConfigurationPanel';
 import { TestingConsolePanel } from './TestingConsolePanel';
@@ -372,6 +396,28 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
     tool_chain: ToolChainNode,
     self_reflection: SelfReflectionNode,
     goal_decomposition: GoalDecompositionNode,
+    // Document Processing Node Types
+    ocr_document: OCRDocumentNode,
+    doc_ai: DocAINode,
+    metadata_extraction: MetadataExtractionNode,
+    form_recognition: FormRecognitionNode,
+    image_analysis: ImageAnalysisNode,
+    document_validation: DocumentValidationNode,
+    data_extraction: DataExtractionNode,
+    document_comparison: DocumentComparisonNode,
+    document_archive: DocumentArchiveNode,
+    document_to_database: DocumentToDatabaseNode,
+    // Enhanced Agentic AI Node Types
+    plan_execute: PlanExecuteNode,
+    reasoning_chain: ReasoningChainNode,
+    memory_context: MemoryContextNode,
+    critique_refinement: CritiqueRefinementNode,
+    multi_perspective: MultiPerspectiveNode,
+    knowledge_integration: KnowledgeIntegrationNode,
+    hypothesis_testing: HypothesisTestingNode,
+    skill_composition: SkillCompositionNode,
+    adaptive_learning: AdaptiveLearningNode,
+    workflow_orchestrator: WorkflowOrchestratorNode,
     // Legacy multi-agent fallback - also uses enhanced node with wrapper
     'multi-agent': EnhancedWorkflowNode,
   }), []);
