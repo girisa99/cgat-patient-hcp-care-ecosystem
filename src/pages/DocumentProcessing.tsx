@@ -195,7 +195,7 @@ interface MedicationResult {
   ndc?: string;
   ndcOptions: { code: string; name: string; manufacturer: string }[];
   alternatives?: { name: string; ndc: string; inStock: boolean; stockQty: number }[];
-  clinicalRecommendations?: { type: 'warning' | 'info' | 'error'; message: string }[];
+  clinicalRecommendations?: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[];
   isControlled?: boolean;
   schedule?: string;
 }
@@ -245,31 +245,36 @@ export default function DocumentProcessing() {
         }));
         
         // Generate clinical recommendations from API data
-        const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; message: string }[] = [];
+        const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
         
         // Add controlled substance warning if applicable
         if (data.isControlled) {
           clinicalRecommendations.push({
             type: 'warning',
+            title: 'Controlled Substance',
             message: `Schedule ${data.schedule} controlled substance - Verify patient ID and check PDMP`
           });
         }
         
-        // Add interaction warnings from RxNorm
+        // Add clinical info from RxNorm/OpenFDA with titles
         if (data.clinicalInfo) {
           data.clinicalInfo.forEach((info: any) => {
+            const recType = info.type === 'error' ? 'error' : 
+                            (info.severity === 'high' ? 'warning' : 'info');
             clinicalRecommendations.push({
-              type: info.severity === 'high' ? 'warning' : 'info',
+              type: recType as 'warning' | 'info' | 'error',
+              title: info.title || undefined,
               message: info.description
             });
           });
         }
         
-        // Add standard info if no warnings
+        // Add standard info if no recommendations found
         if (clinicalRecommendations.length === 0) {
           clinicalRecommendations.push({
             type: 'info',
-            message: 'Standard medication - no special handling required'
+            title: 'Standard Medication',
+            message: 'No specific warnings found. Follow standard prescribing guidelines.'
           });
         }
         
@@ -891,22 +896,36 @@ export default function DocumentProcessing() {
                   {searchResults?.clinicalRecommendations && searchResults.clinicalRecommendations.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {searchResults.clinicalRecommendations.map((rec, i) => {
-                        const getRecommendationType = (message: string) => {
-                          if (message.toLowerCase().includes('dose') || message.toLowerCase().includes('dosage')) 
-                            return { title: 'Dosage Alert', icon: AlertTriangle };
-                          if (message.toLowerCase().includes('interaction')) 
-                            return { title: 'Drug Interaction', icon: XCircle };
-                          if (message.toLowerCase().includes('contraindication') || message.toLowerCase().includes('risk')) 
-                            return { title: 'Contraindication', icon: XCircle };
-                          if (message.toLowerCase().includes('opioid') || message.toLowerCase().includes('controlled')) 
-                            return { title: 'Controlled Substance', icon: Shield };
-                          if (message.toLowerCase().includes('monitor') || message.toLowerCase().includes('dependence')) 
-                            return { title: 'Monitoring Required', icon: Activity };
-                          return { title: 'Clinical Note', icon: Sparkles };
+                        // Determine icon based on recommendation type or message content
+                        const getIcon = () => {
+                          if (rec.title?.toLowerCase().includes('contraindication') || rec.message.toLowerCase().includes('contraindication'))
+                            return XCircle;
+                          if (rec.title?.toLowerCase().includes('dose') || rec.message.toLowerCase().includes('dose'))
+                            return AlertTriangle;
+                          if (rec.title?.toLowerCase().includes('interaction') || rec.message.toLowerCase().includes('interaction'))
+                            return Activity;
+                          if (rec.title?.toLowerCase().includes('controlled') || rec.message.toLowerCase().includes('controlled'))
+                            return Shield;
+                          if (rec.title?.toLowerCase().includes('monitor') || rec.message.toLowerCase().includes('monitor'))
+                            return Activity;
+                          if (rec.type === 'error') return XCircle;
+                          if (rec.type === 'warning') return AlertTriangle;
+                          return Sparkles;
                         };
                         
-                        const recType = getRecommendationType(rec.message);
-                        const IconComponent = recType.icon;
+                        const IconComponent = getIcon();
+                        
+                        // Use title from API if available, otherwise generate from message
+                        const displayTitle = rec.title || (() => {
+                          const msg = rec.message.toLowerCase();
+                          if (msg.includes('dose')) return 'Dosage Alert';
+                          if (msg.includes('interaction')) return 'Drug Interaction';
+                          if (msg.includes('contraindication')) return 'Contraindication';
+                          if (msg.includes('controlled')) return 'Controlled Substance';
+                          if (msg.includes('monitor')) return 'Monitoring Required';
+                          return 'Clinical Note';
+                        })();
+                        
                         const bgColor = rec.type === 'error' ? 'bg-destructive' : 
                                          rec.type === 'warning' ? 'bg-zinc-900 dark:bg-zinc-800' : 
                                          'bg-muted';
@@ -915,7 +934,8 @@ export default function DocumentProcessing() {
                         return (
                           <div 
                             key={i} 
-                            className={`rounded-xl p-4 ${bgColor} ${textColor} relative overflow-hidden`}
+                            className={`rounded-xl p-4 ${bgColor} ${textColor} relative overflow-hidden cursor-pointer hover:opacity-95 transition-opacity`}
+                            onClick={() => toast.info(rec.message)}
                           >
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-xs font-medium uppercase tracking-wider opacity-80">
@@ -923,11 +943,15 @@ export default function DocumentProcessing() {
                               </span>
                               <IconComponent className="h-5 w-5 opacity-60" />
                             </div>
-                            <h3 className="text-xl font-bold mb-2">{recType.title}</h3>
-                            <p className="text-sm opacity-90 leading-relaxed">{rec.message}</p>
+                            <h3 className="text-xl font-bold mb-2">{displayTitle}</h3>
+                            <p className="text-sm opacity-90 leading-relaxed line-clamp-3">{rec.message}</p>
                             <Button 
                               variant="link" 
                               className={`p-0 h-auto mt-3 ${textColor} opacity-70 hover:opacity-100`}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                toast.info(rec.message, { duration: 10000 });
+                              }}
                             >
                               Read more
                             </Button>

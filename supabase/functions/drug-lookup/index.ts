@@ -156,9 +156,14 @@ serve(async (req) => {
       }
     }
 
-    // Add clinical recommendations based on drug class
+    // Add clinical recommendations based on drug class and drug name
+    const drugNameLower = drugName.toLowerCase();
+    
     if (results.ndc.length > 0) {
       const pharmClasses = results.ndc[0].pharmClass || [];
+      const genericName = results.ndc[0].genericName?.toLowerCase() || '';
+      
+      // Controlled substance warnings
       if (pharmClasses.some((c: string) => c.toLowerCase().includes('opioid'))) {
         results.clinicalInfo.push({
           type: 'warning',
@@ -177,6 +182,98 @@ serve(async (req) => {
         results.isControlled = true;
         results.schedule = 'IV';
       }
+      
+      // Common medication-specific recommendations
+      if (genericName.includes('metformin') || drugNameLower.includes('metformin')) {
+        results.clinicalInfo.push({
+          type: 'info',
+          severity: 'medium',
+          title: 'Dosage Guidance',
+          description: 'Start with low dose (500mg once daily) and titrate gradually. Take with meals to reduce GI side effects.'
+        });
+        results.clinicalInfo.push({
+          type: 'warning',
+          severity: 'medium',
+          title: 'Contraindication',
+          description: 'Contraindicated in patients with renal impairment (eGFR <30). Monitor kidney function regularly.'
+        });
+        results.clinicalInfo.push({
+          type: 'info',
+          severity: 'low',
+          title: 'Clinical Monitoring',
+          description: 'Monitor B12 levels with long-term use. May cause lactic acidosis in rare cases - discontinue before contrast procedures.'
+        });
+      }
+      
+      if (genericName.includes('lisinopril') || drugNameLower.includes('lisinopril')) {
+        results.clinicalInfo.push({
+          type: 'warning',
+          severity: 'high',
+          title: 'Contraindication',
+          description: 'Contraindicated in pregnancy. May cause angioedema - discontinue immediately if facial/throat swelling occurs.'
+        });
+        results.clinicalInfo.push({
+          type: 'info',
+          severity: 'medium',
+          title: 'Drug Interaction',
+          description: 'Avoid potassium supplements and potassium-sparing diuretics. Monitor potassium levels.'
+        });
+      }
+      
+      if (genericName.includes('atorvastatin') || drugNameLower.includes('atorvastatin') || drugNameLower.includes('lipitor')) {
+        results.clinicalInfo.push({
+          type: 'warning',
+          severity: 'medium',
+          title: 'Muscle Effects',
+          description: 'Monitor for muscle pain, tenderness, or weakness. Risk of rhabdomyolysis, especially with high doses.'
+        });
+        results.clinicalInfo.push({
+          type: 'info',
+          severity: 'low',
+          title: 'Dosage Alert',
+          description: 'Take in the evening for optimal effect. Avoid grapefruit juice which can increase drug levels.'
+        });
+      }
+      
+      if (genericName.includes('warfarin') || drugNameLower.includes('warfarin') || drugNameLower.includes('coumadin')) {
+        results.clinicalInfo.push({
+          type: 'warning',
+          severity: 'high',
+          title: 'Bleeding Risk',
+          description: 'High bleeding risk - monitor INR regularly. Numerous drug and food interactions (vitamin K).'
+        });
+        results.clinicalInfo.push({
+          type: 'error',
+          severity: 'high',
+          title: 'Contraindication',
+          description: 'Contraindicated in pregnancy, active bleeding, and uncontrolled hypertension.'
+        });
+      }
+      
+      if (genericName.includes('amoxicillin') || drugNameLower.includes('amoxicillin')) {
+        results.clinicalInfo.push({
+          type: 'warning',
+          severity: 'medium',
+          title: 'Allergy Alert',
+          description: 'Check for penicillin allergy before prescribing. Cross-reactivity with cephalosporins possible.'
+        });
+        results.clinicalInfo.push({
+          type: 'info',
+          severity: 'low',
+          title: 'Administration',
+          description: 'Can be taken with or without food. Complete full course even if symptoms improve.'
+        });
+      }
+    }
+    
+    // Add general recommendation if nothing specific found
+    if (results.clinicalInfo.length === 0) {
+      results.clinicalInfo.push({
+        type: 'info',
+        severity: 'low',
+        title: 'Standard Medication',
+        description: 'No specific warnings found. Follow standard prescribing guidelines and monitor for adverse effects.'
+      });
     }
 
     console.log(`📦 Returning results: ${results.ndc.length} NDC, ${results.rxnorm.length} RxNorm, ${results.alternatives.length} alternatives`);
