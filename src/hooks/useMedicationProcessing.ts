@@ -84,17 +84,108 @@ export interface ComplianceFlag {
   medicationId: string;
 }
 
-// Frequency patterns for quantity calculation
+// Standard SIG codes for prescription parsing
+export interface SigParsed {
+  dose: { amount: number; unit: string; display: string };
+  route: { code: string; meaning: string };
+  frequency: { code: string; timesPerDay: number; meaning: string };
+  duration?: { days: number; display: string };
+  conditions?: string[];
+  translation: string;
+}
+
+// SIG Frequency codes
+const SIG_FREQUENCY_CODES: Record<string, { timesPerDay: number; meaning: string }> = {
+  'qd': { timesPerDay: 1, meaning: 'once daily' },
+  'od': { timesPerDay: 1, meaning: 'once daily' },
+  'bid': { timesPerDay: 2, meaning: 'twice daily' },
+  'tid': { timesPerDay: 3, meaning: 'three times a day' },
+  'qid': { timesPerDay: 4, meaning: 'four times a day' },
+  'q4h': { timesPerDay: 6, meaning: 'every 4 hours' },
+  'q6h': { timesPerDay: 4, meaning: 'every 6 hours' },
+  'q8h': { timesPerDay: 3, meaning: 'every 8 hours' },
+  'q12h': { timesPerDay: 2, meaning: 'every 12 hours' },
+  'qhs': { timesPerDay: 1, meaning: 'at bedtime' },
+  'hs': { timesPerDay: 1, meaning: 'at bedtime' },
+  'qam': { timesPerDay: 1, meaning: 'every morning' },
+  'qpm': { timesPerDay: 1, meaning: 'every evening' },
+  'qod': { timesPerDay: 0.5, meaning: 'every other day' },
+  'qw': { timesPerDay: 1/7, meaning: 'once weekly' },
+  'biw': { timesPerDay: 2/7, meaning: 'twice weekly' },
+  'tiw': { timesPerDay: 3/7, meaning: 'three times weekly' },
+  'prn': { timesPerDay: 0, meaning: 'as needed' },
+  'stat': { timesPerDay: 1, meaning: 'immediately (one time)' },
+  'ac': { timesPerDay: 3, meaning: 'before meals' },
+  'pc': { timesPerDay: 3, meaning: 'after meals' },
+  'achs': { timesPerDay: 4, meaning: 'before meals and at bedtime' },
+};
+
+// SIG Route codes
+const SIG_ROUTE_CODES: Record<string, string> = {
+  'po': 'by mouth (oral)',
+  'sl': 'under the tongue (sublingual)',
+  'pr': 'rectally',
+  'pv': 'vaginally',
+  'im': 'intramuscular injection',
+  'iv': 'intravenous injection',
+  'sc': 'subcutaneous injection',
+  'sq': 'subcutaneous injection',
+  'subq': 'subcutaneous injection',
+  'id': 'intradermal injection',
+  'top': 'topically (on skin)',
+  'inh': 'by inhalation',
+  'neb': 'by nebulizer',
+  'ou': 'both eyes',
+  'od': 'right eye',
+  'os': 'left eye',
+  'au': 'both ears',
+  'ad': 'right ear',
+  'as': 'left ear',
+  'gtt': 'drop(s)',
+  'gtts': 'drops',
+  'ng': 'nasogastric tube',
+  'peg': 'percutaneous endoscopic gastrostomy',
+  'td': 'transdermal',
+  'buc': 'buccal (inside cheek)',
+};
+
+// SIG Condition codes
+const SIG_CONDITION_CODES: Record<string, string> = {
+  'ac': 'before meals',
+  'pc': 'after meals',
+  'hs': 'at bedtime',
+  'c': 'with',
+  'cc': 'with meals',
+  's': 'without',
+  'ss': 'half',
+  'ud': 'as directed',
+  'ut dict': 'as directed',
+  'prn': 'as needed',
+  'sos': 'if needed',
+  'stat': 'immediately',
+  'npo': 'nothing by mouth',
+  'aa': 'of each',
+};
+
+// Frequency patterns for quantity calculation (expanded)
 const FREQUENCY_PATTERNS: Record<string, { timesPerDay: number; pattern: RegExp }> = {
-  'once daily': { timesPerDay: 1, pattern: /once\s*(a\s*)?daily|qd|q\.?d\.?|every\s*day|daily/i },
+  'once daily': { timesPerDay: 1, pattern: /once\s*(a\s*)?daily|qd|q\.?d\.?|every\s*day|daily|od/i },
   'twice daily': { timesPerDay: 2, pattern: /twice\s*(a\s*)?daily|bid|b\.?i\.?d\.?|every\s*12\s*hours|q12h/i },
   'three times daily': { timesPerDay: 3, pattern: /three\s*times\s*(a\s*)?daily|tid|t\.?i\.?d\.?|every\s*8\s*hours|q8h/i },
   'four times daily': { timesPerDay: 4, pattern: /four\s*times\s*(a\s*)?daily|qid|q\.?i\.?d\.?|every\s*6\s*hours|q6h/i },
+  'every 4 hours': { timesPerDay: 6, pattern: /every\s*4\s*hours|q4h/i },
   'every other day': { timesPerDay: 0.5, pattern: /every\s*other\s*day|qod|q\.?o\.?d\.?/i },
   'weekly': { timesPerDay: 1/7, pattern: /once\s*weekly|weekly|every\s*week|qw/i },
+  'twice weekly': { timesPerDay: 2/7, pattern: /twice\s*weekly|biw|b\.?i\.?w\.?/i },
+  'three times weekly': { timesPerDay: 3/7, pattern: /three\s*times\s*weekly|tiw|t\.?i\.?w\.?/i },
   'as needed': { timesPerDay: 0, pattern: /as\s*needed|prn|p\.?r\.?n\.?/i },
   'at bedtime': { timesPerDay: 1, pattern: /at\s*bedtime|hs|h\.?s\.?|qhs|before\s*bed/i },
   'in the morning': { timesPerDay: 1, pattern: /in\s*the\s*morning|qam|a\.?m\.?/i },
+  'in the evening': { timesPerDay: 1, pattern: /in\s*the\s*evening|qpm|p\.?m\.?/i },
+  'before meals': { timesPerDay: 3, pattern: /before\s*meals|ac|a\.?c\.?/i },
+  'after meals': { timesPerDay: 3, pattern: /after\s*meals|pc|p\.?c\.?/i },
+  'with meals': { timesPerDay: 3, pattern: /with\s*meals|cc|c\.?c\.?/i },
+  'immediately': { timesPerDay: 1, pattern: /immediately|stat/i },
 };
 
 // Common drug database (simulated - in production, use FDA/Health Canada APIs)
@@ -131,6 +222,86 @@ const CONTROLLED_SUBSTANCES: Record<string, string> = {
 export function useMedicationProcessing() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [lastAnalysis, setLastAnalysis] = useState<PrescriptionAnalysis | null>(null);
+
+  /**
+   * Parse SIG codes from prescription instructions
+   * Converts abbreviations like "1 tab po bid prn" to structured data and human-readable translation
+   */
+  const parseSig = useCallback((sigText: string): SigParsed => {
+    const normalizedSig = sigText.toLowerCase().trim();
+    const conditions: string[] = [];
+    
+    // Parse dose (e.g., "1 tablet", "2 caps", "1-2 tabs")
+    const doseMatch = normalizedSig.match(/(\d+(?:-\d+)?)\s*(tab(?:let)?s?|cap(?:sule)?s?|pill?s?|ml|mg|gtt|gtts|drop?s?|puff?s?|spray?s?|patch(?:es)?)/i);
+    const dose = doseMatch 
+      ? { amount: parseInt(doseMatch[1]), unit: doseMatch[2], display: `${doseMatch[1]} ${doseMatch[2]}` }
+      : { amount: 1, unit: 'tablet', display: '1 tablet' };
+
+    // Parse route
+    let route = { code: 'po', meaning: 'by mouth (oral)' };
+    for (const [code, meaning] of Object.entries(SIG_ROUTE_CODES)) {
+      const routePattern = new RegExp(`\\b${code}\\b`, 'i');
+      if (routePattern.test(normalizedSig)) {
+        route = { code, meaning };
+        break;
+      }
+    }
+
+    // Parse frequency
+    let frequency = { code: 'qd', timesPerDay: 1, meaning: 'once daily' };
+    for (const [code, data] of Object.entries(SIG_FREQUENCY_CODES)) {
+      const freqPattern = new RegExp(`\\b${code}\\b`, 'i');
+      if (freqPattern.test(normalizedSig)) {
+        frequency = { code, ...data };
+        break;
+      }
+    }
+    // Also check natural language patterns
+    for (const [name, { timesPerDay, pattern }] of Object.entries(FREQUENCY_PATTERNS)) {
+      if (pattern.test(normalizedSig)) {
+        frequency = { code: name.replace(/\s+/g, '-'), timesPerDay, meaning: name };
+        break;
+      }
+    }
+
+    // Parse duration (e.g., "for 10 days", "x 7 days", "for 2 weeks")
+    let duration: { days: number; display: string } | undefined;
+    const durationMatch = normalizedSig.match(/(?:for|x)\s*(\d+)\s*(day?s?|week?s?|month?s?)/i);
+    if (durationMatch) {
+      let days = parseInt(durationMatch[1]);
+      const unit = durationMatch[2].toLowerCase();
+      if (unit.startsWith('week')) days *= 7;
+      if (unit.startsWith('month')) days *= 30;
+      duration = { days, display: `${durationMatch[1]} ${durationMatch[2]}` };
+    }
+
+    // Parse conditions (e.g., "with food", "at bedtime", "as needed for pain")
+    if (/with\s*food|with\s*meals|cc/i.test(normalizedSig)) conditions.push('with food');
+    if (/at\s*bedtime|hs\b/i.test(normalizedSig)) conditions.push('at bedtime');
+    if (/as\s*needed|prn/i.test(normalizedSig)) {
+      const prnMatch = normalizedSig.match(/(?:as\s*needed|prn)\s*(?:for\s+)?(\w+(?:\s+\w+)?)?/i);
+      conditions.push(prnMatch?.[1] ? `as needed for ${prnMatch[1]}` : 'as needed');
+    }
+    if (/before\s*meals|ac\b/i.test(normalizedSig)) conditions.push('before meals');
+    if (/after\s*meals|pc\b/i.test(normalizedSig)) conditions.push('after meals');
+    if (/on\s*empty\s*stomach|npo/i.test(normalizedSig)) conditions.push('on empty stomach');
+    if (/as\s*directed|ud\b/i.test(normalizedSig)) conditions.push('as directed');
+
+    // Build human-readable translation
+    const translationParts = [`Take ${dose.display} ${route.meaning}`];
+    if (frequency.code !== 'stat') translationParts.push(frequency.meaning);
+    if (duration) translationParts.push(`for ${duration.display}`);
+    if (conditions.length > 0) translationParts.push(conditions.join(', '));
+
+    return {
+      dose,
+      route,
+      frequency,
+      duration,
+      conditions: conditions.length > 0 ? conditions : undefined,
+      translation: translationParts.join(' ')
+    };
+  }, []);
 
   /**
    * Parse medication instructions to calculate quantity and day supply
@@ -449,6 +620,10 @@ export function useMedicationProcessing() {
     calculateQuantityAndDaySupply,
     matchDrugToCode,
     checkControlledSubstance,
-    validateMedicationOrder
+    validateMedicationOrder,
+    parseSig
   };
 }
+
+// Export SIG code constants for external use
+export { SIG_FREQUENCY_CODES, SIG_ROUTE_CODES, SIG_CONDITION_CODES };
