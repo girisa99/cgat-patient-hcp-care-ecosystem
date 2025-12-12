@@ -70,6 +70,15 @@ const AgentsInner = () => {
   const agentContext = locationState?.agentContext;
   const [showStreamlinedView, setShowStreamlinedView] = useState(Boolean(agentContext));
 
+  // Redirect to admin if accessing canvas directly without context
+  useEffect(() => {
+    if (!agentContext && !locationState?.prefillPrompt && !locationState?.agentId) {
+      console.log('📋 No agent context - redirecting to admin for proper agent creation flow');
+      toast.info('Please create an agent from the Admin Dashboard');
+      navigate('/admin', { replace: true });
+    }
+  }, [agentContext, locationState, navigate]);
+
   const { status: aiHealth, checkHealth, checking } = useAIServiceHealth();
   const isAIHealthy = aiHealth.overallHealthy;
   const aiCheckComplete = Boolean(aiHealth.lastChecked);
