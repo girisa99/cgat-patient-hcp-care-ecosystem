@@ -43,7 +43,8 @@ import {
   Package,
   HeartPulse,
   ClipboardList,
-  Stethoscope
+  Stethoscope,
+  Shield
 } from 'lucide-react';
 import { useMedicationProcessing } from '@/hooks/useMedicationProcessing';
 import { toast } from 'sonner';
@@ -875,55 +876,100 @@ export default function DocumentProcessing() {
                 </CardContent>
               </Card>
 
-              {/* Clinical Recommendations */}
-              <Card>
+              {/* Clinical Recommendations - Enhanced Card Display */}
+              <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Brain className="h-5 w-5" />
                     Clinical Recommendations
                   </CardTitle>
+                  <CardDescription>
+                    AI-powered clinical insights from OpenFDA and RxNorm databases
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {searchResults?.clinicalRecommendations ? (
-                    <div className="space-y-2">
-                      {searchResults.clinicalRecommendations.map((rec, i) => (
-                        <Alert key={i} variant={rec.type === 'error' ? 'destructive' : 'default'}>
-                          {rec.type === 'warning' && <AlertTriangle className="h-4 w-4" />}
-                          {rec.type === 'error' && <XCircle className="h-4 w-4" />}
-                          {rec.type === 'info' && <Sparkles className="h-4 w-4" />}
-                          <AlertDescription>{rec.message}</AlertDescription>
-                        </Alert>
-                      ))}
+                  {searchResults?.clinicalRecommendations && searchResults.clinicalRecommendations.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {searchResults.clinicalRecommendations.map((rec, i) => {
+                        const getRecommendationType = (message: string) => {
+                          if (message.toLowerCase().includes('dose') || message.toLowerCase().includes('dosage')) 
+                            return { title: 'Dosage Alert', icon: AlertTriangle };
+                          if (message.toLowerCase().includes('interaction')) 
+                            return { title: 'Drug Interaction', icon: XCircle };
+                          if (message.toLowerCase().includes('contraindication') || message.toLowerCase().includes('risk')) 
+                            return { title: 'Contraindication', icon: XCircle };
+                          if (message.toLowerCase().includes('opioid') || message.toLowerCase().includes('controlled')) 
+                            return { title: 'Controlled Substance', icon: Shield };
+                          if (message.toLowerCase().includes('monitor') || message.toLowerCase().includes('dependence')) 
+                            return { title: 'Monitoring Required', icon: Activity };
+                          return { title: 'Clinical Note', icon: Sparkles };
+                        };
+                        
+                        const recType = getRecommendationType(rec.message);
+                        const IconComponent = recType.icon;
+                        const bgColor = rec.type === 'error' ? 'bg-destructive' : 
+                                         rec.type === 'warning' ? 'bg-zinc-900 dark:bg-zinc-800' : 
+                                         'bg-muted';
+                        const textColor = rec.type === 'error' || rec.type === 'warning' ? 'text-white' : 'text-foreground';
+                        
+                        return (
+                          <div 
+                            key={i} 
+                            className={`rounded-xl p-4 ${bgColor} ${textColor} relative overflow-hidden`}
+                          >
+                            <div className="flex items-center justify-between mb-3">
+                              <span className="text-xs font-medium uppercase tracking-wider opacity-80">
+                                RECOMMENDATION
+                              </span>
+                              <IconComponent className="h-5 w-5 opacity-60" />
+                            </div>
+                            <h3 className="text-xl font-bold mb-2">{recType.title}</h3>
+                            <p className="text-sm opacity-90 leading-relaxed">{rec.message}</p>
+                            <Button 
+                              variant="link" 
+                              className={`p-0 h-auto mt-3 ${textColor} opacity-70 hover:opacity-100`}
+                            >
+                              Read more
+                            </Button>
+                          </div>
+                        );
+                      })}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-12 text-muted-foreground">
                       <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Recommendations will appear after drug search</p>
+                      <p>Clinical recommendations will appear after drug search</p>
+                      <p className="text-xs mt-2">Powered by OpenFDA & RxNorm APIs</p>
                     </div>
                   )}
                 </CardContent>
               </Card>
 
-              {/* Inventory & Alternatives */}
-              <Card>
+              {/* Alternatives with Enhanced Display */}
+              <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Activity className="h-5 w-5" />
-                    Inventory & Alternatives
+                    Drug Alternatives & Inventory
                   </CardTitle>
+                  <CardDescription>
+                    Alternative medications from RxNorm with simulated inventory status
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {searchResults?.alternatives ? (
-                    <div className="space-y-2">
+                  {searchResults?.alternatives && searchResults.alternatives.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {searchResults.alternatives.map((alt, i) => (
-                        <div key={i} className="flex items-center justify-between p-3 border rounded-lg">
-                          <div>
-                            <p className="font-medium text-sm">{alt.name}</p>
-                            <p className="text-xs text-muted-foreground">NDC: {alt.ndc}</p>
+                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-sm truncate">{alt.name}</p>
+                            <p className="text-xs text-muted-foreground mt-1">RxCUI: {alt.ndc}</p>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2 ml-2">
                             {alt.inStock ? (
-                              <Badge className="bg-green-500">{alt.stockQty} in stock</Badge>
+                              <Badge className="bg-green-600 hover:bg-green-700 text-white">
+                                {alt.stockQty} in stock
+                              </Badge>
                             ) : (
                               <Badge variant="destructive">Out of stock</Badge>
                             )}
@@ -932,9 +978,10 @@ export default function DocumentProcessing() {
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center py-8 text-muted-foreground">
+                    <div className="text-center py-12 text-muted-foreground">
                       <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Inventory info will appear after drug search</p>
+                      <p>Alternative medications will appear after drug search</p>
+                      <p className="text-xs mt-2">Data sourced from RxNorm related drugs API</p>
                     </div>
                   )}
                 </CardContent>
