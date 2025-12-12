@@ -224,84 +224,100 @@ export default function DocumentProcessing() {
   
   const currentConfig = DOCUMENT_CONFIGS.find(c => c.id === selectedDocType)!;
 
-  // Simulated drug database for search
-  const DRUG_DATABASE = [
-    { name: 'Metformin', genericName: 'Metformin HCl', strengths: ['500mg', '850mg', '1000mg'], ndcPrefix: '0093-7214' },
-    { name: 'Lisinopril', genericName: 'Lisinopril', strengths: ['5mg', '10mg', '20mg', '40mg'], ndcPrefix: '0143-1264' },
-    { name: 'Atorvastatin', genericName: 'Atorvastatin Calcium', strengths: ['10mg', '20mg', '40mg', '80mg'], ndcPrefix: '0378-0155' },
-    { name: 'Omeprazole', genericName: 'Omeprazole', strengths: ['20mg', '40mg'], ndcPrefix: '0378-5210' },
-    { name: 'Amlodipine', genericName: 'Amlodipine Besylate', strengths: ['5mg', '10mg'], ndcPrefix: '0378-0083' },
-    { name: 'Gabapentin', genericName: 'Gabapentin', strengths: ['100mg', '300mg', '400mg', '600mg', '800mg'], ndcPrefix: '0378-0182' },
-    { name: 'Levothyroxine', genericName: 'Levothyroxine Sodium', strengths: ['25mcg', '50mcg', '75mcg', '100mcg', '125mcg'], ndcPrefix: '0378-1825' },
-    { name: 'Sertraline', genericName: 'Sertraline HCl', strengths: ['25mg', '50mg', '100mg'], ndcPrefix: '0378-4187' },
-    { name: 'Metoprolol', genericName: 'Metoprolol Tartrate', strengths: ['25mg', '50mg', '100mg'], ndcPrefix: '0378-0221' },
-    { name: 'Losartan', genericName: 'Losartan Potassium', strengths: ['25mg', '50mg', '100mg'], ndcPrefix: '0378-0280' },
-    { name: 'Hydrocodone/APAP', genericName: 'Hydrocodone/Acetaminophen', strengths: ['5/325mg', '7.5/325mg', '10/325mg'], ndcPrefix: '0591-0540', controlled: true, schedule: 'II' },
-    { name: 'Oxycodone', genericName: 'Oxycodone HCl', strengths: ['5mg', '10mg', '15mg', '20mg', '30mg'], ndcPrefix: '0591-5502', controlled: true, schedule: 'II' },
-  ];
-
-  // Handle drug search with auto-calculation
-  const handleDrugSearch = useCallback(() => {
+  // Handle drug search with real OpenFDA + RxNorm API
+  const handleDrugSearch = useCallback(async () => {
     if (!drugSearchQuery.trim()) return;
     
     setIsSearching(true);
     
-    // Simulate API search delay
-    setTimeout(() => {
-      const query = drugSearchQuery.toLowerCase();
-      const matchedDrug = DRUG_DATABASE.find(d => 
-        d.name.toLowerCase().includes(query) || 
-        d.genericName.toLowerCase().includes(query)
-      );
+    try {
+      // Call edge function for real drug lookup
+      const { data, error } = await supabase.functions.invoke('drug-lookup', {
+        body: { drugName: drugSearchQuery, searchType: 'all' }
+      });
       
-      if (matchedDrug) {
+      if (error) throw error;
+      
+      if (data && (data.ndc?.length > 0 || data.rxnorm?.length > 0)) {
         // Calculate quantity based on sig
         const calculation = calculateQuantityAndDaySupply(sigInstructions || 'Take 1 tablet daily for 30 days');
         
+        // Transform API response to our format
+        const ndcOptions = (data.ndc || []).map((ndc: any) => ({
+          code: ndc.code,
+          name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+          manufacturer: ndc.manufacturer,
+          dosageForm: ndc.dosageForm,
+          country: 'USA'
+        }));
+        
+        // Generate clinical recommendations from API data
+        const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; message: string }[] = [];
+        
+        // Add controlled substance warning if applicable
+        if (data.isControlled) {
+          clinicalRecommendations.push({
+            type: 'warning',
+            message: `Schedule ${data.schedule} controlled substance - Verify patient ID and check PDMP`
+          });
+        }
+        
+        // Add interaction warnings from RxNorm
+        if (data.clinicalInfo) {
+          data.clinicalInfo.forEach((info: any) => {
+            clinicalRecommendations.push({
+              type: info.severity === 'high' ? 'warning' : 'info',
+              message: info.description
+            });
+          });
+        }
+        
+        // Add standard info if no warnings
+        if (clinicalRecommendations.length === 0) {
+          clinicalRecommendations.push({
+            type: 'info',
+            message: 'Standard medication - no special handling required'
+          });
+        }
+        
+        const primaryNdc = data.ndc?.[0];
+        
         const result: MedicationResult = {
-          drugName: matchedDrug.name,
-          genericName: matchedDrug.genericName,
-          strength: matchedDrug.strengths[0],
+          drugName: primaryNdc?.brandName || data.drugName,
+          genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
+          strength: primaryNdc?.strength || '',
           sig: sigInstructions || 'Take 1 tablet daily for 30 days',
           calculatedQuantity: calculation.totalQuantity,
           daysSupply: calculation.daysSupply,
           dailyDose: calculation.dailyDose,
-          ndc: `${matchedDrug.ndcPrefix}-01`,
-          din: `0224${Math.floor(Math.random() * 9000 + 1000)}`,
-          ndcOptions: [
-            { code: `${matchedDrug.ndcPrefix}-01`, name: `${matchedDrug.genericName} (Generic)`, manufacturer: 'Teva Pharmaceuticals' },
-            { code: `${matchedDrug.ndcPrefix}-02`, name: `${matchedDrug.genericName} (Generic)`, manufacturer: 'Mylan' },
-            { code: `${matchedDrug.ndcPrefix}-03`, name: `${matchedDrug.name} (Brand)`, manufacturer: 'Pfizer' },
-          ],
-          dinOptions: [
-            { code: `0224${Math.floor(Math.random() * 9000 + 1000)}`, name: `APO-${matchedDrug.name}`, manufacturer: 'Apotex' },
-            { code: `0238${Math.floor(Math.random() * 9000 + 1000)}`, name: `TEVA-${matchedDrug.name}`, manufacturer: 'Teva Canada' },
-          ],
-          alternatives: [
-            { name: `${matchedDrug.genericName} 500 tablets`, ndc: `${matchedDrug.ndcPrefix}-05`, inStock: true, stockQty: 500 },
-            { name: `${matchedDrug.genericName} 100 tablets`, ndc: `${matchedDrug.ndcPrefix}-06`, inStock: true, stockQty: 250 },
-            { name: `${matchedDrug.genericName} 30 tablets`, ndc: `${matchedDrug.ndcPrefix}-07`, inStock: false, stockQty: 0 },
-          ],
-          clinicalRecommendations: matchedDrug.controlled ? [
-            { type: 'warning', message: `${matchedDrug.name} is a Schedule ${matchedDrug.schedule} controlled substance` },
-            { type: 'info', message: 'Verify patient ID and prescription legitimacy' },
-            { type: 'info', message: 'Check PDMP database before dispensing' }
-          ] : [
-            { type: 'info', message: 'Standard medication - no special handling required' }
-          ],
-          isControlled: matchedDrug.controlled,
-          schedule: matchedDrug.schedule
+          ndc: primaryNdc?.code,
+          din: undefined, // DIN is Canadian, not from US APIs
+          ndcOptions,
+          dinOptions: [], // Would need Health Canada API for DIN
+          alternatives: (data.alternatives || []).map((alt: any) => ({
+            name: alt.name,
+            ndc: alt.rxcui, // RxCUI as reference
+            inStock: Math.random() > 0.3, // Simulated inventory
+            stockQty: Math.floor(Math.random() * 500)
+          })),
+          clinicalRecommendations,
+          isControlled: data.isControlled,
+          schedule: data.schedule
         };
         
         setSearchResults(result);
-        toast.success(`Found ${matchedDrug.name} - Quantity calculated: ${calculation.totalQuantity}`);
+        toast.success(`Found ${ndcOptions.length} NDC codes from OpenFDA + ${data.rxnorm?.length || 0} RxNorm entries`);
       } else {
-        toast.error('Drug not found in database');
+        toast.error('Drug not found - try a different spelling or generic name');
         setSearchResults(null);
       }
-      
+    } catch (err) {
+      console.error('Drug search error:', err);
+      toast.error('Failed to search drug database');
+      setSearchResults(null);
+    } finally {
       setIsSearching(false);
-    }, 800);
+    }
   }, [drugSearchQuery, sigInstructions, calculateQuantityAndDaySupply]);
 
   // Auto-search when sig changes
@@ -821,64 +837,75 @@ export default function DocumentProcessing() {
                 </CardContent>
               </Card>
 
-              {/* NDC/DIN Codes */}
+              {/* NDC Codes - US */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Package className="h-5 w-5" />
-                    NDC/DIN Codes
+                    NDC Codes (USA)
                   </CardTitle>
                   <CardDescription>
-                    Available product codes for the selected medication
+                    National Drug Codes from OpenFDA - US drug product identifiers
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {searchResults ? (
-                    <div className="space-y-4">
-                      <div>
-                        <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                          <Badge>NDC</Badge> American Codes
-                        </h4>
-                        <ScrollArea className="h-32 border rounded-lg">
+                    <div className="space-y-2">
+                      {searchResults.ndcOptions.length > 0 ? (
+                        <ScrollArea className="h-48 border rounded-lg">
                           <div className="p-2 space-y-1">
                             {searchResults.ndcOptions.map((option, i) => (
-                              <div key={i} className="flex items-center justify-between p-2 hover:bg-muted rounded cursor-pointer">
-                                <div>
+                              <div key={i} className="flex items-center justify-between p-3 hover:bg-muted rounded cursor-pointer border-b last:border-0">
+                                <div className="flex-1">
                                   <p className="font-medium text-sm">{option.name}</p>
                                   <p className="text-xs text-muted-foreground">{option.manufacturer}</p>
+                                  {(option as any).dosageForm && (
+                                    <Badge variant="outline" className="mt-1 text-xs">
+                                      {(option as any).dosageForm}
+                                    </Badge>
+                                  )}
                                 </div>
-                                <Badge variant="outline">{option.code}</Badge>
+                                <div className="text-right">
+                                  <Badge className="bg-blue-600">{option.code}</Badge>
+                                  <p className="text-xs text-muted-foreground mt-1">USA</p>
+                                </div>
                               </div>
                             ))}
                           </div>
                         </ScrollArea>
-                      </div>
-
-                      <div>
-                        <h4 className="font-medium text-sm mb-2 flex items-center gap-2">
-                          <Badge variant="secondary">DIN</Badge> Canadian Codes
-                        </h4>
-                        <ScrollArea className="h-32 border rounded-lg">
-                          <div className="p-2 space-y-1">
-                            {searchResults.dinOptions.map((option, i) => (
-                              <div key={i} className="flex items-center justify-between p-2 hover:bg-muted rounded cursor-pointer">
-                                <div>
-                                  <p className="font-medium text-sm">{option.name}</p>
-                                  <p className="text-xs text-muted-foreground">{option.manufacturer}</p>
-                                </div>
-                                <Badge variant="secondary">{option.code}</Badge>
-                              </div>
-                            ))}
-                          </div>
-                        </ScrollArea>
-                      </div>
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <p>No NDC codes found for this drug</p>
+                          <p className="text-xs">Try a different spelling or generic name</p>
+                        </div>
+                      )}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
                       <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Search for a drug to see NDC/DIN codes</p>
+                      <p>Search for a drug to see NDC codes</p>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* DIN Codes - Canada */}
+              <Card className="opacity-75">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Package className="h-5 w-5" />
+                    DIN Codes (Canada)
+                    <Badge variant="secondary" className="ml-2">Coming Soon</Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Drug Identification Numbers from Health Canada
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Canadian DIN lookup requires Health Canada API integration</p>
+                    <p className="text-xs mt-2">Contact support to enable this feature</p>
+                  </div>
                 </CardContent>
               </Card>
 
