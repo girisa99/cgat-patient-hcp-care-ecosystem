@@ -212,8 +212,10 @@ export default function DocumentProcessing() {
   const [sigInstructions, setSigInstructions] = useState('');
   const [searchResults, setSearchResults] = useState<MedicationResult | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+  const [selectedNdc, setSelectedNdc] = useState<string | null>(null);
+  const [parsedSig, setParsedSig] = useState<any>(null);
   
-  const { calculateQuantityAndDaySupply, matchDrugToCode, checkControlledSubstance } = useMedicationProcessing();
+  const { calculateQuantityAndDaySupply, matchDrugToCode, checkControlledSubstance, parseSig } = useMedicationProcessing();
   
   const currentConfig = DOCUMENT_CONFIGS.find(c => c.id === selectedDocType)!;
 
@@ -222,6 +224,7 @@ export default function DocumentProcessing() {
     if (!drugSearchQuery.trim()) return;
     
     setIsSearching(true);
+    setSelectedNdc(null); // Reset selected NDC on new search
     
     try {
       // Call edge function for real drug lookup
@@ -315,6 +318,16 @@ export default function DocumentProcessing() {
       setIsSearching(false);
     }
   }, [drugSearchQuery, sigInstructions, calculateQuantityAndDaySupply]);
+
+  // Parse SIG when it changes
+  useEffect(() => {
+    if (sigInstructions.trim()) {
+      const parsed = parseSig(sigInstructions);
+      setParsedSig(parsed);
+    } else {
+      setParsedSig(null);
+    }
+  }, [sigInstructions, parseSig]);
 
   // Auto-search when sig changes
   useEffect(() => {
@@ -792,9 +805,54 @@ export default function DocumentProcessing() {
                       onChange={(e) => setSigInstructions(e.target.value)}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Enter instructions to auto-calculate quantity and day supply
+                      Supports: PO, BID, TID, QID, PRN, HS, AC, PC, QD, etc.
                     </p>
                   </div>
+
+                  {/* Parsed SIG Display */}
+                  {parsedSig && (
+                    <Card className="bg-muted/50 border-border">
+                      <CardContent className="pt-4 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Stethoscope className="h-4 w-4 text-primary" />
+                          <span className="font-medium text-sm">Parsed Instructions</span>
+                        </div>
+                        <p className="text-sm text-primary font-medium">{parsedSig.translation}</p>
+                        <div className="grid grid-cols-2 gap-3 text-sm">
+                          {parsedSig.dose && (
+                            <div>
+                              <span className="text-muted-foreground">Dose:</span>
+                              <span className="ml-2 font-medium">{parsedSig.dose}</span>
+                            </div>
+                          )}
+                          {parsedSig.route && (
+                            <div>
+                              <span className="text-muted-foreground">Route:</span>
+                              <span className="ml-2 font-medium">{parsedSig.route}</span>
+                            </div>
+                          )}
+                          {parsedSig.frequency && (
+                            <div>
+                              <span className="text-muted-foreground">Frequency:</span>
+                              <span className="ml-2 font-medium">{parsedSig.frequency}</span>
+                            </div>
+                          )}
+                          {parsedSig.duration && (
+                            <div>
+                              <span className="text-muted-foreground">Duration:</span>
+                              <span className="ml-2 font-medium">{parsedSig.duration}</span>
+                            </div>
+                          )}
+                          {parsedSig.conditions.length > 0 && (
+                            <div className="col-span-2">
+                              <span className="text-muted-foreground">Conditions:</span>
+                              <span className="ml-2 font-medium">{parsedSig.conditions.join(', ')}</span>
+                            </div>
+                          )}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )}
 
                   {searchResults && (
                     <Card className="bg-primary/5 border-primary/30">
@@ -829,7 +887,6 @@ export default function DocumentProcessing() {
                 </CardContent>
               </Card>
 
-              {/* NDC Codes - US */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
@@ -837,7 +894,7 @@ export default function DocumentProcessing() {
                     NDC Codes (USA)
                   </CardTitle>
                   <CardDescription>
-                    National Drug Codes from OpenFDA - US drug product identifiers
+                    Select an NDC to view clinical recommendations
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -847,7 +904,18 @@ export default function DocumentProcessing() {
                         <ScrollArea className="h-48 border rounded-lg">
                           <div className="p-2 space-y-1">
                             {searchResults.ndcOptions.map((option, i) => (
-                              <div key={i} className="flex items-center justify-between p-3 hover:bg-muted rounded cursor-pointer border-b last:border-0">
+                              <div 
+                                key={i} 
+                                className={`flex items-center justify-between p-3 rounded cursor-pointer border-b last:border-0 transition-colors ${
+                                  selectedNdc === option.code 
+                                    ? 'bg-primary/10 border-primary' 
+                                    : 'hover:bg-muted'
+                                }`}
+                                onClick={() => {
+                                  setSelectedNdc(option.code);
+                                  toast.success(`Selected NDC: ${option.code}`);
+                                }}
+                              >
                                 <div className="flex-1">
                                   <p className="font-medium text-sm">{option.name}</p>
                                   <p className="text-xs text-muted-foreground">{option.manufacturer}</p>
@@ -857,9 +925,13 @@ export default function DocumentProcessing() {
                                     </Badge>
                                   )}
                                 </div>
-                                <div className="text-right">
-                                  <Badge className="bg-blue-600">{option.code}</Badge>
-                                  <p className="text-xs text-muted-foreground mt-1">USA</p>
+                                <div className="text-right flex items-center gap-2">
+                                  {selectedNdc === option.code && (
+                                    <CheckCircle className="h-4 w-4 text-primary" />
+                                  )}
+                                  <Badge className={selectedNdc === option.code ? 'bg-primary' : 'bg-blue-600'}>
+                                    {option.code}
+                                  </Badge>
                                 </div>
                               </div>
                             ))}
@@ -869,6 +941,12 @@ export default function DocumentProcessing() {
                         <div className="text-center py-8 text-muted-foreground">
                           <p>No NDC codes found for this drug</p>
                           <p className="text-xs">Try a different spelling or generic name</p>
+                        </div>
+                      )}
+                      {selectedNdc && (
+                        <div className="mt-3 p-3 bg-muted rounded-lg">
+                          <p className="text-sm font-medium">Selected NDC</p>
+                          <p className="text-lg font-bold text-primary">{selectedNdc}</p>
                         </div>
                       )}
                     </div>
@@ -887,13 +965,30 @@ export default function DocumentProcessing() {
                   <CardTitle className="flex items-center gap-2">
                     <Brain className="h-5 w-5" />
                     Clinical Recommendations
+                    {selectedNdc && (
+                      <Badge variant="outline" className="ml-2">NDC: {selectedNdc}</Badge>
+                    )}
                   </CardTitle>
                   <CardDescription>
-                    AI-powered clinical insights from OpenFDA and RxNorm databases
+                    {selectedNdc 
+                      ? 'Clinical insights for selected NDC from OpenFDA and RxNorm' 
+                      : 'Select an NDC code above to view specific recommendations'}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
-                  {searchResults?.clinicalRecommendations && searchResults.clinicalRecommendations.length > 0 ? (
+                  {!searchResults ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Search for a drug to see clinical recommendations</p>
+                      <p className="text-xs mt-2">Powered by OpenFDA & RxNorm APIs</p>
+                    </div>
+                  ) : !selectedNdc ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>Select an NDC code to view clinical recommendations</p>
+                      <p className="text-xs mt-2">Click on any NDC code in the list above</p>
+                    </div>
+                  ) : searchResults?.clinicalRecommendations && searchResults.clinicalRecommendations.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {searchResults.clinicalRecommendations.map((rec, i) => {
                         // Determine icon based on recommendation type or message content
@@ -961,9 +1056,9 @@ export default function DocumentProcessing() {
                     </div>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
-                      <Brain className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                      <p>Clinical recommendations will appear after drug search</p>
-                      <p className="text-xs mt-2">Powered by OpenFDA & RxNorm APIs</p>
+                      <CheckCircle className="h-12 w-12 mx-auto mb-4 opacity-50 text-green-500" />
+                      <p>No specific clinical alerts for this medication</p>
+                      <p className="text-xs mt-2">Follow standard prescribing guidelines</p>
                     </div>
                   )}
                 </CardContent>
@@ -977,29 +1072,61 @@ export default function DocumentProcessing() {
                     Drug Alternatives & Inventory
                   </CardTitle>
                   <CardDescription>
-                    Alternative medications from RxNorm with simulated inventory status
+                    Alternative medications based on molecule/compound from RxNorm
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {searchResults?.alternatives && searchResults.alternatives.length > 0 ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {searchResults.alternatives.map((alt, i) => (
-                        <div key={i} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors">
-                          <div className="flex-1 min-w-0">
-                            <p className="font-medium text-sm truncate">{alt.name}</p>
-                            <p className="text-xs text-muted-foreground mt-1">RxCUI: {alt.ndc}</p>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        {searchResults.alternatives.map((alt, i) => (
+                          <div 
+                            key={i} 
+                            className="p-4 border rounded-lg hover:bg-muted/50 transition-colors cursor-pointer"
+                            onClick={() => {
+                              toast.info(`Alternative: ${alt.name}`, {
+                                description: `RxCUI: ${alt.ndc} | ${alt.inStock ? `${alt.stockQty} in stock` : 'Out of stock'}`
+                              });
+                            }}
+                          >
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1 min-w-0">
+                                <p className="font-medium text-sm">{alt.name}</p>
+                                <p className="text-xs text-muted-foreground mt-1">RxCUI: {alt.ndc}</p>
+                                <div className="flex gap-2 mt-2">
+                                  <Badge variant="outline" className="text-xs">
+                                    Same molecule
+                                  </Badge>
+                                  {searchResults.isControlled && (
+                                    <Badge variant="secondary" className="text-xs">
+                                      Schedule {searchResults.schedule}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="flex flex-col items-end gap-2 ml-2">
+                                {alt.inStock ? (
+                                  <Badge className="bg-green-600 hover:bg-green-700 text-white">
+                                    {alt.stockQty} in stock
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="destructive">Out of stock</Badge>
+                                )}
+                                <Button size="sm" variant="outline" className="text-xs">
+                                  Select
+                                </Button>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2 ml-2">
-                            {alt.inStock ? (
-                              <Badge className="bg-green-600 hover:bg-green-700 text-white">
-                                {alt.stockQty} in stock
-                              </Badge>
-                            ) : (
-                              <Badge variant="destructive">Out of stock</Badge>
-                            )}
-                          </div>
-                        </div>
-                      ))}
+                        ))}
+                      </div>
+                      <Alert>
+                        <Sparkles className="h-4 w-4" />
+                        <AlertDescription>
+                          These alternatives share the same active ingredient and therapeutic class as {searchResults.genericName || searchResults.drugName}.
+                          Always verify clinical appropriateness before substitution.
+                        </AlertDescription>
+                      </Alert>
                     </div>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
