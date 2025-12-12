@@ -14,6 +14,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import {
@@ -1171,6 +1172,8 @@ const AgentCard: React.FC<AgentCardProps> = ({
 }) => {
   const [showDeployDialog, setShowDeployDialog] = useState(false);
   const [selectedChannels, setSelectedChannels] = useState<string[]>([]);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showToggleConfirm, setShowToggleConfirm] = useState(false);
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -1241,7 +1244,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
             <Button
               size="sm"
               variant={agent.status === 'active' ? 'outline' : 'default'}
-              onClick={onToggleStatus}
+              onClick={() => setShowToggleConfirm(true)}
             >
               {agent.status === 'active' ? (
                 <>
@@ -1311,7 +1314,6 @@ const AgentCard: React.FC<AgentCardProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('🎯 Edit in Canvas clicked');
                     onBuildInCanvas();
                   }}
                   className="cursor-pointer"
@@ -1323,7 +1325,6 @@ const AgentCard: React.FC<AgentCardProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('🎯 View Code Snippet clicked');
                     onShowSnippet();
                   }}
                   className="cursor-pointer"
@@ -1336,8 +1337,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('🎯 Toggle Status clicked, current:', agent.status);
-                    onToggleStatus();
+                    setShowToggleConfirm(true);
                   }}
                   className="cursor-pointer"
                 >
@@ -1357,8 +1357,7 @@ const AgentCard: React.FC<AgentCardProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('🎯 Delete Agent clicked');
-                    onDelete();
+                    setShowDeleteConfirm(true);
                   }}
                   className="text-destructive focus:text-destructive cursor-pointer"
                 >
@@ -1416,6 +1415,58 @@ const AgentCard: React.FC<AgentCardProps> = ({
           </div>
         )}
       </CardContent>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Agent</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete "{agent.name}"? This action cannot be undone and will remove all associated deployments and configurations.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onDelete();
+                setShowDeleteConfirm(false);
+              }}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Toggle Status Confirmation Dialog */}
+      <AlertDialog open={showToggleConfirm} onOpenChange={setShowToggleConfirm}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {agent.status === 'active' ? 'Disable Agent' : 'Enable Agent'}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {agent.status === 'active' 
+                ? `Are you sure you want to disable "${agent.name}"? This will pause all active conversations and deployments.`
+                : `Are you sure you want to enable "${agent.name}"? This will activate the agent and its deployments.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                onToggleStatus();
+                setShowToggleConfirm(false);
+              }}
+            >
+              {agent.status === 'active' ? 'Disable' : 'Enable'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 };
