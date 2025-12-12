@@ -1295,22 +1295,41 @@ const AgentCard: React.FC<AgentCardProps> = ({
                   <MoreVertical className="h-4 w-4" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-background border shadow-lg">
+              <DropdownMenuContent align="end" className="bg-background border shadow-lg z-50">
                 <DropdownMenuItem 
-                  onSelect={() => {
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
                     console.log('🎯 Edit in Canvas clicked');
                     onBuildInCanvas();
                   }}
+                  className="cursor-pointer"
                 >
                   <Workflow className="h-4 w-4 mr-2" />
                   Edit in Canvas
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => onShowSnippet()}>
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🎯 View Code Snippet clicked');
+                    onShowSnippet();
+                  }}
+                  className="cursor-pointer"
+                >
                   <Code className="h-4 w-4 mr-2" />
                   View Code Snippet
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onSelect={() => onToggleStatus()}>
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🎯 Toggle Status clicked, current:', agent.status);
+                    onToggleStatus();
+                  }}
+                  className="cursor-pointer"
+                >
                   {agent.status === 'active' ? (
                     <>
                       <Pause className="h-4 w-4 mr-2" />
@@ -1323,7 +1342,15 @@ const AgentCard: React.FC<AgentCardProps> = ({
                     </>
                   )}
                 </DropdownMenuItem>
-                <DropdownMenuItem onSelect={() => onDelete()} className="text-destructive focus:text-destructive">
+                <DropdownMenuItem 
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    console.log('🎯 Delete Agent clicked');
+                    onDelete();
+                  }}
+                  className="text-destructive focus:text-destructive cursor-pointer"
+                >
                   <Trash2 className="h-4 w-4 mr-2" />
                   Delete Agent
                 </DropdownMenuItem>
