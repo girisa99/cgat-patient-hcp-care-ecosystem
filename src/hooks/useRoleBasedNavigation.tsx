@@ -53,7 +53,7 @@ export const useRoleBasedNavigation = () => {
       onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
       'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
-      'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
+      'system-integration': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Consolidated integration page incl. healthcare providers
       'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'customerOnboarding', 'demoUser'], // Document processing page
       ngrok: ['superAdmin'], // Remove onboardingTeam - technical admin tool only
       security: ['superAdmin'],
@@ -113,7 +113,7 @@ export const useRoleBasedNavigation = () => {
       onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
       modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
       'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
-      'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
+      'system-integration': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Consolidated integration page incl. healthcare providers
       'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
       'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
       'patient-onboarding-whatsapp': ['superAdmin', 'onboardingTeam', 'healthcareProvider'], // WhatsApp patient enrollment
@@ -166,7 +166,7 @@ export const useRoleBasedNavigation = () => {
           onboarding: ['superAdmin', 'onboardingTeam', 'demoUser'], // Add demoUser for onboarding demo
           modules: ['superAdmin', 'demoUser'], // Add demoUser for module management demo
           'api-services': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Healthcare providers need API access
-          'system-integration': ['superAdmin', 'onboardingTeam', 'demoUser'], // New consolidated integration page
+          'system-integration': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Consolidated integration page incl. healthcare providers
           'document-processing': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'customerOnboarding', 'demoUser'], // Document processing page
           'patient-onboarding': ['healthcareProvider'], // Healthcare provider specific - patient enrollment
           'patient-onboarding-standard': ['superAdmin', 'onboardingTeam', 'healthcareProvider', 'demoUser'], // Standard patient enrollment
