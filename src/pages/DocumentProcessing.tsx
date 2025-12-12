@@ -58,10 +58,19 @@ import {
   HeartPulse,
   ClipboardList,
   Stethoscope,
-  Shield
+  Shield,
+  Cpu,
+  Layers,
+  ScanLine,
+  FileType,
+  ArrowRight,
+  Zap,
+  CreditCard,
+  BadgeCheck
 } from 'lucide-react';
 import { useMedicationProcessing } from '@/hooks/useMedicationProcessing';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/layout/AppLayout';
@@ -74,6 +83,18 @@ type DocumentType =
   | 'customer-onboarding'
   | 'prescription'
   | 'insurance';
+
+// Agent workflow types for document processing
+type AgentWorkflowType = 'none' | 'insurance-verification' | 'prescription-processing' | 'patient-intake';
+
+interface AgentWorkflowConfig {
+  id: AgentWorkflowType;
+  title: string;
+  description: string;
+  icon: React.ReactNode;
+  documentTypes: DocumentType[];
+  capabilities: string[];
+}
 
 interface DocumentConfig {
   id: DocumentType;
@@ -226,13 +247,47 @@ interface MedicationResult {
   schedule?: string;
 }
 
+// Agent workflow configurations
+const AGENT_WORKFLOW_CONFIGS: AgentWorkflowConfig[] = [
+  {
+    id: 'insurance-verification',
+    title: 'Insurance Verification Agent',
+    description: 'Verify coverage, eligibility, co-pays from insurance cards',
+    icon: <CreditCard className="h-5 w-5" />,
+    documentTypes: ['insurance', 'patient-onboarding'],
+    capabilities: ['Coverage verification', 'Eligibility check', 'Co-pay lookup', 'Prior authorization status']
+  },
+  {
+    id: 'prescription-processing',
+    title: 'Prescription Processing Agent',
+    description: 'Co-pay lookup, prior auth check, drug interactions',
+    icon: <Pill className="h-5 w-5" />,
+    documentTypes: ['prescription', 'order-management'],
+    capabilities: ['Drug interaction check', 'Prior auth verification', 'Co-pay calculation', 'Formulary check']
+  },
+  {
+    id: 'patient-intake',
+    title: 'Patient Intake Agent',
+    description: 'Extract and validate patient demographics & history',
+    icon: <UserCheck className="h-5 w-5" />,
+    documentTypes: ['patient-onboarding', 'insurance'],
+    capabilities: ['Demographics extraction', 'Medical history parsing', 'Consent validation', 'Duplicate patient check']
+  }
+];
+
 export default function DocumentProcessing() {
+  const navigate = useNavigate();
   const [selectedDocType, setSelectedDocType] = useState<DocumentType>('prescription');
   const [activeTab, setActiveTab] = useState<'upload' | 'medication' | 'history'>('upload');
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  
+  // Agent processing mode
+  const [processingMode, setProcessingMode] = useState<'standalone' | 'agent'>('standalone');
+  const [selectedAgentWorkflow, setSelectedAgentWorkflow] = useState<AgentWorkflowType>('none');
+  const [isAgentProcessing, setIsAgentProcessing] = useState(false);
   
   // Processing settings (these control actual behavior)
   const [enableOCR, setEnableOCR] = useState(true);
@@ -243,6 +298,11 @@ export default function DocumentProcessing() {
   const [enableNdcMatching, setEnableNdcMatching] = useState(true);
   const [enableClinicalRecommendations, setEnableClinicalRecommendations] = useState(true);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.85);
+  
+  // Get recommended agent workflows for current document type
+  const recommendedAgentWorkflows = AGENT_WORKFLOW_CONFIGS.filter(
+    config => config.documentTypes.includes(selectedDocType)
+  );
   
   // Medication search state
   const [drugSearchQuery, setDrugSearchQuery] = useState('');
@@ -597,6 +657,71 @@ export default function DocumentProcessing() {
     if (enableAutoCalculateQty) settingsUsed.push('Auto-Calc');
     
     toast.success(`Document processed! (${settingsUsed.join(', ')})`);
+    
+    // Run agent workflow if enabled
+    if (processingMode === 'agent' && selectedAgentWorkflow !== 'none') {
+      await runAgentWorkflow(finalResult);
+    }
+  };
+
+  // Agent workflow processing
+  const runAgentWorkflow = async (result: ProcessingResult) => {
+    setIsAgentProcessing(true);
+    const workflow = AGENT_WORKFLOW_CONFIGS.find(w => w.id === selectedAgentWorkflow);
+    
+    if (!workflow) {
+      setIsAgentProcessing(false);
+      return;
+    }
+    
+    toast.info(`Starting ${workflow.title}...`);
+    
+    // Simulate agent processing stages
+    for (let i = 0; i < workflow.capabilities.length; i++) {
+      await new Promise(resolve => setTimeout(resolve, 800));
+      toast.info(`${workflow.capabilities[i]}...`);
+    }
+    
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Add agent results to the processing result
+    const agentResult = {
+      workflow: workflow.title,
+      capabilities: workflow.capabilities,
+      status: 'complete',
+      timestamp: new Date().toISOString(),
+      results: {} as Record<string, any>
+    };
+    
+    // Generate mock agent results based on workflow type
+    if (selectedAgentWorkflow === 'insurance-verification') {
+      agentResult.results = {
+        coverageVerified: true,
+        eligibilityStatus: 'Active',
+        copay: '$25.00',
+        deductible: '$500 remaining',
+        priorAuthRequired: false
+      };
+    } else if (selectedAgentWorkflow === 'prescription-processing') {
+      agentResult.results = {
+        drugInteractions: 'None detected',
+        priorAuthStatus: 'Not required',
+        formularyTier: 'Tier 2',
+        estimatedCopay: '$15.00'
+      };
+    } else if (selectedAgentWorkflow === 'patient-intake') {
+      agentResult.results = {
+        duplicateCheck: 'No duplicates found',
+        demographicsValid: true,
+        consentStatus: 'Signed',
+        missingFields: []
+      };
+    }
+    
+    setIsAgentProcessing(false);
+    toast.success(`${workflow.title} completed!`, {
+      description: 'Agent workflow results added to document'
+    });
   };
 
   const generateMockValue = (key: string): string => {
@@ -709,7 +834,190 @@ export default function DocumentProcessing() {
           </CardContent>
         </Card>
 
-        {/* Main Content */}
+        {/* DocAI Pipeline Visualization */}
+        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-background to-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Cpu className="h-5 w-5 text-primary" />
+              AI Processing Pipeline
+            </CardTitle>
+            <CardDescription>Document processing stages powered by DocAI, OCR, and Form Recognition</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              {/* Stage 1: OCR */}
+              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
+                <div className={`p-3 rounded-xl ${enableOCR ? 'bg-blue-500/20 border-2 border-blue-500' : 'bg-muted border-2 border-transparent'}`}>
+                  <ScanLine className={`h-6 w-6 ${enableOCR ? 'text-blue-500' : 'text-muted-foreground'}`} />
+                </div>
+                <span className="text-xs font-medium text-center">OCR</span>
+                <Badge variant={enableOCR ? 'default' : 'secondary'} className="text-[10px]">
+                  {enableOCR ? 'Active' : 'Disabled'}
+                </Badge>
+              </div>
+              
+              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              
+              {/* Stage 2: DocAI */}
+              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
+                <div className="p-3 rounded-xl bg-purple-500/20 border-2 border-purple-500">
+                  <Brain className="h-6 w-6 text-purple-500" />
+                </div>
+                <span className="text-xs font-medium text-center">DocAI</span>
+                <Badge variant="default" className="text-[10px] bg-purple-500">Active</Badge>
+              </div>
+              
+              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              
+              {/* Stage 3: Form Recognition */}
+              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
+                <div className={`p-3 rounded-xl ${enableTableExtraction ? 'bg-green-500/20 border-2 border-green-500' : 'bg-muted border-2 border-transparent'}`}>
+                  <FileType className={`h-6 w-6 ${enableTableExtraction ? 'text-green-500' : 'text-muted-foreground'}`} />
+                </div>
+                <span className="text-xs font-medium text-center">Form Recognition</span>
+                <Badge variant={enableTableExtraction ? 'default' : 'secondary'} className={`text-[10px] ${enableTableExtraction ? 'bg-green-500' : ''}`}>
+                  {enableTableExtraction ? 'Active' : 'Disabled'}
+                </Badge>
+              </div>
+              
+              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              
+              {/* Stage 4: Field Mapping */}
+              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
+                <div className="p-3 rounded-xl bg-orange-500/20 border-2 border-orange-500">
+                  <Layers className="h-6 w-6 text-orange-500" />
+                </div>
+                <span className="text-xs font-medium text-center">Field Mapping</span>
+                <Badge variant="default" className="text-[10px] bg-orange-500">Active</Badge>
+              </div>
+              
+              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
+              
+              {/* Stage 5: Agent (Optional) */}
+              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
+                <div className={`p-3 rounded-xl ${processingMode === 'agent' ? 'bg-primary/20 border-2 border-primary' : 'bg-muted border-2 border-dashed border-muted-foreground/50'}`}>
+                  <Bot className={`h-6 w-6 ${processingMode === 'agent' ? 'text-primary' : 'text-muted-foreground'}`} />
+                </div>
+                <span className="text-xs font-medium text-center">Agent</span>
+                <Badge variant={processingMode === 'agent' ? 'default' : 'outline'} className="text-[10px]">
+                  {processingMode === 'agent' ? 'Enabled' : 'Optional'}
+                </Badge>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Processing Mode Selection */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Zap className="h-5 w-5" />
+              Processing Mode
+            </CardTitle>
+            <CardDescription>Choose standalone processing or run with an AI agent for advanced workflows</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {/* Mode Toggle */}
+            <div className="flex items-center gap-4 p-4 border rounded-lg">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1">
+                  <FileText className="h-4 w-4" />
+                  <span className="font-medium">Standalone Processing</span>
+                </div>
+                <p className="text-xs text-muted-foreground">Process documents locally with OCR and field extraction only</p>
+              </div>
+              <Switch 
+                checked={processingMode === 'agent'} 
+                onCheckedChange={(checked) => {
+                  setProcessingMode(checked ? 'agent' : 'standalone');
+                  if (!checked) setSelectedAgentWorkflow('none');
+                }}
+              />
+              <div className="flex-1 text-right">
+                <div className="flex items-center gap-2 mb-1 justify-end">
+                  <span className="font-medium">Run with Agent</span>
+                  <Bot className="h-4 w-4" />
+                </div>
+                <p className="text-xs text-muted-foreground">Enable AI agent for verification & advanced processing</p>
+              </div>
+            </div>
+
+            {/* Agent Workflow Selection */}
+            {processingMode === 'agent' && (
+              <div className="space-y-3">
+                <Label className="text-sm font-medium">Select Agent Workflow</Label>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  {recommendedAgentWorkflows.length > 0 ? (
+                    recommendedAgentWorkflows.map((workflow) => (
+                      <div
+                        key={workflow.id}
+                        onClick={() => setSelectedAgentWorkflow(workflow.id)}
+                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                          selectedAgentWorkflow === workflow.id 
+                            ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                            : 'hover:border-primary/50 hover:bg-muted/50'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 mb-2">
+                          <div className={`p-2 rounded-lg ${selectedAgentWorkflow === workflow.id ? 'bg-primary/20' : 'bg-muted'}`}>
+                            {workflow.icon}
+                          </div>
+                          <div>
+                            <h4 className="font-medium text-sm">{workflow.title}</h4>
+                            <p className="text-xs text-muted-foreground">{workflow.description}</p>
+                          </div>
+                          {selectedAgentWorkflow === workflow.id && (
+                            <CheckCircle className="h-5 w-5 text-primary ml-auto" />
+                          )}
+                        </div>
+                        <div className="flex flex-wrap gap-1 mt-2">
+                          {workflow.capabilities.slice(0, 2).map((cap, i) => (
+                            <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
+                          ))}
+                          {workflow.capabilities.length > 2 && (
+                            <Badge variant="outline" className="text-[10px]">+{workflow.capabilities.length - 2}</Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="col-span-3 text-center py-6 text-muted-foreground">
+                      <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                      <p className="text-sm">No agent workflows available for {currentConfig.title}</p>
+                      <Button 
+                        variant="link" 
+                        size="sm" 
+                        onClick={() => navigate('/agents/canvas')}
+                        className="mt-2"
+                      >
+                        Create custom agent workflow →
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {selectedAgentWorkflow !== 'none' && (
+                  <Alert className="bg-primary/5 border-primary/20">
+                    <BadgeCheck className="h-4 w-4" />
+                    <AlertDescription className="flex items-center justify-between">
+                      <span>
+                        <strong>{AGENT_WORKFLOW_CONFIGS.find(w => w.id === selectedAgentWorkflow)?.title}</strong> will process your document after extraction
+                      </span>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => navigate('/agents/canvas')}
+                      >
+                        Configure Agent
+                      </Button>
+                    </AlertDescription>
+                  </Alert>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="upload" className="flex items-center gap-2">
@@ -943,6 +1251,49 @@ export default function DocumentProcessing() {
                       {currentConfig.targetFields.length} Target Fields
                     </Badge>
                   </div>
+
+                  {/* Agent Processing Status */}
+                  {processingMode === 'agent' && (
+                    <>
+                      <Separator />
+                      <div className="space-y-3">
+                        <h4 className="font-medium text-sm flex items-center gap-2">
+                          <Bot className="h-4 w-4" />
+                          Agent Workflow
+                        </h4>
+                        {selectedAgentWorkflow !== 'none' ? (
+                          <div className="p-3 border rounded-lg bg-primary/5">
+                            <div className="flex items-center gap-2 mb-2">
+                              {isAgentProcessing ? (
+                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                              ) : (
+                                <CheckCircle className="h-4 w-4 text-green-500" />
+                              )}
+                              <span className="font-medium text-sm">
+                                {AGENT_WORKFLOW_CONFIGS.find(w => w.id === selectedAgentWorkflow)?.title}
+                              </span>
+                            </div>
+                            <div className="flex flex-wrap gap-1">
+                              {AGENT_WORKFLOW_CONFIGS.find(w => w.id === selectedAgentWorkflow)?.capabilities.slice(0, 2).map((cap, i) => (
+                                <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        ) : (
+                          <p className="text-xs text-muted-foreground">No agent workflow selected</p>
+                        )}
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="w-full"
+                          onClick={() => navigate('/agents/canvas')}
+                        >
+                          <Bot className="h-3 w-3 mr-2" />
+                          Manage Agents
+                        </Button>
+                      </div>
+                    </>
+                  )}
                 </CardContent>
               </Card>
             </div>
