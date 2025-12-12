@@ -5,6 +5,7 @@
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -147,6 +148,9 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
   const [selectedEngineTemplate, setSelectedEngineTemplate] = useState('');
   const [selectedScreenMode, setSelectedScreenMode] = useState<'single' | 'split' | 'form-specific'>('single');
   const [customUseCases, setCustomUseCases] = useState<Array<{ id: string; name: string; category: string; description: string }>>([]);
+  const [showEditEngineDialog, setShowEditEngineDialog] = useState(false);
+  const [selectedEngineForEdit, setSelectedEngineForEdit] = useState<any>(null);
+  const [editEngineForm, setEditEngineForm] = useState({ name: '', engine_type: '' });
 
   const metrics = getAggregateMetrics();
 
@@ -175,6 +179,54 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
     // For now, toggle to inactive/deleted status
     await toggleStatus(agentId, false);
     toast({ title: 'Agent disabled' });
+  };
+
+  const handleToggleEngineStatus = async (engineId: string, isActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('conversation_engines')
+        .update({ is_active: isActive })
+        .eq('id', engineId);
+      if (error) throw error;
+      refetchEngines();
+      toast({ title: isActive ? 'Engine activated' : 'Engine deactivated' });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Failed to update engine status' });
+    }
+  };
+
+  const handleDeleteEngine = async (engineId: string) => {
+    try {
+      const { error } = await supabase
+        .from('conversation_engines')
+        .delete()
+        .eq('id', engineId);
+      if (error) throw error;
+      refetchEngines();
+      toast({ title: 'Engine deleted' });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Failed to delete engine' });
+    }
+  };
+
+  const handleUpdateEngine = async () => {
+    if (!selectedEngineForEdit) return;
+    try {
+      const { error } = await supabase
+        .from('conversation_engines')
+        .update({ 
+          name: editEngineForm.name || selectedEngineForEdit.name,
+          engine_type: editEngineForm.engine_type || selectedEngineForEdit.engine_type
+        })
+        .eq('id', selectedEngineForEdit.id);
+      if (error) throw error;
+      refetchEngines();
+      setShowEditEngineDialog(false);
+      setSelectedEngineForEdit(null);
+      toast({ title: 'Engine updated' });
+    } catch (err) {
+      toast({ variant: 'destructive', title: 'Failed to update engine' });
+    }
   };
 
 
@@ -685,6 +737,43 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
                         {engine.is_active ? 'Active' : 'Inactive'}
                       </Badge>
                       <Badge variant="outline">{engine.capabilities?.length || 0} capabilities</Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => {
+                            setSelectedEngineForEdit(engine);
+                            setShowEditEngineDialog(true);
+                          }}>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Engine
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleToggleEngineStatus(engine.id, !engine.is_active)}>
+                            {engine.is_active ? (
+                              <>
+                                <Pause className="h-4 w-4 mr-2" />
+                                Deactivate
+                              </>
+                            ) : (
+                              <>
+                                <Play className="h-4 w-4 mr-2" />
+                                Activate
+                              </>
+                            )}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem 
+                            onClick={() => handleDeleteEngine(engine.id)}
+                            className="text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" />
+                            Delete Engine
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
                   </div>
                 </CardContent>
@@ -934,6 +1023,59 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
               Create Use Case
             </Button>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Engine Dialog */}
+      <Dialog open={showEditEngineDialog} onOpenChange={(open) => {
+        setShowEditEngineDialog(open);
+        if (!open) setSelectedEngineForEdit(null);
+      }}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Edit Conversation Engine</DialogTitle>
+            <DialogDescription>
+              Update engine configuration
+            </DialogDescription>
+          </DialogHeader>
+          {selectedEngineForEdit && (
+            <div className="space-y-4">
+              <div>
+                <Label>Engine Name</Label>
+                <Input
+                  defaultValue={selectedEngineForEdit.name}
+                  onChange={(e) => setEditEngineForm(f => ({ ...f, name: e.target.value }))}
+                  placeholder="Engine name"
+                />
+              </div>
+              <div>
+                <Label>Engine Type</Label>
+                <Select
+                  defaultValue={selectedEngineForEdit.engine_type}
+                  onValueChange={(v) => setEditEngineForm(f => ({ ...f, engine_type: v }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="llm">LLM (Large Language Model)</SelectItem>
+                    <SelectItem value="mcp">MCP (Model Context Protocol)</SelectItem>
+                    <SelectItem value="hybrid">Hybrid</SelectItem>
+                    <SelectItem value="sml">SML (Small Language Model)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2">
+                <Button variant="outline" className="flex-1" onClick={() => setShowEditEngineDialog(false)}>
+                  Cancel
+                </Button>
+                <Button className="flex-1" onClick={handleUpdateEngine}>
+                  <CheckCircle className="h-4 w-4 mr-2" />
+                  Save Changes
+                </Button>
+              </div>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
