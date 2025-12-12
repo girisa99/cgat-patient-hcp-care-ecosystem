@@ -157,10 +157,22 @@ const DOCUMENT_CONFIGS: DocumentConfig[] = [
     description: 'Prescriptions with medication auto-calculation',
     color: 'bg-red-500',
     targetFields: [
+      { key: 'patient_name', label: 'Patient Name', required: true },
+      { key: 'patient_dob', label: 'Date of Birth', required: true },
+      { key: 'prescriber_name', label: 'Prescriber Name', required: true },
+      { key: 'prescriber_npi', label: 'Prescriber NPI' },
+      { key: 'prescriber_dea', label: 'DEA Number' },
+      { key: 'medication', label: 'Medication Name', required: true },
+      { key: 'strength', label: 'Strength' },
+      { key: 'sig', label: 'Sig / Instructions', required: true },
+      { key: 'quantity', label: 'Quantity', required: true },
+      { key: 'days_supply', label: 'Days Supply' },
       { key: 'refills', label: 'Refills' },
-      { key: 'ndc', label: 'NDC Code' }
+      { key: 'ndc', label: 'NDC Code' },
+      { key: 'date_written', label: 'Date Written' },
+      { key: 'pharmacy', label: 'Pharmacy' }
     ],
-    documentTypes: ['Prescription', 'E-Prescription', 'Refill Request']
+    documentTypes: ['Prescription', 'E-Prescription', 'Refill Request', 'Fax Prescription', 'Handwritten Rx']
   },
   {
     id: 'insurance',
@@ -559,15 +571,22 @@ export default function DocumentProcessing() {
   const generateMockValue = (key: string): string => {
     const mockValues: Record<string, string> = {
       patient_name: 'John Smith',
+      patient_dob: '1985-03-15',
       dob: '1985-03-15',
       insurance_id: 'INS-789456123',
       diagnosis: 'Type 2 Diabetes',
+      prescriber_name: 'Dr. Sarah Johnson',
       prescriber_npi: '1234567890',
+      prescriber_dea: 'AJ1234567',
       medication: 'Metformin 500mg',
+      strength: '500mg',
+      sig: 'Take 1 tablet by mouth twice daily with meals',
       ndc: '0093-7214-01',
       quantity: '60',
       days_supply: '30',
       refills: '3',
+      date_written: '2024-01-15',
+      pharmacy: 'CVS Pharmacy #1234',
       facility_name: 'City Medical Center',
       license_number: 'LIC-2024-12345',
       company_name: 'Healthcare Solutions Inc',
@@ -581,8 +600,10 @@ export default function DocumentProcessing() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
-      'image/*': ['.png', '.jpg', '.jpeg'],
-      'application/pdf': ['.pdf']
+      'image/*': ['.png', '.jpg', '.jpeg', '.tiff', '.tif', '.heic', '.heif', '.bmp', '.gif'],
+      'application/pdf': ['.pdf'],
+      'image/tiff': ['.tiff', '.tif'],
+      'image/heic': ['.heic', '.heif']
     },
     maxFiles: 1
   });
@@ -691,7 +712,7 @@ export default function DocumentProcessing() {
                       <Upload className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                       <p className="text-lg font-medium">Drop document here or click to upload</p>
                       <p className="text-sm text-muted-foreground mt-2">
-                        Supports PDF, JPG, PNG • Auto-processes on upload
+                        Supports PDF, JPG, PNG, TIFF, FAX, HEIC • OCR for handwritten & printed
                       </p>
                       <Badge variant="secondary" className="mt-4">
                         {currentConfig.title}
