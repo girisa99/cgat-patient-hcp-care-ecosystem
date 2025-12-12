@@ -253,7 +253,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
 
     // Check for agentic capabilities
     const hasAgenticNodes = workflowNodes.some(n => 
-      ['react_loop', 'tool_chain', 'self_reflection'].includes(n.data.type_key)
+      ['react_loop', 'tool_chain', 'self_reflection', 'plan_execute', 'reasoning_chain'].includes(n.data.type_key)
     );
 
     if (!hasAgenticNodes && agentContext.useCase?.name?.toLowerCase().includes('autonom')) {
@@ -263,6 +263,36 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
         title: 'Add Agentic AI Capabilities',
         description: 'Enable autonomous reasoning with ReAct loops for goal-oriented behavior.',
         action: () => addRecommendedNode('react_loop')
+      });
+    }
+
+    // Check for document processing capabilities
+    const hasDocProcessing = workflowNodes.some(n => 
+      ['ocr_document', 'doc_ai', 'metadata_extraction', 'form_recognition', 'data_extraction'].includes(n.data.type_key)
+    );
+
+    if (!hasDocProcessing && (agentContext.useCase?.name?.toLowerCase().includes('document') || agentContext.useCase?.name?.toLowerCase().includes('form'))) {
+      newSuggestions.push({
+        id: 'add-doc-processing',
+        type: 'recommendation',
+        title: 'Add Document Processing',
+        description: 'Process documents with OCR, form recognition, and data extraction.',
+        action: () => addRecommendedNode('ocr_document')
+      });
+    }
+
+    // Check for enhanced agentic capabilities
+    const hasEnhancedAgentic = workflowNodes.some(n => 
+      ['plan_execute', 'reasoning_chain', 'memory_context', 'adaptive_learning'].includes(n.data.type_key)
+    );
+
+    if (!hasEnhancedAgentic && workflowNodes.length >= 3) {
+      newSuggestions.push({
+        id: 'add-enhanced-agentic',
+        type: 'improvement',
+        title: 'Add Enhanced Reasoning',
+        description: 'Add planning, reasoning chains, or adaptive learning for smarter workflows.',
+        action: () => addRecommendedNode('plan_execute')
       });
     }
 
@@ -287,7 +317,29 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'react_loop': 'ReAct Loop',
       'tool_chain': 'Tool Chain',
       'self_reflection': 'Self Reflection',
-      'goal_decomposition': 'Goal Decomposition'
+      'goal_decomposition': 'Goal Decomposition',
+      // Document Processing nodes - all 10 types
+      'ocr_document': 'OCR Document',
+      'doc_ai': 'Document AI',
+      'metadata_extraction': 'Metadata Extraction',
+      'form_recognition': 'Form Recognition',
+      'image_analysis': 'Image Analysis',
+      'document_validation': 'Document Validation',
+      'data_extraction': 'Data Extraction',
+      'document_comparison': 'Document Comparison',
+      'document_archive': 'Document Archive',
+      'document_to_database': 'Doc to Database',
+      // Enhanced Agentic AI nodes - all 10 types
+      'plan_execute': 'Plan & Execute',
+      'reasoning_chain': 'Reasoning Chain',
+      'memory_context': 'Memory & Context',
+      'critique_refinement': 'Critique & Refinement',
+      'multi_perspective': 'Multi-Perspective',
+      'knowledge_integration': 'Knowledge Integration',
+      'hypothesis_testing': 'Hypothesis Testing',
+      'skill_composition': 'Skill Composition',
+      'adaptive_learning': 'Adaptive Learning',
+      'workflow_orchestrator': 'Workflow Orchestrator'
     };
 
     const nodeIntents: { [key: string]: string } = {
@@ -296,7 +348,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'error_handler': 'Handle errors and exceptions gracefully',
       'validation': 'Validate input data before processing',
       'mcp_connector': 'Connect to external MCP tool',
-      // Multi-agent intents - all 10 types
+      // Multi-agent intents
       'a2a_agent': 'A2A Protocol compliant agent with task lifecycle',
       'task_handoff': 'Transfer task context between agents',
       'communication_hub': 'Central message routing between agents',
@@ -306,7 +358,29 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'react_loop': 'Reasoning and acting loop for autonomous goals',
       'tool_chain': 'Sequential tool execution with output chaining',
       'self_reflection': 'Agent self-evaluation and strategy adjustment',
-      'goal_decomposition': 'Break complex goals into achievable sub-tasks'
+      'goal_decomposition': 'Break complex goals into achievable sub-tasks',
+      // Document Processing intents
+      'ocr_document': 'Extract text from images and scanned documents',
+      'doc_ai': 'Analyze documents with AI for entities and classification',
+      'metadata_extraction': 'Extract metadata from documents',
+      'form_recognition': 'Recognize and extract form field data',
+      'image_analysis': 'Analyze images for objects, text, and content',
+      'document_validation': 'Validate document authenticity',
+      'data_extraction': 'Extract structured data from documents',
+      'document_comparison': 'Compare documents for differences',
+      'document_archive': 'Archive documents with versioning',
+      'document_to_database': 'Parse and push document data to database',
+      // Enhanced Agentic AI intents
+      'plan_execute': 'Plan-execute-reflect cycle for complex tasks',
+      'reasoning_chain': 'Chain of thought reasoning with step-by-step logic',
+      'memory_context': 'Manage contextual memory across conversations',
+      'critique_refinement': 'Self-critique and iterative improvement',
+      'multi_perspective': 'Analyze from multiple viewpoints',
+      'knowledge_integration': 'Integrate knowledge from multiple sources',
+      'hypothesis_testing': 'Generate and test hypotheses systematically',
+      'skill_composition': 'Compose complex behaviors from simpler skills',
+      'adaptive_learning': 'Learn and adapt from execution feedback',
+      'workflow_orchestrator': 'Orchestrate complex multi-step workflows'
     };
 
     const newNode: WorkflowNode = {

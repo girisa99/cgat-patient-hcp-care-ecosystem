@@ -71,7 +71,7 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
     type: nodeType,
     data: initialConfiguration || {},
   };
-  const [activeTab, setActiveTab] = useState('configuration');
+  const [activeTab, setActiveTab] = useState('quick');
   const [selectedTool, setSelectedTool] = useState<string>('');
   const [toolInputData, setToolInputData] = useState<string>('{}');
   
@@ -182,17 +182,201 @@ export const EnhancedNodeConfigurationPanel: React.FC<EnhancedNodeConfigurationP
 
         <div className="flex-1 overflow-hidden">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
-            <TabsList className="grid w-full grid-cols-7">
-              <TabsTrigger value="configuration">Configuration</TabsTrigger>
-              <TabsTrigger value="api-services">API Services</TabsTrigger>
-              <TabsTrigger value="ai-models">AI Models</TabsTrigger>
-              <TabsTrigger value="tools">Tools & Execution</TabsTrigger>
-              <TabsTrigger value="knowledge">Knowledge Base</TabsTrigger>
-              <TabsTrigger value="vectors">Vector Store</TabsTrigger>
-              <TabsTrigger value="history">Execution History</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-8">
+              <TabsTrigger value="quick" className="text-xs">Quick Setup</TabsTrigger>
+              <TabsTrigger value="configuration" className="text-xs">Configuration</TabsTrigger>
+              <TabsTrigger value="api-services" className="text-xs">API Services</TabsTrigger>
+              <TabsTrigger value="ai-models" className="text-xs">AI Models</TabsTrigger>
+              <TabsTrigger value="tools" className="text-xs">Tools</TabsTrigger>
+              <TabsTrigger value="knowledge" className="text-xs">Knowledge Base</TabsTrigger>
+              <TabsTrigger value="vectors" className="text-xs">Vector Store</TabsTrigger>
+              <TabsTrigger value="history" className="text-xs">History</TabsTrigger>
             </TabsList>
 
             <div className="flex-1 overflow-hidden">
+              {/* Quick Setup Tab - User-friendly toggle interface */}
+              <TabsContent value="quick" className="h-full">
+                <ScrollArea className="h-full p-4">
+                  <div className="space-y-4">
+                    {/* Essential Features */}
+                    <Card>
+                      <CardHeader className="pb-3">
+                        <CardTitle className="text-base flex items-center gap-2">
+                          <Zap className="h-4 w-4 text-primary" />
+                          Essential Features
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        <div className="flex items-center justify-between p-3 rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <Eye className="h-4 w-4 text-green-500" />
+                            <div>
+                              <div className="font-medium text-sm">Node Enabled</div>
+                              <div className="text-xs text-muted-foreground">Enable or disable this node</div>
+                            </div>
+                          </div>
+                          <Switch 
+                            checked={normalizedNode.data?.enabled !== false} 
+                            onCheckedChange={(v) => handleConfigurationChange({ ...normalizedNode.data, enabled: v })} 
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <CheckCircle className="h-4 w-4 text-blue-500" />
+                            <div>
+                              <div className="font-medium text-sm">Auto Retry on Failure</div>
+                              <div className="text-xs text-muted-foreground">Automatically retry if node fails</div>
+                            </div>
+                          </div>
+                          <Switch 
+                            checked={normalizedNode.data?.autoRetry === true} 
+                            onCheckedChange={(v) => handleConfigurationChange({ ...normalizedNode.data, autoRetry: v })} 
+                          />
+                        </div>
+                        
+                        <div className="flex items-center justify-between p-3 rounded-lg border">
+                          <div className="flex items-center gap-3">
+                            <Clock className="h-4 w-4 text-amber-500" />
+                            <div>
+                              <div className="font-medium text-sm">Log Execution</div>
+                              <div className="text-xs text-muted-foreground">Save execution logs for debugging</div>
+                            </div>
+                          </div>
+                          <Switch 
+                            checked={normalizedNode.data?.logExecution !== false} 
+                            onCheckedChange={(v) => handleConfigurationChange({ ...normalizedNode.data, logExecution: v })} 
+                          />
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    {/* Document Processing Options */}
+                    {(normalizedNode.type?.includes('ocr') || normalizedNode.type?.includes('doc') || normalizedNode.type?.includes('form') || normalizedNode.type?.includes('image') || normalizedNode.type?.includes('metadata') || normalizedNode.type?.includes('data_extraction')) && (
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Play className="h-4 w-4 text-emerald-600" />
+                            Document Processing
+                            <Badge variant="secondary" className="text-xs bg-emerald-500/10 text-emerald-600">New</Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between p-3 rounded-lg border">
+                            <div className="flex items-center gap-3">
+                              <Eye className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium text-sm">OCR Processing</div>
+                                <div className="text-xs text-muted-foreground">Extract text from images</div>
+                              </div>
+                            </div>
+                            <Switch 
+                              checked={normalizedNode.data?.ocrEnabled === true} 
+                              onCheckedChange={(v) => handleConfigurationChange({ ...normalizedNode.data, ocrEnabled: v })} 
+                            />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 rounded-lg border">
+                            <div className="flex items-center gap-3">
+                              <Database className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium text-sm">Push to Database</div>
+                                <div className="text-xs text-muted-foreground">Save extracted data to tables</div>
+                              </div>
+                            </div>
+                            <Switch 
+                              checked={normalizedNode.data?.pushToDatabase === true} 
+                              onCheckedChange={(v) => handleConfigurationChange({ ...normalizedNode.data, pushToDatabase: v })} 
+                            />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 rounded-lg border">
+                            <div className="flex items-center gap-3">
+                              <Globe className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium text-sm">AI-Enhanced Analysis</div>
+                                <div className="text-xs text-muted-foreground">Use AI for intelligent extraction</div>
+                              </div>
+                            </div>
+                            <Switch 
+                              checked={normalizedNode.data?.aiEnhanced === true} 
+                              onCheckedChange={(v) => handleConfigurationChange({ ...normalizedNode.data, aiEnhanced: v })} 
+                            />
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    {/* Enhanced Agentic AI Options */}
+                    {(normalizedNode.type?.includes('plan') || normalizedNode.type?.includes('reasoning') || normalizedNode.type?.includes('memory') || normalizedNode.type?.includes('critique') || normalizedNode.type?.includes('adaptive') || normalizedNode.type?.includes('orchestrator')) && (
+                      <Card>
+                        <CardHeader className="pb-3">
+                          <CardTitle className="text-base flex items-center gap-2">
+                            <Brain className="h-4 w-4 text-violet-600" />
+                            Enhanced Agentic AI
+                            <Badge variant="secondary" className="text-xs bg-violet-500/10 text-violet-600">New</Badge>
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-3">
+                          <div className="flex items-center justify-between p-3 rounded-lg border">
+                            <div className="flex items-center gap-3">
+                              <Brain className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium text-sm">Reflection Enabled</div>
+                                <div className="text-xs text-muted-foreground">Enable self-reflection cycles</div>
+                              </div>
+                            </div>
+                            <Switch 
+                              checked={normalizedNode.data?.reflectionEnabled !== false} 
+                              onCheckedChange={(v) => handleConfigurationChange({ ...normalizedNode.data, reflectionEnabled: v })} 
+                            />
+                          </div>
+                          
+                          <div className="flex items-center justify-between p-3 rounded-lg border">
+                            <div className="flex items-center gap-3">
+                              <Sparkles className="h-4 w-4" />
+                              <div>
+                                <div className="font-medium text-sm">Adaptive Learning</div>
+                                <div className="text-xs text-muted-foreground">Learn from execution feedback</div>
+                              </div>
+                            </div>
+                            <Switch 
+                              checked={normalizedNode.data?.adaptiveLearning === true} 
+                              onCheckedChange={(v) => handleConfigurationChange({ ...normalizedNode.data, adaptiveLearning: v })} 
+                            />
+                          </div>
+                          
+                          <div>
+                            <Label className="text-sm mb-2 block">Max Iterations</Label>
+                            <Select 
+                              value={String(normalizedNode.data?.maxIterations || 5)}
+                              onValueChange={(v) => handleConfigurationChange({ ...normalizedNode.data, maxIterations: parseInt(v) })}
+                            >
+                              <SelectTrigger>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="3">3 iterations</SelectItem>
+                                <SelectItem value="5">5 iterations</SelectItem>
+                                <SelectItem value="10">10 iterations</SelectItem>
+                                <SelectItem value="20">20 iterations</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <div className="flex justify-end pt-4">
+                      <Button onClick={() => handleConfigurationChange(normalizedNode.data)} disabled={isSaving}>
+                        <Save className="h-4 w-4 mr-2" />
+                        {isSaving ? 'Saving...' : 'Save Configuration'}
+                      </Button>
+                    </div>
+                  </div>
+                </ScrollArea>
+              </TabsContent>
+
               <TabsContent value="configuration" className="h-full">
                 <ScrollArea className="h-full p-4">
                   <DynamicConfigurationForm
