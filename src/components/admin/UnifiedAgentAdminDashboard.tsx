@@ -176,9 +176,20 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
   };
 
   const handleDeleteAgent = async (agentId: string) => {
-    // For now, toggle to inactive/deleted status
-    await toggleStatus(agentId, false);
-    toast({ title: 'Agent disabled' });
+    try {
+      const { error } = await supabase
+        .from('agents')
+        .delete()
+        .eq('id', agentId);
+
+      if (error) throw error;
+
+      await refetch();
+      toast({ title: 'Agent deleted' });
+    } catch (err) {
+      console.error('Failed to delete agent:', err);
+      toast({ variant: 'destructive', title: 'Failed to delete agent' });
+    }
   };
 
   const handleToggleEngineStatus = async (engineId: string, isActive: boolean) => {
