@@ -66,7 +66,7 @@ export const RoleBasedNavigation: React.FC<RoleBasedNavigationProps> = ({ classN
     if (userRoles.includes('healthcareProvider')) {
       return {
         primary: availableTabs.filter(tab => 
-          ['/', '/document-processing'].includes(tab.to)
+          ['/', '/order-management', '/document-processing', '/patient-onboarding'].includes(tab.to)
         ),
         treatmentCenters: [],
         agents: availableTabs.filter(tab => ['/agents'].includes(tab.to)),
