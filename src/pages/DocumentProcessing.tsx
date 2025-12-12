@@ -16,6 +16,13 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   FileSearch, 
   Upload, 
@@ -214,6 +221,7 @@ export default function DocumentProcessing() {
   const [isSearching, setIsSearching] = useState(false);
   const [selectedNdc, setSelectedNdc] = useState<string | null>(null);
   const [parsedSig, setParsedSig] = useState<any>(null);
+  const [selectedRecommendation, setSelectedRecommendation] = useState<{ title: string; message: string; type: string } | null>(null);
   
   const { calculateQuantityAndDaySupply, matchDrugToCode, checkControlledSubstance, parseSig } = useMedicationProcessing();
   
@@ -822,28 +830,28 @@ export default function DocumentProcessing() {
                           {parsedSig.dose && (
                             <div>
                               <span className="text-muted-foreground">Dose:</span>
-                              <span className="ml-2 font-medium">{parsedSig.dose}</span>
+                              <span className="ml-2 font-medium">{parsedSig.dose.display || `${parsedSig.dose.amount} ${parsedSig.dose.unit}`}</span>
                             </div>
                           )}
                           {parsedSig.route && (
                             <div>
                               <span className="text-muted-foreground">Route:</span>
-                              <span className="ml-2 font-medium">{parsedSig.route}</span>
+                              <span className="ml-2 font-medium">{parsedSig.route.meaning || parsedSig.route}</span>
                             </div>
                           )}
                           {parsedSig.frequency && (
                             <div>
                               <span className="text-muted-foreground">Frequency:</span>
-                              <span className="ml-2 font-medium">{parsedSig.frequency}</span>
+                              <span className="ml-2 font-medium">{parsedSig.frequency.meaning || parsedSig.frequency}</span>
                             </div>
                           )}
                           {parsedSig.duration && (
                             <div>
                               <span className="text-muted-foreground">Duration:</span>
-                              <span className="ml-2 font-medium">{parsedSig.duration}</span>
+                              <span className="ml-2 font-medium">{parsedSig.duration.display || parsedSig.duration}</span>
                             </div>
                           )}
-                          {parsedSig.conditions.length > 0 && (
+                          {parsedSig.conditions && parsedSig.conditions.length > 0 && (
                             <div className="col-span-2">
                               <span className="text-muted-foreground">Conditions:</span>
                               <span className="ml-2 font-medium">{parsedSig.conditions.join(', ')}</span>
@@ -1013,11 +1021,11 @@ export default function DocumentProcessing() {
                         // Use title from API if available, otherwise generate from message
                         const displayTitle = rec.title || (() => {
                           const msg = rec.message.toLowerCase();
-                          if (msg.includes('dose')) return 'Dosage Alert';
+                          if (msg.includes('dose')) return 'Dosage Guidance';
                           if (msg.includes('interaction')) return 'Drug Interaction';
                           if (msg.includes('contraindication')) return 'Contraindication';
                           if (msg.includes('controlled')) return 'Controlled Substance';
-                          if (msg.includes('monitor')) return 'Monitoring Required';
+                          if (msg.includes('monitor')) return 'Clinical Monitoring';
                           return 'Clinical Note';
                         })();
                         
@@ -1030,7 +1038,7 @@ export default function DocumentProcessing() {
                           <div 
                             key={i} 
                             className={`rounded-xl p-4 ${bgColor} ${textColor} relative overflow-hidden cursor-pointer hover:opacity-95 transition-opacity`}
-                            onClick={() => toast.info(rec.message)}
+                            onClick={() => setSelectedRecommendation({ title: displayTitle, message: rec.message, type: rec.type })}
                           >
                             <div className="flex items-center justify-between mb-3">
                               <span className="text-xs font-medium uppercase tracking-wider opacity-80">
@@ -1045,7 +1053,7 @@ export default function DocumentProcessing() {
                               className={`p-0 h-auto mt-3 ${textColor} opacity-70 hover:opacity-100`}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                toast.info(rec.message, { duration: 10000 });
+                                setSelectedRecommendation({ title: displayTitle, message: rec.message, type: rec.type });
                               }}
                             >
                               Read more
@@ -1187,6 +1195,32 @@ export default function DocumentProcessing() {
             </Card>
           </TabsContent>
         </Tabs>
+
+        {/* Clinical Recommendation Dialog */}
+        <Dialog open={!!selectedRecommendation} onOpenChange={() => setSelectedRecommendation(null)}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                {selectedRecommendation?.type === 'error' ? (
+                  <XCircle className="h-5 w-5 text-destructive" />
+                ) : selectedRecommendation?.type === 'warning' ? (
+                  <AlertTriangle className="h-5 w-5 text-yellow-500" />
+                ) : (
+                  <Sparkles className="h-5 w-5 text-primary" />
+                )}
+                {selectedRecommendation?.title}
+              </DialogTitle>
+              <DialogDescription className="pt-4">
+                <p className="text-base leading-relaxed">{selectedRecommendation?.message}</p>
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end pt-4">
+              <Button variant="outline" onClick={() => setSelectedRecommendation(null)}>
+                Close
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </div>
     </AppLayout>
   );
