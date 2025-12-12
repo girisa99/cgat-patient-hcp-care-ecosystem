@@ -38,6 +38,36 @@ import {
   GoalDecompositionNode
 } from './MultiAgentNodes';
 
+// Document Processing Node Components
+import {
+  DOCUMENT_PROCESSING_NODE_TYPES,
+  OCRDocumentNode,
+  DocAINode,
+  MetadataExtractionNode,
+  FormRecognitionNode,
+  ImageAnalysisNode,
+  DocumentValidationNode,
+  DataExtractionNode,
+  DocumentComparisonNode,
+  DocumentArchiveNode,
+  DocumentToDatabaseNode
+} from './DocumentProcessingNodes';
+
+// Enhanced Agentic AI Node Components
+import {
+  ENHANCED_AGENTIC_NODE_TYPES,
+  PlanExecuteNode,
+  ReasoningChainNode,
+  MemoryContextNode,
+  CritiqueRefinementNode,
+  MultiPerspectiveNode,
+  KnowledgeIntegrationNode,
+  HypothesisTestingNode,
+  SkillCompositionNode,
+  AdaptiveLearningNode,
+  WorkflowOrchestratorNode
+} from './EnhancedAgenticNodes';
+
 // Export all node types
 export { BaseWorkflowNode } from './BaseWorkflowNode';
 export { UseCaseNode } from './UseCaseNode';
@@ -73,6 +103,36 @@ export {
   SelfReflectionNode,
   GoalDecompositionNode
 } from './MultiAgentNodes';
+
+// Export Document Processing nodes
+export {
+  DOCUMENT_PROCESSING_NODE_TYPES,
+  OCRDocumentNode,
+  DocAINode,
+  MetadataExtractionNode,
+  FormRecognitionNode,
+  ImageAnalysisNode,
+  DocumentValidationNode,
+  DataExtractionNode,
+  DocumentComparisonNode,
+  DocumentArchiveNode,
+  DocumentToDatabaseNode
+} from './DocumentProcessingNodes';
+
+// Export Enhanced Agentic AI nodes
+export {
+  ENHANCED_AGENTIC_NODE_TYPES,
+  PlanExecuteNode,
+  ReasoningChainNode,
+  MemoryContextNode,
+  CritiqueRefinementNode,
+  MultiPerspectiveNode,
+  KnowledgeIntegrationNode,
+  HypothesisTestingNode,
+  SkillCompositionNode,
+  AdaptiveLearningNode,
+  WorkflowOrchestratorNode
+} from './EnhancedAgenticNodes';
 
 // All nodes are now managed through the database-driven workflow_node_types table
 // This eliminates hardcoded registries and ensures consistency across the platform
