@@ -94,98 +94,255 @@ export interface SigParsed {
   translation: string;
 }
 
-// SIG Frequency codes
+// SIG Frequency codes - Comprehensive list
 const SIG_FREQUENCY_CODES: Record<string, { timesPerDay: number; meaning: string }> = {
+  // Daily frequencies
   'qd': { timesPerDay: 1, meaning: 'once daily' },
   'od': { timesPerDay: 1, meaning: 'once daily' },
+  'dy': { timesPerDay: 1, meaning: 'daily' },
   'bid': { timesPerDay: 2, meaning: 'twice daily' },
-  'tid': { timesPerDay: 3, meaning: 'three times a day' },
-  'qid': { timesPerDay: 4, meaning: 'four times a day' },
+  'tid': { timesPerDay: 3, meaning: 'three times daily' },
+  'tqid': { timesPerDay: 3.5, meaning: 'three or four times daily' },
+  'qid': { timesPerDay: 4, meaning: 'four times daily' },
+  'qbid': { timesPerDay: 1.5, meaning: 'one or two times daily' },
+  'btid': { timesPerDay: 2.5, meaning: 'two or three times daily' },
+  
+  // Hourly frequencies
+  'q1h': { timesPerDay: 24, meaning: 'every hour' },
+  'q2h': { timesPerDay: 12, meaning: 'every 2 hours' },
+  'q2-3h': { timesPerDay: 8, meaning: 'every 2-3 hours' },
+  'q2-4h': { timesPerDay: 6, meaning: 'every 2-4 hours' },
+  'q3h': { timesPerDay: 8, meaning: 'every 3 hours' },
   'q4h': { timesPerDay: 6, meaning: 'every 4 hours' },
+  'q4-6h': { timesPerDay: 5, meaning: 'every 4-6 hours' },
   'q6h': { timesPerDay: 4, meaning: 'every 6 hours' },
   'q8h': { timesPerDay: 3, meaning: 'every 8 hours' },
   'q12h': { timesPerDay: 2, meaning: 'every 12 hours' },
+  
+  // Time-based frequencies
   'qhs': { timesPerDay: 1, meaning: 'at bedtime' },
   'hs': { timesPerDay: 1, meaning: 'at bedtime' },
+  'n': { timesPerDay: 1, meaning: 'at night' },
   'qam': { timesPerDay: 1, meaning: 'every morning' },
   'qpm': { timesPerDay: 1, meaning: 'every evening' },
+  
+  // Other day frequencies
   'qod': { timesPerDay: 0.5, meaning: 'every other day' },
+  'q2d': { timesPerDay: 0.5, meaning: 'every second day' },
+  
+  // Weekly frequencies
   'qw': { timesPerDay: 1/7, meaning: 'once weekly' },
   'biw': { timesPerDay: 2/7, meaning: 'twice weekly' },
   'tiw': { timesPerDay: 3/7, meaning: 'three times weekly' },
-  'prn': { timesPerDay: 0, meaning: 'as needed' },
-  'stat': { timesPerDay: 1, meaning: 'immediately (one time)' },
+  
+  // Meal-related frequencies
   'ac': { timesPerDay: 3, meaning: 'before meals' },
   'pc': { timesPerDay: 3, meaning: 'after meals' },
+  'cc': { timesPerDay: 3, meaning: 'with meals' },
   'achs': { timesPerDay: 4, meaning: 'before meals and at bedtime' },
+  
+  // PRN and special
+  'prn': { timesPerDay: 0, meaning: 'as needed' },
+  'prnf': { timesPerDay: 0, meaning: 'when necessary for' },
+  'stat': { timesPerDay: 1, meaning: 'immediately (at once)' },
+  'uf': { timesPerDay: 1, meaning: 'until finished' },
 };
 
-// SIG Route codes
+// SIG Route codes - Comprehensive list
 const SIG_ROUTE_CODES: Record<string, string> = {
+  // Oral routes
   'po': 'by mouth (oral)',
   'sl': 'under the tongue (sublingual)',
+  'buc': 'buccal (inside cheek)',
+  
+  // Rectal/Vaginal routes
   'pr': 'rectally',
+  'r': 'into the rectum',
   'pv': 'vaginally',
+  'v': 'into the vagina',
+  'supp': 'suppository',
+  
+  // Injection routes
   'im': 'intramuscular injection',
   'iv': 'intravenous injection',
   'sc': 'subcutaneous injection',
   'sq': 'subcutaneous injection',
   'subq': 'subcutaneous injection',
   'id': 'intradermal injection',
+  'inj': 'inject',
+  'medap': 'injection administered by pharmacist',
+  
+  // Topical routes
   'top': 'topically (on skin)',
+  'aa': 'to affected area',
+  'app': 'apply',
+  'apl': 'applicatorful',
+  'pl': 'place',
+  'td': 'transdermal',
+  
+  // Inhalation routes
   'inh': 'by inhalation',
+  'i': 'inhale',
   'neb': 'by nebulizer',
+  'pf': 'puffs',
+  
+  // Eye routes
   'ou': 'both eyes',
   'od': 'right eye',
   'os': 'left eye',
+  'gtt': 'drop(s)',
+  'gtts': 'drops',
+  
+  // Ear routes
   'au': 'both ears',
   'ad': 'right ear',
   'as': 'left ear',
-  'gtt': 'drop(s)',
-  'gtts': 'drops',
+  'ien': 'in each nostril',
+  'al': 'in the left ear',
+  
+  // Tube routes
   'ng': 'nasogastric tube',
   'peg': 'percutaneous endoscopic gastrostomy',
-  'td': 'transdermal',
-  'buc': 'buccal (inside cheek)',
+  'ir': 'insert',
+  'ins': 'instill',
 };
 
-// SIG Condition codes
+// SIG Condition and modifier codes - Comprehensive list
 const SIG_CONDITION_CODES: Record<string, string> = {
+  // Meal-related conditions
   'ac': 'before meals',
   'pc': 'after meals',
-  'hs': 'at bedtime',
-  'c': 'with',
   'cc': 'with meals',
+  'cf': 'with food',
+  'c': 'with',
   's': 'without',
-  'ss': 'half',
+  
+  // Timing conditions
+  'hs': 'at bedtime',
+  'n': 'at night',
+  'stat': 'immediately',
+  
+  // PRN conditions
+  'prn': 'as needed',
+  'prnf': 'when necessary for',
+  'sos': 'if needed',
   'ud': 'as directed',
   'ut dict': 'as directed',
-  'prn': 'as needed',
-  'sos': 'if needed',
-  'stat': 'immediately',
-  'npo': 'nothing by mouth',
+  
+  // Quantity modifiers
+  'ss': 'one half',
   'aa': 'of each',
+  'admx': 'to a maximum of',
+  
+  // Preparation instructions
+  'sw': 'shake well',
+  'cr': 'crush',
+  'dr': 'drink',
+  'fl': 'fluids',
+  'aq': 'water',
+  'ju': 'juice',
+  'sp': 'sparingly',
+  
+  // Health conditions
+  'pa': 'pain',
+  'fe': 'fever',
+  'hd': 'headache',
+  'bp': 'blood pressure',
+  'hr': 'heart',
+  'ar': 'arthritis',
+  'di': 'diarrhea',
+  'con': 'constipation',
+  'bm': 'bowel movement',
+  'sb': 'shortness of breath',
+  'inf': 'inflammation',
+  'ra': 'rash',
+  'ci': 'circulation',
+  
+  // Other
+  'npo': 'nothing by mouth',
+  'medcp': 'consultation provided by',
+  'medra': 'refer to adaptation form',
+  'medro': 'refer to opinions form',
 };
 
-// Frequency patterns for quantity calculation (expanded)
+// SIG Dose form codes
+const SIG_DOSE_FORMS: Record<string, string> = {
+  // Solid forms
+  'tab': 'tablet',
+  'tabs': 'tablets',
+  'tbl': 'tablespoon',
+  'tbls': 'tablespoonfuls',
+  'tsp': 'teaspoon',
+  'tsps': 'teaspoonfuls',
+  'cap': 'capsule',
+  'caps': 'capsules',
+  'pf': 'puffs',
+  'supp': 'suppository',
+  
+  // Liquid forms
+  'gtt': 'drop',
+  'gtts': 'drops',
+  'ml': 'milliliter',
+  
+  // Time units
+  'd': 'day',
+  'ds': 'days',
+  'h': 'hour',
+  'hrs': 'hours',
+  
+  // Instructions
+  't': 'take',
+  'g': 'give',
+  'f': 'for',
+  'q': 'every',
+};
+
+// Frequency patterns for quantity calculation (comprehensive)
 const FREQUENCY_PATTERNS: Record<string, { timesPerDay: number; pattern: RegExp }> = {
-  'once daily': { timesPerDay: 1, pattern: /once\s*(a\s*)?daily|qd|q\.?d\.?|every\s*day|daily|od/i },
+  // Daily patterns
+  'once daily': { timesPerDay: 1, pattern: /once\s*(a\s*)?daily|qd|q\.?d\.?|every\s*day|daily|od|dy/i },
   'twice daily': { timesPerDay: 2, pattern: /twice\s*(a\s*)?daily|bid|b\.?i\.?d\.?|every\s*12\s*hours|q12h/i },
   'three times daily': { timesPerDay: 3, pattern: /three\s*times\s*(a\s*)?daily|tid|t\.?i\.?d\.?|every\s*8\s*hours|q8h/i },
+  'three or four times daily': { timesPerDay: 3.5, pattern: /three\s*(or|to)\s*four\s*times|tqid/i },
   'four times daily': { timesPerDay: 4, pattern: /four\s*times\s*(a\s*)?daily|qid|q\.?i\.?d\.?|every\s*6\s*hours|q6h/i },
+  'one or two times daily': { timesPerDay: 1.5, pattern: /one\s*(or|to)\s*two\s*times|qbid/i },
+  'two or three times daily': { timesPerDay: 2.5, pattern: /two\s*(or|to)\s*three\s*times|btid/i },
+  
+  // Hourly patterns
+  'every hour': { timesPerDay: 24, pattern: /every\s*hour|q1h|every\s*1\s*hour/i },
+  'every 2 hours': { timesPerDay: 12, pattern: /every\s*2\s*hours|q2h/i },
+  'every 2-3 hours': { timesPerDay: 8, pattern: /every\s*2[\s-]?(?:to)?[\s-]?3\s*hours|q2-3h/i },
+  'every 2-4 hours': { timesPerDay: 6, pattern: /every\s*2[\s-]?(?:to)?[\s-]?4\s*hours|q2-4h/i },
+  'every 3 hours': { timesPerDay: 8, pattern: /every\s*3\s*hours|q3h/i },
   'every 4 hours': { timesPerDay: 6, pattern: /every\s*4\s*hours|q4h/i },
-  'every other day': { timesPerDay: 0.5, pattern: /every\s*other\s*day|qod|q\.?o\.?d\.?/i },
+  'every 4-6 hours': { timesPerDay: 5, pattern: /every\s*4[\s-]?(?:to)?[\s-]?6\s*hours|q4-6h/i },
+  'every 6 hours': { timesPerDay: 4, pattern: /every\s*6\s*hours|q6h/i },
+  'every 8 hours': { timesPerDay: 3, pattern: /every\s*8\s*hours|q8h/i },
+  'every 12 hours': { timesPerDay: 2, pattern: /every\s*12\s*hours|q12h/i },
+  
+  // Day-based patterns
+  'every other day': { timesPerDay: 0.5, pattern: /every\s*other\s*day|qod|q\.?o\.?d\.?|q2d|every\s*second\s*day/i },
+  
+  // Weekly patterns
   'weekly': { timesPerDay: 1/7, pattern: /once\s*weekly|weekly|every\s*week|qw/i },
   'twice weekly': { timesPerDay: 2/7, pattern: /twice\s*weekly|biw|b\.?i\.?w\.?/i },
   'three times weekly': { timesPerDay: 3/7, pattern: /three\s*times\s*weekly|tiw|t\.?i\.?w\.?/i },
-  'as needed': { timesPerDay: 0, pattern: /as\s*needed|prn|p\.?r\.?n\.?/i },
-  'at bedtime': { timesPerDay: 1, pattern: /at\s*bedtime|hs|h\.?s\.?|qhs|before\s*bed/i },
-  'in the morning': { timesPerDay: 1, pattern: /in\s*the\s*morning|qam|a\.?m\.?/i },
-  'in the evening': { timesPerDay: 1, pattern: /in\s*the\s*evening|qpm|p\.?m\.?/i },
+  
+  // Time-based patterns
+  'at bedtime': { timesPerDay: 1, pattern: /at\s*bedtime|hs|h\.?s\.?|qhs|before\s*bed|at\s*night/i },
+  'in the morning': { timesPerDay: 1, pattern: /in\s*the\s*morning|qam|each\s*morning|every\s*morning/i },
+  'in the evening': { timesPerDay: 1, pattern: /in\s*the\s*evening|qpm|each\s*evening|every\s*evening/i },
+  'at night': { timesPerDay: 1, pattern: /at\s*night|night|n\b/i },
+  
+  // Meal-related patterns
   'before meals': { timesPerDay: 3, pattern: /before\s*meals|ac|a\.?c\.?/i },
   'after meals': { timesPerDay: 3, pattern: /after\s*meals|pc|p\.?c\.?/i },
-  'with meals': { timesPerDay: 3, pattern: /with\s*meals|cc|c\.?c\.?/i },
-  'immediately': { timesPerDay: 1, pattern: /immediately|stat/i },
+  'with meals': { timesPerDay: 3, pattern: /with\s*meals|with\s*food|cc|c\.?c\.?|cf/i },
+  
+  // Special patterns
+  'as needed': { timesPerDay: 0, pattern: /as\s*needed|when\s*required|prn|p\.?r\.?n\.?|prnf/i },
+  'immediately': { timesPerDay: 1, pattern: /immediately|stat|at\s*once/i },
+  'until finished': { timesPerDay: 1, pattern: /until\s*finished|uf/i },
 };
 
 // Common drug database (simulated - in production, use FDA/Health Canada APIs)
