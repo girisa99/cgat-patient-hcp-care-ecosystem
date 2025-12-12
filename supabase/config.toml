@@ -113,3 +113,9 @@ verify_jwt = false
 
 [functions.data-integration]
 verify_jwt = false
+
+[functions.document-processor]
+verify_jwt = false
+
+[functions.process-documents]
+verify_jwt = false
