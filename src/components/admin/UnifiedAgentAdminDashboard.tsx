@@ -1,7 +1,7 @@
 /**
  * UNIFIED AGENT ADMIN DASHBOARD
  * Central admin for managing all agent types, deployments, channels, branding
- * Includes: Agent Registry, Conversation Engines, Channel Deployments, Real-time Status
+ * Includes: Agent Registry, Conversation Engines, Channel Deployments, Document Processing
  */
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -49,6 +49,8 @@ import {
   PlusCircle,
   Layers,
   Network,
+  FileSearch,
+  Pill,
 } from 'lucide-react';
 import { getArchitectureInfo } from '@/components/workflow-builder/MultiAgentNodeRegistry';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -57,6 +59,7 @@ import { useAgentConversationEngines } from '@/hooks/useAgentConversationEngines
 import { useUnifiedChannelDeployments } from '@/hooks/useUnifiedChannelDeployments';
 import { AgentRegistration, EXTENDED_USE_CASE_TEMPLATES } from '@/services/agentUseCaseRegistry';
 import { useToast } from '@/hooks/use-toast';
+import { DocumentUploadProcessor } from '@/components/document-processing/DocumentUploadProcessor';
 
 const CHANNEL_OPTIONS = [
   { id: 'web-chat', name: 'Web Chat', icon: MessageSquare },
@@ -532,6 +535,10 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
             <Link2 className="h-4 w-4" />
             <span className="hidden sm:inline">Mappings</span>
           </TabsTrigger>
+          <TabsTrigger value="documents" className="flex items-center gap-1.5 px-3">
+            <FileSearch className="h-4 w-4" />
+            <span className="hidden sm:inline">Documents</span>
+          </TabsTrigger>
         </TabsList>
 
         {/* AGENTS TAB */}
@@ -996,6 +1003,51 @@ export const UnifiedAgentAdminDashboard: React.FC = () => {
               </Card>
             )}
           </div>
+        </TabsContent>
+
+        {/* DOCUMENTS TAB */}
+        <TabsContent value="documents" className="space-y-4">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold flex items-center gap-2">
+                <FileSearch className="h-5 w-5" />
+                Document Processing
+              </h3>
+              <p className="text-sm text-muted-foreground">
+                OCR, medication extraction, NDC/DIN matching, and form mapping
+              </p>
+            </div>
+            <Badge variant="secondary" className="flex items-center gap-1">
+              <Pill className="h-3 w-3" />
+              Medication Processing
+            </Badge>
+          </div>
+          
+          <DocumentUploadProcessor 
+            showAdvancedOptions={true}
+            targetFormFields={[
+              'patient_name', 
+              'date_of_birth', 
+              'npi', 
+              'insurance_id', 
+              'phone', 
+              'email', 
+              'address',
+              'diagnosis',
+              'provider',
+              'medication',
+              'dosage',
+              'frequency',
+              'quantity',
+              'refills'
+            ]}
+            onFormMappingComplete={(mapping) => {
+              toast({
+                title: 'Form Mapping Complete',
+                description: `Mapped ${Object.keys(mapping).length} fields from document`,
+              });
+            }}
+          />
         </TabsContent>
       </Tabs>
 

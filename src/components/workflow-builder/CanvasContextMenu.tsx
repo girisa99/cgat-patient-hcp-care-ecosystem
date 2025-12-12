@@ -149,18 +149,21 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
     // Universal recommendation map for ALL use cases
     const recommendationMap: { [key: string]: string[] } = {
       'patient': ['patient_intake', 'npi_verification', 'hipaa_compliance', 'ehr_integration', 'knowledge_base', 'insurance_verification'],
-      'enrollment': ['patient_intake', 'document_processing', 'npi_verification', 'consent_form', 'notification'],
+      'enrollment': ['patient_intake', 'document_upload', 'npi_verification', 'consent_form', 'notification', 'form_mapping'],
       'order': ['database', 'notification', 'api', 'email', 'condition', 'status_update'],
       'treatment': ['npi_verification', 'database', 'email', 'notification', 'compliance_check'],
-      'center': ['npi_verification', 'database', 'email', 'notification', 'document_processing'],
+      'center': ['npi_verification', 'database', 'email', 'notification', 'document_upload'],
       'manufacturing': ['api', 'database', 'webhook', 'email', 'compliance_check', 'inventory_check'],
       'npi': ['npi_verification', 'api', 'database', 'validation', 'compliance_check'],
-      'credential': ['npi_verification', 'document_processing', 'database', 'compliance_check', 'notification'],
+      'credential': ['npi_verification', 'document_upload', 'database', 'compliance_check', 'notification'],
       'insurance': ['insurance_verification', 'patient_intake', 'database', 'api', 'notification'],
-      'document': ['document_processing', 'ocr', 'database', 'transform', 'validation'],
+      'document': ['document_upload', 'ocr_processor', 'metadata_extractor', 'form_mapping', 'validation', 'database'],
+      'prescription': ['document_upload', 'medication_processor', 'ndc_din_matcher', 'quantity_calculator', 'pharmacy_integration'],
+      'medication': ['medication_processor', 'ndc_din_matcher', 'quantity_calculator', 'drug_interaction_check', 'pharmacy_integration'],
+      'pharmacy': ['medication_processor', 'ndc_din_matcher', 'quantity_calculator', 'inventory_check', 'api'],
       'onboarding': ['patient_intake', 'npi_verification', 'database', 'notification', 'email'],
       'verification': ['npi_verification', 'insurance_verification', 'api', 'validation', 'database'],
-      'compliance': ['hipaa_compliance', 'compliance_check', 'audit_log', 'document_processing', 'database'],
+      'compliance': ['hipaa_compliance', 'compliance_check', 'audit_log', 'document_upload', 'database'],
       'analytics': ['database', 'transform', 'api', 'visualization', 'notification'],
       'notification': ['email', 'sms', 'push_notification', 'webhook', 'condition'],
       'workflow': ['condition', 'loop', 'parallel', 'transform', 'database'],
@@ -282,6 +285,32 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
         { id: 'patient_intake', type_key: 'patient_intake', display_name: 'Patient Intake', category_id: 'healthcare' },
         { id: 'ehr_integration', type_key: 'ehr_integration', display_name: 'EHR Integration', category_id: 'healthcare' },
         { id: 'hipaa_compliance', type_key: 'hipaa_compliance', display_name: 'HIPAA Compliance', category_id: 'healthcare' },
+        { id: 'insurance_verification', type_key: 'insurance_verification', display_name: 'Insurance Verification', category_id: 'healthcare' },
+      ]
+    },
+    {
+      id: 'document-processing',
+      name: 'Document Processing',
+      nodes: [
+        { id: 'document_upload', type_key: 'document_upload', display_name: 'Document Upload', category_id: 'document-processing' },
+        { id: 'ocr_processor', type_key: 'ocr_processor', display_name: 'OCR Processor', category_id: 'document-processing' },
+        { id: 'metadata_extractor', type_key: 'metadata_extractor', display_name: 'Metadata Extractor', category_id: 'document-processing' },
+        { id: 'table_extractor', type_key: 'table_extractor', display_name: 'Table Extractor', category_id: 'document-processing' },
+        { id: 'signature_detector', type_key: 'signature_detector', display_name: 'Signature Detector', category_id: 'document-processing' },
+        { id: 'form_mapping', type_key: 'form_mapping', display_name: 'Form Mapping', category_id: 'document-processing' },
+        { id: 'document_classifier', type_key: 'document_classifier', display_name: 'Document Classifier', category_id: 'document-processing' },
+      ]
+    },
+    {
+      id: 'medication',
+      name: 'Medication Processing',
+      nodes: [
+        { id: 'medication_processor', type_key: 'medication_processor', display_name: 'Medication Processor', category_id: 'medication' },
+        { id: 'ndc_din_matcher', type_key: 'ndc_din_matcher', display_name: 'NDC/DIN Matcher', category_id: 'medication' },
+        { id: 'quantity_calculator', type_key: 'quantity_calculator', display_name: 'Quantity Calculator', category_id: 'medication' },
+        { id: 'drug_interaction_check', type_key: 'drug_interaction_check', display_name: 'Drug Interaction Check', category_id: 'medication' },
+        { id: 'prescription_parser', type_key: 'prescription_parser', display_name: 'Prescription Parser', category_id: 'medication' },
+        { id: 'pharmacy_integration', type_key: 'pharmacy_integration', display_name: 'Pharmacy Integration', category_id: 'medication' },
       ]
     },
     {
@@ -311,12 +340,13 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
     })).filter(cat => cat.nodes.length > 0 || cat.name.toLowerCase().includes(term));
   }, [categories, searchTerm]);
 
-  // Quick add nodes (most commonly used) - now includes multi-agent + document + agentic
+  // Quick add nodes (most commonly used) - includes document processing + medication
   const quickAddNodes = [
     { type: 'agent', category: 'ai-agents', label: 'AI Agent', icon: Bot },
-    { type: 'ocr_document', category: 'document_processing', label: 'OCR Document', icon: FileText },
-    { type: 'plan_execute', category: 'enhanced_agentic', label: 'Plan & Execute', icon: Brain },
-    { type: 'react_loop', category: 'multi-agent', label: 'ReAct Loop', icon: Brain },
+    { type: 'document_upload', category: 'document-processing', label: 'Document Upload', icon: FileText },
+    { type: 'medication_processor', category: 'medication', label: 'Medication Processor', icon: Activity },
+    { type: 'ndc_din_matcher', category: 'medication', label: 'NDC/DIN Matcher', icon: Search },
+    { type: 'ocr_processor', category: 'document-processing', label: 'OCR Processor', icon: FileText },
     { type: 'condition', category: 'workflow', label: 'Condition', icon: GitBranch },
     { type: 'knowledge_base', category: 'data', label: 'Knowledge Base', icon: Database },
   ];
