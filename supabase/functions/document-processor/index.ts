@@ -359,8 +359,9 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
 
   await updateProgress(supabase, documentId, 95, 'metadata', 'completed');
 
-  // Determine final status based on validation
-  const finalStatus = validationStatus.requiresManualReview ? 'needs_review' : 'completed';
+  // Determine final status - must be one of: uploaded, processing, completed, error, cancelled
+  // If manual review needed, we still mark as 'completed' but the validation_status.requiresManualReview flag indicates review needed
+  const finalStatus = 'completed';
 
   // Stage 9: Finalize
   const { error: updateError } = await supabase
