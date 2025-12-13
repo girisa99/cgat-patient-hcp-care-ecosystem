@@ -74,6 +74,15 @@ export interface ExtractedMetadata {
   signatures?: SignatureDetection[];
   documentClassification?: DocumentClassification;
   handwrittenRegions?: HandwrittenRegion[];
+  extractionSummary?: ExtractionSummary;
+}
+
+export interface ExtractionSummary {
+  ocrFieldCount: number;
+  nlpFieldCount: number;
+  totalFields: number;
+  ocrProvider: string;
+  nlpProvider: string;
 }
 
 export interface EntityExtraction {
@@ -82,6 +91,7 @@ export interface EntityExtraction {
   confidence: number;
   boundingBox?: BoundingBox;
   verified?: boolean;
+  source?: 'ocr' | 'nlp';
 }
 
 export interface FormFieldExtraction {
