@@ -1119,21 +1119,7 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     }
   }
 
-  // Extract date of birth
-  const dobPatterns = [
-    { regex: /Date\s+of\s+Birth:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, type: 'date_of_birth', confidence: 0.95 },
-    { regex: /DOB:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, type: 'date_of_birth', confidence: 0.95 },
-    { regex: /Birth\s*Date:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, type: 'date_of_birth', confidence: 0.9 },
-  ];
-
-  for (const { regex, type, confidence } of dobPatterns) {
-    const match = text.match(regex);
-    if (match && match[1]) {
-      if (!entities.find(e => e.type === type)) {
-        entities.push({ type, value: match[1].trim(), confidence });
-      }
-    }
-  }
+  // DOB extraction already handled above with dobPatterns
 
   // Extract pharmacy information
   const pharmacyPatterns = [
@@ -1169,24 +1155,7 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     }
   }
 
-  // Extract medication-specific information (critical for prescriptions)
-  const medicationPatterns = [
-    { regex: /(?:Medication|Drug|Rx|Prescription):\s*([A-Za-z]+(?:\s+\d+\s*(?:mg|mcg|ml|g))?)/i, type: 'medication', confidence: 0.9 },
-    { regex: /(?:Current\s+)?Medications?:\s*[-•]?\s*([A-Za-z]+)\s+(\d+\s*(?:mg|mcg|ml|g))/gi, type: 'medication', confidence: 0.85 },
-    // Common drug names pattern
-    { regex: /\b(Metformin|Lisinopril|Atorvastatin|Levothyroxine|Amlodipine|Omeprazole|Losartan|Gabapentin|Hydrocodone|Sertraline|Simvastatin|Metoprolol|Pantoprazole|Escitalopram|Tramadol|Prednisone|Amoxicillin|Azithromycin|Alprazolam|Trazodone|Atenolol|Clopidogrel|Montelukast|Furosemide|Fluoxetine|Citalopram|Zoloft|Lipitor|Norvasc|Glucophage)\s*(\d+\s*(?:mg|mcg|ml|g))?/gi, type: 'medication', confidence: 0.95 },
-  ];
-
-  for (const { regex, type, confidence } of medicationPatterns) {
-    const globalRegex = new RegExp(regex.source, regex.flags.includes('g') ? regex.flags : regex.flags + 'g');
-    let match;
-    while ((match = globalRegex.exec(text)) !== null) {
-      const value = match[2] ? `${match[1]} ${match[2]}`.trim() : match[1].trim();
-      if (value && !entities.find(e => e.value.toLowerCase() === value.toLowerCase() && e.type === type)) {
-        entities.push({ type, value, confidence });
-      }
-    }
-  }
+  // Medication extraction already handled above with commonDrugs list
 
   // Extract SIG/Instructions
   const sigPatterns = [
