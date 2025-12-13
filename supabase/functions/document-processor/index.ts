@@ -711,6 +711,8 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     { type: 'group_number', regex: /GRP-[\w]+/gi, confidence: 0.85 },
     { type: 'license', regex: /[A-Z]{2}-[A-Z]{2}-\d+/g, confidence: 0.85 },
     { type: 'icd_code', regex: /[A-Z]\d{2}\.\d{1,2}/g, confidence: 0.9 },
+    { type: 'ndc', regex: /NDC[:\s#]*(\d{4,5}-\d{3,4}-\d{1,2})/gi, confidence: 0.95 },
+    { type: 'dea', regex: /DEA[:\s#]*([A-Z]{2}\d{7})/gi, confidence: 0.95 },
   ];
 
   for (const { type, regex, confidence } of patterns) {
@@ -719,6 +721,10 @@ function extractEntities(text: string): { type: string; value: string; confidenc
       for (const match of matches) {
         const value = type === 'npi' && match.includes('NPI') 
           ? match.replace(/NPI[:\s#]*/i, '') 
+          : type === 'ndc' && match.includes('NDC')
+          ? match.replace(/NDC[:\s#]*/i, '')
+          : type === 'dea' && match.includes('DEA')
+          ? match.replace(/DEA[:\s#]*/i, '')
           : match;
         if (!entities.find(e => e.value === value && e.type === type)) {
           entities.push({ type, value, confidence });
@@ -731,6 +737,7 @@ function extractEntities(text: string): { type: string; value: string; confidenc
   const namePatterns = [
     { regex: /Patient\s+Name:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, type: 'patient_name' },
     { regex: /Provider\s+Name:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, type: 'provider' },
+    { regex: /Prescriber:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, type: 'prescriber' },
     { regex: /Dr\.\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, type: 'provider' },
     { regex: /Facility\s+Name:\s*(.+?)(?:\n|$)/i, type: 'facility' },
   ];
@@ -740,6 +747,56 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     if (match && match[1]) {
       entities.push({ type, value: match[1].trim(), confidence: 0.85 });
     }
+  }
+
+  // Extract medication-specific information (critical for prescriptions)
+  const medicationPatterns = [
+    { regex: /(?:Medication|Drug|Rx|Prescription):\s*([A-Za-z]+(?:\s+\d+\s*(?:mg|mcg|ml|g))?)/i, type: 'medication', confidence: 0.9 },
+    { regex: /(?:Current\s+)?Medications?:\s*[-•]?\s*([A-Za-z]+)\s+(\d+\s*(?:mg|mcg|ml|g))/gi, type: 'medication', confidence: 0.85 },
+    // Common drug names pattern
+    { regex: /\b(Metformin|Lisinopril|Atorvastatin|Levothyroxine|Amlodipine|Omeprazole|Losartan|Gabapentin|Hydrocodone|Sertraline|Simvastatin|Metoprolol|Pantoprazole|Escitalopram|Tramadol|Prednisone|Amoxicillin|Azithromycin|Alprazolam|Trazodone)\s*(\d+\s*(?:mg|mcg|ml|g))?/gi, type: 'medication', confidence: 0.95 },
+  ];
+
+  for (const { regex, type, confidence } of medicationPatterns) {
+    const globalRegex = new RegExp(regex.source, regex.flags.includes('g') ? regex.flags : regex.flags + 'g');
+    let match;
+    while ((match = globalRegex.exec(text)) !== null) {
+      const value = match[2] ? `${match[1]} ${match[2]}`.trim() : match[1].trim();
+      if (value && !entities.find(e => e.value.toLowerCase() === value.toLowerCase() && e.type === type)) {
+        entities.push({ type, value, confidence });
+      }
+    }
+  }
+
+  // Extract SIG/Instructions
+  const sigPatterns = [
+    { regex: /(?:SIG|Sig|Directions|Instructions):\s*(.+?)(?:\n|$)/i, type: 'sig', confidence: 0.9 },
+    { regex: /Take\s+(\d+\s*(?:tablet|capsule|pill|drop|puff)s?\s+(?:by mouth|orally|twice|once|three times|four times)\s*.+?)(?:\n|$)/i, type: 'sig', confidence: 0.85 },
+  ];
+
+  for (const { regex, type, confidence } of sigPatterns) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      if (!entities.find(e => e.type === type)) {
+        entities.push({ type, value: match[1].trim(), confidence });
+      }
+    }
+  }
+
+  // Extract quantity and refills
+  const quantityMatch = text.match(/(?:Qty|Quantity|Disp|Dispense)[:\s#]*(\d+)/i);
+  if (quantityMatch) {
+    entities.push({ type: 'quantity', value: quantityMatch[1], confidence: 0.9 });
+  }
+
+  const refillsMatch = text.match(/(?:Refills?|Ref)[:\s#]*(\d+)/i);
+  if (refillsMatch) {
+    entities.push({ type: 'refills', value: refillsMatch[1], confidence: 0.9 });
+  }
+
+  const daysSupplyMatch = text.match(/(?:Days?\s*Supply|DS)[:\s#]*(\d+)/i);
+  if (daysSupplyMatch) {
+    entities.push({ type: 'days_supply', value: daysSupplyMatch[1], confidence: 0.9 });
   }
 
   // Extract diagnoses
@@ -760,16 +817,35 @@ function extractFormFields(text: string, targetFields: string[]): { fieldName: s
   const fields: { fieldName: string; value: string; confidence: number; fieldType?: string }[] = [];
   
   const fieldPatterns: Record<string, { patterns: RegExp[]; type: string }> = {
-    patient_name: { patterns: [/Patient\s+Name:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    patient_name: { patterns: [/Patient\s+Name:\s*(.+?)(?:\n|$)/i, /Name:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i], type: 'text' },
     date_of_birth: { patterns: [/Date\s+of\s+Birth:\s*(.+?)(?:\n|$)/i, /DOB:\s*(.+?)(?:\n|$)/i], type: 'date' },
     npi: { patterns: [/NPI[:\s#]*(\d{10})/i], type: 'number' },
+    prescriber_npi: { patterns: [/(?:Prescriber\s+)?NPI[:\s#]*(\d{10})/i], type: 'number' },
+    prescriber_dea: { patterns: [/DEA[:\s#]*([A-Z]{2}\d{7})/i], type: 'text' },
     insurance_id: { patterns: [/Insurance\s+ID:\s*(.+?)(?:\n|$)/i], type: 'text' },
     phone: { patterns: [/Phone:\s*(.+?)(?:\n|$)/i], type: 'text' },
     email: { patterns: [/Email:\s*(.+?)(?:\n|$)/i], type: 'text' },
     address: { patterns: [/Address:\s*(.+?)(?:\n|$)/i], type: 'text' },
     provider: { patterns: [/Provider\s+Name:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    prescriber_name: { patterns: [/Prescriber:\s*(.+?)(?:\n|$)/i, /Dr\.\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i], type: 'text' },
     diagnosis: { patterns: [/Primary\s+Diagnosis:\s*(.+?)(?:\n|$)/i], type: 'text' },
     facility: { patterns: [/Facility\s+Name:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    // Medication-specific fields
+    medication: { patterns: [
+      /(?:Medication|Drug|Rx):\s*([A-Za-z]+(?:\s+\d+\s*(?:mg|mcg|ml|g))?)/i,
+      /\b(Metformin|Lisinopril|Atorvastatin|Levothyroxine|Amlodipine|Omeprazole|Losartan|Gabapentin|Hydrocodone|Sertraline)\s*(\d+\s*mg)?/i
+    ], type: 'text' },
+    strength: { patterns: [/(?:Strength|Dose):\s*(\d+\s*(?:mg|mcg|ml|g))/i, /([0-9.]+\s*(?:mg|mcg|ml|g))/i], type: 'text' },
+    sig: { patterns: [
+      /(?:SIG|Sig|Directions|Instructions):\s*(.+?)(?:\n|$)/i,
+      /Take\s+(\d+\s*(?:tablet|capsule)s?\s+.+?)(?:\n|$)/i
+    ], type: 'text' },
+    quantity: { patterns: [/(?:Qty|Quantity|Disp|Dispense)[:\s#]*(\d+)/i], type: 'number' },
+    days_supply: { patterns: [/(?:Days?\s*Supply|DS)[:\s#]*(\d+)/i], type: 'number' },
+    refills: { patterns: [/(?:Refills?|Ref)[:\s#]*(\d+)/i], type: 'number' },
+    ndc: { patterns: [/NDC[:\s#]*(\d{4,5}-\d{3,4}-\d{1,2})/i], type: 'text' },
+    date_written: { patterns: [/(?:Date\s+Written|Written|Rx\s+Date)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i], type: 'date' },
+    pharmacy: { patterns: [/(?:Pharmacy|Send\s+to)[:\s]*(.+?)(?:\n|$)/i], type: 'text' },
   };
 
   for (const fieldName of targetFields) {
@@ -780,7 +856,7 @@ function extractFormFields(text: string, targetFields: string[]): { fieldName: s
         if (match && match[1]) {
           fields.push({
             fieldName,
-            value: match[1].trim(),
+            value: match[2] ? `${match[1]} ${match[2]}`.trim() : match[1].trim(),
             confidence: 0.85,
             fieldType: config.type
           });
