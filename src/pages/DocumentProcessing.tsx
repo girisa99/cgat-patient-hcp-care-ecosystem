@@ -242,6 +242,7 @@ interface ProcessingResult {
   tables?: any[];
   error?: string;
   processedAt: Date;
+  imageUrl?: string; // Store uploaded image for verification/audit
 }
 
 interface MedicationResult {
@@ -563,6 +564,9 @@ export default function DocumentProcessing() {
     
     const file = acceptedFiles[0];
     
+    // Create object URL for image preview
+    const imageUrl = file.type.startsWith('image/') ? URL.createObjectURL(file) : undefined;
+    
     const newResult: ProcessingResult = {
       id: crypto.randomUUID(),
       fileName: file.name,
@@ -570,7 +574,8 @@ export default function DocumentProcessing() {
       stage: 'uploading',
       progress: 0,
       extractedFields: {},
-      processedAt: new Date()
+      processedAt: new Date(),
+      imageUrl
     };
     
     setProcessingResult(newResult);
@@ -1430,6 +1435,58 @@ export default function DocumentProcessing() {
 
           {/* Medication Lookup Tab */}
           <TabsContent value="medication" className="space-y-4">
+            {/* Prescription Image Preview for Verification */}
+            {processingResult?.imageUrl && processingResult.stage === 'complete' && (
+              <Card className="border-primary/30 bg-primary/5">
+                <CardHeader className="pb-3">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Eye className="h-5 w-5 text-primary" />
+                    Prescription Document (Verification)
+                  </CardTitle>
+                  <CardDescription>
+                    Original document for verification against extracted data
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-4 items-start">
+                    <div className="flex-shrink-0 border rounded-lg overflow-hidden bg-white">
+                      <img 
+                        src={processingResult.imageUrl} 
+                        alt="Uploaded prescription" 
+                        className="max-h-64 w-auto object-contain"
+                      />
+                    </div>
+                    <div className="flex-1 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline">{processingResult.fileName}</Badge>
+                        <Badge className="bg-green-500">Processed</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        Compare extracted data with the original document to verify accuracy.
+                      </p>
+                      <div className="flex flex-wrap gap-2 mt-2">
+                        {processingResult.extractedFields['medication']?.value && (
+                          <Badge variant="secondary">
+                            Medication: {processingResult.extractedFields['medication'].value}
+                          </Badge>
+                        )}
+                        {processingResult.extractedFields['patient_name']?.value && (
+                          <Badge variant="secondary">
+                            Patient: {processingResult.extractedFields['patient_name'].value}
+                          </Badge>
+                        )}
+                        {processingResult.extractedFields['prescriber_name']?.value && (
+                          <Badge variant="secondary">
+                            Prescriber: {processingResult.extractedFields['prescriber_name'].value}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+            
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               {/* Drug Search */}
               <Card>
@@ -1864,22 +1921,58 @@ export default function DocumentProcessing() {
                     <p className="text-xs mt-3">Processed documents will appear here with their extracted data and validation status</p>
                   </div>
                 ) : (
-                  <div className="space-y-2">
+                  <div className="space-y-3">
                     {processingHistory.map((doc) => (
-                      <div key={doc.id} className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 cursor-pointer">
-                        <div className="flex items-center gap-3">
-                          <FileText className="h-8 w-8 text-muted-foreground" />
-                          <div>
-                            <p className="font-medium">{doc.fileName}</p>
-                            <p className="text-sm text-muted-foreground">
+                      <div key={doc.id} className="border rounded-lg hover:bg-muted/50 cursor-pointer overflow-hidden">
+                        <div className="flex items-start gap-4 p-4">
+                          {/* Document Image Thumbnail for Audit */}
+                          {doc.imageUrl ? (
+                            <div className="flex-shrink-0 w-20 h-20 border rounded-lg overflow-hidden bg-white">
+                              <img 
+                                src={doc.imageUrl} 
+                                alt={doc.fileName}
+                                className="w-full h-full object-cover"
+                              />
+                            </div>
+                          ) : (
+                            <div className="flex-shrink-0 w-20 h-20 border rounded-lg bg-muted flex items-center justify-center">
+                              <FileText className="h-8 w-8 text-muted-foreground" />
+                            </div>
+                          )}
+                          
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <p className="font-medium truncate">{doc.fileName}</p>
+                              <div className="flex items-center gap-2 flex-shrink-0">
+                                <Badge variant="outline">{Object.keys(doc.extractedFields).length} fields</Badge>
+                                <Badge className="bg-green-500">Complete</Badge>
+                              </div>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">
                               {DOCUMENT_CONFIGS.find(c => c.id === doc.documentType)?.title} • {doc.processedAt.toLocaleString()}
                             </p>
+                            
+                            {/* Key extracted fields preview */}
+                            <div className="flex flex-wrap gap-1 mt-2">
+                              {doc.extractedFields['medication']?.value && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {doc.extractedFields['medication'].value}
+                                </Badge>
+                              )}
+                              {doc.extractedFields['patient_name']?.value && (
+                                <Badge variant="secondary" className="text-xs">
+                                  {doc.extractedFields['patient_name'].value}
+                                </Badge>
+                              )}
+                              {doc.medications?.[0] && (
+                                <Badge variant="outline" className="text-xs">
+                                  Qty: {doc.medications[0].calculatedQuantity}
+                                </Badge>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge variant="outline">{Object.keys(doc.extractedFields).length} fields</Badge>
-                          <Badge className="bg-green-500">Complete</Badge>
-                          <Button variant="ghost" size="sm">
+                          
+                          <Button variant="ghost" size="sm" className="flex-shrink-0">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </div>
