@@ -156,6 +156,75 @@ serve(async (req) => {
       }
     }
 
+    // Fallback: if no results found, try a simplified drug name (e.g., remove strength and dosage form)
+    if (results.ndc.length === 0 && results.rxnorm.length === 0) {
+      const simplifiedName = drugName
+        .toLowerCase()
+        // Remove strength like "250 mg", "10mg", etc.
+        .replace(/\b\d+\s*(mg|mcg|g|ml|units?)\b/gi, '')
+        // Remove common dosage form words
+        .replace(/\b(tablets?|capsules?|caps?|tabs?|solution|suspension|injection|cream|ointment|topical|drops?|inhaler|syrup)\b/gi, '')
+        // Collapse extra spaces
+        .replace(/\s+/g, ' ')
+        .trim();
+
+      if (simplifiedName && simplifiedName.length >= 2 && simplifiedName !== drugName.toLowerCase()) {
+        console.log(`🔁 No results for full name, retrying with simplified name: ${simplifiedName}`);
+
+        // Retry OpenFDA with simplified name
+        try {
+          const fdaUrlSimple = `https://api.fda.gov/drug/ndc.json?search=generic_name:"${encodeURIComponent(simplifiedName)}"OR+brand_name:"${encodeURIComponent(simplifiedName)}"&limit=10`;
+          console.log(`📡 OpenFDA fallback request: ${fdaUrlSimple}`);
+          const fdaResponseSimple = await fetch(fdaUrlSimple);
+          if (fdaResponseSimple.ok) {
+            const fdaDataSimple = await fdaResponseSimple.json();
+            results.ndc = (fdaDataSimple.results || []).map((drug: OpenFDADrug) => ({
+              code: drug.product_ndc,
+              type: 'NDC',
+              country: 'USA',
+              genericName: drug.generic_name,
+              brandName: drug.brand_name,
+              manufacturer: drug.labeler_name,
+              dosageForm: drug.dosage_form,
+              route: drug.route?.join(', ') || 'oral',
+              strength: drug.active_ingredients?.[0]?.strength || '',
+              productType: drug.product_type,
+              pharmClass: drug.pharm_class || []
+            }));
+            console.log(`✅ OpenFDA fallback found ${results.ndc.length} NDC codes`);
+          } else {
+            console.log(`⚠️ OpenFDA fallback returned ${fdaResponseSimple.status}`);
+          }
+        } catch (fdaError) {
+          console.error('OpenFDA fallback error:', fdaError);
+        }
+
+        // Retry RxNorm with simplified name
+        try {
+          const rxNormUrlSimple = `https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(simplifiedName)}`;
+          console.log(`📡 RxNorm fallback request: ${rxNormUrlSimple}`);
+          const rxResponseSimple = await fetch(rxNormUrlSimple);
+          if (rxResponseSimple.ok) {
+            const rxDataSimple = await rxResponseSimple.json();
+            const conceptGroupSimple = rxDataSimple.drugGroup?.conceptGroup || [];
+            for (const group of conceptGroupSimple) {
+              if (group.conceptProperties) {
+                results.rxnorm.push(...group.conceptProperties.map((drug: RxNormDrug) => ({
+                  rxcui: drug.rxcui,
+                  name: drug.name,
+                  synonym: drug.synonym,
+                  termType: drug.tty
+                })));
+              }
+            }
+            console.log(`✅ RxNorm fallback found ${results.rxnorm.length} entries`);
+          }
+        } catch (rxError) {
+          console.error('RxNorm fallback error:', rxError);
+        }
+      }
+    }
+
     // Add clinical recommendations based on drug class and drug name
     const drugNameLower = drugName.toLowerCase();
     
