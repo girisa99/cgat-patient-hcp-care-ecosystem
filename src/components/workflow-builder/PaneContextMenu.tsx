@@ -68,9 +68,38 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
   onAddNode,
   agentContext,
 }) => {
-  const [categories, setCategories] = useState<NodeCategory[]>([]);
+  // Initialize with static categories immediately so menu is never empty
+  const getStaticCategoriesInitial = (): NodeCategory[] => [
+    {
+      id: 'workflow',
+      name: 'Workflow',
+      nodes: [
+        { id: 'start', type_key: 'start', display_name: 'Start', description: 'Workflow entry point', category_id: 'workflow' },
+        { id: 'end', type_key: 'end', display_name: 'End', description: 'Workflow exit point', category_id: 'workflow' },
+        { id: 'condition', type_key: 'condition', display_name: 'Condition', description: 'Conditional branching', category_id: 'workflow' },
+      ]
+    },
+    {
+      id: 'ai-agents',
+      name: 'AI Agents',
+      nodes: [
+        { id: 'agent', type_key: 'agent', display_name: 'AI Agent', description: 'Conversational AI', category_id: 'ai-agents' },
+        { id: 'llm', type_key: 'llm', display_name: 'LLM Node', description: 'Language model', category_id: 'ai-agents' },
+      ]
+    },
+    {
+      id: 'data',
+      name: 'Data',
+      nodes: [
+        { id: 'database', type_key: 'database', display_name: 'Database', description: 'DB operations', category_id: 'data' },
+        { id: 'knowledge_base', type_key: 'knowledge_base', display_name: 'Knowledge Base', description: 'RAG store', category_id: 'data' },
+      ]
+    },
+  ];
+
+  const [categories, setCategories] = useState<NodeCategory[]>(getStaticCategoriesInitial());
   const [searchTerm, setSearchTerm] = useState('');
-  const [isLoading, setIsLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
 
@@ -110,19 +139,20 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
   const loadCategoriesAndNodes = async () => {
     setIsLoading(true);
     try {
-      const { data: categoriesData } = await (supabase as any)
-        .from('workflow_node_categories')
+      // Try to load from database first
+      const { data: categoriesData, error: catError } = await supabase
+        .from('workflow_node_categories' as any)
         .select('id, name, description')
         .eq('is_active', true)
         .order('display_order');
 
-      const { data: nodesData } = await supabase
+      const { data: nodesData, error: nodesError } = await supabase
         .from('workflow_node_types')
         .select('id, type_key, display_name, description, category_id')
         .eq('is_active', true)
         .order('display_order');
 
-      if (categoriesData && nodesData) {
+      if (!catError && !nodesError && categoriesData && nodesData && categoriesData.length > 0) {
         const categoriesWithNodes: NodeCategory[] = (categoriesData as any[]).map((cat: any) => ({
           id: cat.id,
           name: cat.name,
@@ -130,8 +160,15 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
           nodes: (nodesData as any[]).filter((node: any) => node.category_id === cat.id)
         })).filter((cat: NodeCategory) => cat.nodes.length > 0);
 
-        setCategories(categoriesWithNodes);
+        if (categoriesWithNodes.length > 0) {
+          setCategories(categoriesWithNodes);
+          return;
+        }
       }
+      
+      // Fallback to static categories if DB empty or errors
+      console.log('Using static node categories (DB returned empty or error)');
+      setCategories(getStaticCategories());
     } catch (error) {
       console.error('Failed to load node categories:', error);
       setCategories(getStaticCategories());
@@ -145,34 +182,94 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
       id: 'workflow',
       name: 'Workflow',
       nodes: [
-        { id: 'start', type_key: 'start', display_name: 'Start', category_id: 'workflow' },
-        { id: 'end', type_key: 'end', display_name: 'End', category_id: 'workflow' },
-        { id: 'condition', type_key: 'condition', display_name: 'Condition', category_id: 'workflow' },
-        { id: 'loop', type_key: 'loop', display_name: 'Loop', category_id: 'workflow' },
+        { id: 'start', type_key: 'start', display_name: 'Start', description: 'Workflow entry point', category_id: 'workflow' },
+        { id: 'end', type_key: 'end', display_name: 'End', description: 'Workflow exit point', category_id: 'workflow' },
+        { id: 'condition', type_key: 'condition', display_name: 'Condition', description: 'Conditional branching', category_id: 'workflow' },
+        { id: 'loop', type_key: 'loop', display_name: 'Loop', description: 'Iterate over items', category_id: 'workflow' },
+        { id: 'parallel', type_key: 'parallel', display_name: 'Parallel', description: 'Execute in parallel', category_id: 'workflow' },
       ]
     },
     {
       id: 'ai-agents',
       name: 'AI Agents',
       nodes: [
-        { id: 'agent', type_key: 'agent', display_name: 'AI Agent', category_id: 'ai-agents' },
-        { id: 'llm', type_key: 'llm', display_name: 'LLM Node', category_id: 'ai-agents' },
+        { id: 'agent', type_key: 'agent', display_name: 'AI Agent', description: 'Conversational AI agent', category_id: 'ai-agents' },
+        { id: 'llm', type_key: 'llm', display_name: 'LLM Node', description: 'Large language model', category_id: 'ai-agents' },
+        { id: 'reasoning', type_key: 'reasoning', display_name: 'Reasoning Agent', description: 'Chain-of-thought reasoning', category_id: 'ai-agents' },
+        { id: 'vision', type_key: 'vision', display_name: 'Vision Agent', description: 'Image analysis AI', category_id: 'ai-agents' },
       ]
     },
     {
       id: 'data',
       name: 'Data',
       nodes: [
-        { id: 'database', type_key: 'database', display_name: 'Database', category_id: 'data' },
-        { id: 'knowledge_base', type_key: 'knowledge_base', display_name: 'Knowledge Base', category_id: 'data' },
+        { id: 'database', type_key: 'database', display_name: 'Database', description: 'Database operations', category_id: 'data' },
+        { id: 'knowledge_base', type_key: 'knowledge_base', display_name: 'Knowledge Base', description: 'RAG knowledge store', category_id: 'data' },
+        { id: 'input', type_key: 'input', display_name: 'Input', description: 'Data input node', category_id: 'data' },
+        { id: 'output', type_key: 'output', display_name: 'Output', description: 'Data output node', category_id: 'data' },
+        { id: 'transform', type_key: 'transform', display_name: 'Transform', description: 'Data transformation', category_id: 'data' },
       ]
     },
     {
       id: 'integration',
       name: 'Integration',
       nodes: [
-        { id: 'api', type_key: 'api', display_name: 'API Call', category_id: 'integration' },
-        { id: 'webhook', type_key: 'webhook', display_name: 'Webhook', category_id: 'integration' },
+        { id: 'api', type_key: 'api', display_name: 'API Call', description: 'REST API integration', category_id: 'integration' },
+        { id: 'webhook', type_key: 'webhook', display_name: 'Webhook', description: 'Webhook trigger/listener', category_id: 'integration' },
+        { id: 'function', type_key: 'function', display_name: 'Function', description: 'Custom function call', category_id: 'integration' },
+        { id: 'http', type_key: 'http', display_name: 'HTTP Request', description: 'Generic HTTP request', category_id: 'integration' },
+      ]
+    },
+    {
+      id: 'mcp',
+      name: 'MCP Connectors',
+      nodes: [
+        { id: 'mcp_connector', type_key: 'mcp_connector', display_name: 'MCP Connector', description: 'Model Context Protocol', category_id: 'mcp' },
+        { id: 'healthcare_mcp', type_key: 'healthcare_mcp', display_name: 'Healthcare MCP', description: 'Healthcare data sync', category_id: 'mcp' },
+        { id: 'database_mcp', type_key: 'database_mcp', display_name: 'Database MCP', description: 'Database MCP sync', category_id: 'mcp' },
+      ]
+    },
+    {
+      id: 'healthcare',
+      name: 'Healthcare',
+      nodes: [
+        { id: 'npi_verification', type_key: 'npi_verification', display_name: 'NPI Verification', description: 'Verify NPI numbers', category_id: 'healthcare' },
+        { id: 'patient_intake', type_key: 'patient_intake', display_name: 'Patient Intake', description: 'Patient intake form', category_id: 'healthcare' },
+        { id: 'ehr_integration', type_key: 'ehr_integration', display_name: 'EHR Integration', description: 'Electronic health records', category_id: 'healthcare' },
+        { id: 'hipaa_compliance', type_key: 'hipaa_compliance', display_name: 'HIPAA Compliance', description: 'HIPAA compliance check', category_id: 'healthcare' },
+        { id: 'insurance_verification', type_key: 'insurance_verification', display_name: 'Insurance Verification', description: 'Verify insurance', category_id: 'healthcare' },
+      ]
+    },
+    {
+      id: 'document-processing',
+      name: 'Document Processing',
+      nodes: [
+        { id: 'document_upload', type_key: 'document_upload', display_name: 'Document Upload', description: 'Upload documents', category_id: 'document-processing' },
+        { id: 'ocr_processor', type_key: 'ocr_processor', display_name: 'OCR Processor', description: 'Extract text from images', category_id: 'document-processing' },
+        { id: 'google_vision_ocr', type_key: 'google_vision_ocr', display_name: 'Google Vision OCR', description: 'Google Cloud Vision', category_id: 'document-processing' },
+        { id: 'azure_form_recognizer', type_key: 'azure_form_recognizer', display_name: 'Azure Form Recognizer', description: 'Azure Form Recognizer', category_id: 'document-processing' },
+        { id: 'aws_textract', type_key: 'aws_textract', display_name: 'AWS Textract', description: 'AWS Textract OCR', category_id: 'document-processing' },
+        { id: 'metadata_extractor', type_key: 'metadata_extractor', display_name: 'Metadata Extractor', description: 'Extract metadata', category_id: 'document-processing' },
+        { id: 'form_mapping', type_key: 'form_mapping', display_name: 'Form Mapping', description: 'Map form fields', category_id: 'document-processing' },
+      ]
+    },
+    {
+      id: 'medication',
+      name: 'Medication Processing',
+      nodes: [
+        { id: 'medication_processor', type_key: 'medication_processor', display_name: 'Medication Processor', description: 'Process prescriptions', category_id: 'medication' },
+        { id: 'ndc_matcher', type_key: 'ndc_matcher', display_name: 'NDC Matcher', description: 'Match NDC codes', category_id: 'medication' },
+        { id: 'quantity_calculator', type_key: 'quantity_calculator', display_name: 'Quantity Calculator', description: 'Calculate qty/days', category_id: 'medication' },
+        { id: 'drug_interaction_check', type_key: 'drug_interaction_check', display_name: 'Drug Interaction Check', description: 'Check drug interactions', category_id: 'medication' },
+      ]
+    },
+    {
+      id: 'communication',
+      name: 'Communication',
+      nodes: [
+        { id: 'email', type_key: 'email', display_name: 'Email', description: 'Send email', category_id: 'communication' },
+        { id: 'sms', type_key: 'sms', display_name: 'SMS', description: 'Send SMS', category_id: 'communication' },
+        { id: 'notification', type_key: 'notification', display_name: 'Notification', description: 'Push notification', category_id: 'communication' },
       ]
     },
   ];
