@@ -178,20 +178,33 @@ const DOCUMENT_CONFIGS: DocumentConfig[] = [
     description: 'Prescriptions with medication auto-calculation',
     color: 'bg-red-500',
     targetFields: [
+      // Patient Information
       { key: 'patient_name', label: 'Patient Name', required: true },
       { key: 'patient_dob', label: 'Date of Birth', required: true },
+      { key: 'patient_address', label: 'Patient Address' },
+      { key: 'patient_phone', label: 'Patient Phone' },
+      // Prescriber Information
       { key: 'prescriber_name', label: 'Prescriber Name', required: true },
       { key: 'prescriber_npi', label: 'Prescriber NPI' },
       { key: 'prescriber_dea', label: 'DEA Number' },
+      { key: 'prescriber_address', label: 'Prescriber Address' },
+      // Medication Information
       { key: 'medication', label: 'Medication Name', required: true },
       { key: 'strength', label: 'Strength' },
       { key: 'sig', label: 'Sig / Instructions', required: true },
       { key: 'quantity', label: 'Quantity', required: true },
       { key: 'days_supply', label: 'Days Supply' },
       { key: 'refills', label: 'Refills' },
+      { key: 'refill_status', label: 'Refill Status' },
       { key: 'ndc', label: 'NDC Code' },
       { key: 'date_written', label: 'Date Written' },
-      { key: 'pharmacy', label: 'Pharmacy' }
+      // Pharmacy Information
+      { key: 'pharmacy', label: 'Pharmacy Name' },
+      { key: 'pharmacy_address', label: 'Pharmacy Address' },
+      { key: 'pharmacy_phone', label: 'Pharmacy Phone' },
+      // Clinical Information
+      { key: 'diagnosis', label: 'Diagnosis' },
+      { key: 'allergies', label: 'Allergies' }
     ],
     documentTypes: ['Prescription', 'E-Prescription', 'Refill Request', 'Fax Prescription', 'Handwritten Rx']
   },
