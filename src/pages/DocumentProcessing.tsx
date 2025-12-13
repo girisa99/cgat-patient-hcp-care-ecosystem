@@ -312,6 +312,7 @@ export default function DocumentProcessing() {
   const [enableNdcMatching, setEnableNdcMatching] = useState(true);
   const [enableClinicalRecommendations, setEnableClinicalRecommendations] = useState(true);
   const [confidenceThreshold, setConfidenceThreshold] = useState(0.85);
+  const [ocrProvider, setOcrProvider] = useState<'google' | 'azure' | 'aws'>('google');
   
   // Get recommended agent workflows for current document type
   const recommendedAgentWorkflows = AGENT_WORKFLOW_CONFIGS.filter(
@@ -622,7 +623,8 @@ export default function DocumentProcessing() {
             enableHandwritingRecognition: enableHandwriting,
             enableTableExtraction,
             enableSignatureDetection,
-            confidenceThreshold
+            confidenceThreshold,
+            ocrProvider,
           }
         }
       });
@@ -1416,6 +1418,40 @@ export default function DocumentProcessing() {
                   <CardTitle className="text-lg">Processing Options</CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  {/* OCR Provider selection */}
+                  <div className="space-y-2">
+                    <Label className="text-sm">OCR Provider</Label>
+                    <div className="grid grid-cols-3 gap-2">
+                      <Button
+                        type="button"
+                        variant={ocrProvider === 'google' ? 'default' : 'outline'}
+                        size="sm"
+                        className="w-full justify-center"
+                        onClick={() => setOcrProvider('google')}
+                      >
+                        Google
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={ocrProvider === 'azure' ? 'default' : 'outline'}
+                        size="sm"
+                        className="w-full justify-center"
+                        onClick={() => setOcrProvider('azure')}
+                      >
+                        Azure
+                      </Button>
+                      <Button
+                        type="button"
+                        variant={ocrProvider === 'aws' ? 'default' : 'outline'}
+                        size="sm"
+                        className="w-full justify-center"
+                        onClick={() => setOcrProvider('aws')}
+                      >
+                        AWS
+                      </Button>
+                    </div>
+                  </div>
+
                   <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <Label>OCR Extraction</Label>
@@ -2088,6 +2124,40 @@ export default function DocumentProcessing() {
               {/* OCR & Extraction Settings */}
               <div className="space-y-3">
                 <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wide">Document Extraction</h4>
+                {/* OCR Provider selection inside settings dialog */}
+                <div className="space-y-2 p-2 rounded-lg hover:bg-muted/50">
+                  <Label className="text-sm">OCR Provider</Label>
+                  <p className="text-xs text-muted-foreground mb-2">Choose which OCR engine to use for extraction.</p>
+                  <div className="grid grid-cols-3 gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={ocrProvider === 'google' ? 'default' : 'outline'}
+                      className="w-full justify-center"
+                      onClick={() => setOcrProvider('google')}
+                    >
+                      Google
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={ocrProvider === 'azure' ? 'default' : 'outline'}
+                      className="w-full justify-center"
+                      onClick={() => setOcrProvider('azure')}
+                    >
+                      Azure
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant={ocrProvider === 'aws' ? 'default' : 'outline'}
+                      className="w-full justify-center"
+                      onClick={() => setOcrProvider('aws')}
+                    >
+                      AWS
+                    </Button>
+                  </div>
+                </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
                     <div>
@@ -2110,7 +2180,7 @@ export default function DocumentProcessing() {
                     </div>
                     <Switch checked={enableTableExtraction} onCheckedChange={setEnableTableExtraction} />
                   </div>
-                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
+                  <div className="flex items-center justify_between p-2 rounded-lg hover:bg-muted/50">
                     <div>
                       <Label>Signature Detection</Label>
                       <p className="text-xs text-muted-foreground">Identify signature regions in documents</p>
