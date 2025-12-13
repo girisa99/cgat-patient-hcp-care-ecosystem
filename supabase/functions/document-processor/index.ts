@@ -600,14 +600,12 @@ async function googleCloudVisionOCR(base64Image: string, enableHandwriting?: boo
   console.log("Calling Google Cloud Vision API...");
   
   try {
+    // DOCUMENT_TEXT_DETECTION handles both printed and handwritten text
+    // TEXT_DETECTION is for simpler text extraction
     const features = [
-      { type: "TEXT_DETECTION" },
-      { type: "DOCUMENT_TEXT_DETECTION" }
+      { type: "DOCUMENT_TEXT_DETECTION" },
+      { type: "TEXT_DETECTION" }
     ];
-    
-    if (enableHandwriting) {
-      features.push({ type: "HANDWRITING_DETECTION" } as any);
-    }
     
     const response = await fetch(
       `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
