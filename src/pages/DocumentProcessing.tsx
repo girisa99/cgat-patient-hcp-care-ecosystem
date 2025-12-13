@@ -87,7 +87,6 @@ import {
   getCategoryLabel,
   getCategoryIcon
 } from '@/config/documentTypes';
-import AIProcessingPipeline from '@/components/document-processing/AIProcessingPipeline';
 import ProcessingOptionsPanel from '@/components/document-processing/ProcessingOptionsPanel';
 
 // Processing stages
@@ -949,45 +948,102 @@ export default function DocumentProcessing() {
           </div>
         </div>
 
-        {/* Document Type Selector */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg">Select Document Type</CardTitle>
-            <CardDescription>Choose the type of document to process - fields and processing will adapt automatically</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {DOCUMENT_TYPE_CONFIGS.map((config) => (
-                <Button
-                  key={config.id}
-                  variant={selectedDocType === config.id ? 'default' : 'outline'}
-                  className={`h-auto py-4 flex flex-col items-center gap-2 transition-all ${
-                    selectedDocType === config.id ? '' : 'hover:border-primary/50'
-                  }`}
-                  onClick={() => setSelectedDocType(config.id)}
+        {/* Compact Control Bar with Document Type Dropdown */}
+        <Card className="bg-gradient-to-r from-muted/30 via-background to-muted/30">
+          <CardContent className="py-4">
+            <div className="flex flex-wrap items-center gap-4">
+              {/* Document Type Dropdown */}
+              <div className="flex items-center gap-3">
+                <Label className="text-sm font-medium whitespace-nowrap">Document Type</Label>
+                <Select value={selectedDocType} onValueChange={setSelectedDocType}>
+                  <SelectTrigger className="w-[220px] bg-background">
+                    <SelectValue>
+                      <div className="flex items-center gap-2">
+                        <span>{currentConfig.icon}</span>
+                        <span>{currentConfig.title}</span>
+                      </div>
+                    </SelectValue>
+                  </SelectTrigger>
+                  <SelectContent className="max-h-[400px]">
+                    {getAllCategories().map(category => (
+                      <div key={category}>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 flex items-center gap-2">
+                          <span>{getCategoryIcon(category)}</span>
+                          {getCategoryLabel(category)}
+                        </div>
+                        {getDocumentTypesByCategory(category).map(config => (
+                          <SelectItem key={config.id} value={config.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{config.icon}</span>
+                              <span>{config.title}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </div>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <Separator orientation="vertical" className="h-8" />
+
+              {/* Compact AI Pipeline Status */}
+              <div className="flex items-center gap-2">
+                <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
+                  processingResult?.stage === 'complete' ? 'bg-green-500/10 text-green-600' :
+                  processingResult?.stage && processingResult.stage !== 'idle' ? 'bg-primary/10 text-primary animate-pulse' :
+                  'bg-muted text-muted-foreground'
+                }`}>
+                  {processingResult?.stage === 'complete' ? (
+                    <><CheckCircle className="h-3.5 w-3.5" /> Complete</>
+                  ) : processingResult?.stage === 'ocr' ? (
+                    <><Eye className="h-3.5 w-3.5 animate-pulse" /> OCR</>
+                  ) : processingResult?.stage === 'extraction' ? (
+                    <><Table2 className="h-3.5 w-3.5 animate-pulse" /> Extracting</>
+                  ) : processingResult?.stage === 'mapping' ? (
+                    <><ClipboardList className="h-3.5 w-3.5 animate-pulse" /> Mapping</>
+                  ) : processingResult?.stage === 'validation' ? (
+                    <><Shield className="h-3.5 w-3.5 animate-pulse" /> Validating</>
+                  ) : (
+                    <><Cpu className="h-3.5 w-3.5" /> Ready</>
+                  )}
+                </div>
+              </div>
+
+              <Separator orientation="vertical" className="h-8" />
+
+              {/* Processing Mode Toggle */}
+              <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-muted/50">
+                <Button 
+                  size="sm" 
+                  variant={processingMode === 'standalone' ? 'default' : 'ghost'}
+                  className="h-7 px-3 text-xs rounded-full"
+                  onClick={() => setProcessingMode('standalone')}
                 >
-                  <div className={`p-2 rounded-lg ${selectedDocType === config.id ? 'bg-primary-foreground/20' : config.color + '/10'}`}>
-                    <span className="text-xl">{config.icon}</span>
-                  </div>
-                  <span className="text-xs text-center font-medium">{config.title}</span>
+                  <Zap className="h-3 w-3 mr-1" />
+                  Standalone
                 </Button>
-              ))}
+                <Button 
+                  size="sm" 
+                  variant={processingMode === 'agent' ? 'default' : 'ghost'}
+                  className="h-7 px-3 text-xs rounded-full"
+                  onClick={() => setProcessingMode('agent')}
+                >
+                  <Bot className="h-3 w-3 mr-1" />
+                  Agent
+                </Button>
+              </div>
+
+              <div className="flex-1" />
+
+              {/* Settings Button */}
+              <Button variant="outline" size="sm" onClick={() => setShowSettingsDialog(true)} className="h-8">
+                <Settings className="h-4 w-4 mr-2" />
+                Options
+              </Button>
             </div>
           </CardContent>
         </Card>
-
-        {/* AI Processing Pipeline - Redesigned */}
-        <AIProcessingPipeline
-          documentConfig={currentConfig}
-          enableOCR={enableOCR}
-          enableTableExtraction={enableTableExtraction}
-          processingMode={processingMode}
-          setProcessingMode={setProcessingMode}
-          isAutoProcessing={isAutoProcessing}
-          setIsAutoProcessing={setIsAutoProcessing}
-          onOpenSettings={() => setShowSettingsDialog(true)}
-          currentStage={processingResult?.stage}
-        />
 
         {/* Agent Workflow Selection - Only show when agent mode is enabled */}
         {processingMode === 'agent' && (
