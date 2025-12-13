@@ -572,94 +572,89 @@ function delay(ms: number): Promise<void> {
 async function simulateOCRExtraction(fileData: Blob, enableHandwriting?: boolean): Promise<string> {
   const bytes = await fileData.arrayBuffer();
   
-  // Simulate comprehensive OCR output
+  // Simulate comprehensive OCR output for prescription/medical document
   let text = `[OCR Extracted Content - ${enableHandwriting ? 'Including Handwriting' : 'Print Only'}]
 
-Document Analysis Report
-========================
+PRESCRIPTION
+============
+Rx Number: RX-2024-78456
+Date Written: 12/13/2024
 
 PATIENT INFORMATION
 -------------------
 Patient Name: John Michael Doe
 Date of Birth: 01/15/1980
+Patient Address: 456 Oak Street, Apt 2B, Los Angeles, CA 90012
+Patient Phone: (555) 987-6543
 Patient ID: PT-2024-00789
-Social Security: XXX-XX-5678
 
-PROVIDER INFORMATION
---------------------
-Provider Name: Dr. Jane Smith, MD
-NPI Number: 1234567890
+PRESCRIBER INFORMATION
+----------------------
+Prescriber: Dr. Sarah Johnson, MD
+Provider Name: Dr. Sarah Johnson
+NPI: 1234567890
+DEA: AJ1234567
 License: CA-MD-98765
 Specialty: Internal Medicine
-
-FACILITY INFORMATION
---------------------
-Facility Name: Metro Health Center
-Address: 123 Medical Center Dr, Suite 100
-City: Los Angeles, CA 90210
-Phone: (555) 123-4567
+Prescriber Address: 123 Medical Center Dr, Suite 100, Los Angeles, CA 90210
+Prescriber Phone: (555) 123-4567
 Fax: (555) 123-4568
+
+MEDICATION
+----------
+Drug: Lisinopril 10mg
+Medication: Lisinopril
+Strength: 10mg
+NDC: 0378-0234-01
+SIG: Take 1 tablet by mouth once daily in the morning
+Quantity: 30
+Days Supply: 30
+Refills: 3
+Refill Status: New Prescription
+
+PHARMACY INFORMATION
+--------------------
+Pharmacy: CVS Pharmacy #4521
+Pharmacy Address: 789 Main Street, Los Angeles, CA 90015
+Pharmacy Phone: (555) 456-7890
+Pharmacy NPI: 9876543210
+
+CLINICAL INFORMATION
+--------------------
+Primary Diagnosis: Essential Hypertension (I10)
+Secondary Diagnosis: Type 2 Diabetes Mellitus (E11.9)
+Allergies: Penicillin, Sulfa drugs
 
 INSURANCE INFORMATION
 ---------------------
 Insurance Provider: Blue Cross Blue Shield
 Insurance ID: INS-12345678
 Group Number: GRP-9876543
-Policy Type: PPO
-Effective Date: 01/01/2024
-
-CONTACT INFORMATION
--------------------
-Email: john.doe@email.com
-Phone: (555) 987-6543
-Emergency Contact: Mary Doe (555) 111-2222
-
-MEDICAL INFORMATION
--------------------
-Primary Diagnosis: Type 2 Diabetes Mellitus (E11.9)
-Secondary Diagnosis: Hypertension (I10)
-Allergies: Penicillin, Sulfa drugs
-Current Medications:
-  - Metformin 500mg twice daily
-  - Lisinopril 10mg once daily
-  - Aspirin 81mg once daily
-
-VISIT DETAILS
--------------
-Date of Service: 12/12/2024
-Time: 10:30 AM
-Visit Type: Follow-up Consultation
-Chief Complaint: Routine diabetes management
+BIN: 012345
+PCN: RXGROUP
 
 SIGNATURES
 ----------
 [Signature Area Detected]
-Patient Signature: [Signed] Date: 12/12/2024
-Provider Signature: [Signed] Date: 12/12/2024
+Prescriber Signature: [Signed] Date: 12/13/2024
+Dispense As Written: No
 
 TABLES
 ------
-| Medication    | Dosage  | Frequency  | Start Date |
-|---------------|---------|------------|------------|
-| Metformin     | 500mg   | Twice daily| 01/01/2023 |
-| Lisinopril    | 10mg    | Once daily | 03/15/2023 |
-| Aspirin       | 81mg    | Once daily | 01/01/2023 |
-
-Lab Results:
-| Test          | Result  | Range      | Status     |
-|---------------|---------|------------|------------|
-| HbA1c         | 7.2%    | <7.0%      | High       |
-| Glucose       | 145     | 70-100     | High       |
-| Blood Pressure| 135/85  | <120/80    | Elevated   |
+| Medication    | Dosage  | Frequency    | Refills | Start Date |
+|---------------|---------|--------------|---------|------------|
+| Lisinopril    | 10mg    | Once daily   | 3       | 12/13/2024 |
+| Metformin     | 500mg   | Twice daily  | 5       | 01/01/2023 |
+| Aspirin       | 81mg    | Once daily   | 12      | 01/01/2023 |
 `;
 
   if (enableHandwriting) {
     text += `
 HANDWRITTEN NOTES
 -----------------
-[Handwritten Region 1]: "Follow up in 3 months"
-[Handwritten Region 2]: "Increase Metformin if needed"
-[Handwritten Region 3]: "Patient understanding good"
+[Handwritten Region 1]: "Take with food"
+[Handwritten Region 2]: "Monitor blood pressure weekly"
+[Handwritten Region 3]: "Follow up in 30 days"
 `;
   }
 
@@ -735,17 +730,86 @@ function extractEntities(text: string): { type: string; value: string; confidenc
 
   // Extract name patterns
   const namePatterns = [
-    { regex: /Patient\s+Name:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, type: 'patient_name' },
-    { regex: /Provider\s+Name:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, type: 'provider' },
-    { regex: /Prescriber:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, type: 'prescriber' },
-    { regex: /Dr\.\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, type: 'provider' },
+    { regex: /Patient\s+Name:\s*(.+?)(?:\n|$)/i, type: 'patient_name' },
+    { regex: /Provider\s+Name:\s*(.+?)(?:\n|$)/i, type: 'provider' },
+    { regex: /Prescriber:\s*(.+?)(?:\n|$)/i, type: 'prescriber' },
+    { regex: /Dr\.\s*([A-Za-z]+(?:\s+[A-Za-z]+)*(?:,?\s*(?:MD|DO|NP|PA|PharmD))?)/i, type: 'prescriber' },
     { regex: /Facility\s+Name:\s*(.+?)(?:\n|$)/i, type: 'facility' },
   ];
 
   for (const { regex, type } of namePatterns) {
     const match = text.match(regex);
     if (match && match[1]) {
-      entities.push({ type, value: match[1].trim(), confidence: 0.85 });
+      if (!entities.find(e => e.type === type)) {
+        entities.push({ type, value: match[1].trim(), confidence: 0.85 });
+      }
+    }
+  }
+
+  // Extract address patterns
+  const addressPatterns = [
+    { regex: /Patient\s+Address:\s*(.+?)(?:\n|$)/i, type: 'patient_address', confidence: 0.9 },
+    { regex: /Prescriber\s+Address:\s*(.+?)(?:\n|$)/i, type: 'prescriber_address', confidence: 0.9 },
+    { regex: /Pharmacy\s+Address:\s*(.+?)(?:\n|$)/i, type: 'pharmacy_address', confidence: 0.9 },
+    { regex: /Address:\s*(\d+.+?,\s*[A-Za-z\s]+,\s*[A-Z]{2}\s*\d{5})/i, type: 'address', confidence: 0.85 },
+  ];
+
+  for (const { regex, type, confidence } of addressPatterns) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      if (!entities.find(e => e.type === type)) {
+        entities.push({ type, value: match[1].trim(), confidence });
+      }
+    }
+  }
+
+  // Extract date of birth
+  const dobPatterns = [
+    { regex: /Date\s+of\s+Birth:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, type: 'date_of_birth', confidence: 0.95 },
+    { regex: /DOB:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, type: 'date_of_birth', confidence: 0.95 },
+    { regex: /Birth\s*Date:\s*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, type: 'date_of_birth', confidence: 0.9 },
+  ];
+
+  for (const { regex, type, confidence } of dobPatterns) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      if (!entities.find(e => e.type === type)) {
+        entities.push({ type, value: match[1].trim(), confidence });
+      }
+    }
+  }
+
+  // Extract pharmacy information
+  const pharmacyPatterns = [
+    { regex: /Pharmacy:\s*(.+?)(?:\n|$)/i, type: 'pharmacy', confidence: 0.9 },
+    { regex: /Pharmacy\s+Name:\s*(.+?)(?:\n|$)/i, type: 'pharmacy', confidence: 0.9 },
+    { regex: /Send\s+to:\s*(.+?)(?:\n|$)/i, type: 'pharmacy', confidence: 0.85 },
+    { regex: /Pharmacy\s+Phone:\s*(.+?)(?:\n|$)/i, type: 'pharmacy_phone', confidence: 0.9 },
+    { regex: /Pharmacy\s+NPI:\s*(\d{10})/i, type: 'pharmacy_npi', confidence: 0.95 },
+  ];
+
+  for (const { regex, type, confidence } of pharmacyPatterns) {
+    const match = text.match(regex);
+    if (match && match[1]) {
+      if (!entities.find(e => e.type === type)) {
+        entities.push({ type, value: match[1].trim(), confidence });
+      }
+    }
+  }
+
+  // Extract refill status
+  const refillStatusPatterns = [
+    { regex: /Refill\s+Status:\s*(.+?)(?:\n|$)/i, type: 'refill_status', confidence: 0.9 },
+    { regex: /(?:New\s+Prescription|Refill\s+Request|Transfer)/i, type: 'refill_status', confidence: 0.85 },
+  ];
+
+  for (const { regex, type, confidence } of refillStatusPatterns) {
+    const match = text.match(regex);
+    if (match) {
+      const value = match[1] ? match[1].trim() : match[0].trim();
+      if (!entities.find(e => e.type === type)) {
+        entities.push({ type, value, confidence });
+      }
     }
   }
 
@@ -754,7 +818,7 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     { regex: /(?:Medication|Drug|Rx|Prescription):\s*([A-Za-z]+(?:\s+\d+\s*(?:mg|mcg|ml|g))?)/i, type: 'medication', confidence: 0.9 },
     { regex: /(?:Current\s+)?Medications?:\s*[-•]?\s*([A-Za-z]+)\s+(\d+\s*(?:mg|mcg|ml|g))/gi, type: 'medication', confidence: 0.85 },
     // Common drug names pattern
-    { regex: /\b(Metformin|Lisinopril|Atorvastatin|Levothyroxine|Amlodipine|Omeprazole|Losartan|Gabapentin|Hydrocodone|Sertraline|Simvastatin|Metoprolol|Pantoprazole|Escitalopram|Tramadol|Prednisone|Amoxicillin|Azithromycin|Alprazolam|Trazodone)\s*(\d+\s*(?:mg|mcg|ml|g))?/gi, type: 'medication', confidence: 0.95 },
+    { regex: /\b(Metformin|Lisinopril|Atorvastatin|Levothyroxine|Amlodipine|Omeprazole|Losartan|Gabapentin|Hydrocodone|Sertraline|Simvastatin|Metoprolol|Pantoprazole|Escitalopram|Tramadol|Prednisone|Amoxicillin|Azithromycin|Alprazolam|Trazodone|Atenolol|Clopidogrel|Montelukast|Furosemide|Fluoxetine|Citalopram|Zoloft|Lipitor|Norvasc|Glucophage)\s*(\d+\s*(?:mg|mcg|ml|g))?/gi, type: 'medication', confidence: 0.95 },
   ];
 
   for (const { regex, type, confidence } of medicationPatterns) {
@@ -799,6 +863,18 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     entities.push({ type: 'days_supply', value: daysSupplyMatch[1], confidence: 0.9 });
   }
 
+  // Extract strength
+  const strengthMatch = text.match(/(?:Strength|Dose):\s*(\d+\s*(?:mg|mcg|ml|g))/i);
+  if (strengthMatch) {
+    entities.push({ type: 'strength', value: strengthMatch[1], confidence: 0.9 });
+  }
+
+  // Extract date written
+  const dateWrittenMatch = text.match(/(?:Date\s+Written|Written|Rx\s+Date)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
+  if (dateWrittenMatch) {
+    entities.push({ type: 'date_written', value: dateWrittenMatch[1], confidence: 0.9 });
+  }
+
   // Extract diagnoses
   const diagnosisMatch = text.match(/(?:Primary\s+)?Diagnosis:\s*(.+?)(?:\n|$)/gi);
   if (diagnosisMatch) {
@@ -810,6 +886,12 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     }
   }
 
+  // Extract allergies
+  const allergiesMatch = text.match(/(?:Allergies|Known\s+Allergies):\s*(.+?)(?:\n|$)/i);
+  if (allergiesMatch) {
+    entities.push({ type: 'allergies', value: allergiesMatch[1].trim(), confidence: 0.85 });
+  }
+
   return entities;
 }
 
@@ -817,25 +899,27 @@ function extractFormFields(text: string, targetFields: string[]): { fieldName: s
   const fields: { fieldName: string; value: string; confidence: number; fieldType?: string }[] = [];
   
   const fieldPatterns: Record<string, { patterns: RegExp[]; type: string }> = {
+    // Patient information
     patient_name: { patterns: [/Patient\s+Name:\s*(.+?)(?:\n|$)/i, /Name:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i], type: 'text' },
+    patient_dob: { patterns: [/Date\s+of\s+Birth:\s*(.+?)(?:\n|$)/i, /DOB:\s*(.+?)(?:\n|$)/i], type: 'date' },
     date_of_birth: { patterns: [/Date\s+of\s+Birth:\s*(.+?)(?:\n|$)/i, /DOB:\s*(.+?)(?:\n|$)/i], type: 'date' },
-    npi: { patterns: [/NPI[:\s#]*(\d{10})/i], type: 'number' },
-    prescriber_npi: { patterns: [/(?:Prescriber\s+)?NPI[:\s#]*(\d{10})/i], type: 'number' },
+    patient_address: { patterns: [/Patient\s+Address:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    patient_phone: { patterns: [/Patient\s+Phone:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    
+    // Prescriber/Provider information
+    prescriber_name: { patterns: [/Prescriber:\s*(.+?)(?:\n|$)/i, /Provider\s+Name:\s*(.+?)(?:\n|$)/i, /Dr\.\s*([A-Za-z]+(?:\s+[A-Za-z]+)*(?:,?\s*(?:MD|DO|NP|PA))?)/i], type: 'text' },
+    prescriber_npi: { patterns: [/(?:Prescriber\s+)?NPI[:\s#]*(\d{10})/i, /NPI:\s*(\d{10})/i], type: 'number' },
     prescriber_dea: { patterns: [/DEA[:\s#]*([A-Z]{2}\d{7})/i], type: 'text' },
-    insurance_id: { patterns: [/Insurance\s+ID:\s*(.+?)(?:\n|$)/i], type: 'text' },
-    phone: { patterns: [/Phone:\s*(.+?)(?:\n|$)/i], type: 'text' },
-    email: { patterns: [/Email:\s*(.+?)(?:\n|$)/i], type: 'text' },
-    address: { patterns: [/Address:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    prescriber_address: { patterns: [/Prescriber\s+Address:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    npi: { patterns: [/NPI[:\s#]*(\d{10})/i], type: 'number' },
     provider: { patterns: [/Provider\s+Name:\s*(.+?)(?:\n|$)/i], type: 'text' },
-    prescriber_name: { patterns: [/Prescriber:\s*(.+?)(?:\n|$)/i, /Dr\.\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i], type: 'text' },
-    diagnosis: { patterns: [/Primary\s+Diagnosis:\s*(.+?)(?:\n|$)/i], type: 'text' },
-    facility: { patterns: [/Facility\s+Name:\s*(.+?)(?:\n|$)/i], type: 'text' },
-    // Medication-specific fields
+    
+    // Medication fields
     medication: { patterns: [
-      /(?:Medication|Drug|Rx):\s*([A-Za-z]+(?:\s+\d+\s*(?:mg|mcg|ml|g))?)/i,
-      /\b(Metformin|Lisinopril|Atorvastatin|Levothyroxine|Amlodipine|Omeprazole|Losartan|Gabapentin|Hydrocodone|Sertraline)\s*(\d+\s*mg)?/i
+      /(?:Medication|Drug):\s*([A-Za-z]+(?:\s+\d+\s*(?:mg|mcg|ml|g))?)/i,
+      /\b(Metformin|Lisinopril|Atorvastatin|Levothyroxine|Amlodipine|Omeprazole|Losartan|Gabapentin|Hydrocodone|Sertraline|Atenolol|Clopidogrel|Montelukast|Furosemide|Fluoxetine)\s*(\d+\s*mg)?/i
     ], type: 'text' },
-    strength: { patterns: [/(?:Strength|Dose):\s*(\d+\s*(?:mg|mcg|ml|g))/i, /([0-9.]+\s*(?:mg|mcg|ml|g))/i], type: 'text' },
+    strength: { patterns: [/(?:Strength|Dose):\s*(\d+\s*(?:mg|mcg|ml|g))/i], type: 'text' },
     sig: { patterns: [
       /(?:SIG|Sig|Directions|Instructions):\s*(.+?)(?:\n|$)/i,
       /Take\s+(\d+\s*(?:tablet|capsule)s?\s+.+?)(?:\n|$)/i
@@ -843,9 +927,32 @@ function extractFormFields(text: string, targetFields: string[]): { fieldName: s
     quantity: { patterns: [/(?:Qty|Quantity|Disp|Dispense)[:\s#]*(\d+)/i], type: 'number' },
     days_supply: { patterns: [/(?:Days?\s*Supply|DS)[:\s#]*(\d+)/i], type: 'number' },
     refills: { patterns: [/(?:Refills?|Ref)[:\s#]*(\d+)/i], type: 'number' },
+    refill_status: { patterns: [/Refill\s+Status:\s*(.+?)(?:\n|$)/i, /(New\s+Prescription|Refill\s+Request|Transfer)/i], type: 'text' },
     ndc: { patterns: [/NDC[:\s#]*(\d{4,5}-\d{3,4}-\d{1,2})/i], type: 'text' },
     date_written: { patterns: [/(?:Date\s+Written|Written|Rx\s+Date)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i], type: 'date' },
-    pharmacy: { patterns: [/(?:Pharmacy|Send\s+to)[:\s]*(.+?)(?:\n|$)/i], type: 'text' },
+    
+    // Pharmacy information
+    pharmacy: { patterns: [/Pharmacy:\s*(.+?)(?:\n|$)/i, /Pharmacy\s+Name:\s*(.+?)(?:\n|$)/i, /Send\s+to:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    pharmacy_address: { patterns: [/Pharmacy\s+Address:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    pharmacy_phone: { patterns: [/Pharmacy\s+Phone:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    pharmacy_npi: { patterns: [/Pharmacy\s+NPI:\s*(\d{10})/i], type: 'number' },
+    
+    // Insurance information
+    insurance_id: { patterns: [/Insurance\s+ID:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    insurance_name: { patterns: [/Insurance\s+Provider:\s*(.+?)(?:\n|$)/i, /Insurance:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    group_number: { patterns: [/Group\s+Number:\s*(.+?)(?:\n|$)/i, /GRP-(\w+)/i], type: 'text' },
+    bin: { patterns: [/BIN:\s*(\d+)/i], type: 'text' },
+    pcn: { patterns: [/PCN:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    
+    // Clinical information
+    diagnosis: { patterns: [/Primary\s+Diagnosis:\s*(.+?)(?:\n|$)/i, /Diagnosis:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    allergies: { patterns: [/Allergies:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    
+    // Other
+    phone: { patterns: [/Phone:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    email: { patterns: [/Email:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    address: { patterns: [/Address:\s*(.+?)(?:\n|$)/i], type: 'text' },
+    facility: { patterns: [/Facility\s+Name:\s*(.+?)(?:\n|$)/i], type: 'text' },
   };
 
   for (const fieldName of targetFields) {
