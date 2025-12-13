@@ -4555,6 +4555,7 @@ export type Database = {
           completed_at: string | null
           created_at: string
           current_stage: string | null
+          document_type: string | null
           error_message: string | null
           extracted_metadata: Json | null
           extracted_text: string | null
@@ -4568,11 +4569,13 @@ export type Database = {
           stages: Json | null
           status: string
           user_id: string | null
+          validation_status: string | null
         }
         Insert: {
           completed_at?: string | null
           created_at?: string
           current_stage?: string | null
+          document_type?: string | null
           error_message?: string | null
           extracted_metadata?: Json | null
           extracted_text?: string | null
@@ -4586,11 +4589,13 @@ export type Database = {
           stages?: Json | null
           status?: string
           user_id?: string | null
+          validation_status?: string | null
         }
         Update: {
           completed_at?: string | null
           created_at?: string
           current_stage?: string | null
+          document_type?: string | null
           error_message?: string | null
           extracted_metadata?: Json | null
           extracted_text?: string | null
@@ -4604,6 +4609,7 @@ export type Database = {
           stages?: Json | null
           status?: string
           user_id?: string | null
+          validation_status?: string | null
         }
         Relationships: []
       }
