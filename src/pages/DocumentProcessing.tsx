@@ -85,9 +85,14 @@ import {
   getDocumentTypesByCategory,
   getAllCategories,
   getCategoryLabel,
-  getCategoryIcon
+  getCategoryIcon,
+  DOCUMENT_TYPE_CONFIGS as BASE_DOCUMENT_TYPE_CONFIGS
 } from '@/config/documentTypes';
 import ProcessingOptionsPanel from '@/components/document-processing/ProcessingOptionsPanel';
+import CustomDocumentTypeDialog from '@/components/document-processing/CustomDocumentTypeDialog';
+import AgentArchitectureRecommendationPanel from '@/components/document-processing/AgentArchitectureRecommendationPanel';
+import ProcessingHistoryWithExport from '@/components/document-processing/ProcessingHistoryWithExport';
+import { ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
 
 // Processing stages
 type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
@@ -177,12 +182,22 @@ export default function DocumentProcessing() {
   const [selectedDocType, setSelectedDocType] = useState<string>('prescription');
   const [activeTab, setActiveTab] = useState<string>('upload');
   
+  // Custom document types state - merge with base configs
+  const [customDocTypes, setCustomDocTypes] = useState<DocumentTypeConfig[]>([]);
+  const [showCustomTypeDialog, setShowCustomTypeDialog] = useState(false);
+  
+  // Combined document type configs
+  const DOCUMENT_TYPE_CONFIGS = [...BASE_DOCUMENT_TYPE_CONFIGS, ...customDocTypes];
+  
+  // Helper to get doc type by id from combined list
+  const getDocTypeById = (id: string) => DOCUMENT_TYPE_CONFIGS.find(c => c.id === id);
+  
   // Get current document config from extensible config
-  const currentConfig = getDocumentTypeById(selectedDocType) || DOCUMENT_TYPE_CONFIGS[0];
+  const currentConfig = getDocTypeById(selectedDocType) || getDocumentTypeById(selectedDocType) || DOCUMENT_TYPE_CONFIGS[0];
   
   // Dynamic tabs based on document type
   const getTabsForDocumentType = (docType: string) => {
-    const config = getDocumentTypeById(docType);
+    const config = getDocTypeById(docType) || getDocumentTypeById(docType);
     const baseTabs: { id: string; label: string; icon: React.ReactNode }[] = [
       { id: 'upload', label: 'Upload & Process', icon: <Upload className="h-4 w-4" /> },
     ];
@@ -215,6 +230,9 @@ export default function DocumentProcessing() {
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  
+  // Agent recommendation panel state
+  const [showAgentRecommendation, setShowAgentRecommendation] = useState(false);
   
   // Agent processing mode
   const [processingMode, setProcessingMode] = useState<'standalone' | 'agent'>('standalone');
@@ -981,9 +999,45 @@ export default function DocumentProcessing() {
                         ))}
                       </div>
                     ))}
+                    {/* Custom document types */}
+                    {customDocTypes.length > 0 && (
+                      <div>
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 flex items-center gap-2 sticky top-0">
+                          <span>✨</span>
+                          Custom Types
+                        </div>
+                        {customDocTypes.map(config => (
+                          <SelectItem key={config.id} value={config.id}>
+                            <div className="flex items-center gap-2">
+                              <span>{config.icon}</span>
+                              <span>{config.title}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </div>
+                    )}
+                    {/* Add New Type Option */}
+                    <div 
+                      className="px-2 py-2 text-sm cursor-pointer hover:bg-muted flex items-center gap-2 text-primary"
+                      onClick={(e) => { e.stopPropagation(); setShowCustomTypeDialog(true); }}
+                    >
+                      <Plus className="h-4 w-4" />
+                      Add Custom Type...
+                    </div>
                   </SelectContent>
                 </Select>
               </div>
+
+              {/* Agent Recommendation Button */}
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={() => setShowAgentRecommendation(!showAgentRecommendation)}
+                className="h-8"
+              >
+                <Brain className="h-4 w-4 mr-2" />
+                AI Agent
+              </Button>
 
               <Separator orientation="vertical" className="h-8" />
 
@@ -2285,6 +2339,46 @@ export default function DocumentProcessing() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Custom Document Type Dialog */}
+        <CustomDocumentTypeDialog
+          open={showCustomTypeDialog}
+          onOpenChange={setShowCustomTypeDialog}
+          onSave={(newType) => {
+            setCustomDocTypes(prev => [...prev, newType]);
+            setSelectedDocType(newType.id);
+            toast.success(`Created custom document type: ${newType.title}`);
+          }}
+        />
+
+        {/* Agent Architecture Recommendation Panel */}
+        {showAgentRecommendation && (
+          <Dialog open={showAgentRecommendation} onOpenChange={setShowAgentRecommendation}>
+            <DialogContent className="max-w-lg">
+              <AgentArchitectureRecommendationPanel
+                documentType={currentConfig}
+                onConfirmAndBuild={(recommendation, options) => {
+                  toast.success(`Building ${recommendation.label} agent for ${currentConfig.title}`);
+                  // Navigate to canvas with context
+                  navigate('/agents/canvas', {
+                    state: {
+                      prefillContext: {
+                        name: `${currentConfig.title} Processor`,
+                        useCase: currentConfig.id,
+                        description: `AI agent for processing ${currentConfig.title} documents`,
+                        architecture: recommendation.architecture,
+                        suggestedNodes: recommendation.suggestedNodes,
+                        mcpTargets: options.selectedTargets,
+                        includeHumanInLoop: options.includeHumanInLoop
+                      }
+                    }
+                  });
+                  setShowAgentRecommendation(false);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
     </AppLayout>
   );
