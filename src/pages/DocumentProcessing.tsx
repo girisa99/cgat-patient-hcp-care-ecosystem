@@ -87,6 +87,8 @@ import {
   getCategoryLabel,
   getCategoryIcon
 } from '@/config/documentTypes';
+import AIProcessingPipeline from '@/components/document-processing/AIProcessingPipeline';
+import ProcessingOptionsPanel from '@/components/document-processing/ProcessingOptionsPanel';
 
 // Processing stages
 type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
@@ -974,189 +976,82 @@ export default function DocumentProcessing() {
           </CardContent>
         </Card>
 
-        {/* DocAI Pipeline Visualization */}
-        <Card className="border-primary/20 bg-gradient-to-r from-primary/5 via-background to-primary/5">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Cpu className="h-5 w-5 text-primary" />
-              AI Processing Pipeline
-            </CardTitle>
-            <CardDescription>Document processing stages powered by DocAI, OCR, and Form Recognition</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex items-center justify-between gap-2 flex-wrap">
-              {/* Stage 1: OCR */}
-              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
-                <div className={`p-3 rounded-xl ${enableOCR ? 'bg-blue-500/20 border-2 border-blue-500' : 'bg-muted border-2 border-transparent'}`}>
-                  <ScanLine className={`h-6 w-6 ${enableOCR ? 'text-blue-500' : 'text-muted-foreground'}`} />
-                </div>
-                <span className="text-xs font-medium text-center">OCR</span>
-                <Badge variant={enableOCR ? 'default' : 'secondary'} className="text-[10px]">
-                  {enableOCR ? 'Active' : 'Disabled'}
-                </Badge>
-              </div>
-              
-              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-              
-              {/* Stage 2: DocAI */}
-              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
-                <div className="p-3 rounded-xl bg-purple-500/20 border-2 border-purple-500">
-                  <Brain className="h-6 w-6 text-purple-500" />
-                </div>
-                <span className="text-xs font-medium text-center">DocAI</span>
-                <Badge variant="default" className="text-[10px] bg-purple-500">Active</Badge>
-              </div>
-              
-              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-              
-              {/* Stage 3: Form Recognition */}
-              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
-                <div className={`p-3 rounded-xl ${enableTableExtraction ? 'bg-green-500/20 border-2 border-green-500' : 'bg-muted border-2 border-transparent'}`}>
-                  <FileType className={`h-6 w-6 ${enableTableExtraction ? 'text-green-500' : 'text-muted-foreground'}`} />
-                </div>
-                <span className="text-xs font-medium text-center">Form Recognition</span>
-                <Badge variant={enableTableExtraction ? 'default' : 'secondary'} className={`text-[10px] ${enableTableExtraction ? 'bg-green-500' : ''}`}>
-                  {enableTableExtraction ? 'Active' : 'Disabled'}
-                </Badge>
-              </div>
-              
-              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-              
-              {/* Stage 4: Field Mapping */}
-              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
-                <div className="p-3 rounded-xl bg-orange-500/20 border-2 border-orange-500">
-                  <Layers className="h-6 w-6 text-orange-500" />
-                </div>
-                <span className="text-xs font-medium text-center">Field Mapping</span>
-                <Badge variant="default" className="text-[10px] bg-orange-500">Active</Badge>
-              </div>
-              
-              <ArrowRight className="h-5 w-5 text-muted-foreground flex-shrink-0" />
-              
-              {/* Stage 5: Agent (Optional) */}
-              <div className="flex flex-col items-center gap-2 flex-1 min-w-[100px]">
-                <div className={`p-3 rounded-xl ${processingMode === 'agent' ? 'bg-primary/20 border-2 border-primary' : 'bg-muted border-2 border-dashed border-muted-foreground/50'}`}>
-                  <Bot className={`h-6 w-6 ${processingMode === 'agent' ? 'text-primary' : 'text-muted-foreground'}`} />
-                </div>
-                <span className="text-xs font-medium text-center">Agent</span>
-                <Badge variant={processingMode === 'agent' ? 'default' : 'outline'} className="text-[10px]">
-                  {processingMode === 'agent' ? 'Enabled' : 'Optional'}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* AI Processing Pipeline - Redesigned */}
+        <AIProcessingPipeline
+          documentConfig={currentConfig}
+          enableOCR={enableOCR}
+          enableTableExtraction={enableTableExtraction}
+          processingMode={processingMode}
+          setProcessingMode={setProcessingMode}
+          isAutoProcessing={isAutoProcessing}
+          setIsAutoProcessing={setIsAutoProcessing}
+          onOpenSettings={() => setShowSettingsDialog(true)}
+          currentStage={processingResult?.stage}
+        />
 
-        {/* Processing Mode Selection */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Zap className="h-5 w-5" />
-              Processing Mode
-            </CardTitle>
-            <CardDescription>Choose standalone processing or run with an AI agent for advanced workflows</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Mode Toggle */}
-            <div className="flex items-center gap-4 p-4 border rounded-lg">
-              <div className="flex-1">
-                <div className="flex items-center gap-2 mb-1">
-                  <FileText className="h-4 w-4" />
-                  <span className="font-medium">Standalone Processing</span>
-                </div>
-                <p className="text-xs text-muted-foreground">Process documents locally with OCR and field extraction only</p>
-              </div>
-              <Switch 
-                checked={processingMode === 'agent'} 
-                onCheckedChange={(checked) => {
-                  setProcessingMode(checked ? 'agent' : 'standalone');
-                  if (!checked) setSelectedAgentWorkflow('none');
-                }}
-              />
-              <div className="flex-1 text-right">
-                <div className="flex items-center gap-2 mb-1 justify-end">
-                  <span className="font-medium">Run with Agent</span>
-                  <Bot className="h-4 w-4" />
-                </div>
-                <p className="text-xs text-muted-foreground">Enable AI agent for verification & advanced processing</p>
-              </div>
-            </div>
-
-            {/* Agent Workflow Selection */}
-            {processingMode === 'agent' && (
-              <div className="space-y-3">
-                <Label className="text-sm font-medium">Select Agent Workflow</Label>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                  {recommendedAgentWorkflows.length > 0 ? (
-                    recommendedAgentWorkflows.map((workflow) => (
-                      <div
-                        key={workflow.id}
-                        onClick={() => setSelectedAgentWorkflow(workflow.id)}
-                        className={`p-4 border rounded-lg cursor-pointer transition-all ${
-                          selectedAgentWorkflow === workflow.id 
-                            ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
-                            : 'hover:border-primary/50 hover:bg-muted/50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-3 mb-2">
-                          <div className={`p-2 rounded-lg ${selectedAgentWorkflow === workflow.id ? 'bg-primary/20' : 'bg-muted'}`}>
-                            {workflow.icon}
-                          </div>
-                          <div>
-                            <h4 className="font-medium text-sm">{workflow.title}</h4>
-                            <p className="text-xs text-muted-foreground">{workflow.description}</p>
-                          </div>
-                          {selectedAgentWorkflow === workflow.id && (
-                            <CheckCircle className="h-5 w-5 text-primary ml-auto" />
-                          )}
+        {/* Agent Workflow Selection - Only show when agent mode is enabled */}
+        {processingMode === 'agent' && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Bot className="h-5 w-5" />
+                Select Agent Workflow
+              </CardTitle>
+              <CardDescription>Choose an AI agent to process your {currentConfig.title} document</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                {recommendedAgentWorkflows.length > 0 ? (
+                  recommendedAgentWorkflows.map((workflow) => (
+                    <div
+                      key={workflow.id}
+                      onClick={() => setSelectedAgentWorkflow(workflow.id)}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all ${
+                        selectedAgentWorkflow === workflow.id 
+                          ? 'border-primary bg-primary/5 ring-2 ring-primary/20' 
+                          : 'hover:border-primary/50 hover:bg-muted/50'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3 mb-2">
+                        <div className={`p-2 rounded-lg ${selectedAgentWorkflow === workflow.id ? 'bg-primary/20' : 'bg-muted'}`}>
+                          {workflow.icon}
                         </div>
-                        <div className="flex flex-wrap gap-1 mt-2">
-                          {workflow.capabilities.slice(0, 2).map((cap, i) => (
-                            <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
-                          ))}
-                          {workflow.capabilities.length > 2 && (
-                            <Badge variant="outline" className="text-[10px]">+{workflow.capabilities.length - 2}</Badge>
-                          )}
+                        <div className="flex-1">
+                          <h4 className="font-medium text-sm">{workflow.title}</h4>
+                          <p className="text-xs text-muted-foreground">{workflow.description}</p>
                         </div>
+                        {selectedAgentWorkflow === workflow.id && (
+                          <CheckCircle className="h-5 w-5 text-primary" />
+                        )}
                       </div>
-                    ))
-                  ) : (
-                    <div className="col-span-3 text-center py-6 text-muted-foreground">
-                      <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                      <p className="text-sm">No agent workflows available for {currentConfig.title}</p>
-                      <Button 
-                        variant="link" 
-                        size="sm" 
-                        onClick={() => navigate('/agents/canvas')}
-                        className="mt-2"
-                      >
-                        Create custom agent workflow →
-                      </Button>
+                      <div className="flex flex-wrap gap-1 mt-2">
+                        {workflow.capabilities.slice(0, 2).map((cap, i) => (
+                          <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
+                        ))}
+                        {workflow.capabilities.length > 2 && (
+                          <Badge variant="outline" className="text-[10px]">+{workflow.capabilities.length - 2}</Badge>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
-
-                {selectedAgentWorkflow !== 'none' && (
-                  <Alert className="bg-primary/5 border-primary/20">
-                    <BadgeCheck className="h-4 w-4" />
-                    <AlertDescription className="flex items-center justify-between">
-                      <span>
-                        <strong>{AGENT_WORKFLOW_CONFIGS.find(w => w.id === selectedAgentWorkflow)?.title}</strong> will process your document after extraction
-                      </span>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        onClick={() => navigate('/agents/canvas')}
-                      >
-                        Configure Agent
-                      </Button>
-                    </AlertDescription>
-                  </Alert>
+                  ))
+                ) : (
+                  <div className="col-span-3 text-center py-6 text-muted-foreground">
+                    <Bot className="h-8 w-8 mx-auto mb-2 opacity-50" />
+                    <p className="text-sm">No agent workflows available for {currentConfig.title}</p>
+                    <Button 
+                      variant="link" 
+                      size="sm" 
+                      onClick={() => navigate('/agents/canvas')}
+                      className="mt-2"
+                    >
+                      Create custom agent workflow →
+                    </Button>
+                  </div>
                 )}
               </div>
-            )}
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        )}
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           {/* Dynamic Tabs based on selected document type */}
@@ -1377,147 +1272,28 @@ export default function DocumentProcessing() {
                 )}
               </div>
 
-              {/* Processing Options Sidebar */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Processing Options</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {/* OCR Provider selection */}
-                  <div className="space-y-2">
-                    <Label className="text-sm">OCR Provider</Label>
-                    <div className="grid grid-cols-3 gap-2">
-                      <Button
-                        type="button"
-                        variant={ocrProvider === 'google' ? 'default' : 'outline'}
-                        size="sm"
-                        className="w-full justify-center"
-                        onClick={() => setOcrProvider('google')}
-                      >
-                        Google
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={ocrProvider === 'azure' ? 'default' : 'outline'}
-                        size="sm"
-                        className="w-full justify-center"
-                        onClick={() => setOcrProvider('azure')}
-                      >
-                        Azure
-                      </Button>
-                      <Button
-                        type="button"
-                        variant={ocrProvider === 'aws' ? 'default' : 'outline'}
-                        size="sm"
-                        className="w-full justify-center"
-                        onClick={() => setOcrProvider('aws')}
-                      >
-                        AWS
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between">
-                      <Label>OCR Extraction</Label>
-                      <Switch checked={enableOCR} onCheckedChange={setEnableOCR} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>Handwriting Recognition</Label>
-                      <Switch checked={enableHandwriting} onCheckedChange={setEnableHandwriting} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>Table Detection</Label>
-                      <Switch checked={enableTableExtraction} onCheckedChange={setEnableTableExtraction} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>Signature Detection</Label>
-                      <Switch checked={enableSignatureDetection} onCheckedChange={setEnableSignatureDetection} />
-                    </div>
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="space-y-3">
-                    <h4 className="font-medium text-sm">Medication Features</h4>
-                    <div className="flex items-center justify-between">
-                      <Label>Auto-Calculate Qty</Label>
-                      <Switch checked={enableAutoCalculateQty} onCheckedChange={setEnableAutoCalculateQty} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>NDC Matching</Label>
-                      <Switch checked={enableNdcMatching} onCheckedChange={setEnableNdcMatching} />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <Label>Clinical Recommendations</Label>
-                      <Switch checked={enableClinicalRecommendations} onCheckedChange={setEnableClinicalRecommendations} />
-                    </div>
-                  </div>
-
-                  <Separator />
-
-                  <div className="space-y-2">
-                    <Label className="text-sm">Confidence Threshold</Label>
-                    <Input 
-                      type="number" 
-                      value={confidenceThreshold} 
-                      onChange={(e) => setConfidenceThreshold(parseFloat(e.target.value) || 0.85)}
-                      min="0" 
-                      max="1" 
-                      step="0.05" 
-                    />
-                  </div>
-
-                  <div className="pt-2">
-                    <Badge variant="outline" className="w-full justify-center">
-                      {currentConfig.targetFields.length} Target Fields
-                    </Badge>
-                  </div>
-
-                  {/* Agent Processing Status */}
-                  {processingMode === 'agent' && (
-                    <>
-                      <Separator />
-                      <div className="space-y-3">
-                        <h4 className="font-medium text-sm flex items-center gap-2">
-                          <Bot className="h-4 w-4" />
-                          Agent Workflow
-                        </h4>
-                        {selectedAgentWorkflow !== 'none' ? (
-                          <div className="p-3 border rounded-lg bg-primary/5">
-                            <div className="flex items-center gap-2 mb-2">
-                              {isAgentProcessing ? (
-                                <Loader2 className="h-4 w-4 animate-spin text-primary" />
-                              ) : (
-                                <CheckCircle className="h-4 w-4 text-green-500" />
-                              )}
-                              <span className="font-medium text-sm">
-                                {AGENT_WORKFLOW_CONFIGS.find(w => w.id === selectedAgentWorkflow)?.title}
-                              </span>
-                            </div>
-                            <div className="flex flex-wrap gap-1">
-                              {AGENT_WORKFLOW_CONFIGS.find(w => w.id === selectedAgentWorkflow)?.capabilities.slice(0, 2).map((cap, i) => (
-                                <Badge key={i} variant="secondary" className="text-[10px]">{cap}</Badge>
-                              ))}
-                            </div>
-                          </div>
-                        ) : (
-                          <p className="text-xs text-muted-foreground">No agent workflow selected</p>
-                        )}
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          className="w-full"
-                          onClick={() => navigate('/agents/canvas')}
-                        >
-                          <Bot className="h-3 w-3 mr-2" />
-                          Manage Agents
-                        </Button>
-                      </div>
-                    </>
-                  )}
-                </CardContent>
-              </Card>
+              {/* Processing Options Sidebar - New Dynamic Component */}
+              <ProcessingOptionsPanel
+                documentConfig={currentConfig}
+                enableOCR={enableOCR}
+                setEnableOCR={setEnableOCR}
+                enableHandwriting={enableHandwriting}
+                setEnableHandwriting={setEnableHandwriting}
+                enableTableExtraction={enableTableExtraction}
+                setEnableTableExtraction={setEnableTableExtraction}
+                enableSignatureDetection={enableSignatureDetection}
+                setEnableSignatureDetection={setEnableSignatureDetection}
+                enableAutoCalculateQty={enableAutoCalculateQty}
+                setEnableAutoCalculateQty={setEnableAutoCalculateQty}
+                enableNdcMatching={enableNdcMatching}
+                setEnableNdcMatching={setEnableNdcMatching}
+                enableClinicalRecommendations={enableClinicalRecommendations}
+                setEnableClinicalRecommendations={setEnableClinicalRecommendations}
+                confidenceThreshold={confidenceThreshold}
+                setConfidenceThreshold={setConfidenceThreshold}
+                ocrProvider={ocrProvider}
+                setOcrProvider={setOcrProvider}
+              />
             </div>
           </TabsContent>
 
