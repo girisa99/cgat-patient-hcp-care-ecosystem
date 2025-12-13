@@ -1,7 +1,8 @@
 /**
- * Document Processing Page - Redesigned
+ * Document Processing Page - Redesigned with Extensible Document Types
  * Central hub for document processing across all workflows
  * Auto-processes documents on upload with OCR, mapping, and validation
+ * Supports adding new document types via config/documentTypes.ts
  */
 
 import React, { useState, useCallback, useEffect } from 'react';
@@ -66,7 +67,10 @@ import {
   ArrowRight,
   Zap,
   CreditCard,
-  BadgeCheck
+  BadgeCheck,
+  Plus,
+  Image,
+  FlaskConical
 } from 'lucide-react';
 import { useMedicationProcessing } from '@/hooks/useMedicationProcessing';
 import { toast } from 'sonner';
@@ -74,165 +78,35 @@ import { useNavigate } from 'react-router-dom';
 import { useDropzone } from 'react-dropzone';
 import { supabase } from '@/integrations/supabase/client';
 import AppLayout from '@/components/layout/AppLayout';
+import { 
+  DOCUMENT_TYPE_CONFIGS, 
+  DocumentTypeConfig, 
+  getDocumentTypeById, 
+  getDocumentTypesByCategory,
+  getAllCategories,
+  getCategoryLabel,
+  getCategoryIcon
+} from '@/config/documentTypes';
 
-// Document type configurations
-type DocumentType = 
-  | 'patient-onboarding' 
-  | 'order-management' 
-  | 'treatment-center' 
-  | 'customer-onboarding'
-  | 'prescription'
-  | 'insurance';
+// Processing stages
+type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
 
 // Agent workflow types for document processing
-type AgentWorkflowType = 'none' | 'insurance-verification' | 'prescription-processing' | 'patient-intake';
+type AgentWorkflowType = 'none' | 'insurance-verification' | 'prescription-processing' | 'patient-intake' | 'imaging-analysis';
 
 interface AgentWorkflowConfig {
   id: AgentWorkflowType;
   title: string;
   description: string;
   icon: React.ReactNode;
-  documentTypes: DocumentType[];
+  documentTypes: string[];
   capabilities: string[];
 }
-
-interface DocumentConfig {
-  id: DocumentType;
-  title: string;
-  icon: React.ReactNode;
-  description: string;
-  color: string;
-  targetFields: { key: string; label: string; required?: boolean }[];
-  documentTypes: string[];
-}
-
-const DOCUMENT_CONFIGS: DocumentConfig[] = [
-  {
-    id: 'patient-onboarding',
-    title: 'Patient Onboarding',
-    icon: <UserCheck className="h-6 w-6" />,
-    description: 'Enrollment, consent forms, lab results',
-    color: 'bg-blue-500',
-    targetFields: [
-      { key: 'patient_name', label: 'Patient Name', required: true },
-      { key: 'dob', label: 'Date of Birth', required: true },
-      { key: 'insurance_id', label: 'Insurance ID' },
-      { key: 'diagnosis', label: 'Diagnosis' },
-      { key: 'prescriber_npi', label: 'Prescriber NPI' },
-      { key: 'consent_signed', label: 'Consent Signed' }
-    ],
-    documentTypes: ['Consent Form', 'Lab Results', 'Insurance Card', 'Prior Authorization', 'Medical History']
-  },
-  {
-    id: 'order-management',
-    title: 'Order Management',
-    icon: <ShoppingCart className="h-6 w-6" />,
-    description: 'Prescription orders, refills, transfers',
-    color: 'bg-green-500',
-    targetFields: [
-      { key: 'medication', label: 'Medication', required: true },
-      { key: 'ndc', label: 'NDC Code', required: true },
-      { key: 'quantity', label: 'Quantity', required: true },
-      { key: 'days_supply', label: 'Days Supply', required: true },
-      { key: 'refills', label: 'Refills' },
-      { key: 'prescriber', label: 'Prescriber' },
-      { key: 'sig', label: 'Sig/Instructions' }
-    ],
-    documentTypes: ['Prescription', 'Refill Request', 'Transfer Request', 'Hospital Discharge']
-  },
-  {
-    id: 'treatment-center',
-    title: 'Treatment Center',
-    icon: <Building2 className="h-6 w-6" />,
-    description: 'Facility credentials, licenses, compliance',
-    color: 'bg-purple-500',
-    targetFields: [
-      { key: 'facility_name', label: 'Facility Name', required: true },
-      { key: 'license_number', label: 'License Number', required: true },
-      { key: 'dea_number', label: 'DEA Number' },
-      { key: 'npi', label: 'NPI', required: true },
-      { key: 'accreditation', label: 'Accreditation' },
-      { key: 'address', label: 'Address', required: true }
-    ],
-    documentTypes: ['License', 'DEA Registration', 'Insurance Certificate', 'Accreditation', 'Contract']
-  },
-  {
-    id: 'customer-onboarding',
-    title: 'Customer Onboarding',
-    icon: <Users className="h-6 w-6" />,
-    description: 'Business registration, credit applications',
-    color: 'bg-orange-500',
-    targetFields: [
-      { key: 'company_name', label: 'Company Name', required: true },
-      { key: 'tax_id', label: 'Tax ID', required: true },
-      { key: 'contact_name', label: 'Contact Name', required: true },
-      { key: 'email', label: 'Email', required: true },
-      { key: 'credit_terms', label: 'Credit Terms' }
-    ],
-    documentTypes: ['Business License', 'W-9', 'Credit Application', 'Contract', 'Insurance Certificate']
-  },
-  {
-    id: 'prescription',
-    title: 'Rx / Prescription',
-    icon: <Pill className="h-6 w-6" />,
-    description: 'Prescriptions with medication auto-calculation',
-    color: 'bg-red-500',
-    targetFields: [
-      // Patient Information
-      { key: 'patient_name', label: 'Patient Name', required: true },
-      { key: 'patient_dob', label: 'Date of Birth', required: true },
-      { key: 'patient_address', label: 'Patient Address' },
-      { key: 'patient_phone', label: 'Patient Phone' },
-      // Prescriber Information
-      { key: 'prescriber_name', label: 'Prescriber Name', required: true },
-      { key: 'prescriber_npi', label: 'Prescriber NPI' },
-      { key: 'prescriber_dea', label: 'DEA Number' },
-      { key: 'prescriber_address', label: 'Prescriber Address' },
-      // Medication Information
-      { key: 'medication', label: 'Medication Name', required: true },
-      { key: 'strength', label: 'Strength' },
-      { key: 'sig', label: 'Sig / Instructions', required: true },
-      { key: 'quantity', label: 'Quantity', required: true },
-      { key: 'days_supply', label: 'Days Supply' },
-      { key: 'refills', label: 'Refills' },
-      { key: 'refill_status', label: 'Refill Status' },
-      { key: 'ndc', label: 'NDC Code' },
-      { key: 'date_written', label: 'Date Written' },
-      // Pharmacy Information
-      { key: 'pharmacy', label: 'Pharmacy Name' },
-      { key: 'pharmacy_address', label: 'Pharmacy Address' },
-      { key: 'pharmacy_phone', label: 'Pharmacy Phone' },
-      // Clinical Information
-      { key: 'diagnosis', label: 'Diagnosis' },
-      { key: 'allergies', label: 'Allergies' }
-    ],
-    documentTypes: ['Prescription', 'E-Prescription', 'Refill Request', 'Fax Prescription', 'Handwritten Rx']
-  },
-  {
-    id: 'insurance',
-    title: 'Insurance Document',
-    icon: <FileCheck className="h-6 w-6" />,
-    description: 'Insurance cards, EOBs, prior authorizations',
-    color: 'bg-teal-500',
-    targetFields: [
-      { key: 'insurance_name', label: 'Insurance Name', required: true },
-      { key: 'member_id', label: 'Member ID', required: true },
-      { key: 'group_number', label: 'Group Number' },
-      { key: 'bin', label: 'BIN' },
-      { key: 'pcn', label: 'PCN' },
-      { key: 'effective_date', label: 'Effective Date' }
-    ],
-    documentTypes: ['Insurance Card', 'EOB', 'Prior Authorization', 'Benefits Verification']
-  }
-];
-
-// Processing stages
-type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
 
 interface ProcessingResult {
   id: string;
   fileName: string;
-  documentType: DocumentType;
+  documentType: string;
   stage: ProcessingStage;
   progress: number;
   extractedFields: Record<string, { value: string; confidence: number; verified?: boolean }>;
@@ -242,7 +116,7 @@ interface ProcessingResult {
   tables?: any[];
   error?: string;
   processedAt: Date;
-  imageUrl?: string; // Store uploaded image for verification/audit
+  imageUrl?: string;
 }
 
 interface MedicationResult {
@@ -286,33 +160,39 @@ const AGENT_WORKFLOW_CONFIGS: AgentWorkflowConfig[] = [
     icon: <UserCheck className="h-5 w-5" />,
     documentTypes: ['patient-onboarding', 'insurance'],
     capabilities: ['Demographics extraction', 'Medical history parsing', 'Consent validation', 'Duplicate patient check']
+  },
+  {
+    id: 'imaging-analysis',
+    title: 'Medical Imaging Agent',
+    description: 'Analyze X-ray, CT, MRI, ECG reports with DICOM support',
+    icon: <Image className="h-5 w-5" />,
+    documentTypes: ['xray', 'ct-scan', 'mri', 'ecg', 'ultrasound'],
+    capabilities: ['DICOM processing', 'Image analysis', 'Report extraction', 'Finding detection']
   }
 ];
 
 export default function DocumentProcessing() {
   const navigate = useNavigate();
-  const [selectedDocType, setSelectedDocType] = useState<DocumentType>('prescription');
+  const [selectedDocType, setSelectedDocType] = useState<string>('prescription');
   const [activeTab, setActiveTab] = useState<string>('upload');
   
+  // Get current document config from extensible config
+  const currentConfig = getDocumentTypeById(selectedDocType) || DOCUMENT_TYPE_CONFIGS[0];
+  
   // Dynamic tabs based on document type
-  const getTabsForDocumentType = (docType: DocumentType) => {
+  const getTabsForDocumentType = (docType: string) => {
+    const config = getDocumentTypeById(docType);
     const baseTabs: { id: string; label: string; icon: React.ReactNode }[] = [
       { id: 'upload', label: 'Upload & Process', icon: <Upload className="h-4 w-4" /> },
     ];
     
-    // Add document-type-specific tabs
-    if (docType === 'prescription') {
-      baseTabs.push({ id: 'medication', label: 'Medication Lookup', icon: <Pill className="h-4 w-4" /> });
-    } else if (docType === 'insurance') {
-      baseTabs.push({ id: 'insurance-details', label: 'Insurance Details', icon: <CreditCard className="h-4 w-4" /> });
-    } else if (docType === 'patient-onboarding') {
-      baseTabs.push({ id: 'patient-info', label: 'Patient Info', icon: <Users className="h-4 w-4" /> });
-    } else if (docType === 'order-management') {
-      baseTabs.push({ id: 'order-details', label: 'Order Details', icon: <ShoppingCart className="h-4 w-4" /> });
-    } else if (docType === 'treatment-center') {
-      baseTabs.push({ id: 'treatment-info', label: 'Treatment Center', icon: <Building2 className="h-4 w-4" /> });
-    } else if (docType === 'customer-onboarding') {
-      baseTabs.push({ id: 'customer-info', label: 'Customer Info', icon: <UserCheck className="h-4 w-4" /> });
+    // Add document-type-specific tab based on config
+    if (config?.specialTab) {
+      baseTabs.push({ 
+        id: config.specialTab.id, 
+        label: config.specialTab.label, 
+        icon: <span className="text-sm">{config.specialTab.icon}</span>
+      });
     }
     
     // Always add history at the end
@@ -383,7 +263,7 @@ export default function DocumentProcessing() {
   
   const { calculateQuantityAndDaySupply, matchDrugToCode, checkControlledSubstance, parseSig } = useMedicationProcessing();
   
-  const currentConfig = DOCUMENT_CONFIGS.find(c => c.id === selectedDocType)!;
+  // currentConfig is defined above in getTabsForDocumentType section
   
   // Dose options
   const doseOptions = ['1 tablet', '2 tablets', '1 capsule', '2 capsules', '1 drop', '2 drops', '5 ml', '10 ml', '1 puff', '2 puffs'];
@@ -1075,7 +955,7 @@ export default function DocumentProcessing() {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-              {DOCUMENT_CONFIGS.map((config) => (
+              {DOCUMENT_TYPE_CONFIGS.map((config) => (
                 <Button
                   key={config.id}
                   variant={selectedDocType === config.id ? 'default' : 'outline'}
@@ -1085,7 +965,7 @@ export default function DocumentProcessing() {
                   onClick={() => setSelectedDocType(config.id)}
                 >
                   <div className={`p-2 rounded-lg ${selectedDocType === config.id ? 'bg-primary-foreground/20' : config.color + '/10'}`}>
-                    {config.icon}
+                    <span className="text-xl">{config.icon}</span>
                   </div>
                   <span className="text-xs text-center font-medium">{config.title}</span>
                 </Button>
@@ -2365,7 +2245,7 @@ export default function DocumentProcessing() {
                               </div>
                             </div>
                             <p className="text-sm text-muted-foreground mt-1">
-                              {DOCUMENT_CONFIGS.find(c => c.id === doc.documentType)?.title} • {doc.processedAt.toLocaleString()}
+                              {getDocumentTypeById(doc.documentType)?.title || doc.documentType} • {doc.processedAt.toLocaleString()}
                             </p>
                             
                             {/* Key extracted fields preview */}
