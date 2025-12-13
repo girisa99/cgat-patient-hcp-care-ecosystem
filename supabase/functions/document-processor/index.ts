@@ -889,12 +889,16 @@ async function awsTextractOCR(base64Image: string): Promise<string> {
   }
 }
 
-// AI NLP Entity Extraction - uses Lovable AI Gateway for better model availability
+// AI NLP Entity Extraction - uses GEMINI_API_KEY from Universal AI infrastructure
 async function extractEntitiesWithGemini(text: string, apiKey: string): Promise<{ type: string; value: string; confidence: number; source: string }[]> {
-  console.log("Using Lovable AI Gateway for NLP entity extraction...");
+  // Use GEMINI_API_KEY from Universal AI infrastructure (same as useUniversalAI hook)
+  const geminiApiKey = Deno.env.get("GEMINI_API_KEY") || apiKey;
   
-  // First try Lovable AI Gateway
-  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+  if (!geminiApiKey) {
+    throw new Error("GEMINI_API_KEY not configured - add it in Supabase secrets");
+  }
+  
+  console.log("Using Gemini API (Universal AI infrastructure) for NLP entity extraction...");
   
   const prompt = `You are an expert medical document data extractor. Extract ALL entities from this prescription/medical document text. Be very careful to correctly identify each entity type.
 
@@ -923,65 +927,33 @@ ${text.substring(0, 8000)}
 Respond ONLY with a JSON array. Each object must have: type, value, confidence (0-1), source ("nlp").
 Example: [{"type":"patient_name","value":"John Smith","confidence":0.95,"source":"nlp"},{"type":"sig","value":"Take 1 tablet twice daily","confidence":0.9,"source":"nlp"}]`;
 
+  let responseText = '';
+  
   try {
-    let responseText = '';
-    
-    if (lovableApiKey) {
-      console.log("Using Lovable AI Gateway...");
-      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    // Use Gemini API directly with the configured GEMINI_API_KEY
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
         method: "POST",
-        headers: { 
-          "Authorization": `Bearer ${lovableApiKey}`,
-          "Content-Type": "application/json" 
-        },
+        headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          model: "google/gemini-2.5-flash",
-          messages: [
-            { role: "system", content: "You are a medical document data extraction assistant. Extract entities accurately and return only valid JSON." },
-            { role: "user", content: prompt }
-          ],
-          temperature: 0.1,
-          max_tokens: 2048
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 2048,
+          }
         })
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Lovable AI Gateway error:", errorText);
-        throw new Error(`Lovable AI Gateway error: ${response.status}`);
       }
+    );
 
-      const data = await response.json();
-      responseText = data.choices?.[0]?.message?.content || '';
-    } else if (apiKey) {
-      // Fallback to direct Gemini API with updated model
-      console.log("Falling back to direct Gemini API...");
-      const response = await fetch(
-        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: prompt }] }],
-            generationConfig: {
-              temperature: 0.1,
-              maxOutputTokens: 2048,
-            }
-          })
-        }
-      );
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Gemini API error:", errorText);
-        throw new Error(`Gemini API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    } else {
-      throw new Error("No AI API key available");
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Gemini API error:", errorText);
+      throw new Error(`Gemini API error: ${response.status}`);
     }
+
+    const data = await response.json();
+    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     // Parse JSON from response - handle potential markdown code blocks
     let jsonStr = responseText.trim();
