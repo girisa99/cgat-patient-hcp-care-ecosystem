@@ -115,6 +115,33 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
   const [editValue, setEditValue] = useState('');
   const [reviewReason, setReviewReason] = useState('');
   const [ocrProvider, setOcrProvider] = useState<'google' | 'azure' | 'aws'>('google');
+  const [selectedDocumentType, setSelectedDocumentType] = useState<string>('prescription');
+
+  // Dynamic tabs based on document type
+  const getTabsForDocumentType = (docType: string) => {
+    const baseTabs = [
+      { id: 'upload', label: 'Upload', icon: Upload },
+      { id: 'processing', label: 'Processing', icon: Scan },
+      { id: 'mapping', label: 'Mapping', icon: Database },
+      { id: 'validation', label: 'Validation', icon: CheckCircle },
+    ];
+    
+    // Add document-type-specific tabs
+    if (docType === 'prescription') {
+      baseTabs.push({ id: 'medication', label: 'Medication', icon: FileType });
+    } else if (docType === 'insurance_card') {
+      baseTabs.push({ id: 'insurance', label: 'Insurance Details', icon: FileType });
+    } else if (docType === 'lab_result') {
+      baseTabs.push({ id: 'lab_results', label: 'Lab Results', icon: FileType });
+    }
+    
+    // Always add history at the end
+    baseTabs.push({ id: 'history', label: 'History', icon: FileText });
+    
+    return baseTabs;
+  };
+
+  const dynamicTabs = getTabsForDocumentType(selectedDocumentType);
 
   // Handle form mapping completion
   useEffect(() => {
@@ -238,27 +265,77 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-5">
-            <TabsTrigger value="upload" className="flex items-center gap-1">
-              <Upload className="h-3 w-3" />
-              Upload
-            </TabsTrigger>
-            <TabsTrigger value="processing" className="flex items-center gap-1">
-              <Scan className="h-3 w-3" />
-              Processing
-            </TabsTrigger>
-            <TabsTrigger value="mapping" className="flex items-center gap-1">
-              <Database className="h-3 w-3" />
-              Mapping
-            </TabsTrigger>
-            <TabsTrigger value="validation" className="flex items-center gap-1">
-              <CheckCircle className="h-3 w-3" />
-              Validation
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-1">
-              <FileText className="h-3 w-3" />
-              History
-            </TabsTrigger>
+          {/* Document Type Selection - Prominent */}
+          <div className="mb-4 p-3 bg-gradient-to-r from-primary/10 via-background to-primary/5 border border-primary/20 rounded-lg">
+            <div className="flex items-center gap-2 mb-2">
+              <FileType className="h-4 w-4 text-primary" />
+              <span className="text-sm font-medium">Document Type</span>
+              <Badge variant="outline" className="text-xs">Select to configure workflow</Badge>
+            </div>
+            <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+              {[
+                { id: 'prescription', label: 'Prescription', icon: '💊' },
+                { id: 'insurance_card', label: 'Insurance', icon: '🏥' },
+                { id: 'lab_result', label: 'Lab Result', icon: '🔬' },
+                { id: 'medical_record', label: 'Medical Record', icon: '📋' },
+                { id: 'identification', label: 'ID Document', icon: '🪪' },
+                { id: 'form', label: 'General Form', icon: '📄' },
+              ].map(docType => (
+                <button
+                  key={docType.id}
+                  type="button"
+                  onClick={() => setSelectedDocumentType(docType.id)}
+                  className={cn(
+                    "flex flex-col items-center p-2 rounded-lg border transition-all hover:shadow-sm text-center",
+                    selectedDocumentType === docType.id 
+                      ? "border-primary bg-primary/10 shadow-sm ring-1 ring-primary/30" 
+                      : "border-border hover:border-primary/50 bg-background/50"
+                  )}
+                >
+                  <span className="text-lg">{docType.icon}</span>
+                  <span className="text-[10px] font-medium mt-0.5">{docType.label}</span>
+                  {selectedDocumentType === docType.id && (
+                    <Badge className="mt-1 text-[8px] h-3 px-1 bg-primary">Selected</Badge>
+                  )}
+                </button>
+              ))}
+            </div>
+            {/* Show expected fields for selected type */}
+            {DOCUMENT_TYPE_FIELDS[selectedDocumentType] && (
+              <div className="mt-2 pt-2 border-t border-primary/10">
+                <div className="flex items-center gap-1 flex-wrap">
+                  <span className="text-[10px] text-muted-foreground">Expected fields:</span>
+                  {DOCUMENT_TYPE_FIELDS[selectedDocumentType].slice(0, 5).map(field => (
+                    <Badge key={field} variant="secondary" className="text-[9px] h-4 px-1">
+                      {field.replace(/_/g, ' ')}
+                    </Badge>
+                  ))}
+                  {DOCUMENT_TYPE_FIELDS[selectedDocumentType].length > 5 && (
+                    <span className="text-[9px] text-muted-foreground">
+                      +{DOCUMENT_TYPE_FIELDS[selectedDocumentType].length - 5} more
+                    </span>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Dynamic Tabs based on document type */}
+          <TabsList className={cn(
+            "grid w-full",
+            dynamicTabs.length === 5 && "grid-cols-5",
+            dynamicTabs.length === 6 && "grid-cols-6",
+            dynamicTabs.length === 7 && "grid-cols-7"
+          )}>
+            {dynamicTabs.map(tab => {
+              const IconComponent = tab.icon;
+              return (
+                <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-1 text-xs">
+                  <IconComponent className="h-3 w-3" />
+                  <span className="hidden md:inline">{tab.label}</span>
+                </TabsTrigger>
+              );
+            })}
           </TabsList>
 
           {/* Upload Tab */}
@@ -511,9 +588,118 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
             )}
           </TabsContent>
 
+          {/* Medication Tab - Only for Prescription */}
+          {selectedDocumentType === 'prescription' && (
+            <TabsContent value="medication" className="space-y-4 mt-4">
+              {activeJob?.extracted_metadata ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">💊</span>
+                    <h4 className="font-medium">Medication Details</h4>
+                    <Badge variant="outline">From {activeJob.file_name}</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {activeJob.extracted_metadata.entities
+                      ?.filter(e => ['medication', 'dosage', 'frequency', 'quantity', 'refills', 'ndc'].includes(e.type))
+                      .map((entity, idx) => (
+                        <div key={idx} className="bg-muted/50 p-3 rounded-lg">
+                          <Label className="text-xs text-muted-foreground capitalize">{entity.type.replace(/_/g, ' ')}</Label>
+                          <p className="font-medium">{entity.value}</p>
+                          <Badge variant="secondary" className="text-[9px] mt-1">
+                            {Math.round(entity.confidence * 100)}% • {entity.source === 'nlp' ? '🧠 NLP' : '📷 OCR'}
+                          </Badge>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <span className="text-4xl block mb-2">💊</span>
+                  <p>No medication data extracted</p>
+                  <p className="text-sm">Upload a prescription to see medication details</p>
+                </div>
+              )}
+            </TabsContent>
+          )}
+
+          {/* Insurance Tab - Only for Insurance Card */}
+          {selectedDocumentType === 'insurance_card' && (
+            <TabsContent value="insurance" className="space-y-4 mt-4">
+              {activeJob?.extracted_metadata ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🏥</span>
+                    <h4 className="font-medium">Insurance Details</h4>
+                    <Badge variant="outline">From {activeJob.file_name}</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {activeJob.extracted_metadata.entities
+                      ?.filter(e => ['insurance_provider', 'member_id', 'group_number', 'policy_holder', 'effective_date', 'copay', 'deductible'].includes(e.type))
+                      .map((entity, idx) => (
+                        <div key={idx} className="bg-muted/50 p-3 rounded-lg">
+                          <Label className="text-xs text-muted-foreground capitalize">{entity.type.replace(/_/g, ' ')}</Label>
+                          <p className="font-medium">{entity.value}</p>
+                          <Badge variant="secondary" className="text-[9px] mt-1">
+                            {Math.round(entity.confidence * 100)}% • {entity.source === 'nlp' ? '🧠 NLP' : '📷 OCR'}
+                          </Badge>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <span className="text-4xl block mb-2">🏥</span>
+                  <p>No insurance data extracted</p>
+                  <p className="text-sm">Upload an insurance card to see details</p>
+                </div>
+              )}
+            </TabsContent>
+          )}
+
+          {/* Lab Results Tab - Only for Lab Result */}
+          {selectedDocumentType === 'lab_result' && (
+            <TabsContent value="lab_results" className="space-y-4 mt-4">
+              {activeJob?.extracted_metadata ? (
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-lg">🔬</span>
+                    <h4 className="font-medium">Lab Results</h4>
+                    <Badge variant="outline">From {activeJob.file_name}</Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    {activeJob.extracted_metadata.entities
+                      ?.filter(e => ['test_name', 'test_result', 'reference_range', 'test_date', 'lab_name', 'specimen_type', 'flag'].includes(e.type))
+                      .map((entity, idx) => (
+                        <div key={idx} className="bg-muted/50 p-3 rounded-lg">
+                          <Label className="text-xs text-muted-foreground capitalize">{entity.type.replace(/_/g, ' ')}</Label>
+                          <p className="font-medium">{entity.value}</p>
+                          <Badge variant="secondary" className="text-[9px] mt-1">
+                            {Math.round(entity.confidence * 100)}% • {entity.source === 'nlp' ? '🧠 NLP' : '📷 OCR'}
+                          </Badge>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-muted-foreground">
+                  <span className="text-4xl block mb-2">🔬</span>
+                  <p>No lab results extracted</p>
+                  <p className="text-sm">Upload a lab result to see details</p>
+                </div>
+              )}
+            </TabsContent>
+          )}
+
           {/* History Tab */}
           <TabsContent value="history" className="space-y-4 mt-4">
-            <ScrollArea className="h-[400px]">
+            {/* Filter by selected document type */}
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm text-muted-foreground">
+                Showing history for: <Badge variant="outline">{DOCUMENT_TYPE_LABELS[selectedDocumentType] || selectedDocumentType}</Badge>
+              </span>
+              <span className="text-xs text-muted-foreground">{jobs.filter(j => !selectedDocumentType || j.document_type === selectedDocumentType || !j.document_type).length} documents</span>
+            </div>
+            <ScrollArea className="h-[350px]">
               {jobs.length > 0 ? (
                 <div className="space-y-2">
                   {jobs.map(job => (
@@ -524,6 +710,10 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
                       onMap={() => handleMapClick(job.id)}
                       onView={() => {
                         subscribeToJob(job.id);
+                        // Update document type to match the job being viewed
+                        if (job.document_type) {
+                          setSelectedDocumentType(job.document_type);
+                        }
                         setActiveTab('processing');
                       }}
                     />
