@@ -27,6 +27,7 @@ interface ProcessingConfig {
   confidenceThreshold?: number;
   validationRules?: ValidationRule[];
   language?: string;
+  ocrProvider?: 'google' | 'azure' | 'aws';
 }
 
 interface ValidationRule {
@@ -219,9 +220,9 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
     }
 
     if (config.enableOCR !== false && (doc.mime_type?.includes('pdf') || doc.mime_type?.includes('image'))) {
-      await updateProgress(supabase, documentId, 10, 'extraction', 'in_progress', 'Running OCR...');
-      await delay(800);
-      extractedText = await simulateOCRExtraction(fileData, config.enableHandwritingRecognition);
+      const providerName = config.ocrProvider || 'google';
+      await updateProgress(supabase, documentId, 10, 'extraction', 'in_progress', `Running OCR with ${providerName.toUpperCase()}...`);
+      extractedText = await performOCR(fileData, config);
     } else {
       extractedText = await fileData.text();
     }
@@ -569,96 +570,284 @@ function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
 
-async function simulateOCRExtraction(fileData: Blob, enableHandwriting?: boolean): Promise<string> {
-  const bytes = await fileData.arrayBuffer();
+async function performOCR(fileData: Blob, config: ProcessingConfig): Promise<string> {
+  const provider = config.ocrProvider || 'google';
+  console.log(`Performing OCR with provider: ${provider}`);
   
-  // Simulate comprehensive OCR output for prescription/medical document
-  let text = `[OCR Extracted Content - ${enableHandwriting ? 'Including Handwriting' : 'Print Only'}]
-
-PRESCRIPTION
-============
-Rx Number: RX-2024-78456
-Date Written: 12/13/2024
-
-PATIENT INFORMATION
--------------------
-Patient Name: John Michael Doe
-Date of Birth: 01/15/1980
-Patient Address: 456 Oak Street, Apt 2B, Los Angeles, CA 90012
-Patient Phone: (555) 987-6543
-Patient ID: PT-2024-00789
-
-PRESCRIBER INFORMATION
-----------------------
-Prescriber: Dr. Sarah Johnson, MD
-Provider Name: Dr. Sarah Johnson
-NPI: 1234567890
-DEA: AJ1234567
-License: CA-MD-98765
-Specialty: Internal Medicine
-Prescriber Address: 123 Medical Center Dr, Suite 100, Los Angeles, CA 90210
-Prescriber Phone: (555) 123-4567
-Fax: (555) 123-4568
-
-MEDICATION
-----------
-Drug: Lisinopril 10mg
-Medication: Lisinopril
-Strength: 10mg
-NDC: 0378-0234-01
-SIG: Take 1 tablet by mouth once daily in the morning
-Quantity: 30
-Days Supply: 30
-Refills: 3
-Refill Status: New Prescription
-
-PHARMACY INFORMATION
---------------------
-Pharmacy: CVS Pharmacy #4521
-Pharmacy Address: 789 Main Street, Los Angeles, CA 90015
-Pharmacy Phone: (555) 456-7890
-Pharmacy NPI: 9876543210
-
-CLINICAL INFORMATION
---------------------
-Primary Diagnosis: Essential Hypertension (I10)
-Secondary Diagnosis: Type 2 Diabetes Mellitus (E11.9)
-Allergies: Penicillin, Sulfa drugs
-
-INSURANCE INFORMATION
----------------------
-Insurance Provider: Blue Cross Blue Shield
-Insurance ID: INS-12345678
-Group Number: GRP-9876543
-BIN: 012345
-PCN: RXGROUP
-
-SIGNATURES
-----------
-[Signature Area Detected]
-Prescriber Signature: [Signed] Date: 12/13/2024
-Dispense As Written: No
-
-TABLES
-------
-| Medication    | Dosage  | Frequency    | Refills | Start Date |
-|---------------|---------|--------------|---------|------------|
-| Lisinopril    | 10mg    | Once daily   | 3       | 12/13/2024 |
-| Metformin     | 500mg   | Twice daily  | 5       | 01/01/2023 |
-| Aspirin       | 81mg    | Once daily   | 12      | 01/01/2023 |
-`;
-
-  if (enableHandwriting) {
-    text += `
-HANDWRITTEN NOTES
------------------
-[Handwritten Region 1]: "Take with food"
-[Handwritten Region 2]: "Monitor blood pressure weekly"
-[Handwritten Region 3]: "Follow up in 30 days"
-`;
+  const bytes = await fileData.arrayBuffer();
+  const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+  
+  switch (provider) {
+    case 'google':
+      return await googleCloudVisionOCR(base64, config.enableHandwritingRecognition);
+    case 'azure':
+      return await azureFormRecognizerOCR(base64);
+    case 'aws':
+      return await awsTextractOCR(base64);
+    default:
+      return await googleCloudVisionOCR(base64, config.enableHandwritingRecognition);
   }
+}
 
-  return text;
+async function googleCloudVisionOCR(base64Image: string, enableHandwriting?: boolean): Promise<string> {
+  const apiKey = Deno.env.get("GOOGLE_API_KEY");
+  
+  if (!apiKey) {
+    console.error("GOOGLE_API_KEY not configured");
+    throw new Error("Google Cloud Vision API key not configured. Please add GOOGLE_API_KEY in secrets.");
+  }
+  
+  console.log("Calling Google Cloud Vision API...");
+  
+  try {
+    const features = [
+      { type: "TEXT_DETECTION" },
+      { type: "DOCUMENT_TEXT_DETECTION" }
+    ];
+    
+    if (enableHandwriting) {
+      features.push({ type: "HANDWRITING_DETECTION" } as any);
+    }
+    
+    const response = await fetch(
+      `https://vision.googleapis.com/v1/images:annotate?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requests: [{
+            image: { content: base64Image },
+            features: features
+          }]
+        })
+      }
+    );
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Google Vision API error:", response.status, errorText);
+      throw new Error(`Google Vision API error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log("Google Vision API response received");
+    
+    if (data.responses?.[0]?.error) {
+      throw new Error(`Vision API error: ${data.responses[0].error.message}`);
+    }
+    
+    // Get full text annotation (best quality)
+    const fullTextAnnotation = data.responses?.[0]?.fullTextAnnotation;
+    if (fullTextAnnotation?.text) {
+      console.log(`Extracted ${fullTextAnnotation.text.length} characters from document`);
+      return fullTextAnnotation.text;
+    }
+    
+    // Fallback to text annotations
+    const textAnnotations = data.responses?.[0]?.textAnnotations;
+    if (textAnnotations && textAnnotations.length > 0) {
+      const text = textAnnotations[0].description || '';
+      console.log(`Extracted ${text.length} characters from text annotations`);
+      return text;
+    }
+    
+    console.warn("No text found in document");
+    return "[No text detected in image]";
+    
+  } catch (error) {
+    console.error("Google Vision OCR error:", error);
+    throw error;
+  }
+}
+
+async function azureFormRecognizerOCR(base64Image: string): Promise<string> {
+  const apiKey = Deno.env.get("AZURE_FORM_RECOGNIZER_KEY");
+  const endpoint = Deno.env.get("AZURE_FORM_RECOGNIZER_ENDPOINT");
+  
+  if (!apiKey || !endpoint) {
+    throw new Error("Azure Form Recognizer not configured. Please add AZURE_FORM_RECOGNIZER_KEY and AZURE_FORM_RECOGNIZER_ENDPOINT in secrets.");
+  }
+  
+  console.log("Calling Azure Form Recognizer API...");
+  
+  try {
+    // Decode base64 to binary
+    const binaryData = Uint8Array.from(atob(base64Image), c => c.charCodeAt(0));
+    
+    // Start analysis
+    const analyzeUrl = `${endpoint}/formrecognizer/documentModels/prebuilt-read:analyze?api-version=2023-07-31`;
+    const analyzeResponse = await fetch(analyzeUrl, {
+      method: "POST",
+      headers: {
+        "Ocp-Apim-Subscription-Key": apiKey,
+        "Content-Type": "application/octet-stream"
+      },
+      body: binaryData
+    });
+    
+    if (!analyzeResponse.ok) {
+      const errorText = await analyzeResponse.text();
+      throw new Error(`Azure Form Recognizer error: ${analyzeResponse.status} - ${errorText}`);
+    }
+    
+    // Get operation location for polling
+    const operationLocation = analyzeResponse.headers.get("Operation-Location");
+    if (!operationLocation) {
+      throw new Error("No operation location returned from Azure");
+    }
+    
+    // Poll for results
+    let result = null;
+    for (let i = 0; i < 30; i++) {
+      await delay(1000);
+      
+      const resultResponse = await fetch(operationLocation, {
+        headers: { "Ocp-Apim-Subscription-Key": apiKey }
+      });
+      
+      const resultData = await resultResponse.json();
+      
+      if (resultData.status === "succeeded") {
+        result = resultData;
+        break;
+      } else if (resultData.status === "failed") {
+        throw new Error(`Azure analysis failed: ${resultData.error?.message || 'Unknown error'}`);
+      }
+    }
+    
+    if (!result) {
+      throw new Error("Azure Form Recognizer timeout");
+    }
+    
+    // Extract text from result
+    const content = result.analyzeResult?.content || '';
+    console.log(`Azure extracted ${content.length} characters`);
+    return content || "[No text detected]";
+    
+  } catch (error) {
+    console.error("Azure Form Recognizer error:", error);
+    throw error;
+  }
+}
+
+async function awsTextractOCR(base64Image: string): Promise<string> {
+  const accessKeyId = Deno.env.get("AWS_ACCESS_KEY_ID");
+  const secretAccessKey = Deno.env.get("AWS_SECRET_ACCESS_KEY");
+  const region = Deno.env.get("AWS_REGION") || "us-east-1";
+  
+  if (!accessKeyId || !secretAccessKey) {
+    throw new Error("AWS Textract not configured. Please add AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY in secrets.");
+  }
+  
+  console.log("Calling AWS Textract API...");
+  
+  try {
+    // AWS Signature V4 signing is complex - using simplified approach
+    // In production, use AWS SDK or proper signing
+    const service = "textract";
+    const host = `${service}.${region}.amazonaws.com`;
+    const endpoint = `https://${host}`;
+    
+    const payload = JSON.stringify({
+      Document: {
+        Bytes: base64Image
+      }
+    });
+    
+    // Create date strings
+    const now = new Date();
+    const amzDate = now.toISOString().replace(/[:-]|\.\d{3}/g, '');
+    const dateStamp = amzDate.slice(0, 8);
+    
+    // Create canonical request
+    const method = "POST";
+    const canonicalUri = "/";
+    const canonicalQuerystring = "";
+    const canonicalHeaders = `content-type:application/x-amz-json-1.1\nhost:${host}\nx-amz-date:${amzDate}\nx-amz-target:Textract.DetectDocumentText\n`;
+    const signedHeaders = "content-type;host;x-amz-date;x-amz-target";
+    
+    // Create payload hash
+    const payloadHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(payload));
+    const payloadHashHex = Array.from(new Uint8Array(payloadHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    const canonicalRequest = `${method}\n${canonicalUri}\n${canonicalQuerystring}\n${canonicalHeaders}\n${signedHeaders}\n${payloadHashHex}`;
+    
+    // Create string to sign
+    const algorithm = "AWS4-HMAC-SHA256";
+    const credentialScope = `${dateStamp}/${region}/${service}/aws4_request`;
+    const canonicalRequestHash = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonicalRequest));
+    const canonicalRequestHashHex = Array.from(new Uint8Array(canonicalRequestHash)).map(b => b.toString(16).padStart(2, '0')).join('');
+    const stringToSign = `${algorithm}\n${amzDate}\n${credentialScope}\n${canonicalRequestHashHex}`;
+    
+    // Create signing key
+    const getSignatureKey = async (key: string, dateStamp: string, regionName: string, serviceName: string) => {
+      const kDate = await hmacSha256(`AWS4${key}`, dateStamp);
+      const kRegion = await hmacSha256Raw(kDate, regionName);
+      const kService = await hmacSha256Raw(kRegion, serviceName);
+      const kSigning = await hmacSha256Raw(kService, "aws4_request");
+      return kSigning;
+    };
+    
+    const hmacSha256 = async (key: string, data: string): Promise<ArrayBuffer> => {
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(key),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      return crypto.subtle.sign("HMAC", cryptoKey, new TextEncoder().encode(data));
+    };
+    
+    const hmacSha256Raw = async (key: ArrayBuffer, data: string): Promise<ArrayBuffer> => {
+      const cryptoKey = await crypto.subtle.importKey(
+        "raw",
+        key,
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      );
+      return crypto.subtle.sign("HMAC", cryptoKey, new TextEncoder().encode(data));
+    };
+    
+    const signingKey = await getSignatureKey(secretAccessKey, dateStamp, region, service);
+    const signatureBuffer = await hmacSha256Raw(signingKey, stringToSign);
+    const signature = Array.from(new Uint8Array(signatureBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+    
+    const authorizationHeader = `${algorithm} Credential=${accessKeyId}/${credentialScope}, SignedHeaders=${signedHeaders}, Signature=${signature}`;
+    
+    const response = await fetch(endpoint, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-amz-json-1.1",
+        "X-Amz-Date": amzDate,
+        "X-Amz-Target": "Textract.DetectDocumentText",
+        "Authorization": authorizationHeader
+      },
+      body: payload
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`AWS Textract error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    
+    // Extract text from blocks
+    const blocks = data.Blocks || [];
+    const lines = blocks
+      .filter((b: any) => b.BlockType === "LINE")
+      .map((b: any) => b.Text)
+      .join("\n");
+    
+    console.log(`AWS Textract extracted ${lines.length} characters`);
+    return lines || "[No text detected]";
+    
+  } catch (error) {
+    console.error("AWS Textract error:", error);
+    throw error;
+  }
 }
 
 function analyzeContent(text: string) {
