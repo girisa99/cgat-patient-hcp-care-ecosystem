@@ -26,6 +26,13 @@ export interface DocumentJob {
   document_type?: DocumentType;
   validation_status?: ValidationStatus;
   batch_id?: string;
+  // Image storage for verification
+  image_url?: string;
+  image_base64?: string;
+  thumbnail_url?: string;
+  // Real-time extraction tracking
+  extraction_stages?: ExtractionStage[];
+  live_extractions?: LiveExtraction[];
 }
 
 export type DocumentType = 
@@ -84,6 +91,40 @@ export interface ExtractionSummary {
   ocrProvider: string;
   nlpProvider: string;
 }
+
+// Real-time extraction tracking interfaces
+export interface ExtractionStage {
+  name: string;
+  status: 'pending' | 'processing' | 'completed' | 'error';
+  startedAt?: string;
+  completedAt?: string;
+  fieldsExtracted?: number;
+  message?: string;
+}
+
+export interface LiveExtraction {
+  id: string;
+  fieldName: string;
+  fieldValue: string;
+  confidence: number;
+  source: 'ocr' | 'nlp';
+  extractedAt: string;
+  boundingBox?: BoundingBox;
+}
+
+// Document type specific field configurations
+export const DOCUMENT_TYPE_FIELDS: Record<DocumentType, string[]> = {
+  prescription: ['patient_name', 'prescriber_name', 'medication_name', 'dosage', 'sig', 'quantity', 'refills', 'date', 'npi', 'dea_number'],
+  insurance_card: ['member_name', 'member_id', 'group_number', 'plan_name', 'rx_bin', 'rx_pcn', 'payer_id', 'effective_date', 'copay'],
+  medical_record: ['patient_name', 'date_of_birth', 'mrn', 'visit_date', 'diagnosis', 'provider_name', 'facility_name', 'notes'],
+  form: ['patient_name', 'date_of_birth', 'address', 'phone', 'email', 'signature', 'date', 'consent'],
+  contract: ['party_names', 'effective_date', 'expiration_date', 'terms', 'signatures', 'amount', 'payment_terms'],
+  invoice: ['vendor_name', 'invoice_number', 'date', 'due_date', 'line_items', 'subtotal', 'tax', 'total', 'payment_terms'],
+  receipt: ['vendor_name', 'date', 'items', 'subtotal', 'tax', 'total', 'payment_method', 'transaction_id'],
+  lab_result: ['patient_name', 'date_of_birth', 'test_name', 'result_value', 'reference_range', 'units', 'collection_date', 'ordering_provider'],
+  identification: ['full_name', 'date_of_birth', 'id_number', 'expiration_date', 'address', 'issue_date', 'issuing_authority'],
+  unknown: ['patient_name', 'date', 'content', 'notes']
+};
 
 export interface EntityExtraction {
   type: string;

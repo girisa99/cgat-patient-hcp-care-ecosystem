@@ -157,7 +157,17 @@ async function handleUpload(supabase: any, request: ProcessingRequest) {
     throw new Error(`Upload failed: ${uploadError.message}`);
   }
 
-  // Create processing record with enhanced fields
+  // Get public URL for the uploaded file
+  const { data: urlData } = await supabase.storage
+    .from('document-processing')
+    .getPublicUrl(filePath);
+  
+  const publicUrl = urlData?.publicUrl || null;
+
+  // Determine if this is an image file for thumbnail/preview
+  const isImage = mimeType?.startsWith('image/');
+  
+  // Create processing record with enhanced fields including image data
   const { data: record, error: recordError } = await supabase
     .from('document_processing_jobs')
     .insert({
@@ -167,6 +177,10 @@ async function handleUpload(supabase: any, request: ProcessingRequest) {
       status: 'uploaded',
       processing_config: processingConfig || {},
       progress: 0,
+      // Store image URL and base64 for preview
+      image_url: publicUrl,
+      image_base64: isImage ? fileBase64 : null,
+      thumbnail_url: isImage ? publicUrl : null,
       stages: { upload: { status: 'completed', timestamp: new Date().toISOString() } }
     })
     .select()
@@ -184,6 +198,7 @@ async function handleUpload(supabase: any, request: ProcessingRequest) {
       success: true, 
       documentId: record.id,
       filePath,
+      imageUrl: publicUrl,
       status: 'uploaded'
     }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } }
