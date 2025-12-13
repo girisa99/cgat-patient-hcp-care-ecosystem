@@ -640,6 +640,33 @@ const MetadataPreview: React.FC<{ metadata: ExtractedMetadata }> = ({ metadata }
       Extracted Data Summary
     </h4>
     
+    {/* Extraction Source Breakdown */}
+    {metadata.extractionSummary && (
+      <div className="bg-background/80 border border-border/50 rounded-lg p-3 space-y-2">
+        <div className="flex items-center gap-2">
+          <Sparkles className="h-3.5 w-3.5 text-primary" />
+          <span className="text-xs font-medium">Extraction Sources</span>
+        </div>
+        <div className="grid grid-cols-3 gap-2 text-xs">
+          <div className="bg-blue-500/10 border border-blue-500/20 p-2 rounded">
+            <span className="text-blue-600 dark:text-blue-400 font-medium">OCR</span>
+            <p className="font-bold text-lg">{metadata.extractionSummary.ocrFieldCount}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{metadata.extractionSummary.ocrProvider}</p>
+          </div>
+          <div className="bg-purple-500/10 border border-purple-500/20 p-2 rounded">
+            <span className="text-purple-600 dark:text-purple-400 font-medium">AI NLP</span>
+            <p className="font-bold text-lg">{metadata.extractionSummary.nlpFieldCount}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{metadata.extractionSummary.nlpProvider}</p>
+          </div>
+          <div className="bg-green-500/10 border border-green-500/20 p-2 rounded">
+            <span className="text-green-600 dark:text-green-400 font-medium">Total</span>
+            <p className="font-bold text-lg">{metadata.extractionSummary.totalFields}</p>
+            <p className="text-[10px] text-muted-foreground">fields</p>
+          </div>
+        </div>
+      </div>
+    )}
+    
     <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
       {metadata.pageCount && (
         <div className="bg-background p-2 rounded">
@@ -681,10 +708,19 @@ const MetadataPreview: React.FC<{ metadata: ExtractedMetadata }> = ({ metadata }
 
     {metadata.entities && metadata.entities.length > 0 && (
       <div className="pt-2">
-        <span className="text-xs text-muted-foreground">Extracted Entities:</span>
+        <span className="text-xs text-muted-foreground">Extracted Entities ({metadata.entities.length}):</span>
         <div className="flex flex-wrap gap-1 mt-1">
           {metadata.entities.slice(0, 8).map((e, i) => (
-            <Badge key={i} variant="outline" className="text-[10px]">
+            <Badge 
+              key={i} 
+              variant="outline" 
+              className={cn(
+                "text-[10px]",
+                e.source === 'nlp' && "border-purple-500/50 bg-purple-500/5",
+                e.source === 'ocr' && "border-blue-500/50 bg-blue-500/5"
+              )}
+            >
+              <span className="opacity-60">{e.source === 'nlp' ? '🧠' : '📷'}</span>
               {e.type}: {e.value.substring(0, 20)}
             </Badge>
           ))}

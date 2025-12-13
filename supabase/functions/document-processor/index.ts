@@ -48,12 +48,19 @@ interface ExtractedMetadata {
   wordCount?: number;
   language?: string;
   keywords?: string[];
-  entities?: { type: string; value: string; confidence: number }[];
-  formFields?: { fieldName: string; value: string; confidence: number; fieldType?: string }[];
+  entities?: { type: string; value: string; confidence: number; source?: string }[];
+  formFields?: { fieldName: string; value: string; confidence: number; fieldType?: string; source?: string }[];
   tables?: ExtractedTable[];
   signatures?: SignatureDetection[];
   documentClassification?: DocumentClassification;
   handwrittenRegions?: HandwrittenRegion[];
+  extractionSummary?: {
+    ocrFieldCount: number;
+    nlpFieldCount: number;
+    totalFields: number;
+    ocrProvider: string;
+    nlpProvider: string;
+  };
 }
 
 interface ExtractedTable {
@@ -241,25 +248,38 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
   const analysisResult = analyzeContent(extractedText);
   await updateProgress(supabase, documentId, 35, 'analysis', 'completed');
 
-  // Stage 3: Entity Extraction (using Gemini NLP if available)
+  // Stage 3: Entity Extraction (using AI NLP if available, with OCR fallback)
   await updateProgress(supabase, documentId, 40, 'entity_extraction', 'in_progress', 'Extracting entities with AI NLP...');
   
-  let entities: { type: string; value: string; confidence: number }[] = [];
+  let entities: { type: string; value: string; confidence: number; source?: string }[] = [];
+  let nlpProvider = 'none';
+  let ocrProvider = config.ocrProvider || 'google';
+  
   try {
-    // Try Gemini NLP extraction first for better accuracy
+    // Try Lovable AI Gateway first, then Gemini API, then regex fallback
+    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-    if (geminiApiKey) {
-      entities = await extractEntitiesWithGemini(extractedText, geminiApiKey);
-      console.log(`Gemini NLP extracted ${entities.length} entities`);
+    
+    if (lovableApiKey || geminiApiKey) {
+      entities = await extractEntitiesWithGemini(extractedText, geminiApiKey || '');
+      nlpProvider = lovableApiKey ? 'lovable-ai-gemini' : 'gemini-direct';
+      console.log(`AI NLP (${nlpProvider}) extracted ${entities.length} entities`);
     } else {
-      // Fallback to regex-based extraction
+      // Fallback to regex-based extraction (marked as OCR source)
       entities = extractEntities(extractedText);
+      nlpProvider = 'regex-fallback';
       console.log(`Regex extracted ${entities.length} entities`);
     }
   } catch (nlpError) {
-    console.error("Gemini NLP extraction failed, falling back to regex:", nlpError);
+    console.error("AI NLP extraction failed, falling back to regex:", nlpError);
     entities = extractEntities(extractedText);
+    nlpProvider = 'regex-fallback';
   }
+  
+  // Calculate extraction summary
+  const nlpFieldCount = entities.filter(e => e.source === 'nlp').length;
+  const ocrFieldCount = entities.filter(e => e.source === 'ocr' || !e.source).length;
+  
   await updateProgress(supabase, documentId, 50, 'entity_extraction', 'completed');
 
   // Stage 4: Table Extraction
@@ -312,7 +332,14 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
     tables,
     signatures,
     documentClassification,
-    handwrittenRegions: config.enableHandwritingRecognition ? extractHandwrittenRegions(extractedText) : []
+    handwrittenRegions: config.enableHandwritingRecognition ? extractHandwrittenRegions(extractedText) : [],
+    extractionSummary: {
+      ocrFieldCount,
+      nlpFieldCount,
+      totalFields: entities.length,
+      ocrProvider,
+      nlpProvider
+    }
   };
 
   await updateProgress(supabase, documentId, 95, 'metadata', 'completed');
@@ -862,59 +889,99 @@ async function awsTextractOCR(base64Image: string): Promise<string> {
   }
 }
 
-// Gemini NLP Entity Extraction - uses Google's Generative Language API
-async function extractEntitiesWithGemini(text: string, apiKey: string): Promise<{ type: string; value: string; confidence: number }[]> {
-  console.log("Using Gemini NLP for entity extraction...");
+// AI NLP Entity Extraction - uses Lovable AI Gateway for better model availability
+async function extractEntitiesWithGemini(text: string, apiKey: string): Promise<{ type: string; value: string; confidence: number; source: string }[]> {
+  console.log("Using Lovable AI Gateway for NLP entity extraction...");
   
-  const prompt = `Extract ALL entities from this document text. For each entity found, provide the type, exact value, and confidence (0-1).
+  // First try Lovable AI Gateway
+  const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
+  
+  const prompt = `You are an expert medical document data extractor. Extract ALL entities from this prescription/medical document text. Be very careful to correctly identify each entity type.
 
-Required entity types to extract:
-- patient_name: Full patient name
-- date_of_birth: Patient DOB (any date format)
-- medication: Drug name with strength (e.g., "Colace 100mg")
-- strength: Medication strength (e.g., "100mg")
-- dosage: Dosing instructions (e.g., "twice daily")
-- prescriber: Doctor or prescriber name
-- npi: 10-digit NPI number
-- dea: DEA number
-- phone: Phone numbers
-- address: Full or partial addresses
-- diagnosis: Medical conditions or diagnoses
-- insurance_id: Insurance ID or member number
-- ndc: NDC drug code
+IMPORTANT RULES:
+1. patient_name: The PATIENT's full name (who the medication is prescribed TO). Look for "Patient:", "Name:", or similar labels. This is NOT the doctor's name.
+2. prescriber: The DOCTOR's or PRESCRIBER's name (who wrote the prescription). Look for "Dr.", "MD", "Prescriber:", "Physician:" labels.
+3. medication: The drug name WITH strength if present (e.g., "Colace 100mg", "Metformin 500mg")
+4. sig: The DOSING INSTRUCTIONS like "Take twice daily", "1 tablet by mouth daily", "PRN for pain". This is NOT the patient name.
+5. strength: The medication dosage strength alone (e.g., "100mg", "500mg")
+6. quantity: Number of pills/tablets/units to dispense
+7. refills: Number of refills allowed
+8. date_of_birth: Patient's birth date
+9. phone: Phone numbers
+10. npi: 10-digit National Provider Identifier
+11. dea: DEA registration number
+12. address: Full or partial addresses
+13. diagnosis: Medical conditions or diagnoses
+14. insurance_id: Insurance member ID
+15. ndc: National Drug Code
 
-Document text:
+Document text to analyze:
 """
 ${text.substring(0, 8000)}
 """
 
-Respond ONLY with a JSON array in this exact format (no markdown, no explanation):
-[{"type":"patient_name","value":"John Smith","confidence":0.95},{"type":"medication","value":"Colace 100mg","confidence":0.9}]`;
+Respond ONLY with a JSON array. Each object must have: type, value, confidence (0-1), source ("nlp").
+Example: [{"type":"patient_name","value":"John Smith","confidence":0.95,"source":"nlp"},{"type":"sig","value":"Take 1 tablet twice daily","confidence":0.9,"source":"nlp"}]`;
 
   try {
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
-      {
+    let responseText = '';
+    
+    if (lovableApiKey) {
+      console.log("Using Lovable AI Gateway...");
+      const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { 
+          "Authorization": `Bearer ${lovableApiKey}`,
+          "Content-Type": "application/json" 
+        },
         body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 2048,
-          }
+          model: "google/gemini-2.5-flash",
+          messages: [
+            { role: "system", content: "You are a medical document data extraction assistant. Extract entities accurately and return only valid JSON." },
+            { role: "user", content: prompt }
+          ],
+          temperature: 0.1,
+          max_tokens: 2048
         })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Lovable AI Gateway error:", errorText);
+        throw new Error(`Lovable AI Gateway error: ${response.status}`);
       }
-    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API error:", errorText);
-      throw new Error(`Gemini API error: ${response.status}`);
+      const data = await response.json();
+      responseText = data.choices?.[0]?.message?.content || '';
+    } else if (apiKey) {
+      // Fallback to direct Gemini API with updated model
+      console.log("Falling back to direct Gemini API...");
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 2048,
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error("Gemini API error:", errorText);
+        throw new Error(`Gemini API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    } else {
+      throw new Error("No AI API key available");
     }
-
-    const data = await response.json();
-    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
     
     // Parse JSON from response - handle potential markdown code blocks
     let jsonStr = responseText.trim();
@@ -925,17 +992,18 @@ Respond ONLY with a JSON array in this exact format (no markdown, no explanation
     const entities = JSON.parse(jsonStr);
     
     if (Array.isArray(entities)) {
-      console.log(`Gemini extracted ${entities.length} entities successfully`);
+      console.log(`AI NLP extracted ${entities.length} entities successfully`);
       return entities.map(e => ({
         type: String(e.type || 'unknown'),
         value: String(e.value || ''),
-        confidence: Number(e.confidence) || 0.8
+        confidence: Number(e.confidence) || 0.8,
+        source: 'nlp'
       })).filter(e => e.value.length > 0);
     }
     
-    throw new Error("Invalid Gemini response format");
+    throw new Error("Invalid AI response format");
   } catch (error) {
-    console.error("Gemini NLP extraction error:", error);
+    console.error("AI NLP extraction error:", error);
     throw error;
   }
 }
@@ -970,8 +1038,8 @@ function extractKeywords(text: string): string[] {
     .map(([word]) => word);
 }
 
-function extractEntities(text: string): { type: string; value: string; confidence: number }[] {
-  const entities: { type: string; value: string; confidence: number }[] = [];
+function extractEntities(text: string): { type: string; value: string; confidence: number; source: string }[] {
+  const entities: { type: string; value: string; confidence: number; source: string }[] = [];
   
   const patterns: { type: string; regex: RegExp; confidence: number }[] = [
     { type: 'email', regex: /[\w.-]+@[\w.-]+\.\w+/gi, confidence: 0.95 },
@@ -1001,7 +1069,7 @@ function extractEntities(text: string): { type: string; value: string; confidenc
           ? match.replace(/DEA[:\s#]*/i, '')
           : match;
         if (!entities.find(e => e.value === value && e.type === type)) {
-          entities.push({ type, value, confidence });
+          entities.push({ type, value, confidence, source: 'ocr' });
         }
       }
     }
