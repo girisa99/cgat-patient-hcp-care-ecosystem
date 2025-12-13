@@ -46,7 +46,8 @@ import {
   Layers,
   Link2,
   Cpu,
-  CloudCog
+  CloudCog,
+  Scan
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { MULTI_AGENT_NODES, MULTI_AGENT_CATEGORIES } from './MultiAgentNodeRegistry';
@@ -109,6 +110,8 @@ const iconMap: { [key: string]: React.ComponentType<any> } = {
   'check': CheckCircle,
   'file-input': FileInput,
   'file-output': FileOutput,
+  'scan': Scan,
+  'search': Search,
 };
 
 const getIconForCategory = (categoryName: string, iconName?: string): React.ComponentType<any> => {
@@ -127,6 +130,7 @@ const getIconForCategory = (categoryName: string, iconName?: string): React.Comp
   if (name.includes('analytics') || name.includes('monitor')) return BarChart3;
   if (name.includes('communication') || name.includes('message')) return MessageSquare;
   if (name.includes('healthcare') || name.includes('medical')) return Activity;
+  if (name.includes('document') || name.includes('ocr') || name.includes('scan')) return Scan;
   
   return Settings;
 };
@@ -294,6 +298,11 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
       nodes: [
         { id: 'document_upload', type_key: 'document_upload', display_name: 'Document Upload', category_id: 'document-processing' },
         { id: 'ocr_processor', type_key: 'ocr_processor', display_name: 'OCR Processor', category_id: 'document-processing' },
+        // Multi-Provider OCR Nodes
+        { id: 'google_vision_ocr', type_key: 'google_vision_ocr', display_name: 'Google Vision OCR', category_id: 'document-processing' },
+        { id: 'azure_form_recognizer', type_key: 'azure_form_recognizer', display_name: 'Azure Form Recognizer', category_id: 'document-processing' },
+        { id: 'aws_textract', type_key: 'aws_textract', display_name: 'AWS Textract', category_id: 'document-processing' },
+        { id: 'multi_provider_ocr', type_key: 'multi_provider_ocr', display_name: 'Multi-Provider OCR', category_id: 'document-processing' },
         { id: 'metadata_extractor', type_key: 'metadata_extractor', display_name: 'Metadata Extractor', category_id: 'document-processing' },
         { id: 'table_extractor', type_key: 'table_extractor', display_name: 'Table Extractor', category_id: 'document-processing' },
         { id: 'signature_detector', type_key: 'signature_detector', display_name: 'Signature Detector', category_id: 'document-processing' },
@@ -351,8 +360,14 @@ export const CanvasContextMenu: React.FC<CanvasContextMenuProps> = ({
     { type: 'knowledge_base', category: 'data', label: 'Knowledge Base', icon: Database },
   ];
 
-  // Document Processing nodes for submenu
+  // Document Processing nodes for submenu - including Multi-Provider OCR
   const documentProcessingNodes = [
+    // Multi-Provider OCR - PRIMARY OPTIONS
+    { type: 'multi_provider_ocr', category: 'document_processing', label: 'Multi-Provider OCR', icon: Scan, description: 'Select OCR provider (Google/Azure/AWS)' },
+    { type: 'google_vision_ocr', category: 'document_processing', label: 'Google Vision OCR', icon: FileText, description: 'Google Cloud Vision API' },
+    { type: 'azure_form_recognizer', category: 'document_processing', label: 'Azure Form Recognizer', icon: FileText, description: 'Azure Form Recognizer API' },
+    { type: 'aws_textract', category: 'document_processing', label: 'AWS Textract', icon: FileText, description: 'AWS Textract API' },
+    // Standard document processing
     { type: 'ocr_document', category: 'document_processing', label: 'OCR Document', icon: FileText, description: 'Extract text from images/scans' },
     { type: 'doc_ai', category: 'document_processing', label: 'Document AI', icon: FileText, description: 'Intelligent document analysis' },
     { type: 'metadata_extraction', category: 'document_processing', label: 'Metadata Extraction', icon: FileText, description: 'Extract document metadata' },

@@ -260,85 +260,100 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
 
           {/* Upload Tab */}
           <TabsContent value="upload" className="space-y-4 mt-4">
-            {/* OCR Provider Selection */}
-            <div className="bg-gradient-to-r from-primary/5 to-primary/10 rounded-lg p-4 mb-4">
-              <div className="flex items-center gap-2 mb-3">
-                <Scan className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">OCR Provider</span>
-              </div>
-              <div className="grid grid-cols-3 gap-3">
-                <button
-                  onClick={() => setOcrProvider('google')}
-                  className={cn(
-                    "flex flex-col items-center p-3 rounded-lg border-2 transition-all",
-                    ocrProvider === 'google' 
-                      ? "border-primary bg-primary/10" 
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <span className="text-2xl mb-1">🔍</span>
-                  <span className="text-sm font-medium">Google Vision</span>
-                  <span className="text-xs text-muted-foreground">Cloud Vision AI</span>
-                  {ocrProvider === 'google' && <Badge variant="secondary" className="mt-1 text-xs">Active</Badge>}
-                </button>
-                <button
-                  onClick={() => setOcrProvider('azure')}
-                  className={cn(
-                    "flex flex-col items-center p-3 rounded-lg border-2 transition-all",
-                    ocrProvider === 'azure' 
-                      ? "border-primary bg-primary/10" 
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <span className="text-2xl mb-1">📘</span>
-                  <span className="text-sm font-medium">Azure</span>
-                  <span className="text-xs text-muted-foreground">Form Recognizer</span>
-                  {ocrProvider === 'azure' && <Badge variant="secondary" className="mt-1 text-xs">Active</Badge>}
-                </button>
-                <button
-                  onClick={() => setOcrProvider('aws')}
-                  className={cn(
-                    "flex flex-col items-center p-3 rounded-lg border-2 transition-all",
-                    ocrProvider === 'aws' 
-                      ? "border-primary bg-primary/10" 
-                      : "border-border hover:border-primary/50"
-                  )}
-                >
-                  <span className="text-2xl mb-1">☁️</span>
-                  <span className="text-sm font-medium">AWS</span>
-                  <span className="text-xs text-muted-foreground">Textract</span>
-                  {ocrProvider === 'aws' && <Badge variant="secondary" className="mt-1 text-xs">Active</Badge>}
-                </button>
-              </div>
-            </div>
-            
-            {/* Quick Options */}
-            <div className="flex flex-wrap gap-4 mb-4">
-              <div className="flex items-center space-x-2">
-                <Switch id="ocr" checked={enableOCR} onCheckedChange={setEnableOCR} />
-                <Label htmlFor="ocr" className="text-sm">OCR</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="handwriting" checked={enableHandwriting} onCheckedChange={setEnableHandwriting} />
-                <Label htmlFor="handwriting" className="text-sm">Handwriting</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="tables" checked={enableTableExtraction} onCheckedChange={setEnableTableExtraction} />
-                <Label htmlFor="tables" className="text-sm">Tables</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="signatures" checked={enableSignatureDetection} onCheckedChange={setEnableSignatureDetection} />
-                <Label htmlFor="signatures" className="text-sm">Signatures</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="auto-process" checked={autoProcess} onCheckedChange={setAutoProcess} />
-                <Label htmlFor="auto-process" className="text-sm">Auto-process</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <Switch id="auto-map" checked={autoMap} onCheckedChange={setAutoMap} />
-                <Label htmlFor="auto-map" className="text-sm">Auto-map</Label>
-              </div>
-            </div>
+            {/* Processing Options - Prominent Section */}
+            <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 via-background to-primary/5">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+                  <Settings className="h-4 w-4 text-primary" />
+                  Processing Options
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {/* OCR Provider Selection - Now Prominent */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Scan className="h-4 w-4 text-primary" />
+                    <span className="text-sm font-medium">OCR Provider</span>
+                    <Badge variant="outline" className="text-xs">Required</Badge>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <button
+                      type="button"
+                      onClick={() => setOcrProvider('google')}
+                      className={cn(
+                        "flex flex-col items-center p-3 rounded-lg border-2 transition-all hover:shadow-md",
+                        ocrProvider === 'google' 
+                          ? "border-primary bg-primary/10 shadow-sm" 
+                          : "border-border hover:border-primary/50 bg-background"
+                      )}
+                    >
+                      <span className="text-xl mb-1">🔍</span>
+                      <span className="text-xs font-semibold">Google Vision</span>
+                      <span className="text-[10px] text-muted-foreground">Cloud Vision AI</span>
+                      {ocrProvider === 'google' && <Badge className="mt-1 text-[10px] h-4 bg-green-500">Active</Badge>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOcrProvider('azure')}
+                      className={cn(
+                        "flex flex-col items-center p-3 rounded-lg border-2 transition-all hover:shadow-md",
+                        ocrProvider === 'azure' 
+                          ? "border-primary bg-primary/10 shadow-sm" 
+                          : "border-border hover:border-primary/50 bg-background"
+                      )}
+                    >
+                      <span className="text-xl mb-1">📘</span>
+                      <span className="text-xs font-semibold">Azure</span>
+                      <span className="text-[10px] text-muted-foreground">Form Recognizer</span>
+                      {ocrProvider === 'azure' && <Badge className="mt-1 text-[10px] h-4 bg-blue-500">Active</Badge>}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setOcrProvider('aws')}
+                      className={cn(
+                        "flex flex-col items-center p-3 rounded-lg border-2 transition-all hover:shadow-md",
+                        ocrProvider === 'aws' 
+                          ? "border-primary bg-primary/10 shadow-sm" 
+                          : "border-border hover:border-primary/50 bg-background"
+                      )}
+                    >
+                      <span className="text-xl mb-1">☁️</span>
+                      <span className="text-xs font-semibold">AWS</span>
+                      <span className="text-[10px] text-muted-foreground">Textract</span>
+                      {ocrProvider === 'aws' && <Badge className="mt-1 text-[10px] h-4 bg-orange-500">Active</Badge>}
+                    </button>
+                  </div>
+                </div>
+
+                {/* Quick Processing Options */}
+                <div className="grid grid-cols-3 gap-3 pt-2 border-t">
+                  <div className="flex items-center space-x-2">
+                    <Switch id="ocr" checked={enableOCR} onCheckedChange={setEnableOCR} />
+                    <Label htmlFor="ocr" className="text-xs">OCR</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="handwriting" checked={enableHandwriting} onCheckedChange={setEnableHandwriting} />
+                    <Label htmlFor="handwriting" className="text-xs">Handwriting</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="tables" checked={enableTableExtraction} onCheckedChange={setEnableTableExtraction} />
+                    <Label htmlFor="tables" className="text-xs">Tables</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="signatures" checked={enableSignatureDetection} onCheckedChange={setEnableSignatureDetection} />
+                    <Label htmlFor="signatures" className="text-xs">Signatures</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="auto-process" checked={autoProcess} onCheckedChange={setAutoProcess} />
+                    <Label htmlFor="auto-process" className="text-xs">Auto-process</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <Switch id="auto-map" checked={autoMap} onCheckedChange={setAutoMap} />
+                    <Label htmlFor="auto-map" className="text-xs">Auto-map</Label>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
 
             {/* Advanced Options */}
             {showAdvancedOptions && (
