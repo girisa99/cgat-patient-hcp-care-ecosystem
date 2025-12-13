@@ -268,16 +268,31 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
 
     // Check for document processing capabilities
     const hasDocProcessing = workflowNodes.some(n => 
-      ['ocr_document', 'doc_ai', 'metadata_extraction', 'form_recognition', 'data_extraction'].includes(n.data.type_key)
+      ['ocr_document', 'doc_ai', 'metadata_extraction', 'form_recognition', 'data_extraction', 'google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'multi_provider_ocr'].includes(n.data.type_key)
     );
 
-    if (!hasDocProcessing && (agentContext.useCase?.name?.toLowerCase().includes('document') || agentContext.useCase?.name?.toLowerCase().includes('form'))) {
+    if (!hasDocProcessing && (agentContext.useCase?.name?.toLowerCase().includes('document') || agentContext.useCase?.name?.toLowerCase().includes('form') || agentContext.useCase?.name?.toLowerCase().includes('prescription') || agentContext.useCase?.name?.toLowerCase().includes('ocr'))) {
       newSuggestions.push({
         id: 'add-doc-processing',
         type: 'recommendation',
-        title: 'Add Document Processing',
-        description: 'Process documents with OCR, form recognition, and data extraction.',
-        action: () => addRecommendedNode('ocr_document')
+        title: 'Add Multi-Provider OCR',
+        description: 'Choose OCR provider: Google Vision, Azure Form Recognizer, or AWS Textract for document processing.',
+        action: () => addRecommendedNode('multi_provider_ocr')
+      });
+    }
+
+    // Check for specific OCR providers if document workflow
+    const hasMultiProviderOCR = workflowNodes.some(n => 
+      ['google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'multi_provider_ocr'].includes(n.data.type_key)
+    );
+
+    if (!hasMultiProviderOCR && hasDocProcessing) {
+      newSuggestions.push({
+        id: 'add-multi-ocr',
+        type: 'improvement',
+        title: 'Add Multi-Provider OCR Selection',
+        description: 'Enable user selection of OCR provider (Google/Azure/AWS) for better flexibility.',
+        action: () => addRecommendedNode('multi_provider_ocr')
       });
     }
 
@@ -318,7 +333,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'tool_chain': 'Tool Chain',
       'self_reflection': 'Self Reflection',
       'goal_decomposition': 'Goal Decomposition',
-      // Document Processing nodes - all 10 types
+      // Document Processing nodes - all types including Multi-Provider OCR
       'ocr_document': 'OCR Document',
       'doc_ai': 'Document AI',
       'metadata_extraction': 'Metadata Extraction',
@@ -329,6 +344,11 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'document_comparison': 'Document Comparison',
       'document_archive': 'Document Archive',
       'document_to_database': 'Doc to Database',
+      // Multi-Provider OCR nodes
+      'multi_provider_ocr': 'Multi-Provider OCR',
+      'google_vision_ocr': 'Google Vision OCR',
+      'azure_form_recognizer': 'Azure Form Recognizer',
+      'aws_textract': 'AWS Textract',
       // Enhanced Agentic AI nodes - all 10 types
       'plan_execute': 'Plan & Execute',
       'reasoning_chain': 'Reasoning Chain',
