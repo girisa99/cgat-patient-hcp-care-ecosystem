@@ -292,7 +292,44 @@ const AGENT_WORKFLOW_CONFIGS: AgentWorkflowConfig[] = [
 export default function DocumentProcessing() {
   const navigate = useNavigate();
   const [selectedDocType, setSelectedDocType] = useState<DocumentType>('prescription');
-  const [activeTab, setActiveTab] = useState<'upload' | 'medication' | 'history'>('upload');
+  const [activeTab, setActiveTab] = useState<string>('upload');
+  
+  // Dynamic tabs based on document type
+  const getTabsForDocumentType = (docType: DocumentType) => {
+    const baseTabs: { id: string; label: string; icon: React.ReactNode }[] = [
+      { id: 'upload', label: 'Upload & Process', icon: <Upload className="h-4 w-4" /> },
+    ];
+    
+    // Add document-type-specific tabs
+    if (docType === 'prescription') {
+      baseTabs.push({ id: 'medication', label: 'Medication Lookup', icon: <Pill className="h-4 w-4" /> });
+    } else if (docType === 'insurance') {
+      baseTabs.push({ id: 'insurance-details', label: 'Insurance Details', icon: <CreditCard className="h-4 w-4" /> });
+    } else if (docType === 'patient-onboarding') {
+      baseTabs.push({ id: 'patient-info', label: 'Patient Info', icon: <Users className="h-4 w-4" /> });
+    } else if (docType === 'order-management') {
+      baseTabs.push({ id: 'order-details', label: 'Order Details', icon: <ShoppingCart className="h-4 w-4" /> });
+    } else if (docType === 'treatment-center') {
+      baseTabs.push({ id: 'treatment-info', label: 'Treatment Center', icon: <Building2 className="h-4 w-4" /> });
+    } else if (docType === 'customer-onboarding') {
+      baseTabs.push({ id: 'customer-info', label: 'Customer Info', icon: <UserCheck className="h-4 w-4" /> });
+    }
+    
+    // Always add history at the end
+    baseTabs.push({ id: 'history', label: 'History', icon: <History className="h-4 w-4" /> });
+    
+    return baseTabs;
+  };
+
+  const dynamicTabs = getTabsForDocumentType(selectedDocType);
+  
+  // Reset to upload tab when document type changes if current tab is not available
+  useEffect(() => {
+    const validTabIds = dynamicTabs.map(t => t.id);
+    if (!validTabIds.includes(activeTab)) {
+      setActiveTab('upload');
+    }
+  }, [selectedDocType]);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);
@@ -1241,20 +1278,15 @@ export default function DocumentProcessing() {
           </CardContent>
         </Card>
 
-        <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="space-y-4">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="upload" className="flex items-center gap-2">
-              <Upload className="h-4 w-4" />
-              Upload & Process
-            </TabsTrigger>
-            <TabsTrigger value="medication" className="flex items-center gap-2">
-              <Pill className="h-4 w-4" />
-              Medication Lookup
-            </TabsTrigger>
-            <TabsTrigger value="history" className="flex items-center gap-2">
-              <History className="h-4 w-4" />
-              History
-            </TabsTrigger>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
+          {/* Dynamic Tabs based on selected document type */}
+          <TabsList className={`grid w-full ${dynamicTabs.length === 2 ? 'grid-cols-2' : 'grid-cols-3'}`}>
+            {dynamicTabs.map(tab => (
+              <TabsTrigger key={tab.id} value={tab.id} className="flex items-center gap-2">
+                {tab.icon}
+                <span className="hidden sm:inline">{tab.label}</span>
+              </TabsTrigger>
+            ))}
           </TabsList>
 
           {/* Upload Tab */}
@@ -2059,6 +2091,214 @@ export default function DocumentProcessing() {
               </Card>
             </div>
           </TabsContent>
+
+          {/* Insurance Details Tab - Only for Insurance document type */}
+          {selectedDocType === 'insurance' && (
+            <TabsContent value="insurance-details" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <CreditCard className="h-5 w-5 text-primary" />
+                    Insurance Details
+                  </CardTitle>
+                  <CardDescription>
+                    Extracted insurance information from uploaded document
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {processingResult && processingResult.stage === 'complete' ? (
+                    <div className="space-y-4">
+                      {/* Document Image */}
+                      {processingResult.imageUrl && (
+                        <div className="flex gap-4 items-start p-4 bg-muted/30 rounded-lg">
+                          <img 
+                            src={processingResult.imageUrl} 
+                            alt="Insurance document" 
+                            className="max-h-48 w-auto rounded border"
+                          />
+                          <div className="flex-1">
+                            <Badge variant="outline">{processingResult.fileName}</Badge>
+                            <p className="text-sm text-muted-foreground mt-2">
+                              Verify extracted data against the original document
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      {/* Extracted Insurance Fields */}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {currentConfig.targetFields.map((field) => {
+                          const extracted = processingResult.extractedFields[field.key];
+                          return (
+                            <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
+                              <Label className="text-xs text-muted-foreground">{field.label}</Label>
+                              <p className="font-medium">{extracted?.value || '—'}</p>
+                              {extracted?.confidence && (
+                                <Badge variant="secondary" className="text-[9px] mt-1">
+                                  {Math.round(extracted.confidence * 100)}%
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <CreditCard className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No insurance document processed</p>
+                      <p className="text-sm mt-1">Upload an insurance card to see details</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Patient Info Tab - Only for Patient Onboarding document type */}
+          {selectedDocType === 'patient-onboarding' && (
+            <TabsContent value="patient-info" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Users className="h-5 w-5 text-primary" />
+                    Patient Information
+                  </CardTitle>
+                  <CardDescription>
+                    Extracted patient demographics and information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {processingResult && processingResult.stage === 'complete' ? (
+                    <div className="space-y-4">
+                      {processingResult.imageUrl && (
+                        <div className="flex gap-4 items-start p-4 bg-muted/30 rounded-lg">
+                          <img src={processingResult.imageUrl} alt="Document" className="max-h-48 w-auto rounded border" />
+                        </div>
+                      )}
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                        {currentConfig.targetFields.map((field) => {
+                          const extracted = processingResult.extractedFields[field.key];
+                          return (
+                            <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
+                              <Label className="text-xs text-muted-foreground">{field.label}</Label>
+                              <p className="font-medium">{extracted?.value || '—'}</p>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No patient document processed</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Order Details Tab - Only for Order Management document type */}
+          {selectedDocType === 'order-management' && (
+            <TabsContent value="order-details" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5 text-primary" />
+                    Order Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {processingResult && processingResult.stage === 'complete' ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {currentConfig.targetFields.map((field) => {
+                        const extracted = processingResult.extractedFields[field.key];
+                        return (
+                          <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
+                            <Label className="text-xs text-muted-foreground">{field.label}</Label>
+                            <p className="font-medium">{extracted?.value || '—'}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <ShoppingCart className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No order document processed</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Treatment Center Tab */}
+          {selectedDocType === 'treatment-center' && (
+            <TabsContent value="treatment-info" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Building2 className="h-5 w-5 text-primary" />
+                    Treatment Center Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {processingResult && processingResult.stage === 'complete' ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {currentConfig.targetFields.map((field) => {
+                        const extracted = processingResult.extractedFields[field.key];
+                        return (
+                          <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
+                            <Label className="text-xs text-muted-foreground">{field.label}</Label>
+                            <p className="font-medium">{extracted?.value || '—'}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <Building2 className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No treatment center document processed</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
+
+          {/* Customer Onboarding Tab */}
+          {selectedDocType === 'customer-onboarding' && (
+            <TabsContent value="customer-info" className="space-y-4">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <UserCheck className="h-5 w-5 text-primary" />
+                    Customer Information
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {processingResult && processingResult.stage === 'complete' ? (
+                    <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                      {currentConfig.targetFields.map((field) => {
+                        const extracted = processingResult.extractedFields[field.key];
+                        return (
+                          <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
+                            <Label className="text-xs text-muted-foreground">{field.label}</Label>
+                            <p className="font-medium">{extracted?.value || '—'}</p>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <UserCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No customer document processed</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </TabsContent>
+          )}
 
           {/* History Tab */}
           <TabsContent value="history">
