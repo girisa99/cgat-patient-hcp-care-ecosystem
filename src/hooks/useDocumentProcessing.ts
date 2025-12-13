@@ -155,6 +155,7 @@ export interface ProcessingConfig {
   confidenceThreshold?: number;
   validationRules?: ValidationRule[];
   language?: string;
+  ocrProvider?: 'google' | 'azure' | 'aws';
 }
 
 export interface ValidationRule {
