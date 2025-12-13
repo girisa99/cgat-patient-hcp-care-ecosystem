@@ -744,7 +744,7 @@ export default function DocumentProcessing() {
           clinicalRecommendations: enableClinicalRecommendations ? [] : []
         }];
         
-        // Auto-populate drug search with extracted medication
+        // Auto-populate drug search with extracted medication and trigger search
         if (extractedDrugName) {
           setDrugSearchQuery(extractedDrugName);
           if (extractedSig) {
@@ -753,8 +753,95 @@ export default function DocumentProcessing() {
           // Switch to medication tab to show user the extracted data
           setActiveTab('medication');
           toast.info(`Extracted medication: ${extractedDrugName}`, {
-            description: 'Review and search for NDC codes in Drug Search tab'
+            description: 'Searching for NDC codes and clinical data...'
           });
+          
+          // Auto-trigger drug search to populate NDC codes, clinical recommendations, and alternatives
+          setTimeout(async () => {
+            try {
+              const { data, error } = await supabase.functions.invoke('drug-lookup', {
+                body: { drugName: extractedDrugName, searchType: 'all' }
+              });
+              
+              if (error) throw error;
+              
+              if (data && (data.ndc?.length > 0 || data.rxnorm?.length > 0)) {
+                const calculation = calculateQuantityAndDaySupply(extractedSig || 'Take 1 tablet daily for 30 days');
+                
+                const ndcOptions = (data.ndc || []).map((ndc: any) => ({
+                  code: ndc.code,
+                  name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+                  manufacturer: ndc.manufacturer,
+                  dosageForm: ndc.dosageForm,
+                  country: 'USA'
+                }));
+                
+                const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
+                
+                if (data.isControlled) {
+                  clinicalRecommendations.push({
+                    type: 'warning',
+                    title: 'Controlled Substance',
+                    message: `Schedule ${data.schedule} controlled substance - Verify patient ID and check PDMP`
+                  });
+                }
+                
+                if (data.clinicalInfo) {
+                  data.clinicalInfo.forEach((info: any) => {
+                    const recType = info.type === 'error' ? 'error' : 
+                                    (info.severity === 'high' ? 'warning' : 'info');
+                    clinicalRecommendations.push({
+                      type: recType as 'warning' | 'info' | 'error',
+                      title: info.title || undefined,
+                      message: info.description
+                    });
+                  });
+                }
+                
+                if (clinicalRecommendations.length === 0) {
+                  clinicalRecommendations.push({
+                    type: 'info',
+                    title: 'Standard Medication',
+                    message: 'No specific warnings found. Follow standard prescribing guidelines.'
+                  });
+                }
+                
+                const primaryNdc = data.ndc?.[0];
+                
+                const autoSearchResult: MedicationResult = {
+                  drugName: primaryNdc?.brandName || data.drugName || extractedDrugName,
+                  genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
+                  strength: primaryNdc?.strength || '',
+                  sig: extractedSig || 'Take 1 tablet daily for 30 days',
+                  calculatedQuantity: calculation.totalQuantity,
+                  daysSupply: calculation.daysSupply,
+                  dailyDose: calculation.dailyDose,
+                  ndc: primaryNdc?.code,
+                  ndcOptions,
+                  alternatives: (data.alternatives || []).map((alt: any) => ({
+                    name: alt.name,
+                    ndc: alt.rxcui,
+                    inStock: Math.random() > 0.3,
+                    stockQty: Math.floor(Math.random() * 500)
+                  })),
+                  clinicalRecommendations,
+                  isControlled: data.isControlled,
+                  schedule: data.schedule
+                };
+                
+                setSearchResults(autoSearchResult);
+                
+                // Auto-select first NDC
+                if (ndcOptions.length > 0) {
+                  setSelectedNdc(ndcOptions[0].code);
+                }
+                
+                toast.success(`Found ${ndcOptions.length} NDC codes with clinical data`);
+              }
+            } catch (err) {
+              console.error('Auto drug search error:', err);
+            }
+          }, 500);
         }
       }
 
