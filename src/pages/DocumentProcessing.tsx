@@ -1387,21 +1387,74 @@ export default function DocumentProcessing() {
                             </>
                           )}
 
-                          {/* Validation Summary */}
+                          {/* Validation Summary with Failed Fields Details */}
                           {processingResult.validationResults && (
                             <>
                               <Separator />
-                              <div className="flex items-center justify-between p-3 border rounded-lg">
-                                <span className="font-medium">Validation Results</span>
-                                <div className="flex items-center gap-3">
-                                  <Badge className="bg-green-500">{processingResult.validationResults.passed} Passed</Badge>
-                                  {processingResult.validationResults.warnings > 0 && (
-                                    <Badge variant="secondary">{processingResult.validationResults.warnings} Warnings</Badge>
-                                  )}
-                                  {processingResult.validationResults.failed > 0 && (
-                                    <Badge variant="destructive">{processingResult.validationResults.failed} Failed</Badge>
-                                  )}
+                              <div className="space-y-3">
+                                <div className="flex items-center justify-between p-3 border rounded-lg">
+                                  <span className="font-medium">Validation Results</span>
+                                  <div className="flex items-center gap-3">
+                                    <Badge className="bg-green-500">{processingResult.validationResults.passed} Passed</Badge>
+                                    {processingResult.validationResults.warnings > 0 && (
+                                      <Badge variant="secondary">{processingResult.validationResults.warnings} Warnings</Badge>
+                                    )}
+                                    {processingResult.validationResults.failed > 0 && (
+                                      <Badge variant="destructive">{processingResult.validationResults.failed} Failed</Badge>
+                                    )}
+                                  </div>
                                 </div>
+                                
+                                {/* Show Failed/Missing Fields */}
+                                {processingResult.validationResults.failed > 0 && (
+                                  <div className="p-3 border border-destructive/30 bg-destructive/5 rounded-lg space-y-2">
+                                    <div className="flex items-center gap-2 text-destructive">
+                                      <XCircle className="h-4 w-4" />
+                                      <span className="font-medium text-sm">Missing Required Fields</span>
+                                    </div>
+                                    <div className="flex flex-wrap gap-2">
+                                      {currentConfig.targetFields
+                                        .filter(f => f.required && !processingResult.extractedFields[f.key])
+                                        .map((field, i) => (
+                                          <Badge key={i} variant="outline" className="border-destructive/50 text-destructive">
+                                            {field.label}
+                                          </Badge>
+                                        ))
+                                      }
+                                    </div>
+                                    <p className="text-xs text-muted-foreground mt-2">
+                                      These fields could not be extracted from the document. Manual entry may be required.
+                                    </p>
+                                  </div>
+                                )}
+
+                                {/* Show All Target Fields Status */}
+                                <details className="group">
+                                  <summary className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground">
+                                    <span>View all {currentConfig.targetFields.length} target fields</span>
+                                    <ArrowRight className="h-3 w-3 transition-transform group-open:rotate-90" />
+                                  </summary>
+                                  <div className="mt-2 grid grid-cols-2 gap-1">
+                                    {currentConfig.targetFields.map((field, i) => {
+                                      const extracted = processingResult.extractedFields[field.key];
+                                      return (
+                                        <div key={i} className={`flex items-center gap-2 p-1.5 rounded text-xs ${
+                                          extracted ? 'bg-green-500/10 text-green-700' : 'bg-muted text-muted-foreground'
+                                        }`}>
+                                          {extracted ? (
+                                            <CheckCircle className="h-3 w-3 flex-shrink-0" />
+                                          ) : (
+                                            <XCircle className="h-3 w-3 flex-shrink-0" />
+                                          )}
+                                          <span className="truncate">{field.label}</span>
+                                          {field.required && !extracted && (
+                                            <Badge variant="destructive" className="text-[8px] px-1">Required</Badge>
+                                          )}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </details>
                               </div>
                             </>
                           )}

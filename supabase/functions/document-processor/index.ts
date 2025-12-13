@@ -915,9 +915,86 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     }
   }
 
-  // Extract name patterns
+  // Enhanced patient name extraction - look for patterns in prescription documents
+  const patientNamePatterns = [
+    { regex: /Patient\s+Name[:\s]*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, confidence: 0.95 },
+    { regex: /PATIENT\s+NAME\s*\n?\s*([A-Z][a-z]+)\s*\n?\s*[•·]?\s*Patient\s+name\s*\n?\s*([A-Z][a-z]+)/i, confidence: 0.9, combineGroups: true },
+    { regex: /Name:\s*([A-Z][a-z]+(?:\s+[A-Z][a-z]+)+)/i, confidence: 0.85 },
+    { regex: /([A-Z][a-z]+)\s+([A-Z][a-z]+)\s*\n\s*(?:Date of birth|DOB)/i, confidence: 0.85, combineGroups: true },
+  ];
+
+  for (const pattern of patientNamePatterns) {
+    if (entities.find(e => e.type === 'patient_name')) break;
+    const match = text.match(pattern.regex);
+    if (match) {
+      let value = '';
+      if ((pattern as any).combineGroups && match[1] && match[2]) {
+        value = `${match[1].trim()} ${match[2].trim()}`;
+      } else if (match[1]) {
+        value = match[1].trim();
+      }
+      if (value && value.length > 2) {
+        entities.push({ type: 'patient_name', value, confidence: pattern.confidence });
+      }
+    }
+  }
+
+  // Enhanced DOB extraction
+  const dobPatterns = [
+    { regex: /DOB[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, confidence: 0.95 },
+    { regex: /Date\s+of\s+birth[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, confidence: 0.95 },
+    { regex: /Birth\s*Date[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, confidence: 0.9 },
+  ];
+
+  for (const { regex, confidence } of dobPatterns) {
+    if (entities.find(e => e.type === 'date_of_birth' || e.type === 'patient_dob')) break;
+    const match = text.match(regex);
+    if (match && match[1]) {
+      entities.push({ type: 'patient_dob', value: match[1].trim(), confidence });
+      entities.push({ type: 'date_of_birth', value: match[1].trim(), confidence });
+    }
+  }
+
+  // Enhanced medication extraction - handle formats like "Colace 100mg"
+  const medicationPatterns = [
+    // Standard drug + strength format
+    { regex: /([A-Z][a-z]+(?:\s+[A-Z][a-z]+)?)\s+(\d+\s*(?:mg|mcg|ml|g|mg\/ml))/gi, confidence: 0.9 },
+    // Prescription with bullet point format
+    { regex: /[•·]\s*([A-Z][a-z]+)\s+(\d+\s*(?:mg|mcg|ml|g|mg\/ml))/gi, confidence: 0.9 },
+    // Medication label format
+    { regex: /(?:Medication|Drug|Rx)[:\s]+([A-Z][a-z]+(?:\s+\d+\s*(?:mg|mcg|ml|g))?)/i, confidence: 0.85 },
+  ];
+
+  // Common drug name list for better matching
+  const commonDrugs = [
+    'Colace', 'Metformin', 'Lisinopril', 'Atorvastatin', 'Levothyroxine', 'Amlodipine', 
+    'Omeprazole', 'Losartan', 'Gabapentin', 'Hydrocodone', 'Sertraline', 'Simvastatin',
+    'Metoprolol', 'Pantoprazole', 'Escitalopram', 'Tramadol', 'Prednisone', 'Amoxicillin',
+    'Azithromycin', 'Alprazolam', 'Trazodone', 'Atenolol', 'Clopidogrel', 'Montelukast',
+    'Furosemide', 'Fluoxetine', 'Citalopram', 'Zoloft', 'Lipitor', 'Norvasc', 'Glucophage',
+    'Aspirin', 'Ibuprofen', 'Acetaminophen', 'Tylenol', 'Advil', 'Motrin'
+  ];
+
+  // Try to find common drug names with strength
+  for (const drug of commonDrugs) {
+    const drugRegex = new RegExp(`(${drug})\\s*(\\d+\\s*(?:mg|mcg|ml|g|mg\\/ml))?`, 'gi');
+    const match = text.match(drugRegex);
+    if (match && match[0]) {
+      const value = match[0].trim();
+      if (!entities.find(e => e.type === 'medication' && e.value.toLowerCase().includes(drug.toLowerCase()))) {
+        entities.push({ type: 'medication', value, confidence: 0.95 });
+        // Also extract strength separately
+        const strengthMatch = match[0].match(/(\d+\s*(?:mg|mcg|ml|g|mg\/ml))/i);
+        if (strengthMatch && !entities.find(e => e.type === 'strength')) {
+          entities.push({ type: 'strength', value: strengthMatch[1].trim(), confidence: 0.9 });
+        }
+        break;
+      }
+    }
+  }
+
+  // Extract name patterns (provider/prescriber)
   const namePatterns = [
-    { regex: /Patient\s+Name:\s*(.+?)(?:\n|$)/i, type: 'patient_name' },
     { regex: /Provider\s+Name:\s*(.+?)(?:\n|$)/i, type: 'provider' },
     { regex: /Prescriber:\s*(.+?)(?:\n|$)/i, type: 'prescriber' },
     { regex: /Dr\.\s*([A-Za-z]+(?:\s+[A-Za-z]+)*(?:,?\s*(?:MD|DO|NP|PA|PharmD))?)/i, type: 'prescriber' },
