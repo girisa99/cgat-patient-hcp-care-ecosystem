@@ -570,97 +570,213 @@ export default function DocumentProcessing() {
   }, [selectedDocType, isAutoProcessing]);
 
   const runAutoProcessing = async (result: ProcessingResult, file: File) => {
-    // Build stages based on enabled settings
-    const stages: { stage: ProcessingStage; label: string; duration: number; enabled: boolean }[] = [
-      { stage: 'uploading', label: 'Uploading document...', duration: 500, enabled: true },
-      { stage: 'ocr', label: enableOCR ? 'Running OCR...' : 'Skipping OCR...', duration: enableOCR ? 1500 : 300, enabled: true },
-      { stage: 'extraction', label: 'Extracting data...', duration: 1200, enabled: true },
-      { stage: 'mapping', label: 'Mapping fields...', duration: 800, enabled: true },
-      { stage: 'validation', label: 'Validating results...', duration: 600, enabled: true }
-    ];
-    
-    const enabledStages = stages.filter(s => s.enabled);
-    const progressPerStage = 100 / enabledStages.length;
-    let currentProgress = 0;
-    
-    for (const { stage, label, duration } of enabledStages) {
-      setProcessingResult(prev => prev ? { ...prev, stage, progress: currentProgress } : null);
-      toast.info(label);
+    try {
+      // Stage 1: Upload
+      setProcessingResult(prev => prev ? { ...prev, stage: 'uploading', progress: 10 } : null);
+      toast.info('Uploading document...');
       
-      await new Promise(resolve => setTimeout(resolve, duration));
-      currentProgress += progressPerStage;
-      setProcessingResult(prev => prev ? { ...prev, progress: Math.min(currentProgress, 100) } : null);
-    }
-    
-    // Generate extracted data based on document type and confidence threshold
-    const extractedFields: Record<string, { value: string; confidence: number }> = {};
-    currentConfig.targetFields.forEach(field => {
-      const rawConfidence = Math.random() * 0.3 + 0.7; // 70-100%
-      // Only include fields that meet confidence threshold
-      if (rawConfidence >= confidenceThreshold) {
-        extractedFields[field.key] = {
-          value: generateMockValue(field.key),
-          confidence: rawConfidence
+      // Convert file to base64 for edge function
+      const reader = new FileReader();
+      const base64Promise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => {
+          const base64 = (reader.result as string).split(',')[1];
+          resolve(base64);
         };
-      }
-    });
-    
-    // Generate medication data for prescription documents (respects settings)
-    let medications: MedicationResult[] | undefined;
-    if ((selectedDocType === 'prescription' || selectedDocType === 'order-management') && enableAutoCalculateQty) {
-      const sigText = 'Take 1 tablet twice daily with meals';
-      const calculation = calculateQuantityAndDaySupply(sigText);
+        reader.onerror = reject;
+      });
+      reader.readAsDataURL(file);
+      const fileBase64 = await base64Promise;
       
-      medications = [{
-        drugName: 'Metformin',
-        genericName: 'Metformin HCl',
-        strength: '500mg',
-        sig: sigText,
-        calculatedQuantity: calculation.totalQuantity,
-        daysSupply: calculation.daysSupply,
-        dailyDose: calculation.dailyDose,
-        ndc: enableNdcMatching ? '0093-7214-01' : undefined,
-        ndcOptions: enableNdcMatching ? [
-          { code: '0093-7214-01', name: 'Metformin HCl 500mg', manufacturer: 'Teva' },
-          { code: '0378-0234-01', name: 'Metformin HCl 500mg', manufacturer: 'Mylan' }
-        ] : [],
-        clinicalRecommendations: enableClinicalRecommendations ? [
-          { type: 'info', message: 'Take with food to reduce GI side effects' }
-        ] : []
-      }];
-    }
+      setProcessingResult(prev => prev ? { ...prev, progress: 20 } : null);
+      
+      // Stage 2: Call edge function for real document processing
+      setProcessingResult(prev => prev ? { ...prev, stage: 'ocr', progress: 30 } : null);
+      toast.info(enableOCR ? 'Running OCR extraction...' : 'Processing document...');
+      
+      const { data: uploadResult, error: uploadError } = await supabase.functions.invoke('document-processor', {
+        body: {
+          action: 'upload',
+          fileBase64,
+          fileName: file.name,
+          mimeType: file.type,
+          processingConfig: {
+            enableOCR,
+            enableHandwritingRecognition: enableHandwriting,
+            enableTableExtraction,
+            enableSignatureDetection,
+            confidenceThreshold
+          }
+        }
+      });
+      
+      if (uploadError) throw uploadError;
+      
+      const documentId = uploadResult?.documentId;
+      if (!documentId) throw new Error('Failed to get document ID');
+      
+      setProcessingResult(prev => prev ? { ...prev, progress: 40 } : null);
+      
+      // Stage 3: Process document with OCR and extraction
+      setProcessingResult(prev => prev ? { ...prev, stage: 'extraction', progress: 50 } : null);
+      toast.info('Extracting data from document...');
+      
+      const { data: processResult, error: processError } = await supabase.functions.invoke('document-processor', {
+        body: {
+          action: 'process',
+          documentId
+        }
+      });
+      
+      if (processError) throw processError;
+      
+      setProcessingResult(prev => prev ? { ...prev, progress: 70 } : null);
+      
+      // Stage 4: Map to form fields
+      setProcessingResult(prev => prev ? { ...prev, stage: 'mapping', progress: 80 } : null);
+      toast.info('Mapping fields...');
+      
+      const targetFields = currentConfig.targetFields.map(f => f.key);
+      const { data: mapResult } = await supabase.functions.invoke('document-processor', {
+        body: {
+          action: 'map_to_form',
+          documentId,
+          processingConfig: { extractionFields: targetFields }
+        }
+      });
+      
+      // Stage 5: Validation
+      setProcessingResult(prev => prev ? { ...prev, stage: 'validation', progress: 90 } : null);
+      toast.info('Validating results...');
+      
+      // Build extracted fields from form mapping
+      const extractedFields: Record<string, { value: string; confidence: number }> = {};
+      if (mapResult?.formMapping) {
+        Object.entries(mapResult.formMapping).forEach(([key, data]: [string, any]) => {
+          if (data.confidence >= confidenceThreshold) {
+            extractedFields[key] = {
+              value: data.value,
+              confidence: data.confidence
+            };
+          }
+        });
+      }
+      
+      // Extract medications from OCR text for prescription documents
+      let medications: MedicationResult[] | undefined;
+      let extractedDrugName: string | undefined;
+      let extractedSig: string | undefined;
+      
+      if ((selectedDocType === 'prescription' || selectedDocType === 'order-management') && enableAutoCalculateQty) {
+        const rawText = processResult?.extractedTextPreview || '';
+        const fullMetadata = processResult?.metadata || {};
+        
+        // Extract medication info from OCR text
+        const medicationPatterns = [
+          /(?:Medication|Drug|Rx):\s*([A-Za-z]+(?:\s+\d+\s*mg)?)/i,
+          /(?:Current Medications|Medications):\s*[-•]?\s*([A-Za-z]+)\s+(\d+\s*mg)/i,
+          /([A-Za-z]+)\s+(\d+\s*mg)\s+(?:twice|once|three times|four times)/i
+        ];
+        
+        const sigPatterns = [
+          /(?:SIG|Directions|Instructions|Take):\s*(.+?)(?:\n|$)/i,
+          /Take\s+(\d+\s*(?:tablet|capsule|pill)s?\s+.+?)(?:\n|$)/i,
+          /(\d+\s*(?:tablet|capsule)s?\s+(?:twice|once|three times)\s+daily.+?)(?:\n|$)/i
+        ];
+        
+        // Try to extract drug name
+        for (const pattern of medicationPatterns) {
+          const match = rawText.match(pattern);
+          if (match) {
+            extractedDrugName = match[1].trim();
+            break;
+          }
+        }
+        
+        // Try to extract SIG
+        for (const pattern of sigPatterns) {
+          const match = rawText.match(pattern);
+          if (match) {
+            extractedSig = match[1].trim();
+            break;
+          }
+        }
+        
+        // Check entities for medication info
+        const entities = fullMetadata.entities || [];
+        const medicationEntity = entities.find((e: any) => e.type === 'medication' || e.type === 'drug');
+        if (medicationEntity && !extractedDrugName) {
+          extractedDrugName = medicationEntity.value;
+        }
+        
+        // Use extracted or fallback values
+        const drugName = extractedDrugName || extractedFields['medication']?.value?.split(' ')[0] || 'Unknown';
+        const sigText = extractedSig || extractedFields['sig']?.value || 'Take as directed';
+        const calculation = calculateQuantityAndDaySupply(sigText);
+        
+        medications = [{
+          drugName,
+          genericName: drugName,
+          strength: extractedFields['strength']?.value || '',
+          sig: sigText,
+          calculatedQuantity: calculation.totalQuantity,
+          daysSupply: calculation.daysSupply,
+          dailyDose: calculation.dailyDose,
+          ndc: enableNdcMatching ? extractedFields['ndc']?.value : undefined,
+          ndcOptions: [],
+          clinicalRecommendations: enableClinicalRecommendations ? [] : []
+        }];
+        
+        // Auto-populate drug search with extracted medication
+        if (extractedDrugName) {
+          setDrugSearchQuery(extractedDrugName);
+          if (extractedSig) {
+            setSigInstructions(extractedSig);
+          }
+          // Switch to medication tab to show user the extracted data
+          setActiveTab('medication');
+          toast.info(`Extracted medication: ${extractedDrugName}`, {
+            description: 'Review and search for NDC codes in Drug Search tab'
+          });
+        }
+      }
 
-    const finalResult: ProcessingResult = {
-      ...result,
-      stage: 'complete',
-      progress: 100,
-      extractedFields,
-      medications,
-      validationResults: {
-        passed: Object.keys(extractedFields).filter(k => extractedFields[k].confidence >= confidenceThreshold).length,
-        failed: Object.keys(extractedFields).filter(k => extractedFields[k].confidence < confidenceThreshold * 0.8).length,
-        warnings: Object.keys(extractedFields).filter(k => 
-          extractedFields[k].confidence >= confidenceThreshold * 0.8 && 
-          extractedFields[k].confidence < confidenceThreshold
-        ).length
-      },
-      processedAt: new Date()
-    };
-    
-    setProcessingResult(finalResult);
-    setProcessingHistory(prev => [finalResult, ...prev]);
-    
-    const settingsUsed = [];
-    if (enableOCR) settingsUsed.push('OCR');
-    if (enableHandwriting) settingsUsed.push('Handwriting');
-    if (enableTableExtraction) settingsUsed.push('Tables');
-    if (enableAutoCalculateQty) settingsUsed.push('Auto-Calc');
-    
-    toast.success(`Document processed! (${settingsUsed.join(', ')})`);
-    
-    // Run agent workflow if enabled
-    if (processingMode === 'agent' && selectedAgentWorkflow !== 'none') {
-      await runAgentWorkflow(finalResult);
+      const finalResult: ProcessingResult = {
+        ...result,
+        stage: 'complete',
+        progress: 100,
+        extractedFields,
+        medications,
+        rawText: processResult?.extractedTextPreview,
+        validationResults: {
+          passed: Object.keys(extractedFields).filter(k => extractedFields[k].confidence >= confidenceThreshold).length,
+          failed: currentConfig.targetFields.filter(f => f.required && !extractedFields[f.key]).length,
+          warnings: Object.keys(extractedFields).filter(k => 
+            extractedFields[k].confidence >= confidenceThreshold * 0.8 && 
+            extractedFields[k].confidence < confidenceThreshold
+          ).length
+        },
+        processedAt: new Date()
+      };
+      
+      setProcessingResult(finalResult);
+      setProcessingHistory(prev => [finalResult, ...prev]);
+      
+      const settingsUsed = [];
+      if (enableOCR) settingsUsed.push('OCR');
+      if (enableHandwriting) settingsUsed.push('Handwriting');
+      if (enableTableExtraction) settingsUsed.push('Tables');
+      if (enableAutoCalculateQty) settingsUsed.push('Auto-Calc');
+      
+      toast.success(`Document processed! (${settingsUsed.join(', ')})`);
+      
+      // Run agent workflow if enabled
+      if (processingMode === 'agent' && selectedAgentWorkflow !== 'none') {
+        await runAgentWorkflow(finalResult);
+      }
+    } catch (error) {
+      console.error('Document processing error:', error);
+      toast.error('Failed to process document: ' + (error instanceof Error ? error.message : 'Unknown error'));
+      setProcessingResult(prev => prev ? { ...prev, stage: 'error', error: String(error) } : null);
     }
   };
 
