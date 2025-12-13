@@ -33,7 +33,10 @@ import {
   ExtractedTable,
   ProcessingConfig,
   FormFieldExtraction,
-  ExportOptions
+  ExportOptions,
+  DOCUMENT_TYPE_FIELDS,
+  LiveExtraction,
+  ExtractionStage
 } from '@/hooks/useDocumentProcessing';
 import { toast } from 'sonner';
 
@@ -540,67 +543,195 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
   );
 };
 
-// Processing Status Component
+// Real-time Extraction Display Component
+const RealTimeExtractionDisplay: React.FC<{ 
+  job: DocumentJob;
+  extractions: LiveExtraction[];
+}> = ({ job, extractions }) => {
+  const recentExtractions = extractions.slice(-8);
+  
+  return (
+    <div className="bg-muted/30 border rounded-lg p-3 space-y-2">
+      <div className="flex items-center gap-2">
+        <Zap className="h-4 w-4 text-primary animate-pulse" />
+        <span className="text-sm font-medium">Live Field Extraction</span>
+        <Badge variant="secondary" className="text-[10px] ml-auto">
+          {extractions.length} fields
+        </Badge>
+      </div>
+      <div className="space-y-1 max-h-40 overflow-y-auto">
+        {recentExtractions.map((ext, idx) => (
+          <div 
+            key={ext.id || idx}
+            className={cn(
+              "flex items-center justify-between p-2 rounded-md text-xs transition-all",
+              idx === recentExtractions.length - 1 && "bg-primary/10 animate-pulse",
+              idx < recentExtractions.length - 1 && "bg-background/50"
+            )}
+          >
+            <div className="flex items-center gap-2 flex-1 min-w-0">
+              <Badge 
+                variant="outline" 
+                className={cn(
+                  "text-[9px] shrink-0",
+                  ext.source === 'nlp' && "border-purple-500 bg-purple-500/10",
+                  ext.source === 'ocr' && "border-blue-500 bg-blue-500/10"
+                )}
+              >
+                {ext.source === 'nlp' ? '🧠 NLP' : '📷 OCR'}
+              </Badge>
+              <span className="font-medium capitalize truncate">{ext.fieldName.replace(/_/g, ' ')}</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-muted-foreground truncate max-w-[120px]">{ext.fieldValue}</span>
+              <Badge variant="secondary" className="text-[9px]">{Math.round(ext.confidence * 100)}%</Badge>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+// Document Image Preview Component
+const DocumentImagePreview: React.FC<{ 
+  job: DocumentJob;
+  className?: string;
+}> = ({ job, className }) => {
+  const imageUrl = job.image_url || job.image_base64;
+  
+  if (!imageUrl) return null;
+  
+  return (
+    <div className={cn("border rounded-lg overflow-hidden bg-muted/30", className)}>
+      <div className="flex items-center justify-between p-2 border-b bg-background/50">
+        <div className="flex items-center gap-2">
+          <FileText className="h-4 w-4" />
+          <span className="text-sm font-medium truncate">{job.file_name}</span>
+        </div>
+        {job.document_type && job.document_type !== 'unknown' && (
+          <Badge variant="outline" className="text-[10px]">
+            {DOCUMENT_TYPE_LABELS[job.document_type]}
+          </Badge>
+        )}
+      </div>
+      <div className="relative aspect-[3/4] max-h-[300px] bg-black/5">
+        <img 
+          src={job.image_base64 ? `data:${job.mime_type};base64,${job.image_base64}` : imageUrl}
+          alt={job.file_name}
+          className="w-full h-full object-contain"
+        />
+      </div>
+    </div>
+  );
+};
+
+// Processing Status Component with Real-time extraction
 const ProcessingStatus: React.FC<{ job: DocumentJob; onCancel: () => void }> = ({ job, onCancel }) => {
   const stages = ['extraction', 'analysis', 'entity_extraction', 'table_extraction', 'signature_detection', 'classification', 'validation', 'metadata'];
   const currentStageIndex = stages.indexOf(job.current_stage || '');
+  const liveExtractions = job.live_extractions || [];
+  
+  // Simulate live extractions from entities if not provided directly
+  const displayExtractions: LiveExtraction[] = liveExtractions.length > 0 
+    ? liveExtractions 
+    : (job.extracted_metadata?.entities || []).map((e, i) => ({
+        id: `entity-${i}`,
+        fieldName: e.type,
+        fieldValue: e.value,
+        confidence: e.confidence,
+        source: e.source || 'ocr',
+        extractedAt: new Date().toISOString()
+      }));
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <FileText className="h-4 w-4" />
-          <span className="font-medium">{job.file_name}</span>
-          {job.document_type && job.document_type !== 'unknown' && (
-            <Badge variant="outline" className="text-xs">
-              <FileType className="mr-1 h-3 w-3" />
-              {DOCUMENT_TYPE_LABELS[job.document_type]}
+      {/* Document Image & Status Header */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Image Preview */}
+        {(job.image_url || job.image_base64) && (
+          <DocumentImagePreview job={job} />
+        )}
+        
+        {/* Processing Status */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4" />
+              <span className="font-medium truncate">{job.file_name}</span>
+            </div>
+            <Badge variant={
+              job.status === 'completed' ? 'default' : 
+              job.status === 'error' ? 'destructive' : 
+              job.status === 'needs_review' ? 'secondary' : 
+              'outline'
+            }>
+              {job.status}
             </Badge>
-          )}
-        </div>
-        <Badge variant={
-          job.status === 'completed' ? 'default' : 
-          job.status === 'error' ? 'destructive' : 
-          job.status === 'needs_review' ? 'secondary' : 
-          'outline'
-        }>
-          {job.status}
-        </Badge>
-      </div>
-
-      <div className="space-y-2">
-        <div className="flex justify-between text-sm">
-          <span>{STAGE_LABELS[job.current_stage || 'upload'] || job.current_stage}</span>
-          <span>{job.progress}%</span>
-        </div>
-        <Progress value={job.progress} className="h-2" />
-        {job.stage_message && (
-          <p className="text-xs text-muted-foreground">{job.stage_message}</p>
-        )}
-      </div>
-
-      {/* Compact stage indicators */}
-      <div className="flex items-center gap-1 pt-2 overflow-x-auto">
-        {stages.slice(0, 5).map((stage, idx) => (
-          <div 
-            key={stage}
-            className={cn(
-              "w-6 h-6 rounded-full flex items-center justify-center text-[10px] flex-shrink-0",
-              idx < currentStageIndex 
-                ? "bg-primary text-primary-foreground"
-                : idx === currentStageIndex && job.status === 'processing'
-                ? "bg-primary/20 text-primary animate-pulse"
-                : "bg-muted text-muted-foreground"
-            )}
-            title={STAGE_LABELS[stage]}
-          >
-            {idx < currentStageIndex ? <Check className="h-3 w-3" /> : idx + 1}
           </div>
-        ))}
-        {stages.length > 5 && (
-          <span className="text-xs text-muted-foreground">+{stages.length - 5}</span>
-        )}
+
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span>{STAGE_LABELS[job.current_stage || 'upload'] || job.current_stage}</span>
+              <span>{job.progress}%</span>
+            </div>
+            <Progress value={job.progress} className="h-2" />
+            {job.stage_message && (
+              <p className="text-xs text-muted-foreground">{job.stage_message}</p>
+            )}
+          </div>
+
+          {/* Document Type & Expected Fields */}
+          {job.document_type && job.document_type !== 'unknown' && (
+            <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
+              <div className="flex items-center gap-2">
+                <FileType className="h-4 w-4 text-primary" />
+                <span className="text-sm font-medium">{DOCUMENT_TYPE_LABELS[job.document_type]}</span>
+              </div>
+              <div className="flex flex-wrap gap-1">
+                {DOCUMENT_TYPE_FIELDS[job.document_type]?.slice(0, 6).map(field => (
+                  <Badge key={field} variant="secondary" className="text-[10px]">
+                    {field.replace(/_/g, ' ')}
+                  </Badge>
+                ))}
+                {DOCUMENT_TYPE_FIELDS[job.document_type]?.length > 6 && (
+                  <Badge variant="outline" className="text-[10px]">
+                    +{DOCUMENT_TYPE_FIELDS[job.document_type].length - 6} more
+                  </Badge>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* Compact stage indicators */}
+          <div className="flex items-center gap-1 pt-2 overflow-x-auto">
+            {stages.slice(0, 5).map((stage, idx) => (
+              <div 
+                key={stage}
+                className={cn(
+                  "w-6 h-6 rounded-full flex items-center justify-center text-[10px] flex-shrink-0",
+                  idx < currentStageIndex 
+                    ? "bg-primary text-primary-foreground"
+                    : idx === currentStageIndex && job.status === 'processing'
+                    ? "bg-primary/20 text-primary animate-pulse"
+                    : "bg-muted text-muted-foreground"
+                )}
+                title={STAGE_LABELS[stage]}
+              >
+                {idx < currentStageIndex ? <Check className="h-3 w-3" /> : idx + 1}
+              </div>
+            ))}
+            {stages.length > 5 && (
+              <span className="text-xs text-muted-foreground">+{stages.length - 5}</span>
+            )}
+          </div>
+        </div>
       </div>
+
+      {/* Real-time Extraction Display */}
+      {job.status === 'processing' && displayExtractions.length > 0 && (
+        <RealTimeExtractionDisplay job={job} extractions={displayExtractions} />
+      )}
 
       {job.status === 'processing' && (
         <div className="flex justify-end">
@@ -957,58 +1088,115 @@ const ValidationDisplay: React.FC<ValidationDisplayProps> = ({
   );
 };
 
-// Job History Item Component
+// Job History Item Component with Thumbnail
 const JobHistoryItem: React.FC<{ 
   job: DocumentJob; 
   onProcess: () => void;
   onMap: () => void;
   onView: () => void;
-}> = ({ job, onProcess, onMap, onView }) => (
-  <div className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
-    <div className="flex items-center gap-3 flex-1 min-w-0">
-      <FileText className="h-4 w-4 flex-shrink-0" />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <p className="text-sm font-medium truncate">{job.file_name}</p>
-          {job.document_type && job.document_type !== 'unknown' && (
-            <Badge variant="outline" className="text-[10px]">
-              {DOCUMENT_TYPE_LABELS[job.document_type]}
-            </Badge>
+}> = ({ job, onProcess, onMap, onView }) => {
+  const hasThumbnail = job.thumbnail_url || job.image_base64;
+  
+  return (
+    <div className="flex items-stretch gap-3 p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors">
+      {/* Document Thumbnail */}
+      {hasThumbnail ? (
+        <div className="w-16 h-20 rounded overflow-hidden bg-muted flex-shrink-0 border">
+          <img 
+            src={job.thumbnail_url || (job.image_base64 ? `data:${job.mime_type};base64,${job.image_base64}` : '')}
+            alt={job.file_name}
+            className="w-full h-full object-cover"
+          />
+        </div>
+      ) : (
+        <div className="w-16 h-20 rounded overflow-hidden bg-muted flex-shrink-0 border flex items-center justify-center">
+          <FileText className="h-6 w-6 text-muted-foreground" />
+        </div>
+      )}
+      
+      {/* Job Info */}
+      <div className="flex-1 min-w-0 flex flex-col justify-between">
+        <div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <p className="text-sm font-medium truncate">{job.file_name}</p>
+            {job.document_type && job.document_type !== 'unknown' && (
+              <Badge variant="outline" className="text-[10px]">
+                {DOCUMENT_TYPE_LABELS[job.document_type]}
+              </Badge>
+            )}
+          </div>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            {new Date(job.created_at).toLocaleDateString()} • {new Date(job.created_at).toLocaleTimeString()}
+          </p>
+          
+          {/* Extraction Summary */}
+          {job.extracted_metadata?.extractionSummary && (
+            <div className="flex items-center gap-2 mt-1">
+              <Badge variant="secondary" className="text-[9px] gap-1">
+                <span className="text-blue-500">📷 {job.extracted_metadata.extractionSummary.ocrFieldCount}</span>
+              </Badge>
+              <Badge variant="secondary" className="text-[9px] gap-1">
+                <span className="text-purple-500">🧠 {job.extracted_metadata.extractionSummary.nlpFieldCount}</span>
+              </Badge>
+              <span className="text-[10px] text-muted-foreground">
+                {job.extracted_metadata.extractionSummary.totalFields} fields
+              </span>
+            </div>
+          )}
+          
+          {/* Expected Fields for Document Type */}
+          {job.document_type && DOCUMENT_TYPE_FIELDS[job.document_type] && (
+            <div className="flex flex-wrap gap-1 mt-1">
+              {DOCUMENT_TYPE_FIELDS[job.document_type].slice(0, 4).map(field => (
+                <Badge key={field} variant="outline" className="text-[9px] h-4 px-1">
+                  {field.replace(/_/g, ' ')}
+                </Badge>
+              ))}
+              {DOCUMENT_TYPE_FIELDS[job.document_type].length > 4 && (
+                <Badge variant="outline" className="text-[9px] h-4 px-1 opacity-60">
+                  +{DOCUMENT_TYPE_FIELDS[job.document_type].length - 4}
+                </Badge>
+              )}
+            </div>
           )}
         </div>
-        <p className="text-xs text-muted-foreground">
-          {new Date(job.created_at).toLocaleDateString()} • {job.progress}%
-        </p>
+        
+        <div className="flex items-center gap-2 mt-2">
+          <Progress value={job.progress} className="h-1.5 flex-1" />
+          <span className="text-[10px] text-muted-foreground w-8">{job.progress}%</span>
+        </div>
+      </div>
+      
+      {/* Actions */}
+      <div className="flex flex-col items-end justify-between">
+        <Badge 
+          variant={
+            job.status === 'completed' ? 'default' : 
+            job.status === 'error' ? 'destructive' : 
+            job.status === 'processing' ? 'secondary' :
+            job.status === 'needs_review' ? 'outline' :
+            'outline'
+          }
+          className="text-xs"
+        >
+          {job.status}
+        </Badge>
+        <div className="flex gap-1">
+          <Button variant="ghost" size="sm" onClick={onView} title="View Details">
+            <Eye className="h-3 w-3" />
+          </Button>
+          {job.status === 'uploaded' && (
+            <Button variant="ghost" size="sm" onClick={onProcess} title="Process Document">
+              <Play className="h-3 w-3" />
+            </Button>
+          )}
+          {job.status === 'completed' && (
+            <Button variant="ghost" size="sm" onClick={onMap} title="Map to Form">
+              <Database className="h-3 w-3" />
+            </Button>
+          )}
+        </div>
       </div>
     </div>
-    <div className="flex items-center gap-2">
-      <Badge 
-        variant={
-          job.status === 'completed' ? 'default' : 
-          job.status === 'error' ? 'destructive' : 
-          job.status === 'processing' ? 'secondary' :
-          job.status === 'needs_review' ? 'outline' :
-          'outline'
-        }
-        className="text-xs"
-      >
-        {job.status}
-      </Badge>
-      <div className="flex gap-1">
-        <Button variant="ghost" size="sm" onClick={onView} title="View">
-          <Eye className="h-3 w-3" />
-        </Button>
-        {job.status === 'uploaded' && (
-          <Button variant="ghost" size="sm" onClick={onProcess} title="Process">
-            <Play className="h-3 w-3" />
-          </Button>
-        )}
-        {job.status === 'completed' && (
-          <Button variant="ghost" size="sm" onClick={onMap} title="Map">
-            <Database className="h-3 w-3" />
-          </Button>
-        )}
-      </div>
-    </div>
-  </div>
-);
+  );
+};

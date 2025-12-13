@@ -4,7 +4,7 @@
  */
 
 export { DocumentUploadProcessor } from './DocumentUploadProcessor';
-export { useDocumentProcessing } from '@/hooks/useDocumentProcessing';
+export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
 export type { 
   DocumentJob, 
   DocumentType,
@@ -23,5 +23,8 @@ export type {
   ValidationError,
   ValidationWarning,
   BatchProcessingResult,
-  ExportOptions
+  ExportOptions,
+  ExtractionSummary,
+  ExtractionStage,
+  LiveExtraction
 } from '@/hooks/useDocumentProcessing';
