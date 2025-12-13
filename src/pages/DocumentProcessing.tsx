@@ -964,10 +964,10 @@ export default function DocumentProcessing() {
                       </div>
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent className="max-h-[400px]">
+                  <SelectContent className="max-h-[300px] overflow-y-auto bg-background border shadow-lg z-50">
                     {getAllCategories().map(category => (
                       <div key={category}>
-                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 flex items-center gap-2">
+                        <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground bg-muted/50 flex items-center gap-2 sticky top-0">
                           <span>{getCategoryIcon(category)}</span>
                           {getCategoryLabel(category)}
                         </div>
