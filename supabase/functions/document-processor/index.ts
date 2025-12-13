@@ -241,11 +241,25 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
   const analysisResult = analyzeContent(extractedText);
   await updateProgress(supabase, documentId, 35, 'analysis', 'completed');
 
-  // Stage 3: Entity Extraction
-  await updateProgress(supabase, documentId, 40, 'entity_extraction', 'in_progress', 'Extracting entities...');
-  await delay(400);
+  // Stage 3: Entity Extraction (using Gemini NLP if available)
+  await updateProgress(supabase, documentId, 40, 'entity_extraction', 'in_progress', 'Extracting entities with AI NLP...');
   
-  const entities = extractEntities(extractedText);
+  let entities: { type: string; value: string; confidence: number }[] = [];
+  try {
+    // Try Gemini NLP extraction first for better accuracy
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    if (geminiApiKey) {
+      entities = await extractEntitiesWithGemini(extractedText, geminiApiKey);
+      console.log(`Gemini NLP extracted ${entities.length} entities`);
+    } else {
+      // Fallback to regex-based extraction
+      entities = extractEntities(extractedText);
+      console.log(`Regex extracted ${entities.length} entities`);
+    }
+  } catch (nlpError) {
+    console.error("Gemini NLP extraction failed, falling back to regex:", nlpError);
+    entities = extractEntities(extractedText);
+  }
   await updateProgress(supabase, documentId, 50, 'entity_extraction', 'completed');
 
   // Stage 4: Table Extraction
@@ -844,6 +858,84 @@ async function awsTextractOCR(base64Image: string): Promise<string> {
     
   } catch (error) {
     console.error("AWS Textract error:", error);
+    throw error;
+  }
+}
+
+// Gemini NLP Entity Extraction - uses Google's Generative Language API
+async function extractEntitiesWithGemini(text: string, apiKey: string): Promise<{ type: string; value: string; confidence: number }[]> {
+  console.log("Using Gemini NLP for entity extraction...");
+  
+  const prompt = `Extract ALL entities from this document text. For each entity found, provide the type, exact value, and confidence (0-1).
+
+Required entity types to extract:
+- patient_name: Full patient name
+- date_of_birth: Patient DOB (any date format)
+- medication: Drug name with strength (e.g., "Colace 100mg")
+- strength: Medication strength (e.g., "100mg")
+- dosage: Dosing instructions (e.g., "twice daily")
+- prescriber: Doctor or prescriber name
+- npi: 10-digit NPI number
+- dea: DEA number
+- phone: Phone numbers
+- address: Full or partial addresses
+- diagnosis: Medical conditions or diagnoses
+- insurance_id: Insurance ID or member number
+- ndc: NDC drug code
+
+Document text:
+"""
+${text.substring(0, 8000)}
+"""
+
+Respond ONLY with a JSON array in this exact format (no markdown, no explanation):
+[{"type":"patient_name","value":"John Smith","confidence":0.95},{"type":"medication","value":"Colace 100mg","confidence":0.9}]`;
+
+  try {
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: prompt }] }],
+          generationConfig: {
+            temperature: 0.1,
+            maxOutputTokens: 2048,
+          }
+        })
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error("Gemini API error:", errorText);
+      throw new Error(`Gemini API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    // Parse JSON from response - handle potential markdown code blocks
+    let jsonStr = responseText.trim();
+    if (jsonStr.startsWith('```')) {
+      jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+    }
+    
+    const entities = JSON.parse(jsonStr);
+    
+    if (Array.isArray(entities)) {
+      console.log(`Gemini extracted ${entities.length} entities successfully`);
+      return entities.map(e => ({
+        type: String(e.type || 'unknown'),
+        value: String(e.value || ''),
+        confidence: Number(e.confidence) || 0.8
+      })).filter(e => e.value.length > 0);
+    }
+    
+    throw new Error("Invalid Gemini response format");
+  } catch (error) {
+    console.error("Gemini NLP extraction error:", error);
     throw error;
   }
 }
