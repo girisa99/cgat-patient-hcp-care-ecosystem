@@ -244,6 +244,25 @@ const FixedAdvancedReactFlowContent: React.FC<FixedAdvancedReactFlowProps> = ({
   const { categories, nodeTypes, nodeTypesByCategory } = useWorkflowNodes();
   const { generateAgent, testNode, analyzeWorkflow, isLoading } = useUniversalAI();
 
+  // Global context menu handler so right-click works even on existing nodes/edges
+  useEffect(() => {
+    const container = reactFlowWrapper.current;
+    if (!container) return;
+
+    const handleContextMenu = (event: MouseEvent) => {
+      const target = event.target as HTMLElement | null;
+      // Only trigger when right-click occurs inside the ReactFlow canvas area
+      if (!target || !target.closest('.react-flow')) return;
+
+      event.preventDefault();
+      setContextMenuPosition({ x: event.clientX, y: event.clientY });
+      setShowPaneContextMenu(true);
+    };
+
+    container.addEventListener('contextmenu', handleContextMenu);
+    return () => container.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
   // Multi-agent pattern extraction for AI inference
   const extractMultiAgentPatterns = useCallback((prompt: string) => {
     const patterns = [
@@ -935,32 +954,30 @@ Examples:
         <div className="flex-1 relative min-w-0 z-0">
           <div className="w-full h-full">
             <ReactFlow
-              nodes={nodes}
-              edges={edges}
-              onNodesChange={handleNodesChange}
-              onEdgesChange={handleEdgesChange}
-              onConnect={onConnect}
-              onNodeClick={handleNodeClick}
-              onPaneContextMenu={handlePaneContextMenu}
-              onPaneClick={closePaneContextMenu}
-              onDrop={onDrop}
-              onDragOver={onDragOver}
-              nodeTypes={safeNodeTypes}
-              edgeTypes={safeEdgeTypes}
-              connectionMode={connectionMode}
-              snapToGrid={snapToGrid}
-              snapGrid={[15, 15]}
-              nodesDraggable={nodesDraggable}
-              nodesConnectable={true}
-              elementsSelectable={true}
-              panOnScrollMode={panOnScrollMode}
-              selectNodesOnDrag={false}
-              fitView
-              fitViewOptions={{ padding: 0.2 }}
-              multiSelectionKeyCode="Shift"
-              deleteKeyCode={["Backspace", "Delete"]}
-              className="bg-background z-0"
-            >
+               nodes={nodes}
+               edges={edges}
+               onNodesChange={handleNodesChange}
+               onEdgesChange={handleEdgesChange}
+               onConnect={onConnect}
+               onNodeClick={handleNodeClick}
+               onDrop={onDrop}
+               onDragOver={onDragOver}
+               nodeTypes={safeNodeTypes}
+               edgeTypes={safeEdgeTypes}
+               connectionMode={connectionMode}
+               snapToGrid={snapToGrid}
+               snapGrid={[15, 15]}
+               nodesDraggable={nodesDraggable}
+               nodesConnectable={true}
+               elementsSelectable={true}
+               panOnScrollMode={panOnScrollMode}
+               selectNodesOnDrag={false}
+               fitView
+               fitViewOptions={{ padding: 0.2 }}
+               multiSelectionKeyCode="Shift"
+               deleteKeyCode={["Backspace", "Delete"]}
+               className="bg-background z-0"
+             >
               <Background variant={backgroundVariant} gap={12} size={1} />
               <Controls />
               
