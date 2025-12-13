@@ -164,10 +164,7 @@ async function handleUpload(supabase: any, request: ProcessingRequest) {
   
   const publicUrl = urlData?.publicUrl || null;
 
-  // Determine if this is an image file for thumbnail/preview
-  const isImage = mimeType?.startsWith('image/');
-  
-  // Create processing record with enhanced fields including image data
+  // Create processing record - only use columns that exist in the table
   const { data: record, error: recordError } = await supabase
     .from('document_processing_jobs')
     .insert({
@@ -175,12 +172,15 @@ async function handleUpload(supabase: any, request: ProcessingRequest) {
       file_path: filePath,
       mime_type: mimeType,
       status: 'uploaded',
-      processing_config: processingConfig || {},
+      processing_config: {
+        ...processingConfig,
+        // Store image URL in config for preview access
+        publicUrl: publicUrl,
+        isImage: mimeType?.startsWith('image/')
+      },
       progress: 0,
-      // Store image URL and base64 for preview
-      image_url: publicUrl,
-      image_base64: isImage ? fileBase64 : null,
-      thumbnail_url: isImage ? publicUrl : null,
+      current_stage: 'upload',
+      stage_message: 'Document uploaded successfully',
       stages: { upload: { status: 'completed', timestamp: new Date().toISOString() } }
     })
     .select()
