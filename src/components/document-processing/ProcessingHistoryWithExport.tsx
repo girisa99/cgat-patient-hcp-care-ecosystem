@@ -1,9 +1,10 @@
 /**
  * Processing History Panel with MCP SDK Export
  * Displays processing history with ability to export to external tools via MCP
+ * Includes Field Mapping Dialog for source-to-target field mapping
  */
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -42,10 +43,13 @@ import {
   FileJson,
   FileSpreadsheet,
   ExternalLink,
-  Webhook
+  Webhook,
+  ArrowRight
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { FieldMappingDialog, type FieldMapping, type TargetField, type SourceField } from './FieldMappingDialog';
+import { exportWithMappings } from '@/services/mcpFieldMappingService';
 
 interface ProcessingResult {
   id: string;
@@ -95,9 +99,36 @@ export default function ProcessingHistoryWithExport({
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showExportDialog, setShowExportDialog] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showMappingDialog, setShowMappingDialog] = useState(false);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const [selectedTarget, setSelectedTarget] = useState<string>('supabase');
   const [isExporting, setIsExporting] = useState(false);
+  
+  // Extract source fields from selected items for mapping
+  const sourceFieldsForMapping = useMemo<SourceField[]>(() => {
+    if (selectedItems.length === 0) return [];
+    
+    const selectedData = history.filter(h => selectedItems.includes(h.id));
+    const allFields = new Map<string, any>();
+    
+    // Aggregate all fields from selected items
+    for (const item of selectedData) {
+      for (const [key, fieldData] of Object.entries(item.extractedFields)) {
+        if (!allFields.has(key)) {
+          allFields.set(key, fieldData.value);
+        }
+      }
+      // Also include medication fields if available
+      if (item.medications && item.medications.length > 0) {
+        const med = item.medications[0];
+        if (med.name && !allFields.has('medication')) allFields.set('medication', med.name);
+        if (med.dosage && !allFields.has('dosage')) allFields.set('dosage', med.dosage);
+        if (med.ndc && !allFields.has('ndc_code')) allFields.set('ndc_code', med.ndc);
+      }
+    }
+    
+    return Array.from(allFields.entries()).map(([name, value]) => ({ name, value }));
+  }, [selectedItems, history]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [filterDocType, setFilterDocType] = useState<string>('all');
@@ -169,6 +200,59 @@ export default function ProcessingHistoryWithExport({
     });
   };
 
+  // Opens mapping dialog before export for CRM targets
+  const handleProceedToMapping = () => {
+    if (selectedItems.length === 0) {
+      toast.error('Please select items to export');
+      return;
+    }
+    
+    // For CRM targets, show mapping dialog first
+    if (['salesforce', 'hubspot', 'veeva'].includes(selectedTarget)) {
+      setShowExportDialog(false);
+      setShowMappingDialog(true);
+    } else {
+      // For other targets (supabase, webhook, download), export directly
+      handleExport();
+    }
+  };
+
+  // Handle confirmed field mappings from dialog
+  const handleConfirmedMapping = async (mappings: FieldMapping[], customFields: TargetField[]) => {
+    setIsExporting(true);
+    
+    try {
+      const result = await exportWithMappings(
+        sourceFieldsForMapping,
+        mappings,
+        customFields,
+        selectedTarget as 'salesforce' | 'hubspot' | 'veeva' | 'supabase' | 'webhook',
+        {
+          endpoint: webhookUrl,
+          syncType: 'create_or_update',
+          documentId: selectedItems[0]
+        }
+      );
+      
+      if (result.success) {
+        toast.success(
+          `Exported ${result.mappedFields} fields to ${selectedTarget}` +
+          (result.customFieldsCreated.length > 0 
+            ? ` (${result.customFieldsCreated.length} custom fields created)` 
+            : '')
+        );
+        setSelectedItems([]);
+      } else {
+        toast.error(result.error || 'Export failed');
+      }
+    } catch (error) {
+      console.error('Export with mapping error:', error);
+      toast.error('Export failed');
+    } finally {
+      setIsExporting(false);
+    }
+  };
+
   const handleExport = async () => {
     if (selectedItems.length === 0) {
       toast.error('Please select items to export');
@@ -232,7 +316,7 @@ export default function ProcessingHistoryWithExport({
         case 'salesforce':
         case 'hubspot':
         case 'veeva':
-          // CRM sync via MCP
+          // CRM sync should go through mapping dialog, but fallback if called directly
           await supabase.functions.invoke('mcp-data-sync', {
             body: {
               target: selectedTarget,
@@ -522,17 +606,30 @@ export default function ProcessingHistoryWithExport({
             <Button variant="outline" onClick={() => setShowExportDialog(false)}>
               Cancel
             </Button>
-            <Button onClick={handleExport} disabled={isExporting}>
+            <Button onClick={handleProceedToMapping} disabled={isExporting}>
               {isExporting ? (
                 <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : ['salesforce', 'hubspot', 'veeva'].includes(selectedTarget) ? (
+                <ArrowRight className="h-4 w-4 mr-2" />
               ) : (
                 <Send className="h-4 w-4 mr-2" />
               )}
-              Export Now
+              {['salesforce', 'hubspot', 'veeva'].includes(selectedTarget) 
+                ? 'Configure Mapping' 
+                : 'Export Now'}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Field Mapping Dialog for CRM exports */}
+      <FieldMappingDialog
+        open={showMappingDialog}
+        onOpenChange={setShowMappingDialog}
+        sourceFields={sourceFieldsForMapping}
+        targetSystem={selectedTarget as 'salesforce' | 'hubspot' | 'veeva' | 'supabase' | 'webhook'}
+        onConfirmMapping={handleConfirmedMapping}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
