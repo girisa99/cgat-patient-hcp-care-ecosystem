@@ -687,7 +687,7 @@ export default function DocumentProcessing() {
       setProcessingResult(prev => prev ? { ...prev, stage: 'validation', progress: 90 } : null);
       toast.info('Validating results...');
       
-      // Build extracted fields from form mapping AND entities
+      // Build extracted fields from form mapping AND entities - include ALL fields for user editing
       const extractedFields: Record<string, { value: string; confidence: number }> = {};
       
       // First, populate from entities extracted by Gemini NLP (from processResult.metadata)
@@ -697,28 +697,26 @@ export default function DocumentProcessing() {
       if (entities.length > 0) {
         console.log(`Populating extracted fields from ${entities.length} entities`);
         for (const entity of entities) {
-          if (entity.value && entity.confidence >= confidenceThreshold * 0.8) {
+          if (entity.value) {
             // Map entity type to field key (normalize to match target fields)
             const fieldKey = entity.type.toLowerCase().replace(/\s+/g, '_');
             if (!extractedFields[fieldKey]) {
               extractedFields[fieldKey] = {
                 value: entity.value,
-                confidence: entity.confidence
+                confidence: entity.confidence || 0.5
               };
             }
           }
         }
       }
       
-      // Then, merge/override with form mapping results (higher priority)
+      // Then, merge/override with form mapping results (higher priority) - include all regardless of confidence
       if (mapResult?.formMapping) {
         Object.entries(mapResult.formMapping).forEach(([key, data]: [string, any]) => {
-          if (data.confidence >= confidenceThreshold) {
-            extractedFields[key] = {
-              value: data.value,
-              confidence: data.confidence
-            };
-          }
+          extractedFields[key] = {
+            value: data.value || '',
+            confidence: data.confidence || 0
+          };
         });
       }
       
@@ -1356,28 +1354,186 @@ export default function DocumentProcessing() {
                         })}
                       </div>
 
-                      {/* Extracted Fields */}
+                      {/* Extracted Fields - Show ALL target fields for editing */}
                       {processingResult.stage === 'complete' && (
                         <>
                           <Separator />
                           <div className="space-y-3">
-                            <h4 className="font-medium flex items-center gap-2">
-                              <Table2 className="h-4 w-4" />
-                              Extracted Data
-                            </h4>
-                            <div className="grid grid-cols-2 gap-2">
-                              {Object.entries(processingResult.extractedFields).map(([key, { value, confidence }]) => (
-                                <div key={key} className="p-2 border rounded-lg">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
-                                    <Badge variant={confidence > 0.9 ? 'default' : confidence > 0.7 ? 'secondary' : 'destructive'} className="text-xs">
-                                      {Math.round(confidence * 100)}%
-                                    </Badge>
-                                  </div>
-                                  <p className="font-medium text-sm mt-1">{value}</p>
-                                </div>
-                              ))}
+                            <div className="flex items-center justify-between">
+                              <h4 className="font-medium flex items-center gap-2">
+                                <Table2 className="h-4 w-4" />
+                                Extracted Data ({Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length}/{currentConfig.targetFields.length} fields)
+                              </h4>
+                              <p className="text-xs text-muted-foreground">Edit fields below, then confirm to proceed</p>
                             </div>
+                            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                              {currentConfig.targetFields.map((field) => {
+                                const extracted = processingResult.extractedFields[field.key];
+                                const hasValue = extracted?.value && extracted.value.trim() !== '';
+                                const confidence = extracted?.confidence || 0;
+                                
+                                return (
+                                  <div key={field.key} className={`p-2 border rounded-lg ${hasValue ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'}`}>
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        {field.label}
+                                        {field.required && <span className="text-destructive">*</span>}
+                                      </span>
+                                      {hasValue ? (
+                                        <Badge variant={confidence > 0.9 ? 'default' : confidence > 0.7 ? 'secondary' : 'outline'} className="text-xs">
+                                          {Math.round(confidence * 100)}%
+                                        </Badge>
+                                      ) : (
+                                        <Badge variant="outline" className="text-xs text-amber-600">Missing</Badge>
+                                      )}
+                                    </div>
+                                    <Input
+                                      value={extracted?.value || ''}
+                                      placeholder={`Enter ${field.label.toLowerCase()}...`}
+                                      className="h-7 text-sm"
+                                      onChange={(e) => {
+                                        setProcessingResult(prev => {
+                                          if (!prev) return prev;
+                                          return {
+                                            ...prev,
+                                            extractedFields: {
+                                              ...prev.extractedFields,
+                                              [field.key]: {
+                                                value: e.target.value,
+                                                confidence: e.target.value ? (extracted?.confidence || 1.0) : 0,
+                                                verified: true
+                                              }
+                                            }
+                                          };
+                                        });
+                                      }}
+                                    />
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            
+                            {/* Also show any extracted fields not in target fields */}
+                            {Object.keys(processingResult.extractedFields).filter(key => 
+                              !currentConfig.targetFields.find(f => f.key === key) && 
+                              processingResult.extractedFields[key]?.value
+                            ).length > 0 && (
+                              <details className="mt-2">
+                                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
+                                  + {Object.keys(processingResult.extractedFields).filter(key => 
+                                    !currentConfig.targetFields.find(f => f.key === key) && 
+                                    processingResult.extractedFields[key]?.value
+                                  ).length} additional extracted fields
+                                </summary>
+                                <div className="grid grid-cols-2 gap-2 mt-2">
+                                  {Object.entries(processingResult.extractedFields)
+                                    .filter(([key]) => !currentConfig.targetFields.find(f => f.key === key))
+                                    .map(([key, { value, confidence }]) => value && (
+                                      <div key={key} className="p-2 border rounded-lg bg-muted/50">
+                                        <div className="flex items-center justify-between">
+                                          <span className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
+                                          <Badge variant="secondary" className="text-xs">{Math.round(confidence * 100)}%</Badge>
+                                        </div>
+                                        <p className="font-medium text-sm mt-1">{value}</p>
+                                      </div>
+                                    ))
+                                  }
+                                </div>
+                              </details>
+                            )}
+                            
+                            {/* Confirm button to proceed to medication lookup */}
+                            {(selectedDocType === 'prescription' || selectedDocType === 'order-management') && (
+                              <Button 
+                                className="w-full mt-3" 
+                                onClick={async () => {
+                                  // Get medication from extracted fields
+                                  const medication = processingResult.extractedFields['medication']?.value || 
+                                                     processingResult.extractedFields['drug']?.value || '';
+                                  const sig = processingResult.extractedFields['sig']?.value || 
+                                             processingResult.extractedFields['instructions']?.value || '';
+                                  
+                                  if (medication) {
+                                    setDrugSearchQuery(medication);
+                                    if (sig) setSigInstructions(sig);
+                                    setActiveTab('medication');
+                                    toast.info('Fields confirmed! Searching for NDC codes...');
+                                    
+                                    // Trigger drug search
+                                    const { baseName } = normalizeDrugName(medication);
+                                    try {
+                                      const { data, error } = await supabase.functions.invoke('drug-lookup', {
+                                        body: { drugName: baseName, searchType: 'all' }
+                                      });
+                                      
+                                      if (!error && data) {
+                                        const calculation = calculateQuantityAndDaySupply(sig || 'Take 1 tablet daily for 30 days');
+                                        const ndcOptions = (data.ndc || []).map((ndc: any) => ({
+                                          code: ndc.code,
+                                          name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+                                          manufacturer: ndc.manufacturer,
+                                          dosageForm: ndc.dosageForm,
+                                          country: 'USA'
+                                        }));
+                                        
+                                        const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
+                                        if (data.isControlled) {
+                                          clinicalRecommendations.push({
+                                            type: 'warning',
+                                            title: 'Controlled Substance',
+                                            message: `Schedule ${data.schedule} controlled substance`
+                                          });
+                                        }
+                                        if (data.clinicalInfo) {
+                                          data.clinicalInfo.forEach((info: any) => {
+                                            clinicalRecommendations.push({
+                                              type: info.severity === 'high' ? 'warning' : 'info',
+                                              title: info.title,
+                                              message: info.description
+                                            });
+                                          });
+                                        }
+                                        
+                                        const preservedStrength = processingResult.extractedFields['strength']?.value || '';
+                                        const primaryNdc = data.ndc?.[0];
+                                        
+                                        setSearchResults({
+                                          drugName: primaryNdc?.brandName || data.drugName || medication,
+                                          genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
+                                          strength: preservedStrength || primaryNdc?.strength || '',
+                                          sig: sig || 'Take as directed',
+                                          calculatedQuantity: calculation.totalQuantity,
+                                          daysSupply: calculation.daysSupply,
+                                          dailyDose: calculation.dailyDose,
+                                          ndc: primaryNdc?.code,
+                                          ndcOptions,
+                                          alternatives: (data.alternatives || []).map((alt: any) => ({
+                                            name: alt.name,
+                                            ndc: alt.rxcui,
+                                            inStock: Math.random() > 0.3,
+                                            stockQty: Math.floor(Math.random() * 500)
+                                          })),
+                                          clinicalRecommendations,
+                                          isControlled: data.isControlled,
+                                          schedule: data.schedule
+                                        });
+                                        
+                                        if (ndcOptions.length > 0) setSelectedNdc(ndcOptions[0].code);
+                                        toast.success(`Found ${ndcOptions.length} NDC codes`);
+                                      }
+                                    } catch (err) {
+                                      console.error('Drug lookup error:', err);
+                                      toast.error('Failed to lookup drug information');
+                                    }
+                                  } else {
+                                    toast.warning('Please enter a medication name first');
+                                  }
+                                }}
+                              >
+                                <CheckCircle className="h-4 w-4 mr-2" />
+                                Confirm & Lookup NDC/Clinical Info
+                              </Button>
+                            )}
                           </div>
 
                           {/* Medication Results */}
