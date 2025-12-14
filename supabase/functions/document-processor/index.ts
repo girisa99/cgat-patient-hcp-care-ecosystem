@@ -913,262 +913,186 @@ async function awsTextractOCR(base64Image: string): Promise<string> {
   }
 }
 
-// Document-type-specific extraction prompt generator
+// Dynamic document extraction prompt generator - discovers fields from content
 function generateExtractionPrompt(text: string, documentType: string): string {
   const docText = text.substring(0, 8000);
   
-  // Document type specific field configurations
-  const documentTypeFields: Record<string, { description: string; fields: string[] }> = {
-    // Healthcare documents
-    'prescription': {
-      description: 'prescription/medication order',
-      fields: [
-        'patient_name: The PATIENT\'s full name',
-        'patient_dob: Patient date of birth (DOB)',
-        'patient_address: Patient address',
-        'patient_phone: Patient phone number',
-        'prescriber_name: Doctor/prescriber name (who wrote the prescription)',
-        'prescriber_npi: 10-digit National Provider Identifier',
-        'prescriber_dea: DEA registration number (format: 2 letters + 7 digits)',
-        'medication: Drug name with strength (e.g., "Amoxicillin 250 mg")',
-        'strength: Medication dosage strength (e.g., "250 mg")',
-        'sig: Dosing instructions - Latin abbreviations like "p.o." (by mouth), "T.i.d." (3x daily)',
-        'quantity: Number of pills/tablets to dispense - look for "#" followed by number',
-        'days_supply: Number of days the medication should last',
-        'refills: Number of refills allowed',
-        'ndc: National Drug Code',
-        'date_written: Date prescription was written',
-        'diagnosis: Medical condition or diagnosis'
-      ]
-    },
-    'insurance': {
-      description: 'insurance card or insurance document',
-      fields: [
-        'insurance_name: Name of the insurance company/carrier (e.g., "Blue Cross Blue Shield", "Aetna", "UnitedHealthcare")',
-        'member_id: Member ID number (subscriber ID, policy number)',
-        'group_number: Group number for the insurance plan',
-        'bin: Bank Identification Number (BIN) - typically 6 digits',
-        'pcn: Processor Control Number (PCN)',
-        'plan_type: Type of plan (HMO, PPO, POS, EPO)',
-        'copay: Copay amounts (may have multiple for different visit types)',
-        'deductible: Deductible amount',
-        'effective_date: Coverage effective/start date',
-        'expiration_date: Coverage end/expiration date',
-        'subscriber_name: Name of the primary subscriber/policyholder',
-        'member_name: Name of the covered member (if different from subscriber)',
-        'rx_bin: Pharmacy BIN number',
-        'rx_pcn: Pharmacy PCN',
-        'rx_group: Pharmacy group number',
-        'issuer_phone: Customer service phone number',
-        'claims_address: Address for claims submission'
-      ]
-    },
-    'patient-onboarding': {
-      description: 'patient intake, enrollment, or consent form',
-      fields: [
-        'patient_name: Patient full name',
-        'dob: Date of birth',
-        'ssn: Social Security Number (last 4 digits)',
-        'address: Home address',
-        'phone: Phone number',
-        'email: Email address',
-        'insurance_id: Insurance member ID',
-        'emergency_contact: Emergency contact name and phone',
-        'allergies: Known allergies',
-        'consent_signed: Whether consent form is signed (yes/no)',
-        'primary_care_physician: PCP name',
-        'medications: Current medications'
-      ]
-    },
-    'lab-results': {
-      description: 'laboratory test results',
-      fields: [
-        'patient_name: Patient name',
-        'patient_dob: Patient date of birth',
-        'specimen_id: Specimen or sample ID',
-        'collection_date: Date specimen was collected',
-        'test_name: Name of the test performed',
-        'result_value: Numerical or qualitative result',
-        'reference_range: Normal reference range',
-        'units: Units of measurement',
-        'flag: Abnormal flag (H=High, L=Low, N=Normal)',
-        'ordering_provider: Name of ordering physician',
-        'lab_name: Laboratory name',
-        'report_date: Date report was generated'
-      ]
-    },
-    // Medical imaging
-    'xray': {
-      description: 'X-ray radiology report',
-      fields: [
-        'patient_name: Patient name',
-        'patient_dob: Patient date of birth',
-        'study_date: Date of the X-ray examination',
-        'body_part: Body part examined',
-        'indication: Clinical reason for the study',
-        'findings: Radiological findings',
-        'impression: Radiologist impression/diagnosis',
-        'radiologist: Name of interpreting radiologist',
-        'accession_number: Study accession number',
-        'technique: Imaging technique used'
-      ]
-    },
-    'ct-scan': {
-      description: 'CT scan radiology report',
-      fields: [
-        'patient_name: Patient name',
-        'patient_dob: Patient date of birth',
-        'study_date: Date of the CT scan',
-        'body_region: Body region scanned',
-        'contrast: Whether contrast was used',
-        'indication: Clinical indication',
-        'findings: Radiological findings',
-        'impression: Impression/diagnosis',
-        'radiologist: Interpreting radiologist',
-        'slice_thickness: CT slice thickness',
-        'radiation_dose: Radiation dose administered'
-      ]
-    },
-    'mri': {
-      description: 'MRI radiology report',
-      fields: [
-        'patient_name: Patient name',
-        'patient_dob: Patient date of birth',
-        'study_date: Date of the MRI',
-        'body_region: Body region imaged',
-        'contrast: Whether contrast was used',
-        'sequences: MRI sequences performed',
-        'indication: Clinical indication',
-        'findings: Radiological findings',
-        'impression: Impression/diagnosis',
-        'radiologist: Interpreting radiologist',
-        'tesla_strength: Magnet strength (e.g., 1.5T, 3T)'
-      ]
-    },
-    // Financial documents
-    'invoice': {
-      description: 'invoice or bill',
-      fields: [
-        'invoice_number: Invoice or bill number',
-        'vendor_name: Company or vendor name',
-        'vendor_address: Vendor address',
-        'invoice_date: Invoice date',
-        'due_date: Payment due date',
-        'subtotal: Subtotal amount before tax',
-        'tax: Tax amount',
-        'total: Total amount due',
-        'payment_terms: Payment terms (Net 30, etc.)',
-        'po_number: Purchase order number'
-      ]
-    },
-    // Identity documents
-    'passport': {
-      description: 'passport or travel document',
-      fields: [
-        'full_name: Full legal name',
-        'nationality: Nationality/citizenship',
-        'date_of_birth: Date of birth',
-        'gender: Gender',
-        'passport_number: Passport number',
-        'issue_date: Date of issue',
-        'expiry_date: Expiration date',
-        'place_of_birth: Place of birth',
-        'issuing_authority: Issuing country/authority',
-        'mrz_line1: Machine readable zone line 1',
-        'mrz_line2: Machine readable zone line 2'
-      ]
-    },
-    'drivers-license': {
-      description: 'driver\'s license or state ID',
-      fields: [
-        'full_name: Full legal name',
-        'license_number: License or ID number',
-        'date_of_birth: Date of birth',
-        'address: Address on license',
-        'issue_date: Date of issue',
-        'expiry_date: Expiration date',
-        'class: License class',
-        'restrictions: Any restrictions',
-        'state: Issuing state'
-      ]
-    },
-    // Business documents
-    'order-management': {
-      description: 'purchase order or sales order',
-      fields: [
-        'order_number: Order or PO number',
-        'customer_name: Customer name',
-        'order_date: Order date',
-        'items: Line items/products ordered',
-        'quantity: Total quantity',
-        'total: Order total amount',
-        'shipping_address: Shipping address',
-        'status: Order status'
-      ]
-    },
-    'treatment-center': {
-      description: 'treatment center or facility document',
-      fields: [
-        'facility_name: Facility or center name',
-        'license_number: State license number',
-        'dea_number: DEA registration number',
-        'npi: National Provider Identifier',
-        'accreditation: Accreditation body',
-        'address: Facility address',
-        'phone: Contact phone',
-        'admin_contact: Administrator contact'
-      ]
-    },
-    'customer-onboarding': {
-      description: 'business customer or vendor onboarding document',
-      fields: [
-        'company_name: Company/business name',
-        'tax_id: Tax ID or EIN',
-        'contact_name: Primary contact name',
-        'email: Contact email',
-        'phone: Contact phone',
-        'address: Business address',
-        'credit_terms: Credit terms requested',
-        'credit_limit: Credit limit'
-      ]
-    }
+  // Category hints provide context without limiting fields
+  const categoryHints: Record<string, string> = {
+    // Healthcare - Insurance (multiple variants)
+    'insurance': `This is an insurance card or insurance document. It could be:
+- PHARMACY/Rx insurance card (look for: RxBIN, RxPCN, RxGroup, pharmacy copays)
+- MEDICAL insurance card (look for: member ID, group number, copays for office/specialist/ER, deductibles)
+- MEDICAID card (look for: Medicaid ID, state program name, managed care organization)
+- MEDICARE card (look for: Medicare number, Part A/B/C/D, QMB indicator)
+- DENTAL insurance (look for: dental plan, orthodontia coverage)
+- VISION insurance (look for: VSP, EyeMed, vision benefits)
+Extract ALL information visible on the card including phone numbers, addresses, plan names, coverage details, and any identifying numbers.`,
+
+    // Healthcare - Prescriptions
+    'prescription': `This is a prescription/Rx document. Look for ALL of these if present:
+- Patient information (name, DOB, address, phone, allergies)
+- Prescriber information (name, NPI, DEA, address, phone, signature)
+- Medication details (drug name, strength, form, quantity, sig/directions, refills, DAW)
+- Pharmacy information (if pre-printed or stamped)
+- Diagnosis codes, dates written/expiration
+Extract every piece of information - prescriptions vary widely in format.`,
+
+    // Healthcare - Patient Forms
+    'patient-onboarding': `This is a patient intake, registration, or enrollment form. Extract ALL fields including:
+- Demographics (name, DOB, SSN, gender, race, ethnicity, language)
+- Contact info (address, phone, email, preferred contact method)
+- Emergency contacts (name, relationship, phone)
+- Insurance information (primary, secondary, subscriber info)
+- Medical history (conditions, surgeries, allergies, medications)
+- Consents and signatures (HIPAA, treatment consent, financial responsibility)
+- Referring physician, primary care provider, specialist preferences`,
+
+    // Healthcare - Lab Results
+    'lab-results': `This is a laboratory results report. Extract ALL information:
+- Patient identifiers (name, DOB, MRN, account number)
+- Ordering provider and collection info
+- Each test with: test name, result value, units, reference range, flags (H/L/Critical)
+- Specimen type, collection date/time, received date, report date
+- Lab facility info, CLIA number
+- Any comments or interpretive notes`,
+
+    // Medical Imaging
+    'xray': `This is an X-ray/radiograph report. Extract:
+- Patient info, MRN, accession number, study date
+- Exam type and body part(s) examined
+- Clinical history/indication
+- Technique description
+- Findings (detailed observations)
+- Impression/conclusion
+- Radiologist name, credentials, signature date
+- Comparison to prior studies if mentioned`,
+
+    'ct-scan': `This is a CT scan report. Extract:
+- Patient info, study date, accession number
+- Exam type, body regions scanned
+- Contrast administration details (type, volume, timing)
+- Detailed findings organized by anatomy
+- Measurements of any lesions/abnormalities
+- Impressions and recommendations
+- Radiologist info and signature`,
+
+    'mri': `This is an MRI report. Extract:
+- Patient info, study date, accession number
+- Exam type, body region, magnet strength
+- Sequences performed, contrast used
+- Detailed findings by anatomy
+- Measurements and comparisons
+- Impressions and recommendations
+- Radiologist info`,
+
+    'ecg': `This is an ECG/EKG report. Extract:
+- Patient info, date/time of study
+- Heart rate, rhythm interpretation
+- Intervals (PR, QRS, QT/QTc)
+- Axis measurements
+- Detailed interpretation
+- Comparison to prior ECGs
+- Cardiologist/interpreter info`,
+
+    // Financial/Business
+    'invoice': `This is an invoice or bill. Extract ALL information:
+- Vendor/company details (name, address, phone, email, tax ID)
+- Invoice number, date, due date, PO number
+- Bill-to and ship-to addresses
+- Each line item (description, quantity, unit price, amount)
+- Subtotal, taxes (itemized if multiple), discounts, shipping
+- Total amount due, payment terms, payment instructions
+- Account numbers, late fee policies`,
+
+    'order-management': `This is a purchase order, sales order, or shipping document. Extract:
+- Order/PO number, order date, ship date
+- Buyer and seller information
+- Shipping address, billing address
+- Each item (SKU, description, quantity, price)
+- Shipping method, tracking numbers
+- Order status, special instructions
+- Payment terms and totals`,
+
+    // Identity Documents
+    'passport': `This is a passport or travel document. Extract:
+- Full legal name, nationality
+- Date of birth, place of birth, gender
+- Passport number, type
+- Issue date, expiry date
+- Issuing authority/country
+- MRZ (machine readable zone) lines if visible
+- Photo ID number, visa pages info if present`,
+
+    'drivers-license': `This is a driver's license or state ID. Extract:
+- Full name, address
+- Date of birth, gender, height, weight, eye color
+- License number, document number
+- Issue date, expiry date
+- Class, endorsements, restrictions
+- Organ donor status
+- State/jurisdiction`,
+
+    // Facility/Organization
+    'treatment-center': `This is a treatment center or healthcare facility document. Extract:
+- Facility name, DBA, type of facility
+- License numbers (state, federal)
+- DEA registration, NPI
+- Accreditation (CARF, Joint Commission, etc.)
+- Address, phone, fax, email
+- Administrator/medical director info
+- Services offered, specialties
+- Bed count, hours of operation`,
+
+    'customer-onboarding': `This is a business/customer onboarding document. Extract:
+- Company name, DBA, entity type
+- Tax ID/EIN, DUNS number
+- Primary contact info
+- Billing address, shipping address
+- Bank info if provided
+- Credit terms, credit limit requested
+- References, trade references
+- Authorized signers`,
+
+    'enrollment': `This is an enrollment or application form. Extract:
+- Applicant information (individual or organization)
+- Program/plan being enrolled in
+- Eligibility information
+- Effective date, coverage period
+- Beneficiary information
+- Premium/payment information
+- Elections and options selected
+- Signatures and dates`,
   };
-  
-  // Get configuration for the document type, default to general extraction
-  const config = documentTypeFields[documentType] || {
-    description: 'document',
-    fields: [
-      'name: Any person name',
-      'date: Any date',
-      'id_number: Any ID or reference number',
-      'address: Any address',
-      'phone: Any phone number',
-      'email: Any email address',
-      'amount: Any monetary amount',
-      'organization: Any company or organization name'
-    ]
-  };
-  
-  const fieldsText = config.fields.map((f, i) => `${i + 1}. ${f}`).join('\n');
-  
-  return `You are an expert document data extractor. Extract ALL relevant entities from this ${config.description}. Be thorough and accurate.
 
-FIELDS TO EXTRACT:
-${fieldsText}
+  const hint = categoryHints[documentType] || `Analyze this document thoroughly and extract ALL structured information you can identify including names, dates, IDs, addresses, phone numbers, amounts, organizations, and any other relevant data fields.`;
 
-IMPORTANT:
-- Extract the exact value as it appears in the document
-- If a field appears multiple times, extract each occurrence
-- Assign confidence scores based on how clearly the value was found (0.5-1.0)
-- Only extract values you are confident about
+  return `You are an intelligent document data extraction AI. Your job is to analyze documents and extract ALL relevant structured information.
 
-Document text to analyze:
+DOCUMENT CONTEXT:
+${hint}
+
+CRITICAL INSTRUCTIONS:
+1. DYNAMICALLY DISCOVER all fields - do NOT limit yourself to any predefined list
+2. Extract EVERY piece of structured information visible in the document
+3. Create descriptive field names in snake_case (e.g., "member_id", "effective_date", "copay_specialist")
+4. For repeated/multiple values, use numbered suffixes (e.g., "medication_1", "medication_2")
+5. Include confidence scores based on extraction clarity
+
+DOCUMENT TEXT:
 """
 ${docText}
 """
 
-Respond ONLY with a JSON array. Each object must have: type (field key), value, confidence (0-1), source ("nlp").
-Example: [{"type":"insurance_name","value":"Blue Cross Blue Shield","confidence":0.95,"source":"nlp"}]`;
+RESPOND WITH ONLY A JSON ARRAY. Each object must have:
+- type: field name in snake_case
+- value: exact extracted value
+- confidence: 0.0-1.0 based on clarity
+- source: "nlp"
+
+Example: [{"type":"member_id","value":"ABC123456789","confidence":0.98,"source":"nlp"},{"type":"group_number","value":"GRP-9999","confidence":0.95,"source":"nlp"}]
+
+Extract EVERYTHING. Do not skip any visible data.`; 
 }
 
 
