@@ -66,6 +66,7 @@ interface ProcessingHistoryWithExportProps {
   history: ProcessingResult[];
   onViewResult?: (result: ProcessingResult) => void;
   onDeleteItems?: (ids: string[]) => void;
+  documentTypes?: string[];
 }
 
 interface MCPExportTarget {
@@ -89,6 +90,7 @@ export default function ProcessingHistoryWithExport({
   history,
   onViewResult,
   onDeleteItems,
+  documentTypes = [],
 }: ProcessingHistoryWithExportProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -98,6 +100,17 @@ export default function ProcessingHistoryWithExport({
   const [isExporting, setIsExporting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
+  const [filterDocType, setFilterDocType] = useState<string>('all');
+
+  // Get unique document types from history if not provided
+  const availableDocTypes = documentTypes.length > 0 
+    ? documentTypes 
+    : [...new Set(history.map(h => h.documentType))].filter(Boolean);
+
+  // Filter history based on selected document type
+  const filteredHistory = filterDocType === 'all' 
+    ? history 
+    : history.filter(h => h.documentType === filterDocType);
 
   const toggleSelect = (id: string) => {
     setSelectedItems(prev => 
@@ -106,10 +119,10 @@ export default function ProcessingHistoryWithExport({
   };
 
   const selectAll = () => {
-    if (selectedItems.length === history.length) {
+    if (selectedItems.length === filteredHistory.length) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(history.map(h => h.id));
+      setSelectedItems(filteredHistory.map(h => h.id));
     }
   };
 
@@ -274,16 +287,34 @@ export default function ProcessingHistoryWithExport({
 
   return (
     <div className="space-y-4">
-      {/* Header with Actions */}
-      <div className="flex items-center justify-between">
+      {/* Header with Filter and Actions */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <div className="flex items-center gap-2">
           <Checkbox
-            checked={selectedItems.length === history.length && history.length > 0}
+            checked={selectedItems.length === filteredHistory.length && filteredHistory.length > 0}
             onCheckedChange={selectAll}
           />
           <span className="text-sm text-muted-foreground">
             {selectedItems.length > 0 ? `${selectedItems.length} selected` : 'Select items'}
           </span>
+          
+          {/* Document Type Filter */}
+          {availableDocTypes.length > 0 && (
+            <Select value={filterDocType} onValueChange={setFilterDocType}>
+              <SelectTrigger className="w-[160px] h-8 ml-2">
+                <SelectValue placeholder="Filter by type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types ({history.length})</SelectItem>
+                {availableDocTypes.map(docType => (
+                  <SelectItem key={docType} value={docType}>
+                    {docType.charAt(0).toUpperCase() + docType.slice(1).replace(/-/g, ' ')} 
+                    ({history.filter(h => h.documentType === docType).length})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
         </div>
         <div className="flex gap-2">
           <Button 
@@ -337,14 +368,14 @@ export default function ProcessingHistoryWithExport({
       {/* History List */}
       <ScrollArea className="h-[400px]">
         <div className="space-y-2">
-          {history.length === 0 ? (
+          {filteredHistory.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <History className="h-12 w-12 mx-auto mb-3 opacity-50" />
               <p>No processing history yet</p>
               <p className="text-sm">Upload documents to see them here</p>
             </div>
           ) : (
-            history.map((result) => (
+            filteredHistory.map((result) => (
               <div
                 key={result.id}
                 className={`p-3 rounded-lg border flex items-center gap-3 transition-colors ${
