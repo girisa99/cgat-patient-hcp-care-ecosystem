@@ -2163,8 +2163,10 @@ export default function DocumentProcessing() {
             <ProcessingHistoryWithExport
               history={processingHistory}
               onViewResult={(result: any) => {
-                // When viewing from history, load into main panel for review
                 setProcessingResult(result as any);
+              }}
+              onDeleteItems={(ids: string[]) => {
+                setProcessingHistory(prev => prev.filter(item => !ids.includes(item.id)));
               }}
             />
           </TabsContent>
