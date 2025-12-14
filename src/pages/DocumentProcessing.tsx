@@ -687,8 +687,30 @@ export default function DocumentProcessing() {
       setProcessingResult(prev => prev ? { ...prev, stage: 'validation', progress: 90 } : null);
       toast.info('Validating results...');
       
-      // Build extracted fields from form mapping
+      // Build extracted fields from form mapping AND entities
       const extractedFields: Record<string, { value: string; confidence: number }> = {};
+      
+      // First, populate from entities extracted by Gemini NLP (from processResult.metadata)
+      const metadata = processResult?.metadata || {};
+      const entities = metadata.entities || [];
+      
+      if (entities.length > 0) {
+        console.log(`Populating extracted fields from ${entities.length} entities`);
+        for (const entity of entities) {
+          if (entity.value && entity.confidence >= confidenceThreshold * 0.8) {
+            // Map entity type to field key (normalize to match target fields)
+            const fieldKey = entity.type.toLowerCase().replace(/\s+/g, '_');
+            if (!extractedFields[fieldKey]) {
+              extractedFields[fieldKey] = {
+                value: entity.value,
+                confidence: entity.confidence
+              };
+            }
+          }
+        }
+      }
+      
+      // Then, merge/override with form mapping results (higher priority)
       if (mapResult?.formMapping) {
         Object.entries(mapResult.formMapping).forEach(([key, data]: [string, any]) => {
           if (data.confidence >= confidenceThreshold) {
@@ -699,6 +721,8 @@ export default function DocumentProcessing() {
           }
         });
       }
+      
+      console.log(`Total extracted fields: ${Object.keys(extractedFields).length}`, extractedFields);
       
       // Extract medications from OCR text for prescription documents
       let medications: MedicationResult[] | undefined;
