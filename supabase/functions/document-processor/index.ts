@@ -13,6 +13,8 @@ interface ProcessingRequest {
   fileName?: string;
   mimeType?: string;
   processingConfig?: ProcessingConfig;
+  userId?: string;
+  documentType?: string;
 }
 
 interface ProcessingConfig {
@@ -133,7 +135,7 @@ serve(async (req) => {
 });
 
 async function handleUpload(supabase: any, request: ProcessingRequest) {
-  const { fileBase64, fileName, mimeType, processingConfig } = request;
+  const { fileBase64, fileName, mimeType, processingConfig, userId, documentType } = request;
   
   if (!fileBase64 || !fileName) {
     throw new Error("Missing file data or filename");
@@ -172,6 +174,8 @@ async function handleUpload(supabase: any, request: ProcessingRequest) {
       file_path: filePath,
       mime_type: mimeType,
       status: 'uploaded',
+      document_type: documentType || 'unknown',
+      user_id: userId || null,
       processing_config: {
         ...processingConfig,
         // Store image URL in config for preview access
