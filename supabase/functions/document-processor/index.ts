@@ -286,14 +286,16 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
       nlpProvider = lovableApiKey ? 'lovable-ai-gemini' : 'gemini-direct';
       console.log(`AI NLP (${nlpProvider}) extracted ${entities.length} entities for document type: ${docType}`);
     } else {
-      // Fallback to regex-based extraction (marked as OCR source)
-      entities = extractEntities(extractedText);
+      // Fallback to regex-based extraction (marked as OCR source) - pass document type
+      const docType = doc.document_type || 'unknown';
+      entities = extractEntities(extractedText, docType);
       nlpProvider = 'regex-fallback';
-      console.log(`Regex extracted ${entities.length} entities`);
+      console.log(`Regex extracted ${entities.length} entities for document type: ${docType}`);
     }
   } catch (nlpError) {
     console.error("AI NLP extraction failed, falling back to regex:", nlpError);
-    entities = extractEntities(extractedText);
+    const docType = doc.document_type || 'unknown';
+    entities = extractEntities(extractedText, docType);
     nlpProvider = 'regex-fallback';
   }
   
@@ -1267,15 +1269,53 @@ function extractKeywords(text: string): string[] {
     .map(([word]) => word);
 }
 
-function extractEntities(text: string): { type: string; value: string; confidence: number; source: string }[] {
+function extractEntities(text: string, documentType: string = 'prescription'): { type: string; value: string; confidence: number; source: string }[] {
   const entities: { type: string; value: string; confidence: number; source: string }[] = [];
   
-  const patterns: { type: string; regex: RegExp; confidence: number }[] = [
+  // Common patterns for all document types
+  const commonPatterns: { type: string; regex: RegExp; confidence: number }[] = [
     { type: 'email', regex: /[\w.-]+@[\w.-]+\.\w+/gi, confidence: 0.95 },
     { type: 'phone', regex: /\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/g, confidence: 0.9 },
+    { type: 'date', regex: /\d{1,2}\/\d{1,2}\/\d{2,4}/g, confidence: 0.85 },
+  ];
+  
+  // Document-type-specific patterns
+  const insurancePatterns: { type: string; regex: RegExp; confidence: number }[] = [
+    // Insurance company name
+    { type: 'insurance_name', regex: /(?:Blue\s*Cross|Aetna|United\s*Healthcare|Cigna|Humana|Kaiser|Anthem|BCBS|Medicare|Medicaid|TRICARE)/gi, confidence: 0.95 },
+    { type: 'insurance_name', regex: /(?:Insurance|Carrier|Plan)[:\s]*([A-Za-z\s]+?)(?:\n|Member|Group|ID)/i, confidence: 0.85 },
+    // Member ID
+    { type: 'member_id', regex: /(?:Member\s*ID|Subscriber\s*ID|ID\s*Number|Member\s*#)[:\s#]*([A-Z0-9-]+)/gi, confidence: 0.95 },
+    { type: 'member_id', regex: /(?:ID)[:\s#]*([A-Z]{2,3}[0-9]{6,12})/gi, confidence: 0.85 },
+    // Group number
+    { type: 'group_number', regex: /(?:Group\s*(?:Number|No|#)?|GRP)[:\s#]*([A-Z0-9-]+)/gi, confidence: 0.9 },
+    // BIN (Bank Identification Number) - typically 6 digits
+    { type: 'bin', regex: /(?:BIN|Rx\s*BIN)[:\s#]*(\d{6})/gi, confidence: 0.95 },
+    // PCN (Processor Control Number)
+    { type: 'pcn', regex: /(?:PCN|Rx\s*PCN)[:\s#]*([A-Z0-9]+)/gi, confidence: 0.9 },
+    // Plan type
+    { type: 'plan_type', regex: /(?:Plan\s*Type|Coverage)[:\s]*(HMO|PPO|POS|EPO|HDHP|Indemnity)/gi, confidence: 0.95 },
+    // Copay amounts
+    { type: 'copay', regex: /(?:Copay|Co-?pay|Office\s*Visit)[:\s]*\$?(\d+(?:\.\d{2})?)/gi, confidence: 0.9 },
+    // Deductible
+    { type: 'deductible', regex: /(?:Deductible)[:\s]*\$?(\d+(?:,\d{3})?(?:\.\d{2})?)/gi, confidence: 0.9 },
+    // Effective date
+    { type: 'effective_date', regex: /(?:Effective|Eff\.?\s*Date|Coverage\s*Start)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, confidence: 0.9 },
+    // Expiration date
+    { type: 'expiration_date', regex: /(?:Expir(?:ation|es)?|Exp\.?\s*Date|Term\s*Date|Coverage\s*End)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, confidence: 0.9 },
+    // Subscriber name
+    { type: 'subscriber_name', regex: /(?:Subscriber|Member)\s*Name[:\s]*([A-Za-z]+(?:\s+[A-Za-z]+)+)/gi, confidence: 0.9 },
+    // Customer service phone
+    { type: 'issuer_phone', regex: /(?:Customer\s*Service|Call|For\s*Claims)[:\s]*\(?\d{3}\)?[-.\s]?\d{3}[-.\s]?\d{4}/gi, confidence: 0.85 },
+    // Rx-specific fields
+    { type: 'rx_bin', regex: /(?:Rx\s*BIN)[:\s#]*(\d{6})/gi, confidence: 0.95 },
+    { type: 'rx_pcn', regex: /(?:Rx\s*PCN)[:\s#]*([A-Z0-9]+)/gi, confidence: 0.9 },
+    { type: 'rx_group', regex: /(?:Rx\s*Group|Rx\s*Grp)[:\s#]*([A-Z0-9-]+)/gi, confidence: 0.9 },
+  ];
+  
+  const prescriptionPatterns: { type: string; regex: RegExp; confidence: number }[] = [
     { type: 'npi', regex: /NPI[:\s#]*(\d{10})/gi, confidence: 0.95 },
     { type: 'npi', regex: /\b\d{10}\b/g, confidence: 0.7 },
-    { type: 'date', regex: /\d{1,2}\/\d{1,2}\/\d{2,4}/g, confidence: 0.85 },
     { type: 'ssn', regex: /\d{3}-\d{2}-\d{4}/g, confidence: 0.9 },
     { type: 'insurance_id', regex: /INS-[\w-]+/gi, confidence: 0.9 },
     { type: 'patient_id', regex: /PT-[\w-]+/gi, confidence: 0.9 },
@@ -1285,6 +1325,56 @@ function extractEntities(text: string): { type: string; value: string; confidenc
     { type: 'ndc', regex: /NDC[:\s#]*(\d{4,5}-\d{3,4}-\d{1,2})/gi, confidence: 0.95 },
     { type: 'dea', regex: /DEA[:\s#]*([A-Z]{2}\d{7})/gi, confidence: 0.95 },
   ];
+  
+  const invoicePatterns: { type: string; regex: RegExp; confidence: number }[] = [
+    { type: 'invoice_number', regex: /(?:Invoice\s*(?:No|#|Number)?)[:\s#]*([A-Z0-9-]+)/gi, confidence: 0.95 },
+    { type: 'po_number', regex: /(?:PO\s*(?:No|#|Number)?|Purchase\s*Order)[:\s#]*([A-Z0-9-]+)/gi, confidence: 0.9 },
+    { type: 'vendor_name', regex: /(?:From|Vendor|Seller|Bill\s*From)[:\s]*([A-Za-z\s]+?)(?:\n|Address)/gi, confidence: 0.85 },
+    { type: 'invoice_date', regex: /(?:Invoice\s*Date|Date)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, confidence: 0.9 },
+    { type: 'due_date', regex: /(?:Due\s*Date|Payment\s*Due)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, confidence: 0.9 },
+    { type: 'subtotal', regex: /(?:Subtotal|Sub-?Total)[:\s]*\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi, confidence: 0.9 },
+    { type: 'tax', regex: /(?:Tax|Sales\s*Tax|VAT)[:\s]*\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi, confidence: 0.85 },
+    { type: 'total', regex: /(?:Total|Amount\s*Due|Grand\s*Total)[:\s]*\$?(\d+(?:,\d{3})*(?:\.\d{2})?)/gi, confidence: 0.9 },
+    { type: 'payment_terms', regex: /(?:Terms|Payment\s*Terms)[:\s]*(Net\s*\d+|Due\s*on\s*Receipt)/gi, confidence: 0.85 },
+  ];
+  
+  const identityPatterns: { type: string; regex: RegExp; confidence: number }[] = [
+    { type: 'full_name', regex: /(?:Name|Full\s*Name)[:\s]*([A-Za-z]+(?:\s+[A-Za-z]+)+)/gi, confidence: 0.9 },
+    { type: 'license_number', regex: /(?:License\s*(?:No|#|Number)?|DL\s*#)[:\s#]*([A-Z0-9-]+)/gi, confidence: 0.95 },
+    { type: 'passport_number', regex: /(?:Passport\s*(?:No|#|Number)?)[:\s#]*([A-Z0-9]+)/gi, confidence: 0.95 },
+    { type: 'date_of_birth', regex: /(?:DOB|Date\s*of\s*Birth|Birth\s*Date)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, confidence: 0.95 },
+    { type: 'issue_date', regex: /(?:Issue\s*Date|Issued)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, confidence: 0.9 },
+    { type: 'expiry_date', regex: /(?:Expir(?:y|ation)\s*Date|Expires?)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/gi, confidence: 0.9 },
+    { type: 'nationality', regex: /(?:Nationality|Citizenship)[:\s]*([A-Za-z\s]+)/gi, confidence: 0.85 },
+    { type: 'gender', regex: /(?:Sex|Gender)[:\s]*(Male|Female|M|F)/gi, confidence: 0.9 },
+  ];
+  
+  // Select patterns based on document type
+  let patterns: { type: string; regex: RegExp; confidence: number }[] = [...commonPatterns];
+  
+  switch (documentType) {
+    case 'insurance':
+      patterns = [...patterns, ...insurancePatterns];
+      break;
+    case 'prescription':
+      patterns = [...patterns, ...prescriptionPatterns];
+      break;
+    case 'invoice':
+    case 'receipt':
+      patterns = [...patterns, ...invoicePatterns];
+      break;
+    case 'passport':
+    case 'drivers-license':
+      patterns = [...patterns, ...identityPatterns];
+      break;
+    case 'patient-onboarding':
+    case 'lab-results':
+      patterns = [...patterns, ...prescriptionPatterns]; // Use healthcare patterns
+      break;
+    default:
+      // For unknown types, use all patterns
+      patterns = [...patterns, ...prescriptionPatterns, ...insurancePatterns];
+  }
 
   for (const { type, regex, confidence } of patterns) {
     const matches = text.match(regex);
