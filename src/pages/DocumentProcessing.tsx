@@ -239,40 +239,100 @@ export default function DocumentProcessing() {
     const loadHistory = async () => {
       setIsLoadingHistory(true);
       try {
-        const { data, error } = await supabase
+        // Try to scope history to current user when possible
+        let userId: string | null = null;
+        try {
+          const { data } = await supabase.auth.getUser();
+          userId = data?.user?.id ?? null;
+        } catch (authErr) {
+          console.warn('Unable to resolve current user for history filter:', authErr);
+        }
+
+        let query: any = supabase
           .from('document_processing_jobs')
           .select('*')
           .order('created_at', { ascending: false })
           .limit(50);
-        
+
+        // Only show this user's jobs when user_id is available; legacy
+        // rows with null user_id are still allowed by RLS but we hide
+        // them from the UI to avoid confusing extra history entries.
+        if (userId) {
+          query = query.eq('user_id', userId);
+        }
+
+        const { data, error } = await query;
+
         if (error) throw error;
-        
+
         if (data && data.length > 0) {
-          const historyItems: ProcessingResult[] = data.map((job: any) => ({
-            id: job.id,
-            fileName: job.file_name,
-            documentType: job.document_type || 'unknown',
-            stage: job.status === 'completed' ? 'complete' : job.status,
-            progress: job.progress || 100,
-            extractedFields: (job.extracted_metadata?.entities || []).reduce((acc: any, entity: any) => {
-              acc[entity.type] = {
-                value: entity.value,
-                confidence: entity.confidence,
-                verified: entity.verified || false
+          const historyItems: ProcessingResult[] = data.map((job: any) => {
+            // Derive a robust public URL for the stored file
+            const { data: urlData } = supabase.storage
+              .from('document-processing')
+              .getPublicUrl(job.file_path);
+
+            const publicUrl = urlData?.publicUrl
+              || job.processing_config?.publicUrl
+              || undefined;
+
+            // Build extracted fields map from stored metadata (entities + formFields)
+            const metadata = job.extracted_metadata || {};
+            const entities = metadata.entities || [];
+            const formFields = metadata.formFields || [];
+
+            const extractedFields: Record<string, { value: string; confidence: number; verified?: boolean }> = {};
+
+            // Entities first
+            entities.forEach((entity: any) => {
+              if (!entity || !entity.type) return;
+              const key = String(entity.type).toLowerCase().replace(/\s+/g, '_');
+              if (!extractedFields[key]) {
+                extractedFields[key] = {
+                  value: entity.value ?? '',
+                  confidence: entity.confidence ?? 0,
+                  verified: entity.verified ?? false,
+                };
+              }
+            });
+
+            // Then form fields override / extend
+            formFields.forEach((field: any) => {
+              if (!field || !field.fieldName) return;
+              const key = String(field.fieldName).toLowerCase().replace(/\s+/g, '_');
+              extractedFields[key] = {
+                value: field.value ?? '',
+                confidence: field.confidence ?? 0,
+                verified: field.verified ?? false,
               };
-              return acc;
-            }, {}),
-            medications: [],
-            validationResults: job.validation_status ? {
-              passed: (job.validation_status.warnings || []).length === 0 ? Object.keys(job.extracted_metadata?.entities || {}).length : 0,
-              failed: (job.validation_status.errors || []).length,
-              warnings: (job.validation_status.warnings || []).length
-            } : undefined,
-            rawText: job.extracted_text,
-            processedAt: new Date(job.created_at),
-            imageUrl: job.processing_config?.publicUrl
-          }));
-          
+            });
+
+            // Map basic validation summary if present (object-based status)
+            let validationSummary: { passed: number; failed: number; warnings: number } | undefined;
+            const validation = job.validation_status as any;
+            if (validation && typeof validation === 'object') {
+              validationSummary = {
+                passed: validation.passed ?? 0,
+                failed: validation.failed ?? 0,
+                warnings: validation.warnings ?? 0,
+              };
+            }
+
+            return {
+              id: job.id,
+              fileName: job.file_name,
+              documentType: job.document_type || 'unknown',
+              stage: job.status === 'completed' ? 'complete' : job.status,
+              progress: job.progress || 100,
+              extractedFields,
+              medications: [],
+              validationResults: validationSummary,
+              rawText: job.extracted_text,
+              processedAt: new Date(job.created_at),
+              imageUrl: publicUrl,
+            };
+          });
+
           setProcessingHistory(historyItems);
         }
       } catch (err) {
@@ -281,10 +341,10 @@ export default function DocumentProcessing() {
         setIsLoadingHistory(false);
       }
     };
-    
+
     loadHistory();
   }, []);
-  
+
   // Agent recommendation panel state
   const [showAgentRecommendation, setShowAgentRecommendation] = useState(false);
   
