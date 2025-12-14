@@ -230,6 +230,60 @@ export default function DocumentProcessing() {
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [showVerificationDialog, setShowVerificationDialog] = useState(false);
+  const [pendingResult, setPendingResult] = useState<ProcessingResult | null>(null);
+  
+  // Load processing history from database on mount
+  useEffect(() => {
+    const loadHistory = async () => {
+      setIsLoadingHistory(true);
+      try {
+        const { data, error } = await supabase
+          .from('document_processing_jobs')
+          .select('*')
+          .order('created_at', { ascending: false })
+          .limit(50);
+        
+        if (error) throw error;
+        
+        if (data && data.length > 0) {
+          const historyItems: ProcessingResult[] = data.map((job: any) => ({
+            id: job.id,
+            fileName: job.file_name,
+            documentType: job.document_type || 'unknown',
+            stage: job.status === 'completed' ? 'complete' : job.status,
+            progress: job.progress || 100,
+            extractedFields: (job.extracted_metadata?.entities || []).reduce((acc: any, entity: any) => {
+              acc[entity.type] = {
+                value: entity.value,
+                confidence: entity.confidence,
+                verified: entity.verified || false
+              };
+              return acc;
+            }, {}),
+            medications: [],
+            validationResults: job.validation_status ? {
+              passed: (job.validation_status.warnings || []).length === 0 ? Object.keys(job.extracted_metadata?.entities || {}).length : 0,
+              failed: (job.validation_status.errors || []).length,
+              warnings: (job.validation_status.warnings || []).length
+            } : undefined,
+            rawText: job.extracted_text,
+            processedAt: new Date(job.created_at),
+            imageUrl: job.processing_config?.publicUrl
+          }));
+          
+          setProcessingHistory(historyItems);
+        }
+      } catch (err) {
+        console.error('Failed to load processing history:', err);
+      } finally {
+        setIsLoadingHistory(false);
+      }
+    };
+    
+    loadHistory();
+  }, []);
   
   // Agent recommendation panel state
   const [showAgentRecommendation, setShowAgentRecommendation] = useState(false);
@@ -801,8 +855,10 @@ export default function DocumentProcessing() {
         processedAt: new Date()
       };
       
+      // Show verification dialog before saving to history
+      setPendingResult(finalResult);
+      setShowVerificationDialog(true);
       setProcessingResult(finalResult);
-      setProcessingHistory(prev => [finalResult, ...prev]);
       
       const settingsUsed = [];
       if (enableOCR) settingsUsed.push('OCR');
@@ -810,7 +866,7 @@ export default function DocumentProcessing() {
       if (enableTableExtraction) settingsUsed.push('Tables');
       if (enableAutoCalculateQty) settingsUsed.push('Auto-Calc');
       
-      toast.success(`Document processed! (${settingsUsed.join(', ')})`);
+      toast.success(`Document processed! (${settingsUsed.join(', ')}) - Please verify extracted data before saving.`);
       
       // Run agent workflow if enabled
       if (processingMode === 'agent' && selectedAgentWorkflow !== 'none') {
@@ -2078,31 +2134,74 @@ export default function DocumentProcessing() {
                       This log maintains an audit trail for compliance and allows you to review or re-export past documents.
                     </CardDescription>
                   </div>
-                  <Button variant="outline" size="sm">
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => {
+                      if (processingHistory.length === 0) {
+                        toast.error('No documents to export');
+                        return;
+                      }
+                      // Export all history as JSON
+                      const exportData = processingHistory.map(item => ({
+                        id: item.id,
+                        fileName: item.fileName,
+                        documentType: item.documentType,
+                        processedAt: item.processedAt,
+                        extractedFields: Object.fromEntries(
+                          Object.entries(item.extractedFields).map(([key, val]) => [key, val.value])
+                        ),
+                        medications: item.medications,
+                        validationStatus: item.validationResults ? 
+                          (item.validationResults.failed > 0 ? 'failed' : 
+                           item.validationResults.warnings > 0 ? 'warnings' : 'passed') : 'unknown'
+                      }));
+                      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `document_processing_history_${new Date().toISOString().slice(0,10)}.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                      toast.success(`Exported ${processingHistory.length} records`);
+                    }}
+                  >
                     <Download className="h-4 w-4 mr-2" />
-                    Export
+                    Export All
                   </Button>
                 </div>
               </CardHeader>
               <CardContent>
-                {/* Info about History Tab */}
-                <Alert className="mb-4">
-                  <History className="h-4 w-4" />
-                  <AlertDescription>
-                    The History tab stores all your document processing sessions. Each entry shows: document name, 
-                    workflow type (Patient Onboarding, Rx, etc.), extracted fields count, processing status, and timestamp.
-                    You can export this data for compliance audits or re-process documents as needed.
-                  </AlertDescription>
-                </Alert>
+                {/* Loading state */}
+                {isLoadingHistory && (
+                  <div className="text-center py-12">
+                    <Loader2 className="h-8 w-8 mx-auto animate-spin text-primary" />
+                    <p className="text-sm text-muted-foreground mt-2">Loading history...</p>
+                  </div>
+                )}
                 
-                {processingHistory.length === 0 ? (
+                {/* Info about History Tab */}
+                {!isLoadingHistory && (
+                  <Alert className="mb-4">
+                    <History className="h-4 w-4" />
+                    <AlertDescription>
+                      The History tab stores all your document processing sessions. Each entry shows: document name, 
+                      workflow type (Patient Onboarding, Rx, etc.), extracted fields count, processing status, and timestamp.
+                      You can export this data for compliance audits or re-process documents as needed.
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {!isLoadingHistory && processingHistory.length === 0 && (
                   <div className="text-center py-12 text-muted-foreground">
                     <History className="h-12 w-12 mx-auto mb-4 opacity-50" />
                     <p className="font-medium">No documents processed yet</p>
                     <p className="text-sm mt-1">Upload a document in the "Document Upload" tab to get started</p>
                     <p className="text-xs mt-3">Processed documents will appear here with their extracted data and validation status</p>
                   </div>
-                ) : (
+                )}
+                
+                {!isLoadingHistory && processingHistory.length > 0 && (
                   <div className="space-y-3">
                     {processingHistory.map((doc) => (
                       <div key={doc.id} className="border rounded-lg hover:bg-muted/50 cursor-pointer overflow-hidden">
@@ -2337,6 +2436,118 @@ export default function DocumentProcessing() {
                 Close
               </Button>
             </div>
+          </DialogContent>
+        </Dialog>
+
+        {/* Verification Dialog - Confirm extracted data before saving */}
+        <Dialog open={showVerificationDialog} onOpenChange={setShowVerificationDialog}>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileCheck className="h-5 w-5 text-primary" />
+                Verify Extracted Data
+              </DialogTitle>
+              <DialogDescription>
+                Please review the extracted data and compare it against the original document before saving to history.
+              </DialogDescription>
+            </DialogHeader>
+            
+            {pendingResult && (
+              <div className="space-y-4 py-4">
+                {/* Side-by-side comparison */}
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+                  {/* Original Document */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Image className="h-4 w-4" />
+                      Original Document
+                    </h4>
+                    {pendingResult.imageUrl ? (
+                      <img 
+                        src={pendingResult.imageUrl} 
+                        alt="Original document" 
+                        className="w-full rounded border"
+                      />
+                    ) : (
+                      <div className="bg-muted rounded p-4 text-center text-muted-foreground">
+                        <FileText className="h-12 w-12 mx-auto mb-2" />
+                        <p className="text-sm">No image preview available</p>
+                        {pendingResult.rawText && (
+                          <pre className="text-left text-xs mt-2 max-h-40 overflow-auto bg-background p-2 rounded">
+                            {pendingResult.rawText.slice(0, 500)}...
+                          </pre>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  
+                  {/* Extracted Fields */}
+                  <div className="border rounded-lg p-4">
+                    <h4 className="font-medium mb-2 flex items-center gap-2">
+                      <Table2 className="h-4 w-4" />
+                      Extracted Fields ({Object.keys(pendingResult.extractedFields).length})
+                    </h4>
+                    <ScrollArea className="h-[300px]">
+                      <div className="space-y-2">
+                        {Object.entries(pendingResult.extractedFields).map(([key, field]) => (
+                          <div 
+                            key={key} 
+                            className={`p-2 rounded border ${field.confidence >= confidenceThreshold ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'}`}
+                          >
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</Label>
+                              <Badge variant={field.confidence >= confidenceThreshold ? 'default' : 'secondary'} className="text-[9px]">
+                                {Math.round(field.confidence * 100)}%
+                              </Badge>
+                            </div>
+                            <p className="font-medium text-sm">{field.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </ScrollArea>
+                  </div>
+                </div>
+                
+                {/* Validation Summary */}
+                {pendingResult.validationResults && (
+                  <Alert className={pendingResult.validationResults.failed > 0 ? 'border-destructive' : pendingResult.validationResults.warnings > 0 ? 'border-yellow-500' : 'border-green-500'}>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      <div className="flex items-center gap-4">
+                        <span className="text-green-600 font-medium">{pendingResult.validationResults.passed} passed</span>
+                        <span className="text-yellow-600 font-medium">{pendingResult.validationResults.warnings} warnings</span>
+                        <span className="text-red-600 font-medium">{pendingResult.validationResults.failed} failed</span>
+                      </div>
+                    </AlertDescription>
+                  </Alert>
+                )}
+                
+                {/* Action Buttons */}
+                <div className="flex justify-end gap-2 pt-4 border-t">
+                  <Button variant="outline" onClick={() => {
+                    setShowVerificationDialog(false);
+                    setPendingResult(null);
+                  }}>
+                    Cancel & Discard
+                  </Button>
+                  <Button 
+                    variant="default"
+                    onClick={() => {
+                      if (pendingResult) {
+                        // Add to history after verification
+                        setProcessingHistory(prev => [pendingResult, ...prev]);
+                        toast.success('Document verified and saved to history');
+                      }
+                      setShowVerificationDialog(false);
+                      setPendingResult(null);
+                    }}
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Confirm & Save to History
+                  </Button>
+                </div>
+              </div>
+            )}
           </DialogContent>
         </Dialog>
 
