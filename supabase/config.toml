@@ -122,3 +122,6 @@ verify_jwt = false
 
 [functions.drug-lookup]
 verify_jwt = false
+
+[functions.mcp-data-sync]
+verify_jwt = false
