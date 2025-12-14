@@ -269,29 +269,49 @@ export default function DocumentProcessing() {
       if (data && data.length > 0) {
         const historyItems: ProcessingResult[] = data.map((job: any) => {
           // Derive a robust public URL for the stored file
-          const { data: urlData } = supabase.storage
-            .from('document-processing')
-            .getPublicUrl(job.file_path);
+          let publicUrl: string | undefined;
+          
+          // Try from processing_config first (most reliable as it's stored at upload time)
+          if (job.processing_config?.publicUrl) {
+            publicUrl = job.processing_config.publicUrl;
+          } else if (job.file_path) {
+            // Fallback: try to construct URL from file_path
+            try {
+              const { data: urlData } = supabase.storage
+                .from('document-processing')
+                .getPublicUrl(job.file_path);
+              publicUrl = urlData?.publicUrl;
+            } catch (e) {
+              console.warn('Could not get public URL for:', job.file_path);
+            }
+          }
 
-          const publicUrl = urlData?.publicUrl
-            || job.processing_config?.publicUrl
-            || undefined;
-
-          // Build extracted fields map from stored metadata (entities + formFields)
+          // Build extracted fields map from stored metadata
+          // Support both new dynamic extraction format and legacy entity/formFields format
           const metadata = job.extracted_metadata || {};
           const entities = metadata.entities || [];
           const formFields = metadata.formFields || [];
 
           const extractedFields: Record<string, { value: string; confidence: number; verified?: boolean }> = {};
 
-          // Entities first
+          // Handle dynamic entities (from Gemini NLP) - support various field name formats
           entities.forEach((entity: any) => {
-            if (!entity || !entity.type) return;
-            const key = String(entity.type).toLowerCase().replace(/\s+/g, '_');
-            if (!extractedFields[key]) {
+            if (!entity) return;
+            
+            // Get the field name from various possible keys
+            const fieldName = entity.type || entity.fieldName || entity.field_name || entity.name;
+            if (!fieldName) return;
+            
+            // Normalize key: lowercase, replace spaces with underscores
+            const key = String(fieldName).toLowerCase().replace(/\s+/g, '_');
+            
+            // Get the value from various possible keys
+            const value = entity.value ?? entity.text ?? entity.content ?? '';
+            
+            if (!extractedFields[key] || (entity.confidence || 0) > (extractedFields[key].confidence || 0)) {
               extractedFields[key] = {
-                value: entity.value ?? '',
-                confidence: entity.confidence ?? 0,
+                value: String(value),
+                confidence: entity.confidence ?? 0.8,
                 verified: entity.verified ?? false,
               };
             }
@@ -299,11 +319,16 @@ export default function DocumentProcessing() {
 
           // Then form fields override / extend
           formFields.forEach((field: any) => {
-            if (!field || !field.fieldName) return;
-            const key = String(field.fieldName).toLowerCase().replace(/\s+/g, '_');
+            if (!field) return;
+            const fieldName = field.fieldName || field.field_name || field.name || field.type;
+            if (!fieldName) return;
+            
+            const key = String(fieldName).toLowerCase().replace(/\s+/g, '_');
+            const value = field.value ?? field.text ?? '';
+            
             extractedFields[key] = {
-              value: field.value ?? '',
-              confidence: field.confidence ?? 0,
+              value: String(value),
+              confidence: field.confidence ?? 0.8,
               verified: field.verified ?? false,
             };
           });
@@ -326,7 +351,7 @@ export default function DocumentProcessing() {
             stage: job.status === 'completed' ? 'complete' : job.status,
             progress: job.progress || 100,
             extractedFields,
-            medications: [],
+            medications: metadata.medications || [],
             validationResults: validationSummary,
             rawText: job.extracted_text,
             processedAt: new Date(job.created_at),
@@ -2422,6 +2447,9 @@ export default function DocumentProcessing() {
               history={processingHistory}
               onViewResult={(result: any) => {
                 setProcessingResult(result as any);
+                // Show a dialog or switch to upload tab to display the result
+                setShowVerificationDialog(true);
+                setPendingResult(result as any);
               }}
               onDeleteItems={(ids: string[]) => {
                 setProcessingHistory(prev => prev.filter(item => !ids.includes(item.id)));
