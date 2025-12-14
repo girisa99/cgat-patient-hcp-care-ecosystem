@@ -50,6 +50,13 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { FieldMappingDialog, type FieldMapping, type TargetField, type SourceField } from './FieldMappingDialog';
 import { exportWithMappings } from '@/services/mcpFieldMappingService';
+import { 
+  dynamicFieldMappingService,
+  toCSV,
+  toJSON,
+  downloadAsFile,
+  type ExportFormat
+} from '@/services/dynamicFieldMappingService';
 
 interface ProcessingResult {
   id: string;
@@ -82,12 +89,14 @@ interface MCPExportTarget {
 }
 
 const MCP_EXPORT_TARGETS: MCPExportTarget[] = [
+  { id: 'download_json', name: 'Download JSON', icon: <FileJson className="h-4 w-4 text-yellow-500" />, description: 'Save as JSON file' },
+  { id: 'download_csv', name: 'Download CSV', icon: <FileSpreadsheet className="h-4 w-4 text-green-500" />, description: 'Save as CSV file' },
   { id: 'supabase', name: 'Supabase', icon: <Database className="h-4 w-4" />, description: 'Save to database table' },
-  { id: 'salesforce', name: 'Salesforce', icon: <Cloud className="h-4 w-4 text-blue-500" />, description: 'Push to Salesforce CRM' },
-  { id: 'hubspot', name: 'HubSpot', icon: <span className="text-orange-500 text-sm font-bold">H</span>, description: 'Sync to HubSpot' },
-  { id: 'veeva', name: 'Veeva CRM', icon: <span className="text-green-500 text-sm font-bold">V</span>, description: 'Healthcare CRM sync' },
-  { id: 'webhook', name: 'Webhook', icon: <Webhook className="h-4 w-4" />, description: 'POST to custom endpoint' },
-  { id: 'api', name: 'External API', icon: <ExternalLink className="h-4 w-4" />, description: 'Call external REST API' },
+  { id: 'salesforce', name: 'Salesforce', icon: <Cloud className="h-4 w-4 text-blue-500" />, description: 'Push to Salesforce CRM', requiresConfig: true },
+  { id: 'hubspot', name: 'HubSpot', icon: <span className="text-orange-500 text-sm font-bold">H</span>, description: 'Sync to HubSpot', requiresConfig: true },
+  { id: 'veeva', name: 'Veeva CRM', icon: <span className="text-green-500 text-sm font-bold">V</span>, description: 'Healthcare CRM sync', requiresConfig: true },
+  { id: 'webhook', name: 'Webhook', icon: <Webhook className="h-4 w-4" />, description: 'POST to custom endpoint', requiresConfig: true },
+  { id: 'api', name: 'API/Middleware', icon: <ExternalLink className="h-4 w-4" />, description: 'Push to REST API or middleware layer', requiresConfig: true },
 ];
 
 export default function ProcessingHistoryWithExport({
@@ -207,14 +216,66 @@ export default function ProcessingHistoryWithExport({
       return;
     }
     
-    // For CRM targets, show mapping dialog first
-    if (['salesforce', 'hubspot', 'veeva'].includes(selectedTarget)) {
+    // Handle direct downloads (no mapping needed)
+    if (selectedTarget === 'download_json' || selectedTarget === 'download_csv') {
+      handleDirectDownload();
+      return;
+    }
+    
+    // For CRM/API targets, show mapping dialog first
+    if (['salesforce', 'hubspot', 'veeva', 'webhook', 'api'].includes(selectedTarget)) {
       setShowExportDialog(false);
       setShowMappingDialog(true);
     } else {
-      // For other targets (supabase, webhook, download), export directly
+      // For supabase, export directly
       handleExport();
     }
+  };
+
+  // Direct download as JSON or CSV (dynamic fields, no hardcoding)
+  const handleDirectDownload = () => {
+    const selectedData = history.filter(h => selectedItems.includes(h.id));
+    
+    // Build dynamic export data - ALL extracted fields, no fixed schema
+    const exportData = selectedData.map(item => {
+      const record: Record<string, any> = {
+        _id: item.id,
+        _fileName: item.fileName,
+        _documentType: item.documentType,
+        _processedAt: item.processedAt,
+      };
+      
+      // Add ALL dynamically extracted fields
+      for (const [key, fieldData] of Object.entries(item.extractedFields)) {
+        record[key] = fieldData.value;
+      }
+      
+      // Add medication data if present
+      if (item.medications && item.medications.length > 0) {
+        item.medications.forEach((med, idx) => {
+          const prefix = item.medications!.length > 1 ? `medication_${idx + 1}_` : '';
+          if (med.name) record[`${prefix}medication_name`] = med.name;
+          if (med.dosage) record[`${prefix}dosage`] = med.dosage;
+          if (med.ndc) record[`${prefix}ndc_code`] = med.ndc;
+          if (med.frequency) record[`${prefix}frequency`] = med.frequency;
+        });
+      }
+      
+      return record;
+    });
+    
+    const timestamp = new Date().toISOString().slice(0, 10);
+    
+    if (selectedTarget === 'download_json') {
+      downloadAsFile(exportData, `document-export-${timestamp}.json`, 'json');
+      toast.success(`Downloaded ${exportData.length} record(s) as JSON`);
+    } else {
+      downloadAsFile(exportData, `document-export-${timestamp}.csv`, 'csv');
+      toast.success(`Downloaded ${exportData.length} record(s) as CSV`);
+    }
+    
+    setShowExportDialog(false);
+    setSelectedItems([]);
   };
 
   // Handle confirmed field mappings from dialog
