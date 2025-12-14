@@ -372,26 +372,48 @@ export default function DocumentProcessing() {
   // Duration options
   const durationOptions = ['7 days', '10 days', '14 days', '21 days', '30 days', '60 days', '90 days'];
 
+  // Normalize drug name for API lookup - strip strength, dosage form, extras
+  const normalizeDrugName = useCallback((rawName: string): { baseName: string; extractedStrength: string } => {
+    const original = rawName.trim();
+    
+    // Extract strength pattern first (e.g., "500 mg", "10mg", "250mcg")
+    const strengthMatch = original.match(/\b(\d+(?:\.\d+)?)\s*(mg|mcg|g|ml|units?)\b/i);
+    const extractedStrength = strengthMatch ? `${strengthMatch[1]} ${strengthMatch[2]}` : '';
+    
+    // Remove strength, dosage forms, brand suffixes
+    const baseName = original
+      .replace(/\b\d+(?:\.\d+)?\s*(mg|mcg|g|ml|units?)\b/gi, '')
+      .replace(/\b(tablets?|capsules?|caps?|tabs?|solution|suspension|injection|cream|ointment|topical|drops?|inhaler|syrup|extended.?release|er|sr|xl|xr|hcl|hydrochloride)\b/gi, '')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .split(/\s+/)[0]; // Take first word (generic name)
+    
+    return { baseName: baseName || original.split(/\s+/)[0], extractedStrength };
+  }, []);
+
   // Handle drug search with real OpenFDA + RxNorm API
   const handleDrugSearch = useCallback(async () => {
     if (!drugSearchQuery.trim()) return;
     
     setIsSearching(true);
-    setSelectedNdc(null); // Reset selected NDC on new search
+    setSelectedNdc(null);
     
     try {
-      // Call edge function for real drug lookup
+      // Normalize drug name for better API matching
+      const { baseName, extractedStrength } = normalizeDrugName(drugSearchQuery);
+      
+      // Prefer strength from current processing result, then from query, then from NDC
+      const preferredStrength = processingResult?.medications?.[0]?.strength || extractedStrength || '';
+      
       const { data, error } = await supabase.functions.invoke('drug-lookup', {
-        body: { drugName: drugSearchQuery, searchType: 'all' }
+        body: { drugName: baseName, searchType: 'all' }
       });
       
       if (error) throw error;
       
       if (data) {
-        // Calculate quantity based on sig (fallback to a safe default)
         const calculation = calculateQuantityAndDaySupply(sigInstructions || 'Take 1 tablet daily for 30 days');
         
-        // Transform API response to our format (may legitimately be empty arrays)
         const ndcOptions = (data.ndc || []).map((ndc: any) => ({
           code: ndc.code,
           name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
@@ -400,10 +422,8 @@ export default function DocumentProcessing() {
           country: 'USA'
         }));
         
-        // Generate clinical recommendations from API data
         const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
         
-        // Add controlled substance warning if applicable
         if (data.isControlled) {
           clinicalRecommendations.push({
             type: 'warning',
@@ -412,7 +432,6 @@ export default function DocumentProcessing() {
           });
         }
         
-        // Add clinical info from RxNorm/OpenFDA with titles
         if (data.clinicalInfo) {
           data.clinicalInfo.forEach((info: any) => {
             const recType = info.type === 'error' ? 'error' : 
@@ -425,7 +444,6 @@ export default function DocumentProcessing() {
           });
         }
         
-        // Add standard info if no recommendations found
         if (clinicalRecommendations.length === 0) {
           clinicalRecommendations.push({
             type: 'info',
@@ -436,10 +454,11 @@ export default function DocumentProcessing() {
         
         const primaryNdc = data.ndc?.[0];
         
+        // IMPORTANT: Use preferredStrength (from OCR) instead of NDC strength
         const result: MedicationResult = {
-          drugName: primaryNdc?.brandName || data.drugName,
+          drugName: primaryNdc?.brandName || data.drugName || baseName,
           genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
-          strength: primaryNdc?.strength || '',
+          strength: preferredStrength || primaryNdc?.strength || '',
           sig: sigInstructions || 'Take 1 tablet daily for 30 days',
           calculatedQuantity: calculation.totalQuantity,
           daysSupply: calculation.daysSupply,
@@ -448,8 +467,8 @@ export default function DocumentProcessing() {
           ndcOptions,
           alternatives: (data.alternatives || []).map((alt: any) => ({
             name: alt.name,
-            ndc: alt.rxcui, // RxCUI as reference
-            inStock: Math.random() > 0.3, // Simulated inventory
+            ndc: alt.rxcui,
+            inStock: Math.random() > 0.3,
             stockQty: Math.floor(Math.random() * 500)
           })),
           clinicalRecommendations,
@@ -458,12 +477,16 @@ export default function DocumentProcessing() {
         };
         
         setSearchResults(result);
+        
+        // Auto-select first NDC
+        if (ndcOptions.length > 0) {
+          setSelectedNdc(ndcOptions[0].code);
+        }
 
-        // Feedback reflects whether we actually found structured codes
         if (ndcOptions.length > 0 || (data.rxnorm && data.rxnorm.length > 0)) {
-          toast.success(`Found ${ndcOptions.length} NDC codes from OpenFDA + ${data.rxnorm?.length || 0} RxNorm entries`);
+          toast.success(`Found ${ndcOptions.length} NDC codes + ${data.rxnorm?.length || 0} RxNorm entries`);
         } else {
-          toast.info('No NDC/RxNorm matches found; showing general clinical information from drug lookup');
+          toast.info('No NDC/RxNorm matches; showing clinical info');
         }
       } else {
         toast.error('Drug lookup failed - empty response');
@@ -476,7 +499,7 @@ export default function DocumentProcessing() {
     } finally {
       setIsSearching(false);
     }
-  }, [drugSearchQuery, sigInstructions, calculateQuantityAndDaySupply]);
+  }, [drugSearchQuery, sigInstructions, calculateQuantityAndDaySupply, normalizeDrugName, processingResult]);
 
   // Parse SIG when it changes and auto-populate dropdowns
   useEffect(() => {
@@ -754,92 +777,99 @@ export default function DocumentProcessing() {
             description: 'Searching for NDC codes and clinical data...'
           });
           
-          // Auto-trigger drug search to populate NDC codes, clinical recommendations, and alternatives
-          setTimeout(async () => {
-            try {
-              const { data, error } = await supabase.functions.invoke('drug-lookup', {
-                body: { drugName: extractedDrugName, searchType: 'all' }
-              });
+          // Normalize drug name for better API matching
+          const { baseName, extractedStrength } = normalizeDrugName(extractedDrugName);
+          // Preserve strength from OCR extraction
+          const preservedStrength = extractedFields['strength']?.value || extractedStrength || '';
+          
+          // Auto-trigger drug search immediately (no delay needed)
+          try {
+            const { data, error } = await supabase.functions.invoke('drug-lookup', {
+              body: { drugName: baseName, searchType: 'all' }
+            });
+            
+            if (error) throw error;
+            
+            if (data) {
+              const calculation = calculateQuantityAndDaySupply(extractedSig || 'Take 1 tablet daily for 30 days');
               
-              if (error) throw error;
+              const ndcOptions = (data.ndc || []).map((ndc: any) => ({
+                code: ndc.code,
+                name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+                manufacturer: ndc.manufacturer,
+                dosageForm: ndc.dosageForm,
+                country: 'USA'
+              }));
               
-              if (data && (data.ndc?.length > 0 || data.rxnorm?.length > 0)) {
-                const calculation = calculateQuantityAndDaySupply(extractedSig || 'Take 1 tablet daily for 30 days');
-                
-                const ndcOptions = (data.ndc || []).map((ndc: any) => ({
-                  code: ndc.code,
-                  name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
-                  manufacturer: ndc.manufacturer,
-                  dosageForm: ndc.dosageForm,
-                  country: 'USA'
-                }));
-                
-                const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
-                
-                if (data.isControlled) {
-                  clinicalRecommendations.push({
-                    type: 'warning',
-                    title: 'Controlled Substance',
-                    message: `Schedule ${data.schedule} controlled substance - Verify patient ID and check PDMP`
-                  });
-                }
-                
-                if (data.clinicalInfo) {
-                  data.clinicalInfo.forEach((info: any) => {
-                    const recType = info.type === 'error' ? 'error' : 
-                                    (info.severity === 'high' ? 'warning' : 'info');
-                    clinicalRecommendations.push({
-                      type: recType as 'warning' | 'info' | 'error',
-                      title: info.title || undefined,
-                      message: info.description
-                    });
-                  });
-                }
-                
-                if (clinicalRecommendations.length === 0) {
-                  clinicalRecommendations.push({
-                    type: 'info',
-                    title: 'Standard Medication',
-                    message: 'No specific warnings found. Follow standard prescribing guidelines.'
-                  });
-                }
-                
-                const primaryNdc = data.ndc?.[0];
-                
-                const autoSearchResult: MedicationResult = {
-                  drugName: primaryNdc?.brandName || data.drugName || extractedDrugName,
-                  genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
-                  strength: primaryNdc?.strength || '',
-                  sig: extractedSig || 'Take 1 tablet daily for 30 days',
-                  calculatedQuantity: calculation.totalQuantity,
-                  daysSupply: calculation.daysSupply,
-                  dailyDose: calculation.dailyDose,
-                  ndc: primaryNdc?.code,
-                  ndcOptions,
-                  alternatives: (data.alternatives || []).map((alt: any) => ({
-                    name: alt.name,
-                    ndc: alt.rxcui,
-                    inStock: Math.random() > 0.3,
-                    stockQty: Math.floor(Math.random() * 500)
-                  })),
-                  clinicalRecommendations,
-                  isControlled: data.isControlled,
-                  schedule: data.schedule
-                };
-                
-                setSearchResults(autoSearchResult);
-                
-                // Auto-select first NDC
-                if (ndcOptions.length > 0) {
-                  setSelectedNdc(ndcOptions[0].code);
-                }
-                
-                toast.success(`Found ${ndcOptions.length} NDC codes with clinical data`);
+              const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
+              
+              if (data.isControlled) {
+                clinicalRecommendations.push({
+                  type: 'warning',
+                  title: 'Controlled Substance',
+                  message: `Schedule ${data.schedule} controlled substance - Verify patient ID and check PDMP`
+                });
               }
-            } catch (err) {
-              console.error('Auto drug search error:', err);
+              
+              if (data.clinicalInfo) {
+                data.clinicalInfo.forEach((info: any) => {
+                  const recType = info.type === 'error' ? 'error' : 
+                                  (info.severity === 'high' ? 'warning' : 'info');
+                  clinicalRecommendations.push({
+                    type: recType as 'warning' | 'info' | 'error',
+                    title: info.title || undefined,
+                    message: info.description
+                  });
+                });
+              }
+              
+              if (clinicalRecommendations.length === 0) {
+                clinicalRecommendations.push({
+                  type: 'info',
+                  title: 'Standard Medication',
+                  message: 'No specific warnings found. Follow standard prescribing guidelines.'
+                });
+              }
+              
+              const primaryNdc = data.ndc?.[0];
+              
+              // IMPORTANT: Use preservedStrength (from OCR) instead of NDC strength
+              const autoSearchResult: MedicationResult = {
+                drugName: primaryNdc?.brandName || data.drugName || extractedDrugName,
+                genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
+                strength: preservedStrength || primaryNdc?.strength || '',
+                sig: extractedSig || 'Take 1 tablet daily for 30 days',
+                calculatedQuantity: calculation.totalQuantity,
+                daysSupply: calculation.daysSupply,
+                dailyDose: calculation.dailyDose,
+                ndc: primaryNdc?.code,
+                ndcOptions,
+                alternatives: (data.alternatives || []).map((alt: any) => ({
+                  name: alt.name,
+                  ndc: alt.rxcui,
+                  inStock: Math.random() > 0.3,
+                  stockQty: Math.floor(Math.random() * 500)
+                })),
+                clinicalRecommendations,
+                isControlled: data.isControlled,
+                schedule: data.schedule
+              };
+              
+              setSearchResults(autoSearchResult);
+              
+              // Auto-select first NDC
+              if (ndcOptions.length > 0) {
+                setSelectedNdc(ndcOptions[0].code);
+              }
+              
+              const msg = ndcOptions.length > 0 || (data.rxnorm?.length > 0)
+                ? `Found ${ndcOptions.length} NDC codes + ${data.rxnorm?.length || 0} RxNorm entries`
+                : 'Clinical info loaded (no NDC matches)';
+              toast.success(msg);
             }
-          }, 500);
+          } catch (err) {
+            console.error('Auto drug search error:', err);
+          }
         }
       }
 
