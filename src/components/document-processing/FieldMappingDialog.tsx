@@ -43,65 +43,27 @@ import {
   Sparkles
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { EXTERNAL_SYSTEMS_CONFIG, type DataMapping } from '@/utils/externalSystemsConfig';
+import { 
+  dynamicFieldMappingService,
+  toCSV,
+  toJSON,
+  downloadAsFile,
+  type ExportFormat
+} from '@/services/dynamicFieldMappingService';
 
-// Target system schemas (would be fetched from APIs in production)
-const TARGET_SCHEMAS: Record<string, TargetField[]> = {
-  salesforce: [
-    { name: 'Name', type: 'string', required: true, label: 'Full Name' },
-    { name: 'FirstName', type: 'string', required: false, label: 'First Name' },
-    { name: 'LastName', type: 'string', required: false, label: 'Last Name' },
-    { name: 'Email', type: 'email', required: false, label: 'Email' },
-    { name: 'Phone', type: 'phone', required: false, label: 'Phone' },
-    { name: 'Date_of_Birth__c', type: 'date', required: false, label: 'Date of Birth' },
-    { name: 'Prescription__c', type: 'string', required: false, label: 'Prescription' },
-    { name: 'Medication__c', type: 'string', required: false, label: 'Medication' },
-    { name: 'Dosage__c', type: 'string', required: false, label: 'Dosage' },
-    { name: 'Frequency__c', type: 'string', required: false, label: 'Frequency' },
-    { name: 'Prescriber__c', type: 'string', required: false, label: 'Prescriber' },
-    { name: 'NPI__c', type: 'string', required: false, label: 'NPI Number' },
-    { name: 'Insurance_ID__c', type: 'string', required: false, label: 'Insurance ID' },
-    { name: 'NDC_Code__c', type: 'string', required: false, label: 'NDC Code' },
-  ],
-  hubspot: [
-    { name: 'firstname', type: 'string', required: false, label: 'First Name' },
-    { name: 'lastname', type: 'string', required: false, label: 'Last Name' },
+// Dynamic target schema - fetched at runtime, not hardcoded
+// User can add ANY custom field for ANY document type
+const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
+  // Base fields that CRMs commonly have - NOT limiting, just suggestions
+  const commonFields: TargetField[] = [
+    { name: 'name', type: 'string', required: false, label: 'Name' },
     { name: 'email', type: 'email', required: false, label: 'Email' },
     { name: 'phone', type: 'phone', required: false, label: 'Phone' },
-    { name: 'date_of_birth', type: 'date', required: false, label: 'Date of Birth' },
-    { name: 'medication', type: 'string', required: false, label: 'Medication' },
-    { name: 'dosage', type: 'string', required: false, label: 'Dosage' },
-    { name: 'frequency', type: 'string', required: false, label: 'Frequency' },
-    { name: 'prescriber', type: 'string', required: false, label: 'Prescriber' },
-    { name: 'npi_number', type: 'string', required: false, label: 'NPI Number' },
-    { name: 'insurance_id', type: 'string', required: false, label: 'Insurance ID' },
-  ],
-  veeva: [
-    { name: 'Patient_Name_vod__c', type: 'string', required: true, label: 'Patient Name' },
-    { name: 'Product_vod__c', type: 'string', required: false, label: 'Product/Medication' },
-    { name: 'DOB_vod__c', type: 'date', required: false, label: 'Date of Birth' },
-    { name: 'Prescriber_vod__c', type: 'string', required: false, label: 'Prescriber' },
-    { name: 'NPI_vod__c', type: 'string', required: false, label: 'NPI' },
-    { name: 'Territory_vod__c', type: 'string', required: false, label: 'Territory' },
-    { name: 'Dosage_vod__c', type: 'string', required: false, label: 'Dosage' },
-    { name: 'Instructions_vod__c', type: 'string', required: false, label: 'Instructions' },
-  ],
-  supabase: [
-    { name: 'patient_name', type: 'string', required: false, label: 'Patient Name' },
-    { name: 'medication', type: 'string', required: false, label: 'Medication' },
-    { name: 'dosage', type: 'string', required: false, label: 'Dosage' },
-    { name: 'frequency', type: 'string', required: false, label: 'Frequency' },
-    { name: 'prescriber', type: 'string', required: false, label: 'Prescriber' },
-    { name: 'npi_number', type: 'string', required: false, label: 'NPI Number' },
-    { name: 'date_of_birth', type: 'date', required: false, label: 'Date of Birth' },
-    { name: 'insurance_id', type: 'string', required: false, label: 'Insurance ID' },
-    { name: 'ndc_code', type: 'string', required: false, label: 'NDC Code' },
-  ],
-  webhook: [
-    { name: 'patient_name', type: 'string', required: false, label: 'Patient Name' },
-    { name: 'medication', type: 'string', required: false, label: 'Medication' },
-    { name: 'custom_field', type: 'string', required: false, label: 'Custom Field' },
-  ]
+    { name: 'date', type: 'date', required: false, label: 'Date' },
+  ];
+  
+  // These are SUGGESTIONS only - user can create any custom field
+  return commonFields;
 };
 
 interface TargetField {
@@ -238,7 +200,7 @@ export function FieldMappingDialog({
   const [isAutoMatching, setIsAutoMatching] = useState(false);
   
   const targetFields = useMemo(() => {
-    const base = TARGET_SCHEMAS[targetSystem] || [];
+    const base = getBaseTargetSchema(targetSystem);
     return [...base, ...customFields];
   }, [targetSystem, customFields]);
   
