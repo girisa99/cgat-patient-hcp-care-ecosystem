@@ -231,6 +231,7 @@ export default function ProcessingHistoryWithExport({
           toast.success(`Synced ${selectedData.length} records to ${selectedTarget}`);
           break;
 
+        case 'download':
         default:
           // Download as file
           const blob = exportFormat === 'json'
@@ -285,25 +286,50 @@ export default function ProcessingHistoryWithExport({
           </span>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline" 
+            size="sm"
+            disabled={selectedItems.length === 0}
+            onClick={() => {
+              setExportFormat('json');
+              setSelectedTarget('download');
+              setShowExportDialog(true);
+            }}
+          >
+            <FileJson className="h-4 w-4 mr-2" />
+            JSON
+          </Button>
+          <Button 
+            variant="outline" 
+            size="sm"
+            disabled={selectedItems.length === 0}
+            onClick={() => {
+              setExportFormat('csv');
+              setSelectedTarget('download');
+              setShowExportDialog(true);
+            }}
+          >
+            <FileSpreadsheet className="h-4 w-4 mr-2" />
+            CSV
+          </Button>
+          <Button 
+            variant="default" 
+            size="sm"
+            disabled={selectedItems.length === 0}
+            onClick={() => setShowExportDialog(true)}
+          >
+            <Upload className="h-4 w-4 mr-2" />
+            MCP Export
+          </Button>
           {selectedItems.length > 0 && (
-            <>
-              <Button 
-                variant="destructive" 
-                size="sm"
-                onClick={() => setShowDeleteConfirm(true)}
-              >
-                <XCircle className="h-4 w-4 mr-2" />
-                Delete ({selectedItems.length})
-              </Button>
-              <Button 
-                variant="default" 
-                size="sm"
-                onClick={() => setShowExportDialog(true)}
-              >
-                <Upload className="h-4 w-4 mr-2" />
-                Export via MCP
-              </Button>
-            </>
+            <Button 
+              variant="destructive" 
+              size="sm"
+              onClick={() => setShowDeleteConfirm(true)}
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              Delete ({selectedItems.length})
+            </Button>
           )}
         </div>
       </div>
