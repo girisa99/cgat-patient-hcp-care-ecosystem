@@ -64,7 +64,7 @@ interface ProcessingResult {
 
 interface ProcessingHistoryWithExportProps {
   history: ProcessingResult[];
-  onViewResult: (result: ProcessingResult) => void;
+  onViewResult?: (result: ProcessingResult) => void;
 }
 
 interface MCPExportTarget {
