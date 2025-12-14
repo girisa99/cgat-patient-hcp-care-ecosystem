@@ -280,9 +280,11 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
     const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
     
     if (lovableApiKey || geminiApiKey) {
-      entities = await extractEntitiesWithGemini(extractedText, geminiApiKey || '');
+      // Pass document type for type-specific extraction
+      const docType = doc.document_type || 'unknown';
+      entities = await extractEntitiesWithGemini(extractedText, geminiApiKey || '', docType);
       nlpProvider = lovableApiKey ? 'lovable-ai-gemini' : 'gemini-direct';
-      console.log(`AI NLP (${nlpProvider}) extracted ${entities.length} entities`);
+      console.log(`AI NLP (${nlpProvider}) extracted ${entities.length} entities for document type: ${docType}`);
     } else {
       // Fallback to regex-based extraction (marked as OCR source)
       entities = extractEntities(extractedText);
@@ -909,8 +911,267 @@ async function awsTextractOCR(base64Image: string): Promise<string> {
   }
 }
 
-// AI NLP Entity Extraction - uses GEMINI_API_KEY from Universal AI infrastructure
-async function extractEntitiesWithGemini(text: string, apiKey: string): Promise<{ type: string; value: string; confidence: number; source: string }[]> {
+// Document-type-specific extraction prompt generator
+function generateExtractionPrompt(text: string, documentType: string): string {
+  const docText = text.substring(0, 8000);
+  
+  // Document type specific field configurations
+  const documentTypeFields: Record<string, { description: string; fields: string[] }> = {
+    // Healthcare documents
+    'prescription': {
+      description: 'prescription/medication order',
+      fields: [
+        'patient_name: The PATIENT\'s full name',
+        'patient_dob: Patient date of birth (DOB)',
+        'patient_address: Patient address',
+        'patient_phone: Patient phone number',
+        'prescriber_name: Doctor/prescriber name (who wrote the prescription)',
+        'prescriber_npi: 10-digit National Provider Identifier',
+        'prescriber_dea: DEA registration number (format: 2 letters + 7 digits)',
+        'medication: Drug name with strength (e.g., "Amoxicillin 250 mg")',
+        'strength: Medication dosage strength (e.g., "250 mg")',
+        'sig: Dosing instructions - Latin abbreviations like "p.o." (by mouth), "T.i.d." (3x daily)',
+        'quantity: Number of pills/tablets to dispense - look for "#" followed by number',
+        'days_supply: Number of days the medication should last',
+        'refills: Number of refills allowed',
+        'ndc: National Drug Code',
+        'date_written: Date prescription was written',
+        'diagnosis: Medical condition or diagnosis'
+      ]
+    },
+    'insurance': {
+      description: 'insurance card or insurance document',
+      fields: [
+        'insurance_name: Name of the insurance company/carrier (e.g., "Blue Cross Blue Shield", "Aetna", "UnitedHealthcare")',
+        'member_id: Member ID number (subscriber ID, policy number)',
+        'group_number: Group number for the insurance plan',
+        'bin: Bank Identification Number (BIN) - typically 6 digits',
+        'pcn: Processor Control Number (PCN)',
+        'plan_type: Type of plan (HMO, PPO, POS, EPO)',
+        'copay: Copay amounts (may have multiple for different visit types)',
+        'deductible: Deductible amount',
+        'effective_date: Coverage effective/start date',
+        'expiration_date: Coverage end/expiration date',
+        'subscriber_name: Name of the primary subscriber/policyholder',
+        'member_name: Name of the covered member (if different from subscriber)',
+        'rx_bin: Pharmacy BIN number',
+        'rx_pcn: Pharmacy PCN',
+        'rx_group: Pharmacy group number',
+        'issuer_phone: Customer service phone number',
+        'claims_address: Address for claims submission'
+      ]
+    },
+    'patient-onboarding': {
+      description: 'patient intake, enrollment, or consent form',
+      fields: [
+        'patient_name: Patient full name',
+        'dob: Date of birth',
+        'ssn: Social Security Number (last 4 digits)',
+        'address: Home address',
+        'phone: Phone number',
+        'email: Email address',
+        'insurance_id: Insurance member ID',
+        'emergency_contact: Emergency contact name and phone',
+        'allergies: Known allergies',
+        'consent_signed: Whether consent form is signed (yes/no)',
+        'primary_care_physician: PCP name',
+        'medications: Current medications'
+      ]
+    },
+    'lab-results': {
+      description: 'laboratory test results',
+      fields: [
+        'patient_name: Patient name',
+        'patient_dob: Patient date of birth',
+        'specimen_id: Specimen or sample ID',
+        'collection_date: Date specimen was collected',
+        'test_name: Name of the test performed',
+        'result_value: Numerical or qualitative result',
+        'reference_range: Normal reference range',
+        'units: Units of measurement',
+        'flag: Abnormal flag (H=High, L=Low, N=Normal)',
+        'ordering_provider: Name of ordering physician',
+        'lab_name: Laboratory name',
+        'report_date: Date report was generated'
+      ]
+    },
+    // Medical imaging
+    'xray': {
+      description: 'X-ray radiology report',
+      fields: [
+        'patient_name: Patient name',
+        'patient_dob: Patient date of birth',
+        'study_date: Date of the X-ray examination',
+        'body_part: Body part examined',
+        'indication: Clinical reason for the study',
+        'findings: Radiological findings',
+        'impression: Radiologist impression/diagnosis',
+        'radiologist: Name of interpreting radiologist',
+        'accession_number: Study accession number',
+        'technique: Imaging technique used'
+      ]
+    },
+    'ct-scan': {
+      description: 'CT scan radiology report',
+      fields: [
+        'patient_name: Patient name',
+        'patient_dob: Patient date of birth',
+        'study_date: Date of the CT scan',
+        'body_region: Body region scanned',
+        'contrast: Whether contrast was used',
+        'indication: Clinical indication',
+        'findings: Radiological findings',
+        'impression: Impression/diagnosis',
+        'radiologist: Interpreting radiologist',
+        'slice_thickness: CT slice thickness',
+        'radiation_dose: Radiation dose administered'
+      ]
+    },
+    'mri': {
+      description: 'MRI radiology report',
+      fields: [
+        'patient_name: Patient name',
+        'patient_dob: Patient date of birth',
+        'study_date: Date of the MRI',
+        'body_region: Body region imaged',
+        'contrast: Whether contrast was used',
+        'sequences: MRI sequences performed',
+        'indication: Clinical indication',
+        'findings: Radiological findings',
+        'impression: Impression/diagnosis',
+        'radiologist: Interpreting radiologist',
+        'tesla_strength: Magnet strength (e.g., 1.5T, 3T)'
+      ]
+    },
+    // Financial documents
+    'invoice': {
+      description: 'invoice or bill',
+      fields: [
+        'invoice_number: Invoice or bill number',
+        'vendor_name: Company or vendor name',
+        'vendor_address: Vendor address',
+        'invoice_date: Invoice date',
+        'due_date: Payment due date',
+        'subtotal: Subtotal amount before tax',
+        'tax: Tax amount',
+        'total: Total amount due',
+        'payment_terms: Payment terms (Net 30, etc.)',
+        'po_number: Purchase order number'
+      ]
+    },
+    // Identity documents
+    'passport': {
+      description: 'passport or travel document',
+      fields: [
+        'full_name: Full legal name',
+        'nationality: Nationality/citizenship',
+        'date_of_birth: Date of birth',
+        'gender: Gender',
+        'passport_number: Passport number',
+        'issue_date: Date of issue',
+        'expiry_date: Expiration date',
+        'place_of_birth: Place of birth',
+        'issuing_authority: Issuing country/authority',
+        'mrz_line1: Machine readable zone line 1',
+        'mrz_line2: Machine readable zone line 2'
+      ]
+    },
+    'drivers-license': {
+      description: 'driver\'s license or state ID',
+      fields: [
+        'full_name: Full legal name',
+        'license_number: License or ID number',
+        'date_of_birth: Date of birth',
+        'address: Address on license',
+        'issue_date: Date of issue',
+        'expiry_date: Expiration date',
+        'class: License class',
+        'restrictions: Any restrictions',
+        'state: Issuing state'
+      ]
+    },
+    // Business documents
+    'order-management': {
+      description: 'purchase order or sales order',
+      fields: [
+        'order_number: Order or PO number',
+        'customer_name: Customer name',
+        'order_date: Order date',
+        'items: Line items/products ordered',
+        'quantity: Total quantity',
+        'total: Order total amount',
+        'shipping_address: Shipping address',
+        'status: Order status'
+      ]
+    },
+    'treatment-center': {
+      description: 'treatment center or facility document',
+      fields: [
+        'facility_name: Facility or center name',
+        'license_number: State license number',
+        'dea_number: DEA registration number',
+        'npi: National Provider Identifier',
+        'accreditation: Accreditation body',
+        'address: Facility address',
+        'phone: Contact phone',
+        'admin_contact: Administrator contact'
+      ]
+    },
+    'customer-onboarding': {
+      description: 'business customer or vendor onboarding document',
+      fields: [
+        'company_name: Company/business name',
+        'tax_id: Tax ID or EIN',
+        'contact_name: Primary contact name',
+        'email: Contact email',
+        'phone: Contact phone',
+        'address: Business address',
+        'credit_terms: Credit terms requested',
+        'credit_limit: Credit limit'
+      ]
+    }
+  };
+  
+  // Get configuration for the document type, default to general extraction
+  const config = documentTypeFields[documentType] || {
+    description: 'document',
+    fields: [
+      'name: Any person name',
+      'date: Any date',
+      'id_number: Any ID or reference number',
+      'address: Any address',
+      'phone: Any phone number',
+      'email: Any email address',
+      'amount: Any monetary amount',
+      'organization: Any company or organization name'
+    ]
+  };
+  
+  const fieldsText = config.fields.map((f, i) => `${i + 1}. ${f}`).join('\n');
+  
+  return `You are an expert document data extractor. Extract ALL relevant entities from this ${config.description}. Be thorough and accurate.
+
+FIELDS TO EXTRACT:
+${fieldsText}
+
+IMPORTANT:
+- Extract the exact value as it appears in the document
+- If a field appears multiple times, extract each occurrence
+- Assign confidence scores based on how clearly the value was found (0.5-1.0)
+- Only extract values you are confident about
+
+Document text to analyze:
+"""
+${docText}
+"""
+
+Respond ONLY with a JSON array. Each object must have: type (field key), value, confidence (0-1), source ("nlp").
+Example: [{"type":"insurance_name","value":"Blue Cross Blue Shield","confidence":0.95,"source":"nlp"}]`;
+}
+
+
+// Now supports document-type-specific extraction prompts
+async function extractEntitiesWithGemini(text: string, apiKey: string, documentType: string = 'prescription'): Promise<{ type: string; value: string; confidence: number; source: string }[]> {
   // Use GEMINI_API_KEY from Universal AI infrastructure (same as useUniversalAI hook)
   const geminiApiKey = Deno.env.get("GEMINI_API_KEY") || apiKey;
   
@@ -918,47 +1179,10 @@ async function extractEntitiesWithGemini(text: string, apiKey: string): Promise<
     throw new Error("GEMINI_API_KEY not configured - add it in Supabase secrets");
   }
   
-  console.log("Using Gemini API (Universal AI infrastructure) for NLP entity extraction...");
+  console.log(`Using Gemini API for NLP entity extraction - document type: ${documentType}`);
   
-  const prompt = `You are an expert medical document data extractor. Extract ALL entities from this prescription/medical document text. Be very careful to correctly identify each entity type.
-
-IMPORTANT RULES:
-1. patient_name: The PATIENT's full name (who the medication is prescribed TO). Look for "Patient Name:", "Name:", or similar labels.
-2. prescriber: The DOCTOR's or PRESCRIBER's name (who wrote the prescription). Look for "Print Last Name", "Dr.", "MD", signatures.
-3. medication: The drug name WITH strength if present (e.g., "Amoxicillin 250 mg tablets")
-4. sig: The DOSING INSTRUCTIONS - look for Latin abbreviations like "p.o." (by mouth), "T.i.d." (3 times daily), "b.i.d." (twice daily), "PRN" (as needed), or phrases like "TT tablets" (2 tablets), "X 7 days" (for 7 days). Extract the FULL instruction text.
-5. strength: The medication dosage strength alone (e.g., "250 mg", "500mg")
-6. quantity: Number of pills/tablets/units to dispense - look for "#" followed by number (e.g., "#42" means quantity 42), or "Qty:", "Quantity:", "Disp:"
-7. refills: Number of refills allowed - look for "Refill" with a number, or "Times" field
-8. date_written: Date the prescription was written - look for "Date" field
-9. date_of_birth: Patient's birth date - look for "DOB", "Date of Birth"
-10. phone: Phone numbers
-11. npi: 10-digit National Provider Identifier
-12. dea: DEA registration number (format: 2 letters + 7 digits)
-13. address: Full or partial addresses
-14. diagnosis: Medical conditions or diagnoses
-15. insurance_id: Insurance member ID
-16. ndc: National Drug Code
-
-COMMON PRESCRIPTION PATTERNS TO RECOGNIZE:
-- "#42" or "# 42" = quantity of 42
-- "TT" = Take Two (2 tablets)
-- "p.o." = per os (by mouth)
-- "T.i.d." or "tid" = three times daily
-- "b.i.d." or "bid" = twice daily
-- "q.d." or "qd" = once daily
-- "X 7 days" = for 7 days
-- "PRN" = as needed
-- "Do Not Refill" with X marked = 0 refills
-- "Refill ___ Times" = number of refills
-
-Document text to analyze:
-"""
-${text.substring(0, 8000)}
-"""
-
-Respond ONLY with a JSON array. Each object must have: type, value, confidence (0-1), source ("nlp").
-Example: [{"type":"patient_name","value":"John Smith","confidence":0.95,"source":"nlp"},{"type":"sig","value":"2 tablets by mouth 3 times daily for 7 days","confidence":0.9,"source":"nlp"},{"type":"quantity","value":"42","confidence":0.9,"source":"nlp"}]`;
+  // Generate document-type-specific prompt
+  const prompt = generateExtractionPrompt(text, documentType);
 
   let responseText = '';
   
