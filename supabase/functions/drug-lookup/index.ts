@@ -24,6 +24,156 @@ interface RxNormDrug {
   tty?: string;
 }
 
+// Common OCR misspellings and their corrections
+const DRUG_NAME_CORRECTIONS: Record<string, string> = {
+  'amoxillin': 'amoxicillin',
+  'amoxicilin': 'amoxicillin',
+  'amoxycillin': 'amoxicillin',
+  'amoxycylin': 'amoxicillin',
+  'amoxacillin': 'amoxicillin',
+  'ibuprophen': 'ibuprofen',
+  'ibuprofin': 'ibuprofen',
+  'ibuprofan': 'ibuprofen',
+  'acetamenophen': 'acetaminophen',
+  'acetaminophin': 'acetaminophen',
+  'acetominophen': 'acetaminophen',
+  'tylenol': 'acetaminophen',
+  'tylanol': 'acetaminophen',
+  'metforman': 'metformin',
+  'metformine': 'metformin',
+  'lisinpril': 'lisinopril',
+  'lisanopril': 'lisinopril',
+  'lisinipril': 'lisinopril',
+  'atorvastain': 'atorvastatin',
+  'atorvastatan': 'atorvastatin',
+  'atorvastin': 'atorvastatin',
+  'omeprazol': 'omeprazole',
+  'omeprazola': 'omeprazole',
+  'amlodapine': 'amlodipine',
+  'amlodopine': 'amlodipine',
+  'gabapantin': 'gabapentin',
+  'gabapenton': 'gabapentin',
+  'sertaline': 'sertraline',
+  'sertralene': 'sertraline',
+  'losarton': 'losartan',
+  'losarten': 'losartan',
+  'hydrocodene': 'hydrocodone',
+  'hydrocondone': 'hydrocodone',
+  'oxycodene': 'oxycodone',
+  'oxycontin': 'oxycodone',
+  'alprazolom': 'alprazolam',
+  'alprazalam': 'alprazolam',
+  'aspirn': 'aspirin',
+  'asprin': 'aspirin',
+  'prednisone': 'prednisone',
+  'prednizone': 'prednisone',
+  'levothyroxin': 'levothyroxine',
+  'levothyroxene': 'levothyroxine',
+  'metoprolal': 'metoprolol',
+  'metropolol': 'metoprolol',
+  'simvastain': 'simvastatin',
+  'simvastin': 'simvastatin',
+  'atenalol': 'atenolol',
+  'atinolol': 'atenolol',
+  'clopidogral': 'clopidogrel',
+  'clopidagrel': 'clopidogrel',
+  'ciprofloxicin': 'ciprofloxacin',
+  'ciprofloxin': 'ciprofloxacin',
+  'azithromicin': 'azithromycin',
+  'azythromycin': 'azithromycin',
+  'tramadal': 'tramadol',
+  'tramidal': 'tramadol',
+  'furosimide': 'furosemide',
+  'furosimid': 'furosemide',
+  'pantoprazol': 'pantoprazole',
+  'pantoprazola': 'pantoprazole',
+  'duloxatine': 'duloxetine',
+  'duloxetin': 'duloxetine',
+  'escitalopran': 'escitalopram',
+  'escitaloprom': 'escitalopram',
+  'fluoxatine': 'fluoxetine',
+  'fluoxetin': 'fluoxetine',
+  'warferin': 'warfarin',
+  'warfiran': 'warfarin',
+  'cephalexan': 'cephalexin',
+  'cephalexen': 'cephalexin',
+  'doxycyclin': 'doxycycline',
+  'doxycyclin': 'doxycycline',
+};
+
+// Fuzzy match function using Levenshtein distance
+function levenshteinDistance(a: string, b: string): number {
+  const matrix: number[][] = [];
+  
+  for (let i = 0; i <= b.length; i++) {
+    matrix[i] = [i];
+  }
+  for (let j = 0; j <= a.length; j++) {
+    matrix[0][j] = j;
+  }
+  
+  for (let i = 1; i <= b.length; i++) {
+    for (let j = 1; j <= a.length; j++) {
+      if (b.charAt(i - 1) === a.charAt(j - 1)) {
+        matrix[i][j] = matrix[i - 1][j - 1];
+      } else {
+        matrix[i][j] = Math.min(
+          matrix[i - 1][j - 1] + 1,
+          matrix[i][j - 1] + 1,
+          matrix[i - 1][j] + 1
+        );
+      }
+    }
+  }
+  
+  return matrix[b.length][a.length];
+}
+
+// Correct drug name spelling using corrections dictionary and fuzzy matching
+function correctDrugNameSpelling(drugName: string): { corrected: string; original: string; wasCorrected: boolean } {
+  const lowerName = drugName.toLowerCase().trim();
+  
+  // Check exact match in corrections dictionary
+  if (DRUG_NAME_CORRECTIONS[lowerName]) {
+    console.log(`📝 Corrected spelling: ${drugName} → ${DRUG_NAME_CORRECTIONS[lowerName]}`);
+    return { corrected: DRUG_NAME_CORRECTIONS[lowerName], original: drugName, wasCorrected: true };
+  }
+  
+  // Try fuzzy matching against corrections dictionary keys
+  let bestMatch = '';
+  let bestDistance = Infinity;
+  
+  for (const [misspelling, correct] of Object.entries(DRUG_NAME_CORRECTIONS)) {
+    const distance = levenshteinDistance(lowerName, misspelling);
+    if (distance < bestDistance && distance <= 2) { // Allow up to 2 character differences
+      bestDistance = distance;
+      bestMatch = correct;
+    }
+  }
+  
+  if (bestMatch) {
+    console.log(`📝 Fuzzy matched spelling: ${drugName} → ${bestMatch} (distance: ${bestDistance})`);
+    return { corrected: bestMatch, original: drugName, wasCorrected: true };
+  }
+  
+  // Try fuzzy matching against the correct names directly (for partial matches)
+  const uniqueCorrectNames = [...new Set(Object.values(DRUG_NAME_CORRECTIONS))];
+  for (const correctName of uniqueCorrectNames) {
+    const distance = levenshteinDistance(lowerName, correctName);
+    if (distance < bestDistance && distance <= 2) {
+      bestDistance = distance;
+      bestMatch = correctName;
+    }
+  }
+  
+  if (bestMatch) {
+    console.log(`📝 Fuzzy matched to correct name: ${drugName} → ${bestMatch} (distance: ${bestDistance})`);
+    return { corrected: bestMatch, original: drugName, wasCorrected: true };
+  }
+  
+  return { corrected: drugName, original: drugName, wasCorrected: false };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -40,8 +190,16 @@ serve(async (req) => {
       );
     }
 
+    // Correct spelling before lookup
+    const { corrected: correctedDrugName, wasCorrected } = correctDrugNameSpelling(drugName.trim());
+    const searchName = correctedDrugName;
+    
+    console.log(`🔍 Searching for: ${searchName}${wasCorrected ? ` (corrected from ${drugName})` : ''}`);
+
     const results: any = {
       drugName: drugName.trim(),
+      correctedName: wasCorrected ? correctedDrugName : undefined,
+      wasCorrected,
       searchedAt: new Date().toISOString(),
       ndc: [],
       rxnorm: [],
@@ -49,10 +207,10 @@ serve(async (req) => {
       alternatives: []
     };
 
-    // 1. OpenFDA NDC Lookup (American drug codes)
+    // 1. OpenFDA NDC Lookup (American drug codes) - use corrected name
     if (searchType === 'all' || searchType === 'ndc') {
       try {
-        const fdaUrl = `https://api.fda.gov/drug/ndc.json?search=generic_name:"${encodeURIComponent(drugName)}"OR+brand_name:"${encodeURIComponent(drugName)}"&limit=10`;
+        const fdaUrl = `https://api.fda.gov/drug/ndc.json?search=generic_name:"${encodeURIComponent(searchName)}"OR+brand_name:"${encodeURIComponent(searchName)}"&limit=10`;
         console.log(`📡 OpenFDA request: ${fdaUrl}`);
         
         const fdaResponse = await fetch(fdaUrl);
@@ -80,10 +238,10 @@ serve(async (req) => {
       }
     }
 
-    // 2. RxNorm Lookup (NIH drug database for alternatives and clinical info)
+    // 2. RxNorm Lookup (NIH drug database for alternatives and clinical info) - use corrected name
     if (searchType === 'all' || searchType === 'rxnorm') {
       try {
-        const rxNormUrl = `https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(drugName)}`;
+        const rxNormUrl = `https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(searchName)}`;
         console.log(`📡 RxNorm request: ${rxNormUrl}`);
         
         const rxResponse = await fetch(rxNormUrl);
@@ -158,7 +316,7 @@ serve(async (req) => {
 
     // Fallback: if no results found, try a simplified drug name (e.g., remove strength and dosage form)
     if (results.ndc.length === 0 && results.rxnorm.length === 0) {
-      const simplifiedName = drugName
+      const simplifiedName = searchName
         .toLowerCase()
         // Remove strength like "250 mg", "10mg", etc.
         .replace(/\b\d+\s*(mg|mcg|g|ml|units?)\b/gi, '')
@@ -167,13 +325,17 @@ serve(async (req) => {
         // Collapse extra spaces
         .replace(/\s+/g, ' ')
         .trim();
+      
+      // Also try correcting the simplified name
+      const { corrected: correctedSimplified } = correctDrugNameSpelling(simplifiedName);
+      const searchSimplified = correctedSimplified;
 
-      if (simplifiedName && simplifiedName.length >= 2 && simplifiedName !== drugName.toLowerCase()) {
-        console.log(`🔁 No results for full name, retrying with simplified name: ${simplifiedName}`);
+      if (searchSimplified && searchSimplified.length >= 2 && searchSimplified !== searchName.toLowerCase()) {
+        console.log(`🔁 No results for full name, retrying with simplified/corrected name: ${searchSimplified}`);
 
-        // Retry OpenFDA with simplified name
+        // Retry OpenFDA with simplified/corrected name
         try {
-          const fdaUrlSimple = `https://api.fda.gov/drug/ndc.json?search=generic_name:"${encodeURIComponent(simplifiedName)}"OR+brand_name:"${encodeURIComponent(simplifiedName)}"&limit=10`;
+          const fdaUrlSimple = `https://api.fda.gov/drug/ndc.json?search=generic_name:"${encodeURIComponent(searchSimplified)}"OR+brand_name:"${encodeURIComponent(searchSimplified)}"&limit=10`;
           console.log(`📡 OpenFDA fallback request: ${fdaUrlSimple}`);
           const fdaResponseSimple = await fetch(fdaUrlSimple);
           if (fdaResponseSimple.ok) {
@@ -199,9 +361,9 @@ serve(async (req) => {
           console.error('OpenFDA fallback error:', fdaError);
         }
 
-        // Retry RxNorm with simplified name
+        // Retry RxNorm with simplified/corrected name
         try {
-          const rxNormUrlSimple = `https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(simplifiedName)}`;
+          const rxNormUrlSimple = `https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(searchSimplified)}`;
           console.log(`📡 RxNorm fallback request: ${rxNormUrlSimple}`);
           const rxResponseSimple = await fetch(rxNormUrlSimple);
           if (rxResponseSimple.ok) {
@@ -225,8 +387,8 @@ serve(async (req) => {
       }
     }
 
-    // Add clinical recommendations based on drug class and drug name
-    const drugNameLower = drugName.toLowerCase();
+    // Add clinical recommendations based on drug class and drug name (use corrected name for matching)
+    const drugNameLower = searchName.toLowerCase();
     
     if (results.ndc.length > 0) {
       const pharmClasses = results.ndc[0].pharmClass || [];

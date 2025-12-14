@@ -128,6 +128,8 @@ interface ProcessingResult {
 interface MedicationResult {
   drugName: string;
   genericName?: string;
+  correctedName?: string;
+  wasCorrected?: boolean;
   strength: string;
   sig: string;
   calculatedQuantity: number;
