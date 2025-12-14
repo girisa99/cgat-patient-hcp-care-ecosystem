@@ -919,21 +919,34 @@ async function extractEntitiesWithGemini(text: string, apiKey: string): Promise<
   const prompt = `You are an expert medical document data extractor. Extract ALL entities from this prescription/medical document text. Be very careful to correctly identify each entity type.
 
 IMPORTANT RULES:
-1. patient_name: The PATIENT's full name (who the medication is prescribed TO). Look for "Patient:", "Name:", or similar labels. This is NOT the doctor's name.
-2. prescriber: The DOCTOR's or PRESCRIBER's name (who wrote the prescription). Look for "Dr.", "MD", "Prescriber:", "Physician:" labels.
-3. medication: The drug name WITH strength if present (e.g., "Colace 100mg", "Metformin 500mg")
-4. sig: The DOSING INSTRUCTIONS like "Take twice daily", "1 tablet by mouth daily", "PRN for pain". This is NOT the patient name.
-5. strength: The medication dosage strength alone (e.g., "100mg", "500mg")
-6. quantity: Number of pills/tablets/units to dispense
-7. refills: Number of refills allowed
-8. date_of_birth: Patient's birth date
-9. phone: Phone numbers
-10. npi: 10-digit National Provider Identifier
-11. dea: DEA registration number
-12. address: Full or partial addresses
-13. diagnosis: Medical conditions or diagnoses
-14. insurance_id: Insurance member ID
-15. ndc: National Drug Code
+1. patient_name: The PATIENT's full name (who the medication is prescribed TO). Look for "Patient Name:", "Name:", or similar labels.
+2. prescriber: The DOCTOR's or PRESCRIBER's name (who wrote the prescription). Look for "Print Last Name", "Dr.", "MD", signatures.
+3. medication: The drug name WITH strength if present (e.g., "Amoxicillin 250 mg tablets")
+4. sig: The DOSING INSTRUCTIONS - look for Latin abbreviations like "p.o." (by mouth), "T.i.d." (3 times daily), "b.i.d." (twice daily), "PRN" (as needed), or phrases like "TT tablets" (2 tablets), "X 7 days" (for 7 days). Extract the FULL instruction text.
+5. strength: The medication dosage strength alone (e.g., "250 mg", "500mg")
+6. quantity: Number of pills/tablets/units to dispense - look for "#" followed by number (e.g., "#42" means quantity 42), or "Qty:", "Quantity:", "Disp:"
+7. refills: Number of refills allowed - look for "Refill" with a number, or "Times" field
+8. date_written: Date the prescription was written - look for "Date" field
+9. date_of_birth: Patient's birth date - look for "DOB", "Date of Birth"
+10. phone: Phone numbers
+11. npi: 10-digit National Provider Identifier
+12. dea: DEA registration number (format: 2 letters + 7 digits)
+13. address: Full or partial addresses
+14. diagnosis: Medical conditions or diagnoses
+15. insurance_id: Insurance member ID
+16. ndc: National Drug Code
+
+COMMON PRESCRIPTION PATTERNS TO RECOGNIZE:
+- "#42" or "# 42" = quantity of 42
+- "TT" = Take Two (2 tablets)
+- "p.o." = per os (by mouth)
+- "T.i.d." or "tid" = three times daily
+- "b.i.d." or "bid" = twice daily
+- "q.d." or "qd" = once daily
+- "X 7 days" = for 7 days
+- "PRN" = as needed
+- "Do Not Refill" with X marked = 0 refills
+- "Refill ___ Times" = number of refills
 
 Document text to analyze:
 """
@@ -941,7 +954,7 @@ ${text.substring(0, 8000)}
 """
 
 Respond ONLY with a JSON array. Each object must have: type, value, confidence (0-1), source ("nlp").
-Example: [{"type":"patient_name","value":"John Smith","confidence":0.95,"source":"nlp"},{"type":"sig","value":"Take 1 tablet twice daily","confidence":0.9,"source":"nlp"}]`;
+Example: [{"type":"patient_name","value":"John Smith","confidence":0.95,"source":"nlp"},{"type":"sig","value":"2 tablets by mouth 3 times daily for 7 days","confidence":0.9,"source":"nlp"},{"type":"quantity","value":"42","confidence":0.9,"source":"nlp"}]`;
 
   let responseText = '';
   
@@ -1213,47 +1226,89 @@ function extractEntities(text: string): { type: string; value: string; confidenc
 
   // Medication extraction already handled above with commonDrugs list
 
-  // Extract SIG/Instructions
+  // Extract SIG/Instructions - enhanced patterns for prescription abbreviations
   const sigPatterns = [
-    { regex: /(?:SIG|Sig|Directions|Instructions):\s*(.+?)(?:\n|$)/i, type: 'sig', confidence: 0.9 },
-    { regex: /Take\s+(\d+\s*(?:tablet|capsule|pill|drop|puff)s?\s+(?:by mouth|orally|twice|once|three times|four times)\s*.+?)(?:\n|$)/i, type: 'sig', confidence: 0.85 },
+    { regex: /(?:SIG|Sig|Directions|Instructions):\s*(.+?)(?:\n|$)/i, type: 'sig', confidence: 0.95 },
+    { regex: /Take\s+(\d+\s*(?:tablet|capsule|pill|drop|puff)s?\s+(?:by mouth|orally|twice|once|three times|four times|daily|p\.?o\.?|bid|tid|qid|prn).+?)(?:\n|$)/i, type: 'sig', confidence: 0.9 },
+    // Match prescription abbreviation patterns like "TT tablets p.o. T.i.d. X 7 days"
+    { regex: /((?:TT|T{1,2}|I{1,3}|[I1-9])\s*(?:tablet|tab|cap|capsule)s?\s*(?:p\.?o\.?|by mouth|orally)?\s*(?:T\.?i\.?d\.?|t\.?i\.?d\.?|B\.?i\.?d\.?|b\.?i\.?d\.?|Q\.?d\.?|q\.?d\.?|Q\.?i\.?d\.?|q\.?i\.?d\.?|PRN|prn|daily|twice daily|three times daily|four times daily)\.?\s*(?:X\s*\d+\s*days?|for\s*\d+\s*days?)?)/i, type: 'sig', confidence: 0.9 },
+    // Match lines after Rx containing dosing instructions
+    { regex: /Rx\s+[A-Za-z]+.*?\n\s*((?:TT|T{1,2}|[I1-9]\s*(?:tablet|tab|capsule|cap)s?|Take\s+\d+).+?(?:daily|days?|prn|p\.o\.|bid|tid|qid)[^\n]*)/i, type: 'sig', confidence: 0.85 },
   ];
 
   for (const { regex, type, confidence } of sigPatterns) {
     const match = text.match(regex);
     if (match && match[1]) {
       if (!entities.find(e => e.type === type)) {
-        entities.push({ type, value: match[1].trim(), confidence });
+        // Expand abbreviations for clarity
+        let sigValue = match[1].trim();
+        sigValue = sigValue.replace(/\bTT\b/gi, '2');
+        sigValue = sigValue.replace(/\bp\.?o\.?\b/gi, 'by mouth');
+        sigValue = sigValue.replace(/\bT\.?i\.?d\.?\b/gi, '3 times daily');
+        sigValue = sigValue.replace(/\bB\.?i\.?d\.?\b/gi, 'twice daily');
+        sigValue = sigValue.replace(/\bQ\.?i\.?d\.?\b/gi, '4 times daily');
+        sigValue = sigValue.replace(/\bQ\.?d\.?\b/gi, 'once daily');
+        entities.push({ type, value: sigValue, confidence, source: 'ocr' });
       }
     }
   }
 
-  // Extract quantity and refills
-  const quantityMatch = text.match(/(?:Qty|Quantity|Disp|Dispense)[:\s#]*(\d+)/i);
-  if (quantityMatch) {
-    entities.push({ type: 'quantity', value: quantityMatch[1], confidence: 0.9 });
+  // Extract quantity - enhanced patterns for "#42" format
+  const quantityPatterns = [
+    { regex: /#\s*(\d+)/i, confidence: 0.95 }, // "#42" or "# 42"
+    { regex: /(?:Qty|Quantity|Disp|Dispense)[:\s#]*(\d+)/i, confidence: 0.9 },
+    { regex: /(?:^|\s)QTY[:\s]*(\d+)/i, confidence: 0.9 },
+    { regex: /Dispense:\s*(\d+)/i, confidence: 0.9 },
+  ];
+
+  for (const { regex, confidence } of quantityPatterns) {
+    if (entities.find(e => e.type === 'quantity')) break;
+    const match = text.match(regex);
+    if (match && match[1]) {
+      entities.push({ type: 'quantity', value: match[1], confidence, source: 'ocr' });
+    }
   }
 
-  const refillsMatch = text.match(/(?:Refills?|Ref)[:\s#]*(\d+)/i);
-  if (refillsMatch) {
-    entities.push({ type: 'refills', value: refillsMatch[1], confidence: 0.9 });
+  // Extract refills - enhanced patterns
+  const refillsPatterns = [
+    { regex: /(?:Refills?|Ref)[:\s#]*(\d+)/i, confidence: 0.9 },
+    { regex: /Refill\s+(\d+)\s*Times/i, confidence: 0.9 },
+    { regex: /Do\s+Not\s+Refill/i, confidence: 0.95, value: '0' }, // Explicit no refill
+  ];
+
+  for (const { regex, confidence, value } of refillsPatterns) {
+    if (entities.find(e => e.type === 'refills')) break;
+    const match = text.match(regex);
+    if (match) {
+      const refillValue = value || (match[1] ? match[1] : '0');
+      entities.push({ type: 'refills', value: refillValue, confidence, source: 'ocr' });
+    }
   }
 
   const daysSupplyMatch = text.match(/(?:Days?\s*Supply|DS)[:\s#]*(\d+)/i);
   if (daysSupplyMatch) {
-    entities.push({ type: 'days_supply', value: daysSupplyMatch[1], confidence: 0.9 });
+    entities.push({ type: 'days_supply', value: daysSupplyMatch[1], confidence: 0.9, source: 'ocr' });
   }
 
   // Extract strength
   const strengthMatch = text.match(/(?:Strength|Dose):\s*(\d+\s*(?:mg|mcg|ml|g))/i);
   if (strengthMatch) {
-    entities.push({ type: 'strength', value: strengthMatch[1], confidence: 0.9 });
+    entities.push({ type: 'strength', value: strengthMatch[1], confidence: 0.9, source: 'ocr' });
   }
 
-  // Extract date written
-  const dateWrittenMatch = text.match(/(?:Date\s+Written|Written|Rx\s+Date)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i);
-  if (dateWrittenMatch) {
-    entities.push({ type: 'date_written', value: dateWrittenMatch[1], confidence: 0.9 });
+  // Extract date written - enhanced patterns
+  const dateWrittenPatterns = [
+    { regex: /(?:Date\s+Written|Written|Rx\s+Date)[:\s]*(\d{1,2}\/\d{1,2}\/\d{2,4})/i, confidence: 0.95 },
+    { regex: /^Date\s+(\d{1,2}\/\d{1,2}\/\d{2,4})/im, confidence: 0.9 }, // "Date 10/3/00" at start of line
+    { regex: /Date[:\s]+(\d{1,2}\/\d{1,2}\/\d{2,4})/i, confidence: 0.85 },
+  ];
+
+  for (const { regex, confidence } of dateWrittenPatterns) {
+    if (entities.find(e => e.type === 'date_written')) break;
+    const match = text.match(regex);
+    if (match && match[1]) {
+      entities.push({ type: 'date_written', value: match[1], confidence, source: 'ocr' });
+    }
   }
 
   // Extract diagnoses
