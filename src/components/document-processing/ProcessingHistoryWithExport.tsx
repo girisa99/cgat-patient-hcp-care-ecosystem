@@ -283,10 +283,16 @@ export default function ProcessingHistoryWithExport({
     setIsExporting(true);
     
     try {
+      // Convert TargetField type to match service interface
+      const convertedCustomFields = customFields.map(f => ({
+        ...f,
+        dataType: f.type || 'string'
+      }));
+      
       const result = await exportWithMappings(
         sourceFieldsForMapping,
         mappings,
-        customFields,
+        convertedCustomFields,
         selectedTarget as 'salesforce' | 'hubspot' | 'veeva' | 'supabase' | 'webhook',
         {
           endpoint: webhookUrl,
@@ -296,11 +302,9 @@ export default function ProcessingHistoryWithExport({
       );
       
       if (result.success) {
+        const mockIndicator = result.mock ? ' (mock - configure CRM secrets for real integration)' : '';
         toast.success(
-          `Exported ${result.mappedFields} fields to ${selectedTarget}` +
-          (result.customFieldsCreated.length > 0 
-            ? ` (${result.customFieldsCreated.length} custom fields created)` 
-            : '')
+          `Exported ${mappings.length} fields to ${selectedTarget}${mockIndicator}`
         );
         setSelectedItems([]);
       } else {
