@@ -387,11 +387,11 @@ export default function DocumentProcessing() {
       
       if (error) throw error;
       
-      if (data && (data.ndc?.length > 0 || data.rxnorm?.length > 0)) {
-        // Calculate quantity based on sig
+      if (data) {
+        // Calculate quantity based on sig (fallback to a safe default)
         const calculation = calculateQuantityAndDaySupply(sigInstructions || 'Take 1 tablet daily for 30 days');
         
-        // Transform API response to our format
+        // Transform API response to our format (may legitimately be empty arrays)
         const ndcOptions = (data.ndc || []).map((ndc: any) => ({
           code: ndc.code,
           name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
@@ -458,9 +458,15 @@ export default function DocumentProcessing() {
         };
         
         setSearchResults(result);
-        toast.success(`Found ${ndcOptions.length} NDC codes from OpenFDA + ${data.rxnorm?.length || 0} RxNorm entries`);
+
+        // Feedback reflects whether we actually found structured codes
+        if (ndcOptions.length > 0 || (data.rxnorm && data.rxnorm.length > 0)) {
+          toast.success(`Found ${ndcOptions.length} NDC codes from OpenFDA + ${data.rxnorm?.length || 0} RxNorm entries`);
+        } else {
+          toast.info('No NDC/RxNorm matches found; showing general clinical information from drug lookup');
+        }
       } else {
-        toast.error('Drug not found - try a different spelling or generic name');
+        toast.error('Drug lookup failed - empty response');
         setSearchResults(null);
       }
     } catch (err) {
