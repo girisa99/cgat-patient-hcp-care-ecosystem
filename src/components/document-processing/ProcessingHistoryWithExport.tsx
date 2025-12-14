@@ -65,6 +65,7 @@ interface ProcessingResult {
 interface ProcessingHistoryWithExportProps {
   history: ProcessingResult[];
   onViewResult?: (result: ProcessingResult) => void;
+  onDeleteItems?: (ids: string[]) => void;
 }
 
 interface MCPExportTarget {
@@ -87,12 +88,15 @@ const MCP_EXPORT_TARGETS: MCPExportTarget[] = [
 export default function ProcessingHistoryWithExport({
   history,
   onViewResult,
+  onDeleteItems,
 }: ProcessingHistoryWithExportProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showExportDialog, setShowExportDialog] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [exportFormat, setExportFormat] = useState<'json' | 'csv'>('json');
   const [selectedTarget, setSelectedTarget] = useState<string>('supabase');
   const [isExporting, setIsExporting] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
 
   const toggleSelect = (id: string) => {
@@ -106,6 +110,32 @@ export default function ProcessingHistoryWithExport({
       setSelectedItems([]);
     } else {
       setSelectedItems(history.map(h => h.id));
+    }
+  };
+
+  const handleDelete = async () => {
+    if (selectedItems.length === 0) return;
+    
+    setIsDeleting(true);
+    try {
+      // Delete from database
+      const { error } = await supabase
+        .from('document_processing_jobs')
+        .delete()
+        .in('id', selectedItems);
+      
+      if (error) throw error;
+      
+      // Notify parent to update state
+      onDeleteItems?.(selectedItems);
+      setSelectedItems([]);
+      setShowDeleteConfirm(false);
+      toast.success(`Deleted ${selectedItems.length} record(s)`);
+    } catch (err) {
+      console.error('Delete error:', err);
+      toast.error('Failed to delete records');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -256,14 +286,24 @@ export default function ProcessingHistoryWithExport({
         </div>
         <div className="flex gap-2">
           {selectedItems.length > 0 && (
-            <Button 
-              variant="default" 
-              size="sm"
-              onClick={() => setShowExportDialog(true)}
-            >
-              <Upload className="h-4 w-4 mr-2" />
-              Export via MCP
-            </Button>
+            <>
+              <Button 
+                variant="destructive" 
+                size="sm"
+                onClick={() => setShowDeleteConfirm(true)}
+              >
+                <XCircle className="h-4 w-4 mr-2" />
+                Delete ({selectedItems.length})
+              </Button>
+              <Button 
+                variant="default" 
+                size="sm"
+                onClick={() => setShowExportDialog(true)}
+              >
+                <Upload className="h-4 w-4 mr-2" />
+                Export via MCP
+              </Button>
+            </>
           )}
         </div>
       </div>
@@ -423,6 +463,34 @@ export default function ProcessingHistoryWithExport({
                 <Send className="h-4 w-4 mr-2" />
               )}
               Export Now
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="h-5 w-5" />
+              Confirm Deletion
+            </DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete {selectedItems.length} selected record(s)? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setShowDeleteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={isDeleting}>
+              {isDeleting ? (
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              ) : (
+                <XCircle className="h-4 w-4 mr-2" />
+              )}
+              Delete
             </Button>
           </DialogFooter>
         </DialogContent>
