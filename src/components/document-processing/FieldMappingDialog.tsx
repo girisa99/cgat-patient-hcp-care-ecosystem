@@ -99,7 +99,7 @@ const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
     { name: 'license_number', type: 'string', required: false, label: 'License Number' },
     { name: 'dea_number', type: 'string', required: false, label: 'DEA Number' },
     
-    // Medication Fields
+    // Prescription/Medication Fields
     { name: 'medication', type: 'string', required: false, label: 'Medication' },
     { name: 'medication_name', type: 'string', required: false, label: 'Medication Name' },
     { name: 'drug_name', type: 'string', required: false, label: 'Drug Name' },
@@ -111,8 +111,84 @@ const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
     { name: 'refills', type: 'number', required: false, label: 'Refills' },
     { name: 'ndc_code', type: 'string', required: false, label: 'NDC Code' },
     { name: 'rx_number', type: 'string', required: false, label: 'Rx Number' },
+    // SIG Codes (Prescription Directions)
+    { name: 'sig_code', type: 'string', required: false, label: 'SIG Code' },
+    { name: 'sig_text', type: 'string', required: false, label: 'SIG Text (Directions)' },
+    { name: 'route_of_administration', type: 'string', required: false, label: 'Route of Administration' },
+    { name: 'dosage_form', type: 'string', required: false, label: 'Dosage Form' },
+    { name: 'dispense_as_written', type: 'boolean', required: false, label: 'Dispense As Written (DAW)' },
+    { name: 'days_supply', type: 'number', required: false, label: 'Days Supply' },
+    { name: 'prn_reason', type: 'string', required: false, label: 'PRN Reason' },
     
-    // Insurance Fields
+    // Medical Insurance Fields
+    { name: 'medical_insurance_id', type: 'string', required: false, label: 'Medical Insurance ID' },
+    { name: 'medical_member_id', type: 'string', required: false, label: 'Medical Member ID' },
+    { name: 'medical_policy_number', type: 'string', required: false, label: 'Medical Policy Number' },
+    { name: 'medical_group_number', type: 'string', required: false, label: 'Medical Group Number' },
+    { name: 'medical_insurance_provider', type: 'string', required: false, label: 'Medical Insurance Provider' },
+    { name: 'medical_plan_name', type: 'string', required: false, label: 'Medical Plan Name' },
+    { name: 'medical_plan_type', type: 'string', required: false, label: 'Medical Plan Type (HMO/PPO/EPO)' },
+    { name: 'medical_effective_date', type: 'date', required: false, label: 'Medical Coverage Effective Date' },
+    { name: 'medical_termination_date', type: 'date', required: false, label: 'Medical Coverage End Date' },
+    { name: 'medical_copay', type: 'number', required: false, label: 'Medical Copay' },
+    { name: 'medical_deductible', type: 'number', required: false, label: 'Medical Deductible' },
+    { name: 'medical_out_of_pocket_max', type: 'number', required: false, label: 'Medical Out-of-Pocket Max' },
+    { name: 'primary_care_physician', type: 'string', required: false, label: 'Primary Care Physician' },
+    { name: 'pcp_npi', type: 'string', required: false, label: 'PCP NPI' },
+    { name: 'referral_required', type: 'boolean', required: false, label: 'Referral Required' },
+    { name: 'prior_auth_required', type: 'boolean', required: false, label: 'Prior Authorization Required' },
+    
+    // Pharmacy/Rx Insurance Fields
+    { name: 'rx_insurance_id', type: 'string', required: false, label: 'Rx Insurance ID' },
+    { name: 'rx_member_id', type: 'string', required: false, label: 'Rx Member ID' },
+    { name: 'rx_group_number', type: 'string', required: false, label: 'Rx Group Number' },
+    { name: 'rx_bin_number', type: 'string', required: false, label: 'Rx BIN Number' },
+    { name: 'rx_pcn', type: 'string', required: false, label: 'Rx PCN' },
+    { name: 'rx_plan_name', type: 'string', required: false, label: 'Rx Plan Name' },
+    { name: 'pbm_name', type: 'string', required: false, label: 'PBM Name' },
+    { name: 'rx_effective_date', type: 'date', required: false, label: 'Rx Coverage Effective Date' },
+    { name: 'rx_termination_date', type: 'date', required: false, label: 'Rx Coverage End Date' },
+    { name: 'rx_copay_generic', type: 'number', required: false, label: 'Rx Copay (Generic)' },
+    { name: 'rx_copay_preferred_brand', type: 'number', required: false, label: 'Rx Copay (Preferred Brand)' },
+    { name: 'rx_copay_non_preferred', type: 'number', required: false, label: 'Rx Copay (Non-Preferred)' },
+    { name: 'rx_copay_specialty', type: 'number', required: false, label: 'Rx Copay (Specialty)' },
+    { name: 'mail_order_pharmacy', type: 'string', required: false, label: 'Mail Order Pharmacy' },
+    { name: 'specialty_pharmacy', type: 'string', required: false, label: 'Specialty Pharmacy' },
+    { name: 'formulary_id', type: 'string', required: false, label: 'Formulary ID' },
+    { name: 'step_therapy_required', type: 'boolean', required: false, label: 'Step Therapy Required' },
+    { name: 'quantity_limits', type: 'string', required: false, label: 'Quantity Limits' },
+    
+    // Patient Onboarding/Hub Services Fields
+    { name: 'hub_patient_id', type: 'string', required: false, label: 'Hub Patient ID' },
+    { name: 'enrollment_id', type: 'string', required: false, label: 'Enrollment ID' },
+    { name: 'program_name', type: 'string', required: false, label: 'Program Name' },
+    { name: 'enrollment_date', type: 'date', required: false, label: 'Enrollment Date' },
+    { name: 'enrollment_status', type: 'string', required: false, label: 'Enrollment Status' },
+    { name: 'enrollment_source', type: 'string', required: false, label: 'Enrollment Source' },
+    { name: 'consent_obtained', type: 'boolean', required: false, label: 'Consent Obtained' },
+    { name: 'consent_date', type: 'date', required: false, label: 'Consent Date' },
+    { name: 'hipaa_consent', type: 'boolean', required: false, label: 'HIPAA Consent' },
+    { name: 'marketing_consent', type: 'boolean', required: false, label: 'Marketing Consent' },
+    { name: 'caregiver_name', type: 'string', required: false, label: 'Caregiver Name' },
+    { name: 'caregiver_relationship', type: 'string', required: false, label: 'Caregiver Relationship' },
+    { name: 'caregiver_phone', type: 'phone', required: false, label: 'Caregiver Phone' },
+    { name: 'caregiver_email', type: 'email', required: false, label: 'Caregiver Email' },
+    { name: 'preferred_contact_method', type: 'string', required: false, label: 'Preferred Contact Method' },
+    { name: 'preferred_language', type: 'string', required: false, label: 'Preferred Language' },
+    { name: 'best_time_to_call', type: 'string', required: false, label: 'Best Time to Call' },
+    { name: 'financial_assistance_needed', type: 'boolean', required: false, label: 'Financial Assistance Needed' },
+    { name: 'copay_assistance_enrolled', type: 'boolean', required: false, label: 'Copay Assistance Enrolled' },
+    { name: 'pap_enrolled', type: 'boolean', required: false, label: 'Patient Assistance Program Enrolled' },
+    { name: 'bridge_program_enrolled', type: 'boolean', required: false, label: 'Bridge Program Enrolled' },
+    { name: 'nurse_educator_assigned', type: 'string', required: false, label: 'Nurse Educator Assigned' },
+    { name: 'case_manager_name', type: 'string', required: false, label: 'Case Manager Name' },
+    { name: 'case_manager_phone', type: 'phone', required: false, label: 'Case Manager Phone' },
+    { name: 'next_followup_date', type: 'date', required: false, label: 'Next Followup Date' },
+    { name: 'therapy_start_date', type: 'date', required: false, label: 'Therapy Start Date' },
+    { name: 'adherence_score', type: 'number', required: false, label: 'Adherence Score' },
+    { name: 'refill_reminder_enabled', type: 'boolean', required: false, label: 'Refill Reminder Enabled' },
+    
+    // Common Insurance Fields
     { name: 'insurance_id', type: 'string', required: false, label: 'Insurance ID' },
     { name: 'member_id', type: 'string', required: false, label: 'Member ID' },
     { name: 'policy_number', type: 'string', required: false, label: 'Policy Number' },
@@ -134,6 +210,7 @@ const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
     // Diagnosis/Clinical Fields
     { name: 'diagnosis', type: 'string', required: false, label: 'Diagnosis' },
     { name: 'icd_code', type: 'string', required: false, label: 'ICD Code' },
+    { name: 'icd_10_code', type: 'string', required: false, label: 'ICD-10 Code' },
     { name: 'symptoms', type: 'string', required: false, label: 'Symptoms' },
     { name: 'allergies', type: 'string', required: false, label: 'Allergies' },
     { name: 'notes', type: 'string', required: false, label: 'Notes' },
@@ -179,13 +256,21 @@ const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
       { name: 'Prescription__c.Strength__c', type: 'string', required: false, label: 'SF: Rx Strength' },
       { name: 'Prescription__c.Frequency__c', type: 'string', required: false, label: 'SF: Rx Frequency' },
       { name: 'Prescription__c.Directions__c', type: 'string', required: false, label: 'SF: Rx Directions' },
+      { name: 'Prescription__c.SIG_Code__c', type: 'string', required: false, label: 'SF: Rx SIG Code' },
+      { name: 'Prescription__c.SIG_Text__c', type: 'string', required: false, label: 'SF: Rx SIG Text' },
+      { name: 'Prescription__c.Route__c', type: 'string', required: false, label: 'SF: Rx Route of Administration' },
+      { name: 'Prescription__c.Dosage_Form__c', type: 'string', required: false, label: 'SF: Rx Dosage Form' },
       { name: 'Prescription__c.Quantity__c', type: 'number', required: false, label: 'SF: Rx Quantity' },
+      { name: 'Prescription__c.Days_Supply__c', type: 'number', required: false, label: 'SF: Rx Days Supply' },
       { name: 'Prescription__c.Refills__c', type: 'number', required: false, label: 'SF: Rx Refills' },
       { name: 'Prescription__c.NDC_Code__c', type: 'string', required: false, label: 'SF: Rx NDC Code' },
       { name: 'Prescription__c.Rx_Number__c', type: 'string', required: false, label: 'SF: Rx Number' },
       { name: 'Prescription__c.Prescription_Date__c', type: 'date', required: false, label: 'SF: Rx Date' },
       { name: 'Prescription__c.Fill_Date__c', type: 'date', required: false, label: 'SF: Rx Fill Date' },
       { name: 'Prescription__c.Expiration_Date__c', type: 'date', required: false, label: 'SF: Rx Expiration' },
+      { name: 'Prescription__c.DAW__c', type: 'boolean', required: false, label: 'SF: Rx DAW' },
+      { name: 'Prescription__c.PRN__c', type: 'boolean', required: false, label: 'SF: Rx PRN' },
+      { name: 'Prescription__c.PRN_Reason__c', type: 'string', required: false, label: 'SF: Rx PRN Reason' },
       
       // Salesforce Prescriber/Provider Fields
       { name: 'Prescriber__c.Name', type: 'string', required: false, label: 'SF: Prescriber Name' },
@@ -202,14 +287,58 @@ const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
       { name: 'Pharmacy__c.Phone__c', type: 'phone', required: false, label: 'SF: Pharmacy Phone' },
       { name: 'Pharmacy__c.Address__c', type: 'string', required: false, label: 'SF: Pharmacy Address' },
       { name: 'Pharmacy__c.NPI__c', type: 'string', required: false, label: 'SF: Pharmacy NPI' },
+      { name: 'Pharmacy__c.NCPDP__c', type: 'string', required: false, label: 'SF: Pharmacy NCPDP' },
+      { name: 'Pharmacy__c.Type__c', type: 'string', required: false, label: 'SF: Pharmacy Type' },
       
-      // Salesforce Insurance Fields  
-      { name: 'Insurance__c.Name', type: 'string', required: false, label: 'SF: Insurance Name' },
-      { name: 'Insurance__c.Member_ID__c', type: 'string', required: false, label: 'SF: Member ID' },
-      { name: 'Insurance__c.Group_Number__c', type: 'string', required: false, label: 'SF: Group Number' },
-      { name: 'Insurance__c.BIN__c', type: 'string', required: false, label: 'SF: BIN' },
-      { name: 'Insurance__c.PCN__c', type: 'string', required: false, label: 'SF: PCN' },
-      { name: 'Insurance__c.Plan_Name__c', type: 'string', required: false, label: 'SF: Plan Name' },
+      // Salesforce Medical Insurance Fields  
+      { name: 'Medical_Insurance__c.Name', type: 'string', required: false, label: 'SF: Medical Insurance Name' },
+      { name: 'Medical_Insurance__c.Member_ID__c', type: 'string', required: false, label: 'SF: Medical Member ID' },
+      { name: 'Medical_Insurance__c.Policy_Number__c', type: 'string', required: false, label: 'SF: Medical Policy Number' },
+      { name: 'Medical_Insurance__c.Group_Number__c', type: 'string', required: false, label: 'SF: Medical Group Number' },
+      { name: 'Medical_Insurance__c.Plan_Type__c', type: 'string', required: false, label: 'SF: Medical Plan Type' },
+      { name: 'Medical_Insurance__c.Effective_Date__c', type: 'date', required: false, label: 'SF: Medical Effective Date' },
+      { name: 'Medical_Insurance__c.Termination_Date__c', type: 'date', required: false, label: 'SF: Medical Term Date' },
+      { name: 'Medical_Insurance__c.Copay__c', type: 'number', required: false, label: 'SF: Medical Copay' },
+      { name: 'Medical_Insurance__c.Deductible__c', type: 'number', required: false, label: 'SF: Medical Deductible' },
+      { name: 'Medical_Insurance__c.OOP_Max__c', type: 'number', required: false, label: 'SF: Medical OOP Max' },
+      { name: 'Medical_Insurance__c.PCP_Name__c', type: 'string', required: false, label: 'SF: PCP Name' },
+      { name: 'Medical_Insurance__c.PCP_NPI__c', type: 'string', required: false, label: 'SF: PCP NPI' },
+      { name: 'Medical_Insurance__c.Prior_Auth_Required__c', type: 'boolean', required: false, label: 'SF: Prior Auth Required' },
+      
+      // Salesforce Pharmacy/Rx Insurance Fields  
+      { name: 'Rx_Insurance__c.Name', type: 'string', required: false, label: 'SF: Rx Insurance Name' },
+      { name: 'Rx_Insurance__c.Member_ID__c', type: 'string', required: false, label: 'SF: Rx Member ID' },
+      { name: 'Rx_Insurance__c.Group_Number__c', type: 'string', required: false, label: 'SF: Rx Group Number' },
+      { name: 'Rx_Insurance__c.BIN__c', type: 'string', required: false, label: 'SF: Rx BIN' },
+      { name: 'Rx_Insurance__c.PCN__c', type: 'string', required: false, label: 'SF: Rx PCN' },
+      { name: 'Rx_Insurance__c.PBM_Name__c', type: 'string', required: false, label: 'SF: PBM Name' },
+      { name: 'Rx_Insurance__c.Plan_Name__c', type: 'string', required: false, label: 'SF: Rx Plan Name' },
+      { name: 'Rx_Insurance__c.Formulary_ID__c', type: 'string', required: false, label: 'SF: Formulary ID' },
+      { name: 'Rx_Insurance__c.Copay_Generic__c', type: 'number', required: false, label: 'SF: Rx Copay Generic' },
+      { name: 'Rx_Insurance__c.Copay_Brand__c', type: 'number', required: false, label: 'SF: Rx Copay Brand' },
+      { name: 'Rx_Insurance__c.Copay_Specialty__c', type: 'number', required: false, label: 'SF: Rx Copay Specialty' },
+      { name: 'Rx_Insurance__c.Specialty_Pharmacy__c', type: 'string', required: false, label: 'SF: Specialty Pharmacy' },
+      { name: 'Rx_Insurance__c.Mail_Order_Pharmacy__c', type: 'string', required: false, label: 'SF: Mail Order Pharmacy' },
+      
+      // Salesforce Hub Services/Enrollment Fields
+      { name: 'Hub_Enrollment__c.Name', type: 'string', required: false, label: 'SF: Hub Enrollment Name' },
+      { name: 'Hub_Enrollment__c.Patient__c', type: 'string', required: false, label: 'SF: Hub Patient Lookup' },
+      { name: 'Hub_Enrollment__c.Enrollment_ID__c', type: 'string', required: false, label: 'SF: Hub Enrollment ID' },
+      { name: 'Hub_Enrollment__c.Program_Name__c', type: 'string', required: false, label: 'SF: Hub Program Name' },
+      { name: 'Hub_Enrollment__c.Enrollment_Date__c', type: 'date', required: false, label: 'SF: Hub Enrollment Date' },
+      { name: 'Hub_Enrollment__c.Status__c', type: 'string', required: false, label: 'SF: Hub Enrollment Status' },
+      { name: 'Hub_Enrollment__c.Source__c', type: 'string', required: false, label: 'SF: Hub Enrollment Source' },
+      { name: 'Hub_Enrollment__c.Consent_Obtained__c', type: 'boolean', required: false, label: 'SF: Consent Obtained' },
+      { name: 'Hub_Enrollment__c.Consent_Date__c', type: 'date', required: false, label: 'SF: Consent Date' },
+      { name: 'Hub_Enrollment__c.HIPAA_Consent__c', type: 'boolean', required: false, label: 'SF: HIPAA Consent' },
+      { name: 'Hub_Enrollment__c.Caregiver_Name__c', type: 'string', required: false, label: 'SF: Caregiver Name' },
+      { name: 'Hub_Enrollment__c.Caregiver_Phone__c', type: 'phone', required: false, label: 'SF: Caregiver Phone' },
+      { name: 'Hub_Enrollment__c.Case_Manager__c', type: 'string', required: false, label: 'SF: Case Manager' },
+      { name: 'Hub_Enrollment__c.Nurse_Educator__c', type: 'string', required: false, label: 'SF: Nurse Educator' },
+      { name: 'Hub_Enrollment__c.Therapy_Start_Date__c', type: 'date', required: false, label: 'SF: Therapy Start Date' },
+      { name: 'Hub_Enrollment__c.Financial_Assistance__c', type: 'boolean', required: false, label: 'SF: Financial Assistance' },
+      { name: 'Hub_Enrollment__c.Copay_Assistance__c', type: 'boolean', required: false, label: 'SF: Copay Assistance' },
+      { name: 'Hub_Enrollment__c.PAP_Enrolled__c', type: 'boolean', required: false, label: 'SF: PAP Enrolled' },
     );
   } else if (targetSystem === 'hubspot') {
     commonFields.push(
@@ -222,6 +351,12 @@ const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
       { name: 'city', type: 'string', required: false, label: 'HS: City' },
       { name: 'state', type: 'string', required: false, label: 'HS: State' },
       { name: 'zip', type: 'string', required: false, label: 'HS: ZIP' },
+      // HubSpot Healthcare Extensions
+      { name: 'insurance_provider', type: 'string', required: false, label: 'HS: Insurance Provider' },
+      { name: 'member_id', type: 'string', required: false, label: 'HS: Member ID' },
+      { name: 'program_enrollment', type: 'string', required: false, label: 'HS: Program Enrollment' },
+      { name: 'enrollment_status', type: 'string', required: false, label: 'HS: Enrollment Status' },
+      { name: 'therapy_name', type: 'string', required: false, label: 'HS: Therapy Name' },
     );
   } else if (targetSystem === 'veeva') {
     commonFields.push(
@@ -230,28 +365,86 @@ const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
       { name: 'Account_vod__c.Name', type: 'string', required: false, label: 'Veeva: Account Name' },
       { name: 'Account_vod__c.NPI_vod__c', type: 'string', required: false, label: 'Veeva: Account NPI' },
       { name: 'Account_vod__c.Specialty_1_vod__c', type: 'string', required: false, label: 'Veeva: Specialty' },
+      { name: 'Account_vod__c.DEA_vod__c', type: 'string', required: false, label: 'Veeva: Account DEA' },
+      { name: 'Account_vod__c.License_vod__c', type: 'string', required: false, label: 'Veeva: Account License' },
       
-      // Veeva Prescriber
+      // Veeva Prescriber/HCP
       { name: 'Prescriber_vod__c', type: 'string', required: false, label: 'Veeva: Prescriber' },
       { name: 'Prescriber_vod__c.Name', type: 'string', required: false, label: 'Veeva: Prescriber Name' },
       { name: 'Prescriber_vod__c.NPI_vod__c', type: 'string', required: false, label: 'Veeva: Prescriber NPI' },
       { name: 'Prescriber_vod__c.DEA_vod__c', type: 'string', required: false, label: 'Veeva: Prescriber DEA' },
+      { name: 'Prescriber_vod__c.Specialty_vod__c', type: 'string', required: false, label: 'Veeva: Prescriber Specialty' },
+      { name: 'Prescriber_vod__c.Address_vod__c', type: 'string', required: false, label: 'Veeva: Prescriber Address' },
+      { name: 'Prescriber_vod__c.Phone_vod__c', type: 'phone', required: false, label: 'Veeva: Prescriber Phone' },
+      { name: 'Prescriber_vod__c.Fax_vod__c', type: 'phone', required: false, label: 'Veeva: Prescriber Fax' },
       
-      // Veeva Product
+      // Veeva Product/Drug
       { name: 'Product_vod__c', type: 'string', required: false, label: 'Veeva: Product' },
       { name: 'Product_vod__c.Name', type: 'string', required: false, label: 'Veeva: Product Name' },
       { name: 'Product_vod__c.NDC_vod__c', type: 'string', required: false, label: 'Veeva: Product NDC' },
+      { name: 'Product_vod__c.Strength_vod__c', type: 'string', required: false, label: 'Veeva: Product Strength' },
+      { name: 'Product_vod__c.Dosage_Form_vod__c', type: 'string', required: false, label: 'Veeva: Dosage Form' },
+      { name: 'Product_vod__c.Route_vod__c', type: 'string', required: false, label: 'Veeva: Route' },
       
       // Veeva Rx/Order
       { name: 'Order_vod__c.Name', type: 'string', required: false, label: 'Veeva: Order Name' },
       { name: 'Order_vod__c.Product_vod__c', type: 'string', required: false, label: 'Veeva: Order Product' },
       { name: 'Order_vod__c.Quantity_vod__c', type: 'number', required: false, label: 'Veeva: Order Quantity' },
       { name: 'Order_vod__c.Account_vod__c', type: 'string', required: false, label: 'Veeva: Order Account' },
+      { name: 'Order_vod__c.SIG_vod__c', type: 'string', required: false, label: 'Veeva: Order SIG' },
+      { name: 'Order_vod__c.SIG_Code_vod__c', type: 'string', required: false, label: 'Veeva: Order SIG Code' },
+      { name: 'Order_vod__c.Directions_vod__c', type: 'string', required: false, label: 'Veeva: Order Directions' },
+      { name: 'Order_vod__c.Days_Supply_vod__c', type: 'number', required: false, label: 'Veeva: Days Supply' },
+      { name: 'Order_vod__c.Refills_vod__c', type: 'number', required: false, label: 'Veeva: Refills' },
+      { name: 'Order_vod__c.DAW_vod__c', type: 'boolean', required: false, label: 'Veeva: DAW' },
       
       // Veeva Patient
       { name: 'Patient_vod__c.Name', type: 'string', required: false, label: 'Veeva: Patient Name' },
       { name: 'Patient_vod__c.Birthdate_vod__c', type: 'date', required: false, label: 'Veeva: Patient DOB' },
       { name: 'Patient_vod__c.Gender_vod__c', type: 'string', required: false, label: 'Veeva: Patient Gender' },
+      { name: 'Patient_vod__c.Address_vod__c', type: 'string', required: false, label: 'Veeva: Patient Address' },
+      { name: 'Patient_vod__c.Phone_vod__c', type: 'phone', required: false, label: 'Veeva: Patient Phone' },
+      { name: 'Patient_vod__c.Email_vod__c', type: 'email', required: false, label: 'Veeva: Patient Email' },
+      { name: 'Patient_vod__c.MRN_vod__c', type: 'string', required: false, label: 'Veeva: Patient MRN' },
+      
+      // Veeva Medical Insurance
+      { name: 'Medical_Coverage_vod__c.Name', type: 'string', required: false, label: 'Veeva: Medical Coverage Name' },
+      { name: 'Medical_Coverage_vod__c.Payer_vod__c', type: 'string', required: false, label: 'Veeva: Medical Payer' },
+      { name: 'Medical_Coverage_vod__c.Member_ID_vod__c', type: 'string', required: false, label: 'Veeva: Medical Member ID' },
+      { name: 'Medical_Coverage_vod__c.Group_vod__c', type: 'string', required: false, label: 'Veeva: Medical Group' },
+      { name: 'Medical_Coverage_vod__c.Plan_Type_vod__c', type: 'string', required: false, label: 'Veeva: Medical Plan Type' },
+      { name: 'Medical_Coverage_vod__c.Effective_Date_vod__c', type: 'date', required: false, label: 'Veeva: Medical Effective Date' },
+      { name: 'Medical_Coverage_vod__c.Prior_Auth_Required_vod__c', type: 'boolean', required: false, label: 'Veeva: Prior Auth Required' },
+      
+      // Veeva Pharmacy/Rx Insurance
+      { name: 'Rx_Coverage_vod__c.Name', type: 'string', required: false, label: 'Veeva: Rx Coverage Name' },
+      { name: 'Rx_Coverage_vod__c.BIN_vod__c', type: 'string', required: false, label: 'Veeva: Rx BIN' },
+      { name: 'Rx_Coverage_vod__c.PCN_vod__c', type: 'string', required: false, label: 'Veeva: Rx PCN' },
+      { name: 'Rx_Coverage_vod__c.Group_vod__c', type: 'string', required: false, label: 'Veeva: Rx Group' },
+      { name: 'Rx_Coverage_vod__c.Member_ID_vod__c', type: 'string', required: false, label: 'Veeva: Rx Member ID' },
+      { name: 'Rx_Coverage_vod__c.PBM_vod__c', type: 'string', required: false, label: 'Veeva: PBM' },
+      { name: 'Rx_Coverage_vod__c.Formulary_vod__c', type: 'string', required: false, label: 'Veeva: Formulary' },
+      { name: 'Rx_Coverage_vod__c.Specialty_Pharmacy_vod__c', type: 'string', required: false, label: 'Veeva: Specialty Pharmacy' },
+      
+      // Veeva Hub/Patient Services
+      { name: 'Patient_Journey_vod__c.Name', type: 'string', required: false, label: 'Veeva: Patient Journey Name' },
+      { name: 'Patient_Journey_vod__c.Patient_vod__c', type: 'string', required: false, label: 'Veeva: Journey Patient' },
+      { name: 'Patient_Journey_vod__c.Program_vod__c', type: 'string', required: false, label: 'Veeva: Program Name' },
+      { name: 'Patient_Journey_vod__c.Enrollment_Date_vod__c', type: 'date', required: false, label: 'Veeva: Enrollment Date' },
+      { name: 'Patient_Journey_vod__c.Status_vod__c', type: 'string', required: false, label: 'Veeva: Journey Status' },
+      { name: 'Patient_Journey_vod__c.Consent_vod__c', type: 'boolean', required: false, label: 'Veeva: Consent' },
+      { name: 'Patient_Journey_vod__c.Case_Manager_vod__c', type: 'string', required: false, label: 'Veeva: Case Manager' },
+      { name: 'Patient_Journey_vod__c.Therapy_Start_vod__c', type: 'date', required: false, label: 'Veeva: Therapy Start' },
+      { name: 'Patient_Journey_vod__c.Financial_Assistance_vod__c', type: 'boolean', required: false, label: 'Veeva: Financial Assistance' },
+      { name: 'Patient_Journey_vod__c.Copay_Card_vod__c', type: 'boolean', required: false, label: 'Veeva: Copay Card' },
+      { name: 'Patient_Journey_vod__c.Adherence_Score_vod__c', type: 'number', required: false, label: 'Veeva: Adherence Score' },
+      
+      // Veeva Benefit Verification
+      { name: 'Benefit_Investigation_vod__c.Name', type: 'string', required: false, label: 'Veeva: BI Name' },
+      { name: 'Benefit_Investigation_vod__c.Status_vod__c', type: 'string', required: false, label: 'Veeva: BI Status' },
+      { name: 'Benefit_Investigation_vod__c.Coverage_vod__c', type: 'string', required: false, label: 'Veeva: BI Coverage' },
+      { name: 'Benefit_Investigation_vod__c.Copay_vod__c', type: 'number', required: false, label: 'Veeva: BI Copay' },
+      { name: 'Benefit_Investigation_vod__c.Prior_Auth_vod__c', type: 'boolean', required: false, label: 'Veeva: BI Prior Auth' },
     );
   }
   
