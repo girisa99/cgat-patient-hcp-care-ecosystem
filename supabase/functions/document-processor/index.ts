@@ -261,21 +261,29 @@ async function handleExtractMetadata(supabase: any, request: ProcessingRequest) 
 }
 
 async function handleMapToForm(supabase: any, request: ProcessingRequest) {
-  const { documentId, processingConfig, documentType, provider: requestedProvider } = request;
+  const { documentId, processingConfig, documentType, provider: requestedProvider, fileBase64, mimeType } = request;
   
-  // Get document record to access image URL
-  let imageUrl = '';
+  // Get document record to access file URL and metadata
+  let fileUrl = '';
+  let filePath = '';
+  let storedMimeType = mimeType || '';
   let configuredProvider = requestedProvider || processingConfig?.ocrProvider || 'gemini';
   
   if (documentId) {
     const { data: doc } = await supabase
       .from('document_processing_jobs')
-      .select('processing_config, file_path')
+      .select('processing_config, file_path, mime_type')
       .eq('id', documentId)
       .single();
     
     if (doc?.processing_config?.publicUrl) {
-      imageUrl = doc.processing_config.publicUrl;
+      fileUrl = doc.processing_config.publicUrl;
+    }
+    if (doc?.file_path) {
+      filePath = doc.file_path;
+    }
+    if (doc?.mime_type) {
+      storedMimeType = doc.mime_type;
     }
     if (doc?.processing_config?.ocrProvider) {
       configuredProvider = doc.processing_config.ocrProvider;
@@ -288,24 +296,55 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   let providerUsed = configuredProvider;
   let icdCodesExtracted: string[] = [];
   let cptCodesExtracted: string[] = [];
+  let lineItemsExtracted: any[] = [];
+  let tablesExtracted: any[] = [];
   
-  // If we have an image URL, do extraction based on provider
-  if (imageUrl) {
-    try {
-      // Fetch and convert image to base64
-      const imageResponse = await fetch(imageUrl);
-      if (imageResponse.ok) {
-        const imageBlob = await imageResponse.arrayBuffer();
-        const imageBytes = new Uint8Array(imageBlob);
+  // Determine file type and process accordingly
+  const effectiveMimeType = storedMimeType || mimeType || 'application/octet-stream';
+  const isImage = effectiveMimeType.startsWith('image/');
+  const isPdf = effectiveMimeType === 'application/pdf';
+  const isCsv = effectiveMimeType === 'text/csv' || effectiveMimeType.includes('csv') || filePath.endsWith('.csv');
+  const isExcel = effectiveMimeType.includes('spreadsheet') || effectiveMimeType.includes('excel') || filePath.match(/\.xlsx?$/);
+  const isJson = effectiveMimeType === 'application/json' || filePath.endsWith('.json');
+  
+  console.log(`Processing file type: ${effectiveMimeType}, isImage: ${isImage}, isPdf: ${isPdf}, isCsv: ${isCsv}`);
+  
+  try {
+    // Handle CSV files
+    if (isCsv && fileUrl) {
+      const csvExtracted = await extractFromCSV(fileUrl, documentType);
+      if (csvExtracted) {
+        Object.assign(formMapping, csvExtracted.fields);
+        lineItemsExtracted = csvExtracted.line_items || [];
+        tablesExtracted = csvExtracted.tables || [];
+        providerUsed = 'csv_parser';
+      }
+    }
+    // Handle JSON files
+    else if (isJson && fileUrl) {
+      const jsonExtracted = await extractFromJSON(fileUrl, documentType);
+      if (jsonExtracted) {
+        Object.assign(formMapping, jsonExtracted.fields);
+        lineItemsExtracted = jsonExtracted.line_items || [];
+        providerUsed = 'json_parser';
+      }
+    }
+    // Handle images and PDFs with OCR/Vision AI
+    else if ((isImage || isPdf) && fileUrl) {
+      // Fetch and convert file to base64
+      const fileResponse = await fetch(fileUrl);
+      if (fileResponse.ok) {
+        const fileBlob = await fileResponse.arrayBuffer();
+        const fileBytes = new Uint8Array(fileBlob);
         const bytes: string[] = [];
-        for (let i = 0; i < imageBytes.length; i++) {
-          bytes.push(String.fromCharCode(imageBytes[i]));
+        for (let i = 0; i < fileBytes.length; i++) {
+          bytes.push(String.fromCharCode(fileBytes[i]));
         }
-        const imageBase64 = btoa(bytes.join(''));
-        const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+        const fileBase64Data = btoa(bytes.join(''));
+        const contentType = fileResponse.headers.get('content-type') || effectiveMimeType;
         
-        // Build extraction prompt based on document type
-        const extractionPrompt = buildExtractionPrompt(documentType || 'invoice');
+        // Build dynamic extraction prompt based on document type with target fields
+        const extractionPrompt = buildExtractionPrompt(documentType || 'unknown', targetFields);
         
         // Try providers in order of preference
         const providers = [configuredProvider, 'gemini', 'azure', 'aws'].filter((v, i, a) => a.indexOf(v) === i);
@@ -320,81 +359,135 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             switch (provider) {
               case 'gemini':
               case 'google':
-                extracted = await extractWithGemini(imageBase64, contentType, extractionPrompt);
+                extracted = await extractWithGemini(fileBase64Data, contentType, extractionPrompt);
                 providerUsed = 'gemini';
                 break;
                 
               case 'azure':
-                extracted = await extractWithAzure(imageBase64, contentType, documentType);
+                extracted = await extractWithAzure(fileBase64Data, contentType, documentType);
                 providerUsed = 'azure';
                 break;
                 
               case 'aws':
-                extracted = await extractWithAWS(imageBase64, contentType, documentType);
+                extracted = await extractWithAWS(fileBase64Data, contentType, documentType);
                 providerUsed = 'aws';
                 break;
                 
               default:
-                extracted = await extractWithGemini(imageBase64, contentType, extractionPrompt);
+                extracted = await extractWithGemini(fileBase64Data, contentType, extractionPrompt);
                 providerUsed = 'gemini';
             }
             
-            if (extracted && extracted.fields) {
+            if (extracted) {
               // Map extracted fields to formMapping format
-              for (const [key, value] of Object.entries(extracted.fields)) {
-                if (value && String(value).trim()) {
-                  formMapping[key] = {
-                    value: String(value),
-                    confidence: extracted.confidence || 0.85,
-                    source: `${providerUsed}_extraction`
-                  };
-                  
-                  // Track ICD and CPT codes for crosswalk
-                  if (key === 'icd_codes' && value) {
-                    icdCodesExtracted = String(value).split(',').map(c => c.trim()).filter(Boolean);
-                  }
-                  if (key === 'cpt_codes' && value) {
-                    cptCodesExtracted = String(value).split(',').map(c => c.trim()).filter(Boolean);
+              if (extracted.fields) {
+                for (const [key, value] of Object.entries(extracted.fields)) {
+                  if (value !== null && value !== undefined && String(value).trim()) {
+                    formMapping[key] = {
+                      value: String(value),
+                      confidence: extracted.confidence || 0.85,
+                      source: `${providerUsed}_extraction`
+                    };
+                    
+                    // Track ICD and CPT codes for crosswalk
+                    if (key === 'icd_codes' || key === 'icd_code' || key.includes('diagnosis')) {
+                      const codes = String(value).split(/[,;]/).map(c => c.trim()).filter(Boolean);
+                      icdCodesExtracted.push(...codes);
+                    }
+                    if (key === 'cpt_codes' || key === 'cpt_code' || key === 'procedure_code') {
+                      const codes = String(value).split(/[,;]/).map(c => c.trim()).filter(Boolean);
+                      cptCodesExtracted.push(...codes);
+                    }
                   }
                 }
               }
               
-              // Add line items
-              if (extracted.line_items && extracted.line_items.length > 0) {
+              // Add line items from extraction
+              if (extracted.line_items && Array.isArray(extracted.line_items)) {
+                lineItemsExtracted = extracted.line_items;
                 formMapping['line_items'] = {
                   value: JSON.stringify(extracted.line_items),
                   confidence: extracted.confidence || 0.85,
                   source: `${providerUsed}_extraction`
                 };
                 
-                // Extract CPT codes from line items
+                // Extract CPT/ICD codes from line items
                 for (const item of extracted.line_items) {
-                  if (item.cpt_code) {
-                    cptCodesExtracted.push(item.cpt_code);
-                  }
+                  if (item.cpt_code) cptCodesExtracted.push(item.cpt_code);
+                  if (item.code) cptCodesExtracted.push(item.code);
+                  if (item.icd_code) icdCodesExtracted.push(item.icd_code);
                 }
               }
               
-              // Add document category
-              if (extracted.document_category) {
-                formMapping['document_category'] = {
-                  value: extracted.document_category,
-                  confidence: 0.9,
+              // Add tables from extraction
+              if (extracted.tables && Array.isArray(extracted.tables)) {
+                tablesExtracted = extracted.tables;
+                formMapping['tables'] = {
+                  value: JSON.stringify(extracted.tables),
+                  confidence: extracted.confidence || 0.85,
                   source: `${providerUsed}_extraction`
                 };
               }
               
+              // Add summary info
+              if (extracted.summary) {
+                for (const [key, value] of Object.entries(extracted.summary)) {
+                  if (value !== null && value !== undefined) {
+                    formMapping[`summary_${key}`] = {
+                      value: String(value),
+                      confidence: 0.9,
+                      source: `${providerUsed}_summary`
+                    };
+                  }
+                }
+              }
+              
+              // Add document category and detected type
+              if (extracted.detected_document_type) {
+                formMapping['detected_document_type'] = {
+                  value: extracted.detected_document_type,
+                  confidence: 0.9,
+                  source: `${providerUsed}_classification`
+                };
+              }
+              if (extracted.document_category) {
+                formMapping['document_category'] = {
+                  value: extracted.document_category,
+                  confidence: 0.9,
+                  source: `${providerUsed}_classification`
+                };
+              }
+              
               extractionSuccess = true;
-              console.log(`Extraction completed with ${providerUsed}: ${Object.keys(formMapping).length} fields`);
+              console.log(`Extraction completed with ${providerUsed}: ${Object.keys(formMapping).length} fields, ${lineItemsExtracted.length} line items`);
             }
           } catch (providerError) {
             console.error(`Provider ${provider} failed:`, providerError);
           }
         }
       }
-    } catch (extractionError) {
-      console.error('Extraction error:', extractionError);
     }
+    // Handle inline base64 data (for direct uploads)
+    else if (fileBase64) {
+      const extractionPrompt = buildExtractionPrompt(documentType || 'unknown', targetFields);
+      const extracted = await extractWithGemini(fileBase64, mimeType || 'image/jpeg', extractionPrompt);
+      if (extracted?.fields) {
+        for (const [key, value] of Object.entries(extracted.fields)) {
+          if (value !== null && value !== undefined) {
+            formMapping[key] = {
+              value: String(value),
+              confidence: extracted.confidence || 0.85,
+              source: 'gemini_extraction'
+            };
+          }
+        }
+        if (extracted.line_items) lineItemsExtracted = extracted.line_items;
+        if (extracted.tables) tablesExtracted = extracted.tables;
+        providerUsed = 'gemini';
+      }
+    }
+  } catch (extractionError) {
+    console.error('Extraction error:', extractionError);
   }
   
   // Perform ICD to CPT/HCPCS crosswalk if ICD codes were extracted
@@ -446,50 +539,225 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   );
 }
 
-// Build extraction prompt based on document type
-function buildExtractionPrompt(documentType: string): string {
-  const baseFields = `
-- invoice_number: Invoice or claim number
-- vendor_name: Vendor, supplier, or provider name  
-- vendor_tax_id: Tax ID or EIN
-- vendor_npi: NPI number if healthcare
-- patient_name: Patient or customer name
-- patient_account: Account number
-- service_date or service_from: Date of service
-- service_to: End date if range
-- billed_amount: Total billed amount
-- allowed_amount: Allowed amount
-- adjustment_amount: Any adjustments
-- paid_amount: Amount paid
-- balance_due: Balance remaining
-- payer_name: Insurance or payer name
-- cpt_codes: Any CPT/HCPCS codes (comma separated)
-- icd_codes: Any ICD-10 diagnosis codes (comma separated)
-- payment_status: paid, partial, unpaid, denied
-- denial_reason: Reason if denied
-- line_items: Array of service line items with description, cpt_code, icd_code, quantity, unit_price, total`;
+// Build DYNAMIC extraction prompt based on document type - NO HARDCODING
+function buildExtractionPrompt(documentType: string, targetFields?: string[]): string {
+  // Document type category hints for flexible extraction
+  const categoryHints: Record<string, string> = {
+    // Financial/RCM documents
+    'invoice': 'invoice, billing statement, claim, accounts receivable',
+    'claim': 'insurance claim, medical claim, superbill, CMS-1500',
+    'eob': 'explanation of benefits, remittance advice, payment posting',
+    'statement': 'account statement, balance due, payment history',
+    'billing': 'billing document, charges, fees, payment',
+    
+    // Healthcare documents
+    'prescription': 'prescription, Rx, medication order, pharmacy',
+    'insurance_card': 'insurance card, ID card, member card, pharmacy benefit',
+    'lab_result': 'lab results, laboratory report, blood test, diagnostics',
+    'medical_record': 'medical record, patient chart, clinical notes',
+    'referral': 'referral form, specialist referral, authorization',
+    
+    // Medical imaging
+    'x-ray': 'X-ray, radiograph, chest x-ray, bone x-ray',
+    'ct-scan': 'CT scan, computed tomography, CAT scan',
+    'mri': 'MRI, magnetic resonance imaging',
+    'ultrasound': 'ultrasound, sonogram, echocardiogram',
+    'ecg': 'ECG, EKG, electrocardiogram, heart rhythm',
+    
+    // Business documents
+    'order-management': 'order, purchase order, sales order, fulfillment',
+    'contract': 'contract, agreement, terms, signatures',
+    'report': 'report, analysis, summary, findings',
+    
+    // Identity/onboarding
+    'passport': 'passport, travel document, ID',
+    'drivers_license': 'drivers license, ID card, identification',
+    'patient_intake': 'patient intake form, registration, demographics',
+    'consent_form': 'consent form, authorization, signature',
+  };
+  
+  const categoryHint = categoryHints[documentType] || documentType;
+  
+  // If target fields provided, include them as hints
+  const fieldHints = targetFields && targetFields.length > 0
+    ? `\n\nPriority fields to extract (if visible): ${targetFields.join(', ')}`
+    : '';
+  
+  return `You are an expert document analyzer. Analyze this document image and extract ALL structured information.
 
-  return `Analyze this ${documentType}/billing document image and extract all financial and billing information.
+Document Type Hint: ${categoryHint}
+${fieldHints}
 
-Extract these specific fields if visible:
-${baseFields}
+INSTRUCTIONS:
+1. Identify the document type and category automatically
+2. Extract ALL visible text fields, values, dates, amounts, codes, and identifiers
+3. For tables/line items, extract each row as a separate item
+4. Extract any medical/billing codes: CPT, HCPCS, ICD-10, NDC, NPI
+5. Extract all monetary values with their labels
+6. Extract all dates and date ranges
+7. Extract all names, addresses, phone numbers, emails
+8. Extract claim/invoice/order numbers and reference IDs
+9. For multi-section documents, extract from ALL sections
 
-IMPORTANT: 
-- Extract ALL CPT codes you can find (5-digit codes like 99213, 71046, etc.)
-- Extract ALL ICD-10 codes (format like A00.0, M54.5, E11.9, etc.)
-- For line items, include cpt_code and icd_code for each service line
+IMPORTANT - Be comprehensive and extract EVERYTHING visible, not just common fields.
 
-Return ONLY a valid JSON object in this exact format:
+Return ONLY a valid JSON object:
 {
   "fields": {
-    "field_name": "extracted_value"
+    "field_name_snake_case": "extracted_value"
   },
   "line_items": [
-    {"description": "...", "cpt_code": "...", "icd_code": "...", "quantity": 1, "unit_price": 0, "total": 0}
+    {"description": "...", "quantity": 1, "unit_price": 0, "total": 0, "code": "...", "date": "..."}
   ],
-  "document_category": "invoice|claim|statement|eob|superbill",
+  "tables": [
+    {"header": ["col1", "col2"], "rows": [["val1", "val2"]]}
+  ],
+  "detected_document_type": "invoice|claim|prescription|insurance_card|etc",
+  "document_category": "financial|healthcare|identity|business",
+  "summary": {
+    "total_amount": 0,
+    "balance_due": 0,
+    "items_count": 0
+  },
   "confidence": 0.0-1.0
 }`;
+}
+
+// CSV extraction - parse CSV files and extract structured data
+async function extractFromCSV(fileUrl: string, documentType?: string): Promise<any> {
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok) throw new Error(`Failed to fetch CSV: ${response.status}`);
+    
+    const csvText = await response.text();
+    const lines = csvText.split('\n').filter(line => line.trim());
+    
+    if (lines.length === 0) return null;
+    
+    // Parse header row
+    const headers = parseCSVLine(lines[0]);
+    const rows: any[] = [];
+    
+    // Parse data rows
+    for (let i = 1; i < lines.length; i++) {
+      const values = parseCSVLine(lines[i]);
+      const row: Record<string, any> = {};
+      headers.forEach((header, idx) => {
+        row[header.toLowerCase().replace(/\s+/g, '_')] = values[idx] || '';
+      });
+      rows.push(row);
+    }
+    
+    // Build form mapping from first row or aggregate
+    const fields: Record<string, { value: string; confidence: number; source: string }> = {};
+    
+    // Calculate totals for financial documents
+    let totalAmount = 0;
+    let totalPaid = 0;
+    let totalOutstanding = 0;
+    
+    for (const row of rows) {
+      for (const [key, value] of Object.entries(row)) {
+        // Track numeric fields for totals
+        const numValue = parseFloat(String(value).replace(/[$,]/g, ''));
+        if (!isNaN(numValue)) {
+          if (key.includes('amount') || key.includes('total') || key.includes('billed') || key.includes('claimed')) {
+            totalAmount += numValue;
+          }
+          if (key.includes('paid') || key.includes('collected')) {
+            totalPaid += numValue;
+          }
+          if (key.includes('outstanding') || key.includes('balance') || key.includes('due')) {
+            totalOutstanding += numValue;
+          }
+        }
+      }
+    }
+    
+    // Add summary fields
+    fields['total_records'] = { value: String(rows.length), confidence: 1, source: 'csv_parser' };
+    fields['total_amount'] = { value: totalAmount.toFixed(2), confidence: 0.95, source: 'csv_parser' };
+    fields['total_paid'] = { value: totalPaid.toFixed(2), confidence: 0.95, source: 'csv_parser' };
+    fields['total_outstanding'] = { value: totalOutstanding.toFixed(2), confidence: 0.95, source: 'csv_parser' };
+    fields['columns'] = { value: headers.join(', '), confidence: 1, source: 'csv_parser' };
+    
+    return {
+      fields,
+      line_items: rows,
+      tables: [{ header: headers, rows: rows.map(r => Object.values(r)) }],
+      detected_document_type: documentType || 'csv_data',
+      document_category: 'data_import',
+      confidence: 0.95
+    };
+  } catch (error) {
+    console.error('CSV extraction error:', error);
+    return null;
+  }
+}
+
+// Helper to parse CSV line handling quoted values
+function parseCSVLine(line: string): string[] {
+  const result: string[] = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result;
+}
+
+// JSON extraction - parse JSON files and extract structured data
+async function extractFromJSON(fileUrl: string, documentType?: string): Promise<any> {
+  try {
+    const response = await fetch(fileUrl);
+    if (!response.ok) throw new Error(`Failed to fetch JSON: ${response.status}`);
+    
+    const jsonData = await response.json();
+    
+    // Flatten JSON to fields
+    const fields: Record<string, { value: string; confidence: number; source: string }> = {};
+    const lineItems: any[] = [];
+    
+    function flattenObject(obj: any, prefix = '') {
+      if (Array.isArray(obj)) {
+        if (obj.length > 0 && typeof obj[0] === 'object') {
+          lineItems.push(...obj);
+        } else {
+          fields[prefix || 'items'] = { value: obj.join(', '), confidence: 1, source: 'json_parser' };
+        }
+      } else if (typeof obj === 'object' && obj !== null) {
+        for (const [key, value] of Object.entries(obj)) {
+          const newKey = prefix ? `${prefix}_${key}` : key;
+          flattenObject(value, newKey.toLowerCase().replace(/\s+/g, '_'));
+        }
+      } else {
+        fields[prefix] = { value: String(obj ?? ''), confidence: 1, source: 'json_parser' };
+      }
+    }
+    
+    flattenObject(jsonData);
+    
+    return {
+      fields,
+      line_items: lineItems,
+      detected_document_type: documentType || 'json_data',
+      document_category: 'data_import',
+      confidence: 1
+    };
+  } catch (error) {
+    console.error('JSON extraction error:', error);
+    return null;
+  }
 }
 
 // Gemini extraction
