@@ -790,6 +790,9 @@ export default function DocumentProcessing() {
 
   const runAutoProcessing = async (result: ProcessingResult, file: File) => {
     try {
+      // Check if this is a medical imaging document that needs image analysis (not OCR extraction)
+      const isMedicalImaging = currentConfig.processingHints?.enableImageAnalysis === true;
+      
       // Stage 1: Upload
       setProcessingResult(prev => prev ? { ...prev, stage: 'uploading', progress: 10 } : null);
       toast.info('Uploading document...');
@@ -807,10 +810,6 @@ export default function DocumentProcessing() {
       const fileBase64 = await base64Promise;
       
       setProcessingResult(prev => prev ? { ...prev, progress: 20 } : null);
-      
-      // Stage 2: Call edge function for real document processing
-      setProcessingResult(prev => prev ? { ...prev, stage: 'ocr', progress: 30 } : null);
-      toast.info(enableOCR ? 'Running OCR extraction...' : 'Processing document...');
       
       // Get current user for scoping
       let userId: string | undefined;
@@ -843,9 +842,36 @@ export default function DocumentProcessing() {
       if (uploadError) throw uploadError;
       
       const documentId = uploadResult?.documentId;
+      const imageUrl = uploadResult?.imageUrl;
       if (!documentId) throw new Error('Failed to get document ID');
       
+      // For medical imaging documents, skip OCR/extraction and go directly to image analysis
+      if (isMedicalImaging) {
+        const imagingResult: ProcessingResult = {
+          ...result,
+          id: documentId,
+          stage: 'complete',
+          progress: 100,
+          extractedFields: {},
+          imageUrl: imageUrl || result.imageUrl,
+          processedAt: new Date()
+        };
+        
+        setProcessingResult(imagingResult);
+        toast.success('Medical image uploaded! Ready for AI analysis.', {
+          description: 'Switch to Image Analysis tab to analyze with Vision AI'
+        });
+        
+        // Auto-switch to image analysis tab
+        setActiveTab('image-analysis');
+        return;
+      }
+      
       setProcessingResult(prev => prev ? { ...prev, progress: 40 } : null);
+      
+      // Stage 2: OCR Processing (non-imaging documents)
+      setProcessingResult(prev => prev ? { ...prev, stage: 'ocr', progress: 45 } : null);
+      toast.info(enableOCR ? 'Running OCR extraction...' : 'Processing document...');
       
       // Stage 3: Process document with OCR and extraction
       setProcessingResult(prev => prev ? { ...prev, stage: 'extraction', progress: 50 } : null);
