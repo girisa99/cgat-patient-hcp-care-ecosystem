@@ -7,7 +7,7 @@ const corsHeaders = {
 };
 
 interface ProcessingRequest {
-  action: 'upload' | 'process' | 'extract_metadata' | 'map_to_form' | 'validate' | 'classify';
+  action: 'upload' | 'process' | 'extract_metadata' | 'map_to_form' | 'validate' | 'classify' | 'analyze_medical_image';
   documentId?: string;
   fileBase64?: string;
   fileName?: string;
@@ -15,6 +15,8 @@ interface ProcessingRequest {
   processingConfig?: ProcessingConfig;
   userId?: string;
   documentType?: string;
+  imageUrl?: string;
+  analysisType?: string;
 }
 
 interface ProcessingConfig {
@@ -119,6 +121,8 @@ serve(async (req) => {
         return await handleValidation(supabase, request);
       case 'classify':
         return await handleClassification(supabase, request);
+      case 'analyze_medical_image':
+        return await handleMedicalImageAnalysis(request);
       default:
         throw new Error(`Unknown action: ${request.action}`);
     }
@@ -636,6 +640,312 @@ async function handleClassification(supabase: any, request: ProcessingRequest) {
     }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } }
   );
+}
+
+// Medical Image Analysis using Vision AI
+async function handleMedicalImageAnalysis(request: ProcessingRequest) {
+  const { imageUrl, documentType, analysisType } = request;
+  
+  if (!imageUrl) {
+    throw new Error("Missing imageUrl for medical image analysis");
+  }
+
+  const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+  
+  if (!geminiApiKey) {
+    console.warn("GEMINI_API_KEY not configured, using fallback analysis");
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        insights: generateFallbackMedicalInsights(documentType || 'medical-image'),
+        modelUsed: 'fallback',
+        disclaimer: 'This analysis is for informational purposes only and should not replace professional medical interpretation.'
+      }),
+      { headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+
+  console.log(`Analyzing medical image with Gemini Vision: ${documentType}`);
+
+  try {
+    // Fetch the image and convert to base64
+    const imageResponse = await fetch(imageUrl);
+    if (!imageResponse.ok) {
+      throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+    }
+    
+    const imageBlob = await imageResponse.arrayBuffer();
+    const imageBytes = new Uint8Array(imageBlob);
+    
+    // Convert to base64 safely
+    const bytes: string[] = [];
+    for (let i = 0; i < imageBytes.length; i++) {
+      bytes.push(String.fromCharCode(imageBytes[i]));
+    }
+    const imageBase64 = btoa(bytes.join(''));
+    
+    // Get content type from response
+    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+    
+    // Build the prompt for medical image analysis
+    const medicalPrompt = buildMedicalAnalysisPrompt(documentType || 'medical-image', analysisType || 'comprehensive');
+    
+    // Call Gemini Vision API
+    const geminiResponse = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: medicalPrompt },
+              {
+                inline_data: {
+                  mime_type: contentType,
+                  data: imageBase64
+                }
+              }
+            ]
+          }],
+          generationConfig: {
+            temperature: 0.2,
+            maxOutputTokens: 4096
+          }
+        })
+      }
+    );
+
+    if (!geminiResponse.ok) {
+      const errorText = await geminiResponse.text();
+      console.error("Gemini Vision API error:", geminiResponse.status, errorText);
+      throw new Error(`Gemini Vision API error: ${geminiResponse.status}`);
+    }
+
+    const geminiData = await geminiResponse.json();
+    const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    
+    console.log("Gemini Vision analysis response received, length:", responseText.length);
+    
+    // Parse the structured response
+    const insights = parseMedicalAnalysisResponse(responseText, documentType || 'medical-image');
+    
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        insights,
+        rawAnalysis: responseText,
+        modelUsed: 'gemini-2.0-flash-vision',
+        disclaimer: 'AI-assisted analysis for informational purposes only. Not a substitute for professional medical diagnosis. Always consult qualified healthcare providers for clinical decisions.'
+      }),
+      { headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+    
+  } catch (error) {
+    console.error("Medical image analysis error:", error);
+    // Return fallback insights on error
+    return new Response(
+      JSON.stringify({ 
+        success: true, 
+        insights: generateFallbackMedicalInsights(documentType || 'medical-image'),
+        modelUsed: 'fallback',
+        error: error instanceof Error ? error.message : 'Analysis failed',
+        disclaimer: 'Fallback analysis provided. For accurate interpretation, please consult a qualified radiologist or medical professional.'
+      }),
+      { headers: { "Content-Type": "application/json", ...corsHeaders } }
+    );
+  }
+}
+
+function buildMedicalAnalysisPrompt(documentType: string, analysisType: string): string {
+  const typeSpecificGuidance: Record<string, string> = {
+    'xray': `Analyze this X-ray image. Look for:
+- Bone structures: alignment, fractures, degenerative changes, bone density
+- Soft tissue: abnormal shadows, masses, calcifications
+- Joint spaces: narrowing, effusions
+- Anatomical landmarks and positioning quality`,
+    'ct-scan': `Analyze this CT scan image. Evaluate:
+- Tissue density patterns and contrast enhancement
+- Anatomical structures visibility and any abnormalities
+- Lesions, masses, or pathological findings
+- Vascular structures if visible`,
+    'mri': `Analyze this MRI image. Assess:
+- Signal intensity patterns in different tissues
+- Anatomical structures and any pathological changes
+- Soft tissue detail and contrast
+- Any areas of abnormal enhancement or signal`,
+    'ecg': `Analyze this ECG/EKG tracing. Evaluate:
+- Heart rhythm and rate
+- P waves, QRS complexes, T waves morphology
+- PR interval, QT interval, QRS duration
+- ST segment changes
+- Any arrhythmias or conduction abnormalities`,
+    'ultrasound': `Analyze this ultrasound image. Assess:
+- Echo patterns and tissue characteristics
+- Organ morphology and size
+- Any masses, cysts, or fluid collections
+- Blood flow patterns if Doppler is shown`
+  };
+
+  const guidance = typeSpecificGuidance[documentType] || `Analyze this medical image comprehensively, identifying any notable features, anatomical structures, and potential findings.`;
+
+  return `You are an AI medical imaging assistant. ${guidance}
+
+IMPORTANT DISCLAIMERS:
+- This is an AI-assisted preliminary analysis only
+- Results should be verified by qualified healthcare professionals
+- This is NOT a diagnostic conclusion
+
+Provide your analysis in the following JSON structure:
+{
+  "findings": [
+    {
+      "category": "finding|observation|recommendation|concern|normal",
+      "description": "Detailed description of the finding",
+      "confidence": 75-95,
+      "region": "Anatomical region if applicable",
+      "clinicalSignificance": "low|medium|high"
+    }
+  ],
+  "technicalQuality": {
+    "score": 1-10,
+    "issues": ["List any image quality issues"],
+    "adequateForDiagnosis": true/false
+  },
+  "summary": "Brief overall summary of the image analysis",
+  "recommendations": ["List of recommended follow-up actions"],
+  "limitations": ["List limitations of this AI analysis"]
+}
+
+Be thorough but conservative in your assessments. When uncertain, indicate lower confidence and recommend specialist review.`;
+}
+
+function parseMedicalAnalysisResponse(responseText: string, documentType: string): any[] {
+  try {
+    // Try to extract JSON from the response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    if (jsonMatch) {
+      const parsed = JSON.parse(jsonMatch[0]);
+      
+      const insights: any[] = [];
+      
+      // Extract findings
+      if (parsed.findings && Array.isArray(parsed.findings)) {
+        parsed.findings.forEach((finding: any) => {
+          insights.push({
+            category: finding.category || 'finding',
+            description: finding.description,
+            confidence: finding.confidence || 80,
+            region: finding.region,
+            clinicalSignificance: finding.clinicalSignificance || 'medium'
+          });
+        });
+      }
+      
+      // Add technical quality as observation
+      if (parsed.technicalQuality) {
+        insights.push({
+          category: 'observation',
+          description: `Image Quality Score: ${parsed.technicalQuality.score}/10. ${parsed.technicalQuality.adequateForDiagnosis ? 'Adequate for diagnostic interpretation.' : 'May require better quality image for definitive diagnosis.'}`,
+          confidence: 95,
+          region: 'Overall'
+        });
+        
+        if (parsed.technicalQuality.issues?.length > 0) {
+          insights.push({
+            category: 'observation',
+            description: `Quality Issues: ${parsed.technicalQuality.issues.join(', ')}`,
+            confidence: 90,
+            region: 'Technical'
+          });
+        }
+      }
+      
+      // Add summary as finding
+      if (parsed.summary) {
+        insights.unshift({
+          category: 'finding',
+          description: parsed.summary,
+          confidence: 85,
+          region: 'Summary'
+        });
+      }
+      
+      // Add recommendations
+      if (parsed.recommendations && Array.isArray(parsed.recommendations)) {
+        parsed.recommendations.forEach((rec: string) => {
+          insights.push({
+            category: 'recommendation',
+            description: rec,
+            confidence: 90
+          });
+        });
+      }
+      
+      // Add limitations as concern
+      if (parsed.limitations && Array.isArray(parsed.limitations)) {
+        insights.push({
+          category: 'concern',
+          description: `AI Analysis Limitations: ${parsed.limitations.join('; ')}`,
+          confidence: 100
+        });
+      }
+      
+      return insights;
+    }
+  } catch (parseError) {
+    console.error("Failed to parse medical analysis JSON:", parseError);
+  }
+  
+  // Fallback: create insights from raw text
+  return [
+    {
+      category: 'finding',
+      description: responseText.substring(0, 500),
+      confidence: 70,
+      region: 'Overall'
+    },
+    {
+      category: 'recommendation',
+      description: 'Consult with a qualified radiologist or medical professional for definitive interpretation.',
+      confidence: 100
+    }
+  ];
+}
+
+function generateFallbackMedicalInsights(documentType: string): any[] {
+  const baseInsights: Record<string, any[]> = {
+    'xray': [
+      { category: 'observation', description: 'X-ray image loaded for review. AI analysis requires API configuration.', confidence: 95, region: 'Overall' },
+      { category: 'finding', description: 'Image appears to show skeletal/soft tissue structures. Manual interpretation required.', confidence: 60 },
+      { category: 'recommendation', description: 'Please have this image reviewed by a qualified radiologist for accurate diagnosis.', confidence: 100 }
+    ],
+    'ct-scan': [
+      { category: 'observation', description: 'CT scan image loaded. Advanced AI analysis temporarily unavailable.', confidence: 95, region: 'Full scan' },
+      { category: 'finding', description: 'Cross-sectional imaging visible. Detailed interpretation requires specialist review.', confidence: 60 },
+      { category: 'recommendation', description: 'Correlate with clinical history. Radiologist interpretation recommended.', confidence: 100 }
+    ],
+    'mri': [
+      { category: 'observation', description: 'MRI image received. AI-assisted analysis pending configuration.', confidence: 92, region: 'Full study' },
+      { category: 'finding', description: 'Magnetic resonance image shows tissue contrast. Professional evaluation needed.', confidence: 60 },
+      { category: 'recommendation', description: 'MRI findings require specialist interpretation for clinical correlation.', confidence: 100 }
+    ],
+    'ecg': [
+      { category: 'observation', description: 'ECG/EKG tracing captured. Automated rhythm analysis not currently available.', confidence: 95 },
+      { category: 'finding', description: 'Cardiac electrical activity recorded. Cardiologist review recommended.', confidence: 60 },
+      { category: 'recommendation', description: 'Have intervals measured and interpreted by qualified personnel.', confidence: 100 }
+    ],
+    'ultrasound': [
+      { category: 'observation', description: 'Ultrasound image uploaded. Sonographic analysis requires AI service.', confidence: 90, region: 'Scanned area' },
+      { category: 'finding', description: 'Acoustic imaging visible. Diagnostic interpretation by specialist needed.', confidence: 60 },
+      { category: 'recommendation', description: 'Correlate sonographic findings with clinical presentation.', confidence: 100 }
+    ]
+  };
+
+  return baseInsights[documentType] || [
+    { category: 'observation', description: 'Medical image loaded for review. AI analysis service configuration required.', confidence: 95 },
+    { category: 'recommendation', description: 'Professional medical interpretation required for accurate diagnosis.', confidence: 100 }
+  ];
 }
 
 // Helper functions
