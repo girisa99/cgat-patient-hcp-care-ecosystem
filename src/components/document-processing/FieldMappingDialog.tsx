@@ -475,21 +475,31 @@ interface FieldMapping {
   customFieldName?: string;
 }
 
-// Document type to relevant object categories mapping
+// Document type to relevant object categories mapping - expanded with more field keywords
 const DOCUMENT_TYPE_OBJECTS: Record<string, string[]> = {
-  prescription: ['Prescription', 'Order', 'Medication', 'Drug', 'Patient', 'Prescriber', 'Pharmacy', 'Product'],
-  insurance_card: ['Medical_Insurance', 'Rx_Insurance', 'Coverage', 'Patient', 'Insurance', 'Payer'],
-  medical_insurance: ['Medical_Insurance', 'Coverage', 'Patient', 'Payer', 'Benefit', 'Insurance'],
-  pharmacy_insurance: ['Rx_Insurance', 'Pharmacy', 'Coverage', 'Patient', 'Insurance'],
-  patient_onboarding: ['Hub_Enrollment', 'Patient', 'Patient_Journey', 'Consent', 'Program', 'Contact', 'Account'],
-  hub_enrollment: ['Hub_Enrollment', 'Patient_Journey', 'Patient', 'Program', 'Consent', 'Benefit'],
-  lab_result: ['Lab_Result', 'Patient', 'Order', 'Specimen', 'Diagnosis'],
-  invoice: ['Invoice', 'Billing', 'Payment', 'Account'],
-  passport: ['Identity', 'Patient', 'Document', 'Contact'],
-  'x-ray': ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis'],
-  ct_scan: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis'],
-  mri: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis'],
-  ecg: ['Cardiology', 'Patient', 'Order', 'Result'],
+  prescription: ['Prescription', 'Order', 'Medication', 'Drug', 'Patient', 'Prescriber', 'Pharmacy', 'Product', 'Rx', 'NDC', 'SIG', 'Dosage', 'Strength', 'Refill', 'Quantity', 'NPI', 'DEA', 'Provider'],
+  insurance_card: ['Medical_Insurance', 'Rx_Insurance', 'Coverage', 'Patient', 'Insurance', 'Payer', 'Member', 'Group', 'BIN', 'PCN', 'Plan', 'Copay', 'Deductible', 'Subscriber'],
+  insurance: ['Medical_Insurance', 'Rx_Insurance', 'Coverage', 'Patient', 'Insurance', 'Payer', 'Member', 'Group', 'BIN', 'PCN', 'Plan', 'Copay', 'Deductible', 'Subscriber'],
+  medical_insurance: ['Medical_Insurance', 'Coverage', 'Patient', 'Payer', 'Benefit', 'Insurance', 'Member', 'Group', 'Copay', 'Deductible'],
+  pharmacy_insurance: ['Rx_Insurance', 'Pharmacy', 'Coverage', 'Patient', 'Insurance', 'BIN', 'PCN', 'Group', 'Member', 'PBM', 'Formulary'],
+  patient_onboarding: ['Hub_Enrollment', 'Patient', 'Patient_Journey', 'Consent', 'Program', 'Contact', 'Account', 'Demographics', 'Address', 'Phone', 'Email', 'Emergency'],
+  'patient-onboarding': ['Hub_Enrollment', 'Patient', 'Patient_Journey', 'Consent', 'Program', 'Contact', 'Account', 'Demographics', 'Address', 'Phone', 'Email', 'Emergency'],
+  hub_enrollment: ['Hub_Enrollment', 'Patient_Journey', 'Patient', 'Program', 'Consent', 'Benefit', 'Enrollment', 'Therapy'],
+  lab_result: ['Lab_Result', 'Patient', 'Order', 'Specimen', 'Diagnosis', 'Test', 'Result', 'Reference', 'Range', 'CLIA'],
+  'lab-results': ['Lab_Result', 'Patient', 'Order', 'Specimen', 'Diagnosis', 'Test', 'Result', 'Reference', 'Range', 'CLIA'],
+  invoice: ['Invoice', 'Billing', 'Payment', 'Account', 'Vendor', 'Amount', 'Tax', 'Total', 'Due', 'PO', 'Line'],
+  passport: ['Identity', 'Patient', 'Document', 'Contact', 'Name', 'Nationality', 'Birth', 'Issue', 'Expiry', 'MRZ'],
+  'drivers-license': ['Identity', 'License', 'Patient', 'Document', 'Contact', 'Name', 'Address', 'Birth', 'Issue', 'Expiry', 'Donor'],
+  xray: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Radiologist'],
+  'x-ray': ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Radiologist'],
+  ct_scan: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Contrast'],
+  'ct-scan': ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Contrast'],
+  mri: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Sequence'],
+  ecg: ['Cardiology', 'Patient', 'Order', 'Result', 'ECG', 'EKG', 'Heart', 'Rhythm', 'Interval', 'Axis'],
+  'order-management': ['Order', 'Purchase', 'Sales', 'Shipping', 'Item', 'SKU', 'Quantity', 'Price', 'Tracking'],
+  'treatment-center': ['Facility', 'License', 'DEA', 'NPI', 'Accreditation', 'Address', 'Administrator', 'Services'],
+  'customer-onboarding': ['Company', 'Contact', 'Account', 'Tax', 'EIN', 'DUNS', 'Credit', 'Bank', 'Address'],
+  enrollment: ['Enrollment', 'Applicant', 'Program', 'Eligibility', 'Effective', 'Coverage', 'Premium', 'Beneficiary'],
 };
 
 // Check if a field is relevant for a document type
@@ -531,13 +541,20 @@ interface FieldMappingDialogProps {
   documentType?: string; // Document type for filtering relevant fields
 }
 
-// Similarity score using Levenshtein distance
+// Similarity score using Levenshtein distance with improved threshold handling
 function calculateSimilarity(s1: string, s2: string): number {
   const s1Lower = s1.toLowerCase().replace(/[_\-\s]/g, '');
   const s2Lower = s2.toLowerCase().replace(/[_\-\s]/g, '');
   
+  // Exact match
   if (s1Lower === s2Lower) return 1;
-  if (s1Lower.includes(s2Lower) || s2Lower.includes(s1Lower)) return 0.8;
+  
+  // One contains the other - high confidence
+  if (s1Lower.includes(s2Lower) || s2Lower.includes(s1Lower)) {
+    // Adjust based on length difference to avoid false positives
+    const lengthRatio = Math.min(s1Lower.length, s2Lower.length) / Math.max(s1Lower.length, s2Lower.length);
+    return 0.7 + (lengthRatio * 0.25); // Range 0.7-0.95 based on length similarity
+  }
   
   // Levenshtein distance
   const track = Array(s2Lower.length + 1).fill(null).map(() =>
@@ -561,7 +578,7 @@ function calculateSimilarity(s1: string, s2: string): number {
   return 1 - (track[s2Lower.length][s1Lower.length] / maxLen);
 }
 
-// Auto-match source to target fields
+// Auto-match source to target fields with improved accuracy
 function autoMatchFields(
   sourceFields: SourceField[],
   targetFields: TargetField[]
@@ -569,45 +586,98 @@ function autoMatchFields(
   const matches = new Map<string, string>();
   const usedTargets = new Set<string>();
   
-  // Common field name aliases
+  // Comprehensive field name aliases for all document types
   const aliases: Record<string, string[]> = {
-    'patient_name': ['name', 'full_name', 'patient', 'patientname'],
-    'medication': ['drug', 'medicine', 'product', 'rx', 'prescription'],
-    'dosage': ['dose', 'strength', 'amount'],
-    'frequency': ['schedule', 'interval', 'timing', 'directions'],
-    'prescriber': ['doctor', 'physician', 'provider', 'prescribername'],
-    'date_of_birth': ['dob', 'birthdate', 'birth_date', 'dateofbirth'],
-    'npi_number': ['npi', 'npinumber', 'provider_npi'],
-    'insurance_id': ['member_id', 'policy_number', 'insuranceid'],
-    'ndc_code': ['ndc', 'ndccode', 'drug_code'],
+    // Patient/Personal
+    'patient_name': ['name', 'full_name', 'patient', 'patientname', 'member_name', 'subscriber_name'],
+    'first_name': ['firstname', 'fname', 'given_name', 'givenname'],
+    'last_name': ['lastname', 'lname', 'surname', 'family_name', 'familyname'],
+    'date_of_birth': ['dob', 'birthdate', 'birth_date', 'dateofbirth', 'birthday'],
+    
+    // Prescription/Medication
+    'medication': ['drug', 'medicine', 'product', 'rx', 'prescription', 'drug_name', 'medication_name'],
+    'medication_name': ['drug_name', 'drugname', 'medicine_name', 'product_name'],
+    'dosage': ['dose', 'strength', 'amount', 'drug_strength'],
+    'frequency': ['schedule', 'interval', 'timing', 'directions', 'sig', 'sig_code'],
+    'quantity': ['qty', 'disp', 'dispense', 'amount'],
+    'refills': ['refill', 'rf', 'refill_count'],
+    'days_supply': ['dayssupply', 'supply_days', 'day_supply'],
+    'sig': ['directions', 'instructions', 'sig_text', 'sigtext'],
+    
+    // Provider/Prescriber
+    'prescriber': ['doctor', 'physician', 'provider', 'prescribername', 'prescriber_name', 'ordering_provider'],
+    'npi_number': ['npi', 'npinumber', 'provider_npi', 'prescriber_npi'],
+    'dea_number': ['dea', 'deanum', 'dea_num', 'deanumber'],
+    
+    // Insurance - General
+    'insurance_id': ['member_id', 'policy_number', 'insuranceid', 'memberid', 'subscriber_id'],
+    'group_number': ['groupnumber', 'grp', 'group_num', 'grpnum', 'group_id'],
+    'insurance_name': ['insurer', 'carrier', 'payer', 'insurance_provider', 'plan_name'],
+    
+    // Insurance - Rx/Pharmacy
+    'rx_bin': ['bin', 'rxbin', 'bin_number'],
+    'rx_pcn': ['pcn', 'rxpcn', 'processor_control'],
+    'rx_group': ['rxgroup', 'rx_grp', 'pharmacy_group'],
+    
+    // Dates
+    'effective_date': ['eff_date', 'effectivedate', 'start_date', 'coverage_start'],
+    'expiration_date': ['exp_date', 'expdate', 'end_date', 'term_date', 'coverage_end'],
+    
+    // NDC/Drug Codes
+    'ndc_code': ['ndc', 'ndccode', 'drug_code', 'product_ndc'],
+    
+    // Contact
+    'phone': ['phone_number', 'phonenumber', 'tel', 'telephone', 'mobile'],
+    'email': ['email_address', 'emailaddress', 'e_mail'],
+    'address': ['street_address', 'mailing_address', 'location', 'addr'],
   };
+  
+  // Match threshold - lowered for better matching
+  const MATCH_THRESHOLD = 0.45;
   
   for (const source of sourceFields) {
     let bestMatch: string | null = null;
     let bestScore = 0;
     
+    const sourceNorm = source.name.toLowerCase().replace(/[_\-\s]/g, '');
+    
     for (const target of targetFields) {
       if (usedTargets.has(target.name)) continue;
+      
+      const targetNorm = target.name.toLowerCase().replace(/[_\-\s]/g, '');
       
       // Direct similarity
       let score = calculateSimilarity(source.name, target.name);
       
-      // Check aliases
-      const sourceNorm = source.name.toLowerCase().replace(/[_\-\s]/g, '');
+      // Check aliases bidirectionally
       for (const [canonical, aliasList] of Object.entries(aliases)) {
-        if (aliasList.includes(sourceNorm) || sourceNorm === canonical.replace(/_/g, '')) {
-          const targetNorm = target.name.toLowerCase().replace(/[_\-\s]/g, '');
-          if (targetNorm.includes(canonical.replace(/_/g, '')) || 
-              aliasList.some(a => targetNorm.includes(a))) {
-            score = Math.max(score, 0.9);
-          }
+        const canonicalNorm = canonical.replace(/_/g, '');
+        
+        // Source matches canonical or alias
+        const sourceMatchesCanonical = sourceNorm === canonicalNorm || 
+          aliasList.some(a => sourceNorm === a.replace(/[_\-\s]/g, ''));
+        
+        // Target matches canonical or alias
+        const targetMatchesCanonical = targetNorm === canonicalNorm ||
+          targetNorm.includes(canonicalNorm) ||
+          aliasList.some(a => targetNorm.includes(a.replace(/[_\-\s]/g, '')));
+        
+        if (sourceMatchesCanonical && targetMatchesCanonical) {
+          score = Math.max(score, 0.92);
         }
       }
       
       // Label similarity bonus
       score = Math.max(score, calculateSimilarity(source.name, target.label) * 0.95);
       
-      if (score > bestScore && score >= 0.5) {
+      // Partial match bonus for common patterns
+      if (sourceNorm.length > 3 && targetNorm.length > 3) {
+        if (targetNorm.startsWith(sourceNorm) || sourceNorm.startsWith(targetNorm)) {
+          score = Math.max(score, 0.75);
+        }
+      }
+      
+      if (score > bestScore && score >= MATCH_THRESHOLD) {
         bestScore = score;
         bestMatch = target.name;
       }
