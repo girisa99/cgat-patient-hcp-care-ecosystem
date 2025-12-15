@@ -35,6 +35,8 @@ import { supabase } from '@/integrations/supabase/client';
 
 interface MedicalImageAnalysisProps {
   imageUrl: string;
+  imageBase64?: string;
+  imageMimeType?: string;
   documentType: string;
   onSaveAnalysis: (data: AnalysisResult) => void;
 }
@@ -71,6 +73,8 @@ interface AIInsight {
 
 export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   imageUrl,
+  imageBase64,
+  imageMimeType,
   documentType,
   onSaveAnalysis
 }) => {
@@ -121,11 +125,25 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
     setRawAnalysis('');
     
     try {
+      // Extract base64 from data URL if not provided separately
+      let base64Data = imageBase64;
+      let mimeType = imageMimeType || 'image/jpeg';
+      
+      if (!base64Data && imageUrl?.startsWith('data:')) {
+        const parts = imageUrl.split(',');
+        base64Data = parts[1];
+        const mimeMatch = parts[0].match(/data:([^;]+)/);
+        if (mimeMatch) mimeType = mimeMatch[1];
+      }
+      
       // Call AI to analyze the medical image using Vision AI
+      // Pass base64 directly to avoid URL fetch issues
       const { data, error } = await supabase.functions.invoke('document-processor', {
         body: {
           action: 'analyze_medical_image',
-          imageUrl,
+          imageBase64: base64Data,
+          imageMimeType: mimeType,
+          imageUrl: !base64Data ? imageUrl : undefined,
           documentType,
           analysisType: 'comprehensive'
         }
