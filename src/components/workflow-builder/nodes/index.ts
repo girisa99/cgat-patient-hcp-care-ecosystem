@@ -68,6 +68,18 @@ import {
   WorkflowOrchestratorNode
 } from './EnhancedAgenticNodes';
 
+// Medical Imaging Node Components
+import {
+  medicalImagingNodeTypes,
+  XRayAnalysisNode,
+  CTScanAnalysisNode,
+  MRIAnalysisNode,
+  ECGAnalysisNode,
+  UltrasoundAnalysisNode,
+  MammogramAnalysisNode,
+  MultiProviderVisionNode
+} from './MedicalImagingNodes';
+
 // Export all node types
 export { BaseWorkflowNode } from './BaseWorkflowNode';
 export { UseCaseNode } from './UseCaseNode';
@@ -133,6 +145,18 @@ export {
   AdaptiveLearningNode,
   WorkflowOrchestratorNode
 } from './EnhancedAgenticNodes';
+
+// Export Medical Imaging nodes
+export {
+  medicalImagingNodeTypes,
+  XRayAnalysisNode,
+  CTScanAnalysisNode,
+  MRIAnalysisNode,
+  ECGAnalysisNode,
+  UltrasoundAnalysisNode,
+  MammogramAnalysisNode,
+  MultiProviderVisionNode
+} from './MedicalImagingNodes';
 
 // All nodes are now managed through the database-driven workflow_node_types table
 // This eliminates hardcoded registries and ensures consistency across the platform

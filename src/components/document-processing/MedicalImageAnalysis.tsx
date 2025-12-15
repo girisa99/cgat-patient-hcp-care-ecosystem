@@ -28,10 +28,18 @@ import {
   Building2,
   ClipboardList,
   FileDown,
-  Shield
+  Shield,
+  Settings2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { VisionAIProviderSelector } from './VisionAIProviderSelector';
+import { 
+  VisionAIProvider, 
+  AIModelType, 
+  MedicalModalityType,
+  medicalVisionAIService 
+} from '@/services/medicalVisionAIService';
 
 interface MedicalImageAnalysisProps {
   imageUrl: string;
@@ -87,6 +95,15 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const [disclaimer, setDisclaimer] = useState<string>('');
   const [rawAnalysis, setRawAnalysis] = useState<string>('');
   const [activeTab, setActiveTab] = useState('analysis');
+  const [showProviderSettings, setShowProviderSettings] = useState(false);
+  
+  // Multi-provider state
+  const modality = (documentType?.replace('-', '') === 'ctscan' ? 'ct-scan' : documentType) as MedicalModalityType || 'xray';
+  const [selectedProvider, setSelectedProvider] = useState<VisionAIProvider>('gemini');
+  const [selectedModelType, setSelectedModelType] = useState<AIModelType>(
+    medicalVisionAIService.getRecommendedModel(modality)
+  );
+  const [analysisType, setAnalysisType] = useState<'screening' | 'diagnostic' | 'comprehensive'>('comprehensive');
   
   // Patient details form state
   const [patientDetails, setPatientDetails] = useState({
@@ -114,7 +131,8 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
       'ct-scan': 'CT Scan',
       'mri': 'MRI',
       'ecg': 'ECG/EKG',
-      'ultrasound': 'Ultrasound'
+      'ultrasound': 'Ultrasound',
+      'mammogram': 'Mammogram'
     };
     return labels[documentType] || 'Medical Image';
   };
@@ -125,7 +143,6 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
     setRawAnalysis('');
     
     try {
-      // Extract base64 from data URL if not provided separately
       let base64Data = imageBase64;
       let mimeType = imageMimeType || 'image/jpeg';
       
@@ -136,16 +153,17 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
         if (mimeMatch) mimeType = mimeMatch[1];
       }
       
-      // Call AI to analyze the medical image using Vision AI
-      // Pass base64 directly to avoid URL fetch issues
+      // Call AI with multi-provider support
       const { data, error } = await supabase.functions.invoke('document-processor', {
         body: {
           action: 'analyze_medical_image',
           imageBase64: base64Data,
           imageMimeType: mimeType,
           imageUrl: !base64Data ? imageUrl : undefined,
-          documentType,
-          analysisType: 'comprehensive'
+          documentType: modality,
+          analysisType,
+          provider: selectedProvider,
+          modelType: selectedModelType
         }
       });
 
@@ -159,8 +177,8 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
       }
       
       setAnalysisComplete(true);
-      toast.success(`Image analyzed using ${data?.modelUsed || 'AI'}`, {
-        description: 'Review the clinical insights below'
+      toast.success(`Analysis complete`, {
+        description: `${data?.provider || 'AI'} (${data?.modelType || 'auto'}) - ${data?.insights?.length || 0} findings`
       });
     } catch (error) {
       console.error('Analysis error:', error);
