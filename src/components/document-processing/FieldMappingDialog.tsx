@@ -51,18 +51,127 @@ import {
   type ExportFormat
 } from '@/services/dynamicFieldMappingService';
 
-// Dynamic target schema - fetched at runtime, not hardcoded
-// User can add ANY custom field for ANY document type
+// Comprehensive target schema - covers healthcare, CRM, and common fields
+// User can ALSO add ANY custom field for ANY document type
 const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
-  // Base fields that CRMs commonly have - NOT limiting, just suggestions
+  // Common fields across all systems
   const commonFields: TargetField[] = [
-    { name: 'name', type: 'string', required: false, label: 'Name' },
+    // Personal/Patient Information
+    { name: 'first_name', type: 'string', required: false, label: 'First Name' },
+    { name: 'last_name', type: 'string', required: false, label: 'Last Name' },
+    { name: 'full_name', type: 'string', required: false, label: 'Full Name' },
+    { name: 'patient_name', type: 'string', required: false, label: 'Patient Name' },
+    { name: 'date_of_birth', type: 'date', required: false, label: 'Date of Birth' },
+    { name: 'dob', type: 'date', required: false, label: 'DOB' },
+    { name: 'sex', type: 'string', required: false, label: 'Sex/Gender' },
+    { name: 'gender', type: 'string', required: false, label: 'Gender' },
+    { name: 'age', type: 'number', required: false, label: 'Age' },
+    
+    // Contact Information
     { name: 'email', type: 'email', required: false, label: 'Email' },
     { name: 'phone', type: 'phone', required: false, label: 'Phone' },
+    { name: 'phone_number', type: 'phone', required: false, label: 'Phone Number' },
+    { name: 'mobile', type: 'phone', required: false, label: 'Mobile' },
+    { name: 'fax', type: 'phone', required: false, label: 'Fax' },
+    
+    // Address Fields
+    { name: 'address', type: 'string', required: false, label: 'Full Address' },
+    { name: 'street_address', type: 'string', required: false, label: 'Street Address' },
+    { name: 'address_line_1', type: 'string', required: false, label: 'Address Line 1' },
+    { name: 'address_line_2', type: 'string', required: false, label: 'Address Line 2' },
+    { name: 'city', type: 'string', required: false, label: 'City' },
+    { name: 'state', type: 'string', required: false, label: 'State' },
+    { name: 'zip_code', type: 'string', required: false, label: 'ZIP Code' },
+    { name: 'postal_code', type: 'string', required: false, label: 'Postal Code' },
+    { name: 'country', type: 'string', required: false, label: 'Country' },
+    
+    // Healthcare/Provider Fields
+    { name: 'npi_number', type: 'string', required: false, label: 'NPI Number' },
+    { name: 'prescriber', type: 'string', required: false, label: 'Prescriber' },
+    { name: 'prescriber_name', type: 'string', required: false, label: 'Prescriber Name' },
+    { name: 'physician', type: 'string', required: false, label: 'Physician' },
+    { name: 'doctor_name', type: 'string', required: false, label: 'Doctor Name' },
+    { name: 'provider_name', type: 'string', required: false, label: 'Provider Name' },
+    { name: 'facility_name', type: 'string', required: false, label: 'Facility Name' },
+    { name: 'clinic_name', type: 'string', required: false, label: 'Clinic Name' },
+    { name: 'hospital_name', type: 'string', required: false, label: 'Hospital Name' },
+    { name: 'license_number', type: 'string', required: false, label: 'License Number' },
+    { name: 'dea_number', type: 'string', required: false, label: 'DEA Number' },
+    
+    // Medication Fields
+    { name: 'medication', type: 'string', required: false, label: 'Medication' },
+    { name: 'medication_name', type: 'string', required: false, label: 'Medication Name' },
+    { name: 'drug_name', type: 'string', required: false, label: 'Drug Name' },
+    { name: 'dosage', type: 'string', required: false, label: 'Dosage' },
+    { name: 'strength', type: 'string', required: false, label: 'Strength' },
+    { name: 'frequency', type: 'string', required: false, label: 'Frequency' },
+    { name: 'directions', type: 'string', required: false, label: 'Directions' },
+    { name: 'quantity', type: 'number', required: false, label: 'Quantity' },
+    { name: 'refills', type: 'number', required: false, label: 'Refills' },
+    { name: 'ndc_code', type: 'string', required: false, label: 'NDC Code' },
+    { name: 'rx_number', type: 'string', required: false, label: 'Rx Number' },
+    
+    // Insurance Fields
+    { name: 'insurance_id', type: 'string', required: false, label: 'Insurance ID' },
+    { name: 'member_id', type: 'string', required: false, label: 'Member ID' },
+    { name: 'policy_number', type: 'string', required: false, label: 'Policy Number' },
+    { name: 'group_number', type: 'string', required: false, label: 'Group Number' },
+    { name: 'insurance_provider', type: 'string', required: false, label: 'Insurance Provider' },
+    { name: 'plan_name', type: 'string', required: false, label: 'Plan Name' },
+    { name: 'bin_number', type: 'string', required: false, label: 'BIN Number' },
+    { name: 'pcn', type: 'string', required: false, label: 'PCN' },
+    { name: 'effective_date', type: 'date', required: false, label: 'Effective Date' },
+    { name: 'expiration_date', type: 'date', required: false, label: 'Expiration Date' },
+    { name: 'copay', type: 'number', required: false, label: 'Copay' },
+    
+    // Date Fields
     { name: 'date', type: 'date', required: false, label: 'Date' },
+    { name: 'prescription_date', type: 'date', required: false, label: 'Prescription Date' },
+    { name: 'fill_date', type: 'date', required: false, label: 'Fill Date' },
+    { name: 'visit_date', type: 'date', required: false, label: 'Visit Date' },
+    
+    // Diagnosis/Clinical Fields
+    { name: 'diagnosis', type: 'string', required: false, label: 'Diagnosis' },
+    { name: 'icd_code', type: 'string', required: false, label: 'ICD Code' },
+    { name: 'symptoms', type: 'string', required: false, label: 'Symptoms' },
+    { name: 'allergies', type: 'string', required: false, label: 'Allergies' },
+    { name: 'notes', type: 'string', required: false, label: 'Notes' },
+    { name: 'comments', type: 'string', required: false, label: 'Comments' },
+    
+    // ID Fields
+    { name: 'ssn', type: 'string', required: false, label: 'SSN' },
+    { name: 'mrn', type: 'string', required: false, label: 'Medical Record Number' },
+    { name: 'account_number', type: 'string', required: false, label: 'Account Number' },
   ];
   
-  // These are SUGGESTIONS only - user can create any custom field
+  // Add system-specific fields
+  if (targetSystem === 'salesforce') {
+    commonFields.push(
+      { name: 'Account.Name', type: 'string', required: false, label: 'SF: Account Name' },
+      { name: 'Contact.FirstName', type: 'string', required: false, label: 'SF: Contact First Name' },
+      { name: 'Contact.LastName', type: 'string', required: false, label: 'SF: Contact Last Name' },
+      { name: 'Contact.Email', type: 'email', required: false, label: 'SF: Contact Email' },
+      { name: 'Contact.Phone', type: 'phone', required: false, label: 'SF: Contact Phone' },
+      { name: 'Contact.MailingStreet', type: 'string', required: false, label: 'SF: Mailing Street' },
+      { name: 'Contact.MailingCity', type: 'string', required: false, label: 'SF: Mailing City' },
+      { name: 'Contact.MailingState', type: 'string', required: false, label: 'SF: Mailing State' },
+      { name: 'Contact.MailingPostalCode', type: 'string', required: false, label: 'SF: Mailing Postal Code' },
+    );
+  } else if (targetSystem === 'hubspot') {
+    commonFields.push(
+      { name: 'firstname', type: 'string', required: false, label: 'HS: First Name' },
+      { name: 'lastname', type: 'string', required: false, label: 'HS: Last Name' },
+      { name: 'company', type: 'string', required: false, label: 'HS: Company' },
+      { name: 'hs_lead_status', type: 'string', required: false, label: 'HS: Lead Status' },
+    );
+  } else if (targetSystem === 'veeva') {
+    commonFields.push(
+      { name: 'Account_vod__c', type: 'string', required: false, label: 'Veeva: Account' },
+      { name: 'Prescriber_vod__c', type: 'string', required: false, label: 'Veeva: Prescriber' },
+      { name: 'Product_vod__c', type: 'string', required: false, label: 'Veeva: Product' },
+    );
+  }
+  
   return commonFields;
 };
 
@@ -198,11 +307,22 @@ export function FieldMappingDialog({
   const [mappings, setMappings] = useState<FieldMapping[]>([]);
   const [customFields, setCustomFields] = useState<TargetField[]>([]);
   const [isAutoMatching, setIsAutoMatching] = useState(false);
+  const [searchFilter, setSearchFilter] = useState('');
   
   const targetFields = useMemo(() => {
     const base = getBaseTargetSchema(targetSystem);
     return [...base, ...customFields];
   }, [targetSystem, customFields]);
+  
+  // Filter target fields based on search
+  const filteredTargetFields = useMemo(() => {
+    if (!searchFilter.trim()) return targetFields;
+    const lower = searchFilter.toLowerCase();
+    return targetFields.filter(tf => 
+      tf.name.toLowerCase().includes(lower) || 
+      tf.label.toLowerCase().includes(lower)
+    );
+  }, [targetFields, searchFilter]);
   
   // Initialize mappings when dialog opens
   useEffect(() => {
@@ -216,6 +336,7 @@ export function FieldMappingDialog({
       }));
       setMappings(initialMappings);
       setCustomFields([]);
+      setSearchFilter('');
     }
   }, [open, sourceFields]);
   
@@ -302,7 +423,7 @@ export function FieldMappingDialog({
         </DialogHeader>
         
         {/* Stats bar */}
-        <div className="flex items-center gap-4 py-2 border-b">
+        <div className="flex items-center gap-4 py-2 border-b flex-wrap">
           <Badge variant="default" className="gap-1">
             <Check className="h-3 w-3" />
             {mappedCount} Mapped
@@ -314,6 +435,12 @@ export function FieldMappingDialog({
           <Badge variant="outline" className="gap-1">
             <X className="h-3 w-3" />
             {skippedCount} Skipped
+          </Badge>
+          <Badge variant="outline" className="gap-1 text-muted-foreground">
+            {sourceFields.length} Source Fields
+          </Badge>
+          <Badge variant="outline" className="gap-1 text-muted-foreground">
+            {targetFields.length} Target Fields
           </Badge>
           <div className="flex-1" />
           <Button

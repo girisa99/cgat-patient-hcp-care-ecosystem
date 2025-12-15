@@ -113,30 +113,80 @@ export default function ProcessingHistoryWithExport({
   const [selectedTarget, setSelectedTarget] = useState<string>('supabase');
   const [isExporting, setIsExporting] = useState(false);
   
-  // Extract source fields from selected items for mapping
+  // Extract ALL source fields from selected items for mapping - comprehensive extraction
   const sourceFieldsForMapping = useMemo<SourceField[]>(() => {
     if (selectedItems.length === 0) return [];
     
     const selectedData = history.filter(h => selectedItems.includes(h.id));
     const allFields = new Map<string, any>();
     
-    // Aggregate all fields from selected items
-    for (const item of selectedData) {
-      for (const [key, fieldData] of Object.entries(item.extractedFields)) {
-        if (!allFields.has(key)) {
-          allFields.set(key, fieldData.value);
+    // Helper to add field with normalized key
+    const addField = (key: string, value: any) => {
+      if (value !== null && value !== undefined && value !== '') {
+        const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
+        if (!allFields.has(normalizedKey)) {
+          allFields.set(normalizedKey, value);
         }
       }
-      // Also include medication fields if available
+    };
+    
+    // Aggregate ALL fields from selected items
+    for (const item of selectedData) {
+      // 1. All extracted fields
+      for (const [key, fieldData] of Object.entries(item.extractedFields || {})) {
+        addField(key, fieldData.value);
+      }
+      
+      // 2. All medication fields (support multiple medications)
       if (item.medications && item.medications.length > 0) {
-        const med = item.medications[0];
-        if (med.name && !allFields.has('medication')) allFields.set('medication', med.name);
-        if (med.dosage && !allFields.has('dosage')) allFields.set('dosage', med.dosage);
-        if (med.ndc && !allFields.has('ndc_code')) allFields.set('ndc_code', med.ndc);
+        item.medications.forEach((med, idx) => {
+          const prefix = item.medications!.length > 1 ? `medication_${idx + 1}_` : '';
+          if (med.name) addField(`${prefix}medication_name`, med.name);
+          if (med.dosage) addField(`${prefix}dosage`, med.dosage);
+          if (med.strength) addField(`${prefix}strength`, med.strength);
+          if (med.frequency) addField(`${prefix}frequency`, med.frequency);
+          if (med.directions) addField(`${prefix}directions`, med.directions);
+          if (med.quantity) addField(`${prefix}quantity`, med.quantity);
+          if (med.refills) addField(`${prefix}refills`, med.refills);
+          if (med.ndc) addField(`${prefix}ndc_code`, med.ndc);
+          if (med.ndcCode) addField(`${prefix}ndc_code`, med.ndcCode);
+          if (med.rxNumber) addField(`${prefix}rx_number`, med.rxNumber);
+          // Add clinical data if present
+          if (med.clinicalRecommendations) addField(`${prefix}clinical_recommendations`, med.clinicalRecommendations);
+          if (med.alternatives) addField(`${prefix}alternatives`, JSON.stringify(med.alternatives));
+        });
+      }
+      
+      // 3. Validation results as fields
+      if (item.validationResults) {
+        addField('validation_passed', item.validationResults.passed);
+        addField('validation_failed', item.validationResults.failed);
+        addField('validation_warnings', item.validationResults.warnings);
+      }
+      
+      // 4. Document metadata
+      addField('document_type', item.documentType);
+      addField('file_name', item.fileName);
+      addField('processed_at', item.processedAt);
+      
+      // 5. Deep scan for any nested objects in extractedFields
+      for (const [key, fieldData] of Object.entries(item.extractedFields || {})) {
+        if (typeof fieldData === 'object' && fieldData !== null) {
+          // Handle nested objects
+          for (const [nestedKey, nestedVal] of Object.entries(fieldData)) {
+            if (nestedKey !== 'value' && nestedKey !== 'confidence' && nestedKey !== 'verified') {
+              addField(`${key}_${nestedKey}`, nestedVal);
+            }
+          }
+        }
       }
     }
     
-    return Array.from(allFields.entries()).map(([name, value]) => ({ name, value }));
+    return Array.from(allFields.entries()).map(([name, value]) => ({ 
+      name, 
+      value,
+      type: typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'string'
+    }));
   }, [selectedItems, history]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
