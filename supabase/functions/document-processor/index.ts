@@ -232,10 +232,13 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
   const stages = doc.stages || {};
   const config: ProcessingConfig = doc.processing_config || {};
 
-  // Stage 1: Text Extraction (OCR if needed)
+  // Stage 1: Text Extraction (OCR if needed) + Get base64 for Vision AI
   await updateProgress(supabase, documentId, 5, 'extraction', 'in_progress', 'Starting text extraction...');
   
   let extractedText = '';
+  let imageBase64 = '';
+  let imageMimeType = doc.mime_type || 'image/jpeg';
+  
   try {
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('document-processing')
@@ -245,6 +248,11 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
       throw new Error(`Failed to download file: ${downloadError.message}`);
     }
 
+    // Convert to base64 for Vision AI (needed for handwriting recognition)
+    const arrayBuffer = await fileData.arrayBuffer();
+    const uint8Array = new Uint8Array(arrayBuffer);
+    imageBase64 = btoa(String.fromCharCode(...uint8Array));
+    
     if (config.enableOCR !== false && (doc.mime_type?.includes('pdf') || doc.mime_type?.includes('image'))) {
       const providerName = config.ocrProvider || 'google';
       await updateProgress(supabase, documentId, 10, 'extraction', 'in_progress', `Running OCR with ${providerName.toUpperCase()}...`);
@@ -262,45 +270,64 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
 
   // Stage 2: Content Analysis
   await updateProgress(supabase, documentId, 25, 'analysis', 'in_progress', 'Analyzing content structure...');
-  await delay(500);
+  await delay(300);
   
   const analysisResult = analyzeContent(extractedText);
   await updateProgress(supabase, documentId, 35, 'analysis', 'completed');
 
-  // Stage 3: Entity Extraction (using AI NLP if available, with OCR fallback)
-  await updateProgress(supabase, documentId, 40, 'entity_extraction', 'in_progress', 'Extracting entities with AI NLP...');
+  // Stage 3: HYBRID Entity Extraction - OCR text + Vision AI for images (especially handwritten)
+  await updateProgress(supabase, documentId, 40, 'entity_extraction', 'in_progress', 'Extracting entities with OCR + Vision AI NLP...');
   
   let entities: { type: string; value: string; confidence: number; source?: string }[] = [];
   let nlpProvider = 'none';
   let ocrProvider = config.ocrProvider || 'google';
   
+  const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+  const docType = doc.document_type || 'unknown';
+  const isImageDocument = doc.mime_type?.includes('image');
+  const enableHandwriting = config.enableHandwritingRecognition !== false;
+  
   try {
-    // Try Lovable AI Gateway first, then Gemini API, then regex fallback
-    const lovableApiKey = Deno.env.get("LOVABLE_API_KEY");
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-    
-    if (lovableApiKey || geminiApiKey) {
-      // Pass document type for type-specific extraction
-      const docType = doc.document_type || 'unknown';
-      entities = await extractEntitiesWithGemini(extractedText, geminiApiKey || '', docType);
-      nlpProvider = lovableApiKey ? 'lovable-ai-gemini' : 'gemini-direct';
-      console.log(`AI NLP (${nlpProvider}) extracted ${entities.length} entities for document type: ${docType}`);
+    if (geminiApiKey && isImageDocument && imageBase64) {
+      // USE GEMINI VISION - Send actual image for better handwriting/visual extraction
+      await updateProgress(supabase, documentId, 42, 'entity_extraction', 'in_progress', 'Using Vision AI for image analysis...');
+      
+      const visionEntities = await extractEntitiesWithGeminiVision(imageBase64, imageMimeType, docType, geminiApiKey);
+      nlpProvider = 'gemini-vision';
+      
+      // Also get text-based entities from OCR text for fusion
+      let textEntities: typeof entities = [];
+      if (extractedText && extractedText.length > 50) {
+        try {
+          textEntities = await extractEntitiesWithGemini(extractedText, geminiApiKey, docType);
+        } catch (textErr) {
+          console.warn("Text NLP extraction failed, using vision only:", textErr);
+        }
+      }
+      
+      // FUSION: Merge vision + text entities, prefer higher confidence
+      entities = fuseExtractionResults(visionEntities, textEntities);
+      console.log(`Hybrid Vision+NLP extracted ${entities.length} entities (vision: ${visionEntities.length}, text: ${textEntities.length})`);
+      
+    } else if (geminiApiKey) {
+      // Text-only NLP extraction (non-image documents)
+      entities = await extractEntitiesWithGemini(extractedText, geminiApiKey, docType);
+      nlpProvider = 'gemini-nlp';
+      console.log(`AI NLP extracted ${entities.length} entities for document type: ${docType}`);
     } else {
-      // Fallback to regex-based extraction (marked as OCR source) - pass document type
-      const docType = doc.document_type || 'unknown';
+      // Fallback to regex-based extraction
       entities = extractEntities(extractedText, docType);
       nlpProvider = 'regex-fallback';
       console.log(`Regex extracted ${entities.length} entities for document type: ${docType}`);
     }
   } catch (nlpError) {
-    console.error("AI NLP extraction failed, falling back to regex:", nlpError);
-    const docType = doc.document_type || 'unknown';
+    console.error("AI extraction failed, falling back to regex:", nlpError);
     entities = extractEntities(extractedText, docType);
     nlpProvider = 'regex-fallback';
   }
   
   // Calculate extraction summary
-  const nlpFieldCount = entities.filter(e => e.source === 'nlp').length;
+  const nlpFieldCount = entities.filter(e => e.source === 'nlp' || e.source === 'vision').length;
   const ocrFieldCount = entities.filter(e => e.source === 'ocr' || !e.source).length;
   
   await updateProgress(supabase, documentId, 50, 'entity_extraction', 'completed');
@@ -1201,6 +1228,154 @@ async function extractEntitiesWithGemini(text: string, apiKey: string, documentT
   // All models failed
   console.error("All Gemini models failed, throwing last error");
   throw lastError || new Error("All Gemini models failed");
+}
+
+// GEMINI VISION - Direct image analysis for handwritten documents
+async function extractEntitiesWithGeminiVision(
+  imageBase64: string, 
+  mimeType: string, 
+  documentType: string,
+  apiKey: string
+): Promise<{ type: string; value: string; confidence: number; source: string }[]> {
+  console.log(`Using Gemini Vision for direct image extraction - document type: ${documentType}`);
+  
+  const prompt = `You are an expert document analysis AI with advanced OCR and handwriting recognition capabilities.
+
+TASK: Analyze this ${documentType} document image and extract ALL visible information, including:
+- Printed text
+- HANDWRITTEN text (signatures, notes, filled forms)
+- Numbers, dates, IDs
+- Checkboxes, selections
+- Any stamps or marks
+
+DOCUMENT TYPE CONTEXT: ${documentType}
+${getVisionDocumentHint(documentType)}
+
+CRITICAL INSTRUCTIONS:
+1. For HANDWRITTEN text, try your best to interpret - even partial recognition is valuable
+2. Mark handwritten fields with higher uncertainty if hard to read
+3. Extract EVERY visible field, even if partially legible
+4. Use snake_case for field names
+
+RESPOND WITH ONLY A JSON ARRAY:
+[{"type":"field_name","value":"extracted_value","confidence":0.0-1.0,"source":"vision"}]
+
+Extract everything visible in this image.`;
+
+  const models = ['gemini-2.5-flash-preview-05-20', 'gemini-2.0-flash', 'gemini-1.5-flash'];
+  
+  for (const model of models) {
+    try {
+      console.log(`Trying Gemini Vision model: ${model}`);
+      
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{
+              parts: [
+                { text: prompt },
+                { 
+                  inlineData: { 
+                    mimeType: mimeType.includes('image') ? mimeType : 'image/jpeg',
+                    data: imageBase64 
+                  }
+                }
+              ]
+            }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 4096,
+              responseMimeType: "application/json"
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        console.warn(`Vision model ${model} error: ${response.status}`);
+        continue;
+      }
+
+      const data = await response.json();
+      let responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      if (!responseText) continue;
+      
+      // Clean JSON response
+      let jsonStr = responseText.trim();
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+      }
+      
+      const entities = JSON.parse(jsonStr);
+      
+      if (Array.isArray(entities) && entities.length > 0) {
+        console.log(`Gemini Vision (${model}) extracted ${entities.length} entities`);
+        return entities.map(e => ({
+          type: String(e.type || 'unknown'),
+          value: String(e.value || ''),
+          confidence: Number(e.confidence) || 0.75,
+          source: 'vision'
+        })).filter(e => e.value.length > 0);
+      }
+    } catch (error) {
+      console.warn(`Vision model ${model} failed:`, error);
+    }
+  }
+  
+  return [];
+}
+
+// Document type hints for Vision AI
+function getVisionDocumentHint(documentType: string): string {
+  const hints: Record<string, string> = {
+    'prescription': 'Look for: patient name, DOB, medication name, dosage, sig/directions, prescriber name, NPI, DEA, date, refills, quantity, handwritten signatures',
+    'insurance': 'Look for: member name, member ID, group number, BIN, PCN, plan name, copays, effective date, insurance company name',
+    'patient-onboarding': 'Look for: full name, DOB, SSN, address, phone, email, emergency contact, insurance info, medical history checkboxes, signatures, dates',
+    'lab-results': 'Look for: patient info, test names, result values with units, reference ranges, flags (H/L), specimen info, ordering physician',
+    'invoice': 'Look for: vendor name, invoice number, date, line items, quantities, prices, subtotal, tax, total, payment terms',
+    'drivers-license': 'Look for: full name, address, DOB, license number, expiry date, class, restrictions, photo ID',
+    'passport': 'Look for: full name, nationality, DOB, passport number, issue/expiry dates, MRZ code lines'
+  };
+  return hints[documentType] || 'Extract all visible text, numbers, dates, names, IDs, and any handwritten content.';
+}
+
+// FUSION: Merge Vision + Text NLP results, prefer higher confidence, deduplicate
+function fuseExtractionResults(
+  visionEntities: { type: string; value: string; confidence: number; source: string }[],
+  textEntities: { type: string; value: string; confidence: number; source: string }[]
+): { type: string; value: string; confidence: number; source: string }[] {
+  const merged: Map<string, { type: string; value: string; confidence: number; source: string }> = new Map();
+  
+  // Add vision entities first (usually better for handwritten)
+  for (const entity of visionEntities) {
+    const key = `${entity.type}:${entity.value.toLowerCase().trim()}`;
+    const existing = merged.get(entity.type);
+    
+    if (!existing || entity.confidence > existing.confidence) {
+      merged.set(entity.type, entity);
+    }
+  }
+  
+  // Add text entities, but only if better confidence or new field
+  for (const entity of textEntities) {
+    const existing = merged.get(entity.type);
+    
+    if (!existing) {
+      merged.set(entity.type, entity);
+    } else if (entity.confidence > existing.confidence + 0.1) {
+      // Only replace if significantly better
+      merged.set(entity.type, { ...entity, source: 'nlp+vision' });
+    } else if (existing.value !== entity.value && entity.confidence > 0.7) {
+      // Different value with good confidence - keep both with suffix
+      merged.set(`${entity.type}_alt`, entity);
+    }
+  }
+  
+  return Array.from(merged.values());
 }
 
 function analyzeContent(text: string) {
