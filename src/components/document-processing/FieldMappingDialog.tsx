@@ -40,7 +40,8 @@ import {
   AlertCircle,
   Database,
   RefreshCw,
-  Sparkles
+  Sparkles,
+  Upload
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { 
@@ -411,19 +412,19 @@ export function FieldMappingDialog({
   
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+      <DialogContent className="max-w-5xl max-h-[90vh] flex flex-col">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Database className="h-5 w-5 text-primary" />
-            Field Mapping - Export to {targetSystem.charAt(0).toUpperCase() + targetSystem.slice(1)}
+            Field Mapping Configuration
           </DialogTitle>
           <DialogDescription>
-            Map extracted fields to target system fields. Auto-match or manually assign mappings.
+            Map source fields to {targetSystem.charAt(0).toUpperCase() + targetSystem.slice(1)} target fields
           </DialogDescription>
         </DialogHeader>
         
         {/* Stats bar */}
-        <div className="flex items-center gap-4 py-2 border-b flex-wrap">
+        <div className="flex items-center gap-3 py-2 border-b flex-wrap">
           <Badge variant="default" className="gap-1">
             <Check className="h-3 w-3" />
             {mappedCount} Mapped
@@ -435,12 +436,6 @@ export function FieldMappingDialog({
           <Badge variant="outline" className="gap-1">
             <X className="h-3 w-3" />
             {skippedCount} Skipped
-          </Badge>
-          <Badge variant="outline" className="gap-1 text-muted-foreground">
-            {sourceFields.length} Source Fields
-          </Badge>
-          <Badge variant="outline" className="gap-1 text-muted-foreground">
-            {targetFields.length} Target Fields
           </Badge>
           <div className="flex-1" />
           <Button
@@ -455,152 +450,229 @@ export function FieldMappingDialog({
             ) : (
               <Wand2 className="h-4 w-4" />
             )}
-            Auto-Match Fields
+            Auto-Match All
           </Button>
         </div>
         
-        {/* Mapping table */}
-        <ScrollArea className="flex-1 min-h-0">
-          <div className="space-y-2 pr-4">
-            {mappings.map((mapping) => (
-              <div
-                key={mapping.sourceField}
-                className={`grid grid-cols-[1fr_auto_1fr_auto_auto] gap-3 items-center p-3 rounded-lg border ${
-                  mapping.skip 
-                    ? 'bg-muted/50 opacity-60' 
-                    : mapping.targetField 
-                      ? 'bg-green-500/5 border-green-500/20' 
-                      : 'bg-yellow-500/5 border-yellow-500/20'
-                }`}
-              >
-                {/* Source field */}
-                <div className="space-y-1">
-                  <div className="font-medium text-sm">{mapping.sourceField}</div>
-                  <div className="text-xs text-muted-foreground truncate max-w-[200px]">
-                    {String(getSourceValue(mapping.sourceField)).substring(0, 50)}
-                  </div>
-                </div>
-                
-                {/* Arrow */}
-                <ArrowRight className="h-4 w-4 text-muted-foreground" />
-                
-                {/* Target field selection */}
-                <div className="space-y-1">
-                  {mapping.createCustom ? (
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={mapping.customFieldName || ''}
-                        onChange={(e) => updateMapping(mapping.sourceField, { 
-                          customFieldName: e.target.value,
-                          targetField: e.target.value
-                        })}
-                        placeholder="Custom field name"
-                        className="h-8"
-                        disabled={mapping.skip}
-                      />
-                      <Badge variant="secondary" className="gap-1 whitespace-nowrap">
-                        <Sparkles className="h-3 w-3" />
-                        New
-                      </Badge>
-                    </div>
-                  ) : (
-                    <Select
-                      value={mapping.targetField || '__skip__'}
-                      onValueChange={(value) => updateMapping(mapping.sourceField, { 
-                        targetField: value === '__skip__' ? '' : value 
-                      })}
-                      disabled={mapping.skip}
+        {/* Two-panel layout: Source on top, Target on bottom */}
+        <div className="flex-1 min-h-0 flex flex-col gap-4 overflow-hidden">
+          
+          {/* SOURCE SYSTEM - Top Panel */}
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-blue-500/10 border-b px-4 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Upload className="h-4 w-4 text-blue-600" />
+                <span className="font-semibold text-sm">Source: Extracted Document Fields</span>
+                <Badge variant="outline" className="text-xs">{sourceFields.length} fields</Badge>
+              </div>
+            </div>
+            <ScrollArea className="h-[180px]">
+              <div className="p-3 grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                {sourceFields.map(sf => {
+                  const mapping = mappings.find(m => m.sourceField === sf.name);
+                  const isMapped = mapping?.targetField && !mapping?.skip;
+                  const isSkipped = mapping?.skip;
+                  
+                  return (
+                    <div 
+                      key={sf.name}
+                      className={`p-2 rounded border text-xs ${
+                        isSkipped 
+                          ? 'bg-muted/50 opacity-60 border-muted' 
+                          : isMapped 
+                            ? 'bg-green-500/10 border-green-500/30' 
+                            : 'bg-yellow-500/10 border-yellow-500/30'
+                      }`}
                     >
-                      <SelectTrigger className="h-8">
-                        <SelectValue placeholder="Select target field" />
+                      <div className="font-medium truncate">{sf.name}</div>
+                      <div className="text-muted-foreground truncate mt-0.5">
+                        {String(sf.value || '').substring(0, 30)}
+                      </div>
+                      {isMapped && (
+                        <div className="flex items-center gap-1 mt-1 text-green-600">
+                          <ArrowRight className="h-3 w-3" />
+                          <span className="truncate">{mapping?.targetField}</span>
+                        </div>
+                      )}
+                      {isSkipped && (
+                        <div className="text-muted-foreground mt-1 italic">Skipped</div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </ScrollArea>
+          </div>
+          
+          {/* MAPPING CONFIGURATION - Middle */}
+          <div className="border rounded-lg flex-1 min-h-0 overflow-hidden">
+            <div className="bg-primary/10 border-b px-4 py-2 flex items-center gap-2">
+              <Wand2 className="h-4 w-4 text-primary" />
+              <span className="font-semibold text-sm">Mapping Configuration</span>
+            </div>
+            <ScrollArea className="h-full max-h-[250px]">
+              <div className="p-3 space-y-2">
+                {mappings.map((mapping) => (
+                  <div
+                    key={mapping.sourceField}
+                    className={`grid grid-cols-[1fr_auto_1.2fr_auto_auto] gap-2 items-center p-2 rounded-lg border ${
+                      mapping.skip 
+                        ? 'bg-muted/30 opacity-70' 
+                        : mapping.targetField 
+                          ? 'bg-green-500/5 border-green-500/20' 
+                          : 'bg-yellow-500/5 border-yellow-500/20'
+                    }`}
+                  >
+                    {/* Source field */}
+                    <div className="min-w-0">
+                      <div className="font-medium text-sm truncate">{mapping.sourceField}</div>
+                      <div className="text-xs text-muted-foreground truncate">
+                        {String(getSourceValue(mapping.sourceField)).substring(0, 40)}
+                      </div>
+                    </div>
+                    
+                    {/* Arrow */}
+                    <ArrowRight className="h-4 w-4 text-muted-foreground shrink-0" />
+                    
+                    {/* Target field selection */}
+                    <div className="min-w-0">
+                      {mapping.createCustom ? (
+                        <div className="flex items-center gap-2">
+                          <Input
+                            value={mapping.customFieldName || ''}
+                            onChange={(e) => updateMapping(mapping.sourceField, { 
+                              customFieldName: e.target.value,
+                              targetField: e.target.value
+                            })}
+                            placeholder="Custom field name"
+                            className="h-8"
+                            disabled={mapping.skip}
+                          />
+                          <Badge variant="secondary" className="gap-1 whitespace-nowrap shrink-0">
+                            <Sparkles className="h-3 w-3" />
+                            New
+                          </Badge>
+                        </div>
+                      ) : (
+                        <Select
+                          value={mapping.targetField || '__skip__'}
+                          onValueChange={(value) => updateMapping(mapping.sourceField, { 
+                            targetField: value === '__skip__' ? '' : value 
+                          })}
+                          disabled={mapping.skip}
+                        >
+                          <SelectTrigger className="h-8">
+                            <SelectValue placeholder="Select target field" />
+                          </SelectTrigger>
+                          <SelectContent className="max-h-[300px]">
+                            <SelectItem value="__skip__">-- Skip this field --</SelectItem>
+                            {targetFields.map(tf => (
+                              <SelectItem key={tf.name} value={tf.name}>
+                                <div className="flex items-center gap-2">
+                                  <span>{tf.label}</span>
+                                  {tf.required && (
+                                    <Badge variant="destructive" className="text-[10px] px-1">Required</Badge>
+                                  )}
+                                  {tf.isCustom && (
+                                    <Badge variant="secondary" className="text-[10px] px-1">Custom</Badge>
+                                  )}
+                                </div>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      )}
+                    </div>
+                    
+                    {/* Transformation */}
+                    <Select
+                      value={mapping.transformation}
+                      onValueChange={(value: any) => updateMapping(mapping.sourceField, { transformation: value })}
+                      disabled={mapping.skip || !mapping.targetField}
+                    >
+                      <SelectTrigger className="w-24 h-8 shrink-0">
+                        <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="__skip__">-- Skip this field --</SelectItem>
-                        {targetFields.map(tf => (
-                          <SelectItem key={tf.name} value={tf.name}>
-                            <div className="flex items-center gap-2">
-                              <span>{tf.label}</span>
-                              {tf.required && (
-                                <Badge variant="destructive" className="text-[10px] px-1">Required</Badge>
-                              )}
-                              {tf.isCustom && (
-                                <Badge variant="secondary" className="text-[10px] px-1">Custom</Badge>
-                              )}
-                            </div>
-                          </SelectItem>
-                        ))}
+                        <SelectItem value="none">None</SelectItem>
+                        <SelectItem value="uppercase">UPPER</SelectItem>
+                        <SelectItem value="lowercase">lower</SelectItem>
+                        <SelectItem value="trim">Trim</SelectItem>
+                        <SelectItem value="date_iso">Date</SelectItem>
+                        <SelectItem value="number">Number</SelectItem>
+                        <SelectItem value="boolean">Bool</SelectItem>
                       </SelectContent>
                     </Select>
-                  )}
-                </div>
-                
-                {/* Transformation */}
-                <Select
-                  value={mapping.transformation}
-                  onValueChange={(value: any) => updateMapping(mapping.sourceField, { transformation: value })}
-                  disabled={mapping.skip || !mapping.targetField}
-                >
-                  <SelectTrigger className="w-28 h-8">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">None</SelectItem>
-                    <SelectItem value="uppercase">UPPERCASE</SelectItem>
-                    <SelectItem value="lowercase">lowercase</SelectItem>
-                    <SelectItem value="trim">Trim spaces</SelectItem>
-                    <SelectItem value="date_iso">Date (ISO)</SelectItem>
-                    <SelectItem value="number">Number</SelectItem>
-                    <SelectItem value="boolean">Boolean</SelectItem>
-                  </SelectContent>
-                </Select>
-                
-                {/* Actions */}
-                <div className="flex items-center gap-2">
-                  <TooltipProvider>
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8"
-                          onClick={() => handleCreateCustomField(mapping.sourceField)}
-                          disabled={mapping.skip || mapping.createCustom}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </TooltipTrigger>
-                      <TooltipContent>Create custom field in target</TooltipContent>
-                    </Tooltip>
-                  </TooltipProvider>
-                  
-                  <Checkbox
-                    checked={mapping.skip}
-                    onCheckedChange={(checked) => updateMapping(mapping.sourceField, { 
-                      skip: !!checked,
-                      targetField: checked ? '' : mapping.targetField 
-                    })}
-                  />
-                  <Label className="text-xs text-muted-foreground">Skip</Label>
-                </div>
+                    
+                    {/* Actions */}
+                    <div className="flex items-center gap-1 shrink-0">
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="h-7 w-7"
+                              onClick={() => handleCreateCustomField(mapping.sourceField)}
+                              disabled={mapping.skip || mapping.createCustom}
+                            >
+                              <Plus className="h-3 w-3" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>Create custom field</TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      
+                      <Checkbox
+                        checked={mapping.skip}
+                        onCheckedChange={(checked) => updateMapping(mapping.sourceField, { 
+                          skip: !!checked,
+                          targetField: checked ? '' : mapping.targetField 
+                        })}
+                      />
+                    </div>
+                  </div>
+                ))}
               </div>
-            ))}
+            </ScrollArea>
           </div>
-        </ScrollArea>
-        
-        {/* Custom fields summary */}
-        {customFields.length > 0 && (
-          <div className="border-t pt-3">
-            <Label className="text-sm font-medium">Custom Fields to Create</Label>
-            <div className="flex flex-wrap gap-2 mt-2">
-              {customFields.map(cf => (
-                <Badge key={cf.name} variant="secondary" className="gap-1">
+          
+          {/* TARGET SYSTEM - Bottom Panel */}
+          <div className="border rounded-lg overflow-hidden">
+            <div className="bg-green-500/10 border-b px-4 py-2 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Database className="h-4 w-4 text-green-600" />
+                <span className="font-semibold text-sm">
+                  Target: {targetSystem.charAt(0).toUpperCase() + targetSystem.slice(1)} Fields
+                </span>
+                <Badge variant="outline" className="text-xs">{targetFields.length} available</Badge>
+              </div>
+              {customFields.length > 0 && (
+                <Badge variant="secondary" className="gap-1">
                   <Plus className="h-3 w-3" />
-                  {cf.name}
+                  {customFields.length} custom fields to create
                 </Badge>
-              ))}
+              )}
             </div>
+            <ScrollArea className="h-[120px]">
+              <div className="p-3 flex flex-wrap gap-1.5">
+                {targetFields.map(tf => {
+                  const isUsed = mappings.some(m => m.targetField === tf.name && !m.skip);
+                  return (
+                    <Badge 
+                      key={tf.name} 
+                      variant={isUsed ? "default" : "outline"}
+                      className={`text-xs ${isUsed ? 'bg-green-600' : 'opacity-70'} ${tf.isCustom ? 'border-dashed' : ''}`}
+                    >
+                      {tf.label}
+                      {tf.isCustom && <Sparkles className="h-2.5 w-2.5 ml-1" />}
+                    </Badge>
+                  );
+                })}
+              </div>
+            </ScrollArea>
           </div>
-        )}
+        </div>
         
         <DialogFooter className="border-t pt-4">
           <Button variant="outline" onClick={() => onOpenChange(false)}>
