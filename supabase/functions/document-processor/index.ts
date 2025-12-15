@@ -1112,7 +1112,7 @@ Extract EVERYTHING. Do not skip any visible data.`;
 }
 
 
-// Now supports document-type-specific extraction prompts
+// Now supports document-type-specific extraction prompts with OCR+NLP fusion
 async function extractEntitiesWithGemini(text: string, apiKey: string, documentType: string = 'prescription'): Promise<{ type: string; value: string; confidence: number; source: string }[]> {
   // Use GEMINI_API_KEY from Universal AI infrastructure (same as useUniversalAI hook)
   const geminiApiKey = Deno.env.get("GEMINI_API_KEY") || apiKey;
@@ -1121,62 +1121,86 @@ async function extractEntitiesWithGemini(text: string, apiKey: string, documentT
     throw new Error("GEMINI_API_KEY not configured - add it in Supabase secrets");
   }
   
-  console.log(`Using Gemini API for NLP entity extraction - document type: ${documentType}`);
+  console.log(`Using Gemini API for NLP entity extraction - document type: ${documentType}, text length: ${text.length}`);
   
   // Generate document-type-specific prompt
   const prompt = generateExtractionPrompt(text, documentType);
 
   let responseText = '';
   
-  try {
-    // Use Gemini API directly with the configured GEMINI_API_KEY
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature: 0.1,
-            maxOutputTokens: 2048,
-          }
-        })
+  // Try multiple Gemini models in order of preference
+  const models = [
+    'gemini-2.5-flash-preview-05-20',
+    'gemini-2.0-flash',
+    'gemini-1.5-flash',
+    'gemini-pro'
+  ];
+  
+  let lastError: Error | null = null;
+  
+  for (const model of models) {
+    try {
+      console.log(`Trying Gemini model: ${model}`);
+      
+      const response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${geminiApiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: prompt }] }],
+            generationConfig: {
+              temperature: 0.1,
+              maxOutputTokens: 4096,
+              responseMimeType: "application/json"
+            }
+          })
+        }
+      );
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.warn(`Gemini model ${model} error: ${response.status}`, errorText);
+        lastError = new Error(`Gemini ${model} error: ${response.status}`);
+        continue; // Try next model
       }
-    );
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("Gemini API error:", errorText);
-      throw new Error(`Gemini API error: ${response.status}`);
+      const data = await response.json();
+      responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+      
+      if (!responseText) {
+        console.warn(`Gemini model ${model} returned empty response`);
+        continue;
+      }
+      
+      // Parse JSON from response - handle potential markdown code blocks
+      let jsonStr = responseText.trim();
+      if (jsonStr.startsWith('```')) {
+        jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
+      }
+      
+      const entities = JSON.parse(jsonStr);
+      
+      if (Array.isArray(entities) && entities.length > 0) {
+        console.log(`AI NLP (${model}) extracted ${entities.length} entities successfully`);
+        return entities.map(e => ({
+          type: String(e.type || 'unknown'),
+          value: String(e.value || ''),
+          confidence: Number(e.confidence) || 0.8,
+          source: 'nlp'
+        })).filter(e => e.value.length > 0);
+      }
+      
+      console.warn(`Gemini model ${model} returned empty or invalid array`);
+    } catch (error) {
+      console.warn(`Gemini model ${model} failed:`, error);
+      lastError = error instanceof Error ? error : new Error(String(error));
     }
-
-    const data = await response.json();
-    responseText = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-    
-    // Parse JSON from response - handle potential markdown code blocks
-    let jsonStr = responseText.trim();
-    if (jsonStr.startsWith('```')) {
-      jsonStr = jsonStr.replace(/```json?\n?/g, '').replace(/```/g, '').trim();
-    }
-    
-    const entities = JSON.parse(jsonStr);
-    
-    if (Array.isArray(entities)) {
-      console.log(`AI NLP extracted ${entities.length} entities successfully`);
-      return entities.map(e => ({
-        type: String(e.type || 'unknown'),
-        value: String(e.value || ''),
-        confidence: Number(e.confidence) || 0.8,
-        source: 'nlp'
-      })).filter(e => e.value.length > 0);
-    }
-    
-    throw new Error("Invalid AI response format");
-  } catch (error) {
-    console.error("AI NLP extraction error:", error);
-    throw error;
   }
+  
+  // All models failed
+  console.error("All Gemini models failed, throwing last error");
+  throw lastError || new Error("All Gemini models failed");
 }
 
 function analyzeContent(text: string) {
