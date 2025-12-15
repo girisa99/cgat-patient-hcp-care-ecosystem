@@ -311,6 +311,97 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       });
     }
 
+    // Check for MEDICAL IMAGING capabilities
+    const hasMedicalImaging = workflowNodes.some(n => 
+      ['xray_analysis', 'ct_analysis', 'mri_analysis', 'ecg_analysis', 'ultrasound_analysis', 'mammogram_analysis', 'vision_ai_hub'].includes(n.data.type_key)
+    );
+
+    const useCaseLower = agentContext.useCase?.name?.toLowerCase() || '';
+    const isMedicalImagingUseCase = useCaseLower.includes('imaging') || useCaseLower.includes('radiology') || 
+      useCaseLower.includes('xray') || useCaseLower.includes('x-ray') || useCaseLower.includes('ct') || 
+      useCaseLower.includes('mri') || useCaseLower.includes('ecg') || useCaseLower.includes('ultrasound') ||
+      useCaseLower.includes('mammogram') || useCaseLower.includes('medical image');
+
+    if (!hasMedicalImaging && isMedicalImagingUseCase) {
+      newSuggestions.push({
+        id: 'add-vision-ai-hub',
+        type: 'recommendation',
+        title: 'Add Multi-Provider Vision AI Hub',
+        description: 'Central hub for medical imaging with Gemini, AWS Rekognition, and Azure Health Insights.',
+        action: () => addRecommendedNode('vision_ai_hub')
+      });
+    }
+
+    // Modality-specific medical imaging recommendations
+    if (isMedicalImagingUseCase && !hasMedicalImaging) {
+      if (useCaseLower.includes('xray') || useCaseLower.includes('x-ray') || useCaseLower.includes('lung') || useCaseLower.includes('chest')) {
+        newSuggestions.push({
+          id: 'add-xray-analysis',
+          type: 'recommendation',
+          title: 'Add X-Ray Analysis Node',
+          description: 'CNN-based lung nodule detection, pneumonia, TB screening with qXR/RetinaNet models.',
+          action: () => addRecommendedNode('xray_analysis')
+        });
+      }
+      if (useCaseLower.includes('ct') || useCaseLower.includes('brain') || useCaseLower.includes('hemorrhage') || useCaseLower.includes('tumor')) {
+        newSuggestions.push({
+          id: 'add-ct-analysis',
+          type: 'recommendation',
+          title: 'Add CT Scan Analysis Node',
+          description: 'U-Net segmentation for brain hemorrhage, lung cancer, tumor analysis with qER/DeepMedic.',
+          action: () => addRecommendedNode('ct_analysis')
+        });
+      }
+      if (useCaseLower.includes('mri') || useCaseLower.includes('alzheimer') || useCaseLower.includes('brain tumor')) {
+        newSuggestions.push({
+          id: 'add-mri-analysis',
+          type: 'recommendation',
+          title: 'Add MRI Analysis Node',
+          description: 'U-Net brain tumor segmentation, Alzheimer detection with BraTS/nnU-Net models.',
+          action: () => addRecommendedNode('mri_analysis')
+        });
+      }
+      if (useCaseLower.includes('ecg') || useCaseLower.includes('cardiac') || useCaseLower.includes('heart') || useCaseLower.includes('arrhythmia')) {
+        newSuggestions.push({
+          id: 'add-ecg-analysis',
+          type: 'recommendation',
+          title: 'Add ECG Analysis Node',
+          description: 'RNN/LSTM arrhythmia detection, AFib, MI analysis with ResNet-ECG models.',
+          action: () => addRecommendedNode('ecg_analysis')
+        });
+      }
+      if (useCaseLower.includes('ultrasound') || useCaseLower.includes('fetal') || useCaseLower.includes('thyroid')) {
+        newSuggestions.push({
+          id: 'add-ultrasound-analysis',
+          type: 'recommendation',
+          title: 'Add Ultrasound Analysis Node',
+          description: 'U-Net fetal measurements, cardiac function, thyroid nodule detection.',
+          action: () => addRecommendedNode('ultrasound_analysis')
+        });
+      }
+      if (useCaseLower.includes('mammogram') || useCaseLower.includes('breast')) {
+        newSuggestions.push({
+          id: 'add-mammogram-analysis',
+          type: 'recommendation',
+          title: 'Add Mammogram Analysis Node',
+          description: 'Faster R-CNN mass detection, microcalcifications, BI-RADS scoring.',
+          action: () => addRecommendedNode('mammogram_analysis')
+        });
+      }
+    }
+
+    // Suggest multi-provider vision if only one provider is used
+    const hasMultiProviderVision = workflowNodes.some(n => n.data.type_key === 'vision_ai_hub');
+    if (hasMedicalImaging && !hasMultiProviderVision) {
+      newSuggestions.push({
+        id: 'add-multi-provider-vision',
+        type: 'improvement',
+        title: 'Add Multi-Provider Vision Hub',
+        description: 'Enable cross-provider analysis with Gemini, AWS Rekognition Medical, and Azure Health Insights for comprehensive results.',
+        action: () => addRecommendedNode('vision_ai_hub')
+      });
+    }
+
     setSuggestions(newSuggestions);
     setIsAnalyzing(false);
   }, [workflowNodes, workflowEdges, agentContext]);
@@ -359,7 +450,15 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'hypothesis_testing': 'Hypothesis Testing',
       'skill_composition': 'Skill Composition',
       'adaptive_learning': 'Adaptive Learning',
-      'workflow_orchestrator': 'Workflow Orchestrator'
+      'workflow_orchestrator': 'Workflow Orchestrator',
+      // Medical Imaging Vision AI nodes
+      'xray_analysis': 'X-Ray Analysis',
+      'ct_analysis': 'CT Scan Analysis',
+      'mri_analysis': 'MRI Analysis',
+      'ecg_analysis': 'ECG Analysis',
+      'ultrasound_analysis': 'Ultrasound Analysis',
+      'mammogram_analysis': 'Mammogram Analysis',
+      'vision_ai_hub': 'Multi-Provider Vision AI Hub'
     };
 
     const nodeIntents: { [key: string]: string } = {
@@ -400,7 +499,15 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'hypothesis_testing': 'Generate and test hypotheses systematically',
       'skill_composition': 'Compose complex behaviors from simpler skills',
       'adaptive_learning': 'Learn and adapt from execution feedback',
-      'workflow_orchestrator': 'Orchestrate complex multi-step workflows'
+      'workflow_orchestrator': 'Orchestrate complex multi-step workflows',
+      // Medical Imaging Vision AI intents
+      'xray_analysis': 'CNN lung nodule, pneumonia, TB, fracture detection (qXR, RetinaNet)',
+      'ct_analysis': 'U-Net brain hemorrhage, lung cancer, tumor segmentation (qER, DeepMedic)',
+      'mri_analysis': 'U-Net brain tumor segmentation, Alzheimer detection (BraTS, nnU-Net)',
+      'ecg_analysis': 'RNN/LSTM arrhythmia, AFib, MI detection (ResNet-ECG)',
+      'ultrasound_analysis': 'U-Net fetal measurements, cardiac, thyroid analysis (SonoNet)',
+      'mammogram_analysis': 'Faster R-CNN mass detection, microcalcifications, BI-RADS (YOLO)',
+      'vision_ai_hub': 'Multi-provider medical vision AI hub (Gemini, AWS, Azure)'
     };
 
     const newNode: WorkflowNode = {
