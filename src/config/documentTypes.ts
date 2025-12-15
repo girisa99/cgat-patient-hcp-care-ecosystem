@@ -30,6 +30,7 @@ export interface DocumentTypeConfig {
   };
   processingHints?: {
     enableMedicationLookup?: boolean;
+    enableImageAnalysis?: boolean; // For medical imaging - analyze image instead of extract fields
     enableDicomViewer?: boolean;
     enableImageEnhancement?: boolean;
     requiresSpecialOCR?: boolean;
@@ -173,8 +174,8 @@ export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
       { key: 'technique', label: 'Technique' }
     ],
     subTypes: ['Chest X-Ray', 'Bone X-Ray', 'Dental X-Ray', 'Mammogram', 'Fluoroscopy'],
-    specialTab: { id: 'imaging-viewer', label: 'Image Viewer', icon: '🩻' },
-    processingHints: { enableDicomViewer: true, enableImageEnhancement: true }
+    specialTab: { id: 'image-analysis', label: 'Image Analysis', icon: '🩻' },
+    processingHints: { enableDicomViewer: true, enableImageEnhancement: true, enableImageAnalysis: true }
   },
   {
     id: 'ct-scan',
@@ -197,8 +198,8 @@ export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
       { key: 'radiation_dose', label: 'Radiation Dose' }
     ],
     subTypes: ['CT Head', 'CT Chest', 'CT Abdomen/Pelvis', 'CT Angiography', 'CT Spine'],
-    specialTab: { id: 'imaging-viewer', label: 'CT Viewer', icon: '🔄' },
-    processingHints: { enableDicomViewer: true, enableImageEnhancement: true }
+    specialTab: { id: 'image-analysis', label: 'Image Analysis', icon: '🔄' },
+    processingHints: { enableDicomViewer: true, enableImageEnhancement: true, enableImageAnalysis: true }
   },
   {
     id: 'mri',
@@ -221,8 +222,8 @@ export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
       { key: 'tesla_strength', label: 'Magnet Strength' }
     ],
     subTypes: ['MRI Brain', 'MRI Spine', 'MRI Cardiac', 'MRI Joint', 'MRA'],
-    specialTab: { id: 'imaging-viewer', label: 'MRI Viewer', icon: '🧲' },
-    processingHints: { enableDicomViewer: true, enableImageEnhancement: true }
+    specialTab: { id: 'image-analysis', label: 'Image Analysis', icon: '🧲' },
+    processingHints: { enableDicomViewer: true, enableImageEnhancement: true, enableImageAnalysis: true }
   },
   {
     id: 'ecg',
@@ -245,8 +246,8 @@ export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
       { key: 'cardiologist', label: 'Cardiologist' }
     ],
     subTypes: ['12-Lead ECG', 'Holter Monitor', 'Stress Test', 'Event Monitor'],
-    specialTab: { id: 'ecg-viewer', label: 'ECG Viewer', icon: '💓' },
-    processingHints: { enableImageEnhancement: true }
+    specialTab: { id: 'image-analysis', label: 'Image Analysis', icon: '💓' },
+    processingHints: { enableImageEnhancement: true, enableImageAnalysis: true }
   },
   {
     id: 'ultrasound',
@@ -268,8 +269,8 @@ export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
       { key: 'interpreting_physician', label: 'Interpreting Physician' }
     ],
     subTypes: ['Abdominal', 'Pelvic', 'Obstetric', 'Echocardiogram', 'Vascular Doppler'],
-    specialTab: { id: 'imaging-viewer', label: 'Ultrasound Viewer', icon: '📡' },
-    processingHints: { enableDicomViewer: true }
+    specialTab: { id: 'image-analysis', label: 'Image Analysis', icon: '📡' },
+    processingHints: { enableDicomViewer: true, enableImageAnalysis: true }
   },
 
   // ========== FINANCIAL ==========
