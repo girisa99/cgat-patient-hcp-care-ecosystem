@@ -123,6 +123,9 @@ interface ProcessingResult {
   error?: string;
   processedAt: Date;
   imageUrl?: string;
+  exportStatus?: 'pending' | 'exported' | 'partial';
+  exportedAt?: Date;
+  exportTargets?: string[];
 }
 
 interface MedicationResult {
@@ -356,6 +359,9 @@ export default function DocumentProcessing() {
             rawText: job.extracted_text,
             processedAt: new Date(job.created_at),
             imageUrl: publicUrl,
+            exportStatus: job.export_status || 'pending',
+            exportedAt: job.exported_at ? new Date(job.exported_at) : undefined,
+            exportTargets: job.export_targets || [],
           };
         });
 

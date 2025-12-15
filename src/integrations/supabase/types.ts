@@ -4557,6 +4557,10 @@ export type Database = {
           current_stage: string | null
           document_type: string | null
           error_message: string | null
+          export_format: string | null
+          export_status: string | null
+          export_targets: string[] | null
+          exported_at: string | null
           extracted_metadata: Json | null
           extracted_text: string | null
           file_name: string
@@ -4577,6 +4581,10 @@ export type Database = {
           current_stage?: string | null
           document_type?: string | null
           error_message?: string | null
+          export_format?: string | null
+          export_status?: string | null
+          export_targets?: string[] | null
+          exported_at?: string | null
           extracted_metadata?: Json | null
           extracted_text?: string | null
           file_name: string
@@ -4597,6 +4605,10 @@ export type Database = {
           current_stage?: string | null
           document_type?: string | null
           error_message?: string | null
+          export_format?: string | null
+          export_status?: string | null
+          export_targets?: string[] | null
+          exported_at?: string | null
           extracted_metadata?: Json | null
           extracted_text?: string | null
           file_name?: string

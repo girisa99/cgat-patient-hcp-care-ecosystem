@@ -11,6 +11,8 @@ import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 import {
   Dialog,
   DialogContent,
@@ -26,6 +28,13 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+import { Calendar } from "@/components/ui/calendar";
+import { format } from "date-fns";
 import { 
   History, 
   FileText, 
@@ -44,7 +53,11 @@ import {
   FileSpreadsheet,
   ExternalLink,
   Webhook,
-  ArrowRight
+  ArrowRight,
+  Calendar as CalendarIcon,
+  Filter,
+  Clock,
+  CheckCircle2
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -71,6 +84,9 @@ interface ProcessingResult {
   error?: string;
   processedAt: Date;
   imageUrl?: string;
+  exportStatus?: 'pending' | 'exported' | 'partial';
+  exportedAt?: Date;
+  exportTargets?: string[];
 }
 
 interface ProcessingHistoryWithExportProps {
@@ -199,16 +215,57 @@ export default function ProcessingHistoryWithExport({
   const [isDeleting, setIsDeleting] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [filterDocType, setFilterDocType] = useState<string>('all');
+  const [filterExportStatus, setFilterExportStatus] = useState<string>('all');
+  const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(undefined);
+  const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(undefined);
+  const [showFilters, setShowFilters] = useState(false);
 
   // Get unique document types from history if not provided
   const availableDocTypes = documentTypes.length > 0 
     ? documentTypes 
     : [...new Set(history.map(h => h.documentType))].filter(Boolean);
 
-  // Filter history based on selected document type
-  const filteredHistory = filterDocType === 'all' 
-    ? history 
-    : history.filter(h => h.documentType === filterDocType);
+  // Filter history based on all filter criteria
+  const filteredHistory = useMemo(() => {
+    return history.filter(h => {
+      // Document type filter
+      if (filterDocType !== 'all' && h.documentType !== filterDocType) return false;
+      
+      // Export status filter
+      if (filterExportStatus !== 'all') {
+        const status = h.exportStatus || 'pending';
+        if (filterExportStatus !== status) return false;
+      }
+      
+      // Date range filter
+      const processedDate = new Date(h.processedAt);
+      if (filterDateFrom && processedDate < filterDateFrom) return false;
+      if (filterDateTo) {
+        const endOfDay = new Date(filterDateTo);
+        endOfDay.setHours(23, 59, 59, 999);
+        if (processedDate > endOfDay) return false;
+      }
+      
+      return true;
+    });
+  }, [history, filterDocType, filterExportStatus, filterDateFrom, filterDateTo]);
+
+  // Count by status for filter badges
+  const statusCounts = useMemo(() => ({
+    all: history.length,
+    pending: history.filter(h => !h.exportStatus || h.exportStatus === 'pending').length,
+    exported: history.filter(h => h.exportStatus === 'exported').length,
+    partial: history.filter(h => h.exportStatus === 'partial').length,
+  }), [history]);
+
+  const clearFilters = () => {
+    setFilterDocType('all');
+    setFilterExportStatus('all');
+    setFilterDateFrom(undefined);
+    setFilterDateTo(undefined);
+  };
+
+  const hasActiveFilters = filterDocType !== 'all' || filterExportStatus !== 'all' || filterDateFrom || filterDateTo;
 
   const toggleSelect = (id: string) => {
     setSelectedItems(prev => 
@@ -336,6 +393,35 @@ export default function ProcessingHistoryWithExport({
     setSelectedItems([]);
   };
 
+  // Mark items as exported in database
+  const markAsExported = async (itemIds: string[], target: string, format: 'json' | 'csv') => {
+    try {
+      for (const id of itemIds) {
+        // Get current export targets
+        const { data: current } = await supabase
+          .from('document_processing_jobs')
+          .select('export_targets')
+          .eq('id', id)
+          .single();
+        
+        const existingTargets = (current?.export_targets as string[]) || [];
+        const newTargets = [...new Set([...existingTargets, target])];
+        
+        await supabase
+          .from('document_processing_jobs')
+          .update({
+            export_status: 'exported',
+            exported_at: new Date().toISOString(),
+            export_targets: newTargets,
+            export_format: format
+          })
+          .eq('id', id);
+      }
+    } catch (err) {
+      console.error('Failed to mark as exported:', err);
+    }
+  };
+
   // Handle confirmed field mappings from dialog
   const handleConfirmedMapping = async (mappings: FieldMapping[], customFields: TargetField[]) => {
     setIsExporting(true);
@@ -360,6 +446,9 @@ export default function ProcessingHistoryWithExport({
       );
       
       if (result.success) {
+        // Mark items as exported
+        await markAsExported(selectedItems, selectedTarget, exportFormat);
+        
         const mockIndicator = result.mock ? ' (mock - configure CRM secrets for real integration)' : '';
         toast.success(
           `Exported ${mappings.length} fields to ${selectedTarget}${mockIndicator}`
@@ -413,6 +502,7 @@ export default function ProcessingHistoryWithExport({
               format: exportFormat
             }
           });
+          await markAsExported(selectedItems, 'supabase', exportFormat);
           toast.success(`Exported ${selectedData.length} records to Supabase`);
           break;
 
@@ -433,6 +523,7 @@ export default function ProcessingHistoryWithExport({
               format: exportFormat
             }
           });
+          await markAsExported(selectedItems, selectedTarget, exportFormat);
           toast.success(`Sent ${selectedData.length} records to ${selectedTarget}`);
           break;
 
@@ -448,10 +539,13 @@ export default function ProcessingHistoryWithExport({
               syncType: 'create_or_update'
             }
           });
+          await markAsExported(selectedItems, selectedTarget, exportFormat);
           toast.success(`Synced ${selectedData.length} records to ${selectedTarget}`);
           break;
 
         case 'download':
+        case 'download_json':
+        case 'download_csv':
         default:
           // Download as file
           const blob = exportFormat === 'json'
@@ -464,6 +558,7 @@ export default function ProcessingHistoryWithExport({
           a.download = `export_${new Date().toISOString().slice(0,10)}.${exportFormat}`;
           a.click();
           URL.revokeObjectURL(url);
+          await markAsExported(selectedItems, 'download', exportFormat);
           toast.success(`Downloaded ${selectedData.length} records`);
       }
 
@@ -496,7 +591,7 @@ export default function ProcessingHistoryWithExport({
     <div className="space-y-4">
       {/* Header with Filter and Actions */}
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <Checkbox
             checked={selectedItems.length === filteredHistory.length && filteredHistory.length > 0}
             onCheckedChange={selectAll}
@@ -505,22 +600,26 @@ export default function ProcessingHistoryWithExport({
             {selectedItems.length > 0 ? `${selectedItems.length} selected` : 'Select items'}
           </span>
           
-          {/* Document Type Filter */}
-          {availableDocTypes.length > 0 && (
-            <Select value={filterDocType} onValueChange={setFilterDocType}>
-              <SelectTrigger className="w-[160px] h-8 ml-2">
-                <SelectValue placeholder="Filter by type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types ({history.length})</SelectItem>
-                {availableDocTypes.map(docType => (
-                  <SelectItem key={docType} value={docType}>
-                    {docType.charAt(0).toUpperCase() + docType.slice(1).replace(/-/g, ' ')} 
-                    ({history.filter(h => h.documentType === docType).length})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Filter Toggle Button */}
+          <Button
+            variant={hasActiveFilters ? "secondary" : "outline"}
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+            className="ml-2"
+          >
+            <Filter className="h-4 w-4 mr-1" />
+            Filters
+            {hasActiveFilters && (
+              <Badge variant="secondary" className="ml-1 h-5 px-1.5 text-xs">
+                {[filterDocType !== 'all', filterExportStatus !== 'all', filterDateFrom, filterDateTo].filter(Boolean).length}
+              </Badge>
+            )}
+          </Button>
+          
+          {hasActiveFilters && (
+            <Button variant="ghost" size="sm" onClick={clearFilters}>
+              Clear
+            </Button>
           )}
         </div>
         <div className="flex gap-2">
@@ -530,7 +629,7 @@ export default function ProcessingHistoryWithExport({
             disabled={selectedItems.length === 0}
             onClick={() => {
               setExportFormat('json');
-              setSelectedTarget('download');
+              setSelectedTarget('download_json');
               setShowExportDialog(true);
             }}
           >
@@ -543,7 +642,7 @@ export default function ProcessingHistoryWithExport({
             disabled={selectedItems.length === 0}
             onClick={() => {
               setExportFormat('csv');
-              setSelectedTarget('download');
+              setSelectedTarget('download_csv');
               setShowExportDialog(true);
             }}
           >
@@ -571,6 +670,118 @@ export default function ProcessingHistoryWithExport({
           )}
         </div>
       </div>
+
+      {/* Expanded Filter Panel */}
+      {showFilters && (
+        <div className="p-4 rounded-lg border bg-muted/30 space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            {/* Document Type Filter */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Document Type</Label>
+              <Select value={filterDocType} onValueChange={setFilterDocType}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="All Types" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types ({history.length})</SelectItem>
+                  {availableDocTypes.map(docType => (
+                    <SelectItem key={docType} value={docType}>
+                      {docType.charAt(0).toUpperCase() + docType.slice(1).replace(/-/g, ' ')} 
+                      ({history.filter(h => h.documentType === docType).length})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Export Status Filter */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">Export Status</Label>
+              <Select value={filterExportStatus} onValueChange={setFilterExportStatus}>
+                <SelectTrigger className="h-9">
+                  <SelectValue placeholder="All Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">
+                    <div className="flex items-center gap-2">
+                      <span>All Status</span>
+                      <Badge variant="outline" className="text-xs">{statusCounts.all}</Badge>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="pending">
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-3 w-3 text-amber-500" />
+                      <span>Pending</span>
+                      <Badge variant="outline" className="text-xs bg-amber-500/10">{statusCounts.pending}</Badge>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="exported">
+                    <div className="flex items-center gap-2">
+                      <CheckCircle2 className="h-3 w-3 text-green-500" />
+                      <span>Exported</span>
+                      <Badge variant="outline" className="text-xs bg-green-500/10">{statusCounts.exported}</Badge>
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="partial">
+                    <div className="flex items-center gap-2">
+                      <AlertTriangle className="h-3 w-3 text-blue-500" />
+                      <span>Partial</span>
+                      <Badge variant="outline" className="text-xs bg-blue-500/10">{statusCounts.partial}</Badge>
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            {/* Date From */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">From Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full h-9 justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filterDateFrom ? format(filterDateFrom, "PPP") : <span className="text-muted-foreground">Pick date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filterDateFrom}
+                    onSelect={setFilterDateFrom}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+            
+            {/* Date To */}
+            <div className="space-y-2">
+              <Label className="text-xs font-medium">To Date</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="outline" className="w-full h-9 justify-start text-left font-normal">
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {filterDateTo ? format(filterDateTo, "PPP") : <span className="text-muted-foreground">Pick date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={filterDateTo}
+                    onSelect={setFilterDateTo}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          
+          {/* Filter Summary */}
+          <div className="text-xs text-muted-foreground">
+            Showing {filteredHistory.length} of {history.length} records
+          </div>
+        </div>
+      )}
 
       {/* History List */}
       <ScrollArea className="h-[400px]">
@@ -602,7 +813,6 @@ export default function ProcessingHistoryWithExport({
                       alt={result.fileName}
                       className="w-full h-full object-cover"
                       onError={(e) => {
-                        // Hide broken image and show fallback
                         e.currentTarget.style.display = 'none';
                         e.currentTarget.parentElement?.classList.add('flex', 'items-center', 'justify-center');
                         const fallback = document.createElement('div');
@@ -622,6 +832,23 @@ export default function ProcessingHistoryWithExport({
                   <div className="flex items-center gap-2">
                     <span className="font-medium text-sm truncate">{result.fileName}</span>
                     {getValidationBadge(result)}
+                    {/* Export Status Badge */}
+                    {result.exportStatus === 'exported' ? (
+                      <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-600">
+                        <CheckCircle2 className="h-3 w-3 mr-1" />
+                        Exported
+                      </Badge>
+                    ) : result.exportStatus === 'partial' ? (
+                      <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-600">
+                        <AlertTriangle className="h-3 w-3 mr-1" />
+                        Partial
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-xs text-amber-600">
+                        <Clock className="h-3 w-3 mr-1" />
+                        Pending
+                      </Badge>
+                    )}
                   </div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
                     <span>{result.documentType}</span>
@@ -629,6 +856,12 @@ export default function ProcessingHistoryWithExport({
                     <span>{Object.keys(result.extractedFields).length} fields</span>
                     <span>•</span>
                     <span>{formatDate(result.processedAt)}</span>
+                    {result.exportTargets && result.exportTargets.length > 0 && (
+                      <>
+                        <span>•</span>
+                        <span className="text-green-600">→ {result.exportTargets.join(', ')}</span>
+                      </>
+                    )}
                   </div>
                 </div>
 
