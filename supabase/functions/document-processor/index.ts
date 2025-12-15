@@ -2,8 +2,49 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+};
+
+// Standard medical reference ranges
+const MEDICAL_REFERENCE_RANGES = {
+  brain: {
+    ventricle_size: { normal: "< 10mm", unit: "mm", description: "Lateral ventricle width" },
+    midline_shift: { normal: "0mm", threshold: "5mm", unit: "mm", description: "Midline deviation" },
+    sulci_width: { normal: "2-4mm", unit: "mm", description: "Cortical sulci width" },
+    gray_white_ratio: { normal: "1.2-1.5", description: "Gray to white matter ratio" },
+  },
+  kidney: {
+    length: { normal: "9-13cm", unit: "cm", description: "Kidney length" },
+    width: { normal: "4-6cm", unit: "cm", description: "Kidney width" },
+    cortical_thickness: { normal: "1.5-2.5cm", unit: "cm", description: "Renal cortex thickness" },
+    stone_size: { threshold: "5mm", unit: "mm", description: "Stone requiring intervention" },
+    hydronephrosis: { grades: ["None", "Mild", "Moderate", "Severe"], description: "Urinary obstruction grade" },
+  },
+  lung: {
+    lung_volume: { normal: "5-6L", unit: "L", description: "Total lung capacity" },
+    nodule_size: { threshold: "8mm", unit: "mm", description: "Nodule requiring follow-up" },
+    pleural_effusion: { grades: ["None", "Minimal", "Moderate", "Large"], description: "Fluid accumulation" },
+    cardiothoracic_ratio: { normal: "< 0.5", description: "Heart to chest ratio" },
+  },
+  heart: {
+    ejection_fraction: { normal: "55-70%", unit: "%", description: "Left ventricular EF" },
+    wall_thickness: { normal: "6-11mm", unit: "mm", description: "LV wall thickness" },
+    chamber_size: { normal: "35-56mm", unit: "mm", description: "LV end-diastolic diameter" },
+    pr_interval: { normal: "120-200ms", unit: "ms", description: "ECG PR interval" },
+    qrs_duration: { normal: "80-120ms", unit: "ms", description: "ECG QRS duration" },
+    qt_interval: { normal: "350-440ms", unit: "ms", description: "ECG QT interval" },
+  },
+  liver: {
+    span: { normal: "< 15cm", unit: "cm", description: "Liver span at MCL" },
+    echogenicity: { normal: "Homogeneous", description: "Liver echo pattern" },
+    portal_vein: { normal: "< 13mm", unit: "mm", description: "Portal vein diameter" },
+  },
+  spine: {
+    disc_height: { normal: "5-10mm", unit: "mm", description: "Intervertebral disc height" },
+    canal_diameter: { normal: "> 12mm", unit: "mm", description: "Spinal canal AP diameter" },
+    lordosis: { normal: "20-45°", unit: "degrees", description: "Lumbar lordosis angle" },
+  }
 };
 
 interface ProcessingRequest {
@@ -209,8 +250,12 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
     return new Response(
       JSON.stringify({ 
         success: true, 
+        autoDetection: parsedAnalysis.autoDetection,
         insights: parsedAnalysis.findings,
         measurements: parsedAnalysis.measurements,
+        obstructionsAndBlockages: parsedAnalysis.obstructionsAndBlockages,
+        clinicalNotes: parsedAnalysis.clinicalNotes,
+        observations: parsedAnalysis.observations,
         panelAnalysis: parsedAnalysis.panelAnalysis,
         detailedReport: parsedAnalysis.detailedReport,
         abnormalitySummary: parsedAnalysis.abnormalitySummary,
@@ -222,7 +267,8 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
         modelApproachDetails: getModelApproachDetails(modelType),
         provider,
         modelType,
-        modality: documentType,
+        detectedModality: parsedAnalysis.autoDetection?.detectedModality || documentType,
+        detectedOrgans: parsedAnalysis.autoDetection?.detectedOrgans || [],
         analysisDepth: 'comprehensive',
         disclaimer: 'AI-ASSISTED ANALYSIS FOR INFORMATIONAL PURPOSES ONLY. This is NOT a medical diagnosis. Results must be reviewed and interpreted by a qualified healthcare provider (radiologist, physician). DO NOT make clinical decisions based solely on this analysis. Always consult your healthcare provider for proper diagnosis and treatment.'
       }),
@@ -529,125 +575,196 @@ ARCHITECTURAL DISTORTION: Spiculated without mass`
 
   return `You are a SENIOR RADIOLOGIST AI ASSISTANT providing COMPREHENSIVE medical image analysis.
 
+STEP 1: AUTO-DETECT IMAGE TYPE (MANDATORY - DO THIS FIRST)
+Before any analysis, you MUST identify:
+
+1. IMAGING MODALITY DETECTION:
+   - Is this an X-Ray? (Look for: grayscale, bone appears white, lungs appear black, flat 2D projection)
+   - Is this a CT Scan? (Look for: cross-sectional slices, Hounsfield unit variations, detailed soft tissue)
+   - Is this an MRI? (Look for: high soft tissue contrast, no bone signal, T1/T2 characteristics)
+   - Is this an Ultrasound? (Look for: grainy texture, real-time appearance, anechoic/hyperechoic areas)
+   - Is this an ECG/EKG? (Look for: waveform tracings, grid pattern, P-QRS-T waves)
+   - Is this a Mammogram? (Look for: breast tissue, compression views, calcification patterns)
+
+2. ANATOMICAL ORGAN/REGION DETECTION:
+   - BRAIN: Look for skull, ventricles, grey/white matter, cerebellum
+   - KIDNEY: Look for bean-shaped organs, collecting system, cortex/medulla
+   - LUNG/CHEST: Look for lung fields, ribs, heart shadow, mediastinum
+   - LIVER: Look for right upper quadrant, hepatic vessels, gallbladder
+   - SPINE: Look for vertebrae, intervertebral discs, spinal canal
+   - HEART: Look for cardiac chambers, valves, pericardium
+   - ABDOMEN: Look for bowel loops, mesenteric fat, abdominal organs
+
 ${guidance}
 
-CRITICAL INSTRUCTIONS:
+CRITICAL ANALYSIS INSTRUCTIONS:
 
 1. MULTI-PANEL IMAGE DETECTION:
    - If the image contains multiple panels (labeled a, b, c, d or numbered 1, 2, 3, 4), analyze EACH PANEL SEPARATELY
-   - Identify what anatomical region/organ each panel shows
-   - For each panel, provide specific findings relevant to that anatomy
-   - Example: Panel A might be chest, Panel B might be abdomen - analyze appropriately
+   - For EACH panel: detect modality AND organ independently
+   - Example: Panel A might be Brain CT, Panel B might be Kidney CT - identify each correctly
 
-2. ANATOMICAL IDENTIFICATION:
-   - For each finding, specify EXACTLY which organ/structure is affected
-   - Use precise anatomical terminology
-   - Identify: Organ (kidney, brain, lung, etc.), Side (left/right/bilateral), Region (upper/lower/medial/lateral)
+2. SIZE AND MEASUREMENT ANALYSIS:
+   - Estimate sizes of organs, lesions, masses, calcifications
+   - Compare measurements to normal reference ranges
+   - Flag any measurement outside normal limits
+   - Include both observed value AND normal range for comparison
 
-3. ABNORMALITY CORRELATION:
-   - Clearly map which abnormality belongs to which panel/region
-   - If Panel A shows kidney and Panel B shows brain, findings must specify this
+3. OBSTRUCTION AND BLOCKAGE DETECTION:
+   - Look for vascular obstructions (stenosis, thrombosis, occlusion)
+   - Identify urinary obstructions (hydronephrosis, stones, strictures)
+   - Detect bowel obstructions (dilated loops, transition points)
+   - Note airway obstructions (tracheal deviation, mass effect)
+   - Assess for biliary obstruction (dilated ducts, stones)
+   - Grade severity: None, Mild, Moderate, Severe, Complete
 
 4. AI MODEL APPROACH CONTEXT:
-   - This analysis emulates ${modelType.toUpperCase()} approach
-   - ${modelType === 'cnn' ? 'Focus on pattern recognition and feature extraction' : ''}
-   - ${modelType === 'u-net' ? 'Focus on segmentation and boundary delineation' : ''}
-   - ${modelType === 'faster-rcnn' ? 'Focus on object detection and localization' : ''}
-   - ${modelType === 'rnn' ? 'Focus on sequential/temporal patterns' : ''}
+   This analysis emulates ${modelType.toUpperCase()} approach:
+   ${modelType === 'cnn' ? '- CNN: Pattern recognition for nodules, masses, fractures, texture abnormalities' : ''}
+   ${modelType === 'u-net' ? '- U-Net: Precise segmentation of organs, tumors, lesions with boundary delineation' : ''}
+   ${modelType === 'faster-rcnn' ? '- Faster R-CNN: Multi-object detection, bounding boxes, lesion localization' : ''}
+   ${modelType === 'yolo' ? '- YOLO: Rapid detection, screening-level analysis, multiple abnormalities' : ''}
+   ${modelType === 'rnn' ? '- RNN/LSTM: Sequential pattern analysis for ECG waveforms, temporal changes' : ''}
+   ${modelType === 'llm' ? '- LLM Vision: Comprehensive interpretation, multi-finding synthesis, report generation' : ''}
 
-5. DETAILED REPORT REQUIREMENTS:
-   - Provide EXTENSIVE description for each finding (minimum 2-3 sentences)
-   - Include differential diagnoses
-   - Explain clinical significance in detail
-   - Suggest follow-up recommendations
-
-Return DETAILED JSON:
+Return COMPREHENSIVE JSON:
 {
+  "autoDetection": {
+    "detectedModality": "X-Ray|CT-Scan|MRI|Ultrasound|ECG|Mammogram|Unknown",
+    "modalityConfidence": 85-99,
+    "modalityFeatures": ["features that led to modality identification"],
+    "detectedOrgans": [
+      {
+        "organ": "Brain|Kidney|Lung|Liver|Heart|Spine|etc",
+        "side": "Left|Right|Bilateral|Midline|N/A",
+        "confidence": 80-99,
+        "identifyingFeatures": ["what features identify this organ"]
+      }
+    ],
+    "imagingCharacteristics": {
+      "contrast": "With contrast|Without contrast|Unknown",
+      "orientation": "Axial|Sagittal|Coronal|AP|PA|Lateral",
+      "quality": "Excellent|Good|Adequate|Poor"
+    }
+  },
   "panelAnalysis": [
     {
       "panelId": "A/B/C/D or 1/2/3/4 or 'single'",
-      "anatomicalRegion": "e.g., Brain, Right Kidney, Chest",
-      "organSystem": "e.g., Neurological, Renal, Respiratory",
-      "imagingModality": "e.g., CT without contrast, MRI T2-weighted",
-      "findings": ["detailed finding 1", "detailed finding 2"]
+      "detectedModality": "specific modality for this panel",
+      "detectedOrgan": "specific organ in this panel",
+      "anatomicalRegion": "e.g., Brain - Axial section at level of basal ganglia",
+      "organSystem": "e.g., Neurological, Renal, Respiratory, Cardiovascular",
+      "findings": ["detailed finding 1 with measurements", "detailed finding 2"]
     }
   ],
   "findings": [
     {
-      "category": "finding|observation|recommendation|concern|normal|abnormality",
+      "category": "finding|observation|recommendation|concern|normal|abnormality|obstruction|blockage",
       "panelReference": "which panel (A/B/C/D/1/2/3/4) or 'all'",
       "anatomicalLocation": {
-        "organ": "specific organ name",
+        "organ": "exact organ name",
         "side": "left/right/bilateral/midline",
-        "region": "specific region within organ",
-        "coordinates": "if applicable, quadrant or zone"
+        "region": "specific region (e.g., upper pole, hilum, cortex)",
+        "coordinates": "quadrant or zone if applicable"
       },
-      "description": "DETAILED description minimum 2-3 sentences explaining the finding, its appearance, and significance",
-      "detailedExplanation": "Extended explanation with pathophysiology and clinical context",
-      "differentialDiagnosis": ["possibility 1", "possibility 2", "possibility 3"],
+      "description": "DETAILED description (minimum 3-4 sentences) explaining finding, appearance, characteristics, and what it might indicate",
+      "detailedExplanation": "Extended pathophysiological explanation with clinical context - what causes this, what does it mean, how does it progress",
+      "differentialDiagnosis": ["most likely diagnosis", "alternative 1", "alternative 2", "alternative 3"],
       "confidence": 70-95,
       "clinicalSignificance": "low|medium|high|critical",
-      "status": "normal|borderline|abnormal",
-      "measurementValue": "value with unit if applicable",
-      "normalRange": "reference range for comparison",
-      "followUpRecommendation": "specific next steps"
+      "status": "normal|borderline|abnormal|critical",
+      "measurementValue": "value with unit (e.g., 15mm, 3.5cm)",
+      "normalRange": "reference range (e.g., <10mm, 9-13cm)",
+      "comparison": "Above normal by X% | Within normal | Below normal by X%",
+      "followUpRecommendation": "specific actionable next steps"
     }
   ],
   "measurements": [
     {
-      "name": "measurement name",
-      "value": number,
-      "unit": "mm/cm/HU/ms/bpm",
-      "normalRange": { "min": number, "max": number, "description": "what normal means" },
-      "status": "normal|borderline|abnormal",
-      "clinicalImplication": "what this value means clinically",
-      "panelReference": "which panel this applies to"
+      "name": "measurement name (e.g., Kidney length, Midline shift, Lesion diameter)",
+      "value": "measured value as string with unit",
+      "numericValue": number,
+      "unit": "mm|cm|HU|ms|bpm|%",
+      "normalRange": { 
+        "min": number, 
+        "max": number, 
+        "reference": "description of normal",
+        "source": "standard reference"
+      },
+      "status": "normal|borderline-low|borderline-high|abnormal-low|abnormal-high|critical",
+      "deviation": "percentage or absolute deviation from normal",
+      "clinicalImplication": "what this value means for the patient",
+      "panelReference": "which panel",
+      "organReference": "which organ"
     }
   ],
-  "anatomicalRegions": [
+  "obstructionsAndBlockages": [
     {
-      "name": "region name",
-      "panelReference": "panel",
-      "status": "normal|abnormal",
-      "description": "detailed description of this region"
+      "type": "vascular|urinary|biliary|bowel|airway|other",
+      "location": "specific anatomical location",
+      "severity": "none|mild|moderate|severe|complete",
+      "cause": "suspected cause (stone, mass, stricture, thrombosis, etc.)",
+      "upstreamEffects": "what's happening proximal to blockage (dilation, pressure)",
+      "measurements": "size of obstruction and dilated segments",
+      "clinicalUrgency": "routine|soon|urgent|emergent",
+      "recommendedAction": "specific intervention or further workup"
+    }
+  ],
+  "clinicalNotes": {
+    "keyFindings": ["most important finding 1", "most important finding 2", "most important finding 3"],
+    "clinicalCorrelation": "How these findings correlate with potential clinical presentations",
+    "riskAssessment": "Overall risk assessment based on findings",
+    "limitations": "Any limitations of this imaging study",
+    "additionalImaging": "Any additional imaging that would be helpful"
+  },
+  "observations": [
+    {
+      "observation": "detailed observation statement",
+      "significance": "why this observation matters",
+      "normalComparison": "how this compares to expected normal appearance"
     }
   ],
   "abnormalitySummary": {
     "totalAbnormalities": number,
     "criticalFindings": ["list critical findings requiring immediate attention"],
     "abnormalitiesByPanel": {
-      "A": ["list of abnormalities"],
-      "B": ["list of abnormalities"]
+      "A": [{"finding": "description", "organ": "affected organ", "severity": "severity"}]
     },
     "abnormalitiesByOrgan": {
-      "organ1": ["findings"],
-      "organ2": ["findings"]
+      "Kidney": [{"finding": "description", "panel": "panel ref", "severity": "severity"}],
+      "Brain": [{"finding": "description", "panel": "panel ref", "severity": "severity"}]
     },
+    "measurementAbnormalities": ["list of measurements outside normal range"],
+    "obstructionSummary": "Summary of any obstructions detected",
     "recommendedActions": ["specific action 1", "specific action 2"]
   },
   "detailedReport": {
-    "clinicalHistory": "Based on imaging findings, relevant clinical context",
-    "technique": "Imaging technique and parameters observed",
-    "comparison": "Note if comparison with prior studies would be beneficial",
-    "findingsNarrative": "COMPREHENSIVE narrative description of ALL findings in paragraph form, organized by panel/region",
-    "impression": "DETAILED summary impression with numbered key findings",
-    "recommendations": "Specific follow-up recommendations"
+    "clinicalHistory": "Relevant clinical context inferred from imaging",
+    "technique": "Imaging modality, orientation, contrast status",
+    "comparison": "Note if comparison with prior studies recommended",
+    "findingsNarrative": "COMPREHENSIVE paragraph-form narrative of ALL findings organized by panel/organ, including all measurements, comparisons to normal, and clinical implications (minimum 200 words)",
+    "impression": "Numbered list of key impressions in order of clinical significance",
+    "recommendations": "Specific actionable recommendations including follow-up timeline"
   },
   "providerConsultation": {
     "required": true,
     "urgency": "routine|soon|urgent|emergent",
-    "recommendedSpecialty": ["Radiology", "relevant specialty"],
-    "reason": "Why consultation is necessary"
+    "recommendedSpecialty": ["Primary specialty", "Secondary if applicable"],
+    "reason": "Specific reason why consultation is necessary",
+    "disclaimer": "This AI analysis is for INFORMATIONAL PURPOSES ONLY. It is NOT a medical diagnosis. All findings MUST be reviewed by a qualified healthcare provider. Do not make any clinical decisions based solely on this analysis. Please consult your physician or radiologist for proper interpretation and medical advice."
   },
-  "summary": "Comprehensive summary of all findings across all panels",
+  "summary": "Executive summary of key findings",
   "urgency": "routine|priority|urgent|emergent"
 }
 
-IMPORTANT REMINDERS:
-- This is AI-ASSISTED analysis, NOT a diagnosis
-- All findings MUST be reviewed by a qualified healthcare provider
-- Encourage patient to discuss results with their doctor
-- Include appropriate uncertainty where applicable`;
+MANDATORY REMINDERS:
+- You MUST first detect the imaging modality (X-ray/CT/MRI/etc) from visual features
+- You MUST identify which organ(s) are being imaged
+- Include SPECIFIC measurements with normal ranges
+- Identify ANY obstructions or blockages
+- ALL findings must reference specific panel AND organ
+- This is AI-ASSISTED analysis only - NOT a diagnosis
+- Patient MUST consult healthcare provider for proper interpretation`;
 }
 
 function parseComprehensiveResponse(responseText: string): any {
@@ -656,12 +773,33 @@ function parseComprehensiveResponse(responseText: string): any {
     if (jsonMatch) {
       const parsed = JSON.parse(jsonMatch[0]);
       return {
+        autoDetection: parsed.autoDetection || {
+          detectedModality: 'Unknown',
+          modalityConfidence: 0,
+          modalityFeatures: [],
+          detectedOrgans: [],
+          imagingCharacteristics: {}
+        },
         findings: parsed.findings || [],
         measurements: parsed.measurements || [],
         panelAnalysis: parsed.panelAnalysis || [],
         detailedReport: parsed.detailedReport || {},
         abnormalitySummary: parsed.abnormalitySummary || {},
-        providerConsultation: parsed.providerConsultation || { required: true, urgency: 'routine' },
+        obstructionsAndBlockages: parsed.obstructionsAndBlockages || [],
+        clinicalNotes: parsed.clinicalNotes || {
+          keyFindings: [],
+          clinicalCorrelation: '',
+          riskAssessment: '',
+          limitations: '',
+          additionalImaging: ''
+        },
+        observations: parsed.observations || [],
+        providerConsultation: parsed.providerConsultation || { 
+          required: true, 
+          urgency: 'routine',
+          recommendedSpecialty: ['Radiology'],
+          disclaimer: 'This AI analysis is for informational purposes only. Please consult your healthcare provider.'
+        },
         anatomicalRegions: parsed.anatomicalRegions || []
       };
     }
@@ -670,6 +808,11 @@ function parseComprehensiveResponse(responseText: string): any {
   }
   
   return {
+    autoDetection: {
+      detectedModality: 'Unknown',
+      modalityConfidence: 0,
+      detectedOrgans: []
+    },
     findings: [{
       category: 'observation',
       description: 'AI analysis completed. Please review all findings with a qualified healthcare provider.',
@@ -684,6 +827,9 @@ function parseComprehensiveResponse(responseText: string): any {
       recommendations: 'Consult with radiologist for comprehensive interpretation'
     },
     abnormalitySummary: { totalAbnormalities: 0, criticalFindings: [], recommendedActions: [] },
+    obstructionsAndBlockages: [],
+    clinicalNotes: { keyFindings: [], clinicalCorrelation: '', riskAssessment: '' },
+    observations: [],
     providerConsultation: { required: true, urgency: 'routine', recommendedSpecialty: ['Radiology'] },
     anatomicalRegions: []
   };

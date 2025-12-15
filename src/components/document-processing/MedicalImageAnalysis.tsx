@@ -151,6 +151,48 @@ interface ModelApproachDetails {
   limitations: string;
 }
 
+interface AutoDetection {
+  detectedModality: string;
+  modalityConfidence: number;
+  modalityFeatures?: string[];
+  detectedOrgans: Array<{
+    organ: string;
+    side: string;
+    confidence: number;
+    identifyingFeatures?: string[];
+  }>;
+  imagingCharacteristics?: {
+    contrast?: string;
+    orientation?: string;
+    quality?: string;
+  };
+}
+
+interface Obstruction {
+  type: string;
+  location: string;
+  severity: string;
+  cause: string;
+  upstreamEffects?: string;
+  measurements?: string;
+  clinicalUrgency: string;
+  recommendedAction: string;
+}
+
+interface ClinicalNotesData {
+  keyFindings: string[];
+  clinicalCorrelation: string;
+  riskAssessment: string;
+  limitations: string;
+  additionalImaging: string;
+}
+
+interface Observation {
+  observation: string;
+  significance: string;
+  normalComparison: string;
+}
+
 export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   imageUrl,
   imageBase64,
@@ -165,6 +207,11 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const [detailedReport, setDetailedReport] = useState<DetailedReport>({});
   const [abnormalitySummary, setAbnormalitySummary] = useState<AbnormalitySummary | null>(null);
   const [modelApproachDetails, setModelApproachDetails] = useState<ModelApproachDetails | null>(null);
+  const [autoDetection, setAutoDetection] = useState<AutoDetection | null>(null);
+  const [obstructions, setObstructions] = useState<Obstruction[]>([]);
+  const [clinicalNotesData, setClinicalNotesData] = useState<ClinicalNotesData | null>(null);
+  const [observations, setObservations] = useState<Observation[]>([]);
+  const [providerConsultation, setProviderConsultation] = useState<any>(null);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
@@ -175,7 +222,7 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const [activeTab, setActiveTab] = useState('analysis');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
   const [hasAbnormalities, setHasAbnormalities] = useState(false);
-  const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['model-info']));
+  const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['model-info', 'auto-detection']));
   
   // Multi-provider state
   const modality = (documentType?.replace('-', '') === 'ctscan' ? 'ct-scan' : documentType) as MedicalModalityType || 'xray';
@@ -234,6 +281,11 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
     setDetailedReport({});
     setAbnormalitySummary(null);
     setModelApproachDetails(null);
+    setAutoDetection(null);
+    setObstructions([]);
+    setClinicalNotesData(null);
+    setObservations([]);
+    setProviderConsultation(null);
     setRawAnalysis('');
     setHasAbnormalities(false);
     
@@ -301,6 +353,31 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
           setModelApproachDetails(data.modelApproachDetails);
         }
         
+        // Set auto-detection data
+        if (data.autoDetection) {
+          setAutoDetection(data.autoDetection);
+        }
+        
+        // Set obstructions and blockages
+        if (data.obstructionsAndBlockages && Array.isArray(data.obstructionsAndBlockages)) {
+          setObstructions(data.obstructionsAndBlockages);
+        }
+        
+        // Set clinical notes
+        if (data.clinicalNotes) {
+          setClinicalNotesData(data.clinicalNotes);
+        }
+        
+        // Set observations
+        if (data.observations && Array.isArray(data.observations)) {
+          setObservations(data.observations);
+        }
+        
+        // Set provider consultation
+        if (data.providerConsultation) {
+          setProviderConsultation(data.providerConsultation);
+        }
+        
         // Check for abnormalities
         const abnormalCount = (data.insights || []).filter((i: AIInsight) => 
           i.status === 'abnormal' || 
@@ -315,7 +392,7 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
       
       setAnalysisComplete(true);
       toast.success(`Analysis complete`, {
-        description: `${data?.provider || 'AI'} using ${data?.modelApproach || data?.modelType || 'auto'} - ${data?.insights?.length || 0} findings`
+        description: `${data?.detectedModality || data?.provider || 'AI'} ${data?.detectedOrgans?.[0]?.organ ? `- ${data.detectedOrgans[0].organ}` : ''} - ${data?.insights?.length || 0} findings`
       });
     } catch (error) {
       console.error('Analysis error:', error);
@@ -548,6 +625,57 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
           </TabsList>
           
           <TabsContent value="analysis" className="mt-4 space-y-4">
+            {/* Auto-Detection Results */}
+            {autoDetection && (
+              <Card className="border-blue-500/30 bg-blue-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Target className="h-4 w-4 text-blue-600" />
+                    Auto-Detected Image Type
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge className="bg-blue-600">
+                      {autoDetection.detectedModality}
+                    </Badge>
+                    <span className="text-xs text-muted-foreground">
+                      {autoDetection.modalityConfidence}% confidence
+                    </span>
+                  </div>
+                  
+                  {autoDetection.detectedOrgans.length > 0 && (
+                    <div>
+                      <span className="text-xs font-medium text-muted-foreground">Detected Organs/Regions:</span>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {autoDetection.detectedOrgans.map((organ, idx) => (
+                          <Badge key={idx} variant="outline" className="text-xs">
+                            <MapPin className="h-3 w-3 mr-1" />
+                            {organ.organ} {organ.side !== 'N/A' && `(${organ.side})`}
+                            <span className="ml-1 text-muted-foreground">{organ.confidence}%</span>
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {autoDetection.imagingCharacteristics && (
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      {autoDetection.imagingCharacteristics.contrast && (
+                        <span>Contrast: {autoDetection.imagingCharacteristics.contrast}</span>
+                      )}
+                      {autoDetection.imagingCharacteristics.orientation && (
+                        <span>• Orientation: {autoDetection.imagingCharacteristics.orientation}</span>
+                      )}
+                      {autoDetection.imagingCharacteristics.quality && (
+                        <span>• Quality: {autoDetection.imagingCharacteristics.quality}</span>
+                      )}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
             {/* Panel Analysis */}
             {panelAnalysis.length > 0 && (
               <Card>
@@ -581,6 +709,150 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
                   </div>
                 </CardContent>
               </Card>
+            )}
+
+            {/* Obstructions and Blockages */}
+            {obstructions.length > 0 && (
+              <Card className="border-amber-500/30 bg-amber-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4 text-amber-600" />
+                    Obstructions & Blockages Detected
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-3">
+                    {obstructions.map((obs, idx) => (
+                      <div key={idx} className="bg-white rounded-lg p-3 border border-amber-200">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge className={
+                            obs.severity === 'severe' || obs.severity === 'complete' ? 'bg-red-500' :
+                            obs.severity === 'moderate' ? 'bg-amber-500' : 'bg-yellow-500'
+                          }>
+                            {obs.severity} {obs.type} obstruction
+                          </Badge>
+                          <Badge variant="outline" className={
+                            obs.clinicalUrgency === 'emergent' ? 'border-red-500 text-red-700' :
+                            obs.clinicalUrgency === 'urgent' ? 'border-amber-500 text-amber-700' : ''
+                          }>
+                            {obs.clinicalUrgency}
+                          </Badge>
+                        </div>
+                        <div className="text-sm space-y-1">
+                          <p><span className="font-medium">Location:</span> {obs.location}</p>
+                          <p><span className="font-medium">Suspected Cause:</span> {obs.cause}</p>
+                          {obs.measurements && <p><span className="font-medium">Measurements:</span> {obs.measurements}</p>}
+                          {obs.upstreamEffects && <p><span className="font-medium">Effects:</span> {obs.upstreamEffects}</p>}
+                          <p className="text-primary font-medium mt-2">Recommended: {obs.recommendedAction}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Clinical Notes */}
+            {clinicalNotesData && (clinicalNotesData.keyFindings?.length > 0 || clinicalNotesData.clinicalCorrelation) && (
+              <Card className="border-green-500/30 bg-green-50/50">
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <ClipboardList className="h-4 w-4 text-green-600" />
+                    Clinical Notes & Observations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3 text-sm">
+                  {clinicalNotesData.keyFindings?.length > 0 && (
+                    <div>
+                      <span className="font-medium">Key Findings:</span>
+                      <ul className="list-disc list-inside mt-1 text-muted-foreground">
+                        {clinicalNotesData.keyFindings.map((f, i) => <li key={i}>{f}</li>)}
+                      </ul>
+                    </div>
+                  )}
+                  {clinicalNotesData.clinicalCorrelation && (
+                    <div>
+                      <span className="font-medium">Clinical Correlation:</span>
+                      <p className="text-muted-foreground mt-1">{clinicalNotesData.clinicalCorrelation}</p>
+                    </div>
+                  )}
+                  {clinicalNotesData.riskAssessment && (
+                    <div>
+                      <span className="font-medium">Risk Assessment:</span>
+                      <p className="text-muted-foreground mt-1">{clinicalNotesData.riskAssessment}</p>
+                    </div>
+                  )}
+                  {clinicalNotesData.additionalImaging && (
+                    <div>
+                      <span className="font-medium">Additional Imaging Recommended:</span>
+                      <p className="text-muted-foreground mt-1">{clinicalNotesData.additionalImaging}</p>
+                    </div>
+                  )}
+                  {clinicalNotesData.limitations && (
+                    <div>
+                      <span className="font-medium">Study Limitations:</span>
+                      <p className="text-muted-foreground mt-1">{clinicalNotesData.limitations}</p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Observations */}
+            {observations.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Eye className="h-4 w-4" />
+                    Detailed Observations
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {observations.map((obs, idx) => (
+                      <div key={idx} className="bg-muted/50 rounded-lg p-3 text-sm">
+                        <p className="font-medium">{obs.observation}</p>
+                        <p className="text-muted-foreground text-xs mt-1">
+                          <span className="font-medium">Significance:</span> {obs.significance}
+                        </p>
+                        {obs.normalComparison && (
+                          <p className="text-muted-foreground text-xs">
+                            <span className="font-medium">Normal Comparison:</span> {obs.normalComparison}
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Provider Consultation Alert */}
+            {providerConsultation && (
+              <Alert className={
+                providerConsultation.urgency === 'emergent' ? 'border-red-500 bg-red-50' :
+                providerConsultation.urgency === 'urgent' ? 'border-amber-500 bg-amber-50' :
+                'border-blue-500 bg-blue-50'
+              }>
+                <Phone className={`h-4 w-4 ${
+                  providerConsultation.urgency === 'emergent' ? 'text-red-600' :
+                  providerConsultation.urgency === 'urgent' ? 'text-amber-600' : 'text-blue-600'
+                }`} />
+                <AlertTitle className={
+                  providerConsultation.urgency === 'emergent' ? 'text-red-800' :
+                  providerConsultation.urgency === 'urgent' ? 'text-amber-800' : 'text-blue-800'
+                }>
+                  Provider Consultation {providerConsultation.urgency === 'emergent' ? 'REQUIRED IMMEDIATELY' : 
+                    providerConsultation.urgency === 'urgent' ? 'Required Soon' : 'Recommended'}
+                </AlertTitle>
+                <AlertDescription className="text-sm space-y-2">
+                  <p><span className="font-medium">Recommended Specialty:</span> {providerConsultation.recommendedSpecialty?.join(', ')}</p>
+                  {providerConsultation.reason && <p><span className="font-medium">Reason:</span> {providerConsultation.reason}</p>}
+                  {providerConsultation.disclaimer && (
+                    <p className="text-xs italic mt-2 p-2 bg-white/50 rounded">{providerConsultation.disclaimer}</p>
+                  )}
+                </AlertDescription>
+              </Alert>
             )}
 
             {/* Abnormality Summary */}
