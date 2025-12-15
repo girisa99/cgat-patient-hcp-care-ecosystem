@@ -611,17 +611,37 @@ function autoMatchFields(
     
     // Insurance - General
     'insurance_id': ['member_id', 'policy_number', 'insuranceid', 'memberid', 'subscriber_id', 'member_id_number'],
-    'group_number': ['groupnumber', 'grp', 'group_num', 'grpnum', 'group_id', 'rxgrp', 'rx_grp'],
-    'insurance_name': ['insurer', 'carrier', 'payer', 'insurance_provider', 'plan_name', 'insurance_company', 'insurance_company_name', 'insurance_company_full', 'insured_by', 'product_name', 'company_name', 'brand_name', 'logo_text', 'carrier_name', 'health_plan', 'health_plan_name', 'insurance_carrier', 'blue_cross', 'bluecross', 'aetna', 'united', 'cigna', 'humana', 'organization_name', 'payer_name'],
+    'member_id': ['memberid', 'member_number', 'id_number', 'card_id', 'insurance_id'],
+    'subscriber_id': ['subscriberid', 'subscriber_number', 'primary_id'],
+    'group_number': ['groupnumber', 'grp', 'group_num', 'grpnum', 'group_id', 'rxgrp', 'rx_grp', 'grp_no'],
+    'insurance_name': ['insurer', 'carrier', 'payer', 'insurance_provider', 'plan_name', 'insurance_company', 'insurance_company_name', 'insurance_company_full', 'insured_by', 'product_name', 'company_name', 'brand_name', 'logo_text', 'carrier_name', 'health_plan', 'health_plan_name', 'insurance_carrier', 'blue_cross', 'bluecross', 'aetna', 'united', 'cigna', 'humana', 'organization_name', 'payer_name', 'anthem', 'kaiser', 'ucare', 'bcbs', 'centene', 'molina'],
+    'plan_name': ['planname', 'plan', 'product', 'coverage_name', 'benefit_plan'],
+    'plan_type': ['plantype', 'plan_category', 'hmo', 'ppo', 'epo', 'pos', 'network_type'],
+    'member_name': ['membername', 'cardholder', 'cardholder_name', 'insured_name', 'covered_member'],
+    
+    // Insurance - Copays and Costs
+    'copay': ['copayment', 'office_copay', 'pcp_copay', 'primary_copay', 'office_visit'],
+    'copay_specialist': ['specialist_copay', 'spec_copay', 'specialist_visit'],
+    'copay_rx': ['rx_copay', 'pharmacy_copay', 'prescription_copay', 'drug_copay'],
+    'deductible': ['ded', 'annual_deductible', 'individual_deductible', 'deduct'],
+    'oop_max': ['out_of_pocket', 'oop', 'out_of_pocket_max', 'max_oop', 'oop_maximum', 'annual_oop'],
+    'coinsurance': ['coins', 'coinsurance_pct', 'coinsurance_percent'],
     
     // Insurance - Rx/Pharmacy
-    'rx_bin': ['bin', 'rxbin', 'bin_number'],
-    'rx_pcn': ['pcn', 'rxpcn', 'processor_control'],
-    'rx_group': ['rxgroup', 'rx_grp', 'pharmacy_group'],
+    'bin': ['rxbin', 'rx_bin', 'bin_number', 'pharmacy_bin'],
+    'pcn': ['rxpcn', 'rx_pcn', 'processor_control', 'processor_control_number'],
+    'rxgrp': ['rx_group', 'rxgroup', 'pharmacy_group', 'rx_grp'],
+    
+    // Insurance - Admin
+    'payer_id': ['payerid', 'electronic_payer_id', 'payer_number'],
+    'customer_service': ['customer_service_phone', 'member_services', 'phone', 'contact_phone', 'service_number'],
+    'claims_address': ['claims_mailing', 'send_claims_to', 'claims_po_box'],
+    'pcp_required': ['pcp_referral', 'referral_needed', 'primary_care_required'],
+    'referral_required': ['needs_referral', 'referral_needed', 'authorization_required'],
     
     // Dates
-    'effective_date': ['eff_date', 'effectivedate', 'start_date', 'coverage_start'],
-    'expiration_date': ['exp_date', 'expdate', 'end_date', 'term_date', 'coverage_end'],
+    'effective_date': ['eff_date', 'effectivedate', 'start_date', 'coverage_start', 'effective', 'eff'],
+    'expiration_date': ['exp_date', 'expdate', 'end_date', 'term_date', 'coverage_end', 'expires', 'exp'],
     
     // NDC/Drug Codes
     'ndc_code': ['ndc', 'ndccode', 'drug_code', 'product_ndc'],

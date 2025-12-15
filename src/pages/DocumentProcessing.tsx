@@ -94,6 +94,70 @@ import AgentArchitectureRecommendationPanel from '@/components/document-processi
 import ProcessingHistoryWithExport from '@/components/document-processing/ProcessingHistoryWithExport';
 import { ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
 
+// Healthcare abbreviation expansion dictionary
+const HEALTHCARE_ABBREVIATIONS: Record<string, string> = {
+  'ded': 'Deductible',
+  'deductible': 'Deductible',
+  'oop': 'Out of Pocket',
+  'oop_max': 'Out of Pocket Maximum',
+  'out_of_pocket': 'Out of Pocket',
+  'epo': 'Exclusive Provider Organization',
+  'hmo': 'Health Maintenance Organization',
+  'ppo': 'Preferred Provider Organization',
+  'pos': 'Point of Service',
+  'pcn': 'Processor Control Number',
+  'bin': 'Bank Identification Number',
+  'rxgrp': 'Rx Group',
+  'rxbin': 'Rx BIN',
+  'ndc': 'National Drug Code',
+  'npi': 'National Provider Identifier',
+  'dea': 'DEA Number',
+  'pcp': 'Primary Care Physician',
+  'dob': 'Date of Birth',
+  'ssn': 'Social Security Number',
+  'mrn': 'Medical Record Number',
+  'dx': 'Diagnosis',
+  'sig': 'Signature/Instructions',
+  'qty': 'Quantity',
+  'rx': 'Prescription',
+  'otc': 'Over The Counter',
+  'er': 'Emergency Room',
+  'urgent_care': 'Urgent Care',
+  'specialist': 'Specialist',
+  'coinsurance': 'Coinsurance',
+  'copay': 'Copayment',
+  'pa': 'Prior Authorization',
+  'eob': 'Explanation of Benefits',
+  'id': 'Identification Number',
+  'grp': 'Group',
+  'eff_date': 'Effective Date',
+  'exp_date': 'Expiration Date',
+  'member_id': 'Member ID',
+  'subscriber_id': 'Subscriber ID',
+  'group_number': 'Group Number',
+  'plan_type': 'Plan Type',
+  'plan_name': 'Plan Name',
+  'insurance_name': 'Insurance Company Name',
+  'insurance_company': 'Insurance Company',
+  'payer_id': 'Payer ID',
+};
+
+// Function to expand abbreviations in field names
+const expandAbbreviation = (text: string): string => {
+  const lowerText = text.toLowerCase().replace(/\s+/g, '_');
+  if (HEALTHCARE_ABBREVIATIONS[lowerText]) {
+    return HEALTHCARE_ABBREVIATIONS[lowerText];
+  }
+  // Check partial matches
+  for (const [abbr, full] of Object.entries(HEALTHCARE_ABBREVIATIONS)) {
+    if (lowerText.includes(abbr) && abbr.length > 2) {
+      return text.replace(new RegExp(abbr, 'gi'), full);
+    }
+  }
+  // Capitalize first letter of each word
+  return text.split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+};
+
 // Processing stages
 type ProcessingStage = 'idle' | 'uploading' | 'ocr' | 'extraction' | 'mapping' | 'validation' | 'complete' | 'error';
 
@@ -2695,28 +2759,66 @@ export default function DocumentProcessing() {
                     )}
                   </div>
                   
-                  {/* Extracted Fields */}
+                  {/* Extracted Fields - Show ALL target fields from config */}
                   <div className="border rounded-lg p-4">
                     <h4 className="font-medium mb-2 flex items-center gap-2">
                       <Table2 className="h-4 w-4" />
-                      Extracted Fields ({Object.keys(pendingResult.extractedFields).length})
+                      Target Fields ({currentConfig.targetFields.length})
                     </h4>
                     <ScrollArea className="h-[300px]">
                       <div className="space-y-2">
-                        {Object.entries(pendingResult.extractedFields).map(([key, field]) => (
-                          <div 
-                            key={key} 
-                            className={`p-2 rounded border ${field.confidence >= confidenceThreshold ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'}`}
-                          >
-                            <div className="flex items-center justify-between">
-                              <Label className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</Label>
-                              <Badge variant={field.confidence >= confidenceThreshold ? 'default' : 'secondary'} className="text-[9px]">
-                                {Math.round(field.confidence * 100)}%
-                              </Badge>
+                        {currentConfig.targetFields.map((targetField) => {
+                          const extracted = pendingResult.extractedFields[targetField.key];
+                          const hasValue = extracted?.value && extracted.value.trim() !== '';
+                          const confidence = extracted?.confidence || 0;
+                          
+                          return (
+                            <div 
+                              key={targetField.key} 
+                              className={`p-2 rounded border ${
+                                hasValue 
+                                  ? (confidence >= confidenceThreshold ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30')
+                                  : 'bg-red-500/10 border-red-500/30'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                  {targetField.label}
+                                  {targetField.required && <span className="text-destructive">*</span>}
+                                </Label>
+                                {hasValue ? (
+                                  <Badge variant={confidence >= confidenceThreshold ? 'default' : 'secondary'} className="text-[9px]">
+                                    {Math.round(confidence * 100)}%
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-[9px] text-red-500">Missing</Badge>
+                                )}
+                              </div>
+                              <p className="font-medium text-sm">{extracted?.value || '—'}</p>
                             </div>
-                            <p className="font-medium text-sm">{field.value}</p>
-                          </div>
-                        ))}
+                          );
+                        })}
+                        
+                        {/* Also show any extra extracted fields not in target fields */}
+                        {Object.entries(pendingResult.extractedFields)
+                          .filter(([key]) => !currentConfig.targetFields.some(f => f.key === key))
+                          .map(([key, field]) => (
+                            <div 
+                              key={key} 
+                              className="p-2 rounded border bg-blue-500/10 border-blue-500/30"
+                            >
+                              <div className="flex items-center justify-between">
+                                <Label className="text-xs text-muted-foreground capitalize flex items-center gap-1">
+                                  {expandAbbreviation(key.replace(/_/g, ' '))}
+                                  <Badge variant="outline" className="text-[8px] ml-1">Extra</Badge>
+                                </Label>
+                                <Badge variant="secondary" className="text-[9px]">
+                                  {Math.round(field.confidence * 100)}%
+                                </Badge>
+                              </div>
+                              <p className="font-medium text-sm">{field.value}</p>
+                            </div>
+                          ))}
                       </div>
                     </ScrollArea>
                   </div>
