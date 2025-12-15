@@ -924,110 +924,206 @@ async function analyzeWithAzureHealth(
 }
 
 function buildMedicalAnalysisPrompt(documentType: string, analysisType: string, modelType: string = 'cnn'): string {
+  // Modality-specific normal ranges and clinical reference values
+  const modalityNormalRanges: Record<string, string> = {
+    'xray': `
+REFERENCE VALUES FOR X-RAY:
+- Cardiothoracic Ratio (CTR): Normal <0.5 (50%), Borderline 0.5-0.55, Abnormal >0.55
+- Lung Fields: Should be clear, symmetric, with visible vascular markings to periphery
+- Costophrenic Angles: Sharp and clear (blunting indicates effusion)
+- Trachea: Midline position, deviation suggests mass/tension pneumothorax
+- Bone Density: T-score >-1 normal, -1 to -2.5 osteopenia, <-2.5 osteoporosis
+- Joint Space Width: Hip >2mm, Knee >3mm, varies by joint`,
+
+    'ct-scan': `
+REFERENCE VALUES FOR CT SCAN:
+- Brain Parenchyma: Gray matter 35-45 HU, White matter 25-35 HU
+- Blood (acute): 50-90 HU
+- CSF: 0-10 HU
+- Bone: >400 HU
+- Fat: -100 to -50 HU
+- Midline Shift: Normal 0mm, Significant >5mm
+- Ventricular Size: Evans ratio <0.3 normal
+- Lung Nodules: <6mm low risk, 6-8mm intermediate, >8mm needs follow-up`,
+
+    'mri': `
+REFERENCE VALUES FOR MRI:
+- Hippocampal Volume: Age-adjusted, <2 SD from mean suggests atrophy
+- Ventricular Volume: Progressive enlargement indicates atrophy/hydrocephalus
+- White Matter Lesion Load: Fazekas Scale 0-3
+- Tumor Volume: Measure in 3 dimensions, calculate approximate volume
+- ADC Values: Restricted diffusion (stroke) <620 x 10^-6 mm²/s`,
+
+    'ecg': `
+REFERENCE VALUES FOR ECG:
+- Heart Rate: 60-100 bpm (normal), <60 bradycardia, >100 tachycardia
+- PR Interval: 120-200ms (normal), >200ms first-degree AV block
+- QRS Duration: 80-120ms (normal), >120ms bundle branch block
+- QT Interval: 350-450ms (varies with HR), use QTc
+- QTc: <450ms male, <460ms female (prolonged >500ms is high risk)
+- ST Segment: Isoelectric ±1mm, >1mm elevation suggests STEMI
+- Axis: -30° to +90° normal, LAD <-30°, RAD >+90°`,
+
+    'ultrasound': `
+REFERENCE VALUES FOR ULTRASOUND:
+- Liver Size: <16cm craniocaudal, echogenicity similar to kidney cortex
+- Gallbladder Wall: <3mm thick
+- Common Bile Duct: <6mm (<8mm post-cholecystectomy)
+- Kidney Size: 9-12cm length, cortical thickness >10mm
+- Aortic Diameter: <3cm normal, >3cm aneurysmal`,
+
+    'mammogram': `
+REFERENCE VALUES FOR MAMMOGRAM:
+- BI-RADS Categories:
+  0 - Incomplete, needs additional imaging
+  1 - Negative (normal)
+  2 - Benign finding
+  3 - Probably benign (<2% malignancy risk)
+  4 - Suspicious (2-95% malignancy risk): 4A (2-10%), 4B (10-50%), 4C (50-95%)
+  5 - Highly suggestive of malignancy (>95%)
+  6 - Known biopsy-proven malignancy
+- Breast Density: A (fatty), B (scattered), C (heterogeneously dense), D (extremely dense)`
+  };
+
   const typeSpecificGuidance: Record<string, string> = {
-    'xray': `Analyze this X-ray image. Look for:
-- Bone structures: alignment, fractures, degenerative changes, bone density
+    'xray': `Analyze this X-ray image comprehensively:
+- Bone structures: alignment, fractures, degenerative changes, bone density (compare to normal T-scores)
 - Soft tissue: abnormal shadows, masses, calcifications
-- Joint spaces: narrowing, effusions
-- Anatomical landmarks and positioning quality
-- Lung nodules, pneumonia patterns, TB indicators (qXR, RetinaNet approach)`,
-    'ct-scan': `Analyze this CT scan image. Evaluate:
-- Tissue density patterns and contrast enhancement
-- Brain hemorrhage detection (qER approach)
-- Tumor detection and segmentation
-- Lung cancer screening indicators
-- Cardiovascular analysis
-- Anatomical structures visibility and any abnormalities`,
-    'mri': `Analyze this MRI image. Assess:
-- Brain tumor segmentation (U-Net approach)
-- Signal intensity patterns in different tissues
-- Alzheimer's disease indicators
-- Multiple sclerosis lesions
-- Anatomical structures and any pathological changes
-- Soft tissue detail and contrast`,
-    'ecg': `Analyze this ECG/EKG tracing. Evaluate:
-- Heart rhythm and rate using RNN/LSTM pattern recognition
-- P waves, QRS complexes, T waves morphology
-- PR interval, QT interval, QRS duration
-- ST segment changes
-- Arrhythmia detection, atrial fibrillation, MI indicators`,
-    'ultrasound': `Analyze this ultrasound image. Assess:
-- Echo patterns and tissue characteristics
-- Organ morphology and size
-- Any masses, cysts, or fluid collections
-- Fetal measurements if applicable
-- Blood flow patterns if Doppler is shown`,
-    'mammogram': `Analyze this mammogram image. Evaluate using YOLO/Faster R-CNN approach:
-- Mass detection and characterization
-- Microcalcifications
-- Breast density assessment
-- Asymmetry detection
-- BI-RADS scoring indicators`
+- Lung fields: nodules (measure size), pneumonia patterns, TB indicators using qXR/RetinaNet/CheXNet approach
+- Cardiothoracic ratio: measure and compare to normal (<0.5)
+- Joint spaces: measure width and compare to normal ranges`,
+
+    'ct-scan': `Analyze this CT scan using qER/U-Net/3D-CNN approaches:
+- Measure Hounsfield units for tissue characterization
+- Brain: check for hemorrhage (acute blood 50-90 HU), midline shift (measure in mm)
+- Lung: nodule detection with size measurement, lung cancer screening indicators
+- Tumor segmentation: estimate volume and characterize enhancement patterns
+- Cardiovascular: assess for calcifications, aneurysms`,
+
+    'mri': `Analyze this MRI using U-Net/BraTS/nnU-Net segmentation:
+- Brain tumor segmentation: outline boundaries, estimate volume
+- Alzheimer's indicators: hippocampal volume, ventricular enlargement
+- Multiple sclerosis: count and characterize lesions using Fazekas scale
+- Signal intensity patterns: compare to expected tissue characteristics
+- Measure any abnormalities in standardized units`,
+
+    'ecg': `Analyze this ECG using RNN/LSTM/Transformer pattern recognition:
+- MEASURE precisely: Heart rate, PR interval, QRS duration, QT/QTc interval
+- Compare ALL measurements to normal ranges
+- Rhythm analysis: regular vs irregular, sinus vs other
+- P wave, QRS complex, T wave morphology
+- ST segment analysis: measure deviation in mm
+- Detect: arrhythmia, atrial fibrillation, MI indicators, axis deviation`,
+
+    'ultrasound': `Analyze this ultrasound using SonoNet/U-Net approaches:
+- Organ measurements: compare to normal size ranges
+- Echo patterns: homogeneous vs heterogeneous, hypo/hyperechoic
+- Masses/cysts: measure in 3 dimensions
+- Doppler flow patterns if shown
+- Compare all findings to normal reference values`,
+
+    'mammogram': `Analyze this mammogram using Faster R-CNN/YOLO/ResNet:
+- Mass detection: size, shape, margins, density
+- Microcalcifications: morphology, distribution
+- Breast density: categorize A-D
+- Asymmetry: focal vs global
+- ASSIGN BI-RADS category with justification
+- Compare all findings to BI-RADS criteria`
   };
 
   const modelTypeGuidance: Record<string, string> = {
-    'cnn': 'Use CNN-based pattern recognition to identify shapes, textures, and anomalies.',
-    'u-net': 'Apply U-Net segmentation approach to precisely outline regions and boundaries.',
-    'yolo': 'Use YOLO-style rapid detection to locate and identify anomalies quickly.',
-    'faster-rcnn': 'Apply Faster R-CNN region proposal approach for precise localization of findings.',
-    'rnn': 'Use RNN sequential analysis for temporal patterns and signal interpretation.',
-    'llm': 'Generate comprehensive clinical narrative and structured report.'
+    'cnn': 'Use CNN-based pattern recognition (CheXNet, DenseNet-121) to identify shapes, textures, and anomalies with classification confidence.',
+    'u-net': 'Apply U-Net segmentation to precisely outline regions, boundaries, and provide volumetric measurements.',
+    'yolo': 'Use YOLO-style rapid detection to locate and identify anomalies with bounding boxes and confidence scores.',
+    'faster-rcnn': 'Apply Faster R-CNN region proposal for precise localization with high accuracy detection.',
+    'rnn': 'Use RNN/LSTM sequential analysis for temporal patterns, signal interpretation, and time-series data.',
+    'llm': 'Generate comprehensive clinical narrative with structured findings and differential diagnosis.'
   };
 
-  const guidance = typeSpecificGuidance[documentType] || `Analyze this medical image comprehensively, identifying any notable features, anatomical structures, and potential findings.`;
+  const guidance = typeSpecificGuidance[documentType] || `Analyze this medical image comprehensively, identifying any notable features, anatomical structures, and potential findings. Measure all quantifiable findings.`;
   const modelApproach = modelTypeGuidance[modelType] || modelTypeGuidance['cnn'];
+  const normalRanges = modalityNormalRanges[documentType] || '';
 
-  return `You are an AI medical imaging assistant specializing in ${documentType?.replace('-', ' ') || 'medical imaging'} analysis.
+  return `You are an expert AI medical imaging assistant using multi-model analysis (CNN, U-Net, YOLO, Faster R-CNN, RNN, LLM) for ${documentType?.replace('-', ' ') || 'medical imaging'}.
 
 AI MODEL APPROACH: ${modelType.toUpperCase()}
 ${modelApproach}
+
+${normalRanges}
 
 ANALYSIS INSTRUCTIONS:
 ${guidance}
 
 ANALYSIS TYPE: ${analysisType || 'comprehensive'}
 
-IMPORTANT DISCLAIMERS:
-- This is an AI-assisted preliminary analysis only
-- Results should be verified by qualified healthcare professionals
-- This is NOT a diagnostic conclusion
+CRITICAL REQUIREMENTS:
+1. ALWAYS include measurements with normal ranges and flag abnormalities
+2. Use specific clinical terminology and accepted medical standards
+3. Classify each finding as NORMAL, BORDERLINE, or ABNORMAL based on reference values
+4. Provide clinical significance ratings based on evidence
+5. Include specific follow-up recommendations
+
+⚠️ IMPORTANT MEDICAL DISCLAIMER:
+This AI analysis is for INFORMATIONAL and EDUCATIONAL purposes only.
+- NOT a substitute for professional medical diagnosis
+- Patient MUST consult with their healthcare provider for interpretation
+- Results require verification by qualified radiologist/physician
+- AI confidence scores do not replace clinical judgment
 
 Provide your analysis in the following JSON structure:
 {
   "findings": [
     {
-      "category": "finding|observation|recommendation|concern|normal|measurement",
-      "description": "Detailed description of the finding",
+      "category": "finding|observation|recommendation|concern|normal|measurement|abnormality",
+      "description": "Detailed clinical description",
       "confidence": 75-95,
-      "region": "Anatomical region if applicable",
+      "region": "Anatomical region",
       "clinicalSignificance": "low|medium|high|critical",
-      "anatomicalLocation": "Specific anatomical location",
-      "differentialDiagnosis": ["Possible conditions to consider"],
-      "followUpRecommendation": "Suggested follow-up action"
+      "anatomicalLocation": "Specific location",
+      "status": "normal|borderline|abnormal",
+      "measurementValue": "value with unit if applicable",
+      "normalRange": "reference range",
+      "differentialDiagnosis": ["Possible conditions"],
+      "followUpRecommendation": "Specific follow-up action"
     }
   ],
   "measurements": [
     {
       "name": "Measurement name",
-      "value": 0,
+      "value": number,
       "unit": "unit",
-      "normalRange": { "min": 0, "max": 0 },
-      "status": "normal|borderline|abnormal"
+      "normalRange": { "min": number, "max": number, "description": "clinical interpretation" },
+      "status": "normal|borderline|abnormal",
+      "clinicalImplication": "What this means clinically"
     }
   ],
+  "abnormalitySummary": {
+    "hasAbnormalities": true/false,
+    "criticalFindings": ["List any urgent findings"],
+    "abnormalMeasurements": ["List measurements outside normal range"],
+    "recommendedActions": ["Specific actions needed"]
+  },
   "technicalQuality": {
     "score": 1-10,
-    "issues": ["List any image quality issues"],
+    "issues": ["Quality issues"],
     "adequateForDiagnosis": true/false
   },
   "modelApproach": "${modelType}",
-  "summary": "Brief overall summary of the image analysis",
+  "clinicalApplications": "Which validated AI models/approaches were conceptually applied",
+  "summary": "Comprehensive clinical summary",
+  "impression": "Clinical impression in standard radiology format",
   "urgency": "routine|priority|urgent|emergent",
-  "recommendations": ["List of recommended follow-up actions"],
-  "limitations": ["List limitations of this AI analysis"]
+  "providerConsultation": {
+    "required": true/false,
+    "urgency": "routine|soon|urgent|immediate",
+    "specialtyRecommended": "Type of specialist if needed",
+    "reason": "Why consultation is recommended"
+  },
+  "recommendations": ["Detailed follow-up actions"],
+  "limitations": ["AI analysis limitations"]
 }
 
-Be thorough but conservative in your assessments. When uncertain, indicate lower confidence and recommend specialist review.`;
+Be thorough, precise, and ALWAYS emphasize the need for professional medical interpretation.`;
 }
 
 function parseMedicalAnalysisResponse(responseText: string, documentType: string): any[] {
