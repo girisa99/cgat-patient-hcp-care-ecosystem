@@ -865,16 +865,32 @@ export default function DocumentProcessing() {
           }
         }
         
-        // Check entities for medication info
+        // Check entities for medication info - support multiple field naming conventions
         const entities = fullMetadata.entities || [];
-        const medicationEntity = entities.find((e: any) => e.type === 'medication' || e.type === 'drug');
+        const medicationEntity = entities.find((e: any) => 
+          e.type === 'medication' || 
+          e.type === 'medication_name' || 
+          e.type === 'drug' || 
+          e.type === 'drug_name'
+        );
         if (medicationEntity && !extractedDrugName) {
           extractedDrugName = medicationEntity.value;
         }
         
-        // Use extracted or fallback values
-        const drugName = extractedDrugName || extractedFields['medication']?.value?.split(' ')[0] || 'Unknown';
-        const sigText = extractedSig || extractedFields['sig']?.value || 'Take as directed';
+        // Also check extractedFields for medication_name (common extraction field name)
+        if (!extractedDrugName && extractedFields['medication_name']?.value) {
+          extractedDrugName = extractedFields['medication_name'].value;
+        }
+        
+        // Use extracted or fallback values - check multiple field name variants
+        const drugName = extractedDrugName || 
+                         extractedFields['medication_name']?.value?.split(' ')[0] || 
+                         extractedFields['medication']?.value?.split(' ')[0] || 
+                         'Unknown';
+        const sigText = extractedSig || 
+                        extractedFields['sig']?.value || 
+                        extractedFields['signature']?.value || 
+                        'Take as directed';
         const calculation = calculateQuantityAndDaySupply(sigText);
         
         medications = [{
