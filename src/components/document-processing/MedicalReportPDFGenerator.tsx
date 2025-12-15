@@ -45,6 +45,26 @@ interface ProviderDetails {
   report_date: string;
 }
 
+interface PanelAnalysis {
+  panelId: string;
+  anatomicalRegion: string;
+  organSystem: string;
+  findings: string[];
+}
+
+interface DetailedReport {
+  findingsNarrative?: string;
+  impression?: string;
+  recommendations?: string;
+}
+
+interface AbnormalitySummary {
+  totalAbnormalities: number;
+  criticalFindings: string[];
+  abnormalitiesByOrgan?: Record<string, string[]>;
+  recommendedActions: string[];
+}
+
 interface MedicalReportPDFGeneratorProps {
   patientDetails: PatientDetails;
   providerDetails: ProviderDetails;
@@ -54,6 +74,9 @@ interface MedicalReportPDFGeneratorProps {
   documentType: string;
   modelUsed: string;
   disclaimer: string;
+  panelAnalysis?: PanelAnalysis[];
+  detailedReport?: DetailedReport;
+  abnormalitySummary?: AbnormalitySummary | null;
   onGenerated?: () => void;
 }
 
@@ -66,6 +89,9 @@ export const MedicalReportPDFGenerator: React.FC<MedicalReportPDFGeneratorProps>
   documentType,
   modelUsed,
   disclaimer,
+  panelAnalysis = [],
+  detailedReport,
+  abnormalitySummary,
   onGenerated
 }) => {
   const [isGenerating, setIsGenerating] = React.useState(false);

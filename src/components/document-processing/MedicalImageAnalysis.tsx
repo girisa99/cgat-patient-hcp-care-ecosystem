@@ -9,6 +9,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Brain, 
   Sparkles, 
@@ -34,7 +35,15 @@ import {
   TrendingUp,
   TrendingDown,
   Minus,
-  Phone
+  Phone,
+  ChevronDown,
+  ChevronRight,
+  Layers,
+  Target,
+  Info,
+  AlertCircle,
+  Cpu,
+  MapPin
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -87,6 +96,15 @@ interface AIInsight {
   status?: 'normal' | 'borderline' | 'abnormal';
   measurementValue?: string;
   normalRange?: string;
+  panelReference?: string;
+  anatomicalLocation?: {
+    organ?: string;
+    side?: string;
+    region?: string;
+  };
+  detailedExplanation?: string;
+  differentialDiagnosis?: string[];
+  followUpRecommendation?: string;
 }
 
 interface Measurement {
@@ -96,6 +114,41 @@ interface Measurement {
   normalRange?: { min: number; max: number; description?: string };
   status: 'normal' | 'borderline' | 'abnormal';
   clinicalImplication?: string;
+  panelReference?: string;
+}
+
+interface PanelAnalysis {
+  panelId: string;
+  anatomicalRegion: string;
+  organSystem: string;
+  imagingModality?: string;
+  findings: string[];
+}
+
+interface DetailedReport {
+  clinicalHistory?: string;
+  technique?: string;
+  comparison?: string;
+  findingsNarrative?: string;
+  impression?: string;
+  recommendations?: string;
+}
+
+interface AbnormalitySummary {
+  totalAbnormalities: number;
+  criticalFindings: string[];
+  abnormalitiesByPanel?: Record<string, string[]>;
+  abnormalitiesByOrgan?: Record<string, string[]>;
+  recommendedActions: string[];
+}
+
+interface ModelApproachDetails {
+  name: string;
+  description: string;
+  capabilities: string[];
+  bestFor: string[];
+  accuracy: string;
+  limitations: string;
 }
 
 export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
@@ -108,15 +161,21 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
+  const [panelAnalysis, setPanelAnalysis] = useState<PanelAnalysis[]>([]);
+  const [detailedReport, setDetailedReport] = useState<DetailedReport>({});
+  const [abnormalitySummary, setAbnormalitySummary] = useState<AbnormalitySummary | null>(null);
+  const [modelApproachDetails, setModelApproachDetails] = useState<ModelApproachDetails | null>(null);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
   const [modelUsed, setModelUsed] = useState<string>('');
+  const [modelApproach, setModelApproach] = useState<string>('');
   const [disclaimer, setDisclaimer] = useState<string>('');
   const [rawAnalysis, setRawAnalysis] = useState<string>('');
   const [activeTab, setActiveTab] = useState('analysis');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
   const [hasAbnormalities, setHasAbnormalities] = useState(false);
+  const [expandedPanels, setExpandedPanels] = useState<Set<string>>(new Set(['model-info']));
   
   // Multi-provider state
   const modality = (documentType?.replace('-', '') === 'ctscan' ? 'ct-scan' : documentType) as MedicalModalityType || 'xray';
@@ -146,6 +205,15 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   
   const [clinicalNotes, setClinicalNotes] = useState('');
 
+  const togglePanel = (panelId: string) => {
+    setExpandedPanels(prev => {
+      const next = new Set(prev);
+      if (next.has(panelId)) next.delete(panelId);
+      else next.add(panelId);
+      return next;
+    });
+  };
+
   const getDocumentTypeLabel = () => {
     const labels: Record<string, string> = {
       'xray': 'X-Ray',
@@ -162,6 +230,10 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
     setIsAnalyzing(true);
     setAiInsights([]);
     setMeasurements([]);
+    setPanelAnalysis([]);
+    setDetailedReport({});
+    setAbnormalitySummary(null);
+    setModelApproachDetails(null);
     setRawAnalysis('');
     setHasAbnormalities(false);
     
@@ -192,19 +264,45 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
 
       if (error) throw error;
 
-      if (data?.insights) {
-        setAiInsights(data.insights);
+      if (data) {
+        // Set insights
+        if (data.insights) {
+          setAiInsights(data.insights);
+        }
+        
+        // Set model info
         setModelUsed(data.modelUsed || 'unknown');
+        setModelApproach(data.modelApproach || data.modelType?.toUpperCase() || '');
         setDisclaimer(data.disclaimer || '');
         setRawAnalysis(data.rawAnalysis || '');
         
-        // Extract measurements if available
+        // Set measurements
         if (data.measurements && Array.isArray(data.measurements)) {
           setMeasurements(data.measurements);
         }
         
+        // Set panel analysis
+        if (data.panelAnalysis && Array.isArray(data.panelAnalysis)) {
+          setPanelAnalysis(data.panelAnalysis);
+        }
+        
+        // Set detailed report
+        if (data.detailedReport) {
+          setDetailedReport(data.detailedReport);
+        }
+        
+        // Set abnormality summary
+        if (data.abnormalitySummary) {
+          setAbnormalitySummary(data.abnormalitySummary);
+        }
+        
+        // Set model approach details
+        if (data.modelApproachDetails) {
+          setModelApproachDetails(data.modelApproachDetails);
+        }
+        
         // Check for abnormalities
-        const abnormalCount = data.insights.filter((i: AIInsight) => 
+        const abnormalCount = (data.insights || []).filter((i: AIInsight) => 
           i.status === 'abnormal' || 
           i.clinicalSignificance === 'high' || 
           i.clinicalSignificance === 'critical' ||
@@ -212,12 +310,12 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
           i.category === 'abnormality'
         ).length;
         
-        setHasAbnormalities(abnormalCount > 0);
+        setHasAbnormalities(abnormalCount > 0 || (data.abnormalitySummary?.totalAbnormalities || 0) > 0);
       }
       
       setAnalysisComplete(true);
       toast.success(`Analysis complete`, {
-        description: `${data?.provider || 'AI'} (${data?.modelType || 'auto'}) - ${data?.insights?.length || 0} findings`
+        description: `${data?.provider || 'AI'} using ${data?.modelApproach || data?.modelType || 'auto'} - ${data?.insights?.length || 0} findings`
       });
     } catch (error) {
       console.error('Analysis error:', error);
@@ -248,77 +346,13 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
     toast.success('Analysis report saved successfully');
   };
 
-  const generateReport = () => {
-    if (!patientDetails.patient_name) {
-      toast.error('Please enter patient details first');
-      return;
-    }
-
-    // Generate a formatted report
-    const report = `
-MEDICAL IMAGING REPORT
-======================
-
-STUDY TYPE: ${getDocumentTypeLabel()}
-STUDY DATE: ${patientDetails.study_date}
-REPORT DATE: ${providerDetails.report_date}
-
-PATIENT INFORMATION
--------------------
-Name: ${patientDetails.patient_name}
-DOB: ${patientDetails.patient_dob || 'Not provided'}
-Patient ID/MRN: ${patientDetails.patient_id || 'Not provided'}
-Referring Physician: ${patientDetails.referring_physician || 'Not provided'}
-
-PROVIDER INFORMATION
---------------------
-Interpreting Provider: ${providerDetails.provider_name || 'Not provided'}
-NPI: ${providerDetails.provider_npi || 'Not provided'}
-Facility: ${providerDetails.facility_name || 'Not provided'}
-Address: ${providerDetails.facility_address || 'Not provided'}
-
-AI-ASSISTED FINDINGS
---------------------
-${aiInsights.map((insight, i) => `
-${i + 1}. [${insight.category.toUpperCase()}] ${insight.description}
-   Confidence: ${insight.confidence}%
-   ${insight.region ? `Region: ${insight.region}` : ''}
-   ${insight.clinicalSignificance ? `Clinical Significance: ${insight.clinicalSignificance}` : ''}
-`).join('\n')}
-
-CLINICAL NOTES
---------------
-${clinicalNotes || 'No additional notes provided.'}
-
-DISCLAIMER
-----------
-${disclaimer || 'This AI-assisted analysis is for informational purposes only and should not replace professional medical interpretation. Always consult qualified healthcare providers for clinical decisions.'}
-
----
-Analysis Model: ${modelUsed || 'Unknown'}
-Generated: ${new Date().toISOString()}
-    `.trim();
-
-    // Download as text file
-    const blob = new Blob([report], { type: 'text/plain' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `medical_report_${patientDetails.patient_name.replace(/\s+/g, '_')}_${patientDetails.study_date}.txt`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-
-    toast.success('Report generated and downloaded');
-  };
-
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'finding': return <Eye className="h-4 w-4 text-blue-500" />;
       case 'observation': return <CheckCircle className="h-4 w-4 text-green-500" />;
       case 'recommendation': return <Sparkles className="h-4 w-4 text-purple-500" />;
       case 'concern': return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+      case 'abnormality': return <AlertCircle className="h-4 w-4 text-red-500" />;
       case 'normal': return <CheckCircle className="h-4 w-4 text-emerald-500" />;
       default: return <FileText className="h-4 w-4 text-muted-foreground" />;
     }
@@ -330,6 +364,7 @@ Generated: ${new Date().toISOString()}
       case 'observation': return 'bg-green-500/10 text-green-700 border-green-500/20';
       case 'recommendation': return 'bg-purple-500/10 text-purple-700 border-purple-500/20';
       case 'concern': return 'bg-amber-500/10 text-amber-700 border-amber-500/20';
+      case 'abnormality': return 'bg-red-500/10 text-red-700 border-red-500/20';
       case 'normal': return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20';
       default: return 'bg-muted text-muted-foreground';
     }
@@ -337,10 +372,20 @@ Generated: ${new Date().toISOString()}
 
   const getSignificanceColor = (significance?: string) => {
     switch (significance) {
-      case 'high': return 'text-red-600';
-      case 'medium': return 'text-amber-600';
-      case 'low': return 'text-green-600';
+      case 'critical': return 'text-red-700 bg-red-100';
+      case 'high': return 'text-red-600 bg-red-50';
+      case 'medium': return 'text-amber-600 bg-amber-50';
+      case 'low': return 'text-green-600 bg-green-50';
       default: return 'text-muted-foreground';
+    }
+  };
+
+  const getStatusIcon = (status?: string) => {
+    switch (status) {
+      case 'abnormal': return <TrendingUp className="h-3 w-3 text-red-500" />;
+      case 'borderline': return <Minus className="h-3 w-3 text-amber-500" />;
+      case 'normal': return <TrendingDown className="h-3 w-3 text-green-500" />;
+      default: return null;
     }
   };
 
@@ -392,19 +437,65 @@ Generated: ${new Date().toISOString()}
             )}
           </div>
           
-          {/* Model Badge */}
+          {/* Model Info Badge */}
           {modelUsed && (
-            <div className="mt-3 flex items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <Badge variant="outline" className="text-xs">
                 <Brain className="h-3 w-3 mr-1" />
                 {modelUsed}
               </Badge>
-              {analysisComplete && (
+              {modelApproach && (
                 <Badge variant="secondary" className="text-xs">
+                  <Cpu className="h-3 w-3 mr-1" />
+                  {modelApproach}
+                </Badge>
+              )}
+              {analysisComplete && (
+                <Badge variant="outline" className="text-xs">
                   {aiInsights.length} insights
                 </Badge>
               )}
             </div>
+          )}
+          
+          {/* Model Approach Details */}
+          {modelApproachDetails && (
+            <Collapsible open={expandedPanels.has('model-info')} className="mt-3">
+              <CollapsibleTrigger 
+                onClick={() => togglePanel('model-info')}
+                className="flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground w-full"
+              >
+                {expandedPanels.has('model-info') ? <ChevronDown className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+                <Info className="h-3 w-3" />
+                AI Model Approach Details
+              </CollapsibleTrigger>
+              <CollapsibleContent className="mt-2">
+                <div className="bg-muted/50 rounded-lg p-3 text-xs space-y-2">
+                  <div>
+                    <span className="font-medium">{modelApproachDetails.name}</span>
+                    <p className="text-muted-foreground">{modelApproachDetails.description}</p>
+                  </div>
+                  <div>
+                    <span className="font-medium">Capabilities:</span>
+                    <ul className="list-disc list-inside text-muted-foreground">
+                      {modelApproachDetails.capabilities.slice(0, 3).map((c, i) => (
+                        <li key={i}>{c}</li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div className="flex gap-4">
+                    <div>
+                      <span className="font-medium">Best For: </span>
+                      <span className="text-muted-foreground">{modelApproachDetails.bestFor.join(', ')}</span>
+                    </div>
+                  </div>
+                  <div className="text-amber-600">
+                    <span className="font-medium">Limitations: </span>
+                    {modelApproachDetails.limitations}
+                  </div>
+                </div>
+              </CollapsibleContent>
+            </Collapsible>
           )}
           
           {/* Analyze Button */}
@@ -428,7 +519,7 @@ Generated: ${new Date().toISOString()}
               )}
             </Button>
             <p className="text-xs text-muted-foreground text-center mt-2">
-              Uses Gemini Vision for medical image analysis
+              Uses multi-model Vision AI for comprehensive medical image analysis
             </p>
           </div>
         </CardContent>
@@ -437,10 +528,14 @@ Generated: ${new Date().toISOString()}
       {/* Right Panel - Analysis & Details */}
       <div className="space-y-4">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="analysis" className="flex items-center gap-1 text-xs">
               <Sparkles className="h-3 w-3" />
-              AI Insights
+              Insights
+            </TabsTrigger>
+            <TabsTrigger value="report" className="flex items-center gap-1 text-xs">
+              <FileText className="h-3 w-3" />
+              Report
             </TabsTrigger>
             <TabsTrigger value="patient" className="flex items-center gap-1 text-xs">
               <User className="h-3 w-3" />
@@ -452,16 +547,93 @@ Generated: ${new Date().toISOString()}
             </TabsTrigger>
           </TabsList>
           
-          <TabsContent value="analysis" className="mt-4">
+          <TabsContent value="analysis" className="mt-4 space-y-4">
+            {/* Panel Analysis */}
+            {panelAnalysis.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Layers className="h-4 w-4" />
+                    Image Panel Analysis
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    {panelAnalysis.map((panel, idx) => (
+                      <div key={idx} className="bg-muted/50 rounded-lg p-3">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline" className="font-mono">Panel {panel.panelId}</Badge>
+                          <span className="font-medium text-sm">{panel.anatomicalRegion}</span>
+                          <Badge variant="secondary" className="text-xs">{panel.organSystem}</Badge>
+                        </div>
+                        {panel.findings.length > 0 && (
+                          <ul className="text-xs text-muted-foreground space-y-1">
+                            {panel.findings.map((finding, fIdx) => (
+                              <li key={fIdx} className="flex items-start gap-1">
+                                <span className="text-primary">•</span>
+                                {finding}
+                              </li>
+                            ))}
+                          </ul>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Abnormality Summary */}
+            {abnormalitySummary && abnormalitySummary.totalAbnormalities > 0 && (
+              <Alert className="border-red-500 bg-red-50">
+                <AlertTriangle className="h-4 w-4 text-red-600" />
+                <AlertTitle className="text-red-800">
+                  {abnormalitySummary.totalAbnormalities} Abnormalit{abnormalitySummary.totalAbnormalities > 1 ? 'ies' : 'y'} Detected
+                </AlertTitle>
+                <AlertDescription className="text-red-700 text-sm space-y-2">
+                  {abnormalitySummary.criticalFindings.length > 0 && (
+                    <div>
+                      <span className="font-medium">Critical Findings:</span>
+                      <ul className="list-disc list-inside">
+                        {abnormalitySummary.criticalFindings.map((f, i) => (
+                          <li key={i}>{f}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                  {abnormalitySummary.abnormalitiesByOrgan && Object.keys(abnormalitySummary.abnormalitiesByOrgan).length > 0 && (
+                    <div>
+                      <span className="font-medium">By Organ:</span>
+                      {Object.entries(abnormalitySummary.abnormalitiesByOrgan).map(([organ, findings]) => (
+                        <div key={organ} className="ml-2">
+                          <span className="font-medium">{organ}:</span> {(findings as string[]).join('; ')}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                  {abnormalitySummary.recommendedActions.length > 0 && (
+                    <div>
+                      <span className="font-medium">Recommended Actions:</span>
+                      <ul className="list-disc list-inside">
+                        {abnormalitySummary.recommendedActions.map((a, i) => (
+                          <li key={i}>{a}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </AlertDescription>
+              </Alert>
+            )}
+
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg flex items-center gap-2">
                   <ClipboardList className="h-5 w-5" />
-                  Clinical Insights
+                  Detailed Findings
                 </CardTitle>
                 <CardDescription>
                   {analysisComplete 
-                    ? `${aiInsights.length} findings from AI analysis` 
+                    ? `${aiInsights.length} findings from ${modelApproach || 'AI'} analysis` 
                     : 'Click "Analyze with Vision AI" to get insights'}
                 </CardDescription>
               </CardHeader>
@@ -476,7 +648,7 @@ Generated: ${new Date().toISOString()}
                 )}
                 
                 {aiInsights.length > 0 ? (
-                  <ScrollArea className="h-[280px] pr-4">
+                  <ScrollArea className="h-[350px] pr-4">
                     <div className="space-y-3">
                       {aiInsights.map((insight, index) => (
                         <div 
@@ -485,25 +657,93 @@ Generated: ${new Date().toISOString()}
                         >
                           <div className="flex items-start gap-2">
                             {getCategoryIcon(insight.category)}
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-1 flex-wrap gap-1">
-                                <Badge variant="outline" className="text-xs capitalize">
-                                  {insight.category}
-                                </Badge>
+                            <div className="flex-1 space-y-2">
+                              <div className="flex items-center justify-between flex-wrap gap-1">
+                                <div className="flex items-center gap-2">
+                                  <Badge variant="outline" className="text-xs capitalize">
+                                    {insight.category}
+                                  </Badge>
+                                  {insight.panelReference && insight.panelReference !== 'all' && (
+                                    <Badge variant="secondary" className="text-xs font-mono">
+                                      Panel {insight.panelReference}
+                                    </Badge>
+                                  )}
+                                  {insight.status && (
+                                    <Badge className={`text-xs ${
+                                      insight.status === 'abnormal' ? 'bg-red-500' : 
+                                      insight.status === 'borderline' ? 'bg-amber-500' : 'bg-green-500'
+                                    }`}>
+                                      {getStatusIcon(insight.status)}
+                                      <span className="ml-1">{insight.status}</span>
+                                    </Badge>
+                                  )}
+                                </div>
                                 <div className="flex items-center gap-2">
                                   {insight.clinicalSignificance && (
-                                    <span className={`text-xs font-medium ${getSignificanceColor(insight.clinicalSignificance)}`}>
+                                    <span className={`text-xs font-medium px-2 py-0.5 rounded ${getSignificanceColor(insight.clinicalSignificance)}`}>
                                       {insight.clinicalSignificance} significance
                                     </span>
                                   )}
                                   <span className="text-xs text-muted-foreground">
-                                    {insight.confidence}% confidence
+                                    {insight.confidence}%
                                   </span>
                                 </div>
                               </div>
+                              
+                              {/* Anatomical Location */}
+                              {insight.anatomicalLocation && (
+                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                  <MapPin className="h-3 w-3" />
+                                  <span>
+                                    {[
+                                      insight.anatomicalLocation.organ,
+                                      insight.anatomicalLocation.side,
+                                      insight.anatomicalLocation.region
+                                    ].filter(Boolean).join(' - ')}
+                                  </span>
+                                </div>
+                              )}
+                              
                               <p className="text-sm">{insight.description}</p>
-                              {insight.region && (
-                                <p className="text-xs text-muted-foreground mt-1">
+                              
+                              {/* Detailed Explanation */}
+                              {insight.detailedExplanation && (
+                                <p className="text-xs text-muted-foreground bg-muted/50 p-2 rounded">
+                                  {insight.detailedExplanation}
+                                </p>
+                              )}
+                              
+                              {/* Differential Diagnosis */}
+                              {insight.differentialDiagnosis && insight.differentialDiagnosis.length > 0 && (
+                                <div className="text-xs">
+                                  <span className="font-medium">Differential: </span>
+                                  <span className="text-muted-foreground">
+                                    {insight.differentialDiagnosis.join(', ')}
+                                  </span>
+                                </div>
+                              )}
+                              
+                              {/* Measurements */}
+                              {insight.measurementValue && (
+                                <div className="text-xs flex items-center gap-2">
+                                  <Activity className="h-3 w-3" />
+                                  <span className="font-medium">Measured: {insight.measurementValue}</span>
+                                  {insight.normalRange && (
+                                    <span className="text-muted-foreground">(Normal: {insight.normalRange})</span>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Follow-up Recommendation */}
+                              {insight.followUpRecommendation && (
+                                <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded">
+                                  <span className="font-medium">Follow-up: </span>
+                                  {insight.followUpRecommendation}
+                                </div>
+                              )}
+                              
+                              {insight.region && !insight.anatomicalLocation && (
+                                <p className="text-xs text-muted-foreground">
                                   Region: {insight.region}
                                 </p>
                               )}
@@ -518,6 +758,79 @@ Generated: ${new Date().toISOString()}
                     <Brain className="h-12 w-12 mx-auto mb-3 opacity-50" />
                     <p>No analysis results yet</p>
                     <p className="text-sm">Upload an image and click analyze</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="report" className="mt-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Detailed Report
+                </CardTitle>
+                <CardDescription>
+                  Comprehensive narrative analysis
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {detailedReport && Object.keys(detailedReport).length > 0 ? (
+                  <ScrollArea className="h-[400px] pr-4">
+                    <div className="space-y-4">
+                      {detailedReport.technique && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Technique</h4>
+                          <p className="text-sm text-muted-foreground">{detailedReport.technique}</p>
+                        </div>
+                      )}
+                      
+                      {detailedReport.clinicalHistory && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Clinical Context</h4>
+                          <p className="text-sm text-muted-foreground">{detailedReport.clinicalHistory}</p>
+                        </div>
+                      )}
+                      
+                      {detailedReport.comparison && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Comparison</h4>
+                          <p className="text-sm text-muted-foreground">{detailedReport.comparison}</p>
+                        </div>
+                      )}
+                      
+                      <Separator />
+                      
+                      {detailedReport.findingsNarrative && (
+                        <div>
+                          <h4 className="font-medium text-sm mb-1">Findings</h4>
+                          <p className="text-sm whitespace-pre-wrap">{detailedReport.findingsNarrative}</p>
+                        </div>
+                      )}
+                      
+                      <Separator />
+                      
+                      {detailedReport.impression && (
+                        <div className="bg-primary/5 p-3 rounded-lg">
+                          <h4 className="font-medium text-sm mb-1">Impression</h4>
+                          <p className="text-sm font-medium">{detailedReport.impression}</p>
+                        </div>
+                      )}
+                      
+                      {detailedReport.recommendations && (
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <h4 className="font-medium text-sm mb-1 text-blue-800">Recommendations</h4>
+                          <p className="text-sm text-blue-700">{detailedReport.recommendations}</p>
+                        </div>
+                      )}
+                    </div>
+                  </ScrollArea>
+                ) : (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <FileText className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                    <p>No detailed report yet</p>
+                    <p className="text-sm">Run analysis to generate report</p>
                   </div>
                 )}
               </CardContent>
@@ -688,6 +1001,9 @@ Generated: ${new Date().toISOString()}
             documentType={documentType}
             modelUsed={modelUsed}
             disclaimer={disclaimer}
+            panelAnalysis={panelAnalysis}
+            detailedReport={detailedReport}
+            abnormalitySummary={abnormalitySummary}
           />
           <Button 
             className="flex-1" 
