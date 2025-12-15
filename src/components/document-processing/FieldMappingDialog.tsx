@@ -457,6 +457,7 @@ interface TargetField {
   required: boolean;
   label: string;
   isCustom?: boolean;
+  objectName?: string; // For grouping by CRM object
 }
 
 interface SourceField {
@@ -474,12 +475,60 @@ interface FieldMapping {
   customFieldName?: string;
 }
 
+// Document type to relevant object categories mapping
+const DOCUMENT_TYPE_OBJECTS: Record<string, string[]> = {
+  prescription: ['Prescription', 'Order', 'Medication', 'Drug', 'Patient', 'Prescriber', 'Pharmacy', 'Product'],
+  insurance_card: ['Medical_Insurance', 'Rx_Insurance', 'Coverage', 'Patient', 'Insurance', 'Payer'],
+  medical_insurance: ['Medical_Insurance', 'Coverage', 'Patient', 'Payer', 'Benefit', 'Insurance'],
+  pharmacy_insurance: ['Rx_Insurance', 'Pharmacy', 'Coverage', 'Patient', 'Insurance'],
+  patient_onboarding: ['Hub_Enrollment', 'Patient', 'Patient_Journey', 'Consent', 'Program', 'Contact', 'Account'],
+  hub_enrollment: ['Hub_Enrollment', 'Patient_Journey', 'Patient', 'Program', 'Consent', 'Benefit'],
+  lab_result: ['Lab_Result', 'Patient', 'Order', 'Specimen', 'Diagnosis'],
+  invoice: ['Invoice', 'Billing', 'Payment', 'Account'],
+  passport: ['Identity', 'Patient', 'Document', 'Contact'],
+  'x-ray': ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis'],
+  ct_scan: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis'],
+  mri: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis'],
+  ecg: ['Cardiology', 'Patient', 'Order', 'Result'],
+};
+
+// Check if a field is relevant for a document type
+const isFieldRelevantForDocType = (fieldName: string, fieldLabel: string, docType: string): boolean => {
+  const relevantObjects = DOCUMENT_TYPE_OBJECTS[docType] || [];
+  if (relevantObjects.length === 0) return true; // Show all if no mapping
+  
+  const normalizedName = fieldName.toLowerCase();
+  const normalizedLabel = fieldLabel.toLowerCase();
+  
+  return relevantObjects.some(obj => {
+    const normalizedObj = obj.toLowerCase().replace(/_/g, '');
+    return normalizedName.includes(normalizedObj) || normalizedLabel.includes(normalizedObj);
+  });
+};
+
+// Extract object name from field path (e.g., "Prescription__c.Name" → "Prescription")
+const getObjectFromField = (fieldName: string): string => {
+  if (fieldName.includes('.')) {
+    const obj = fieldName.split('.')[0];
+    return obj.replace(/__c$|_vod__c$/i, '').replace(/_/g, ' ');
+  }
+  // Check common prefixes
+  const prefixes = ['SF:', 'Veeva:', 'HS:'];
+  for (const prefix of prefixes) {
+    if (fieldName.startsWith(prefix)) {
+      return 'General';
+    }
+  }
+  return 'General';
+};
+
 interface FieldMappingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sourceFields: SourceField[];
   targetSystem: 'salesforce' | 'hubspot' | 'veeva' | 'supabase' | 'webhook';
   onConfirmMapping: (mappings: FieldMapping[], customFields: TargetField[]) => void;
+  documentType?: string; // Document type for filtering relevant fields
 }
 
 // Similarity score using Levenshtein distance
@@ -578,27 +627,84 @@ export function FieldMappingDialog({
   onOpenChange,
   sourceFields,
   targetSystem,
-  onConfirmMapping
+  onConfirmMapping,
+  documentType
 }: FieldMappingDialogProps) {
   const [mappings, setMappings] = useState<FieldMapping[]>([]);
   const [customFields, setCustomFields] = useState<TargetField[]>([]);
   const [isAutoMatching, setIsAutoMatching] = useState(false);
   const [searchFilter, setSearchFilter] = useState('');
+  const [showAllFields, setShowAllFields] = useState(false);
+  const [selectedObject, setSelectedObject] = useState<string>('all');
   
-  const targetFields = useMemo(() => {
+  // Get all target fields with object grouping
+  const allTargetFields = useMemo(() => {
     const base = getBaseTargetSchema(targetSystem);
-    return [...base, ...customFields];
+    return [...base, ...customFields].map(field => ({
+      ...field,
+      objectName: getObjectFromField(field.name)
+    }));
   }, [targetSystem, customFields]);
   
-  // Filter target fields based on search
-  const filteredTargetFields = useMemo(() => {
-    if (!searchFilter.trim()) return targetFields;
-    const lower = searchFilter.toLowerCase();
-    return targetFields.filter(tf => 
-      tf.name.toLowerCase().includes(lower) || 
-      tf.label.toLowerCase().includes(lower)
-    );
-  }, [targetFields, searchFilter]);
+  // Separate into recommended and optional based on document type
+  const { recommendedFields, optionalFields, objectGroups } = useMemo(() => {
+    const recommended: TargetField[] = [];
+    const optional: TargetField[] = [];
+    const groups = new Map<string, TargetField[]>();
+    
+    allTargetFields.forEach(field => {
+      const isRelevant = documentType 
+        ? isFieldRelevantForDocType(field.name, field.label, documentType)
+        : true;
+      
+      if (isRelevant) {
+        recommended.push(field);
+      } else {
+        optional.push(field);
+      }
+      
+      // Group by object
+      const objName = field.objectName || 'General';
+      if (!groups.has(objName)) {
+        groups.set(objName, []);
+      }
+      groups.get(objName)!.push(field);
+    });
+    
+    return { 
+      recommendedFields: recommended, 
+      optionalFields: optional,
+      objectGroups: groups
+    };
+  }, [allTargetFields, documentType]);
+  
+  // Get visible target fields based on filters
+  const visibleTargetFields = useMemo(() => {
+    let fields = showAllFields ? allTargetFields : recommendedFields;
+    
+    // Filter by object
+    if (selectedObject !== 'all') {
+      fields = fields.filter(f => (f.objectName || 'General') === selectedObject);
+    }
+    
+    // Filter by search
+    if (searchFilter.trim()) {
+      const lower = searchFilter.toLowerCase();
+      fields = fields.filter(tf => 
+        tf.name.toLowerCase().includes(lower) || 
+        tf.label.toLowerCase().includes(lower)
+      );
+    }
+    
+    return fields;
+  }, [allTargetFields, recommendedFields, showAllFields, selectedObject, searchFilter]);
+  
+  // Get unique objects for filter dropdown
+  const availableObjects = useMemo(() => {
+    const fields = showAllFields ? allTargetFields : recommendedFields;
+    const objects = new Set(fields.map(f => f.objectName || 'General'));
+    return Array.from(objects).sort();
+  }, [allTargetFields, recommendedFields, showAllFields]);
   
   // Initialize mappings when dialog opens
   useEffect(() => {
@@ -613,6 +719,8 @@ export function FieldMappingDialog({
       setMappings(initialMappings);
       setCustomFields([]);
       setSearchFilter('');
+      setShowAllFields(false);
+      setSelectedObject('all');
     }
   }, [open, sourceFields]);
   
@@ -620,7 +728,8 @@ export function FieldMappingDialog({
     setIsAutoMatching(true);
     
     setTimeout(() => {
-      const autoMatches = autoMatchFields(sourceFields, targetFields);
+      // Prioritize recommended fields for auto-matching
+      const autoMatches = autoMatchFields(sourceFields, recommendedFields.length > 0 ? recommendedFields : allTargetFields);
       
       setMappings(prev => prev.map(m => {
         const matched = autoMatches.get(m.sourceField);
@@ -839,11 +948,33 @@ export function FieldMappingDialog({
                           </SelectTrigger>
                           <SelectContent className="max-h-[300px]">
                             <SelectItem value="__skip__">-- Skip --</SelectItem>
-                            {targetFields.map(tf => (
+                            {visibleTargetFields.length > 0 && (
+                              <div className="px-2 py-1 text-[10px] text-muted-foreground font-semibold border-b">
+                                Recommended ({recommendedFields.length})
+                              </div>
+                            )}
+                            {visibleTargetFields.map(tf => (
                               <SelectItem key={tf.name} value={tf.name}>
                                 <span className="text-xs">{tf.label}</span>
                               </SelectItem>
                             ))}
+                            {!showAllFields && optionalFields.length > 0 && (
+                              <>
+                                <div className="px-2 py-1 text-[10px] text-muted-foreground font-semibold border-t border-b">
+                                  Other Fields ({optionalFields.length})
+                                </div>
+                                {optionalFields.slice(0, 20).map(tf => (
+                                  <SelectItem key={tf.name} value={tf.name}>
+                                    <span className="text-xs text-muted-foreground">{tf.label}</span>
+                                  </SelectItem>
+                                ))}
+                                {optionalFields.length > 20 && (
+                                  <div className="px-2 py-1 text-[10px] text-muted-foreground italic">
+                                    + {optionalFields.length - 20} more fields...
+                                  </div>
+                                )}
+                              </>
+                            )}
                           </SelectContent>
                         </Select>
                       )}
@@ -904,45 +1035,91 @@ export function FieldMappingDialog({
           
           {/* RIGHT PANEL - Target Fields */}
           <div className="border rounded-lg overflow-hidden flex flex-col">
-            <div className="bg-green-500/10 border-b px-3 py-2 flex items-center gap-2 shrink-0">
-              <Database className="h-4 w-4 text-green-600" />
-              <span className="font-semibold text-sm">
-                {targetSystem.charAt(0).toUpperCase() + targetSystem.slice(1)}
-              </span>
-              <Badge variant="outline" className="text-xs ml-auto">{targetFields.length}</Badge>
+            <div className="bg-green-500/10 border-b px-3 py-2 shrink-0">
+              <div className="flex items-center gap-2 mb-2">
+                <Database className="h-4 w-4 text-green-600" />
+                <span className="font-semibold text-sm">
+                  {targetSystem.charAt(0).toUpperCase() + targetSystem.slice(1)}
+                </span>
+                <Badge variant="outline" className="text-xs ml-auto">
+                  {visibleTargetFields.length} / {allTargetFields.length}
+                </Badge>
+              </div>
+              
+              {/* Object filter and show all toggle */}
+              <div className="flex items-center gap-2">
+                <Select value={selectedObject} onValueChange={setSelectedObject}>
+                  <SelectTrigger className="h-6 text-xs flex-1">
+                    <SelectValue placeholder="Filter by object" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Objects</SelectItem>
+                    {availableObjects.map(obj => (
+                      <SelectItem key={obj} value={obj}>{obj}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Button
+                        variant={showAllFields ? "secondary" : "outline"}
+                        size="sm"
+                        className="h-6 text-xs px-2"
+                        onClick={() => setShowAllFields(!showAllFields)}
+                      >
+                        {showAllFields ? 'Recommended' : 'Show All'}
+                      </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      {showAllFields 
+                        ? `Show only ${recommendedFields.length} recommended fields for ${documentType || 'this document'}` 
+                        : `Show all ${allTargetFields.length} available fields`}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             </div>
+            
             <ScrollArea className="flex-1">
               <div className="p-2 space-y-1">
-                {targetFields.map(tf => {
-                  const isUsed = mappings.some(m => m.targetField === tf.name && !m.skip);
-                  const sourceField = mappings.find(m => m.targetField === tf.name && !m.skip)?.sourceField;
-                  
-                  return (
-                    <div 
-                      key={tf.name}
-                      className={`p-2 rounded border text-xs ${
-                        isUsed 
-                          ? 'bg-green-500/10 border-green-500/30' 
-                          : 'bg-background border-border opacity-60'
-                      } ${tf.isCustom ? 'border-dashed' : ''}`}
-                    >
-                      <div className="font-medium truncate flex items-center gap-1">
-                        {isUsed && <Check className="h-3 w-3 text-green-600 shrink-0" />}
-                        <span className="truncate">{tf.label}</span>
-                        {tf.isCustom && <Sparkles className="h-2.5 w-2.5 text-primary shrink-0" />}
-                      </div>
-                      <div className="text-muted-foreground truncate mt-0.5 pl-4 text-[10px]">
-                        {tf.name}
-                      </div>
-                      {isUsed && sourceField && (
-                        <div className="flex items-center gap-1 mt-1 text-green-600 pl-4">
-                          <ArrowRight className="h-3 w-3 shrink-0 rotate-180" />
-                          <span className="truncate text-[10px]">{sourceField}</span>
+                {visibleTargetFields.length === 0 ? (
+                  <div className="text-center text-muted-foreground text-xs p-4">
+                    No fields match your filters
+                  </div>
+                ) : (
+                  visibleTargetFields.map(tf => {
+                    const isUsed = mappings.some(m => m.targetField === tf.name && !m.skip);
+                    const sourceField = mappings.find(m => m.targetField === tf.name && !m.skip)?.sourceField;
+                    
+                    return (
+                      <div 
+                        key={tf.name}
+                        className={`p-2 rounded border text-xs ${
+                          isUsed 
+                            ? 'bg-green-500/10 border-green-500/30' 
+                            : 'bg-background border-border opacity-60'
+                        } ${tf.isCustom ? 'border-dashed' : ''}`}
+                      >
+                        <div className="font-medium truncate flex items-center gap-1">
+                          {isUsed && <Check className="h-3 w-3 text-green-600 shrink-0" />}
+                          <span className="truncate">{tf.label}</span>
+                          {tf.isCustom && <Sparkles className="h-2.5 w-2.5 text-primary shrink-0" />}
                         </div>
-                      )}
-                    </div>
-                  );
-                })}
+                        <div className="text-muted-foreground truncate mt-0.5 pl-4 text-[10px]">
+                          {tf.name}
+                        </div>
+                        {isUsed && sourceField && (
+                          <div className="flex items-center gap-1 mt-1 text-green-600 pl-4">
+                            <ArrowRight className="h-3 w-3 shrink-0 rotate-180" />
+                            <span className="truncate text-[10px]">{sourceField}</span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })
+                )}
               </div>
             </ScrollArea>
             
