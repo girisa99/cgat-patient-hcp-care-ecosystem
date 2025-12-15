@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { 
   Brain, 
   Sparkles, 
@@ -29,11 +29,17 @@ import {
   ClipboardList,
   FileDown,
   Shield,
-  Settings2
+  Settings2,
+  Activity,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Phone
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { VisionAIProviderSelector } from './VisionAIProviderSelector';
+import { MedicalReportPDFGenerator } from './MedicalReportPDFGenerator';
 import { 
   VisionAIProvider, 
   AIModelType, 
@@ -65,6 +71,7 @@ interface AnalysisResult {
     report_date: string;
   };
   aiInsights: AIInsight[];
+  measurements?: Measurement[];
   notes: string;
   reportGenerated: boolean;
   modelUsed?: string;
@@ -72,11 +79,23 @@ interface AnalysisResult {
 }
 
 interface AIInsight {
-  category: 'finding' | 'observation' | 'recommendation' | 'concern' | 'normal';
+  category: 'finding' | 'observation' | 'recommendation' | 'concern' | 'normal' | 'abnormality' | 'measurement';
   description: string;
   confidence: number;
   region?: string;
-  clinicalSignificance?: 'low' | 'medium' | 'high';
+  clinicalSignificance?: 'low' | 'medium' | 'high' | 'critical';
+  status?: 'normal' | 'borderline' | 'abnormal';
+  measurementValue?: string;
+  normalRange?: string;
+}
+
+interface Measurement {
+  name: string;
+  value: number;
+  unit: string;
+  normalRange?: { min: number; max: number; description?: string };
+  status: 'normal' | 'borderline' | 'abnormal';
+  clinicalImplication?: string;
 }
 
 export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
@@ -88,6 +107,7 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
 }) => {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [aiInsights, setAiInsights] = useState<AIInsight[]>([]);
+  const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [zoom, setZoom] = useState(100);
   const [rotation, setRotation] = useState(0);
@@ -96,6 +116,7 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const [rawAnalysis, setRawAnalysis] = useState<string>('');
   const [activeTab, setActiveTab] = useState('analysis');
   const [showProviderSettings, setShowProviderSettings] = useState(false);
+  const [hasAbnormalities, setHasAbnormalities] = useState(false);
   
   // Multi-provider state
   const modality = (documentType?.replace('-', '') === 'ctscan' ? 'ct-scan' : documentType) as MedicalModalityType || 'xray';
@@ -140,7 +161,9 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
   const analyzeImage = async () => {
     setIsAnalyzing(true);
     setAiInsights([]);
+    setMeasurements([]);
     setRawAnalysis('');
+    setHasAbnormalities(false);
     
     try {
       let base64Data = imageBase64;
@@ -174,6 +197,22 @@ export const MedicalImageAnalysis: React.FC<MedicalImageAnalysisProps> = ({
         setModelUsed(data.modelUsed || 'unknown');
         setDisclaimer(data.disclaimer || '');
         setRawAnalysis(data.rawAnalysis || '');
+        
+        // Extract measurements if available
+        if (data.measurements && Array.isArray(data.measurements)) {
+          setMeasurements(data.measurements);
+        }
+        
+        // Check for abnormalities
+        const abnormalCount = data.insights.filter((i: AIInsight) => 
+          i.status === 'abnormal' || 
+          i.clinicalSignificance === 'high' || 
+          i.clinicalSignificance === 'critical' ||
+          i.category === 'concern' ||
+          i.category === 'abnormality'
+        ).length;
+        
+        setHasAbnormalities(abnormalCount > 0);
       }
       
       setAnalysisComplete(true);
@@ -627,17 +666,29 @@ Generated: ${new Date().toISOString()}
           </CardContent>
         </Card>
 
+        {/* Provider Consultation Alert */}
+        {hasAbnormalities && analysisComplete && (
+          <Alert className="border-amber-500 bg-amber-50">
+            <Phone className="h-4 w-4 text-amber-600" />
+            <AlertTitle className="text-amber-800">Healthcare Provider Consultation Required</AlertTitle>
+            <AlertDescription className="text-amber-700 text-sm">
+              Abnormal findings detected. Please schedule an appointment with your healthcare provider to discuss these results. This AI analysis is not a substitute for professional medical interpretation.
+            </AlertDescription>
+          </Alert>
+        )}
+
         {/* Action Buttons */}
         <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            className="flex-1" 
-            onClick={generateReport}
-            disabled={!patientDetails.patient_name || aiInsights.length === 0}
-          >
-            <FileDown className="mr-2 h-4 w-4" />
-            Generate Report
-          </Button>
+          <MedicalReportPDFGenerator
+            patientDetails={patientDetails}
+            providerDetails={providerDetails}
+            aiInsights={aiInsights}
+            measurements={measurements}
+            clinicalNotes={clinicalNotes}
+            documentType={documentType}
+            modelUsed={modelUsed}
+            disclaimer={disclaimer}
+          />
           <Button 
             className="flex-1" 
             onClick={handleSave} 
