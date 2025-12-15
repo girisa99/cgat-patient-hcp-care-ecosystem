@@ -118,8 +118,8 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Parse extracted data into invoice structure
-  const invoiceData: InvoiceData = {
+  // Parse extracted data into invoice structure - memoized to prevent re-renders
+  const invoiceData = React.useMemo<InvoiceData>(() => ({
     invoice_number: extractedData?.invoice_number || extractedData?.claim_number,
     claim_number: extractedData?.claim_number,
     vendor_name: extractedData?.vendor_name || extractedData?.company_name,
@@ -143,7 +143,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     payment_status: extractedData?.payment_status || 'pending',
     denial_reason: extractedData?.denial_reason,
     aging_bucket: extractedData?.aging_bucket,
-  };
+  }), [extractedData]);
 
   // Parse line items from extracted data
   useEffect(() => {
@@ -199,62 +199,58 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
 
   // Calculate RCM Summary
   useEffect(() => {
-    const calculateSummary = () => {
-      const allInvoices = processingHistory.filter(h => 
-        h.document_type === 'invoice' || h.extracted_data?.invoice_number
-      );
+    const allInvoices = processingHistory.filter(h => 
+      h.document_type === 'invoice' || h.extracted_data?.invoice_number
+    );
 
-      const totalBilled = allInvoices.reduce((sum, inv) => 
-        sum + parseFloat(inv.extracted_data?.billed_amount || inv.extracted_data?.total || '0'), 0);
-      const totalPaid = allInvoices.reduce((sum, inv) => 
-        sum + parseFloat(inv.extracted_data?.paid_amount || '0'), 0);
-      const totalAdjustments = allInvoices.reduce((sum, inv) => 
-        sum + parseFloat(inv.extracted_data?.adjustment_amount || '0'), 0);
+    const totalBilled = allInvoices.reduce((sum, inv) => 
+      sum + parseFloat(inv.extracted_data?.billed_amount || inv.extracted_data?.total || '0'), 0);
+    const totalPaid = allInvoices.reduce((sum, inv) => 
+      sum + parseFloat(inv.extracted_data?.paid_amount || '0'), 0);
+    const totalAdjustments = allInvoices.reduce((sum, inv) => 
+      sum + parseFloat(inv.extracted_data?.adjustment_amount || '0'), 0);
 
-      // Include current invoice
-      const currentBilled = invoiceData.billed_amount || 0;
-      const currentPaid = invoiceData.paid_amount || 0;
+    // Include current invoice
+    const currentBilled = invoiceData.billed_amount || 0;
+    const currentPaid = invoiceData.paid_amount || 0;
 
-      const summary: RCMSummary = {
-        totalBilled: totalBilled + currentBilled,
-        totalPaid: totalPaid + currentPaid,
-        totalOutstanding: (totalBilled + currentBilled) - (totalPaid + currentPaid) - totalAdjustments,
-        totalDenied: allInvoices.filter(i => i.extracted_data?.payment_status === 'denied').length * 100,
-        totalAdjustments,
-        collectionRate: totalBilled > 0 ? ((totalPaid / totalBilled) * 100) : 0,
-        avgDaysToPayment: 32, // Would need real date calculation
-        agingBreakdown: [
-          { bucket: '0-30 days', amount: currentBilled * 0.4, count: Math.ceil(allInvoices.length * 0.4) + 1 },
-          { bucket: '31-60 days', amount: currentBilled * 0.3, count: Math.ceil(allInvoices.length * 0.3) },
-          { bucket: '61-90 days', amount: currentBilled * 0.2, count: Math.ceil(allInvoices.length * 0.2) },
-          { bucket: '90+ days', amount: currentBilled * 0.1, count: Math.ceil(allInvoices.length * 0.1) },
-        ],
-        cptBreakdown: lineItems.map(item => ({
-          code: item.cpt_code || 'N/A',
-          description: item.description,
-          count: item.units,
-          billed: item.total,
-          paid: item.status === 'paid' ? item.total : 0
-        })),
-        denialBreakdown: invoiceData.denial_reason ? [{
-          code: invoiceData.denial_reason,
-          reason: DENIAL_CODES[invoiceData.denial_reason] || 'Unknown denial reason',
-          count: 1,
-          amount: invoiceData.billed_amount || 0
-        }] : [],
-        vendorBreakdown: [{
-          vendor: invoiceData.vendor_name || 'Unknown Vendor',
-          billed: invoiceData.billed_amount || 0,
-          paid: invoiceData.paid_amount || 0,
-          outstanding: (invoiceData.billed_amount || 0) - (invoiceData.paid_amount || 0)
-        }]
-      };
-
-      setRcmSummary(summary);
+    const summary: RCMSummary = {
+      totalBilled: totalBilled + currentBilled,
+      totalPaid: totalPaid + currentPaid,
+      totalOutstanding: (totalBilled + currentBilled) - (totalPaid + currentPaid) - totalAdjustments,
+      totalDenied: allInvoices.filter(i => i.extracted_data?.payment_status === 'denied').length * 100,
+      totalAdjustments,
+      collectionRate: totalBilled > 0 ? ((totalPaid / totalBilled) * 100) : 0,
+      avgDaysToPayment: 32,
+      agingBreakdown: [
+        { bucket: '0-30 days', amount: currentBilled * 0.4, count: Math.ceil(allInvoices.length * 0.4) + 1 },
+        { bucket: '31-60 days', amount: currentBilled * 0.3, count: Math.ceil(allInvoices.length * 0.3) },
+        { bucket: '61-90 days', amount: currentBilled * 0.2, count: Math.ceil(allInvoices.length * 0.2) },
+        { bucket: '90+ days', amount: currentBilled * 0.1, count: Math.ceil(allInvoices.length * 0.1) },
+      ],
+      cptBreakdown: lineItems.map(item => ({
+        code: item.cpt_code || 'N/A',
+        description: item.description,
+        count: item.units,
+        billed: item.total,
+        paid: item.status === 'paid' ? item.total : 0
+      })),
+      denialBreakdown: invoiceData.denial_reason ? [{
+        code: invoiceData.denial_reason,
+        reason: DENIAL_CODES[invoiceData.denial_reason] || 'Unknown denial reason',
+        count: 1,
+        amount: invoiceData.billed_amount || 0
+      }] : [],
+      vendorBreakdown: [{
+        vendor: invoiceData.vendor_name || 'Unknown Vendor',
+        billed: invoiceData.billed_amount || 0,
+        paid: invoiceData.paid_amount || 0,
+        outstanding: (invoiceData.billed_amount || 0) - (invoiceData.paid_amount || 0)
+      }]
     };
 
-    calculateSummary();
-  }, [extractedData, processingHistory, lineItems, invoiceData]);
+    setRcmSummary(summary);
+  }, [processingHistory, lineItems, invoiceData]);
 
   // Export handlers
   const handleExportCSV = () => {
