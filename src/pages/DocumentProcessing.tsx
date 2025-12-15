@@ -92,6 +92,7 @@ import ProcessingOptionsPanel from '@/components/document-processing/ProcessingO
 import CustomDocumentTypeDialog from '@/components/document-processing/CustomDocumentTypeDialog';
 import AgentArchitectureRecommendationPanel from '@/components/document-processing/AgentArchitectureRecommendationPanel';
 import ProcessingHistoryWithExport from '@/components/document-processing/ProcessingHistoryWithExport';
+import MedicalImageAnalysis from '@/components/document-processing/MedicalImageAnalysis';
 import { ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
 
 // Healthcare abbreviation expansion dictionary
@@ -2542,6 +2543,41 @@ export default function DocumentProcessing() {
                   )}
                 </CardContent>
               </Card>
+            </TabsContent>
+          )}
+
+          {/* Medical Image Analysis Tab - For X-Ray, CT, MRI, ECG, Ultrasound */}
+          {currentConfig.processingHints?.enableImageAnalysis && (
+            <TabsContent value="image-analysis" className="space-y-4">
+              <MedicalImageAnalysis
+                imageUrl={processingResult?.imageUrl || ''}
+                documentType={selectedDocType}
+                onSaveAnalysis={(data) => {
+                  // Save analysis to history
+                  const result: ProcessingResult = {
+                    id: crypto.randomUUID(),
+                    fileName: processingResult?.fileName || 'Medical Image',
+                    documentType: selectedDocType,
+                    stage: 'complete',
+                    progress: 100,
+                    rawText: '',
+                    extractedFields: {
+                      patient_name: { value: data.patientDetails.patient_name, confidence: 1 },
+                      patient_dob: { value: data.patientDetails.patient_dob, confidence: 1 },
+                      patient_id: { value: data.patientDetails.patient_id, confidence: 1 },
+                      referring_physician: { value: data.patientDetails.referring_physician, confidence: 1 },
+                      study_date: { value: data.patientDetails.study_date, confidence: 1 },
+                      clinical_notes: { value: data.notes, confidence: 1 },
+                      ai_insights: { value: JSON.stringify(data.aiInsights), confidence: 1 }
+                    },
+                    validationResults: { passed: 5, warnings: 0, failed: 0 },
+                    imageUrl: processingResult?.imageUrl || '',
+                    processedAt: new Date()
+                  };
+                  setProcessingHistory(prev => [result, ...prev]);
+                  toast.success('Medical image analysis saved to history');
+                }}
+              />
             </TabsContent>
           )}
 
