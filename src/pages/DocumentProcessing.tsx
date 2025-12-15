@@ -788,6 +788,10 @@ export default function DocumentProcessing() {
     }
   }, [selectedDocType, isAutoProcessing]);
 
+  // Store base64 data for medical imaging analysis
+  const [medicalImageBase64, setMedicalImageBase64] = useState<string>('');
+  const [medicalImageMimeType, setMedicalImageMimeType] = useState<string>('');
+
   const runAutoProcessing = async (result: ProcessingResult, file: File) => {
     try {
       // Check if this is a medical imaging document that needs image analysis (not OCR extraction)
@@ -799,15 +803,19 @@ export default function DocumentProcessing() {
       
       // Convert file to base64 for edge function
       const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => {
-          const base64 = (reader.result as string).split(',')[1];
-          resolve(base64);
-        };
+      const base64DataUrlPromise = new Promise<string>((resolve, reject) => {
+        reader.onload = () => resolve(reader.result as string);
         reader.onerror = reject;
       });
       reader.readAsDataURL(file);
-      const fileBase64 = await base64Promise;
+      const base64DataUrl = await base64DataUrlPromise;
+      const fileBase64 = base64DataUrl.split(',')[1];
+      
+      // Store for medical imaging analysis (keep full data URL for display)
+      if (isMedicalImaging) {
+        setMedicalImageBase64(fileBase64);
+        setMedicalImageMimeType(file.type);
+      }
       
       setProcessingResult(prev => prev ? { ...prev, progress: 20 } : null);
       
@@ -842,7 +850,8 @@ export default function DocumentProcessing() {
       if (uploadError) throw uploadError;
       
       const documentId = uploadResult?.documentId;
-      const imageUrl = uploadResult?.imageUrl;
+      // Use local data URL for display instead of potentially inaccessible Supabase URL
+      const localImageUrl = base64DataUrl;
       if (!documentId) throw new Error('Failed to get document ID');
       
       // For medical imaging documents, skip OCR/extraction and go directly to image analysis
@@ -853,13 +862,13 @@ export default function DocumentProcessing() {
           stage: 'complete',
           progress: 100,
           extractedFields: {},
-          imageUrl: imageUrl || result.imageUrl,
+          imageUrl: localImageUrl, // Use local data URL for reliable display
           processedAt: new Date()
         };
         
         setProcessingResult(imagingResult);
         toast.success('Medical image uploaded! Ready for AI analysis.', {
-          description: 'Switch to Image Analysis tab to analyze with Vision AI'
+          description: 'Click "Analyze with Vision AI" to get clinical insights'
         });
         
         // Auto-switch to image analysis tab
@@ -2577,6 +2586,8 @@ export default function DocumentProcessing() {
             <TabsContent value="image-analysis" className="space-y-4">
               <MedicalImageAnalysis
                 imageUrl={processingResult?.imageUrl || ''}
+                imageBase64={medicalImageBase64}
+                imageMimeType={medicalImageMimeType}
                 documentType={selectedDocType}
                 onSaveAnalysis={(data) => {
                   // Save analysis to history

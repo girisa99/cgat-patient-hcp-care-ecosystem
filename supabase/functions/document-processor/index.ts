@@ -644,10 +644,10 @@ async function handleClassification(supabase: any, request: ProcessingRequest) {
 
 // Medical Image Analysis using Vision AI
 async function handleMedicalImageAnalysis(request: ProcessingRequest) {
-  const { imageUrl, documentType, analysisType } = request;
+  const { imageUrl, imageBase64: providedBase64, imageMimeType, documentType, analysisType } = request as any;
   
-  if (!imageUrl) {
-    throw new Error("Missing imageUrl for medical image analysis");
+  if (!imageUrl && !providedBase64) {
+    throw new Error("Missing imageUrl or imageBase64 for medical image analysis");
   }
 
   const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
@@ -668,24 +668,37 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
   console.log(`Analyzing medical image with Gemini Vision: ${documentType}`);
 
   try {
-    // Fetch the image and convert to base64
-    const imageResponse = await fetch(imageUrl);
-    if (!imageResponse.ok) {
-      throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+    let imageBase64: string;
+    let contentType: string;
+    
+    // Use provided base64 directly if available (preferred - avoids URL fetch issues)
+    if (providedBase64) {
+      console.log("Using provided base64 image data directly");
+      imageBase64 = providedBase64;
+      contentType = imageMimeType || 'image/jpeg';
+    } else {
+      // Fetch the image and convert to base64 (fallback)
+      console.log(`Fetching image from URL: ${imageUrl}`);
+      const imageResponse = await fetch(imageUrl);
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to fetch image: ${imageResponse.status}`);
+      }
+      
+      const imageBlob = await imageResponse.arrayBuffer();
+      const imageBytes = new Uint8Array(imageBlob);
+      
+      // Convert to base64 safely
+      const bytes: string[] = [];
+      for (let i = 0; i < imageBytes.length; i++) {
+        bytes.push(String.fromCharCode(imageBytes[i]));
+      }
+      imageBase64 = btoa(bytes.join(''));
+      
+      // Get content type from response
+      contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
     }
     
-    const imageBlob = await imageResponse.arrayBuffer();
-    const imageBytes = new Uint8Array(imageBlob);
-    
-    // Convert to base64 safely
-    const bytes: string[] = [];
-    for (let i = 0; i < imageBytes.length; i++) {
-      bytes.push(String.fromCharCode(imageBytes[i]));
-    }
-    const imageBase64 = btoa(bytes.join(''));
-    
-    // Get content type from response
-    const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+    console.log(`Image prepared for analysis, content type: ${contentType}, base64 length: ${imageBase64.length}`);
     
     // Build the prompt for medical image analysis
     const medicalPrompt = buildMedicalAnalysisPrompt(documentType || 'medical-image', analysisType || 'comprehensive');
