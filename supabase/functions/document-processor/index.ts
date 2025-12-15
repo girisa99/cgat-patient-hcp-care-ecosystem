@@ -47,8 +47,78 @@ const MEDICAL_REFERENCE_RANGES = {
   }
 };
 
+// ICD-10 to CPT/HCPCS Crosswalk Database
+const ICD_TO_CPT_CROSSWALK: Record<string, { cpt_codes: string[]; hcpcs_codes: string[]; description: string; category: string }> = {
+  // Kidney/Urinary
+  'N20.0': { cpt_codes: ['50060', '50065', '50080', '52352'], hcpcs_codes: ['C9738'], description: 'Calculus of kidney', category: 'Urology' },
+  'N20.1': { cpt_codes: ['50060', '50065', '52356'], hcpcs_codes: ['C9738'], description: 'Calculus of ureter', category: 'Urology' },
+  'N20.2': { cpt_codes: ['50060', '50080', '52352'], hcpcs_codes: [], description: 'Calculus of kidney with ureter', category: 'Urology' },
+  'N17.9': { cpt_codes: ['90935', '90937', '90945'], hcpcs_codes: ['G0491', 'G0492'], description: 'Acute kidney failure', category: 'Nephrology' },
+  'N18.6': { cpt_codes: ['90935', '90937', '90945', '90997'], hcpcs_codes: ['G0491'], description: 'End stage renal disease', category: 'Nephrology' },
+  
+  // Cardiovascular
+  'I21.0': { cpt_codes: ['92920', '92928', '92941', '93458'], hcpcs_codes: ['C9600', 'C9601'], description: 'STEMI anterior wall', category: 'Cardiology' },
+  'I21.1': { cpt_codes: ['92920', '92928', '93458'], hcpcs_codes: ['C9600'], description: 'STEMI inferior wall', category: 'Cardiology' },
+  'I25.10': { cpt_codes: ['93454', '93458', '93460'], hcpcs_codes: [], description: 'Atherosclerotic heart disease', category: 'Cardiology' },
+  'I48.91': { cpt_codes: ['93653', '93656', '93657'], hcpcs_codes: ['C9741'], description: 'Atrial fibrillation', category: 'Cardiology' },
+  'I50.9': { cpt_codes: ['93306', '93307', '93320'], hcpcs_codes: ['G0406', 'G0407'], description: 'Heart failure', category: 'Cardiology' },
+  
+  // Pulmonary
+  'J18.9': { cpt_codes: ['71046', '71047', '94640'], hcpcs_codes: ['G0378'], description: 'Pneumonia', category: 'Pulmonology' },
+  'J44.1': { cpt_codes: ['94640', '94664', '94760'], hcpcs_codes: ['G0237', 'G0238'], description: 'COPD with exacerbation', category: 'Pulmonology' },
+  'J45.20': { cpt_codes: ['94010', '94060', '94640'], hcpcs_codes: ['G0237'], description: 'Mild intermittent asthma', category: 'Pulmonology' },
+  'R91.1': { cpt_codes: ['71250', '71260', '71270', '32405'], hcpcs_codes: [], description: 'Solitary pulmonary nodule', category: 'Pulmonology' },
+  
+  // Neurological
+  'G43.909': { cpt_codes: ['64615', '64616', '96372'], hcpcs_codes: ['J0585'], description: 'Migraine', category: 'Neurology' },
+  'G40.909': { cpt_codes: ['95816', '95819', '95950'], hcpcs_codes: [], description: 'Epilepsy', category: 'Neurology' },
+  'I63.9': { cpt_codes: ['36224', '36226', '61645'], hcpcs_codes: ['C9751'], description: 'Cerebral infarction', category: 'Neurology' },
+  
+  // Oncology
+  'C34.90': { cpt_codes: ['32480', '32663', '77401'], hcpcs_codes: ['G0339', 'G0340'], description: 'Lung cancer', category: 'Oncology' },
+  'C50.919': { cpt_codes: ['19301', '19302', '19303'], hcpcs_codes: ['G0279'], description: 'Breast cancer', category: 'Oncology' },
+  'C61': { cpt_codes: ['55840', '55842', '55845'], hcpcs_codes: ['G0416', 'G0417'], description: 'Prostate cancer', category: 'Oncology' },
+  
+  // Orthopedic
+  'M54.5': { cpt_codes: ['62322', '62323', '64483'], hcpcs_codes: [], description: 'Low back pain', category: 'Orthopedics' },
+  'M17.11': { cpt_codes: ['27447', '27446', '20610'], hcpcs_codes: ['J7321', 'J7325'], description: 'Primary osteoarthritis knee', category: 'Orthopedics' },
+  'S72.001A': { cpt_codes: ['27236', '27245', '27248'], hcpcs_codes: [], description: 'Hip fracture', category: 'Orthopedics' },
+  
+  // Diabetes
+  'E11.9': { cpt_codes: ['83036', '82947', '99490'], hcpcs_codes: ['G0108', 'G0109'], description: 'Type 2 diabetes mellitus', category: 'Endocrinology' },
+  'E11.65': { cpt_codes: ['83036', '99490', '95250'], hcpcs_codes: ['E0787', 'K0553'], description: 'Type 2 DM with hyperglycemia', category: 'Endocrinology' },
+};
+
+// CPT Code Database with descriptions and RVUs
+const CPT_CODE_DATABASE: Record<string, { description: string; category: string; rvu: number; modifier_allowed: boolean }> = {
+  '99213': { description: 'Office visit, established patient, low complexity', category: 'E&M', rvu: 1.30, modifier_allowed: true },
+  '99214': { description: 'Office visit, established patient, moderate complexity', category: 'E&M', rvu: 1.92, modifier_allowed: true },
+  '99215': { description: 'Office visit, established patient, high complexity', category: 'E&M', rvu: 2.80, modifier_allowed: true },
+  '71046': { description: 'Chest X-ray, 2 views', category: 'Radiology', rvu: 0.22, modifier_allowed: false },
+  '71250': { description: 'CT thorax without contrast', category: 'Radiology', rvu: 1.28, modifier_allowed: false },
+  '71260': { description: 'CT thorax with contrast', category: 'Radiology', rvu: 1.74, modifier_allowed: false },
+  '92920': { description: 'Percutaneous coronary intervention, single vessel', category: 'Cardiology', rvu: 15.72, modifier_allowed: true },
+  '93000': { description: 'Electrocardiogram complete', category: 'Cardiology', rvu: 0.17, modifier_allowed: false },
+  '93306': { description: 'Echocardiography complete', category: 'Cardiology', rvu: 1.30, modifier_allowed: false },
+  '50060': { description: 'Nephrolithotomy', category: 'Urology', rvu: 20.46, modifier_allowed: true },
+  '52352': { description: 'Cystourethroscopy with lithotripsy', category: 'Urology', rvu: 8.51, modifier_allowed: true },
+  '90935': { description: 'Hemodialysis, single evaluation', category: 'Nephrology', rvu: 2.15, modifier_allowed: false },
+};
+
+// HCPCS Code Database
+const HCPCS_CODE_DATABASE: Record<string, { description: string; category: string; type: string }> = {
+  'G0378': { description: 'Hospital observation per hour', category: 'Hospital', type: 'Service' },
+  'G0406': { description: 'Follow-up telehealth consultation', category: 'Telehealth', type: 'Service' },
+  'G0491': { description: 'Dialysis procedure at ESRD facility', category: 'Dialysis', type: 'Service' },
+  'J0585': { description: 'Botulinum toxin type A', category: 'Drug', type: 'Injectable' },
+  'J7321': { description: 'Hyaluronan injection', category: 'Drug', type: 'Injectable' },
+  'C9600': { description: 'Coronary artery stent, drug-eluting', category: 'Device', type: 'Implant' },
+  'C9738': { description: 'Lithotripsy laser ureteral', category: 'Procedure', type: 'Service' },
+  'E0787': { description: 'External ambulatory insulin delivery system', category: 'DME', type: 'Equipment' },
+};
+
 interface ProcessingRequest {
-  action: 'upload' | 'process' | 'extract_metadata' | 'map_to_form' | 'validate' | 'classify' | 'analyze_medical_image';
+  action: 'upload' | 'process' | 'extract_metadata' | 'map_to_form' | 'validate' | 'classify' | 'analyze_medical_image' | 'lookup_medical_codes';
   documentId?: string;
   fileBase64?: string;
   fileName?: string;
@@ -62,6 +132,8 @@ interface ProcessingRequest {
   analysisType?: string;
   provider?: string;
   modelType?: string;
+  icdCodes?: string[];
+  cptCodes?: string[];
 }
 
 serve(async (req) => {
@@ -92,6 +164,8 @@ serve(async (req) => {
         return await handleClassify(supabase, request);
       case 'analyze_medical_image':
         return await handleMedicalImageAnalysis(request);
+      case 'lookup_medical_codes':
+        return await handleMedicalCodeLookup(request);
       default:
         throw new Error(`Unknown action: ${request.action}`);
     }
@@ -187,10 +261,12 @@ async function handleExtractMetadata(supabase: any, request: ProcessingRequest) 
 }
 
 async function handleMapToForm(supabase: any, request: ProcessingRequest) {
-  const { documentId, processingConfig, documentType } = request;
+  const { documentId, processingConfig, documentType, provider: requestedProvider } = request;
   
   // Get document record to access image URL
   let imageUrl = '';
+  let configuredProvider = requestedProvider || processingConfig?.ocrProvider || 'gemini';
+  
   if (documentId) {
     const { data: doc } = await supabase
       .from('document_processing_jobs')
@@ -201,137 +277,152 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
     if (doc?.processing_config?.publicUrl) {
       imageUrl = doc.processing_config.publicUrl;
     }
+    if (doc?.processing_config?.ocrProvider) {
+      configuredProvider = doc.processing_config.ocrProvider;
+    }
   }
   
   // Build form mapping based on document type
   const formMapping: Record<string, { value: string; confidence: number; source: string }> = {};
   const targetFields = processingConfig?.extractionFields || [];
+  let providerUsed = configuredProvider;
+  let icdCodesExtracted: string[] = [];
+  let cptCodesExtracted: string[] = [];
   
-  // If we have an image URL and it's an invoice/billing document, do extraction
-  if (imageUrl && (documentType === 'invoice' || !documentType)) {
-    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-    
-    if (geminiApiKey) {
-      try {
-        // Fetch and convert image to base64
-        const imageResponse = await fetch(imageUrl);
-        if (imageResponse.ok) {
-          const imageBlob = await imageResponse.arrayBuffer();
-          const imageBytes = new Uint8Array(imageBlob);
-          const bytes: string[] = [];
-          for (let i = 0; i < imageBytes.length; i++) {
-            bytes.push(String.fromCharCode(imageBytes[i]));
-          }
-          const imageBase64 = btoa(bytes.join(''));
-          const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+  // If we have an image URL, do extraction based on provider
+  if (imageUrl) {
+    try {
+      // Fetch and convert image to base64
+      const imageResponse = await fetch(imageUrl);
+      if (imageResponse.ok) {
+        const imageBlob = await imageResponse.arrayBuffer();
+        const imageBytes = new Uint8Array(imageBlob);
+        const bytes: string[] = [];
+        for (let i = 0; i < imageBytes.length; i++) {
+          bytes.push(String.fromCharCode(imageBytes[i]));
+        }
+        const imageBase64 = btoa(bytes.join(''));
+        const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+        
+        // Build extraction prompt based on document type
+        const extractionPrompt = buildExtractionPrompt(documentType || 'invoice');
+        
+        // Try providers in order of preference
+        const providers = [configuredProvider, 'gemini', 'azure', 'aws'].filter((v, i, a) => a.indexOf(v) === i);
+        let extractionSuccess = false;
+        
+        for (const provider of providers) {
+          if (extractionSuccess) break;
           
-          // Build invoice extraction prompt
-          const extractionPrompt = `Analyze this invoice/billing document image and extract all financial and billing information.
-
-Extract these specific fields if visible:
-- invoice_number: Invoice or claim number
-- vendor_name: Vendor, supplier, or provider name  
-- vendor_tax_id: Tax ID or EIN
-- vendor_npi: NPI number if healthcare
-- patient_name: Patient or customer name
-- patient_account: Account number
-- service_date or service_from: Date of service
-- service_to: End date if range
-- billed_amount: Total billed amount
-- allowed_amount: Allowed amount
-- adjustment_amount: Any adjustments
-- paid_amount: Amount paid
-- balance_due: Balance remaining
-- payer_name: Insurance or payer name
-- cpt_codes: Any CPT/HCPCS codes (comma separated)
-- icd_codes: Any ICD diagnosis codes (comma separated)
-- payment_status: paid, partial, unpaid, denied
-- denial_reason: Reason if denied
-- line_items: Array of service line items with description, quantity, unit_price, total
-
-Return ONLY a valid JSON object in this exact format:
-{
-  "fields": {
-    "field_name": "extracted_value"
-  },
-  "line_items": [
-    {"description": "...", "cpt_code": "...", "quantity": 1, "unit_price": 0, "total": 0}
-  ],
-  "document_category": "invoice|claim|statement|eob",
-  "confidence": 0.0-1.0
-}`;
-
-          const geminiResponse = await fetch(
-            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                contents: [{
-                  parts: [
-                    { text: extractionPrompt },
-                    { inline_data: { mime_type: contentType, data: imageBase64 } }
-                  ]
-                }],
-                generationConfig: {
-                  temperature: 0.1,
-                  topP: 0.95,
-                  maxOutputTokens: 4096
-                }
-              })
-            }
-          );
-
-          if (geminiResponse.ok) {
-            const geminiData = await geminiResponse.json();
-            const responseText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+          try {
+            let extracted: any = null;
             
-            // Parse the JSON response
-            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              try {
-                const extracted = JSON.parse(jsonMatch[0]);
-                const fields = extracted.fields || {};
+            switch (provider) {
+              case 'gemini':
+              case 'google':
+                extracted = await extractWithGemini(imageBase64, contentType, extractionPrompt);
+                providerUsed = 'gemini';
+                break;
                 
-                // Map extracted fields to formMapping format
-                for (const [key, value] of Object.entries(fields)) {
-                  if (value && String(value).trim()) {
-                    formMapping[key] = {
-                      value: String(value),
-                      confidence: extracted.confidence || 0.85,
-                      source: 'gemini_extraction'
-                    };
+              case 'azure':
+                extracted = await extractWithAzure(imageBase64, contentType, documentType);
+                providerUsed = 'azure';
+                break;
+                
+              case 'aws':
+                extracted = await extractWithAWS(imageBase64, contentType, documentType);
+                providerUsed = 'aws';
+                break;
+                
+              default:
+                extracted = await extractWithGemini(imageBase64, contentType, extractionPrompt);
+                providerUsed = 'gemini';
+            }
+            
+            if (extracted && extracted.fields) {
+              // Map extracted fields to formMapping format
+              for (const [key, value] of Object.entries(extracted.fields)) {
+                if (value && String(value).trim()) {
+                  formMapping[key] = {
+                    value: String(value),
+                    confidence: extracted.confidence || 0.85,
+                    source: `${providerUsed}_extraction`
+                  };
+                  
+                  // Track ICD and CPT codes for crosswalk
+                  if (key === 'icd_codes' && value) {
+                    icdCodesExtracted = String(value).split(',').map(c => c.trim()).filter(Boolean);
+                  }
+                  if (key === 'cpt_codes' && value) {
+                    cptCodesExtracted = String(value).split(',').map(c => c.trim()).filter(Boolean);
                   }
                 }
-                
-                // Add line items as JSON string
-                if (extracted.line_items && extracted.line_items.length > 0) {
-                  formMapping['line_items'] = {
-                    value: JSON.stringify(extracted.line_items),
-                    confidence: extracted.confidence || 0.85,
-                    source: 'gemini_extraction'
-                  };
-                }
-                
-                // Add document category
-                if (extracted.document_category) {
-                  formMapping['document_category'] = {
-                    value: extracted.document_category,
-                    confidence: 0.9,
-                    source: 'gemini_extraction'
-                  };
-                }
-                
-                console.log(`Invoice extraction completed: ${Object.keys(formMapping).length} fields`);
-              } catch (parseError) {
-                console.error('Failed to parse Gemini response:', parseError);
               }
+              
+              // Add line items
+              if (extracted.line_items && extracted.line_items.length > 0) {
+                formMapping['line_items'] = {
+                  value: JSON.stringify(extracted.line_items),
+                  confidence: extracted.confidence || 0.85,
+                  source: `${providerUsed}_extraction`
+                };
+                
+                // Extract CPT codes from line items
+                for (const item of extracted.line_items) {
+                  if (item.cpt_code) {
+                    cptCodesExtracted.push(item.cpt_code);
+                  }
+                }
+              }
+              
+              // Add document category
+              if (extracted.document_category) {
+                formMapping['document_category'] = {
+                  value: extracted.document_category,
+                  confidence: 0.9,
+                  source: `${providerUsed}_extraction`
+                };
+              }
+              
+              extractionSuccess = true;
+              console.log(`Extraction completed with ${providerUsed}: ${Object.keys(formMapping).length} fields`);
             }
+          } catch (providerError) {
+            console.error(`Provider ${provider} failed:`, providerError);
           }
         }
-      } catch (extractionError) {
-        console.error('Invoice extraction error:', extractionError);
       }
+    } catch (extractionError) {
+      console.error('Extraction error:', extractionError);
+    }
+  }
+  
+  // Perform ICD to CPT/HCPCS crosswalk if ICD codes were extracted
+  let crosswalkResults: any = null;
+  if (icdCodesExtracted.length > 0) {
+    crosswalkResults = performCrosswalk(icdCodesExtracted, cptCodesExtracted);
+    
+    // Add crosswalk-derived CPT codes to formMapping
+    if (crosswalkResults.suggested_cpt_codes && crosswalkResults.suggested_cpt_codes.length > 0) {
+      const existingCpt = formMapping['cpt_codes']?.value || '';
+      const allCpt = [...new Set([
+        ...existingCpt.split(',').map(c => c.trim()).filter(Boolean),
+        ...crosswalkResults.suggested_cpt_codes
+      ])];
+      formMapping['cpt_codes'] = {
+        value: allCpt.join(', '),
+        confidence: 0.8,
+        source: 'crosswalk_enhanced'
+      };
+    }
+    
+    // Add HCPCS codes from crosswalk
+    if (crosswalkResults.suggested_hcpcs_codes && crosswalkResults.suggested_hcpcs_codes.length > 0) {
+      formMapping['hcpcs_codes'] = {
+        value: crosswalkResults.suggested_hcpcs_codes.join(', '),
+        confidence: 0.8,
+        source: 'crosswalk_derived'
+      };
     }
   }
   
@@ -347,10 +438,248 @@ Return ONLY a valid JSON object in this exact format:
       success: true, 
       formMapping,
       mappingConfidence: Object.keys(formMapping).length > 0 ? 0.85 : 0,
-      documentType: documentType || 'invoice'
+      documentType: documentType || 'invoice',
+      providerUsed,
+      crosswalkResults
     }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } }
   );
+}
+
+// Build extraction prompt based on document type
+function buildExtractionPrompt(documentType: string): string {
+  const baseFields = `
+- invoice_number: Invoice or claim number
+- vendor_name: Vendor, supplier, or provider name  
+- vendor_tax_id: Tax ID or EIN
+- vendor_npi: NPI number if healthcare
+- patient_name: Patient or customer name
+- patient_account: Account number
+- service_date or service_from: Date of service
+- service_to: End date if range
+- billed_amount: Total billed amount
+- allowed_amount: Allowed amount
+- adjustment_amount: Any adjustments
+- paid_amount: Amount paid
+- balance_due: Balance remaining
+- payer_name: Insurance or payer name
+- cpt_codes: Any CPT/HCPCS codes (comma separated)
+- icd_codes: Any ICD-10 diagnosis codes (comma separated)
+- payment_status: paid, partial, unpaid, denied
+- denial_reason: Reason if denied
+- line_items: Array of service line items with description, cpt_code, icd_code, quantity, unit_price, total`;
+
+  return `Analyze this ${documentType}/billing document image and extract all financial and billing information.
+
+Extract these specific fields if visible:
+${baseFields}
+
+IMPORTANT: 
+- Extract ALL CPT codes you can find (5-digit codes like 99213, 71046, etc.)
+- Extract ALL ICD-10 codes (format like A00.0, M54.5, E11.9, etc.)
+- For line items, include cpt_code and icd_code for each service line
+
+Return ONLY a valid JSON object in this exact format:
+{
+  "fields": {
+    "field_name": "extracted_value"
+  },
+  "line_items": [
+    {"description": "...", "cpt_code": "...", "icd_code": "...", "quantity": 1, "unit_price": 0, "total": 0}
+  ],
+  "document_category": "invoice|claim|statement|eob|superbill",
+  "confidence": 0.0-1.0
+}`;
+}
+
+// Gemini extraction
+async function extractWithGemini(imageBase64: string, contentType: string, prompt: string): Promise<any> {
+  const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+  if (!geminiApiKey) throw new Error("GEMINI_API_KEY not configured");
+  
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { text: prompt },
+            { inline_data: { mime_type: contentType, data: imageBase64 } }
+          ]
+        }],
+        generationConfig: { temperature: 0.1, topP: 0.95, maxOutputTokens: 4096 }
+      })
+    }
+  );
+  
+  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
+  
+  const data = await response.json();
+  const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+  
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
+  }
+  return null;
+}
+
+// Azure Form Recognizer extraction (stub - requires AZURE_FORM_RECOGNIZER_KEY)
+async function extractWithAzure(imageBase64: string, contentType: string, documentType?: string): Promise<any> {
+  const azureKey = Deno.env.get("AZURE_FORM_RECOGNIZER_KEY");
+  const azureEndpoint = Deno.env.get("AZURE_FORM_RECOGNIZER_ENDPOINT");
+  
+  if (!azureKey || !azureEndpoint) {
+    console.log("Azure Form Recognizer not configured, skipping");
+    throw new Error("Azure Form Recognizer not configured");
+  }
+  
+  // Azure Form Recognizer prebuilt invoice model
+  const modelId = documentType === 'invoice' ? 'prebuilt-invoice' : 'prebuilt-document';
+  const analyzeUrl = `${azureEndpoint}/formrecognizer/documentModels/${modelId}:analyze?api-version=2023-07-31`;
+  
+  const response = await fetch(analyzeUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': contentType,
+      'Ocp-Apim-Subscription-Key': azureKey
+    },
+    body: Uint8Array.from(atob(imageBase64), c => c.charCodeAt(0))
+  });
+  
+  if (!response.ok) throw new Error(`Azure API error: ${response.status}`);
+  
+  // Azure returns operation-location header for async processing
+  const operationLocation = response.headers.get('operation-location');
+  if (!operationLocation) throw new Error("No operation location returned");
+  
+  // Poll for results (simplified - in production use proper polling)
+  await new Promise(r => setTimeout(r, 2000));
+  
+  const resultResponse = await fetch(operationLocation, {
+    headers: { 'Ocp-Apim-Subscription-Key': azureKey }
+  });
+  
+  if (!resultResponse.ok) throw new Error("Failed to get Azure results");
+  
+  const result = await resultResponse.json();
+  return mapAzureResultToStandard(result);
+}
+
+// AWS Textract extraction (stub - requires AWS credentials)
+async function extractWithAWS(imageBase64: string, contentType: string, documentType?: string): Promise<any> {
+  const awsAccessKey = Deno.env.get("AWS_ACCESS_KEY_ID");
+  const awsSecretKey = Deno.env.get("AWS_SECRET_ACCESS_KEY");
+  const awsRegion = Deno.env.get("AWS_REGION") || 'us-east-1';
+  
+  if (!awsAccessKey || !awsSecretKey) {
+    console.log("AWS Textract not configured, skipping");
+    throw new Error("AWS Textract not configured");
+  }
+  
+  // AWS Textract AnalyzeExpense for invoices
+  // Note: This is a simplified implementation - production would use AWS SDK
+  console.log("AWS Textract extraction attempted but requires full SDK implementation");
+  throw new Error("AWS Textract requires SDK - not fully implemented");
+}
+
+// Map Azure Form Recognizer result to standard format
+function mapAzureResultToStandard(azureResult: any): any {
+  const fields: Record<string, string> = {};
+  const lineItems: any[] = [];
+  
+  try {
+    const documents = azureResult?.analyzeResult?.documents || [];
+    if (documents.length > 0) {
+      const doc = documents[0];
+      const azureFields = doc.fields || {};
+      
+      // Map Azure field names to our standard names
+      const fieldMapping: Record<string, string> = {
+        'InvoiceId': 'invoice_number',
+        'VendorName': 'vendor_name',
+        'VendorTaxId': 'vendor_tax_id',
+        'CustomerName': 'patient_name',
+        'CustomerId': 'patient_account',
+        'InvoiceDate': 'service_from',
+        'DueDate': 'service_to',
+        'SubTotal': 'billed_amount',
+        'TotalTax': 'adjustment_amount',
+        'AmountDue': 'balance_due',
+        'PreviousUnpaidBalance': 'balance_due'
+      };
+      
+      for (const [azureKey, standardKey] of Object.entries(fieldMapping)) {
+        if (azureFields[azureKey]?.content) {
+          fields[standardKey] = azureFields[azureKey].content;
+        }
+      }
+      
+      // Extract line items
+      if (azureFields.Items?.valueArray) {
+        for (const item of azureFields.Items.valueArray) {
+          const itemFields = item.valueObject || {};
+          lineItems.push({
+            description: itemFields.Description?.content || '',
+            cpt_code: '',
+            quantity: parseFloat(itemFields.Quantity?.content) || 1,
+            unit_price: parseFloat(itemFields.UnitPrice?.content) || 0,
+            total: parseFloat(itemFields.Amount?.content) || 0
+          });
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Error mapping Azure result:", e);
+  }
+  
+  return {
+    fields,
+    line_items: lineItems,
+    document_category: 'invoice',
+    confidence: azureResult?.analyzeResult?.documents?.[0]?.confidence || 0.8
+  };
+}
+
+// Perform ICD to CPT/HCPCS crosswalk
+function performCrosswalk(icdCodes: string[], cptCodes: string[]): any {
+  const suggestedCpt: string[] = [];
+  const suggestedHcpcs: string[] = [];
+  const crosswalkDetails: any[] = [];
+  
+  for (const icdCode of icdCodes) {
+    const normalized = icdCode.toUpperCase().trim();
+    const crosswalk = ICD_TO_CPT_CROSSWALK[normalized];
+    
+    if (crosswalk) {
+      for (const cpt of crosswalk.cpt_codes) {
+        if (!suggestedCpt.includes(cpt) && !cptCodes.includes(cpt)) {
+          suggestedCpt.push(cpt);
+        }
+      }
+      for (const hcpcs of crosswalk.hcpcs_codes) {
+        if (!suggestedHcpcs.includes(hcpcs)) {
+          suggestedHcpcs.push(hcpcs);
+        }
+      }
+      crosswalkDetails.push({
+        icd_code: normalized,
+        description: crosswalk.description,
+        category: crosswalk.category,
+        suggested_cpt: crosswalk.cpt_codes,
+        suggested_hcpcs: crosswalk.hcpcs_codes
+      });
+    }
+  }
+  
+  return {
+    suggested_cpt_codes: suggestedCpt,
+    suggested_hcpcs_codes: suggestedHcpcs,
+    crosswalk_details: crosswalkDetails,
+    total_mappings: crosswalkDetails.length
+  };
 }
 
 async function handleValidate(supabase: any, request: ProcessingRequest) {
@@ -385,6 +714,149 @@ async function handleClassify(supabase: any, request: ProcessingRequest) {
   
   return new Response(
     JSON.stringify({ success: true, classification }),
+    { headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
+}
+
+// Medical Code Lookup - ICD to CPT/HCPCS crosswalk
+async function handleMedicalCodeLookup(request: ProcessingRequest) {
+  const { icdCodes = [], cptCodes = [] } = request;
+  
+  const results: {
+    icd_lookups: Array<{
+      icd_code: string;
+      description: string;
+      category: string;
+      associated_cpt: Array<{ code: string; description: string; rvu: number }>;
+      associated_hcpcs: Array<{ code: string; description: string; type: string }>;
+    }>;
+    cpt_lookups: Array<{
+      cpt_code: string;
+      description: string;
+      category: string;
+      rvu: number;
+      modifier_allowed: boolean;
+    }>;
+    crosswalk_summary: {
+      total_icd_codes: number;
+      total_cpt_codes: number;
+      total_hcpcs_codes: number;
+      estimated_total_rvu: number;
+    };
+  } = {
+    icd_lookups: [],
+    cpt_lookups: [],
+    crosswalk_summary: {
+      total_icd_codes: 0,
+      total_cpt_codes: 0,
+      total_hcpcs_codes: 0,
+      estimated_total_rvu: 0
+    }
+  };
+  
+  let totalRvu = 0;
+  const uniqueCptCodes = new Set<string>();
+  const uniqueHcpcsCodes = new Set<string>();
+  
+  // Process ICD codes and get associated CPT/HCPCS
+  for (const icdCode of icdCodes) {
+    const normalizedIcd = icdCode.toUpperCase().trim();
+    const crosswalk = ICD_TO_CPT_CROSSWALK[normalizedIcd];
+    
+    if (crosswalk) {
+      const associatedCpt: Array<{ code: string; description: string; rvu: number }> = [];
+      const associatedHcpcs: Array<{ code: string; description: string; type: string }> = [];
+      
+      // Get CPT details
+      for (const cptCode of crosswalk.cpt_codes) {
+        const cptInfo = CPT_CODE_DATABASE[cptCode];
+        if (cptInfo) {
+          associatedCpt.push({
+            code: cptCode,
+            description: cptInfo.description,
+            rvu: cptInfo.rvu
+          });
+          uniqueCptCodes.add(cptCode);
+          totalRvu += cptInfo.rvu;
+        } else {
+          associatedCpt.push({ code: cptCode, description: 'Unknown CPT', rvu: 0 });
+          uniqueCptCodes.add(cptCode);
+        }
+      }
+      
+      // Get HCPCS details
+      for (const hcpcsCode of crosswalk.hcpcs_codes) {
+        const hcpcsInfo = HCPCS_CODE_DATABASE[hcpcsCode];
+        if (hcpcsInfo) {
+          associatedHcpcs.push({
+            code: hcpcsCode,
+            description: hcpcsInfo.description,
+            type: hcpcsInfo.type
+          });
+          uniqueHcpcsCodes.add(hcpcsCode);
+        } else {
+          associatedHcpcs.push({ code: hcpcsCode, description: 'Unknown HCPCS', type: 'Unknown' });
+          uniqueHcpcsCodes.add(hcpcsCode);
+        }
+      }
+      
+      results.icd_lookups.push({
+        icd_code: normalizedIcd,
+        description: crosswalk.description,
+        category: crosswalk.category,
+        associated_cpt: associatedCpt,
+        associated_hcpcs: associatedHcpcs
+      });
+    } else {
+      // Try to look up via external API (NLM/CMS)
+      results.icd_lookups.push({
+        icd_code: normalizedIcd,
+        description: 'Code not found in local database',
+        category: 'Unknown',
+        associated_cpt: [],
+        associated_hcpcs: []
+      });
+    }
+  }
+  
+  // Process direct CPT code lookups
+  for (const cptCode of cptCodes) {
+    const normalizedCpt = cptCode.trim();
+    const cptInfo = CPT_CODE_DATABASE[normalizedCpt];
+    
+    if (cptInfo) {
+      results.cpt_lookups.push({
+        cpt_code: normalizedCpt,
+        description: cptInfo.description,
+        category: cptInfo.category,
+        rvu: cptInfo.rvu,
+        modifier_allowed: cptInfo.modifier_allowed
+      });
+      uniqueCptCodes.add(normalizedCpt);
+      totalRvu += cptInfo.rvu;
+    } else {
+      results.cpt_lookups.push({
+        cpt_code: normalizedCpt,
+        description: 'Code not found in local database',
+        category: 'Unknown',
+        rvu: 0,
+        modifier_allowed: false
+      });
+    }
+  }
+  
+  // Update summary
+  results.crosswalk_summary = {
+    total_icd_codes: icdCodes.length,
+    total_cpt_codes: uniqueCptCodes.size,
+    total_hcpcs_codes: uniqueHcpcsCodes.size,
+    estimated_total_rvu: Math.round(totalRvu * 100) / 100
+  };
+  
+  console.log(`Medical code lookup: ${icdCodes.length} ICD codes -> ${uniqueCptCodes.size} CPT, ${uniqueHcpcsCodes.size} HCPCS`);
+  
+  return new Response(
+    JSON.stringify({ success: true, ...results }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } }
   );
 }
