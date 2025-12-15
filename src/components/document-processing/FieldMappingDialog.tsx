@@ -610,9 +610,9 @@ function autoMatchFields(
     'dea_number': ['dea', 'deanum', 'dea_num', 'deanumber'],
     
     // Insurance - General
-    'insurance_id': ['member_id', 'policy_number', 'insuranceid', 'memberid', 'subscriber_id'],
-    'group_number': ['groupnumber', 'grp', 'group_num', 'grpnum', 'group_id'],
-    'insurance_name': ['insurer', 'carrier', 'payer', 'insurance_provider', 'plan_name'],
+    'insurance_id': ['member_id', 'policy_number', 'insuranceid', 'memberid', 'subscriber_id', 'member_id_number'],
+    'group_number': ['groupnumber', 'grp', 'group_num', 'grpnum', 'group_id', 'rxgrp', 'rx_grp'],
+    'insurance_name': ['insurer', 'carrier', 'payer', 'insurance_provider', 'plan_name', 'insurance_company', 'insurance_company_name', 'insurance_company_full', 'insured_by', 'product_name'],
     
     // Insurance - Rx/Pharmacy
     'rx_bin': ['bin', 'rxbin', 'bin_number'],
