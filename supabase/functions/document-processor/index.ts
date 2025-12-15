@@ -977,7 +977,14 @@ function generateExtractionPrompt(text: string, documentType: string): string {
 - MEDICARE card (look for: Medicare number, Part A/B/C/D, QMB indicator)
 - DENTAL insurance (look for: dental plan, orthodontia coverage)
 - VISION insurance (look for: VSP, EyeMed, vision benefits)
-Extract ALL information visible on the card including phone numbers, addresses, plan names, coverage details, and any identifying numbers.`,
+
+CRITICAL - INSURANCE COMPANY NAME EXTRACTION:
+- The INSURANCE COMPANY NAME is typically shown as the logo/branding at the TOP of the card
+- Examples: "BlueCross BlueShield", "Aetna", "UnitedHealthcare", "Cigna", "Humana", "Kaiser", "UCare", "Horizon Blue Cross Blue Shield", "CVS Caremark"
+- Extract this as "insurance_name" - this is the PRIMARY insurance carrier/company name
+- Do NOT skip the logo/brand name - it IS the insurance company name
+
+Extract ALL information visible on the card including the insurance company name from the logo, phone numbers, addresses, plan names, coverage details, and any identifying numbers.`,
 
     // Healthcare - Prescriptions
     'prescription': `This is a prescription/Rx document. Look for ALL of these if present:
