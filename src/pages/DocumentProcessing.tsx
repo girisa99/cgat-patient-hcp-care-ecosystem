@@ -93,6 +93,7 @@ import CustomDocumentTypeDialog from '@/components/document-processing/CustomDoc
 import AgentArchitectureRecommendationPanel from '@/components/document-processing/AgentArchitectureRecommendationPanel';
 import ProcessingHistoryWithExport from '@/components/document-processing/ProcessingHistoryWithExport';
 import MedicalImageAnalysis from '@/components/document-processing/MedicalImageAnalysis';
+import InvoiceRCMAnalysis from '@/components/document-processing/InvoiceRCMAnalysis';
 import { ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
 
 // Healthcare abbreviation expansion dictionary
@@ -2613,6 +2614,24 @@ export default function DocumentProcessing() {
                   };
                   setProcessingHistory(prev => [result, ...prev]);
                   toast.success('Medical image analysis saved to history');
+                }}
+              />
+            </TabsContent>
+          )}
+
+          {/* RCM Analysis Tab - For Invoices, Claims, Billing */}
+          {currentConfig.processingHints?.enableRCMAnalysis && (
+            <TabsContent value="rcm-analysis" className="space-y-4">
+              <InvoiceRCMAnalysis
+                extractedData={Object.fromEntries(
+                  Object.entries(processingResult?.extractedFields || {}).map(([key, val]) => [
+                    key,
+                    typeof val === 'object' && val !== null && 'value' in val ? val.value : val
+                  ])
+                )}
+                processingHistory={processingHistory.filter(h => h.documentType === 'invoice')}
+                onExport={(format, data) => {
+                  toast.success(`Exported ${format.toUpperCase()} file`);
                 }}
               />
             </TabsContent>

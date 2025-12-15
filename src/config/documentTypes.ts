@@ -34,6 +34,7 @@ export interface DocumentTypeConfig {
     enableDicomViewer?: boolean;
     enableImageEnhancement?: boolean;
     requiresSpecialOCR?: boolean;
+    enableRCMAnalysis?: boolean; // For invoices/claims - revenue cycle management
   };
 }
 
@@ -273,28 +274,59 @@ export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
     processingHints: { enableDicomViewer: true, enableImageAnalysis: true }
   },
 
-  // ========== FINANCIAL ==========
+  // ========== FINANCIAL / REVENUE CYCLE MANAGEMENT ==========
   {
     id: 'invoice',
-    title: 'Invoice',
+    title: 'Invoice / Billing',
     icon: '🧾',
-    description: 'Invoices, bills, payment requests',
+    description: 'Invoices, claims, billing with RCM analysis',
     color: 'bg-emerald-500',
     category: 'financial',
     targetFields: [
+      // Core Invoice Fields
       { key: 'invoice_number', label: 'Invoice Number', required: true },
+      { key: 'claim_number', label: 'Claim Number' },
       { key: 'vendor_name', label: 'Vendor/Company Name', required: true },
+      { key: 'vendor_tax_id', label: 'Vendor Tax ID (EIN)' },
+      { key: 'vendor_npi', label: 'Vendor NPI' },
       { key: 'vendor_address', label: 'Vendor Address' },
-      { key: 'invoice_date', label: 'Invoice Date', type: 'date', required: true },
+      { key: 'patient_name', label: 'Patient Name' },
+      { key: 'patient_account', label: 'Patient Account #' },
+      { key: 'invoice_date', label: 'Invoice/Service Date', type: 'date', required: true },
       { key: 'due_date', label: 'Due Date', type: 'date' },
+      { key: 'service_from', label: 'Service From Date', type: 'date' },
+      { key: 'service_to', label: 'Service To Date', type: 'date' },
+      // Line Items & CPT Codes
+      { key: 'line_items', label: 'Line Items (JSON)' },
+      { key: 'cpt_codes', label: 'CPT/HCPCS Codes' },
+      { key: 'icd_codes', label: 'ICD-10 Diagnosis Codes' },
+      { key: 'modifiers', label: 'Modifiers' },
+      { key: 'units', label: 'Units/Quantity', type: 'number' },
+      // Billing & Payment
+      { key: 'billed_amount', label: 'Billed Amount', type: 'currency', required: true },
+      { key: 'allowed_amount', label: 'Allowed Amount', type: 'currency' },
+      { key: 'adjustment_amount', label: 'Adjustment Amount', type: 'currency' },
+      { key: 'paid_amount', label: 'Paid Amount', type: 'currency' },
+      { key: 'patient_responsibility', label: 'Patient Responsibility', type: 'currency' },
+      { key: 'balance_due', label: 'Balance Due', type: 'currency' },
       { key: 'subtotal', label: 'Subtotal', type: 'currency' },
       { key: 'tax', label: 'Tax Amount', type: 'currency' },
-      { key: 'total', label: 'Total Amount', type: 'currency', required: true },
+      { key: 'total', label: 'Total Amount', type: 'currency' },
+      // Insurance & Payer
+      { key: 'payer_name', label: 'Payer/Insurance Name' },
+      { key: 'payer_id', label: 'Payer ID' },
+      { key: 'authorization_number', label: 'Prior Auth Number' },
+      { key: 'remittance_advice', label: 'Remittance Advice/ERA' },
+      // Status & Tracking
+      { key: 'payment_status', label: 'Payment Status' },
+      { key: 'denial_reason', label: 'Denial Reason Code' },
+      { key: 'aging_bucket', label: 'Aging Bucket (0-30, 31-60, etc.)' },
       { key: 'payment_terms', label: 'Payment Terms' },
       { key: 'po_number', label: 'PO Number' }
     ],
-    subTypes: ['Standard Invoice', 'Proforma', 'Credit Memo', 'Debit Note', 'Medical Bill'],
-    specialTab: { id: 'invoice-details', label: 'Line Items', icon: '🧾' }
+    subTypes: ['Medical Bill', 'Healthcare Claim', 'EOB/ERA', 'Superbill', 'Standard Invoice', 'Proforma', 'Credit Memo', 'Debit Note'],
+    specialTab: { id: 'rcm-analysis', label: 'RCM Analysis', icon: '💰' },
+    processingHints: { enableRCMAnalysis: true }
   },
   {
     id: 'receipt',
