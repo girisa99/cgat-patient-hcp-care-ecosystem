@@ -378,15 +378,17 @@ export function FieldMappingDialog({
                     </div>
                   ) : (
                     <Select
-                      value={mapping.targetField}
-                      onValueChange={(value) => updateMapping(mapping.sourceField, { targetField: value })}
+                      value={mapping.targetField || '__skip__'}
+                      onValueChange={(value) => updateMapping(mapping.sourceField, { 
+                        targetField: value === '__skip__' ? '' : value 
+                      })}
                       disabled={mapping.skip}
                     >
                       <SelectTrigger className="h-8">
                         <SelectValue placeholder="Select target field" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">-- Skip this field --</SelectItem>
+                        <SelectItem value="__skip__">-- Skip this field --</SelectItem>
                         {targetFields.map(tf => (
                           <SelectItem key={tf.name} value={tf.name}>
                             <div className="flex items-center gap-2">
