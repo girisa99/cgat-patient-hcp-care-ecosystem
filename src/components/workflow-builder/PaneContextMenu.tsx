@@ -27,7 +27,10 @@ import {
   Layers,
   Link2,
   Users,
-  ChevronRight
+  ChevronRight,
+  Scan,
+  Waves,
+  Target
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { MULTI_AGENT_NODES, MULTI_AGENT_CATEGORIES } from './MultiAgentNodeRegistry';
@@ -264,6 +267,19 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
       ]
     },
     {
+      id: 'medical-imaging',
+      name: 'Medical Imaging AI',
+      nodes: [
+        { id: 'vision_ai_hub', type_key: 'vision_ai_hub', display_name: 'Vision AI Hub', description: 'Multi-provider medical imaging AI', category_id: 'medical-imaging' },
+        { id: 'xray_analysis', type_key: 'xray_analysis', display_name: 'X-Ray Analysis', description: 'CNN lung nodules, pneumonia, TB (qXR)', category_id: 'medical-imaging' },
+        { id: 'ct_analysis', type_key: 'ct_analysis', display_name: 'CT Scan Analysis', description: 'U-Net hemorrhage, tumor segmentation', category_id: 'medical-imaging' },
+        { id: 'mri_analysis', type_key: 'mri_analysis', display_name: 'MRI Analysis', description: 'U-Net brain tumor, Alzheimer (BraTS)', category_id: 'medical-imaging' },
+        { id: 'ecg_analysis', type_key: 'ecg_analysis', display_name: 'ECG Analysis', description: 'RNN arrhythmia, AFib, MI detection', category_id: 'medical-imaging' },
+        { id: 'ultrasound_analysis', type_key: 'ultrasound_analysis', display_name: 'Ultrasound Analysis', description: 'Fetal, cardiac, thyroid (SonoNet)', category_id: 'medical-imaging' },
+        { id: 'mammogram_analysis', type_key: 'mammogram_analysis', display_name: 'Mammogram Analysis', description: 'Faster R-CNN mass detection, BI-RADS', category_id: 'medical-imaging' },
+      ]
+    },
+    {
       id: 'communication',
       name: 'Communication',
       nodes: [
@@ -309,6 +325,17 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
     { type: 'tool_chain', category: 'multi-agent', label: 'Tool Chain', icon: Link2 },
     { type: 'self_reflection', category: 'multi-agent', label: 'Self Reflection', icon: Activity },
     { type: 'goal_decomposition', category: 'multi-agent', label: 'Goal Decomposition', icon: GitBranch },
+  ];
+
+  // Medical Imaging Vision AI nodes
+  const medicalImagingNodes = [
+    { type: 'vision_ai_hub', category: 'medical-imaging', label: 'Vision AI Hub', icon: Brain },
+    { type: 'xray_analysis', category: 'medical-imaging', label: 'X-Ray Analysis', icon: Activity },
+    { type: 'ct_analysis', category: 'medical-imaging', label: 'CT Scan Analysis', icon: Scan },
+    { type: 'mri_analysis', category: 'medical-imaging', label: 'MRI Analysis', icon: Brain },
+    { type: 'ecg_analysis', category: 'medical-imaging', label: 'ECG Analysis', icon: Activity },
+    { type: 'ultrasound_analysis', category: 'medical-imaging', label: 'Ultrasound Analysis', icon: Waves },
+    { type: 'mammogram_analysis', category: 'medical-imaging', label: 'Mammogram Analysis', icon: Target },
   ];
 
   const handleNodeClick = (type: string, category: string, label: string) => {
@@ -386,6 +413,37 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
                   className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
                 >
                   <node.icon className="h-4 w-4 text-primary/70" />
+                  {node.label}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Medical Imaging Vision AI Section */}
+        <div className="p-1 border-b border-border">
+          <button
+            onClick={() => setExpandedCategory(expandedCategory === 'medical-imaging' ? null : 'medical-imaging')}
+            className="w-full flex items-center justify-between px-2 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <Brain className="h-4 w-4 text-pink-500" />
+              <span>Medical Imaging AI</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Badge variant="secondary" className="text-xs bg-pink-500/10 text-pink-500">Vision</Badge>
+              <ChevronRight className={`h-4 w-4 transition-transform ${expandedCategory === 'medical-imaging' ? 'rotate-90' : ''}`} />
+            </div>
+          </button>
+          {expandedCategory === 'medical-imaging' && (
+            <div className="ml-2 border-l border-border pl-2">
+              {medicalImagingNodes.map((node) => (
+                <button
+                  key={node.type}
+                  onClick={() => handleNodeClick(node.type, node.category, node.label)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
+                >
+                  <node.icon className="h-4 w-4 text-pink-500/70" />
                   {node.label}
                 </button>
               ))}
