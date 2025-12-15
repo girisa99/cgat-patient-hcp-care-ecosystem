@@ -640,7 +640,10 @@ async function performOCR(fileData: Blob, config: ProcessingConfig): Promise<str
   console.log(`Performing OCR with provider: ${provider}`);
   
   const bytes = await fileData.arrayBuffer();
-  const base64 = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+  const uint8Array = new Uint8Array(bytes);
+  
+  // Convert to base64 in chunks to avoid stack overflow for large files
+  const base64 = arrayBufferToBase64(uint8Array);
   
   switch (provider) {
     case 'google':
@@ -652,6 +655,19 @@ async function performOCR(fileData: Blob, config: ProcessingConfig): Promise<str
     default:
       return await googleCloudVisionOCR(base64, config.enableHandwritingRecognition);
   }
+}
+
+// Helper function to convert ArrayBuffer to base64 without stack overflow
+function arrayBufferToBase64(bytes: Uint8Array): string {
+  const CHUNK_SIZE = 0x8000; // 32KB chunks
+  let binary = '';
+  
+  for (let i = 0; i < bytes.length; i += CHUNK_SIZE) {
+    const chunk = bytes.subarray(i, Math.min(i + CHUNK_SIZE, bytes.length));
+    binary += String.fromCharCode.apply(null, Array.from(chunk));
+  }
+  
+  return btoa(binary);
 }
 
 async function googleCloudVisionOCR(base64Image: string, enableHandwriting?: boolean): Promise<string> {
