@@ -267,17 +267,28 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   let fileUrl = '';
   let filePath = '';
   let storedMimeType = mimeType || '';
-  let configuredProvider = requestedProvider || processingConfig?.ocrProvider || 'gemini';
+  
+  // Normalize OCR provider name (frontend may send 'google', we use 'gemini')
+  let rawProvider = requestedProvider || processingConfig?.ocrProvider || 'gemini';
+  if (rawProvider === 'google') rawProvider = 'gemini';
+  let configuredProvider = rawProvider;
+  
+  console.log(`handleMapToForm called with documentId: ${documentId}, provider: ${configuredProvider}`);
   
   if (documentId) {
-    const { data: doc } = await supabase
+    const { data: doc, error: docError } = await supabase
       .from('document_processing_jobs')
       .select('processing_config, file_path, mime_type')
       .eq('id', documentId)
       .single();
     
+    if (docError) {
+      console.error('Error fetching document:', docError);
+    }
+    
     if (doc?.processing_config?.publicUrl) {
       fileUrl = doc.processing_config.publicUrl;
+      console.log(`Got file URL: ${fileUrl}`);
     }
     if (doc?.file_path) {
       filePath = doc.file_path;
@@ -286,7 +297,8 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
       storedMimeType = doc.mime_type;
     }
     if (doc?.processing_config?.ocrProvider) {
-      configuredProvider = doc.processing_config.ocrProvider;
+      const storedProvider = doc.processing_config.ocrProvider;
+      configuredProvider = storedProvider === 'google' ? 'gemini' : storedProvider;
     }
   }
   
@@ -307,7 +319,7 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   const isExcel = effectiveMimeType.includes('spreadsheet') || effectiveMimeType.includes('excel') || filePath.match(/\.xlsx?$/);
   const isJson = effectiveMimeType === 'application/json' || filePath.endsWith('.json');
   
-  console.log(`Processing file type: ${effectiveMimeType}, isImage: ${isImage}, isPdf: ${isPdf}, isCsv: ${isCsv}`);
+  console.log(`Processing file: ${filePath}, type: ${effectiveMimeType}, isImage: ${isImage}, isPdf: ${isPdf}, fileUrl exists: ${!!fileUrl}`);
   
   try {
     // Handle CSV files
