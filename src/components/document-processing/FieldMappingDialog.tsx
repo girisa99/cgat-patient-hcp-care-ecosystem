@@ -612,7 +612,7 @@ function autoMatchFields(
     // Insurance - General
     'insurance_id': ['member_id', 'policy_number', 'insuranceid', 'memberid', 'subscriber_id', 'member_id_number'],
     'group_number': ['groupnumber', 'grp', 'group_num', 'grpnum', 'group_id', 'rxgrp', 'rx_grp'],
-    'insurance_name': ['insurer', 'carrier', 'payer', 'insurance_provider', 'plan_name', 'insurance_company', 'insurance_company_name', 'insurance_company_full', 'insured_by', 'product_name'],
+    'insurance_name': ['insurer', 'carrier', 'payer', 'insurance_provider', 'plan_name', 'insurance_company', 'insurance_company_name', 'insurance_company_full', 'insured_by', 'product_name', 'company_name', 'brand_name', 'logo_text', 'carrier_name', 'health_plan', 'health_plan_name', 'insurance_carrier', 'blue_cross', 'bluecross', 'aetna', 'united', 'cigna', 'humana', 'organization_name', 'payer_name'],
     
     // Insurance - Rx/Pharmacy
     'rx_bin': ['bin', 'rxbin', 'bin_number'],
