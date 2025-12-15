@@ -248,8 +248,26 @@ const AGENT_WORKFLOW_CONFIGS: AgentWorkflowConfig[] = [
 
 export default function DocumentProcessing() {
   const navigate = useNavigate();
-  const [selectedDocType, setSelectedDocType] = useState<string>('prescription');
-  const [activeTab, setActiveTab] = useState<string>('upload');
+  
+  // Initialize from sessionStorage to persist across tab switches
+  const [selectedDocType, setSelectedDocType] = useState<string>(() => {
+    const saved = sessionStorage.getItem('docProcessing_selectedDocType');
+    return saved || 'prescription';
+  });
+  const [activeTab, setActiveTab] = useState<string>(() => {
+    const saved = sessionStorage.getItem('docProcessing_activeTab');
+    return saved || 'upload';
+  });
+  
+  // Persist selectedDocType to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('docProcessing_selectedDocType', selectedDocType);
+  }, [selectedDocType]);
+  
+  // Persist activeTab to sessionStorage
+  useEffect(() => {
+    sessionStorage.setItem('docProcessing_activeTab', activeTab);
+  }, [activeTab]);
   
   // Custom document types state - merge with base configs
   const [customDocTypes, setCustomDocTypes] = useState<DocumentTypeConfig[]>([]);
@@ -265,7 +283,7 @@ export default function DocumentProcessing() {
   const currentConfig = getDocTypeById(selectedDocType) || getDocumentTypeById(selectedDocType) || DOCUMENT_TYPE_CONFIGS[0];
   
   // Dynamic tabs based on document type
-  const getTabsForDocumentType = (docType: string) => {
+  const getTabsForDocumentType = useCallback((docType: string) => {
     const config = getDocTypeById(docType) || getDocumentTypeById(docType);
     const baseTabs: { id: string; label: string; icon: React.ReactNode }[] = [
       { id: 'upload', label: 'Upload & Process', icon: <Upload className="h-4 w-4" /> },
@@ -284,7 +302,7 @@ export default function DocumentProcessing() {
     baseTabs.push({ id: 'history', label: 'History', icon: <History className="h-4 w-4" /> });
     
     return baseTabs;
-  };
+  }, [customDocTypes]);
 
   const dynamicTabs = getTabsForDocumentType(selectedDocType);
   
@@ -294,7 +312,7 @@ export default function DocumentProcessing() {
     if (!validTabIds.includes(activeTab)) {
       setActiveTab('upload');
     }
-  }, [selectedDocType]);
+  }, [selectedDocType, dynamicTabs, activeTab]);
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);
