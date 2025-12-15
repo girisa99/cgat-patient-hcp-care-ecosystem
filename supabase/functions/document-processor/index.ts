@@ -980,11 +980,47 @@ function generateExtractionPrompt(text: string, documentType: string): string {
 
 CRITICAL - INSURANCE COMPANY NAME EXTRACTION:
 - The INSURANCE COMPANY NAME is typically shown as the logo/branding at the TOP of the card
-- Examples: "BlueCross BlueShield", "Aetna", "UnitedHealthcare", "Cigna", "Humana", "Kaiser", "UCare", "Horizon Blue Cross Blue Shield", "CVS Caremark"
+- Examples: "BlueCross BlueShield", "Aetna", "UnitedHealthcare", "Cigna", "Humana", "Kaiser", "UCare", "Horizon Blue Cross Blue Shield", "CVS Caremark", "Anthem", "Centene", "Molina"
 - Extract this as "insurance_name" - this is the PRIMARY insurance carrier/company name
 - Do NOT skip the logo/brand name - it IS the insurance company name
 
-Extract ALL information visible on the card including the insurance company name from the logo, phone numbers, addresses, plan names, coverage details, and any identifying numbers.`,
+ABBREVIATION EXPANSION (extract with FULL names, not abbreviations):
+- DED = Deductible (extract as "deductible")
+- OOP = Out of Pocket Maximum (extract as "oop_max")
+- EPO = Exclusive Provider Organization
+- HMO = Health Maintenance Organization  
+- PPO = Preferred Provider Organization
+- POS = Point of Service
+- BIN = Bank Identification Number (for Rx cards)
+- PCN = Processor Control Number (for Rx cards)
+- PCP = Primary Care Physician
+
+Extract ALL these fields if visible:
+- insurance_name (company name from logo)
+- plan_name (specific plan name)
+- plan_type (HMO/PPO/EPO/POS)
+- member_name (cardholder name)
+- member_id (primary ID number)
+- subscriber_id (if different from member_id)
+- group_number (group/grp number)
+- bin (BIN/RxBIN for pharmacy)
+- pcn (PCN/RxPCN for pharmacy)
+- rxgrp (RxGroup for pharmacy)
+- copay (office visit copay amount)
+- copay_specialist (specialist copay)
+- copay_rx (prescription copay tiers)
+- deductible (annual deductible amount - may show as DED)
+- oop_max (out of pocket maximum - may show as OOP)
+- coinsurance (percentage after deductible)
+- effective_date (coverage start date)
+- expiration_date (coverage end date)
+- pcp_required (if PCP referral required)
+- referral_required (if referrals needed)
+- payer_id (electronic payer ID)
+- customer_service (phone number)
+- claims_address (claims mailing address)
+
+Extract ALL information visible on the card.`,
 
     // Healthcare - Prescriptions
     'prescription': `This is a prescription/Rx document. Look for ALL of these if present:
