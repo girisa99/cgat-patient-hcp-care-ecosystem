@@ -187,19 +187,168 @@ async function handleExtractMetadata(supabase: any, request: ProcessingRequest) 
 }
 
 async function handleMapToForm(supabase: any, request: ProcessingRequest) {
-  const { documentId, processingConfig } = request;
+  const { documentId, processingConfig, documentType } = request;
   
-  // Map extracted data to form fields
-  const mapping = {
-    documentId,
-    mappedFields: processingConfig?.targetFields || {},
-    mappingConfidence: 0.9,
-    unmappedFields: [],
-    suggestions: []
-  };
+  // Get document record to access image URL
+  let imageUrl = '';
+  if (documentId) {
+    const { data: doc } = await supabase
+      .from('document_processing_jobs')
+      .select('processing_config, file_path')
+      .eq('id', documentId)
+      .single();
+    
+    if (doc?.processing_config?.publicUrl) {
+      imageUrl = doc.processing_config.publicUrl;
+    }
+  }
+  
+  // Build form mapping based on document type
+  const formMapping: Record<string, { value: string; confidence: number; source: string }> = {};
+  const targetFields = processingConfig?.extractionFields || [];
+  
+  // If we have an image URL and it's an invoice/billing document, do extraction
+  if (imageUrl && (documentType === 'invoice' || !documentType)) {
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    
+    if (geminiApiKey) {
+      try {
+        // Fetch and convert image to base64
+        const imageResponse = await fetch(imageUrl);
+        if (imageResponse.ok) {
+          const imageBlob = await imageResponse.arrayBuffer();
+          const imageBytes = new Uint8Array(imageBlob);
+          const bytes: string[] = [];
+          for (let i = 0; i < imageBytes.length; i++) {
+            bytes.push(String.fromCharCode(imageBytes[i]));
+          }
+          const imageBase64 = btoa(bytes.join(''));
+          const contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
+          
+          // Build invoice extraction prompt
+          const extractionPrompt = `Analyze this invoice/billing document image and extract all financial and billing information.
+
+Extract these specific fields if visible:
+- invoice_number: Invoice or claim number
+- vendor_name: Vendor, supplier, or provider name  
+- vendor_tax_id: Tax ID or EIN
+- vendor_npi: NPI number if healthcare
+- patient_name: Patient or customer name
+- patient_account: Account number
+- service_date or service_from: Date of service
+- service_to: End date if range
+- billed_amount: Total billed amount
+- allowed_amount: Allowed amount
+- adjustment_amount: Any adjustments
+- paid_amount: Amount paid
+- balance_due: Balance remaining
+- payer_name: Insurance or payer name
+- cpt_codes: Any CPT/HCPCS codes (comma separated)
+- icd_codes: Any ICD diagnosis codes (comma separated)
+- payment_status: paid, partial, unpaid, denied
+- denial_reason: Reason if denied
+- line_items: Array of service line items with description, quantity, unit_price, total
+
+Return ONLY a valid JSON object in this exact format:
+{
+  "fields": {
+    "field_name": "extracted_value"
+  },
+  "line_items": [
+    {"description": "...", "cpt_code": "...", "quantity": 1, "unit_price": 0, "total": 0}
+  ],
+  "document_category": "invoice|claim|statement|eob",
+  "confidence": 0.0-1.0
+}`;
+
+          const geminiResponse = await fetch(
+            `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
+            {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                contents: [{
+                  parts: [
+                    { text: extractionPrompt },
+                    { inline_data: { mime_type: contentType, data: imageBase64 } }
+                  ]
+                }],
+                generationConfig: {
+                  temperature: 0.1,
+                  topP: 0.95,
+                  maxOutputTokens: 4096
+                }
+              })
+            }
+          );
+
+          if (geminiResponse.ok) {
+            const geminiData = await geminiResponse.json();
+            const responseText = geminiData?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+            
+            // Parse the JSON response
+            const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              try {
+                const extracted = JSON.parse(jsonMatch[0]);
+                const fields = extracted.fields || {};
+                
+                // Map extracted fields to formMapping format
+                for (const [key, value] of Object.entries(fields)) {
+                  if (value && String(value).trim()) {
+                    formMapping[key] = {
+                      value: String(value),
+                      confidence: extracted.confidence || 0.85,
+                      source: 'gemini_extraction'
+                    };
+                  }
+                }
+                
+                // Add line items as JSON string
+                if (extracted.line_items && extracted.line_items.length > 0) {
+                  formMapping['line_items'] = {
+                    value: JSON.stringify(extracted.line_items),
+                    confidence: extracted.confidence || 0.85,
+                    source: 'gemini_extraction'
+                  };
+                }
+                
+                // Add document category
+                if (extracted.document_category) {
+                  formMapping['document_category'] = {
+                    value: extracted.document_category,
+                    confidence: 0.9,
+                    source: 'gemini_extraction'
+                  };
+                }
+                
+                console.log(`Invoice extraction completed: ${Object.keys(formMapping).length} fields`);
+              } catch (parseError) {
+                console.error('Failed to parse Gemini response:', parseError);
+              }
+            }
+          }
+        }
+      } catch (extractionError) {
+        console.error('Invoice extraction error:', extractionError);
+      }
+    }
+  }
+  
+  // Ensure all target fields exist in response (even if empty)
+  for (const field of targetFields) {
+    if (!formMapping[field]) {
+      formMapping[field] = { value: '', confidence: 0, source: 'not_found' };
+    }
+  }
   
   return new Response(
-    JSON.stringify({ success: true, mapping }),
+    JSON.stringify({ 
+      success: true, 
+      formMapping,
+      mappingConfidence: Object.keys(formMapping).length > 0 ? 0.85 : 0,
+      documentType: documentType || 'invoice'
+    }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } }
   );
 }
