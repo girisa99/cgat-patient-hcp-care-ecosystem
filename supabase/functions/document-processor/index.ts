@@ -249,18 +249,16 @@ async function handleProcess(supabase: any, request: ProcessingRequest) {
     }
 
     // Convert to base64 for Vision AI (needed for handwriting recognition)
-    // Use chunked approach to avoid stack overflow for large files
+    // Use safe approach to avoid stack overflow for large files
     const arrayBuffer = await fileData.arrayBuffer();
     const uint8Array = new Uint8Array(arrayBuffer);
     
-    // Process in chunks to avoid "Maximum call stack size exceeded" error
-    const chunkSize = 8192;
-    let binaryString = '';
-    for (let i = 0; i < uint8Array.length; i += chunkSize) {
-      const chunk = uint8Array.slice(i, i + chunkSize);
-      binaryString += String.fromCharCode(...chunk);
+    // Build binary string byte by byte to avoid stack overflow
+    const bytes: string[] = [];
+    for (let i = 0; i < uint8Array.length; i++) {
+      bytes.push(String.fromCharCode(uint8Array[i]));
     }
-    imageBase64 = btoa(binaryString);
+    imageBase64 = btoa(bytes.join(''));
     
     if (config.enableOCR !== false && (doc.mime_type?.includes('pdf') || doc.mime_type?.includes('image'))) {
       const providerName = config.ocrProvider || 'google';
