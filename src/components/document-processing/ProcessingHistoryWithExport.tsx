@@ -113,6 +113,14 @@ export default function ProcessingHistoryWithExport({
   const [selectedTarget, setSelectedTarget] = useState<string>('supabase');
   const [isExporting, setIsExporting] = useState(false);
   
+  // Get document type from selected items for field filtering
+  const selectedDocumentType = useMemo(() => {
+    if (selectedItems.length === 0) return undefined;
+    const selectedData = history.filter(h => selectedItems.includes(h.id));
+    // Use the first selected item's document type (or most common if multiple)
+    return selectedData[0]?.documentType;
+  }, [selectedItems, history]);
+  
   // Extract ALL source fields from selected items for mapping - comprehensive extraction
   const sourceFieldsForMapping = useMemo<SourceField[]>(() => {
     if (selectedItems.length === 0) return [];
@@ -744,6 +752,7 @@ export default function ProcessingHistoryWithExport({
         sourceFields={sourceFieldsForMapping}
         targetSystem={selectedTarget as 'salesforce' | 'hubspot' | 'veeva' | 'supabase' | 'webhook'}
         onConfirmMapping={handleConfirmedMapping}
+        documentType={selectedDocumentType}
       />
 
       {/* Delete Confirmation Dialog */}
