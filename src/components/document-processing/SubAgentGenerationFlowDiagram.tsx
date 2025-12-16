@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import flowImage from '@/assets/subagent-generation-flow-v2.png';
+import flowImage from '@/assets/subagent-generation-flow-v3.png';
 
 export const SubAgentGenerationFlowDiagram = () => {
   const handleDownload = async () => {
