@@ -342,28 +342,78 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
       }
     }
     // Handle images and PDFs with OCR/Vision AI
-    else if ((isImage || isPdf) && fileUrl) {
+    else if ((isImage || isPdf) && (fileUrl || filePath)) {
       console.log(`Starting image/PDF extraction with provider: ${configuredProvider}`);
       
-      // Fetch and convert file to base64
-      const fileResponse = await fetch(fileUrl);
-      console.log(`File fetch response status: ${fileResponse.status}`);
+      let fileBase64Data = '';
+      let contentType = effectiveMimeType;
+      let fetchSuccess = false;
       
-      if (fileResponse.ok) {
-        const fileBlob = await fileResponse.arrayBuffer();
-        const fileBytes = new Uint8Array(fileBlob);
-        console.log(`File size: ${fileBytes.length} bytes`);
+      // First try public URL
+      if (fileUrl) {
+        console.log(`Trying public URL: ${fileUrl}`);
+        const fileResponse = await fetch(fileUrl);
+        console.log(`Public URL fetch status: ${fileResponse.status}`);
         
-        // Convert to base64
-        let fileBase64Data = '';
-        const chunkSize = 0x8000; // Process in chunks to avoid stack overflow
-        for (let i = 0; i < fileBytes.length; i += chunkSize) {
-          const chunk = fileBytes.subarray(i, i + chunkSize);
-          fileBase64Data += String.fromCharCode.apply(null, Array.from(chunk));
+        if (fileResponse.ok) {
+          const fileBlob = await fileResponse.arrayBuffer();
+          const fileBytes = new Uint8Array(fileBlob);
+          console.log(`File size: ${fileBytes.length} bytes`);
+          
+          // Convert to base64 in chunks
+          let binaryString = '';
+          const chunkSize = 0x8000;
+          for (let i = 0; i < fileBytes.length; i += chunkSize) {
+            const chunk = fileBytes.subarray(i, i + chunkSize);
+            binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+          }
+          fileBase64Data = btoa(binaryString);
+          contentType = fileResponse.headers.get('content-type') || effectiveMimeType;
+          fetchSuccess = true;
         }
-        fileBase64Data = btoa(fileBase64Data);
+      }
+      
+      // If public URL failed, try signed URL from storage
+      if (!fetchSuccess && filePath) {
+        console.log(`Public URL failed, trying signed URL for: ${filePath}`);
+        const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+          .from('document-processing')
+          .createSignedUrl(filePath, 300); // 5 min expiry
         
-        const contentType = fileResponse.headers.get('content-type') || effectiveMimeType;
+        if (signedUrlError) {
+          console.error(`Signed URL error: ${signedUrlError.message}`);
+        } else if (signedUrlData?.signedUrl) {
+          console.log(`Got signed URL, fetching...`);
+          const signedResponse = await fetch(signedUrlData.signedUrl);
+          console.log(`Signed URL fetch status: ${signedResponse.status}`);
+          
+          if (signedResponse.ok) {
+            const fileBlob = await signedResponse.arrayBuffer();
+            const fileBytes = new Uint8Array(fileBlob);
+            console.log(`File size from signed URL: ${fileBytes.length} bytes`);
+            
+            let binaryString = '';
+            const chunkSize = 0x8000;
+            for (let i = 0; i < fileBytes.length; i += chunkSize) {
+              const chunk = fileBytes.subarray(i, i + chunkSize);
+              binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+            }
+            fileBase64Data = btoa(binaryString);
+            contentType = signedResponse.headers.get('content-type') || effectiveMimeType;
+            fetchSuccess = true;
+          }
+        }
+      }
+      
+      // Also try using the base64 from the request if available
+      if (!fetchSuccess && request.fileBase64) {
+        console.log(`Using base64 from request`);
+        fileBase64Data = request.fileBase64;
+        contentType = request.mimeType || effectiveMimeType;
+        fetchSuccess = true;
+      }
+      
+      if (fetchSuccess && fileBase64Data) {
         console.log(`Base64 length: ${fileBase64Data.length}, content type: ${contentType}`);
         
         // Build dynamic extraction prompt based on document type with target fields
@@ -494,9 +544,10 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
             // Continue to next provider
           }
         }
+      } else {
+        console.log('File fetch failed - no base64 data available');
       }
     }
-    // Handle inline base64 data (for direct uploads)
     else if (fileBase64) {
       const extractionPrompt = buildExtractionPrompt(documentType || 'unknown', targetFields);
       const extracted = await extractWithGemini(fileBase64, mimeType || 'image/jpeg', extractionPrompt);
