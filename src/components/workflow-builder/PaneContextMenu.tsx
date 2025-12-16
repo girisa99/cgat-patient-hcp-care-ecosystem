@@ -30,7 +30,10 @@ import {
   ChevronRight,
   Scan,
   Waves,
-  Target
+  Target,
+  FileText,
+  Receipt,
+  Stethoscope
 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { MULTI_AGENT_NODES, MULTI_AGENT_CATEGORIES } from './MultiAgentNodeRegistry';
@@ -105,6 +108,35 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
   const [isLoading, setIsLoading] = useState(false);
   const [expandedCategory, setExpandedCategory] = useState<string | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Document Processing nodes (comprehensive)
+  const documentProcessingNodes = [
+    // Multi-Provider OCR
+    { type: 'multi_provider_ocr', category: 'document-processing', label: 'Multi-Provider OCR Hub', icon: Scan, description: 'Google Vision / Azure / AWS' },
+    { type: 'google_vision_ocr', category: 'document-processing', label: 'Google Vision OCR', icon: Scan },
+    { type: 'azure_form_recognizer', category: 'document-processing', label: 'Azure Form Recognizer', icon: Scan },
+    { type: 'aws_textract', category: 'document-processing', label: 'AWS Textract', icon: Scan },
+    // Document Types
+    { type: 'prescription_processor', category: 'document-processing', label: 'Prescription Processor', icon: FileText, description: 'NDC, clinical data, multi-medication' },
+    { type: 'insurance_processor', category: 'document-processing', label: 'Insurance Processor', icon: FileText, description: 'Pharmacy/Medical/Medicaid variants' },
+    { type: 'invoice_rcm_processor', category: 'document-processing', label: 'Invoice/RCM Processor', icon: FileText, description: 'Line items, CPT, aging analysis' },
+    { type: 'patient_form_processor', category: 'document-processing', label: 'Patient Form Processor', icon: FileText },
+    { type: 'lab_result_processor', category: 'document-processing', label: 'Lab Results Processor', icon: FileText },
+    // Processing stages
+    { type: 'gemini_nlp_extractor', category: 'document-processing', label: 'Gemini NLP Extractor', icon: Brain, description: 'Entity extraction with AI' },
+    { type: 'field_mapping', category: 'document-processing', label: 'Field Mapping', icon: Layers },
+    { type: 'validation_node', category: 'document-processing', label: 'Validation & Verification', icon: Shield },
+    { type: 'mcp_export', category: 'document-processing', label: 'MCP/CRM Export', icon: Globe, description: 'Salesforce, HubSpot, Veeva' },
+  ];
+
+  // Invoice/RCM specific nodes
+  const invoiceRCMNodes = [
+    { type: 'invoice_parser', category: 'invoice-rcm', label: 'Invoice Parser', icon: FileText },
+    { type: 'cpt_analyzer', category: 'invoice-rcm', label: 'CPT/HCPCS Analyzer', icon: BarChart3 },
+    { type: 'aging_analyzer', category: 'invoice-rcm', label: 'AR Aging Analyzer', icon: Activity },
+    { type: 'payment_tracker', category: 'invoice-rcm', label: 'Payment Status Tracker', icon: Database },
+    { type: 'erp_export', category: 'invoice-rcm', label: 'ERP Export (QuickBooks/SAP/D365)', icon: Globe },
+  ];
 
   // Close on click outside
   useEffect(() => {
@@ -387,6 +419,73 @@ export const PaneContextMenu: React.FC<PaneContextMenuProps> = ({
               {node.label}
             </button>
           ))}
+        </div>
+
+        {/* Document Processing Section */}
+        <div className="p-1 border-b border-border">
+          <button
+            onClick={() => setExpandedCategory(expandedCategory === 'document-processing-expanded' ? null : 'document-processing-expanded')}
+            className="w-full flex items-center justify-between px-2 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <FileText className="h-4 w-4 text-blue-500" />
+              <span>Document Processing</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Badge variant="secondary" className="text-xs bg-blue-500/10 text-blue-500">OCR</Badge>
+              <ChevronRight className={`h-4 w-4 transition-transform ${expandedCategory === 'document-processing-expanded' ? 'rotate-90' : ''}`} />
+            </div>
+          </button>
+          {expandedCategory === 'document-processing-expanded' && (
+            <div className="ml-2 border-l border-border pl-2 max-h-52 overflow-y-auto">
+              {documentProcessingNodes.map((node) => (
+                <button
+                  key={node.type}
+                  onClick={() => handleNodeClick(node.type, node.category, node.label)}
+                  className="w-full flex flex-col items-start px-2 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <node.icon className="h-4 w-4 text-blue-500/70" />
+                    <span>{node.label}</span>
+                  </div>
+                  {node.description && (
+                    <span className="text-xs text-muted-foreground ml-6">{node.description}</span>
+                  )}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+
+        {/* Invoice/RCM Section */}
+        <div className="p-1 border-b border-border">
+          <button
+            onClick={() => setExpandedCategory(expandedCategory === 'invoice-rcm' ? null : 'invoice-rcm')}
+            className="w-full flex items-center justify-between px-2 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
+          >
+            <div className="flex items-center gap-2">
+              <BarChart3 className="h-4 w-4 text-green-500" />
+              <span>Invoice / RCM</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <Badge variant="secondary" className="text-xs bg-green-500/10 text-green-500">Billing</Badge>
+              <ChevronRight className={`h-4 w-4 transition-transform ${expandedCategory === 'invoice-rcm' ? 'rotate-90' : ''}`} />
+            </div>
+          </button>
+          {expandedCategory === 'invoice-rcm' && (
+            <div className="ml-2 border-l border-border pl-2">
+              {invoiceRCMNodes.map((node) => (
+                <button
+                  key={node.type}
+                  onClick={() => handleNodeClick(node.type, node.category, node.label)}
+                  className="w-full flex items-center gap-2 px-2 py-1.5 text-sm hover:bg-accent rounded-md transition-colors"
+                >
+                  <node.icon className="h-4 w-4 text-green-500/70" />
+                  {node.label}
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Multi-Agent Section */}
