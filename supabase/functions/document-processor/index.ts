@@ -599,12 +599,9 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
     }
   }
   
-  // Ensure all target fields exist in response (even if empty)
-  for (const field of targetFields) {
-    if (!formMapping[field]) {
-      formMapping[field] = { value: '', confidence: 0, source: 'not_found' };
-    }
-  }
+  // Only include fields that were actually extracted - NO hardcoded empty fields
+  // Target fields are used as hints only, not forced into response
+  console.log(`Total extracted fields: ${Object.keys(formMapping).length}`, formMapping);
   
   return new Response(
     JSON.stringify({ 
@@ -850,8 +847,8 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
   
   console.log(`Gemini extraction: starting with content type ${contentType}, base64 length: ${imageBase64?.length || 0}`);
   
-  // Use stable model gemini-1.5-flash for reliable extraction
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+  // Use gemini-2.5-flash for reliable extraction
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${geminiApiKey}`;
   
   try {
     const response = await fetch(apiUrl, {
