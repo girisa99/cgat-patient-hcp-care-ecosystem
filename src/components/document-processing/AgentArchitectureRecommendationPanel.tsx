@@ -21,6 +21,7 @@ import {
   RefreshCw, 
   Target, 
   CheckCircle,
+  XCircle,
   ArrowRight,
   Sparkles,
   UserCheck,
@@ -511,85 +512,97 @@ export default function AgentArchitectureRecommendationPanel({
           <>
             <Separator />
             <div className="space-y-3">
-              <div 
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => setShowSubAgents(!showSubAgents)}
-              >
-                <h5 className="text-sm font-medium flex items-center gap-2">
-                  <Users className="h-4 w-4 text-blue-500" />
-                  Suggested Sub-Agents (A2A)
-                  <Badge variant="secondary" className="text-xs">{subAgentSuggestions.length}</Badge>
+              <div className="p-3 rounded-lg bg-blue-50 dark:bg-blue-950/30 border border-blue-200 dark:border-blue-800">
+                <h5 className="text-sm font-medium flex items-center gap-2 text-blue-800 dark:text-blue-200">
+                  <Users className="h-4 w-4" />
+                  Would you like to add follow-up agents?
                 </h5>
-                {showSubAgents ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                <p className="text-xs text-blue-600 dark:text-blue-400 mt-1">
+                  Select agents that can automatically process your {documentType.title.toLowerCase()} data
+                </p>
               </div>
               
-              {showSubAgents && (
-                <div className="space-y-2">
-                  <p className="text-xs text-muted-foreground">
-                    These agents can be triggered automatically during {documentType.title} processing via A2A protocol
-                  </p>
-                  <ScrollArea className="h-[180px]">
-                    <div className="space-y-2 pr-2">
-                      {subAgentSuggestions.map(agent => (
-                        <div
-                          key={agent.id}
-                          className={cn(
-                            "p-3 rounded-lg border cursor-pointer transition-all",
-                            selectedSubAgents.includes(agent.id)
-                              ? "border-primary bg-primary/5"
-                              : "border-border hover:border-primary/50 hover:bg-muted/30"
-                          )}
-                          onClick={() => toggleSubAgent(agent.id)}
-                        >
-                          <div className="flex items-start gap-3">
-                            <div className="text-xl">{agent.icon}</div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium text-sm">{agent.name}</span>
-                                {selectedSubAgents.includes(agent.id) && (
-                                  <CheckCircle className="h-3.5 w-3.5 text-green-500" />
-                                )}
-                              </div>
-                              <p className="text-xs text-muted-foreground">{agent.description}</p>
-                              <div className="mt-1.5 flex items-center gap-1">
-                                <Zap className="h-3 w-3 text-amber-500" />
-                                <span className="text-[10px] text-amber-600">{agent.triggerCondition}</span>
-                              </div>
-                            </div>
+              <ScrollArea className="h-[200px]">
+                <div className="space-y-2 pr-2">
+                  {subAgentSuggestions.map(agent => (
+                    <div
+                      key={agent.id}
+                      className={cn(
+                        "p-3 rounded-lg border cursor-pointer transition-all",
+                        selectedSubAgents.includes(agent.id)
+                          ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                          : "border-border hover:border-primary/50 hover:bg-muted/30"
+                      )}
+                      onClick={() => toggleSubAgent(agent.id)}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div className="text-xl">{agent.icon}</div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium text-sm">{agent.name}</span>
+                            {selectedSubAgents.includes(agent.id) && (
+                              <Badge className="bg-green-500 text-white text-[10px]">Selected</Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground">{agent.description}</p>
+                          <div className="mt-1.5 flex items-center gap-1">
+                            <Target className="h-3 w-3 text-amber-500" />
+                            <span className="text-[10px] text-muted-foreground">{agent.triggerCondition}</span>
                           </div>
                         </div>
-                      ))}
+                      </div>
                     </div>
-                  </ScrollArea>
-                  {selectedSubAgents.length > 0 && (
-                    <div className="p-2 rounded bg-blue-500/10 text-xs text-blue-700 flex items-center gap-2">
-                      <Network className="h-3.5 w-3.5" />
-                      {selectedSubAgents.length} sub-agent(s) will be included in workflow
-                    </div>
-                  )}
+                  ))}
+                </div>
+              </ScrollArea>
+
+              {selectedSubAgents.length > 0 && (
+                <div className="p-2 rounded bg-green-100 dark:bg-green-900/30 text-xs text-green-700 dark:text-green-300 flex items-center gap-2">
+                  <CheckCircle className="h-3.5 w-3.5" />
+                  {selectedSubAgents.length} agent(s) selected for your workflow
                 </div>
               )}
             </div>
           </>
         )}
 
-        {/* Action Button */}
-        <Button 
-          className="w-full"
-          onClick={() => onConfirmAndBuild(analysis.primaryRecommendation, {
-            ...buildOptions,
-            selectedSubAgents: selectedSubAgents.map(id => 
-              subAgentSuggestions.find(s => s.id === id)
-            ).filter(Boolean)
-          } as any)}
-        >
-          <Play className="h-4 w-4 mr-2" />
-          Generate & Build Agent in Canvas
-          {selectedSubAgents.length > 0 && (
-            <Badge variant="secondary" className="ml-2 text-xs">+{selectedSubAgents.length} sub-agents</Badge>
-          )}
-          <ArrowRight className="h-4 w-4 ml-2" />
-        </Button>
+        <Separator />
+
+        {/* Clear Yes/No Action Buttons */}
+        <div className="space-y-3">
+          <p className="text-sm text-center text-muted-foreground">
+            Build an AI agent workflow for processing {documentType.title.toLowerCase()} documents?
+          </p>
+          <div className="flex gap-3">
+            <Button 
+              variant="outline"
+              className="flex-1"
+              onClick={() => onConfirmAndBuild(analysis.primaryRecommendation, {
+                ...buildOptions,
+                declined: true,
+                selectedSubAgents: []
+              } as any)}
+            >
+              <XCircle className="h-4 w-4 mr-2" />
+              No, Skip
+            </Button>
+            <Button 
+              className="flex-1"
+              onClick={() => onConfirmAndBuild(analysis.primaryRecommendation, {
+                ...buildOptions,
+                selectedSubAgents: selectedSubAgents.map(id => 
+                  subAgentSuggestions.find(s => s.id === id)
+                ).filter(Boolean)
+              } as any)}
+            >
+              <CheckCircle className="h-4 w-4 mr-2" />
+              Yes, Build Agent
+              {selectedSubAgents.length > 0 && (
+                <Badge variant="secondary" className="ml-2 text-xs">+{selectedSubAgents.length}</Badge>
+              )}
+            </Button>
+          </div>
+        </div>
       </CardContent>
     </Card>
   );
