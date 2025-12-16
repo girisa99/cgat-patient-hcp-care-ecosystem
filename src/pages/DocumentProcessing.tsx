@@ -900,16 +900,16 @@ export default function DocumentProcessing() {
       
       setProcessingResult(prev => prev ? { ...prev, progress: 70 } : null);
       
-      // Stage 4: Map to form fields
+      // Stage 4: Map to form fields - NO hardcoded target fields, extract only what's visible
       setProcessingResult(prev => prev ? { ...prev, stage: 'mapping', progress: 80 } : null);
       toast.info('Mapping fields...');
       
-      const targetFields = currentConfig.targetFields.map(f => f.key);
+      // Don't send targetFields - let backend extract ONLY what's in the document
       const { data: mapResult } = await supabase.functions.invoke('document-processor', {
         body: {
           action: 'map_to_form',
           documentId,
-          processingConfig: { extractionFields: targetFields }
+          processingConfig: { } // No extractionFields - pure dynamic extraction
         }
       });
       
