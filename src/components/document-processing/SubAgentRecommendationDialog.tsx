@@ -717,13 +717,26 @@ export default function SubAgentRecommendationDialog({
     ];
     
     // Persist current document processing state to sessionStorage before navigating
-    // This preserves extracted data, medication lookups, and history when user goes to canvas
+    // This preserves ALL document type states - prescription, insurance, invoice, medical imaging
     if (extractedData) {
       const stateToPreserve = {
+        // Universal states for ALL document types
         processingResult: extractedData.processingResult || null,
+        pendingResult: extractedData.pendingResult || null,
+        // Prescription/Medication-specific states
         searchResults: extractedData.searchResults || null,
         drugSearchQuery: extractedData.drugSearchQuery || '',
         sigInstructions: extractedData.sigInstructions || '',
+        selectedNdc: extractedData.selectedNdc || null,
+        parsedSig: extractedData.parsedSig || null,
+        selectedDose: extractedData.selectedDose || '',
+        selectedRoute: extractedData.selectedRoute || '',
+        selectedFrequency: extractedData.selectedFrequency || '',
+        selectedDuration: extractedData.selectedDuration || '',
+        ndcDosageInfo: extractedData.ndcDosageInfo || null,
+        // Medical imaging states
+        medicalImageBase64: extractedData.medicalImageBase64 || '',
+        medicalImageMimeType: extractedData.medicalImageMimeType || '',
       };
       sessionStorage.setItem('docProcessing_fullState', JSON.stringify(stateToPreserve));
     }

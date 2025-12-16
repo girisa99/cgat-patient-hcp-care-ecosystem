@@ -549,30 +549,45 @@ export default function DocumentProcessing() {
   } | null>(null);
   
   // Restore full processing state from sessionStorage on mount (preserves state when navigating to/from canvas)
+  // This works for ALL document types - prescription, insurance, invoice, medical imaging, etc.
   useEffect(() => {
     const savedState = sessionStorage.getItem('docProcessing_fullState');
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
+        
+        // Restore universal processing result (applies to ALL document types)
         if (parsed.processingResult) {
-          // Restore dates
           parsed.processingResult.processedAt = new Date(parsed.processingResult.processedAt);
           if (parsed.processingResult.exportedAt) {
             parsed.processingResult.exportedAt = new Date(parsed.processingResult.exportedAt);
           }
           setProcessingResult(parsed.processingResult);
         }
-        if (parsed.searchResults) {
-          setSearchResults(parsed.searchResults);
+        
+        // Restore pending result if any
+        if (parsed.pendingResult) {
+          parsed.pendingResult.processedAt = new Date(parsed.pendingResult.processedAt);
+          setPendingResult(parsed.pendingResult);
         }
-        if (parsed.drugSearchQuery) {
-          setDrugSearchQuery(parsed.drugSearchQuery);
-        }
-        if (parsed.sigInstructions) {
-          setSigInstructions(parsed.sigInstructions);
-        }
+        
+        // Restore prescription/medication-specific states
+        if (parsed.searchResults) setSearchResults(parsed.searchResults);
+        if (parsed.drugSearchQuery) setDrugSearchQuery(parsed.drugSearchQuery);
+        if (parsed.sigInstructions) setSigInstructions(parsed.sigInstructions);
+        if (parsed.selectedNdc) setSelectedNdc(parsed.selectedNdc);
+        if (parsed.parsedSig) setParsedSig(parsed.parsedSig);
+        if (parsed.selectedDose) setSelectedDose(parsed.selectedDose);
+        if (parsed.selectedRoute) setSelectedRoute(parsed.selectedRoute);
+        if (parsed.selectedFrequency) setSelectedFrequency(parsed.selectedFrequency);
+        if (parsed.selectedDuration) setSelectedDuration(parsed.selectedDuration);
+        if (parsed.ndcDosageInfo) setNdcDosageInfo(parsed.ndcDosageInfo);
+        
         // Clear saved state after restoring (one-time restore)
         sessionStorage.removeItem('docProcessing_fullState');
+        
+        // Show toast to indicate state was restored
+        toast.success('Document processing state restored');
       } catch (e) {
         console.warn('Failed to restore document processing state:', e);
       }
@@ -855,6 +870,20 @@ export default function DocumentProcessing() {
   // Store base64 data for medical imaging analysis
   const [medicalImageBase64, setMedicalImageBase64] = useState<string>('');
   const [medicalImageMimeType, setMedicalImageMimeType] = useState<string>('');
+  
+  // Restore medical imaging states from sessionStorage (needs separate effect since states are declared here)
+  useEffect(() => {
+    const savedState = sessionStorage.getItem('docProcessing_fullState');
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.medicalImageBase64) setMedicalImageBase64(parsed.medicalImageBase64);
+        if (parsed.medicalImageMimeType) setMedicalImageMimeType(parsed.medicalImageMimeType);
+      } catch (e) {
+        // Silent fail - main restoration handles errors
+      }
+    }
+  }, []);
 
   const runAutoProcessing = async (result: ProcessingResult, file: File) => {
     try {
@@ -3360,11 +3389,23 @@ export default function DocumentProcessing() {
           onOpenChange={setShowSubAgentDialog}
           documentType={currentConfig}
           extractedData={{
-            ...processingResult?.extractedFields,
+            // Universal states for ALL document types
             processingResult,
+            pendingResult,
+            // Prescription/Medication-specific states
             searchResults,
             drugSearchQuery,
             sigInstructions,
+            selectedNdc,
+            parsedSig,
+            selectedDose,
+            selectedRoute,
+            selectedFrequency,
+            selectedDuration,
+            ndcDosageInfo,
+            // Medical imaging states
+            medicalImageBase64,
+            medicalImageMimeType,
           }}
         />
       </div>
