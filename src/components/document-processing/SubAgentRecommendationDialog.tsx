@@ -490,6 +490,45 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       triggerCondition: 'When contracts submitted',
       architectureType: 'agentic'
     }
+  ],
+  // Billing is an alias for invoice sub-agents
+  'billing': [
+    {
+      id: 'claims-processor',
+      name: 'Claims Processing Agent',
+      description: 'Automates claims submission and tracking',
+      icon: '📄',
+      useCase: 'claims-processing',
+      triggerCondition: 'When billing ready for claims',
+      architectureType: 'multi-agent'
+    },
+    {
+      id: 'denial-management',
+      name: 'Denial Management Agent',
+      description: 'Handles claim denials and appeals',
+      icon: '🔄',
+      useCase: 'denial-management',
+      triggerCondition: 'When claim is denied',
+      architectureType: 'agentic'
+    },
+    {
+      id: 'payment-posting',
+      name: 'Payment Posting Agent',
+      description: 'Automates ERA/EOB processing',
+      icon: '💰',
+      useCase: 'payment-posting',
+      triggerCondition: 'When payment received',
+      architectureType: 'a2a'
+    },
+    {
+      id: 'ar-follow-up',
+      name: 'AR Follow-up Agent',
+      description: 'Automates accounts receivable follow-up and aging management',
+      icon: '📞',
+      useCase: 'ar-follow-up',
+      triggerCondition: 'When invoices become overdue',
+      architectureType: 'agentic'
+    }
   ]
 };
 
