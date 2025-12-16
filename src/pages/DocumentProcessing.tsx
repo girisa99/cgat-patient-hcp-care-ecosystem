@@ -2646,9 +2646,13 @@ export default function DocumentProcessing() {
                       typeof val === 'object' && val !== null && 'value' in val ? val.value : val
                     ])
                   ),
-                  // Also include line_items and tables from processingResult
-                  line_items: processingResult?.lineItems || [],
-                  tables: processingResult?.tables || []
+                  // Include line_items and tables from extractedFields (where backend puts them)
+                  line_items: processingResult?.extractedFields?.line_items?.value || 
+                              processingResult?.extractedFields?.line_items || 
+                              processingResult?.lineItems || [],
+                  tables: processingResult?.extractedFields?.tables?.value || 
+                          processingResult?.extractedFields?.tables || 
+                          processingResult?.tables || []
                 }}
                 processingHistory={processingHistory.filter(h => h.documentType === 'invoice')}
                 onExport={(format, data) => {
