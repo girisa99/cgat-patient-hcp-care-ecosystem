@@ -658,33 +658,34 @@ function buildExtractionPrompt(documentType: string, targetFields?: string[]): s
   
   const categoryHint = categoryHints[documentType] || documentType;
   
-  // If target fields provided, include them as hints
-  const fieldHints = targetFields && targetFields.length > 0
-    ? `\n\nPriority fields to extract (if visible): ${targetFields.join(', ')}`
-    : '';
+  // Do NOT include target fields as hints - extract ONLY what's visible
+  // This prevents the AI from "hallucinating" fields based on hints
   
-  return `You are an expert document analyzer. Analyze this document image and extract ALL structured information.
+  return `You are an expert document analyzer. Analyze this document image and extract ONLY the information that is ACTUALLY VISIBLE in the document.
 
 Document Type Hint: ${categoryHint}
-${fieldHints}
 
-INSTRUCTIONS:
-1. Identify the document type and category automatically
-2. Extract ALL visible text fields, values, dates, amounts, codes, and identifiers
-3. For tables/line items, extract each row as a separate item
-4. Extract any medical/billing codes: CPT, HCPCS, ICD-10, NDC, NPI
-5. Extract all monetary values with their labels
-6. Extract all dates and date ranges
-7. Extract all names, addresses, phone numbers, emails
-8. Extract claim/invoice/order numbers and reference IDs
-9. For multi-section documents, extract from ALL sections
+CRITICAL RULES:
+1. ONLY extract fields that are ACTUALLY VISIBLE in the document
+2. DO NOT invent, guess, or assume any fields that are not clearly shown
+3. DO NOT add standard fields like "patient_name" or "payer_id" unless they are literally visible in the document
+4. If a field is not visible, DO NOT include it in the output at all
+5. For tables/line items, extract ONLY rows that are actually shown
 
-IMPORTANT - Be comprehensive and extract EVERYTHING visible, not just common fields.
+EXTRACTION INSTRUCTIONS:
+1. Read the document carefully and identify what type it is
+2. Extract ALL visible text: labels, values, dates, amounts, codes, identifiers
+3. For tables, extract every visible row with all columns shown
+4. For financial documents, extract visible totals, subtotals, line items
+5. Preserve the exact field names/labels shown in the document
+6. Use snake_case for field names based on the ACTUAL labels in the document
+
+IMPORTANT: Only include fields that have actual values extracted from the document. Never add empty or placeholder fields.
 
 Return ONLY a valid JSON object:
 {
   "fields": {
-    "field_name_snake_case": "extracted_value"
+    "actual_label_from_document": "actual_value_extracted"
   },
   "line_items": [
     {"description": "...", "quantity": 1, "unit_price": 0, "total": 0, "code": "...", "date": "..."}
@@ -692,7 +693,7 @@ Return ONLY a valid JSON object:
   "tables": [
     {"header": ["col1", "col2"], "rows": [["val1", "val2"]]}
   ],
-  "detected_document_type": "invoice|claim|prescription|insurance_card|etc",
+  "detected_document_type": "detected_type",
   "document_category": "financial|healthcare|identity|business",
   "summary": {
     "total_amount": 0,
