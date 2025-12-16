@@ -95,6 +95,7 @@ import AgentArchitectureRecommendationPanel from '@/components/document-processi
 import ProcessingHistoryWithExport from '@/components/document-processing/ProcessingHistoryWithExport';
 import MedicalImageAnalysis from '@/components/document-processing/MedicalImageAnalysis';
 import InvoiceRCMAnalysis from '@/components/document-processing/InvoiceRCMAnalysis';
+import SubAgentRecommendationDialog from '@/components/document-processing/SubAgentRecommendationDialog';
 import { ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
 
 // Healthcare abbreviation expansion dictionary
@@ -324,6 +325,7 @@ export default function DocumentProcessing() {
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
   const [pendingResult, setPendingResult] = useState<ProcessingResult | null>(null);
+  const [showSubAgentDialog, setShowSubAgentDialog] = useState(false);
   
   // Load processing history from database
   const loadHistory = useCallback(async () => {
@@ -1782,98 +1784,149 @@ export default function DocumentProcessing() {
                               </div>
                             )}
                             
-                            {/* Confirm button to proceed to medication lookup */}
-                            {(selectedDocType === 'prescription' || selectedDocType === 'order-management') && (
-                              <Button 
-                                className="w-full mt-3" 
-                                onClick={async () => {
-                                  // Get medication from extracted fields
-                                  const medication = processingResult.extractedFields['medication']?.value || 
-                                                     processingResult.extractedFields['drug']?.value || '';
-                                  const sig = processingResult.extractedFields['sig']?.value || 
-                                             processingResult.extractedFields['instructions']?.value || '';
-                                  
-                                  if (medication) {
-                                    setDrugSearchQuery(medication);
-                                    if (sig) setSigInstructions(sig);
-                                    setActiveTab('medication');
-                                    toast.info('Fields confirmed! Searching for NDC codes...');
+                            {/* Universal Confirm & Save to History Button - For ALL document types */}
+                            <div className="flex gap-2 mt-4">
+                              {/* Prescription-specific: Also do NDC lookup */}
+                              {(selectedDocType === 'prescription' || selectedDocType === 'order-management') && (
+                                <Button 
+                                  variant="outline"
+                                  className="flex-1" 
+                                  onClick={async () => {
+                                    const medication = processingResult.extractedFields['medication']?.value || 
+                                                       processingResult.extractedFields['drug']?.value || '';
+                                    const sig = processingResult.extractedFields['sig']?.value || 
+                                               processingResult.extractedFields['instructions']?.value || '';
                                     
-                                    // Trigger drug search
-                                    const { baseName } = normalizeDrugName(medication);
-                                    try {
-                                      const { data, error } = await supabase.functions.invoke('drug-lookup', {
-                                        body: { drugName: baseName, searchType: 'all' }
-                                      });
+                                    if (medication) {
+                                      setDrugSearchQuery(medication);
+                                      if (sig) setSigInstructions(sig);
+                                      setActiveTab('medication');
+                                      toast.info('Searching for NDC codes...');
                                       
-                                      if (!error && data) {
-                                        const calculation = calculateQuantityAndDaySupply(sig || 'Take 1 tablet daily for 30 days');
-                                        const ndcOptions = (data.ndc || []).map((ndc: any) => ({
-                                          code: ndc.code,
-                                          name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
-                                          manufacturer: ndc.manufacturer,
-                                          dosageForm: ndc.dosageForm,
-                                          country: 'USA'
-                                        }));
-                                        
-                                        const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
-                                        if (data.isControlled) {
-                                          clinicalRecommendations.push({
-                                            type: 'warning',
-                                            title: 'Controlled Substance',
-                                            message: `Schedule ${data.schedule} controlled substance`
-                                          });
-                                        }
-                                        if (data.clinicalInfo) {
-                                          data.clinicalInfo.forEach((info: any) => {
-                                            clinicalRecommendations.push({
-                                              type: info.severity === 'high' ? 'warning' : 'info',
-                                              title: info.title,
-                                              message: info.description
-                                            });
-                                          });
-                                        }
-                                        
-                                        const preservedStrength = processingResult.extractedFields['strength']?.value || '';
-                                        const primaryNdc = data.ndc?.[0];
-                                        
-                                        setSearchResults({
-                                          drugName: primaryNdc?.brandName || data.drugName || medication,
-                                          genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
-                                          strength: preservedStrength || primaryNdc?.strength || '',
-                                          sig: sig || 'Take as directed',
-                                          calculatedQuantity: calculation.totalQuantity,
-                                          daysSupply: calculation.daysSupply,
-                                          dailyDose: calculation.dailyDose,
-                                          ndc: primaryNdc?.code,
-                                          ndcOptions,
-                                          alternatives: (data.alternatives || []).map((alt: any) => ({
-                                            name: alt.name,
-                                            ndc: alt.rxcui,
-                                            inStock: Math.random() > 0.3,
-                                            stockQty: Math.floor(Math.random() * 500)
-                                          })),
-                                          clinicalRecommendations,
-                                          isControlled: data.isControlled,
-                                          schedule: data.schedule
+                                      const { baseName } = normalizeDrugName(medication);
+                                      try {
+                                        const { data, error } = await supabase.functions.invoke('drug-lookup', {
+                                          body: { drugName: baseName, searchType: 'all' }
                                         });
                                         
-                                        if (ndcOptions.length > 0) setSelectedNdc(ndcOptions[0].code);
-                                        toast.success(`Found ${ndcOptions.length} NDC codes`);
+                                        if (!error && data) {
+                                          const calculation = calculateQuantityAndDaySupply(sig || 'Take 1 tablet daily for 30 days');
+                                          const ndcOptions = (data.ndc || []).map((ndc: any) => ({
+                                            code: ndc.code,
+                                            name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+                                            manufacturer: ndc.manufacturer,
+                                            dosageForm: ndc.dosageForm,
+                                            country: 'USA'
+                                          }));
+                                          
+                                          const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
+                                          if (data.isControlled) {
+                                            clinicalRecommendations.push({
+                                              type: 'warning',
+                                              title: 'Controlled Substance',
+                                              message: `Schedule ${data.schedule} controlled substance`
+                                            });
+                                          }
+                                          
+                                          const preservedStrength = processingResult.extractedFields['strength']?.value || '';
+                                          const primaryNdc = data.ndc?.[0];
+                                          
+                                          setSearchResults({
+                                            drugName: primaryNdc?.brandName || data.drugName || medication,
+                                            genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
+                                            strength: preservedStrength || primaryNdc?.strength || '',
+                                            sig: sig || 'Take as directed',
+                                            calculatedQuantity: calculation.totalQuantity,
+                                            daysSupply: calculation.daysSupply,
+                                            dailyDose: calculation.dailyDose,
+                                            ndc: primaryNdc?.code,
+                                            ndcOptions,
+                                            alternatives: (data.alternatives || []).map((alt: any) => ({
+                                              name: alt.name,
+                                              ndc: alt.rxcui,
+                                              inStock: Math.random() > 0.3,
+                                              stockQty: Math.floor(Math.random() * 500)
+                                            })),
+                                            clinicalRecommendations,
+                                            isControlled: data.isControlled,
+                                            schedule: data.schedule
+                                          });
+                                          
+                                          if (ndcOptions.length > 0) setSelectedNdc(ndcOptions[0].code);
+                                          toast.success(`Found ${ndcOptions.length} NDC codes`);
+                                        }
+                                      } catch (err) {
+                                        console.error('Drug lookup error:', err);
+                                        toast.error('Failed to lookup drug information');
                                       }
-                                    } catch (err) {
-                                      console.error('Drug lookup error:', err);
-                                      toast.error('Failed to lookup drug information');
+                                    } else {
+                                      toast.warning('Please enter a medication name first');
                                     }
-                                  } else {
-                                    toast.warning('Please enter a medication name first');
+                                  }}
+                                >
+                                  <Pill className="h-4 w-4 mr-2" />
+                                  Lookup NDC/Clinical Info
+                                </Button>
+                              )}
+                              
+                              {/* Universal Save Button for ALL document types */}
+                              <Button 
+                                className="flex-1" 
+                                onClick={async () => {
+                                  try {
+                                    const { data: { user } } = await supabase.auth.getUser();
+                                    if (!user) {
+                                      toast.error('Please login to save');
+                                      return;
+                                    }
+                                    
+                                    const processingConfig: Record<string, unknown> = {
+                                      extractedFields: JSON.parse(JSON.stringify(processingResult.extractedFields || {})),
+                                      lineItems: JSON.parse(JSON.stringify(processingResult.lineItems || [])),
+                                      tables: JSON.parse(JSON.stringify(processingResult.tables || [])),
+                                      medications: JSON.parse(JSON.stringify(processingResult.medications || [])),
+                                      validationResults: processingResult.validationResults ? JSON.parse(JSON.stringify(processingResult.validationResults)) : null,
+                                      imageUrl: processingResult.imageUrl,
+                                      savedAt: new Date().toISOString()
+                                    };
+                                    
+                                    const { error } = await supabase
+                                      .from('document_processing_jobs')
+                                      .upsert({
+                                        id: processingResult.id,
+                                        user_id: user.id,
+                                        document_type: selectedDocType,
+                                        file_name: processingResult.fileName,
+                                        file_path: processingResult.imageUrl || processingResult.fileName,
+                                        status: 'completed',
+                                        progress: 100,
+                                        processing_config: processingConfig as any
+                                      });
+                                    
+                                    if (error) throw error;
+                                    
+                                    setProcessingHistory(prev => {
+                                      const existing = prev.find(p => p.id === processingResult.id);
+                                      if (existing) {
+                                        return prev.map(p => p.id === processingResult.id ? processingResult : p);
+                                      }
+                                      return [processingResult, ...prev];
+                                    });
+                                    
+                                    toast.success('Saved to history');
+                                    
+                                    // Show sub-agent recommendation popup
+                                    setShowSubAgentDialog(true);
+                                  } catch (err) {
+                                    console.error('Save error:', err);
+                                    toast.error('Failed to save');
                                   }
                                 }}
                               >
                                 <CheckCircle className="h-4 w-4 mr-2" />
-                                Confirm & Lookup NDC/Clinical Info
+                                Confirm & Save to History
                               </Button>
-                            )}
+                            </div>
                           </div>
 
                           {/* Medication Results */}
@@ -3257,6 +3310,14 @@ export default function DocumentProcessing() {
             </DialogContent>
           </Dialog>
         )}
+
+        {/* Sub-Agent Recommendation Dialog - Clean, focused on sub-agents only */}
+        <SubAgentRecommendationDialog
+          open={showSubAgentDialog}
+          onOpenChange={setShowSubAgentDialog}
+          documentType={currentConfig}
+          extractedData={processingResult?.extractedFields}
+        />
       </div>
     </AppLayout>
   );
