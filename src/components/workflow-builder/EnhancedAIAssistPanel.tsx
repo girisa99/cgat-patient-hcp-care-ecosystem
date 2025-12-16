@@ -268,15 +268,100 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
 
     // Check for document processing capabilities
     const hasDocProcessing = workflowNodes.some(n => 
-      ['ocr_document', 'doc_ai', 'metadata_extraction', 'form_recognition', 'data_extraction', 'google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'multi_provider_ocr'].includes(n.data.type_key)
+      ['ocr_document', 'doc_ai', 'metadata_extraction', 'form_recognition', 'data_extraction', 'google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'multi_provider_ocr', 'prescription_processor', 'insurance_processor', 'invoice_rcm_processor'].includes(n.data.type_key)
     );
 
-    if (!hasDocProcessing && (agentContext.useCase?.name?.toLowerCase().includes('document') || agentContext.useCase?.name?.toLowerCase().includes('form') || agentContext.useCase?.name?.toLowerCase().includes('prescription') || agentContext.useCase?.name?.toLowerCase().includes('ocr'))) {
+    const useCaseLower = agentContext.useCase?.name?.toLowerCase() || '';
+    const descriptionLower = agentContext.description?.toLowerCase() || '';
+    const nameLower = agentContext.name?.toLowerCase() || '';
+    const contextLower = `${useCaseLower} ${descriptionLower} ${nameLower}`;
+
+    // PRESCRIPTION processing recommendations
+    const isPrescriptionUseCase = contextLower.includes('prescription') || contextLower.includes('rx') || contextLower.includes('medication') || contextLower.includes('pharmacy');
+    const hasPrescriptionNodes = workflowNodes.some(n => 
+      ['prescription_processor', 'ndc_matcher', 'medication_processor'].includes(n.data.type_key)
+    );
+
+    if (isPrescriptionUseCase && !hasPrescriptionNodes) {
+      newSuggestions.push({
+        id: 'add-prescription-processor',
+        type: 'recommendation',
+        title: 'Add Prescription Processor',
+        description: 'Process prescriptions with multi-medication extraction, NDC lookup, and clinical recommendations.',
+        action: () => addRecommendedNode('prescription_processor')
+      });
+    }
+
+    // INSURANCE processing recommendations
+    const isInsuranceUseCase = contextLower.includes('insurance') || contextLower.includes('eligibility') || contextLower.includes('coverage');
+    const hasInsuranceNodes = workflowNodes.some(n => 
+      ['insurance_processor', 'insurance_verification'].includes(n.data.type_key)
+    );
+
+    if (isInsuranceUseCase && !hasInsuranceNodes) {
+      newSuggestions.push({
+        id: 'add-insurance-processor',
+        type: 'recommendation',
+        title: 'Add Insurance Processor',
+        description: 'Process pharmacy, medical, and Medicaid insurance cards with auto-variant detection.',
+        action: () => addRecommendedNode('insurance_processor')
+      });
+    }
+
+    // INVOICE/RCM processing recommendations
+    const isInvoiceUseCase = contextLower.includes('invoice') || contextLower.includes('billing') || contextLower.includes('rcm') || contextLower.includes('revenue cycle') || contextLower.includes('claim');
+    const hasInvoiceNodes = workflowNodes.some(n => 
+      ['invoice_rcm_processor', 'invoice_parser', 'cpt_analyzer', 'aging_analyzer'].includes(n.data.type_key)
+    );
+
+    if (isInvoiceUseCase && !hasInvoiceNodes) {
+      newSuggestions.push({
+        id: 'add-invoice-processor',
+        type: 'recommendation',
+        title: 'Add Invoice/RCM Processor',
+        description: 'Process invoices with CPT/HCPCS analysis, AR aging, and ERP export to QuickBooks/SAP/D365.',
+        action: () => addRecommendedNode('invoice_rcm_processor')
+      });
+    }
+
+    // Add NLP extractor recommendation if OCR exists but no NLP
+    const hasOCR = workflowNodes.some(n => 
+      ['multi_provider_ocr', 'google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'ocr_document'].includes(n.data.type_key)
+    );
+    const hasNLPExtractor = workflowNodes.some(n => n.data.type_key === 'gemini_nlp_extractor');
+
+    if (hasOCR && !hasNLPExtractor) {
+      newSuggestions.push({
+        id: 'add-nlp-extractor',
+        type: 'improvement',
+        title: 'Add Gemini NLP Entity Extraction',
+        description: 'Use Gemini AI to extract structured entities from OCR text with intelligent field recognition.',
+        action: () => addRecommendedNode('gemini_nlp_extractor')
+      });
+    }
+
+    // Add MCP Export recommendation if doc processing exists but no export
+    const hasMCPExport = workflowNodes.some(n => 
+      ['mcp_export', 'erp_export', 'mcp_connector'].includes(n.data.type_key)
+    );
+
+    if (hasDocProcessing && !hasMCPExport) {
+      newSuggestions.push({
+        id: 'add-mcp-export',
+        type: 'recommendation',
+        title: 'Add MCP/CRM Export',
+        description: 'Export extracted data to Salesforce, HubSpot, Veeva, or ERP systems via MCP SDK.',
+        action: () => addRecommendedNode('mcp_export')
+      });
+    }
+
+    // General document processing recommendation
+    if (!hasDocProcessing && (contextLower.includes('document') || contextLower.includes('form') || contextLower.includes('ocr'))) {
       newSuggestions.push({
         id: 'add-doc-processing',
         type: 'recommendation',
-        title: 'Add Multi-Provider OCR',
-        description: 'Choose OCR provider: Google Vision, Azure Form Recognizer, or AWS Textract for document processing.',
+        title: 'Add Multi-Provider OCR Hub',
+        description: 'Choose OCR provider: Google Vision, Azure Form Recognizer, or AWS Textract.',
         action: () => addRecommendedNode('multi_provider_ocr')
       });
     }
@@ -286,7 +371,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       ['google_vision_ocr', 'azure_form_recognizer', 'aws_textract', 'multi_provider_ocr'].includes(n.data.type_key)
     );
 
-    if (!hasMultiProviderOCR && hasDocProcessing) {
+    if (!hasMultiProviderOCR && hasDocProcessing && !hasOCR) {
       newSuggestions.push({
         id: 'add-multi-ocr',
         type: 'improvement',
@@ -316,11 +401,10 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       ['xray_analysis', 'ct_analysis', 'mri_analysis', 'ecg_analysis', 'ultrasound_analysis', 'mammogram_analysis', 'vision_ai_hub'].includes(n.data.type_key)
     );
 
-    const useCaseLower = agentContext.useCase?.name?.toLowerCase() || '';
-    const isMedicalImagingUseCase = useCaseLower.includes('imaging') || useCaseLower.includes('radiology') || 
-      useCaseLower.includes('xray') || useCaseLower.includes('x-ray') || useCaseLower.includes('ct') || 
-      useCaseLower.includes('mri') || useCaseLower.includes('ecg') || useCaseLower.includes('ultrasound') ||
-      useCaseLower.includes('mammogram') || useCaseLower.includes('medical image');
+    const isMedicalImagingUseCase = contextLower.includes('imaging') || contextLower.includes('radiology') || 
+      contextLower.includes('xray') || contextLower.includes('x-ray') || contextLower.includes('ct') || 
+      contextLower.includes('mri') || contextLower.includes('ecg') || contextLower.includes('ultrasound') ||
+      contextLower.includes('mammogram') || contextLower.includes('medical image') || contextLower.includes('dicom');
 
     if (!hasMedicalImaging && isMedicalImagingUseCase) {
       newSuggestions.push({
@@ -334,7 +418,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
 
     // Modality-specific medical imaging recommendations
     if (isMedicalImagingUseCase && !hasMedicalImaging) {
-      if (useCaseLower.includes('xray') || useCaseLower.includes('x-ray') || useCaseLower.includes('lung') || useCaseLower.includes('chest')) {
+      if (contextLower.includes('xray') || contextLower.includes('x-ray') || contextLower.includes('lung') || contextLower.includes('chest')) {
         newSuggestions.push({
           id: 'add-xray-analysis',
           type: 'recommendation',
@@ -343,7 +427,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
           action: () => addRecommendedNode('xray_analysis')
         });
       }
-      if (useCaseLower.includes('ct') || useCaseLower.includes('brain') || useCaseLower.includes('hemorrhage') || useCaseLower.includes('tumor')) {
+      if (contextLower.includes('ct') || contextLower.includes('brain') || contextLower.includes('hemorrhage') || contextLower.includes('tumor')) {
         newSuggestions.push({
           id: 'add-ct-analysis',
           type: 'recommendation',
@@ -352,7 +436,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
           action: () => addRecommendedNode('ct_analysis')
         });
       }
-      if (useCaseLower.includes('mri') || useCaseLower.includes('alzheimer') || useCaseLower.includes('brain tumor')) {
+      if (contextLower.includes('mri') || contextLower.includes('alzheimer') || contextLower.includes('brain tumor')) {
         newSuggestions.push({
           id: 'add-mri-analysis',
           type: 'recommendation',
@@ -361,7 +445,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
           action: () => addRecommendedNode('mri_analysis')
         });
       }
-      if (useCaseLower.includes('ecg') || useCaseLower.includes('cardiac') || useCaseLower.includes('heart') || useCaseLower.includes('arrhythmia')) {
+      if (contextLower.includes('ecg') || contextLower.includes('cardiac') || contextLower.includes('heart') || contextLower.includes('arrhythmia')) {
         newSuggestions.push({
           id: 'add-ecg-analysis',
           type: 'recommendation',
@@ -370,7 +454,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
           action: () => addRecommendedNode('ecg_analysis')
         });
       }
-      if (useCaseLower.includes('ultrasound') || useCaseLower.includes('fetal') || useCaseLower.includes('thyroid')) {
+      if (contextLower.includes('ultrasound') || contextLower.includes('fetal') || contextLower.includes('thyroid')) {
         newSuggestions.push({
           id: 'add-ultrasound-analysis',
           type: 'recommendation',
@@ -379,7 +463,7 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
           action: () => addRecommendedNode('ultrasound_analysis')
         });
       }
-      if (useCaseLower.includes('mammogram') || useCaseLower.includes('breast')) {
+      if (contextLower.includes('mammogram') || contextLower.includes('breast')) {
         newSuggestions.push({
           id: 'add-mammogram-analysis',
           type: 'recommendation',
@@ -436,10 +520,26 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'document_archive': 'Document Archive',
       'document_to_database': 'Doc to Database',
       // Multi-Provider OCR nodes
-      'multi_provider_ocr': 'Multi-Provider OCR',
+      'multi_provider_ocr': 'Multi-Provider OCR Hub',
       'google_vision_ocr': 'Google Vision OCR',
       'azure_form_recognizer': 'Azure Form Recognizer',
       'aws_textract': 'AWS Textract',
+      // Document Type Specific nodes
+      'prescription_processor': 'Prescription Processor',
+      'insurance_processor': 'Insurance Processor',
+      'invoice_rcm_processor': 'Invoice/RCM Processor',
+      'patient_form_processor': 'Patient Form Processor',
+      'lab_result_processor': 'Lab Results Processor',
+      'gemini_nlp_extractor': 'Gemini NLP Extractor',
+      'field_mapping': 'Field Mapping',
+      'validation_node': 'Validation & Verification',
+      'mcp_export': 'MCP/CRM Export',
+      // Invoice/RCM specific
+      'invoice_parser': 'Invoice Parser',
+      'cpt_analyzer': 'CPT/HCPCS Analyzer',
+      'aging_analyzer': 'AR Aging Analyzer',
+      'payment_tracker': 'Payment Status Tracker',
+      'erp_export': 'ERP Export',
       // Enhanced Agentic AI nodes - all 10 types
       'plan_execute': 'Plan & Execute',
       'reasoning_chain': 'Reasoning Chain',
@@ -489,6 +589,22 @@ export const EnhancedAIAssistPanel: React.FC<EnhancedAIAssistPanelProps> = ({
       'document_comparison': 'Compare documents for differences',
       'document_archive': 'Archive documents with versioning',
       'document_to_database': 'Parse and push document data to database',
+      // Document Type Specific intents
+      'prescription_processor': 'Process prescriptions with NDC lookup and multi-medication extraction',
+      'insurance_processor': 'Process pharmacy/medical/Medicaid insurance cards with variant detection',
+      'invoice_rcm_processor': 'Process invoices with CPT codes, line items, and RCM analysis',
+      'patient_form_processor': 'Process patient intake and onboarding forms',
+      'lab_result_processor': 'Process laboratory results with structured output',
+      'gemini_nlp_extractor': 'Extract entities from OCR text using Gemini AI',
+      'field_mapping': 'Map extracted fields to target schema',
+      'validation_node': 'Validate extracted data with confidence scoring',
+      'mcp_export': 'Export to CRM via MCP SDK (Salesforce, HubSpot, Veeva)',
+      // Invoice/RCM specific intents
+      'invoice_parser': 'Parse invoice line items and totals',
+      'cpt_analyzer': 'Analyze CPT/HCPCS codes with category and reimbursement',
+      'aging_analyzer': 'Analyze accounts receivable aging buckets',
+      'payment_tracker': 'Track payment status and collection metrics',
+      'erp_export': 'Export to ERP (QuickBooks, SAP, D365)',
       // Enhanced Agentic AI intents
       'plan_execute': 'Plan-execute-reflect cycle for complex tasks',
       'reasoning_chain': 'Chain of thought reasoning with step-by-step logic',
