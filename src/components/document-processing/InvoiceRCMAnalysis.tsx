@@ -108,6 +108,39 @@ interface InvoiceRCMAnalysisProps {
   onExport?: (format: 'csv' | 'json', data: any) => void;
 }
 
+// Intelligent field matcher - maps any extracted field to expected RCM fields
+const findFieldValue = (data: Record<string, any>, ...patterns: string[]): string | undefined => {
+  if (!data) return undefined;
+  
+  // First try exact matches
+  for (const pattern of patterns) {
+    if (data[pattern] !== undefined) return String(data[pattern]);
+  }
+  
+  // Then try case-insensitive and partial matches
+  const keys = Object.keys(data);
+  for (const pattern of patterns) {
+    const patternLower = pattern.toLowerCase().replace(/_/g, '');
+    for (const key of keys) {
+      const keyLower = key.toLowerCase().replace(/_/g, '').replace(/\s+/g, '');
+      if (keyLower.includes(patternLower) || patternLower.includes(keyLower)) {
+        return String(data[key]);
+      }
+    }
+  }
+  
+  return undefined;
+};
+
+// Find numeric field value
+const findNumericValue = (data: Record<string, any>, ...patterns: string[]): number => {
+  const value = findFieldValue(data, ...patterns);
+  if (!value) return 0;
+  // Extract numeric value from string (handles currency symbols, commas)
+  const numericStr = value.replace(/[^0-9.-]/g, '');
+  return parseFloat(numericStr) || 0;
+};
+
 export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   extractedData,
   processingHistory = [],
@@ -118,52 +151,72 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
 
-  // Parse extracted data into invoice structure - memoized to prevent re-renders
-  const invoiceData = React.useMemo<InvoiceData>(() => ({
-    invoice_number: extractedData?.invoice_number || extractedData?.claim_number,
-    claim_number: extractedData?.claim_number,
-    vendor_name: extractedData?.vendor_name || extractedData?.company_name,
-    vendor_tax_id: extractedData?.vendor_tax_id || extractedData?.ein,
-    vendor_npi: extractedData?.vendor_npi || extractedData?.npi,
-    patient_name: extractedData?.patient_name,
-    patient_account: extractedData?.patient_account,
-    invoice_date: extractedData?.invoice_date || extractedData?.service_date,
-    due_date: extractedData?.due_date,
-    service_from: extractedData?.service_from,
-    service_to: extractedData?.service_to,
-    cpt_codes: extractedData?.cpt_codes,
-    icd_codes: extractedData?.icd_codes,
-    billed_amount: parseFloat(extractedData?.billed_amount || extractedData?.total || '0'),
-    allowed_amount: parseFloat(extractedData?.allowed_amount || '0'),
-    adjustment_amount: parseFloat(extractedData?.adjustment_amount || '0'),
-    paid_amount: parseFloat(extractedData?.paid_amount || '0'),
-    patient_responsibility: parseFloat(extractedData?.patient_responsibility || '0'),
-    balance_due: parseFloat(extractedData?.balance_due || extractedData?.total || '0'),
-    payer_name: extractedData?.payer_name || extractedData?.insurance_name,
-    payment_status: extractedData?.payment_status || 'pending',
-    denial_reason: extractedData?.denial_reason,
-    aging_bucket: extractedData?.aging_bucket,
-  }), [extractedData]);
+  // Parse extracted data into invoice structure using intelligent field mapping
+  const invoiceData = React.useMemo<InvoiceData>(() => {
+    console.log('RCM Analysis - Received extractedData:', extractedData);
+    
+    return {
+      invoice_number: findFieldValue(extractedData, 'invoice_number', 'invoice_no', 'invoiceno', 'invoice', 'claim_number', 'claimno'),
+      claim_number: findFieldValue(extractedData, 'claim_number', 'claim_no', 'claimno', 'claim'),
+      vendor_name: findFieldValue(extractedData, 'vendor_name', 'company_name', 'provider_name', 'from', 'vendor', 'company', 'provider', 'biller'),
+      vendor_tax_id: findFieldValue(extractedData, 'vendor_tax_id', 'tax_id', 'ein', 'taxid', 'federal_tax_id'),
+      vendor_npi: findFieldValue(extractedData, 'vendor_npi', 'npi', 'provider_npi', 'national_provider_identifier'),
+      patient_name: findFieldValue(extractedData, 'patient_name', 'patient', 'member_name', 'subscriber_name', 'name'),
+      patient_account: findFieldValue(extractedData, 'patient_account', 'account_number', 'account', 'member_id', 'accountno'),
+      invoice_date: findFieldValue(extractedData, 'invoice_date', 'date', 'service_date', 'statement_date', 'bill_date'),
+      due_date: findFieldValue(extractedData, 'due_date', 'please_pay_by', 'payment_due', 'pay_by', 'due'),
+      service_from: findFieldValue(extractedData, 'service_from', 'service_date_from', 'from_date', 'start_date', 'dos_from'),
+      service_to: findFieldValue(extractedData, 'service_to', 'service_date_to', 'to_date', 'end_date', 'dos_to'),
+      cpt_codes: findFieldValue(extractedData, 'cpt_codes', 'cpt', 'cpt_code', 'procedure_code', 'hcpcs', 'hcpcs_code'),
+      icd_codes: findFieldValue(extractedData, 'icd_codes', 'icd', 'icd_code', 'diagnosis_code', 'icd10', 'icd_10'),
+      billed_amount: findNumericValue(extractedData, 'billed_amount', 'total', 'amount', 'total_amount', 'amount_due', 'balance', 'total_due', 'grand_total'),
+      allowed_amount: findNumericValue(extractedData, 'allowed_amount', 'allowed', 'approved_amount'),
+      adjustment_amount: findNumericValue(extractedData, 'adjustment_amount', 'adjustment', 'adjustments', 'write_off'),
+      paid_amount: findNumericValue(extractedData, 'paid_amount', 'paid', 'payment', 'amount_paid', 'payments_received'),
+      patient_responsibility: findNumericValue(extractedData, 'patient_responsibility', 'patient_due', 'patient_balance', 'your_responsibility'),
+      balance_due: findNumericValue(extractedData, 'balance_due', 'balance', 'amount_due', 'total_due', 'total', 'amount'),
+      payer_name: findFieldValue(extractedData, 'payer_name', 'payer', 'insurance_name', 'insurance', 'insurance_company', 'carrier'),
+      payment_status: findFieldValue(extractedData, 'payment_status', 'status') || 'pending',
+      denial_reason: findFieldValue(extractedData, 'denial_reason', 'denial_code', 'reason_code'),
+      aging_bucket: findFieldValue(extractedData, 'aging_bucket', 'aging', 'days_outstanding'),
+    };
+  }, [extractedData]);
 
-  // Parse line items from extracted data
+  // Parse line items from extracted data using intelligent field matching
   useEffect(() => {
     const items: LineItem[] = [];
     
-    // Try to parse line_items if it's JSON
-    if (extractedData?.line_items) {
+    console.log('RCM Analysis - Parsing line items from:', extractedData);
+    
+    // Find line items using various field names
+    const lineItemsData = extractedData?.line_items || extractedData?.lineitems || 
+                          extractedData?.items || extractedData?.services || 
+                          extractedData?.charges || extractedData?.procedures;
+    
+    if (lineItemsData) {
       try {
-        const parsed = typeof extractedData.line_items === 'string' 
-          ? JSON.parse(extractedData.line_items) 
-          : extractedData.line_items;
+        const parsed = typeof lineItemsData === 'string' 
+          ? JSON.parse(lineItemsData) 
+          : lineItemsData;
         if (Array.isArray(parsed)) {
-          items.push(...parsed);
+          parsed.forEach(item => {
+            items.push({
+              description: item.description || item.service || item.item || item.name || '',
+              cpt_code: item.cpt_code || item.cpt || item.procedure_code || item.code,
+              icd_code: item.icd_code || item.icd || item.diagnosis_code,
+              units: parseFloat(item.units || item.quantity || item.qty || '1') || 1,
+              unit_price: parseFloat(String(item.unit_price || item.price || item.rate || '0').replace(/[^0-9.-]/g, '')) || 0,
+              total: parseFloat(String(item.total || item.amount || item.charge || '0').replace(/[^0-9.-]/g, '')) || 0,
+              modifier: item.modifier || item.mod,
+              status: 'pending'
+            });
+          });
         }
       } catch (e) {
         // If not JSON, try to parse as text
-        const lineText = extractedData.line_items;
-        if (typeof lineText === 'string') {
-          const lines = lineText.split('\n').filter(l => l.trim());
-          lines.forEach((line, idx) => {
+        if (typeof lineItemsData === 'string') {
+          const lines = lineItemsData.split('\n').filter((l: string) => l.trim());
+          lines.forEach((line: string) => {
             items.push({
               description: line,
               units: 1,
@@ -175,10 +228,37 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         }
       }
     }
+    
+    // Also check for tables data
+    const tablesData = extractedData?.tables;
+    if (tablesData && Array.isArray(tablesData)) {
+      tablesData.forEach(table => {
+        if (table.rows && Array.isArray(table.rows)) {
+          table.rows.forEach((row: any[]) => {
+            // Try to parse table rows as line items
+            if (Array.isArray(row) && row.length > 0) {
+              const description = row[0] || '';
+              const total = row[row.length - 1];
+              const numericTotal = parseFloat(String(total).replace(/[^0-9.-]/g, '')) || 0;
+              if (description && !items.some(i => i.description === description)) {
+                items.push({
+                  description: String(description),
+                  units: 1,
+                  unit_price: numericTotal,
+                  total: numericTotal,
+                  status: 'pending'
+                });
+              }
+            }
+          });
+        }
+      });
+    }
 
-    // Parse CPT codes
-    if (extractedData?.cpt_codes) {
-      const cptCodes = extractedData.cpt_codes.split(/[,;\s]+/).filter((c: string) => c.trim());
+    // Parse CPT codes using intelligent field matching
+    const cptData = findFieldValue(extractedData, 'cpt_codes', 'cpt', 'cpt_code', 'procedure_code', 'hcpcs', 'hcpcs_code');
+    if (cptData) {
+      const cptCodes = cptData.split(/[,;\s]+/).filter((c: string) => c.trim());
       cptCodes.forEach((code: string) => {
         const cptInfo = CPT_CODE_DATABASE[code.trim()];
         if (cptInfo && !items.some(i => i.cpt_code === code.trim())) {
@@ -194,6 +274,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
       });
     }
 
+    console.log('RCM Analysis - Parsed line items:', items);
     setLineItems(items);
   }, [extractedData]);
 
