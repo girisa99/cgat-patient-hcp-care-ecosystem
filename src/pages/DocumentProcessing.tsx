@@ -1039,14 +1039,28 @@ export default function DocumentProcessing() {
           extractedDrugName = extractedFields['medication_name'].value;
         }
         
-        // Use extracted or fallback values - check multiple field name variants
+        // Use extracted or fallback values - check multiple field name variants including rx, line_items
+        // Also check for drug name in line_items (common for prescriptions)
+        let drugNameFromLineItems: string | undefined;
+        if (Array.isArray(mapResult?.lineItems) && mapResult.lineItems.length > 0) {
+          const firstItem = mapResult.lineItems[0];
+          if (firstItem?.description) {
+            // Extract drug name from line item description like "Amoxicillin 500mg Cap"
+            drugNameFromLineItems = firstItem.description.split(/\s+\d+\s*mg/i)[0]?.trim();
+          }
+        }
+        
         const drugName = extractedDrugName || 
                          extractedFields['medication_name']?.value?.split(' ')[0] || 
-                         extractedFields['medication']?.value?.split(' ')[0] || 
+                         extractedFields['medication']?.value?.split(' ')[0] ||
+                         extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() ||
+                         extractedFields['drug_name']?.value?.split(' ')[0] ||
+                         drugNameFromLineItems ||
                          'Unknown';
         const sigText = extractedSig || 
                         extractedFields['sig']?.value || 
                         extractedFields['signature']?.value || 
+                        extractedFields['directions']?.value ||
                         'Take as directed';
         const calculation = calculateQuantityAndDaySupply(sigText);
         
@@ -3204,8 +3218,7 @@ export default function DocumentProcessing() {
                             .update({
                               status: 'completed',
                               processing_config: processingConfig as any,
-                              validation_status: validationStatusStr,
-                              updated_at: new Date().toISOString()
+                              validation_status: validationStatusStr
                             })
                             .eq('id', pendingResult.id);
                           
