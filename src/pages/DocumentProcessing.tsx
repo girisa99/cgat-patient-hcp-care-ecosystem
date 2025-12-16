@@ -38,6 +38,7 @@ import {
   FileText, 
   Table2, 
   AlertTriangle,
+  AlertCircle,
   CheckCircle,
   XCircle,
   Loader2,
@@ -186,6 +187,7 @@ interface ProcessingResult {
   validationResults?: { passed: number; failed: number; warnings: number };
   rawText?: string;
   tables?: any[];
+  lineItems?: any[];
   error?: string;
   processedAt: Date;
   imageUrl?: string;
@@ -1146,9 +1148,12 @@ export default function DocumentProcessing() {
         extractedFields,
         medications,
         rawText: processResult?.extractedTextPreview,
+        // Include line items and tables from extraction results
+        lineItems: mapResult?.line_items || mapResult?.lineItems || processResult?.line_items || [],
+        tables: mapResult?.tables || processResult?.tables || [],
         validationResults: {
-          passed: Object.keys(extractedFields).filter(k => extractedFields[k].confidence >= confidenceThreshold).length,
-          failed: currentConfig.targetFields.filter(f => f.required && !extractedFields[f.key]).length,
+          passed: Object.keys(extractedFields).filter(k => extractedFields[k]?.value && extractedFields[k].confidence >= confidenceThreshold).length,
+          failed: currentConfig.targetFields.filter(f => f.required && !extractedFields[f.key]?.value).length,
           warnings: Object.keys(extractedFields).filter(k => 
             extractedFields[k].confidence >= confidenceThreshold * 0.8 && 
             extractedFields[k].confidence < confidenceThreshold
@@ -1598,7 +1603,7 @@ export default function DocumentProcessing() {
                         })}
                       </div>
 
-                      {/* Extracted Fields - Show ALL target fields for editing */}
+                      {/* Extracted Fields - Show ONLY actually extracted fields, not hardcoded target fields */}
                       {processingResult.stage === 'complete' && (
                         <>
                           <Separator />
@@ -1606,84 +1611,129 @@ export default function DocumentProcessing() {
                             <div className="flex items-center justify-between">
                               <h4 className="font-medium flex items-center gap-2">
                                 <Table2 className="h-4 w-4" />
-                                Extracted Data ({Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length}/{currentConfig.targetFields.length} fields)
+                                Extracted Data ({Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length} fields found)
                               </h4>
                               <p className="text-xs text-muted-foreground">Edit fields below, then confirm to proceed</p>
                             </div>
-                            <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
-                              {currentConfig.targetFields.map((field) => {
-                                const extracted = processingResult.extractedFields[field.key];
-                                const hasValue = extracted?.value && extracted.value.trim() !== '';
-                                const confidence = extracted?.confidence || 0;
-                                
-                                return (
-                                  <div key={field.key} className={`p-2 border rounded-lg ${hasValue ? 'bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800' : 'bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800'}`}>
-                                    <div className="flex items-center justify-between mb-1">
-                                      <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                        {field.label}
-                                        {field.required && <span className="text-destructive">*</span>}
-                                      </span>
-                                      {hasValue ? (
-                                        <Badge variant={confidence > 0.9 ? 'default' : confidence > 0.7 ? 'secondary' : 'outline'} className="text-xs">
-                                          {Math.round(confidence * 100)}%
-                                        </Badge>
-                                      ) : (
-                                        <Badge variant="outline" className="text-xs text-amber-600">Missing</Badge>
-                                      )}
-                                    </div>
-                                    <Input
-                                      value={extracted?.value || ''}
-                                      placeholder={`Enter ${field.label.toLowerCase()}...`}
-                                      className="h-7 text-sm"
-                                      onChange={(e) => {
-                                        setProcessingResult(prev => {
-                                          if (!prev) return prev;
-                                          return {
-                                            ...prev,
-                                            extractedFields: {
-                                              ...prev.extractedFields,
-                                              [field.key]: {
-                                                value: e.target.value,
-                                                confidence: e.target.value ? (extracted?.confidence || 1.0) : 0,
-                                                verified: true
-                                              }
-                                            }
-                                          };
-                                        });
-                                      }}
-                                    />
-                                  </div>
-                                );
-                              })}
-                            </div>
                             
-                            {/* Also show any extracted fields not in target fields */}
-                            {Object.keys(processingResult.extractedFields).filter(key => 
-                              !currentConfig.targetFields.find(f => f.key === key) && 
-                              processingResult.extractedFields[key]?.value
-                            ).length > 0 && (
-                              <details className="mt-2">
-                                <summary className="text-xs text-muted-foreground cursor-pointer hover:text-foreground">
-                                  + {Object.keys(processingResult.extractedFields).filter(key => 
-                                    !currentConfig.targetFields.find(f => f.key === key) && 
-                                    processingResult.extractedFields[key]?.value
-                                  ).length} additional extracted fields
-                                </summary>
-                                <div className="grid grid-cols-2 gap-2 mt-2">
-                                  {Object.entries(processingResult.extractedFields)
-                                    .filter(([key]) => !currentConfig.targetFields.find(f => f.key === key))
-                                    .map(([key, { value, confidence }]) => value && (
-                                      <div key={key} className="p-2 border rounded-lg bg-muted/50">
-                                        <div className="flex items-center justify-between">
-                                          <span className="text-xs text-muted-foreground capitalize">{key.replace(/_/g, ' ')}</span>
-                                          <Badge variant="secondary" className="text-xs">{Math.round(confidence * 100)}%</Badge>
+                            {/* Show ONLY actually extracted fields with values */}
+                            {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length > 0 ? (
+                              <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                                {Object.entries(processingResult.extractedFields)
+                                  .filter(([_, field]) => field?.value)
+                                  .map(([key, field]) => {
+                                    const confidence = field?.confidence || 0;
+                                    const targetField = currentConfig.targetFields.find(f => f.key === key);
+                                    const label = targetField?.label || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                    
+                                    return (
+                                      <div key={key} className="p-2 border rounded-lg bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                                        <div className="flex items-center justify-between mb-1">
+                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                            {label}
+                                          </span>
+                                          <Badge variant={confidence > 0.9 ? 'default' : confidence > 0.7 ? 'secondary' : 'outline'} className="text-xs">
+                                            {Math.round(confidence * 100)}%
+                                          </Badge>
                                         </div>
-                                        <p className="font-medium text-sm mt-1">{value}</p>
+                                        <Input
+                                          value={field?.value || ''}
+                                          placeholder={`Enter ${label.toLowerCase()}...`}
+                                          className="h-7 text-sm"
+                                          onChange={(e) => {
+                                            setProcessingResult(prev => {
+                                              if (!prev) return prev;
+                                              return {
+                                                ...prev,
+                                                extractedFields: {
+                                                  ...prev.extractedFields,
+                                                  [key]: {
+                                                    value: e.target.value,
+                                                    confidence: e.target.value ? (field?.confidence || 1.0) : 0,
+                                                    verified: true
+                                                  }
+                                                }
+                                              };
+                                            });
+                                          }}
+                                        />
                                       </div>
-                                    ))
-                                  }
+                                    );
+                                  })}
+                              </div>
+                            ) : (
+                              <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-center">
+                                <AlertCircle className="h-8 w-8 mx-auto text-amber-500 mb-2" />
+                                <p className="text-sm text-amber-700 dark:text-amber-400">No fields were extracted from this document.</p>
+                                <p className="text-xs text-muted-foreground mt-1">Try re-uploading with better image quality or different OCR provider.</p>
+                              </div>
+                            )}
+                            
+                            {/* Show line items / tables for invoices */}
+                            {processingResult.lineItems && processingResult.lineItems.length > 0 && (
+                              <div className="mt-4 border rounded-lg overflow-hidden">
+                                <div className="bg-muted px-3 py-2 font-medium text-sm flex items-center gap-2">
+                                  <Table2 className="h-4 w-4" />
+                                  Line Items ({processingResult.lineItems.length})
                                 </div>
-                              </details>
+                                <div className="max-h-[200px] overflow-y-auto">
+                                  <table className="w-full text-xs">
+                                    <thead className="bg-muted/50 sticky top-0">
+                                      <tr>
+                                        <th className="text-left p-2">Description</th>
+                                        <th className="text-right p-2">Qty</th>
+                                        <th className="text-right p-2">Price</th>
+                                        <th className="text-right p-2">Total</th>
+                                        <th className="text-left p-2">Code</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody>
+                                      {processingResult.lineItems.map((item: any, idx: number) => (
+                                        <tr key={idx} className="border-t">
+                                          <td className="p-2">{item.description || item.name || '-'}</td>
+                                          <td className="p-2 text-right">{item.quantity || item.qty || 1}</td>
+                                          <td className="p-2 text-right">{item.unit_price || item.price || '-'}</td>
+                                          <td className="p-2 text-right font-medium">{item.total || item.amount || '-'}</td>
+                                          <td className="p-2">{item.code || item.cpt || '-'}</td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            )}
+                            
+                            {/* Show tables extracted from document */}
+                            {processingResult.tables && processingResult.tables.length > 0 && (
+                              <div className="mt-4 space-y-3">
+                                {processingResult.tables.map((table: any, tableIdx: number) => (
+                                  <div key={tableIdx} className="border rounded-lg overflow-hidden">
+                                    <div className="bg-muted px-3 py-2 font-medium text-sm">Table {tableIdx + 1}</div>
+                                    <div className="max-h-[200px] overflow-auto">
+                                      <table className="w-full text-xs">
+                                        {table.header && (
+                                          <thead className="bg-muted/50 sticky top-0">
+                                            <tr>
+                                              {table.header.map((col: string, idx: number) => (
+                                                <th key={idx} className="text-left p-2 border-r last:border-r-0">{col}</th>
+                                              ))}
+                                            </tr>
+                                          </thead>
+                                        )}
+                                        <tbody>
+                                          {table.rows?.map((row: any[], rowIdx: number) => (
+                                            <tr key={rowIdx} className="border-t">
+                                              {row.map((cell: any, cellIdx: number) => (
+                                                <td key={cellIdx} className="p-2 border-r last:border-r-0">{cell}</td>
+                                              ))}
+                                            </tr>
+                                          ))}
+                                        </tbody>
+                                      </table>
+                                    </div>
+                                  </div>
+                                ))}
+                              </div>
                             )}
                             
                             {/* Confirm button to proceed to medication lookup */}
