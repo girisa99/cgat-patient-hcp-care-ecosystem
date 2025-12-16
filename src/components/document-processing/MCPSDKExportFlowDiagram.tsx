@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import flowImage from '@/assets/mcp-sdk-export-flow.png';
+import flowImage from '@/assets/mcp-sdk-export-flow-v2.png';
 
 export const MCPSDKExportFlowDiagram = () => {
   const handleDownload = async () => {
