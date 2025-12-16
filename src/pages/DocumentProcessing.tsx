@@ -2637,6 +2637,11 @@ export default function DocumentProcessing() {
                             });
                             
                             toast.success('Insurance details saved to history');
+                            
+                            // Trigger sub-agent recommendation dialog
+                            setTimeout(() => {
+                              setShowSubAgentDialog(true);
+                            }, 300);
                           } catch (err) {
                             console.error('Save error:', err);
                             toast.error('Failed to save insurance details');
@@ -2821,30 +2826,71 @@ export default function DocumentProcessing() {
                 imageBase64={medicalImageBase64}
                 imageMimeType={medicalImageMimeType}
                 documentType={selectedDocType}
-                onSaveAnalysis={(data) => {
-                  // Save analysis to history
-                  const result: ProcessingResult = {
-                    id: crypto.randomUUID(),
-                    fileName: processingResult?.fileName || 'Medical Image',
-                    documentType: selectedDocType,
-                    stage: 'complete',
-                    progress: 100,
-                    rawText: '',
-                    extractedFields: {
-                      patient_name: { value: data.patientDetails.patient_name, confidence: 1 },
-                      patient_dob: { value: data.patientDetails.patient_dob, confidence: 1 },
-                      patient_id: { value: data.patientDetails.patient_id, confidence: 1 },
-                      referring_physician: { value: data.patientDetails.referring_physician, confidence: 1 },
-                      study_date: { value: data.patientDetails.study_date, confidence: 1 },
-                      clinical_notes: { value: data.notes, confidence: 1 },
-                      ai_insights: { value: JSON.stringify(data.aiInsights), confidence: 1 }
-                    },
-                    validationResults: { passed: 5, warnings: 0, failed: 0 },
-                    imageUrl: processingResult?.imageUrl || '',
-                    processedAt: new Date()
-                  };
-                  setProcessingHistory(prev => [result, ...prev]);
-                  toast.success('Medical image analysis saved to history');
+                onSaveAnalysis={async (data) => {
+                  // Save analysis to database AND local history
+                  try {
+                    const { data: { user } } = await supabase.auth.getUser();
+                    
+                    const result: ProcessingResult = {
+                      id: crypto.randomUUID(),
+                      fileName: processingResult?.fileName || 'Medical Image',
+                      documentType: selectedDocType,
+                      stage: 'complete',
+                      progress: 100,
+                      rawText: '',
+                      extractedFields: {
+                        patient_name: { value: data.patientDetails.patient_name, confidence: 1 },
+                        patient_dob: { value: data.patientDetails.patient_dob, confidence: 1 },
+                        patient_id: { value: data.patientDetails.patient_id, confidence: 1 },
+                        referring_physician: { value: data.patientDetails.referring_physician, confidence: 1 },
+                        study_date: { value: data.patientDetails.study_date, confidence: 1 },
+                        clinical_notes: { value: data.notes, confidence: 1 },
+                        ai_insights: { value: JSON.stringify(data.aiInsights), confidence: 1 }
+                      },
+                      validationResults: { passed: 5, warnings: 0, failed: 0 },
+                      imageUrl: processingResult?.imageUrl || '',
+                      processedAt: new Date()
+                    };
+                    
+                    // Save to database - stringify complex objects for JSON compatibility
+                    const processingConfigData = {
+                      extractedFields: JSON.parse(JSON.stringify(result.extractedFields)),
+                      aiInsights: JSON.parse(JSON.stringify(data.aiInsights)),
+                      patientDetails: JSON.parse(JSON.stringify(data.patientDetails)),
+                      providerDetails: JSON.parse(JSON.stringify(data.providerDetails)),
+                      notes: data.notes,
+                      imageUrl: result.imageUrl,
+                      savedAt: new Date().toISOString()
+                    };
+                    
+                    const { data: savedJob, error: saveError } = await supabase
+                      .from('document_processing_jobs')
+                      .insert([{
+                        user_id: user?.id,
+                        document_type: selectedDocType,
+                        file_name: result.fileName,
+                        file_path: result.imageUrl || result.fileName,
+                        status: 'completed',
+                        progress: 100,
+                        processing_config: processingConfigData as any
+                      }])
+                      .select()
+                      .single();
+                    
+                    if (saveError) throw saveError;
+                    
+                    // Update local history
+                    await loadHistory();
+                    toast.success('Medical image analysis saved to history');
+                    
+                    // Trigger sub-agent recommendation dialog
+                    setTimeout(() => {
+                      setShowSubAgentDialog(true);
+                    }, 300);
+                  } catch (err) {
+                    console.error('Save error:', err);
+                    toast.error('Failed to save analysis');
+                  }
                 }}
               />
             </TabsContent>
