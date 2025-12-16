@@ -474,7 +474,8 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
               console.log(`Extraction completed with ${providerUsed}: ${Object.keys(formMapping).length} fields, ${lineItemsExtracted.length} line items`);
             }
           } catch (providerError) {
-            console.error(`Provider ${provider} failed:`, providerError);
+            console.error(`Provider ${provider} failed with error:`, providerError instanceof Error ? providerError.message : providerError);
+            // Continue to next provider
           }
         }
       }
@@ -499,7 +500,7 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
       }
     }
   } catch (extractionError) {
-    console.error('Extraction error:', extractionError);
+    console.error('Main extraction error:', extractionError instanceof Error ? extractionError.message : extractionError);
   }
   
   // Perform ICD to CPT/HCPCS crosswalk if ICD codes were extracted
@@ -772,14 +773,21 @@ async function extractFromJSON(fileUrl: string, documentType?: string): Promise<
   }
 }
 
-// Gemini extraction
+// Gemini extraction with enhanced error handling
 async function extractWithGemini(imageBase64: string, contentType: string, prompt: string): Promise<any> {
   const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
-  if (!geminiApiKey) throw new Error("GEMINI_API_KEY not configured");
+  if (!geminiApiKey) {
+    console.error("GEMINI_API_KEY not configured");
+    throw new Error("GEMINI_API_KEY not configured");
+  }
   
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-exp:generateContent?key=${geminiApiKey}`,
-    {
+  console.log(`Gemini extraction: starting with content type ${contentType}, base64 length: ${imageBase64?.length || 0}`);
+  
+  // Use stable model gemini-1.5-flash for reliable extraction
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`;
+  
+  try {
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -789,21 +797,48 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
             { inline_data: { mime_type: contentType, data: imageBase64 } }
           ]
         }],
-        generationConfig: { temperature: 0.1, topP: 0.95, maxOutputTokens: 4096 }
+        generationConfig: { temperature: 0.1, topP: 0.95, maxOutputTokens: 8192 }
       })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`Gemini API error: ${response.status} - ${errorText}`);
+      throw new Error(`Gemini API error: ${response.status} - ${errorText}`);
     }
-  );
-  
-  if (!response.ok) throw new Error(`Gemini API error: ${response.status}`);
-  
-  const data = await response.json();
-  const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
-  const jsonMatch = responseText.match(/\{[\s\S]*\}/);
-  
-  if (jsonMatch) {
-    return JSON.parse(jsonMatch[0]);
+    
+    const data = await response.json();
+    console.log(`Gemini response received, candidates: ${data?.candidates?.length || 0}`);
+    
+    const responseText = data?.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    console.log(`Gemini extracted text length: ${responseText.length}`);
+    
+    if (!responseText) {
+      console.error("Gemini returned empty response");
+      return null;
+    }
+    
+    // Try to extract JSON from response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log(`Gemini extraction successful: ${Object.keys(parsed.fields || {}).length} fields extracted`);
+        return parsed;
+      } catch (parseError) {
+        console.error("Failed to parse Gemini JSON response:", parseError);
+        // Try to extract fields manually from text
+        return { fields: {}, confidence: 0.3, raw_text: responseText };
+      }
+    }
+    
+    console.log("No JSON found in Gemini response, returning raw text");
+    return { fields: {}, confidence: 0.3, raw_text: responseText };
+  } catch (error) {
+    console.error("Gemini extraction error:", error);
+    throw error;
   }
-  return null;
 }
 
 // Azure Form Recognizer extraction (stub - requires AZURE_FORM_RECOGNIZER_KEY)
