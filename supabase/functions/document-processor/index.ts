@@ -607,6 +607,9 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
     JSON.stringify({ 
       success: true, 
       formMapping,
+      // Include line items and tables as separate arrays for frontend consumption
+      line_items: lineItemsExtracted || [],
+      tables: tablesExtracted || [],
       mappingConfidence: Object.keys(formMapping).length > 0 ? 0.85 : 0,
       documentType: documentType || 'invoice',
       providerUsed,
