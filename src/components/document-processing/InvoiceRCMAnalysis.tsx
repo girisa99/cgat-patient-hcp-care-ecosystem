@@ -95,7 +95,7 @@ const CPT_CODE_DATABASE: Record<string, { description: string; category: string;
 
 // Intelligent category inference for unknown CPT codes
 const inferCPTCategory = (code: string): { category: string; avgReimbursement: number } => {
-  const codeUpper = code.toUpperCase();
+  const codeUpper = code.toUpperCase().trim();
   
   // HCPCS codes (start with letter)
   if (/^[A-Z]/.test(codeUpper)) {
@@ -110,15 +110,19 @@ const inferCPTCategory = (code: string): { category: string; avgReimbursement: n
     return { category: 'HCPCS', avgReimbursement: 75 };
   }
   
-  // CPT code ranges (numeric)
-  const numCode = parseInt(code);
-  if (isNaN(numCode)) return { category: 'Unknown', avgReimbursement: 0 };
+  // CPT code ranges (numeric) - extract digits only
+  const digitsOnly = codeUpper.replace(/\D/g, '');
+  const numCode = parseInt(digitsOnly);
+  if (isNaN(numCode) || digitsOnly.length === 0) return { category: 'Unknown', avgReimbursement: 0 };
   
+  // For 5-digit codes, use proper ranges
   // E/M Services: 99201-99499
   if (numCode >= 99201 && numCode <= 99499) return { category: 'E/M', avgReimbursement: 100 };
   
-  // Anesthesia: 00100-01999
-  if (numCode >= 100 && numCode <= 1999) return { category: 'Anesthesia', avgReimbursement: 350 };
+  // Anesthesia: 00100-01999 (only if original code has leading zeros or is 5 digits starting with 0)
+  if ((codeUpper.startsWith('0') || digitsOnly.length === 5) && numCode >= 100 && numCode <= 1999) {
+    return { category: 'Anesthesia', avgReimbursement: 350 };
+  }
   
   // Surgery: 10000-69999
   if (numCode >= 10000 && numCode <= 19999) return { category: 'Integumentary Surgery', avgReimbursement: 200 };
@@ -158,12 +162,32 @@ const inferCPTCategory = (code: string): { category: string; avgReimbursement: n
   return { category: 'Unknown', avgReimbursement: 0 };
 };
 
+// Normalize CPT code - remove spaces, extract code portion
+const normalizeCPTCode = (code: string): string => {
+  if (!code) return '';
+  // Remove common prefixes and clean up
+  let normalized = code.trim().toUpperCase()
+    .replace(/^(CPT|HCPCS|CODE|PROC)[:\s-]*/i, '')
+    .replace(/\s+/g, '')
+    .replace(/[^\w]/g, '');
+  return normalized;
+};
+
 // Get CPT info with fallback to inference
 const getCPTInfo = (code: string, description?: string): { description: string; category: string; avgReimbursement: number } => {
-  const dbInfo = CPT_CODE_DATABASE[code];
+  const normalized = normalizeCPTCode(code);
+  
+  // Try exact match first
+  const dbInfo = CPT_CODE_DATABASE[normalized] || CPT_CODE_DATABASE[code];
   if (dbInfo) return dbInfo;
   
-  const inferred = inferCPTCategory(code);
+  // Try lowercase match
+  const lowerCode = normalized.toLowerCase();
+  for (const [key, value] of Object.entries(CPT_CODE_DATABASE)) {
+    if (key.toLowerCase() === lowerCode) return value;
+  }
+  
+  const inferred = inferCPTCategory(normalized);
   return {
     description: description || `Procedure code ${code}`,
     category: inferred.category,
