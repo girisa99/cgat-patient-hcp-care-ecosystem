@@ -93,9 +93,11 @@ const AgentsInner = () => {
   const prefillContext = locationState?.prefillContext;
   const [showStreamlinedView, setShowStreamlinedView] = useState(Boolean(agentContext || prefillContext));
 
-  // Redirect to admin if accessing canvas directly without context
+  // Only redirect to admin if NO context is provided at all
+  // Don't redirect if we have prefillContext (from sub-agent selection), prefillPrompt, agentContext, or agentId
   useEffect(() => {
-    if (!agentContext && !prefillContext && !locationState?.prefillPrompt && !locationState?.agentId) {
+    const hasContext = agentContext || prefillContext || locationState?.prefillPrompt || locationState?.agentId;
+    if (!hasContext) {
       console.log('📋 No agent context - redirecting to admin for proper agent creation flow');
       toast.info('Please create an agent from the Admin Dashboard');
       navigate('/admin', { replace: true });
@@ -249,6 +251,45 @@ const AgentsInner = () => {
   const { userRoles, user } = useMasterAuth();
   const { nodeTypes } = useWorkflowNodes();
 
+  // Handle prefillContext from sub-agent selection (document processing)
+  useEffect(() => {
+    if (prefillContext && prefillContext.subAgents && prefillContext.subAgents.length > 0) {
+      // Convert sub-agent context to a prompt
+      const subAgentNames = prefillContext.subAgents.map(a => a.name).join(', ');
+      const generatedPrompt = `Build a ${prefillContext.name || 'workflow'} that includes the following sub-agents:
+
+${prefillContext.subAgents.map(a => `- ${a.name}: ${a.triggerCondition || 'Automated trigger'}`).join('\n')}
+
+Use case: ${prefillContext.useCase || 'General processing'}
+${prefillContext.description ? `Description: ${prefillContext.description}` : ''}
+
+Create a multi-agent workflow that coordinates these agents for optimal processing.`;
+      
+      console.log('📋 Received sub-agent context:', prefillContext);
+      setPrefillPrompt(generatedPrompt);
+      
+      // Skip mode selector, go directly to generate tab
+      setSelectedMode('visual' as AgentMode);
+      setShowModeSelector(false);
+      setShowQuestionnaire(false);
+      setVisualWorkflowSubTab('ai-prompt');
+      
+      toast.success(`${prefillContext.subAgents.length} sub-agent(s) loaded - ready to generate workflow`);
+    } else if (prefillContext && !prefillContext.subAgents) {
+      // Handle prefillContext without subAgents (just name, description, useCase)
+      const generatedPrompt = `Build a ${prefillContext.name || 'workflow'} for ${prefillContext.useCase || 'general'} use case.
+${prefillContext.description ? `\nDescription: ${prefillContext.description}` : ''}`;
+      
+      setPrefillPrompt(generatedPrompt);
+      setSelectedMode('visual' as AgentMode);
+      setShowModeSelector(false);
+      setShowQuestionnaire(false);
+      setVisualWorkflowSubTab('ai-prompt');
+      
+      toast.success('Agent context loaded - ready to generate workflow');
+    }
+  }, [prefillContext]);
+
   // Use Template Integration to map templates to real nodes/edges and ensure connectors
   const templateManager = useTemplateIntegration({
     onWorkflowUpdate: (nodes, edges) => {
@@ -297,7 +338,11 @@ const AgentsInner = () => {
   };
 
   // Initialize questionnaire/mode only once or when not chosen
+  // Skip if we have prefillContext (from sub-agent selection)
   useEffect(() => {
+    // Don't modify mode if we have context from sub-agent selection
+    if (prefillContext) return;
+    
     const completed = localStorage.getItem('agentBuilder_questionnaireCompleted') === 'true';
     setHasCompletedQuestionnaire(completed);
     
@@ -317,7 +362,7 @@ const AgentsInner = () => {
         setShowModeSelector(true);
       }
     }
-  }, [userSessions, selectedMode]);
+  }, [userSessions, selectedMode, prefillContext]);
 
   const handleQuestionnaireComplete = () => {
     setHasCompletedQuestionnaire(true);
