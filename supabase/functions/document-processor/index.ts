@@ -619,89 +619,48 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   );
 }
 
-// Build DYNAMIC extraction prompt based on document type - NO HARDCODING
+// Build DYNAMIC extraction prompt - ZERO HARDCODING, extract only what's visible
 function buildExtractionPrompt(documentType: string, targetFields?: string[]): string {
-  // Document type category hints for flexible extraction
-  const categoryHints: Record<string, string> = {
-    // Financial/RCM documents
-    'invoice': 'invoice, billing statement, claim, accounts receivable',
-    'claim': 'insurance claim, medical claim, superbill, CMS-1500',
-    'eob': 'explanation of benefits, remittance advice, payment posting',
-    'statement': 'account statement, balance due, payment history',
-    'billing': 'billing document, charges, fees, payment',
-    
-    // Healthcare documents
-    'prescription': 'prescription, Rx, medication order, pharmacy',
-    'insurance_card': 'insurance card, ID card, member card, pharmacy benefit',
-    'lab_result': 'lab results, laboratory report, blood test, diagnostics',
-    'medical_record': 'medical record, patient chart, clinical notes',
-    'referral': 'referral form, specialist referral, authorization',
-    
-    // Medical imaging
-    'x-ray': 'X-ray, radiograph, chest x-ray, bone x-ray',
-    'ct-scan': 'CT scan, computed tomography, CAT scan',
-    'mri': 'MRI, magnetic resonance imaging',
-    'ultrasound': 'ultrasound, sonogram, echocardiogram',
-    'ecg': 'ECG, EKG, electrocardiogram, heart rhythm',
-    
-    // Business documents
-    'order-management': 'order, purchase order, sales order, fulfillment',
-    'contract': 'contract, agreement, terms, signatures',
-    'report': 'report, analysis, summary, findings',
-    
-    // Identity/onboarding
-    'passport': 'passport, travel document, ID',
-    'drivers_license': 'drivers license, ID card, identification',
-    'patient_intake': 'patient intake form, registration, demographics',
-    'consent_form': 'consent form, authorization, signature',
-  };
+  // NO document type hints - let the AI determine everything from the actual document content
   
-  const categoryHint = categoryHints[documentType] || documentType;
-  
-  // Do NOT include target fields as hints - extract ONLY what's visible
-  // This prevents the AI from "hallucinating" fields based on hints
-  
-  return `You are an expert document analyzer. Analyze this document image and extract ONLY the information that is ACTUALLY VISIBLE in the document.
+  return `You are an expert document analyzer. Your task is to extract information ONLY from what is ACTUALLY VISIBLE in this document image.
 
-Document Type Hint: ${categoryHint}
+ABSOLUTE REQUIREMENTS - YOU MUST FOLLOW THESE:
+1. Extract ONLY text, numbers, dates, and values that are LITERALLY VISIBLE in the document
+2. DO NOT add ANY fields based on what you think a document "should" contain
+3. DO NOT add standard fields like "patient_name", "payer_id", "claim_number", "vendor_npi", "icd_codes", "cpt_codes" unless they are ACTUALLY PRINTED on the document
+4. If a field is not visible in the document image, DO NOT include it
+5. Use the EXACT labels from the document as field names (convert to snake_case)
+6. Return EMPTY objects if nothing is visible
 
-CRITICAL RULES:
-1. ONLY extract fields that are ACTUALLY VISIBLE in the document
-2. DO NOT invent, guess, or assume any fields that are not clearly shown
-3. DO NOT add standard fields like "patient_name" or "payer_id" unless they are literally visible in the document
-4. If a field is not visible, DO NOT include it in the output at all
-5. For tables/line items, extract ONLY rows that are actually shown
+EXTRACTION PROCESS:
+1. Look at the document image carefully
+2. Read every piece of text that is actually printed/visible
+3. For each visible label-value pair, extract it using the document's own label
+4. For tables, extract only rows that are actually visible
+5. For totals/amounts, extract only what is printed
 
-EXTRACTION INSTRUCTIONS:
-1. Read the document carefully and identify what type it is
-2. Extract ALL visible text: labels, values, dates, amounts, codes, identifiers
-3. For tables, extract every visible row with all columns shown
-4. For financial documents, extract visible totals, subtotals, line items
-5. Preserve the exact field names/labels shown in the document
-6. Use snake_case for field names based on the ACTUAL labels in the document
+CRITICAL: If you cannot read something clearly, DO NOT guess or assume. Skip it.
 
-IMPORTANT: Only include fields that have actual values extracted from the document. Never add empty or placeholder fields.
-
-Return ONLY a valid JSON object:
+Return ONLY this JSON structure with ACTUALLY extracted data:
 {
   "fields": {
-    "actual_label_from_document": "actual_value_extracted"
+    "label_from_document_in_snake_case": "value_read_from_document"
   },
   "line_items": [
-    {"description": "...", "quantity": 1, "unit_price": 0, "total": 0, "code": "...", "date": "..."}
+    {"description": "...", "quantity": 1, "amount": 0}
   ],
   "tables": [
     {"header": ["col1", "col2"], "rows": [["val1", "val2"]]}
   ],
-  "detected_document_type": "detected_type",
-  "document_category": "financial|healthcare|identity|business",
+  "detected_document_type": "what_type_of_document_this_appears_to_be",
   "summary": {
-    "total_amount": 0,
-    "balance_due": 0,
-    "items_count": 0
+    "total_amount": 0
   },
-  "confidence": 0.0-1.0
-}`;
+  "confidence": 0.0
+}
+
+REMEMBER: Only include fields that have ACTUAL values extracted from the document. An empty response is better than inventing data.`;
 }
 
 // CSV extraction - parse CSV files and extract structured data
