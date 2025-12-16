@@ -3241,6 +3241,12 @@ export default function DocumentProcessing() {
                             if (selectedDocType === 'invoice' || selectedDocType === 'billing') {
                               setActiveTab('rcm');
                             }
+                            
+                            // CRITICAL: Show sub-agent recommendation dialog after successful save
+                            // Small delay to ensure verification dialog closes first
+                            setTimeout(() => {
+                              setShowSubAgentDialog(true);
+                            }, 300);
                           }
                         } catch (err) {
                           console.error('Save error:', err);
