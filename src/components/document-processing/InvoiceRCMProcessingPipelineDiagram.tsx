@@ -2,7 +2,7 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import pipelineImage from '@/assets/invoice-rcm-processing-pipeline.png';
+import pipelineImage from '@/assets/invoice-rcm-processing-pipeline-v2.png';
 
 export const InvoiceRCMProcessingPipelineDiagram = () => {
   const handleDownload = async () => {
@@ -45,12 +45,12 @@ export const InvoiceRCMProcessingPipelineDiagram = () => {
       <div className="rounded-lg overflow-hidden border border-border">
         <img
           src={pipelineImage}
-          alt="Invoice/Billing RCM Analysis Pipeline showing two-stage processing: Google Cloud Vision OCR for table and line item extraction, Google Gemini NLP for financial entity extraction, RCM Analysis for aging, payment tracking, denial management, and AR analytics"
+          alt="Invoice/Billing RCM Analysis Pipeline showing two-stage processing: Google Cloud Vision OCR for table, line item, and CSV extraction, Google Gemini NLP for financial entity extraction and ICD code mapping, Code Intelligence (ICD-10, CPT, Adjustment, Denial, Modifier codes), RCM Analysis for aging, payment tracking, denial management, adjustment analysis, and AR analytics"
           className="w-full h-auto"
         />
       </div>
       <p className="text-sm text-muted-foreground mt-4">
-        Invoice/Billing documents flow through Table & Line Item Extraction (Stage 1: OCR) → Financial Entity Extraction (Stage 2: NLP) → RCM Analysis (Aging, Payment Tracking, Denial Management, AR Analytics) → Structured Output
+        Invoice/Billing documents and CSV tables flow through Table & Line Item Extraction (Stage 1: OCR) → Financial Entity Extraction + ICD Code Mapping (Stage 2: NLP) → Code Intelligence (ICD-10, CPT, Adjustment, Denial, Modifier Codes) → RCM Analysis (Aging, Payment Tracking, Denial Management, Adjustment Analysis, AR Analytics) → Structured Output with ICD Mapping & Adjustment Reports
       </p>
     </Card>
   );
