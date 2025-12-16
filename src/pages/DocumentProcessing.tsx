@@ -583,8 +583,8 @@ export default function DocumentProcessing() {
         if (parsed.selectedDuration) setSelectedDuration(parsed.selectedDuration);
         if (parsed.ndcDosageInfo) setNdcDosageInfo(parsed.ndcDosageInfo);
         
-        // Clear saved state after restoring (one-time restore)
-        sessionStorage.removeItem('docProcessing_fullState');
+        // Note: Don't remove sessionStorage here - medical imaging useEffect needs it
+        // It will be cleared after medical imaging states are restored
         
         // Show toast to indicate state was restored
         toast.success('Document processing state restored');
@@ -879,6 +879,9 @@ export default function DocumentProcessing() {
         const parsed = JSON.parse(savedState);
         if (parsed.medicalImageBase64) setMedicalImageBase64(parsed.medicalImageBase64);
         if (parsed.medicalImageMimeType) setMedicalImageMimeType(parsed.medicalImageMimeType);
+        
+        // Clear saved state after ALL restoration is complete (this runs after main restoration)
+        sessionStorage.removeItem('docProcessing_fullState');
       } catch (e) {
         // Silent fail - main restoration handles errors
       }
