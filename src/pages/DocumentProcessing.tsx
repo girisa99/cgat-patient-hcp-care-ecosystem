@@ -2639,12 +2639,17 @@ export default function DocumentProcessing() {
           {currentConfig.processingHints?.enableRCMAnalysis && (
             <TabsContent value="rcm-analysis" className="space-y-4">
               <InvoiceRCMAnalysis
-                extractedData={Object.fromEntries(
-                  Object.entries(processingResult?.extractedFields || {}).map(([key, val]) => [
-                    key,
-                    typeof val === 'object' && val !== null && 'value' in val ? val.value : val
-                  ])
-                )}
+                extractedData={{
+                  ...Object.fromEntries(
+                    Object.entries(processingResult?.extractedFields || {}).map(([key, val]) => [
+                      key,
+                      typeof val === 'object' && val !== null && 'value' in val ? val.value : val
+                    ])
+                  ),
+                  // Also include line_items and tables from processingResult
+                  line_items: processingResult?.lineItems || [],
+                  tables: processingResult?.tables || []
+                }}
                 processingHistory={processingHistory.filter(h => h.documentType === 'invoice')}
                 onExport={(format, data) => {
                   toast.success(`Exported ${format.toUpperCase()} file`);
