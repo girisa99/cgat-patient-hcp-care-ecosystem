@@ -491,11 +491,37 @@ export default function DocumentProcessing() {
 
   // Agent recommendation panel state
   const [showAgentRecommendation, setShowAgentRecommendation] = useState(false);
+  const [hasShownAutoRecommendation, setHasShownAutoRecommendation] = useState(false);
   
   // Agent processing mode
   const [processingMode, setProcessingMode] = useState<'standalone' | 'agent'>('standalone');
   const [selectedAgentWorkflow, setSelectedAgentWorkflow] = useState<AgentWorkflowType>('none');
   const [isAgentProcessing, setIsAgentProcessing] = useState(false);
+  
+  // Auto-show agent recommendations when processing completes (once per session)
+  useEffect(() => {
+    if (
+      processingResult?.stage === 'complete' && 
+      !hasShownAutoRecommendation && 
+      Object.keys(processingResult?.extractedFields || {}).length > 0
+    ) {
+      // Show recommendation after a short delay to let user see results first
+      const timer = setTimeout(() => {
+        setShowAgentRecommendation(true);
+        setHasShownAutoRecommendation(true);
+        toast.info('💡 AI Agent recommendation available for this document type', {
+          description: 'Click to see suggested agents and sub-agents for automated processing',
+          duration: 5000
+        });
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [processingResult?.stage, processingResult?.extractedFields, hasShownAutoRecommendation]);
+  
+  // Reset auto-recommendation flag when document type changes
+  useEffect(() => {
+    setHasShownAutoRecommendation(false);
+  }, [selectedDocType]);
   
   // Processing settings (these control actual behavior)
   const [enableOCR, setEnableOCR] = useState(true);
@@ -3082,9 +3108,12 @@ export default function DocumentProcessing() {
             <DialogContent className="max-w-lg">
               <AgentArchitectureRecommendationPanel
                 documentType={currentConfig}
-                onConfirmAndBuild={(recommendation, options) => {
-                  toast.success(`Building ${recommendation.label} agent for ${currentConfig.title}`);
-                  // Navigate to canvas with context
+                onConfirmAndBuild={(recommendation, options: any) => {
+                  const subAgentCount = options.selectedSubAgents?.length || 0;
+                  toast.success(
+                    `Building ${recommendation.label} agent${subAgentCount > 0 ? ` with ${subAgentCount} sub-agent(s)` : ''} for ${currentConfig.title}`
+                  );
+                  // Navigate to canvas with context including sub-agents
                   navigate('/agents/canvas', {
                     state: {
                       prefillContext: {
@@ -3094,7 +3123,17 @@ export default function DocumentProcessing() {
                         architecture: recommendation.architecture,
                         suggestedNodes: recommendation.suggestedNodes,
                         mcpTargets: options.selectedTargets,
-                        includeHumanInLoop: options.includeHumanInLoop
+                        includeHumanInLoop: options.includeHumanInLoop,
+                        multiChannelDeploy: options.multiChannelDeploy,
+                        enableMCPSync: options.enableMCPSync,
+                        // Include sub-agents for A2A workflow
+                        subAgents: options.selectedSubAgents?.map((agent: any) => ({
+                          id: agent.id,
+                          name: agent.name,
+                          useCase: agent.useCase,
+                          triggerCondition: agent.triggerCondition,
+                          icon: agent.icon
+                        })) || []
                       }
                     }
                   });

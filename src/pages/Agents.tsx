@@ -64,20 +64,43 @@ const AgentsInner = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  // Get prefill context from navigation state (from admin dashboard)
-  const locationState = location.state as { prefillPrompt?: string; agentContext?: any; agentId?: string } | null;
+  // Get prefill context from navigation state (from admin dashboard or document processing)
+  const locationState = location.state as { 
+    prefillPrompt?: string; 
+    agentContext?: any; 
+    agentId?: string;
+    prefillContext?: {
+      name: string;
+      useCase: string;
+      description: string;
+      architecture: string;
+      suggestedNodes: string[];
+      mcpTargets: string[];
+      includeHumanInLoop: boolean;
+      multiChannelDeploy?: boolean;
+      enableMCPSync?: boolean;
+      subAgents?: Array<{
+        id: string;
+        name: string;
+        useCase: string;
+        triggerCondition: string;
+        icon: string;
+      }>;
+    };
+  } | null;
   const [prefillPrompt, setPrefillPrompt] = useState<string>(locationState?.prefillPrompt || '');
   const agentContext = locationState?.agentContext;
-  const [showStreamlinedView, setShowStreamlinedView] = useState(Boolean(agentContext));
+  const prefillContext = locationState?.prefillContext;
+  const [showStreamlinedView, setShowStreamlinedView] = useState(Boolean(agentContext || prefillContext));
 
   // Redirect to admin if accessing canvas directly without context
   useEffect(() => {
-    if (!agentContext && !locationState?.prefillPrompt && !locationState?.agentId) {
+    if (!agentContext && !prefillContext && !locationState?.prefillPrompt && !locationState?.agentId) {
       console.log('📋 No agent context - redirecting to admin for proper agent creation flow');
       toast.info('Please create an agent from the Admin Dashboard');
       navigate('/admin', { replace: true });
     }
-  }, [agentContext, locationState, navigate]);
+  }, [agentContext, prefillContext, locationState, navigate]);
 
   const { status: aiHealth, checkHealth, checking } = useAIServiceHealth();
   const isAIHealthy = aiHealth.overallHealthy;

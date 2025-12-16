@@ -33,6 +33,7 @@ import {
 } from 'lucide-react';
 import { DocumentTypeConfig } from '@/config/documentTypes';
 import { agentArchitectureIntelligence, ArchitectureAnalysis, ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
+import { cn } from '@/lib/utils';
 
 interface AgentArchitectureRecommendationPanelProps {
   documentType: DocumentTypeConfig;
@@ -63,6 +64,215 @@ const DOCUMENT_TYPE_ANALYSIS_MAP: Record<string, string> = {
   'customer-onboarding': 'customer onboarding CRM integration data sync workflow automation',
 };
 
+// Document-type specific sub-agent suggestions
+interface SubAgentSuggestion {
+  id: string;
+  name: string;
+  description: string;
+  icon: string;
+  useCase: string;
+  triggerCondition: string;
+}
+
+const DOCUMENT_TYPE_SUBAGENT_SUGGESTIONS: Record<string, SubAgentSuggestion[]> = {
+  'insurance': [
+    {
+      id: 'insurance-verification',
+      name: 'Insurance Verification Agent',
+      description: 'Verifies insurance eligibility and coverage in real-time via payer APIs',
+      icon: '🔍',
+      useCase: 'insurance-verification',
+      triggerCondition: 'When insurance card is processed, verify eligibility'
+    },
+    {
+      id: 'prior-auth',
+      name: 'Prior Authorization Agent',
+      description: 'Automates prior authorization requests and status tracking',
+      icon: '📋',
+      useCase: 'prior-authorization',
+      triggerCondition: 'When procedure requires pre-approval'
+    },
+    {
+      id: 'benefits-check',
+      name: 'Benefits Verification Agent',
+      description: 'Checks specific benefit coverage, copays, deductibles',
+      icon: '💵',
+      useCase: 'benefits-verification',
+      triggerCondition: 'When coverage details needed for patient'
+    }
+  ],
+  'prescription': [
+    {
+      id: 'drug-interaction',
+      name: 'Drug Interaction Checker Agent',
+      description: 'Checks for drug-drug and drug-allergy interactions',
+      icon: '⚠️',
+      useCase: 'drug-interaction',
+      triggerCondition: 'When new medication is added to patient profile'
+    },
+    {
+      id: 'medication-reconciliation',
+      name: 'Medication Reconciliation Agent',
+      description: 'Reconciles medications across care settings',
+      icon: '📊',
+      useCase: 'medication-reconciliation',
+      triggerCondition: 'When patient transitions between care settings'
+    },
+    {
+      id: 'pharmacy-finder',
+      name: 'Pharmacy Finder Agent',
+      description: 'Finds pharmacies with medication in stock and best pricing',
+      icon: '🏥',
+      useCase: 'pharmacy-finder',
+      triggerCondition: 'When medication availability needed'
+    }
+  ],
+  'patient-onboarding': [
+    {
+      id: 'npi-verification',
+      name: 'NPI Verification Agent',
+      description: 'Verifies NPI numbers and provider credentials',
+      icon: '✅',
+      useCase: 'npi-verification',
+      triggerCondition: 'When provider NPI is captured during onboarding'
+    },
+    {
+      id: 'credentialing',
+      name: 'Credentialing Agent',
+      description: 'Automates provider credentialing and verification workflow',
+      icon: '📜',
+      useCase: 'credentialing',
+      triggerCondition: 'When provider credentials need verification'
+    },
+    {
+      id: 'identity-verification',
+      name: 'Identity Verification Agent',
+      description: 'Verifies patient identity via document and biometric checks',
+      icon: '🆔',
+      useCase: 'identity-verification',
+      triggerCondition: 'When new patient registration'
+    }
+  ],
+  'treatment-center': [
+    {
+      id: 'facility-credentialing',
+      name: 'Facility Credentialing Agent',
+      description: 'Handles treatment center licensing and accreditation verification',
+      icon: '🏢',
+      useCase: 'facility-credentialing',
+      triggerCondition: 'When treatment center onboarding initiated'
+    },
+    {
+      id: 'npi-verification',
+      name: 'NPI Registry Agent',
+      description: 'Verifies facility and provider NPIs against NPPES database',
+      icon: '✅',
+      useCase: 'npi-verification',
+      triggerCondition: 'When NPI captured in facility documents'
+    },
+    {
+      id: 'compliance-check',
+      name: 'Compliance Verification Agent',
+      description: 'Checks regulatory compliance and certification status',
+      icon: '📋',
+      useCase: 'compliance-verification',
+      triggerCondition: 'When facility compliance documents processed'
+    }
+  ],
+  'invoice': [
+    {
+      id: 'claims-processor',
+      name: 'Claims Processing Agent',
+      description: 'Automates claims submission and tracking',
+      icon: '📄',
+      useCase: 'claims-processing',
+      triggerCondition: 'When invoice ready for claims submission'
+    },
+    {
+      id: 'denial-management',
+      name: 'Denial Management Agent',
+      description: 'Handles claim denials and appeals workflow',
+      icon: '🔄',
+      useCase: 'denial-management',
+      triggerCondition: 'When claim is denied'
+    },
+    {
+      id: 'payment-posting',
+      name: 'Payment Posting Agent',
+      description: 'Automates ERA/EOB processing and payment posting',
+      icon: '💰',
+      useCase: 'payment-posting',
+      triggerCondition: 'When payment received'
+    }
+  ],
+  'lab-results': [
+    {
+      id: 'critical-value-alert',
+      name: 'Critical Value Alert Agent',
+      description: 'Monitors for critical lab values and sends immediate alerts',
+      icon: '🚨',
+      useCase: 'critical-value-alerting',
+      triggerCondition: 'When lab result contains critical values'
+    },
+    {
+      id: 'trend-analysis',
+      name: 'Lab Trend Analysis Agent',
+      description: 'Analyzes historical lab trends and identifies patterns',
+      icon: '📈',
+      useCase: 'lab-trend-analysis',
+      triggerCondition: 'When comparing with historical results'
+    }
+  ],
+  'xray': [
+    {
+      id: 'radiology-ai',
+      name: 'Radiology AI Agent',
+      description: 'AI-powered image analysis for X-ray interpretation',
+      icon: '🔬',
+      useCase: 'radiology-ai',
+      triggerCondition: 'When X-ray image uploaded'
+    },
+    {
+      id: 'report-generation',
+      name: 'Radiology Report Agent',
+      description: 'Generates structured radiology reports from findings',
+      icon: '📝',
+      useCase: 'radiology-report',
+      triggerCondition: 'When AI analysis complete'
+    }
+  ],
+  'ct-scan': [
+    {
+      id: 'ct-analysis',
+      name: 'CT Analysis Agent',
+      description: 'Deep learning analysis for CT scan interpretation',
+      icon: '🧠',
+      useCase: 'ct-analysis',
+      triggerCondition: 'When CT scan uploaded'
+    }
+  ],
+  'mri': [
+    {
+      id: 'mri-analysis',
+      name: 'MRI Analysis Agent',
+      description: 'AI-powered MRI interpretation and segmentation',
+      icon: '🧠',
+      useCase: 'mri-analysis',
+      triggerCondition: 'When MRI scan uploaded'
+    }
+  ],
+  'ecg': [
+    {
+      id: 'ecg-interpretation',
+      name: 'ECG Interpretation Agent',
+      description: 'AI-powered ECG rhythm analysis and anomaly detection',
+      icon: '❤️',
+      useCase: 'ecg-interpretation',
+      triggerCondition: 'When ECG uploaded'
+    }
+  ]
+};
+
 const architectureService = agentArchitectureIntelligence;
 
 export default function AgentArchitectureRecommendationPanel({
@@ -71,12 +281,28 @@ export default function AgentArchitectureRecommendationPanel({
   className = '',
 }: AgentArchitectureRecommendationPanelProps) {
   const [showDetails, setShowDetails] = useState(false);
+  const [showSubAgents, setShowSubAgents] = useState(true);
+  const [selectedSubAgents, setSelectedSubAgents] = useState<string[]>([]);
   const [buildOptions, setBuildOptions] = useState<BuildOptions>({
     includeHumanInLoop: true,
     enableMCPSync: true,
     multiChannelDeploy: false,
     selectedTargets: ['supabase'],
   });
+
+  // Get sub-agent suggestions based on document type
+  const subAgentSuggestions = useMemo(() => {
+    return DOCUMENT_TYPE_SUBAGENT_SUGGESTIONS[documentType.id] || [];
+  }, [documentType.id]);
+
+  // Toggle sub-agent selection
+  const toggleSubAgent = (agentId: string) => {
+    setSelectedSubAgents(prev => 
+      prev.includes(agentId)
+        ? prev.filter(id => id !== agentId)
+        : [...prev, agentId]
+    );
+  };
 
   // Generate recommendations based on document type
   const analysis: ArchitectureAnalysis = useMemo(() => {
@@ -280,13 +506,88 @@ export default function AgentArchitectureRecommendationPanel({
           )}
         </div>
 
+        {/* Sub-Agent Suggestions - A2A / Agentic AI */}
+        {subAgentSuggestions.length > 0 && (
+          <>
+            <Separator />
+            <div className="space-y-3">
+              <div 
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setShowSubAgents(!showSubAgents)}
+              >
+                <h5 className="text-sm font-medium flex items-center gap-2">
+                  <Users className="h-4 w-4 text-blue-500" />
+                  Suggested Sub-Agents (A2A)
+                  <Badge variant="secondary" className="text-xs">{subAgentSuggestions.length}</Badge>
+                </h5>
+                {showSubAgents ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+              </div>
+              
+              {showSubAgents && (
+                <div className="space-y-2">
+                  <p className="text-xs text-muted-foreground">
+                    These agents can be triggered automatically during {documentType.title} processing via A2A protocol
+                  </p>
+                  <ScrollArea className="h-[180px]">
+                    <div className="space-y-2 pr-2">
+                      {subAgentSuggestions.map(agent => (
+                        <div
+                          key={agent.id}
+                          className={cn(
+                            "p-3 rounded-lg border cursor-pointer transition-all",
+                            selectedSubAgents.includes(agent.id)
+                              ? "border-primary bg-primary/5"
+                              : "border-border hover:border-primary/50 hover:bg-muted/30"
+                          )}
+                          onClick={() => toggleSubAgent(agent.id)}
+                        >
+                          <div className="flex items-start gap-3">
+                            <div className="text-xl">{agent.icon}</div>
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2">
+                                <span className="font-medium text-sm">{agent.name}</span>
+                                {selectedSubAgents.includes(agent.id) && (
+                                  <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground">{agent.description}</p>
+                              <div className="mt-1.5 flex items-center gap-1">
+                                <Zap className="h-3 w-3 text-amber-500" />
+                                <span className="text-[10px] text-amber-600">{agent.triggerCondition}</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                  {selectedSubAgents.length > 0 && (
+                    <div className="p-2 rounded bg-blue-500/10 text-xs text-blue-700 flex items-center gap-2">
+                      <Network className="h-3.5 w-3.5" />
+                      {selectedSubAgents.length} sub-agent(s) will be included in workflow
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </>
+        )}
+
         {/* Action Button */}
         <Button 
           className="w-full"
-          onClick={() => onConfirmAndBuild(analysis.primaryRecommendation, buildOptions)}
+          onClick={() => onConfirmAndBuild(analysis.primaryRecommendation, {
+            ...buildOptions,
+            selectedSubAgents: selectedSubAgents.map(id => 
+              subAgentSuggestions.find(s => s.id === id)
+            ).filter(Boolean)
+          } as any)}
         >
           <Play className="h-4 w-4 mr-2" />
           Generate & Build Agent in Canvas
+          {selectedSubAgents.length > 0 && (
+            <Badge variant="secondary" className="ml-2 text-xs">+{selectedSubAgents.length} sub-agents</Badge>
+          )}
           <ArrowRight className="h-4 w-4 ml-2" />
         </Button>
       </CardContent>
