@@ -186,76 +186,94 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   useEffect(() => {
     const items: LineItem[] = [];
     
-    console.log('RCM Analysis - Parsing line items from:', extractedData);
+    console.log('RCM Analysis - Full extractedData:', JSON.stringify(extractedData, null, 2));
     
     // Find line items using various field names
-    const lineItemsData = extractedData?.line_items || extractedData?.lineitems || 
+    let lineItemsData = extractedData?.line_items || extractedData?.lineitems || 
                           extractedData?.items || extractedData?.services || 
                           extractedData?.charges || extractedData?.procedures;
     
-    if (lineItemsData) {
+    // Parse JSON string if needed
+    if (typeof lineItemsData === 'string') {
       try {
-        const parsed = typeof lineItemsData === 'string' 
-          ? JSON.parse(lineItemsData) 
-          : lineItemsData;
-        if (Array.isArray(parsed)) {
-          parsed.forEach(item => {
-            items.push({
-              description: item.description || item.service || item.item || item.name || '',
-              cpt_code: item.cpt_code || item.cpt || item.procedure_code || item.code,
-              icd_code: item.icd_code || item.icd || item.diagnosis_code,
-              units: parseFloat(item.units || item.quantity || item.qty || '1') || 1,
-              unit_price: parseFloat(String(item.unit_price || item.price || item.rate || '0').replace(/[^0-9.-]/g, '')) || 0,
-              total: parseFloat(String(item.total || item.amount || item.charge || '0').replace(/[^0-9.-]/g, '')) || 0,
-              modifier: item.modifier || item.mod,
-              status: 'pending'
-            });
-          });
-        }
+        lineItemsData = JSON.parse(lineItemsData);
       } catch (e) {
-        // If not JSON, try to parse as text
-        if (typeof lineItemsData === 'string') {
-          const lines = lineItemsData.split('\n').filter((l: string) => l.trim());
-          lines.forEach((line: string) => {
-            items.push({
-              description: line,
-              units: 1,
-              unit_price: 0,
-              total: 0,
-              status: 'pending'
-            });
-          });
-        }
+        console.log('RCM Analysis - Could not parse line_items as JSON');
       }
     }
     
-    // Also check for tables data
-    const tablesData = extractedData?.tables;
+    if (lineItemsData && Array.isArray(lineItemsData)) {
+      console.log('RCM Analysis - Found line_items array:', lineItemsData.length, 'items');
+      lineItemsData.forEach((item: any) => {
+        items.push({
+          description: item.description || item.service || item.item || item.name || '',
+          cpt_code: item.cpt_code || item.cpt || item.procedure_code || item.code || item['cpt_/_hcpcs_code'] || item.hcpcs,
+          icd_code: item.icd_code || item.icd || item.diagnosis_code,
+          units: parseFloat(item.units || item.quantity || item.qty || '1') || 1,
+          unit_price: parseFloat(String(item.unit_price || item.price || item.rate || '0').replace(/[^0-9.-]/g, '')) || 0,
+          total: parseFloat(String(item.total || item.amount || item.charge || '0').replace(/[^0-9.-]/g, '')) || 0,
+          modifier: item.modifier || item.mod,
+          status: 'pending'
+        });
+      });
+    }
+    
+    // Parse tables data (more intelligent column detection)
+    let tablesData = extractedData?.tables;
+    if (typeof tablesData === 'string') {
+      try {
+        tablesData = JSON.parse(tablesData);
+      } catch (e) {
+        console.log('RCM Analysis - Could not parse tables as JSON');
+      }
+    }
+    
     if (tablesData && Array.isArray(tablesData)) {
-      tablesData.forEach(table => {
-        if (table.rows && Array.isArray(table.rows)) {
-          table.rows.forEach((row: any[]) => {
-            // Try to parse table rows as line items
-            if (Array.isArray(row) && row.length > 0) {
-              const description = row[0] || '';
-              const total = row[row.length - 1];
-              const numericTotal = parseFloat(String(total).replace(/[^0-9.-]/g, '')) || 0;
-              if (description && !items.some(i => i.description === description)) {
-                items.push({
-                  description: String(description),
-                  units: 1,
-                  unit_price: numericTotal,
-                  total: numericTotal,
-                  status: 'pending'
-                });
-              }
-            }
-          });
-        }
+      console.log('RCM Analysis - Found tables:', tablesData.length);
+      tablesData.forEach((table: any) => {
+        const header = table.header || [];
+        const rows = table.rows || [];
+        
+        // Find column indices by header names (case-insensitive)
+        const findColumnIndex = (patterns: string[]): number => {
+          return header.findIndex((h: string) => 
+            patterns.some(p => h?.toLowerCase().includes(p.toLowerCase()))
+          );
+        };
+        
+        const descIdx = findColumnIndex(['description', 'service', 'item', 'name']);
+        const cptIdx = findColumnIndex(['cpt', 'hcpcs', 'procedure', 'code']);
+        const qtyIdx = findColumnIndex(['qty', 'quantity', 'units']);
+        const amountIdx = findColumnIndex(['amount', 'total', 'charge', 'price']);
+        const ndcIdx = findColumnIndex(['ndc']);
+        
+        console.log('RCM Analysis - Table column indices:', { descIdx, cptIdx, qtyIdx, amountIdx, ndcIdx, header });
+        
+        rows.forEach((row: any[]) => {
+          if (!Array.isArray(row) || row.length === 0) return;
+          
+          const description = descIdx >= 0 ? String(row[descIdx] || '') : String(row[0] || '');
+          const cptCode = cptIdx >= 0 ? String(row[cptIdx] || '') : '';
+          const qty = qtyIdx >= 0 ? parseFloat(String(row[qtyIdx]).replace(/[^0-9.-]/g, '')) || 1 : 1;
+          const amount = amountIdx >= 0 
+            ? parseFloat(String(row[amountIdx]).replace(/[^0-9.-]/g, '')) || 0 
+            : parseFloat(String(row[row.length - 1]).replace(/[^0-9.-]/g, '')) || 0;
+          
+          if (description && !items.some(i => i.description === description && i.cpt_code === cptCode)) {
+            items.push({
+              description,
+              cpt_code: cptCode || undefined,
+              units: qty,
+              unit_price: amount / qty,
+              total: amount,
+              status: 'pending'
+            });
+          }
+        });
       });
     }
 
-    // Parse CPT codes using intelligent field matching
+    // Parse standalone CPT codes field
     const cptData = findFieldValue(extractedData, 'cpt_codes', 'cpt', 'cpt_code', 'procedure_code', 'hcpcs', 'hcpcs_code');
     if (cptData) {
       const cptCodes = cptData.split(/[,;\s]+/).filter((c: string) => c.trim());
@@ -274,7 +292,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
       });
     }
 
-    console.log('RCM Analysis - Parsed line items:', items);
+    console.log('RCM Analysis - Final parsed line items:', items.length, items);
     setLineItems(items);
   }, [extractedData]);
 
