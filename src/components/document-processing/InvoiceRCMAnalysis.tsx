@@ -310,48 +310,76 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   const [rcmSummary, setRcmSummary] = useState<RCMSummary | null>(null);
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  
+  // Filter invoice history only
+  const invoiceHistory = processingHistory.filter(h => 
+    h.documentType === 'invoice' || h.documentType === 'billing'
+  );
+  
+  // Get data from selected history item or use extractedData
+  const activeData = React.useMemo(() => {
+    if (selectedHistoryId) {
+      const historyItem = invoiceHistory.find(h => h.id === selectedHistoryId);
+      if (historyItem) {
+        // Build data from history item
+        const fields = historyItem.extractedFields || {};
+        return {
+          ...Object.fromEntries(
+            Object.entries(fields).map(([key, val]: [string, any]) => [
+              key,
+              typeof val === 'object' && val !== null && 'value' in val ? val.value : val
+            ])
+          ),
+          line_items: historyItem.lineItems || fields.line_items?.value || fields.line_items || [],
+          tables: historyItem.tables || fields.tables?.value || fields.tables || []
+        };
+      }
+    }
+    return extractedData;
+  }, [selectedHistoryId, invoiceHistory, extractedData]);
 
   // Parse extracted data into invoice structure using intelligent field mapping
   const invoiceData = React.useMemo<InvoiceData>(() => {
-    console.log('RCM Analysis - Received extractedData:', extractedData);
+    console.log('RCM Analysis - Received activeData:', activeData);
     
     return {
-      invoice_number: findFieldValue(extractedData, 'invoice_number', 'invoice_no', 'invoiceno', 'invoice', 'claim_number', 'claimno'),
-      claim_number: findFieldValue(extractedData, 'claim_number', 'claim_no', 'claimno', 'claim'),
-      vendor_name: findFieldValue(extractedData, 'vendor_name', 'company_name', 'provider_name', 'from', 'vendor', 'company', 'provider', 'biller'),
-      vendor_tax_id: findFieldValue(extractedData, 'vendor_tax_id', 'tax_id', 'ein', 'taxid', 'federal_tax_id'),
-      vendor_npi: findFieldValue(extractedData, 'vendor_npi', 'npi', 'provider_npi', 'national_provider_identifier'),
-      patient_name: findFieldValue(extractedData, 'patient_name', 'patient', 'member_name', 'subscriber_name', 'name'),
-      patient_account: findFieldValue(extractedData, 'patient_account', 'account_number', 'account', 'member_id', 'accountno'),
-      invoice_date: findFieldValue(extractedData, 'invoice_date', 'date', 'service_date', 'statement_date', 'bill_date'),
-      due_date: findFieldValue(extractedData, 'due_date', 'please_pay_by', 'payment_due', 'pay_by', 'due'),
-      service_from: findFieldValue(extractedData, 'service_from', 'service_date_from', 'from_date', 'start_date', 'dos_from'),
-      service_to: findFieldValue(extractedData, 'service_to', 'service_date_to', 'to_date', 'end_date', 'dos_to'),
-      cpt_codes: findFieldValue(extractedData, 'cpt_codes', 'cpt', 'cpt_code', 'procedure_code', 'hcpcs', 'hcpcs_code'),
-      icd_codes: findFieldValue(extractedData, 'icd_codes', 'icd', 'icd_code', 'diagnosis_code', 'icd10', 'icd_10'),
-      billed_amount: findNumericValue(extractedData, 'billed_amount', 'total', 'amount', 'total_amount', 'amount_due', 'balance', 'total_due', 'grand_total'),
-      allowed_amount: findNumericValue(extractedData, 'allowed_amount', 'allowed', 'approved_amount'),
-      adjustment_amount: findNumericValue(extractedData, 'adjustment_amount', 'adjustment', 'adjustments', 'write_off'),
-      paid_amount: findNumericValue(extractedData, 'paid_amount', 'paid', 'payment', 'amount_paid', 'payments_received'),
-      patient_responsibility: findNumericValue(extractedData, 'patient_responsibility', 'patient_due', 'patient_balance', 'your_responsibility'),
-      balance_due: findNumericValue(extractedData, 'balance_due', 'balance', 'amount_due', 'total_due', 'total', 'amount'),
-      payer_name: findFieldValue(extractedData, 'payer_name', 'payer', 'insurance_name', 'insurance', 'insurance_company', 'carrier'),
-      payment_status: findFieldValue(extractedData, 'payment_status', 'status') || 'pending',
-      denial_reason: findFieldValue(extractedData, 'denial_reason', 'denial_code', 'reason_code'),
-      aging_bucket: findFieldValue(extractedData, 'aging_bucket', 'aging', 'days_outstanding'),
+      invoice_number: findFieldValue(activeData, 'invoice_number', 'invoice_no', 'invoiceno', 'invoice', 'claim_number', 'claimno'),
+      claim_number: findFieldValue(activeData, 'claim_number', 'claim_no', 'claimno', 'claim'),
+      vendor_name: findFieldValue(activeData, 'vendor_name', 'company_name', 'provider_name', 'from', 'vendor', 'company', 'provider', 'biller'),
+      vendor_tax_id: findFieldValue(activeData, 'vendor_tax_id', 'tax_id', 'ein', 'taxid', 'federal_tax_id'),
+      vendor_npi: findFieldValue(activeData, 'vendor_npi', 'npi', 'provider_npi', 'national_provider_identifier'),
+      patient_name: findFieldValue(activeData, 'patient_name', 'patient', 'member_name', 'subscriber_name', 'name'),
+      patient_account: findFieldValue(activeData, 'patient_account', 'account_number', 'account', 'member_id', 'accountno'),
+      invoice_date: findFieldValue(activeData, 'invoice_date', 'date', 'service_date', 'statement_date', 'bill_date'),
+      due_date: findFieldValue(activeData, 'due_date', 'please_pay_by', 'payment_due', 'pay_by', 'due'),
+      service_from: findFieldValue(activeData, 'service_from', 'service_date_from', 'from_date', 'start_date', 'dos_from'),
+      service_to: findFieldValue(activeData, 'service_to', 'service_date_to', 'to_date', 'end_date', 'dos_to'),
+      cpt_codes: findFieldValue(activeData, 'cpt_codes', 'cpt', 'cpt_code', 'procedure_code', 'hcpcs', 'hcpcs_code'),
+      icd_codes: findFieldValue(activeData, 'icd_codes', 'icd', 'icd_code', 'diagnosis_code', 'icd10', 'icd_10'),
+      billed_amount: findNumericValue(activeData, 'billed_amount', 'total', 'amount', 'total_amount', 'amount_due', 'balance', 'total_due', 'grand_total'),
+      allowed_amount: findNumericValue(activeData, 'allowed_amount', 'allowed', 'approved_amount'),
+      adjustment_amount: findNumericValue(activeData, 'adjustment_amount', 'adjustment', 'adjustments', 'write_off'),
+      paid_amount: findNumericValue(activeData, 'paid_amount', 'paid', 'payment', 'amount_paid', 'payments_received'),
+      patient_responsibility: findNumericValue(activeData, 'patient_responsibility', 'patient_due', 'patient_balance', 'your_responsibility'),
+      balance_due: findNumericValue(activeData, 'balance_due', 'balance', 'amount_due', 'total_due', 'total', 'amount'),
+      payer_name: findFieldValue(activeData, 'payer_name', 'payer', 'insurance_name', 'insurance', 'insurance_company', 'carrier'),
+      payment_status: findFieldValue(activeData, 'payment_status', 'status') || 'pending',
+      denial_reason: findFieldValue(activeData, 'denial_reason', 'denial_code', 'reason_code'),
+      aging_bucket: findFieldValue(activeData, 'aging_bucket', 'aging', 'days_outstanding'),
     };
-  }, [extractedData]);
+  }, [activeData]);
 
   // Parse line items from extracted data using intelligent field matching
   useEffect(() => {
     const items: LineItem[] = [];
     
-    console.log('RCM Analysis - Full extractedData:', JSON.stringify(extractedData, null, 2));
+    console.log('RCM Analysis - Full activeData:', JSON.stringify(activeData, null, 2));
     
     // Find line items using various field names
-    let lineItemsData = extractedData?.line_items || extractedData?.lineitems || 
-                          extractedData?.items || extractedData?.services || 
-                          extractedData?.charges || extractedData?.procedures;
+    let lineItemsData = activeData?.line_items || activeData?.lineitems || 
+                          activeData?.items || activeData?.services || 
+                          activeData?.charges || activeData?.procedures;
     
     // Parse JSON string if needed
     if (typeof lineItemsData === 'string') {
@@ -379,7 +407,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     }
     
     // Parse tables data (more intelligent column detection)
-    let tablesData = extractedData?.tables;
+    let tablesData = activeData?.tables;
     if (typeof tablesData === 'string') {
       try {
         tablesData = JSON.parse(tablesData);
@@ -582,6 +610,32 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
 
   return (
     <div className="space-y-4">
+      {/* History Selector */}
+      {invoiceHistory.length > 0 && (
+        <Card className="border-dashed">
+          <CardContent className="pt-4">
+            <div className="flex items-center gap-4">
+              <div className="flex-1">
+                <label className="text-sm font-medium mb-1 block">Load from History</label>
+                <select 
+                  className="w-full p-2 border rounded-md text-sm"
+                  value={selectedHistoryId || ''}
+                  onChange={(e) => setSelectedHistoryId(e.target.value || null)}
+                >
+                  <option value="">Current Document</option>
+                  {invoiceHistory.map(h => (
+                    <option key={h.id} value={h.id}>
+                      {h.fileName} - {new Date(h.processedAt).toLocaleDateString()}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <Badge variant="secondary">{invoiceHistory.length} invoice(s) in history</Badge>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Header with Export Options */}
       <div className="flex items-center justify-between">
         <div>

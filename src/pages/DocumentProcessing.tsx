@@ -433,6 +433,24 @@ export default function DocumentProcessing() {
             };
           }
 
+          // Extract line items and tables from processing_config (saved during verification)
+          const processingConfig = job.processing_config || {};
+          const lineItems = processingConfig.lineItems || metadata.lineItems || metadata.line_items || [];
+          const tables = processingConfig.tables || metadata.tables || [];
+          
+          // Override extractedFields with verified fields from processing_config if available
+          if (processingConfig.extractedFields && Object.keys(processingConfig.extractedFields).length > 0) {
+            Object.entries(processingConfig.extractedFields).forEach(([key, field]: [string, any]) => {
+              if (field && field.value) {
+                extractedFields[key] = {
+                  value: String(field.value),
+                  confidence: field.confidence ?? 0.9,
+                  verified: true,
+                };
+              }
+            });
+          }
+
           return {
             id: job.id,
             fileName: job.file_name,
@@ -440,9 +458,11 @@ export default function DocumentProcessing() {
             stage: job.status === 'completed' ? 'complete' : job.status,
             progress: job.progress || 100,
             extractedFields,
-            medications: metadata.medications || [],
+            medications: processingConfig.medications || metadata.medications || [],
             validationResults: validationSummary,
             rawText: job.extracted_text,
+            lineItems,
+            tables,
             processedAt: new Date(job.created_at),
             imageUrl: publicUrl,
             exportStatus: job.export_status || 'pending',
@@ -2668,12 +2688,37 @@ export default function DocumentProcessing() {
               history={processingHistory}
               onViewResult={(result: any) => {
                 setProcessingResult(result as any);
-                // Show a dialog or switch to upload tab to display the result
-                setShowVerificationDialog(true);
-                setPendingResult(result as any);
+                
+                // For invoices/billing, switch to RCM analysis tab
+                if (result.documentType === 'invoice' || result.documentType === 'billing') {
+                  setSelectedDocType(result.documentType);
+                  setActiveTab('rcm-analysis');
+                  toast.info('Loaded invoice for RCM analysis');
+                } else {
+                  // For other document types, show verification dialog
+                  setShowVerificationDialog(true);
+                  setPendingResult(result as any);
+                }
               }}
-              onDeleteItems={(ids: string[]) => {
-                setProcessingHistory(prev => prev.filter(item => !ids.includes(item.id)));
+              onDeleteItems={async (ids: string[]) => {
+                // Delete from database
+                try {
+                  const { error } = await supabase
+                    .from('document_processing_jobs')
+                    .delete()
+                    .in('id', ids);
+                  
+                  if (error) {
+                    toast.error('Failed to delete items');
+                    console.error('Delete error:', error);
+                  } else {
+                    setProcessingHistory(prev => prev.filter(item => !ids.includes(item.id)));
+                    toast.success(`Deleted ${ids.length} item(s)`);
+                  }
+                } catch (err) {
+                  console.error('Delete error:', err);
+                  toast.error('Failed to delete items');
+                }
               }}
             />
           </TabsContent>
@@ -2958,9 +3003,54 @@ export default function DocumentProcessing() {
                     variant="default"
                     onClick={async () => {
                       if (pendingResult) {
-                        toast.success('Document verified and saved to history');
-                        // Reload history from database to show the new entry
-                        await loadHistory();
+                        try {
+                          // Save verified/edited fields to database
+                          const { data: { user } } = await supabase.auth.getUser();
+                          
+                          // Prepare processing config with line items and tables for RCM (as JSON-serializable)
+                          const processingConfig: Record<string, unknown> = {
+                            extractedFields: JSON.parse(JSON.stringify(pendingResult.extractedFields || {})),
+                            lineItems: JSON.parse(JSON.stringify(pendingResult.lineItems || [])),
+                            tables: JSON.parse(JSON.stringify(pendingResult.tables || [])),
+                            medications: JSON.parse(JSON.stringify(pendingResult.medications || [])),
+                            validationResults: pendingResult.validationResults ? JSON.parse(JSON.stringify(pendingResult.validationResults)) : null,
+                            verifiedAt: new Date().toISOString(),
+                            verifiedBy: user?.id || null
+                          };
+                          
+                          // Validation status as string
+                          const validationStatusStr = pendingResult.validationResults 
+                            ? `passed:${pendingResult.validationResults.passed},failed:${pendingResult.validationResults.failed},warnings:${pendingResult.validationResults.warnings}`
+                            : 'verified';
+                          
+                          // Update the document processing job with verified data
+                          const { error: updateError } = await supabase
+                            .from('document_processing_jobs')
+                            .update({
+                              status: 'completed',
+                              processing_config: processingConfig as any,
+                              validation_status: validationStatusStr,
+                              updated_at: new Date().toISOString()
+                            })
+                            .eq('id', pendingResult.id);
+                          
+                          if (updateError) {
+                            console.error('Error saving verified data:', updateError);
+                            toast.error('Failed to save verified data');
+                          } else {
+                            toast.success('Document verified and saved to history');
+                            // Reload history from database to show the updated entry
+                            await loadHistory();
+                            
+                            // For invoices, auto-switch to RCM tab
+                            if (selectedDocType === 'invoice' || selectedDocType === 'billing') {
+                              setActiveTab('rcm');
+                            }
+                          }
+                        } catch (err) {
+                          console.error('Save error:', err);
+                          toast.error('Failed to save document');
+                        }
                       }
                       setShowVerificationDialog(false);
                       setPendingResult(null);
