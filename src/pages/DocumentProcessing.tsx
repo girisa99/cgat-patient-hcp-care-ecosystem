@@ -254,7 +254,7 @@ const AGENT_WORKFLOW_CONFIGS: AgentWorkflowConfig[] = [
 export default function DocumentProcessing() {
   const navigate = useNavigate();
   
-  // Initialize from sessionStorage to persist across tab switches
+  // Initialize from sessionStorage to persist across tab switches and navigation
   const [selectedDocType, setSelectedDocType] = useState<string>(() => {
     const saved = sessionStorage.getItem('docProcessing_selectedDocType');
     return saved || 'prescription';
@@ -547,6 +547,37 @@ export default function DocumentProcessing() {
     dosageForm: string;
     strength: string;
   } | null>(null);
+  
+  // Restore full processing state from sessionStorage on mount (preserves state when navigating to/from canvas)
+  useEffect(() => {
+    const savedState = sessionStorage.getItem('docProcessing_fullState');
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.processingResult) {
+          // Restore dates
+          parsed.processingResult.processedAt = new Date(parsed.processingResult.processedAt);
+          if (parsed.processingResult.exportedAt) {
+            parsed.processingResult.exportedAt = new Date(parsed.processingResult.exportedAt);
+          }
+          setProcessingResult(parsed.processingResult);
+        }
+        if (parsed.searchResults) {
+          setSearchResults(parsed.searchResults);
+        }
+        if (parsed.drugSearchQuery) {
+          setDrugSearchQuery(parsed.drugSearchQuery);
+        }
+        if (parsed.sigInstructions) {
+          setSigInstructions(parsed.sigInstructions);
+        }
+        // Clear saved state after restoring (one-time restore)
+        sessionStorage.removeItem('docProcessing_fullState');
+      } catch (e) {
+        console.warn('Failed to restore document processing state:', e);
+      }
+    }
+  }, []);
   
   const { calculateQuantityAndDaySupply, matchDrugToCode, checkControlledSubstance, parseSig } = useMedicationProcessing();
   
@@ -3328,7 +3359,13 @@ export default function DocumentProcessing() {
           open={showSubAgentDialog}
           onOpenChange={setShowSubAgentDialog}
           documentType={currentConfig}
-          extractedData={processingResult?.extractedFields}
+          extractedData={{
+            ...processingResult?.extractedFields,
+            processingResult,
+            searchResults,
+            drugSearchQuery,
+            sigInstructions,
+          }}
         />
       </div>
     </AppLayout>
