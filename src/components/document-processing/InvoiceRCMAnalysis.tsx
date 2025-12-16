@@ -13,26 +13,162 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-// CPT Code Database (common codes)
+// CPT Code Database (expanded with common codes)
 const CPT_CODE_DATABASE: Record<string, { description: string; category: string; avgReimbursement: number }> = {
-  '99213': { description: 'Office visit, established patient, low complexity', category: 'E/M', avgReimbursement: 75 },
-  '99214': { description: 'Office visit, established patient, moderate complexity', category: 'E/M', avgReimbursement: 110 },
-  '99215': { description: 'Office visit, established patient, high complexity', category: 'E/M', avgReimbursement: 150 },
+  // E/M - Evaluation & Management
+  '99201': { description: 'Office visit, new patient, minimal', category: 'E/M', avgReimbursement: 45 },
+  '99202': { description: 'Office visit, new patient, straightforward', category: 'E/M', avgReimbursement: 75 },
   '99203': { description: 'Office visit, new patient, low complexity', category: 'E/M', avgReimbursement: 100 },
   '99204': { description: 'Office visit, new patient, moderate complexity', category: 'E/M', avgReimbursement: 165 },
   '99205': { description: 'Office visit, new patient, high complexity', category: 'E/M', avgReimbursement: 210 },
+  '99211': { description: 'Office visit, established, minimal', category: 'E/M', avgReimbursement: 25 },
+  '99212': { description: 'Office visit, established, straightforward', category: 'E/M', avgReimbursement: 50 },
+  '99213': { description: 'Office visit, established patient, low complexity', category: 'E/M', avgReimbursement: 75 },
+  '99214': { description: 'Office visit, established patient, moderate complexity', category: 'E/M', avgReimbursement: 110 },
+  '99215': { description: 'Office visit, established patient, high complexity', category: 'E/M', avgReimbursement: 150 },
+  // Mental Health
+  '90791': { description: 'Psychiatric diagnostic evaluation', category: 'Mental Health', avgReimbursement: 175 },
+  '90792': { description: 'Psychiatric evaluation with medical services', category: 'Mental Health', avgReimbursement: 200 },
+  '90832': { description: 'Psychotherapy, 30 minutes', category: 'Mental Health', avgReimbursement: 65 },
   '90834': { description: 'Psychotherapy, 45 minutes', category: 'Mental Health', avgReimbursement: 95 },
   '90837': { description: 'Psychotherapy, 60 minutes', category: 'Mental Health', avgReimbursement: 130 },
+  '90847': { description: 'Family psychotherapy, conjoint', category: 'Mental Health', avgReimbursement: 110 },
+  // Injections & Infusions
   '96372': { description: 'Therapeutic injection, subcutaneous/intramuscular', category: 'Injections', avgReimbursement: 25 },
   '96374': { description: 'Therapeutic IV infusion, initial', category: 'Infusions', avgReimbursement: 55 },
-  '81001': { description: 'Urinalysis, automated', category: 'Lab', avgReimbursement: 5 },
-  '85025': { description: 'Complete blood count (CBC)', category: 'Lab', avgReimbursement: 11 },
+  '96375': { description: 'Therapeutic IV infusion, additional hour', category: 'Infusions', avgReimbursement: 35 },
+  '96376': { description: 'Therapeutic IV push, additional drug', category: 'Infusions', avgReimbursement: 25 },
+  // Lab
+  '80048': { description: 'Basic metabolic panel', category: 'Lab', avgReimbursement: 11 },
+  '80050': { description: 'General health panel', category: 'Lab', avgReimbursement: 45 },
   '80053': { description: 'Comprehensive metabolic panel', category: 'Lab', avgReimbursement: 14 },
+  '80061': { description: 'Lipid panel', category: 'Lab', avgReimbursement: 18 },
+  '81001': { description: 'Urinalysis, automated', category: 'Lab', avgReimbursement: 5 },
+  '81003': { description: 'Urinalysis, manual', category: 'Lab', avgReimbursement: 4 },
+  '82947': { description: 'Glucose, quantitative', category: 'Lab', avgReimbursement: 6 },
+  '83036': { description: 'Hemoglobin A1c', category: 'Lab', avgReimbursement: 13 },
+  '84443': { description: 'Thyroid stimulating hormone (TSH)', category: 'Lab', avgReimbursement: 22 },
+  '85025': { description: 'Complete blood count (CBC)', category: 'Lab', avgReimbursement: 11 },
+  '85027': { description: 'Complete blood count, automated', category: 'Lab', avgReimbursement: 9 },
+  '87880': { description: 'Strep test, rapid', category: 'Lab', avgReimbursement: 17 },
+  // Radiology
+  '70553': { description: 'MRI brain with/without contrast', category: 'Radiology', avgReimbursement: 450 },
   '71046': { description: 'Chest X-ray, 2 views', category: 'Radiology', avgReimbursement: 35 },
+  '71250': { description: 'CT chest without contrast', category: 'Radiology', avgReimbursement: 175 },
+  '72148': { description: 'MRI lumbar spine without contrast', category: 'Radiology', avgReimbursement: 350 },
   '73030': { description: 'X-ray, shoulder', category: 'Radiology', avgReimbursement: 32 },
+  '73110': { description: 'X-ray, wrist', category: 'Radiology', avgReimbursement: 30 },
+  '73560': { description: 'X-ray, knee', category: 'Radiology', avgReimbursement: 35 },
+  '74177': { description: 'CT abdomen and pelvis with contrast', category: 'Radiology', avgReimbursement: 275 },
+  // Cardiology
   '93000': { description: 'Electrocardiogram (ECG), complete', category: 'Cardiology', avgReimbursement: 18 },
-  'J3420': { description: 'Vitamin B12 injection', category: 'Drugs', avgReimbursement: 8 },
+  '93005': { description: 'ECG, tracing only', category: 'Cardiology', avgReimbursement: 12 },
+  '93010': { description: 'ECG, interpretation only', category: 'Cardiology', avgReimbursement: 10 },
+  '93306': { description: 'Echocardiography, transthoracic', category: 'Cardiology', avgReimbursement: 250 },
+  '93350': { description: 'Stress echocardiography', category: 'Cardiology', avgReimbursement: 350 },
+  // Surgery
+  '10060': { description: 'Incision and drainage, abscess', category: 'Surgery', avgReimbursement: 150 },
+  '11102': { description: 'Skin biopsy, tangential', category: 'Surgery', avgReimbursement: 85 },
+  '17000': { description: 'Destruction, premalignant lesion, first', category: 'Surgery', avgReimbursement: 75 },
+  '20610': { description: 'Joint injection/aspiration, major', category: 'Surgery', avgReimbursement: 65 },
+  '27447': { description: 'Total knee arthroplasty', category: 'Surgery', avgReimbursement: 1500 },
+  '29881': { description: 'Knee arthroscopy, meniscectomy', category: 'Surgery', avgReimbursement: 850 },
+  // HCPCS Drugs
+  'J0129': { description: 'Abatacept injection', category: 'Drugs', avgReimbursement: 950 },
+  'J0585': { description: 'Botulinum toxin A injection', category: 'Drugs', avgReimbursement: 550 },
   'J1030': { description: 'Methylprednisolone injection, 40mg', category: 'Drugs', avgReimbursement: 12 },
+  'J1100': { description: 'Dexamethasone injection', category: 'Drugs', avgReimbursement: 8 },
+  'J2001': { description: 'Lidocaine injection', category: 'Drugs', avgReimbursement: 5 },
+  'J3420': { description: 'Vitamin B12 injection', category: 'Drugs', avgReimbursement: 8 },
+  'J7030': { description: 'Normal saline infusion, 1000ml', category: 'Drugs', avgReimbursement: 6 },
+  // DME
+  'E0601': { description: 'CPAP device', category: 'DME', avgReimbursement: 450 },
+  'E0260': { description: 'Hospital bed, semi-electric', category: 'DME', avgReimbursement: 600 },
+  'A4253': { description: 'Blood glucose test strips', category: 'DME', avgReimbursement: 15 },
+  // Preventive
+  '99381': { description: 'Preventive visit, new, infant', category: 'Preventive', avgReimbursement: 120 },
+  '99391': { description: 'Preventive visit, established, infant', category: 'Preventive', avgReimbursement: 95 },
+  '99395': { description: 'Preventive visit, established, 18-39', category: 'Preventive', avgReimbursement: 130 },
+  '99396': { description: 'Preventive visit, established, 40-64', category: 'Preventive', avgReimbursement: 145 },
+  '99397': { description: 'Preventive visit, established, 65+', category: 'Preventive', avgReimbursement: 165 },
+};
+
+// Intelligent category inference for unknown CPT codes
+const inferCPTCategory = (code: string): { category: string; avgReimbursement: number } => {
+  const codeUpper = code.toUpperCase();
+  
+  // HCPCS codes (start with letter)
+  if (/^[A-Z]/.test(codeUpper)) {
+    if (codeUpper.startsWith('J')) return { category: 'Drugs', avgReimbursement: 50 };
+    if (codeUpper.startsWith('A')) return { category: 'DME/Supplies', avgReimbursement: 25 };
+    if (codeUpper.startsWith('E')) return { category: 'DME', avgReimbursement: 200 };
+    if (codeUpper.startsWith('G')) return { category: 'Procedures', avgReimbursement: 75 };
+    if (codeUpper.startsWith('L')) return { category: 'Prosthetics', avgReimbursement: 500 };
+    if (codeUpper.startsWith('Q')) return { category: 'Temp Codes', avgReimbursement: 50 };
+    if (codeUpper.startsWith('S')) return { category: 'Private Payer', avgReimbursement: 100 };
+    if (codeUpper.startsWith('T')) return { category: 'State Medicaid', avgReimbursement: 40 };
+    return { category: 'HCPCS', avgReimbursement: 75 };
+  }
+  
+  // CPT code ranges (numeric)
+  const numCode = parseInt(code);
+  if (isNaN(numCode)) return { category: 'Unknown', avgReimbursement: 0 };
+  
+  // E/M Services: 99201-99499
+  if (numCode >= 99201 && numCode <= 99499) return { category: 'E/M', avgReimbursement: 100 };
+  
+  // Anesthesia: 00100-01999
+  if (numCode >= 100 && numCode <= 1999) return { category: 'Anesthesia', avgReimbursement: 350 };
+  
+  // Surgery: 10000-69999
+  if (numCode >= 10000 && numCode <= 19999) return { category: 'Integumentary Surgery', avgReimbursement: 200 };
+  if (numCode >= 20000 && numCode <= 29999) return { category: 'Musculoskeletal Surgery', avgReimbursement: 500 };
+  if (numCode >= 30000 && numCode <= 39999) return { category: 'Respiratory Surgery', avgReimbursement: 450 };
+  if (numCode >= 40000 && numCode <= 49999) return { category: 'Digestive Surgery', avgReimbursement: 600 };
+  if (numCode >= 50000 && numCode <= 59999) return { category: 'Urinary Surgery', avgReimbursement: 550 };
+  if (numCode >= 60000 && numCode <= 69999) return { category: 'Endocrine/Nervous Surgery', avgReimbursement: 700 };
+  
+  // Radiology: 70000-79999
+  if (numCode >= 70000 && numCode <= 79999) return { category: 'Radiology', avgReimbursement: 150 };
+  
+  // Pathology/Lab: 80000-89999
+  if (numCode >= 80000 && numCode <= 89999) return { category: 'Lab/Pathology', avgReimbursement: 20 };
+  
+  // Medicine: 90000-99199
+  if (numCode >= 90281 && numCode <= 90399) return { category: 'Immunizations', avgReimbursement: 35 };
+  if (numCode >= 90460 && numCode <= 90474) return { category: 'Vaccine Admin', avgReimbursement: 25 };
+  if (numCode >= 90785 && numCode <= 90899) return { category: 'Mental Health', avgReimbursement: 100 };
+  if (numCode >= 90901 && numCode <= 90911) return { category: 'Biofeedback', avgReimbursement: 85 };
+  if (numCode >= 91010 && numCode <= 91299) return { category: 'Gastroenterology', avgReimbursement: 175 };
+  if (numCode >= 92002 && numCode <= 92499) return { category: 'Ophthalmology', avgReimbursement: 125 };
+  if (numCode >= 92502 && numCode <= 92700) return { category: 'Audiology', avgReimbursement: 100 };
+  if (numCode >= 93000 && numCode <= 93799) return { category: 'Cardiology', avgReimbursement: 150 };
+  if (numCode >= 93880 && numCode <= 93998) return { category: 'Vascular Studies', avgReimbursement: 200 };
+  if (numCode >= 94002 && numCode <= 94799) return { category: 'Pulmonary', avgReimbursement: 125 };
+  if (numCode >= 95004 && numCode <= 95199) return { category: 'Allergy/Immunology', avgReimbursement: 75 };
+  if (numCode >= 95700 && numCode <= 95999) return { category: 'Neurology', avgReimbursement: 200 };
+  if (numCode >= 96000 && numCode <= 96020) return { category: 'Psych Testing', avgReimbursement: 150 };
+  if (numCode >= 96360 && numCode <= 96549) return { category: 'Infusions', avgReimbursement: 50 };
+  if (numCode >= 96900 && numCode <= 96999) return { category: 'Dermatology', avgReimbursement: 100 };
+  if (numCode >= 97001 && numCode <= 97799) return { category: 'Physical Therapy', avgReimbursement: 65 };
+  if (numCode >= 97802 && numCode <= 97804) return { category: 'Nutrition Therapy', avgReimbursement: 55 };
+  if (numCode >= 98940 && numCode <= 98943) return { category: 'Chiropractic', avgReimbursement: 45 };
+  if (numCode >= 90000 && numCode <= 99199) return { category: 'Medicine', avgReimbursement: 75 };
+  
+  return { category: 'Unknown', avgReimbursement: 0 };
+};
+
+// Get CPT info with fallback to inference
+const getCPTInfo = (code: string, description?: string): { description: string; category: string; avgReimbursement: number } => {
+  const dbInfo = CPT_CODE_DATABASE[code];
+  if (dbInfo) return dbInfo;
+  
+  const inferred = inferCPTCategory(code);
+  return {
+    description: description || `Procedure code ${code}`,
+    category: inferred.category,
+    avgReimbursement: inferred.avgReimbursement
+  };
 };
 
 // Denial Reason Codes
@@ -673,32 +809,39 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                     <TableHead>Category</TableHead>
                     <TableHead className="text-right">Avg Reimbursement</TableHead>
                     <TableHead className="text-right">Billed</TableHead>
+                    <TableHead className="text-right">Variance</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lineItems.filter(i => i.cpt_code).length > 0 ? 
                     lineItems.filter(i => i.cpt_code).map((item, idx) => {
-                      const cptInfo = CPT_CODE_DATABASE[item.cpt_code!];
+                      const cptInfo = getCPTInfo(item.cpt_code!, item.description);
+                      const variance = item.total - cptInfo.avgReimbursement;
                       return (
                         <TableRow key={idx}>
                           <TableCell>
                             <Badge variant="outline" className="font-mono">{item.cpt_code}</Badge>
                           </TableCell>
-                          <TableCell>{cptInfo?.description || item.description}</TableCell>
+                          <TableCell className="max-w-[200px]">{cptInfo.description}</TableCell>
                           <TableCell>
-                            <Badge variant="secondary">{cptInfo?.category || 'Unknown'}</Badge>
+                            <Badge variant="secondary">{cptInfo.category}</Badge>
                           </TableCell>
                           <TableCell className="text-right">
-                            {formatCurrency(cptInfo?.avgReimbursement || 0)}
+                            {formatCurrency(cptInfo.avgReimbursement)}
                           </TableCell>
                           <TableCell className="text-right font-semibold">
                             {formatCurrency(item.total)}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className={variance >= 0 ? 'text-green-600' : 'text-red-600'}>
+                              {variance >= 0 ? '+' : ''}{formatCurrency(variance)}
+                            </span>
                           </TableCell>
                         </TableRow>
                       );
                     }) : (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center text-muted-foreground">
+                      <TableCell colSpan={6} className="text-center text-muted-foreground">
                         No CPT codes found. Medical billing documents typically contain CPT/HCPCS codes.
                       </TableCell>
                     </TableRow>
