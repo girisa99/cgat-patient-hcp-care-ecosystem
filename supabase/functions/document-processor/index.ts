@@ -343,20 +343,32 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
     }
     // Handle images and PDFs with OCR/Vision AI
     else if ((isImage || isPdf) && fileUrl) {
+      console.log(`Starting image/PDF extraction with provider: ${configuredProvider}`);
+      
       // Fetch and convert file to base64
       const fileResponse = await fetch(fileUrl);
+      console.log(`File fetch response status: ${fileResponse.status}`);
+      
       if (fileResponse.ok) {
         const fileBlob = await fileResponse.arrayBuffer();
         const fileBytes = new Uint8Array(fileBlob);
-        const bytes: string[] = [];
-        for (let i = 0; i < fileBytes.length; i++) {
-          bytes.push(String.fromCharCode(fileBytes[i]));
+        console.log(`File size: ${fileBytes.length} bytes`);
+        
+        // Convert to base64
+        let fileBase64Data = '';
+        const chunkSize = 0x8000; // Process in chunks to avoid stack overflow
+        for (let i = 0; i < fileBytes.length; i += chunkSize) {
+          const chunk = fileBytes.subarray(i, i + chunkSize);
+          fileBase64Data += String.fromCharCode.apply(null, Array.from(chunk));
         }
-        const fileBase64Data = btoa(bytes.join(''));
+        fileBase64Data = btoa(fileBase64Data);
+        
         const contentType = fileResponse.headers.get('content-type') || effectiveMimeType;
+        console.log(`Base64 length: ${fileBase64Data.length}, content type: ${contentType}`);
         
         // Build dynamic extraction prompt based on document type with target fields
         const extractionPrompt = buildExtractionPrompt(documentType || 'unknown', targetFields);
+        console.log(`Extraction prompt built for document type: ${documentType}`);
         
         // Try providers in order of preference
         const providers = [configuredProvider, 'gemini', 'azure', 'aws'].filter((v, i, a) => a.indexOf(v) === i);
@@ -365,14 +377,18 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
         for (const provider of providers) {
           if (extractionSuccess) break;
           
+          console.log(`Trying provider: ${provider}`);
+          
           try {
             let extracted: any = null;
             
             switch (provider) {
               case 'gemini':
               case 'google':
+                console.log('Calling Gemini extraction...');
                 extracted = await extractWithGemini(fileBase64Data, contentType, extractionPrompt);
                 providerUsed = 'gemini';
+                console.log(`Gemini returned: ${extracted ? 'data' : 'null'}`);
                 break;
                 
               case 'azure':
