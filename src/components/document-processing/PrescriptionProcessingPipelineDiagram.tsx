@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import pipelineImage from '@/assets/prescription-processing-pipeline.png';
+import pipelineImage from '@/assets/prescription-processing-pipeline-v2.png';
 
 export const PrescriptionProcessingPipelineDiagram = () => {
   const handleDownload = async () => {
