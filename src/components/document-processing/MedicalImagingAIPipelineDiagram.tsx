@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import pipelineImage from '@/assets/medical-imaging-ai-pipeline-v2.png';
+import pipelineImage from '@/assets/medical-imaging-ai-pipeline-v3.png';
 
 export const MedicalImagingAIPipelineDiagram = () => {
   const handleDownload = async () => {
