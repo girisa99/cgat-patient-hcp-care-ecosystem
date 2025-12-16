@@ -91,7 +91,7 @@ import {
 } from '@/config/documentTypes';
 import ProcessingOptionsPanel from '@/components/document-processing/ProcessingOptionsPanel';
 import CustomDocumentTypeDialog from '@/components/document-processing/CustomDocumentTypeDialog';
-import AgentArchitectureRecommendationPanel from '@/components/document-processing/AgentArchitectureRecommendationPanel';
+// AgentArchitectureRecommendationPanel removed - using SubAgentRecommendationDialog instead
 import ProcessingHistoryWithExport from '@/components/document-processing/ProcessingHistoryWithExport';
 import MedicalImageAnalysis from '@/components/document-processing/MedicalImageAnalysis';
 import InvoiceRCMAnalysis from '@/components/document-processing/InvoiceRCMAnalysis';
@@ -491,8 +491,7 @@ export default function DocumentProcessing() {
 
 
 
-  // Agent recommendation panel state
-  const [showAgentRecommendation, setShowAgentRecommendation] = useState(false);
+  // Agent recommendation panel state - using showSubAgentDialog for the clean dialog
   const [hasShownAutoRecommendation, setHasShownAutoRecommendation] = useState(false);
   
   // Agent processing mode
@@ -509,10 +508,10 @@ export default function DocumentProcessing() {
     ) {
       // Show recommendation after a short delay to let user see results first
       const timer = setTimeout(() => {
-        setShowAgentRecommendation(true);
+        setShowSubAgentDialog(true);
         setHasShownAutoRecommendation(true);
-        toast.info('💡 AI Agent recommendation available for this document type', {
-          description: 'Click to see suggested agents and sub-agents for automated processing',
+        toast.info('💡 Sub-agent recommendations available', {
+          description: 'Deploy follow-up agents to automate processing workflows',
           duration: 5000
         });
       }, 2000);
@@ -1443,7 +1442,7 @@ export default function DocumentProcessing() {
               <Button 
                 variant="outline" 
                 size="sm" 
-                onClick={() => setShowAgentRecommendation(!showAgentRecommendation)}
+                onClick={() => setShowSubAgentDialog(true)}
                 className="h-8"
               >
                 <Brain className="h-4 w-4 mr-2" />
@@ -3268,48 +3267,6 @@ export default function DocumentProcessing() {
             toast.success(`Created custom document type: ${newType.title}`);
           }}
         />
-
-        {/* Agent Architecture Recommendation Panel */}
-        {showAgentRecommendation && (
-          <Dialog open={showAgentRecommendation} onOpenChange={setShowAgentRecommendation}>
-            <DialogContent className="max-w-lg">
-              <AgentArchitectureRecommendationPanel
-                documentType={currentConfig}
-                onConfirmAndBuild={(recommendation, options: any) => {
-                  const subAgentCount = options.selectedSubAgents?.length || 0;
-                  toast.success(
-                    `Building ${recommendation.label} agent${subAgentCount > 0 ? ` with ${subAgentCount} sub-agent(s)` : ''} for ${currentConfig.title}`
-                  );
-                  // Navigate to canvas with context including sub-agents
-                  navigate('/agents/canvas', {
-                    state: {
-                      prefillContext: {
-                        name: `${currentConfig.title} Processor`,
-                        useCase: currentConfig.id,
-                        description: `AI agent for processing ${currentConfig.title} documents`,
-                        architecture: recommendation.architecture,
-                        suggestedNodes: recommendation.suggestedNodes,
-                        mcpTargets: options.selectedTargets,
-                        includeHumanInLoop: options.includeHumanInLoop,
-                        multiChannelDeploy: options.multiChannelDeploy,
-                        enableMCPSync: options.enableMCPSync,
-                        // Include sub-agents for A2A workflow
-                        subAgents: options.selectedSubAgents?.map((agent: any) => ({
-                          id: agent.id,
-                          name: agent.name,
-                          useCase: agent.useCase,
-                          triggerCondition: agent.triggerCondition,
-                          icon: agent.icon
-                        })) || []
-                      }
-                    }
-                  });
-                  setShowAgentRecommendation(false);
-                }}
-              />
-            </DialogContent>
-          </Dialog>
-        )}
 
         {/* Sub-Agent Recommendation Dialog - Clean, focused on sub-agents only */}
         <SubAgentRecommendationDialog

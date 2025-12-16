@@ -15,16 +15,10 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Separator } from '@/components/ui/separator';
 import { 
   Bot, 
-  Users, 
   CheckCircle,
   XCircle,
-  ArrowRight,
-  Target,
-  Zap,
-  Network,
   Brain
 } from 'lucide-react';
 import { DocumentTypeConfig } from '@/config/documentTypes';
@@ -359,68 +353,61 @@ export default function SubAgentRecommendationDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
+      <DialogContent className="max-w-md max-h-[85vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
+          <DialogTitle className="flex items-center gap-2 text-base">
             <Bot className="h-5 w-5 text-primary" />
-            Deploy Sub-Agents for {documentType.title}?
+            Would you like to add follow-up agents?
           </DialogTitle>
-          <DialogDescription>
-            Based on your processed document, these agents can automate follow-up workflows
+          <DialogDescription className="text-sm">
+            Select agents to automate processing for {documentType.title}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 py-2">
-          {/* Agent Selection */}
-          <ScrollArea className="h-[280px] pr-2">
-            <div className="space-y-2">
-              {suggestions.map(agent => (
-                <div
-                  key={agent.id}
-                  className={cn(
-                    "p-3 rounded-lg border cursor-pointer transition-all",
-                    selectedAgents.includes(agent.id)
-                      ? "border-green-500 bg-green-50 dark:bg-green-950/30"
-                      : "border-border hover:border-primary/50 hover:bg-muted/30"
-                  )}
-                  onClick={() => toggleAgent(agent.id)}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">{agent.icon}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-medium text-sm">{agent.name}</span>
-                        {selectedAgents.includes(agent.id) && (
-                          <CheckCircle className="h-4 w-4 text-green-500" />
-                        )}
-                        {getArchitectureBadge(agent.architectureType)}
-                      </div>
-                      <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
-                      <div className="mt-2 flex items-center gap-1.5">
-                        <Target className="h-3 w-3 text-amber-500" />
-                        <span className="text-[11px] text-muted-foreground">{agent.triggerCondition}</span>
-                      </div>
+        {/* Scrollable Agent List */}
+        <ScrollArea className="flex-1 min-h-0 max-h-[45vh] pr-2">
+          <div className="space-y-2 py-2">
+            {suggestions.map(agent => (
+              <div
+                key={agent.id}
+                className={cn(
+                  "p-3 rounded-lg border cursor-pointer transition-all",
+                  selectedAgents.includes(agent.id)
+                    ? "border-green-500 bg-green-50 dark:bg-green-950/30"
+                    : "border-border hover:border-primary/50 hover:bg-muted/30"
+                )}
+                onClick={() => toggleAgent(agent.id)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className="text-xl">{agent.icon}</div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="font-medium text-sm">{agent.name}</span>
+                      {selectedAgents.includes(agent.id) && (
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      )}
+                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">{agent.description}</p>
+                    <div className="mt-1.5 flex items-center gap-2">
+                      {getArchitectureBadge(agent.architectureType)}
+                      <span className="text-[10px] text-amber-600">⚡ {agent.triggerCondition}</span>
                     </div>
                   </div>
                 </div>
-              ))}
-            </div>
-          </ScrollArea>
-
-          {/* Selection Summary */}
-          {selectedAgents.length > 0 && (
-            <div className="p-3 rounded-lg bg-green-50 dark:bg-green-950/30 border border-green-200 dark:border-green-800">
-              <div className="flex items-center gap-2 text-green-700 dark:text-green-300">
-                <Network className="h-4 w-4" />
-                <span className="text-sm font-medium">{selectedAgents.length} agent(s) selected</span>
               </div>
-              <p className="text-xs text-green-600 dark:text-green-400 mt-1">
-                These will be added to your workflow in the Agent Canvas
-              </p>
+            ))}
+          </div>
+        </ScrollArea>
+
+        {/* Fixed Bottom Section - Always Visible */}
+        <div className="flex-shrink-0 pt-3 border-t space-y-3">
+          {selectedAgents.length > 0 && (
+            <div className="p-2 rounded-lg bg-green-50 dark:bg-green-950/30 text-center">
+              <span className="text-sm text-green-700 dark:text-green-300 font-medium">
+                {selectedAgents.length} agent(s) selected
+              </span>
             </div>
           )}
-
-          <Separator />
 
           {/* Action Buttons - Clear Yes/No */}
           <div className="flex gap-3">
@@ -438,8 +425,7 @@ export default function SubAgentRecommendationDialog({
               disabled={selectedAgents.length === 0}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              Yes, Build {selectedAgents.length > 0 ? `(${selectedAgents.length})` : ''}
-              <ArrowRight className="h-4 w-4 ml-2" />
+              Yes, Build
             </Button>
           </div>
         </div>
