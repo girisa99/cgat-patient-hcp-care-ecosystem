@@ -1065,8 +1065,8 @@ export default function DocumentProcessing() {
         const calculation = calculateQuantityAndDaySupply(sigText);
         
         medications = [{
-          drugName,
-          genericName: drugName,
+          drugName: drugName !== 'Unknown' ? drugName : extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() || 'Unknown',
+          genericName: drugName !== 'Unknown' ? drugName : 'Unknown',
           strength: extractedFields['strength']?.value || '',
           sig: sigText,
           calculatedQuantity: calculation.totalQuantity,
@@ -1078,19 +1078,22 @@ export default function DocumentProcessing() {
         }];
         
         // Auto-populate drug search with extracted medication and trigger search
-        if (extractedDrugName) {
-          setDrugSearchQuery(extractedDrugName);
-          if (extractedSig) {
-            setSigInstructions(extractedSig);
+        // Use the final resolved drugName (which includes fallbacks) instead of just extractedDrugName
+        const finalDrugName = drugName !== 'Unknown' ? drugName : null;
+        
+        if (finalDrugName) {
+          setDrugSearchQuery(finalDrugName);
+          if (sigText && sigText !== 'Take as directed') {
+            setSigInstructions(sigText);
           }
           // Switch to medication tab to show user the extracted data
           setActiveTab('medication');
-          toast.info(`Extracted medication: ${extractedDrugName}`, {
+          toast.info(`Extracted medication: ${finalDrugName}`, {
             description: 'Searching for NDC codes and clinical data...'
           });
           
-          // Normalize drug name for better API matching
-          const { baseName, extractedStrength } = normalizeDrugName(extractedDrugName);
+          // Normalize drug name for better API matching - use finalDrugName not extractedDrugName
+          const { baseName, extractedStrength } = normalizeDrugName(finalDrugName);
           // Preserve strength from OCR extraction
           const preservedStrength = extractedFields['strength']?.value || extractedStrength || '';
           
@@ -1103,7 +1106,7 @@ export default function DocumentProcessing() {
             if (error) throw error;
             
             if (data) {
-              const calculation = calculateQuantityAndDaySupply(extractedSig || 'Take 1 tablet daily for 30 days');
+              const calculation = calculateQuantityAndDaySupply(sigText || 'Take 1 tablet daily for 30 days');
               
               const ndcOptions = (data.ndc || []).map((ndc: any) => ({
                 code: ndc.code,
@@ -1147,10 +1150,10 @@ export default function DocumentProcessing() {
               
               // IMPORTANT: Use preservedStrength (from OCR) instead of NDC strength
               const autoSearchResult: MedicationResult = {
-                drugName: primaryNdc?.brandName || data.drugName || extractedDrugName,
-                genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
+                drugName: primaryNdc?.brandName || data.drugName || finalDrugName,
+                genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name || finalDrugName,
                 strength: preservedStrength || primaryNdc?.strength || '',
-                sig: extractedSig || 'Take 1 tablet daily for 30 days',
+                sig: sigText || 'Take 1 tablet daily for 30 days',
                 calculatedQuantity: calculation.totalQuantity,
                 daysSupply: calculation.daysSupply,
                 dailyDose: calculation.dailyDose,
@@ -1168,6 +1171,9 @@ export default function DocumentProcessing() {
               };
               
               setSearchResults(autoSearchResult);
+              
+              // CRITICAL: Update medications array with the drug lookup results so they get saved to history
+              medications = [autoSearchResult];
               
               // Auto-select first NDC
               if (ndcOptions.length > 0) {
@@ -3203,7 +3209,8 @@ export default function DocumentProcessing() {
                             tables: JSON.parse(JSON.stringify(pendingResult.tables || [])),
                             medications: JSON.parse(JSON.stringify(pendingResult.medications || [])),
                             validationResults: pendingResult.validationResults ? JSON.parse(JSON.stringify(pendingResult.validationResults)) : null,
-                            verifiedAt: new Date().toISOString(),
+                            imageUrl: pendingResult.imageUrl || null,
+                            savedAt: new Date().toISOString(),
                             verifiedBy: user?.id || null
                           };
                           
