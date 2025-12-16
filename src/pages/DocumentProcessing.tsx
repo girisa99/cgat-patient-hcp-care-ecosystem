@@ -499,25 +499,8 @@ export default function DocumentProcessing() {
   const [selectedAgentWorkflow, setSelectedAgentWorkflow] = useState<AgentWorkflowType>('none');
   const [isAgentProcessing, setIsAgentProcessing] = useState(false);
   
-  // Auto-show agent recommendations when processing completes (once per session)
-  useEffect(() => {
-    if (
-      processingResult?.stage === 'complete' && 
-      !hasShownAutoRecommendation && 
-      Object.keys(processingResult?.extractedFields || {}).length > 0
-    ) {
-      // Show recommendation after a short delay to let user see results first
-      const timer = setTimeout(() => {
-        setShowSubAgentDialog(true);
-        setHasShownAutoRecommendation(true);
-        toast.info('💡 Sub-agent recommendations available', {
-          description: 'Deploy follow-up agents to automate processing workflows',
-          duration: 5000
-        });
-      }, 2000);
-      return () => clearTimeout(timer);
-    }
-  }, [processingResult?.stage, processingResult?.extractedFields, hasShownAutoRecommendation]);
+  // REMOVED: Auto-show agent recommendations - now only shows AFTER user saves to history
+  // This ensures sequential flow: 1) View results → 2) Save to history → 3) Sub-agent dialog
   
   // Reset auto-recommendation flag when document type changes
   useEffect(() => {
