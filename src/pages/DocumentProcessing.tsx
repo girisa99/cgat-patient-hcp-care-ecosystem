@@ -1153,10 +1153,10 @@ export default function DocumentProcessing() {
         tables: mapResult?.tables || processResult?.tables || [],
         validationResults: {
           passed: Object.keys(extractedFields).filter(k => extractedFields[k]?.value && extractedFields[k].confidence >= confidenceThreshold).length,
-          failed: currentConfig.targetFields.filter(f => f.required && !extractedFields[f.key]?.value).length,
+          failed: 0, // No longer counting "missing" hardcoded fields as failures
           warnings: Object.keys(extractedFields).filter(k => 
-            extractedFields[k].confidence >= confidenceThreshold * 0.8 && 
-            extractedFields[k].confidence < confidenceThreshold
+            extractedFields[k]?.confidence >= confidenceThreshold * 0.8 && 
+            extractedFields[k]?.confidence < confidenceThreshold
           ).length
         },
         processedAt: new Date()
@@ -1888,56 +1888,12 @@ export default function DocumentProcessing() {
                                   </div>
                                 </div>
                                 
-                                {/* Show Failed/Missing Fields */}
-                                {processingResult.validationResults.failed > 0 && (
-                                  <div className="p-3 border border-destructive/30 bg-destructive/5 rounded-lg space-y-2">
-                                    <div className="flex items-center gap-2 text-destructive">
-                                      <XCircle className="h-4 w-4" />
-                                      <span className="font-medium text-sm">Missing Required Fields</span>
-                                    </div>
-                                    <div className="flex flex-wrap gap-2">
-                                      {currentConfig.targetFields
-                                        .filter(f => f.required && !processingResult.extractedFields[f.key])
-                                        .map((field, i) => (
-                                          <Badge key={i} variant="outline" className="border-destructive/50 text-destructive">
-                                            {field.label}
-                                          </Badge>
-                                        ))
-                                      }
-                                    </div>
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                      These fields could not be extracted from the document. Manual entry may be required.
-                                    </p>
-                                  </div>
-                                )}
-
-                                {/* Show All Target Fields Status */}
-                                <details className="group">
-                                  <summary className="flex items-center gap-2 cursor-pointer text-sm text-muted-foreground hover:text-foreground">
-                                    <span>View all {currentConfig.targetFields.length} target fields</span>
-                                    <ArrowRight className="h-3 w-3 transition-transform group-open:rotate-90" />
-                                  </summary>
-                                  <div className="mt-2 grid grid-cols-2 gap-1">
-                                    {currentConfig.targetFields.map((field, i) => {
-                                      const extracted = processingResult.extractedFields[field.key];
-                                      return (
-                                        <div key={i} className={`flex items-center gap-2 p-1.5 rounded text-xs ${
-                                          extracted ? 'bg-green-500/10 text-green-700' : 'bg-muted text-muted-foreground'
-                                        }`}>
-                                          {extracted ? (
-                                            <CheckCircle className="h-3 w-3 flex-shrink-0" />
-                                          ) : (
-                                            <XCircle className="h-3 w-3 flex-shrink-0" />
-                                          )}
-                                          <span className="truncate">{field.label}</span>
-                                          {field.required && !extracted && (
-                                            <Badge variant="destructive" className="text-[8px] px-1">Required</Badge>
-                                          )}
-                                        </div>
-                                      );
-                                    })}
-                                  </div>
-                                </details>
+                                {/* Show extraction summary - no hardcoded field list */}
+                                <div className="p-3 border border-border/50 bg-muted/30 rounded-lg">
+                                  <p className="text-sm text-muted-foreground">
+                                    Extracted {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length} fields from document
+                                  </p>
+                                </div>
                               </div>
                             </>
                           )}
@@ -2456,22 +2412,24 @@ export default function DocumentProcessing() {
                           </div>
                         </div>
                       )}
-                      {/* Extracted Insurance Fields */}
+                      {/* Extracted Insurance Fields - Only show actually extracted fields */}
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {currentConfig.targetFields.map((field) => {
-                          const extracted = processingResult.extractedFields[field.key];
-                          return (
-                            <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
-                              <Label className="text-xs text-muted-foreground">{field.label}</Label>
-                              <p className="font-medium">{extracted?.value || '—'}</p>
-                              {extracted?.confidence && (
-                                <Badge variant="secondary" className="text-[9px] mt-1">
-                                  {Math.round(extracted.confidence * 100)}%
-                                </Badge>
-                              )}
-                            </div>
-                          );
-                        })}
+                        {Object.entries(processingResult.extractedFields)
+                          .filter(([_, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(_))
+                          .map(([key, field]) => {
+                            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            return (
+                              <div key={key} className="p-3 bg-muted/50 rounded-lg">
+                                <Label className="text-xs text-muted-foreground">{label}</Label>
+                                <p className="font-medium">{field?.value || '—'}</p>
+                                {field?.confidence && (
+                                  <Badge variant="secondary" className="text-[9px] mt-1">
+                                    {Math.round(field.confidence * 100)}%
+                                  </Badge>
+                                )}
+                              </div>
+                            );
+                          })}
                       </div>
                     </div>
                   ) : (
@@ -2508,15 +2466,17 @@ export default function DocumentProcessing() {
                         </div>
                       )}
                       <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                        {currentConfig.targetFields.map((field) => {
-                          const extracted = processingResult.extractedFields[field.key];
-                          return (
-                            <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
-                              <Label className="text-xs text-muted-foreground">{field.label}</Label>
-                              <p className="font-medium">{extracted?.value || '—'}</p>
-                            </div>
-                          );
-                        })}
+                        {Object.entries(processingResult.extractedFields)
+                          .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                          .map(([key, field]) => {
+                            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            return (
+                              <div key={key} className="p-3 bg-muted/50 rounded-lg">
+                                <Label className="text-xs text-muted-foreground">{label}</Label>
+                                <p className="font-medium">{field?.value || '—'}</p>
+                              </div>
+                            );
+                          })}
                       </div>
                     </div>
                   ) : (
@@ -2543,15 +2503,17 @@ export default function DocumentProcessing() {
                 <CardContent>
                   {processingResult && processingResult.stage === 'complete' ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {currentConfig.targetFields.map((field) => {
-                        const extracted = processingResult.extractedFields[field.key];
-                        return (
-                          <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
-                            <Label className="text-xs text-muted-foreground">{field.label}</Label>
-                            <p className="font-medium">{extracted?.value || '—'}</p>
-                          </div>
-                        );
-                      })}
+                      {Object.entries(processingResult.extractedFields)
+                        .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                        .map(([key, field]) => {
+                          const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          return (
+                            <div key={key} className="p-3 bg-muted/50 rounded-lg">
+                              <Label className="text-xs text-muted-foreground">{label}</Label>
+                              <p className="font-medium">{field?.value || '—'}</p>
+                            </div>
+                          );
+                        })}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
@@ -2577,15 +2539,17 @@ export default function DocumentProcessing() {
                 <CardContent>
                   {processingResult && processingResult.stage === 'complete' ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {currentConfig.targetFields.map((field) => {
-                        const extracted = processingResult.extractedFields[field.key];
-                        return (
-                          <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
-                            <Label className="text-xs text-muted-foreground">{field.label}</Label>
-                            <p className="font-medium">{extracted?.value || '—'}</p>
-                          </div>
-                        );
-                      })}
+                      {Object.entries(processingResult.extractedFields)
+                        .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                        .map(([key, field]) => {
+                          const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          return (
+                            <div key={key} className="p-3 bg-muted/50 rounded-lg">
+                              <Label className="text-xs text-muted-foreground">{label}</Label>
+                              <p className="font-medium">{field?.value || '—'}</p>
+                            </div>
+                          );
+                        })}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
@@ -2611,15 +2575,17 @@ export default function DocumentProcessing() {
                 <CardContent>
                   {processingResult && processingResult.stage === 'complete' ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                      {currentConfig.targetFields.map((field) => {
-                        const extracted = processingResult.extractedFields[field.key];
-                        return (
-                          <div key={field.key} className="p-3 bg-muted/50 rounded-lg">
-                            <Label className="text-xs text-muted-foreground">{field.label}</Label>
-                            <p className="font-medium">{extracted?.value || '—'}</p>
-                          </div>
-                        );
-                      })}
+                      {Object.entries(processingResult.extractedFields)
+                        .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                        .map(([key, field]) => {
+                          const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                          return (
+                            <div key={key} className="p-3 bg-muted/50 rounded-lg">
+                              <Label className="text-xs text-muted-foreground">{label}</Label>
+                              <p className="font-medium">{field?.value || '—'}</p>
+                            </div>
+                          );
+                        })}
                     </div>
                   ) : (
                     <div className="text-center py-12 text-muted-foreground">
@@ -2919,66 +2885,39 @@ export default function DocumentProcessing() {
                     )}
                   </div>
                   
-                  {/* Extracted Fields - Show ALL target fields from config */}
+                  {/* Extracted Fields - Show ONLY actually extracted fields */}
                   <div className="border rounded-lg p-4">
                     <h4 className="font-medium mb-2 flex items-center gap-2">
                       <Table2 className="h-4 w-4" />
-                      Target Fields ({currentConfig.targetFields.length})
+                      Extracted Fields ({Object.keys(pendingResult.extractedFields).filter(k => pendingResult.extractedFields[k]?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(k)).length})
                     </h4>
                     <ScrollArea className="h-[300px]">
                       <div className="space-y-2">
-                        {currentConfig.targetFields.map((targetField) => {
-                          const extracted = pendingResult.extractedFields[targetField.key];
-                          const hasValue = extracted?.value && extracted.value.trim() !== '';
-                          const confidence = extracted?.confidence || 0;
-                          
-                          return (
-                            <div 
-                              key={targetField.key} 
-                              className={`p-2 rounded border ${
-                                hasValue 
-                                  ? (confidence >= confidenceThreshold ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30')
-                                  : 'bg-red-500/10 border-red-500/30'
-                              }`}
-                            >
-                              <div className="flex items-center justify-between">
-                                <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                                  {targetField.label}
-                                  {targetField.required && <span className="text-destructive">*</span>}
-                                </Label>
-                                {hasValue ? (
+                        {Object.entries(pendingResult.extractedFields)
+                          .filter(([key, field]) => field?.value && !['line_items', 'tables', 'detected_document_type', 'document_category'].includes(key))
+                          .map(([key, field]) => {
+                            const confidence = field?.confidence || 0;
+                            const label = key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                            
+                            return (
+                              <div 
+                                key={key} 
+                                className={`p-2 rounded border ${
+                                  confidence >= confidenceThreshold ? 'bg-green-500/10 border-green-500/30' : 'bg-yellow-500/10 border-yellow-500/30'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between">
+                                  <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                                    {label}
+                                  </Label>
                                   <Badge variant={confidence >= confidenceThreshold ? 'default' : 'secondary'} className="text-[9px]">
                                     {Math.round(confidence * 100)}%
                                   </Badge>
-                                ) : (
-                                  <Badge variant="outline" className="text-[9px] text-red-500">Missing</Badge>
-                                )}
+                                </div>
+                                <p className="font-medium text-sm">{field?.value || '—'}</p>
                               </div>
-                              <p className="font-medium text-sm">{extracted?.value || '—'}</p>
-                            </div>
-                          );
-                        })}
-                        
-                        {/* Also show any extra extracted fields not in target fields */}
-                        {Object.entries(pendingResult.extractedFields)
-                          .filter(([key]) => !currentConfig.targetFields.some(f => f.key === key))
-                          .map(([key, field]) => (
-                            <div 
-                              key={key} 
-                              className="p-2 rounded border bg-blue-500/10 border-blue-500/30"
-                            >
-                              <div className="flex items-center justify-between">
-                                <Label className="text-xs text-muted-foreground capitalize flex items-center gap-1">
-                                  {expandAbbreviation(key.replace(/_/g, ' '))}
-                                  <Badge variant="outline" className="text-[8px] ml-1">Extra</Badge>
-                                </Label>
-                                <Badge variant="secondary" className="text-[9px]">
-                                  {Math.round(field.confidence * 100)}%
-                                </Badge>
-                              </div>
-                              <p className="font-medium text-sm">{field.value}</p>
-                            </div>
-                          ))}
+                            );
+                          })}
                       </div>
                     </ScrollArea>
                   </div>
