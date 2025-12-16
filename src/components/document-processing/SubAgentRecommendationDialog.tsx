@@ -42,7 +42,7 @@ interface SubAgentSuggestion {
   architectureType: 'a2a' | 'agentic' | 'multi-agent' | 'single';
 }
 
-// Document-type specific sub-agent suggestions
+// Document-type specific sub-agent suggestions - UNIVERSAL for ALL document types
 const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
   'insurance': [
     {
@@ -236,6 +236,15 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       useCase: 'ct-analysis',
       triggerCondition: 'When CT scan uploaded',
       architectureType: 'agentic'
+    },
+    {
+      id: 'ct-report',
+      name: 'CT Report Generation Agent',
+      description: 'Generates detailed CT scan reports with findings',
+      icon: '📋',
+      useCase: 'ct-report',
+      triggerCondition: 'After CT analysis complete',
+      architectureType: 'single'
     }
   ],
   'mri': [
@@ -247,6 +256,15 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       useCase: 'mri-analysis',
       triggerCondition: 'When MRI scan uploaded',
       architectureType: 'agentic'
+    },
+    {
+      id: 'mri-report',
+      name: 'MRI Report Generation Agent',
+      description: 'Creates comprehensive MRI diagnostic reports',
+      icon: '📝',
+      useCase: 'mri-report',
+      triggerCondition: 'After MRI analysis complete',
+      architectureType: 'single'
     }
   ],
   'ecg': [
@@ -258,6 +276,15 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       useCase: 'ecg-interpretation',
       triggerCondition: 'When ECG uploaded',
       architectureType: 'agentic'
+    },
+    {
+      id: 'cardiac-alert',
+      name: 'Cardiac Alert Agent',
+      description: 'Triggers alerts for critical cardiac findings',
+      icon: '🚨',
+      useCase: 'cardiac-alerting',
+      triggerCondition: 'When abnormal rhythms detected',
+      architectureType: 'a2a'
     }
   ],
   'lab-results': [
@@ -279,8 +306,223 @@ const DOCUMENT_TYPE_SUBAGENTS: Record<string, SubAgentSuggestion[]> = {
       triggerCondition: 'When comparing with historical results',
       architectureType: 'agentic'
     }
+  ],
+  // NEW: Missing document types with full sub-agent support
+  'passport': [
+    {
+      id: 'identity-verification',
+      name: 'Identity Verification Agent',
+      description: 'Validates passport authenticity and identity details',
+      icon: '🆔',
+      useCase: 'identity-verification',
+      triggerCondition: 'When passport uploaded',
+      architectureType: 'agentic'
+    },
+    {
+      id: 'travel-compliance',
+      name: 'Travel Compliance Agent',
+      description: 'Checks visa requirements and travel eligibility',
+      icon: '✈️',
+      useCase: 'travel-compliance',
+      triggerCondition: 'When travel documentation needed',
+      architectureType: 'a2a'
+    },
+    {
+      id: 'fraud-detection',
+      name: 'Document Fraud Detection Agent',
+      description: 'AI-powered fraud and forgery detection',
+      icon: '🔍',
+      useCase: 'fraud-detection',
+      triggerCondition: 'During identity verification',
+      architectureType: 'agentic'
+    }
+  ],
+  'ultrasound': [
+    {
+      id: 'ultrasound-analysis',
+      name: 'Ultrasound Analysis Agent',
+      description: 'AI-powered ultrasound image interpretation',
+      icon: '📡',
+      useCase: 'ultrasound-analysis',
+      triggerCondition: 'When ultrasound image uploaded',
+      architectureType: 'agentic'
+    },
+    {
+      id: 'fetal-monitoring',
+      name: 'Fetal Monitoring Agent',
+      description: 'Specialized fetal development analysis for OB ultrasounds',
+      icon: '👶',
+      useCase: 'fetal-monitoring',
+      triggerCondition: 'For obstetric ultrasounds',
+      architectureType: 'agentic'
+    },
+    {
+      id: 'ultrasound-report',
+      name: 'Ultrasound Report Agent',
+      description: 'Generates comprehensive ultrasound reports',
+      icon: '📝',
+      useCase: 'ultrasound-report',
+      triggerCondition: 'After ultrasound analysis',
+      architectureType: 'single'
+    }
+  ],
+  'mammogram': [
+    {
+      id: 'mammogram-analysis',
+      name: 'Mammogram Analysis Agent',
+      description: 'AI-powered breast imaging analysis and BI-RADS scoring',
+      icon: '🩺',
+      useCase: 'mammogram-analysis',
+      triggerCondition: 'When mammogram uploaded',
+      architectureType: 'agentic'
+    },
+    {
+      id: 'breast-density',
+      name: 'Breast Density Assessment Agent',
+      description: 'Calculates breast tissue density classification',
+      icon: '📊',
+      useCase: 'breast-density',
+      triggerCondition: 'During mammogram analysis',
+      architectureType: 'single'
+    },
+    {
+      id: 'follow-up-scheduler',
+      name: 'Follow-up Scheduler Agent',
+      description: 'Schedules follow-up appointments based on findings',
+      icon: '📅',
+      useCase: 'follow-up-scheduling',
+      triggerCondition: 'When follow-up needed',
+      architectureType: 'a2a'
+    }
+  ],
+  'customer-onboarding': [
+    {
+      id: 'kyc-verification',
+      name: 'KYC Verification Agent',
+      description: 'Performs Know Your Customer identity verification',
+      icon: '✅',
+      useCase: 'kyc-verification',
+      triggerCondition: 'During customer registration',
+      architectureType: 'agentic'
+    },
+    {
+      id: 'document-validation',
+      name: 'Document Validation Agent',
+      description: 'Validates submitted onboarding documents',
+      icon: '📄',
+      useCase: 'document-validation',
+      triggerCondition: 'When documents uploaded',
+      architectureType: 'single'
+    },
+    {
+      id: 'credit-check',
+      name: 'Credit Check Agent',
+      description: 'Performs credit history and risk assessment',
+      icon: '💳',
+      useCase: 'credit-check',
+      triggerCondition: 'When financial verification needed',
+      architectureType: 'a2a'
+    },
+    {
+      id: 'account-setup',
+      name: 'Account Setup Agent',
+      description: 'Automates account creation and provisioning',
+      icon: '🔧',
+      useCase: 'account-setup',
+      triggerCondition: 'After verification complete',
+      architectureType: 'multi-agent'
+    }
+  ],
+  'order-management': [
+    {
+      id: 'order-tracking',
+      name: 'Order Tracking Agent',
+      description: 'Real-time order status tracking and updates',
+      icon: '📦',
+      useCase: 'order-tracking',
+      triggerCondition: 'When order placed',
+      architectureType: 'a2a'
+    },
+    {
+      id: 'inventory-check',
+      name: 'Inventory Check Agent',
+      description: 'Verifies product availability and stock levels',
+      icon: '📊',
+      useCase: 'inventory-check',
+      triggerCondition: 'Before order processing',
+      architectureType: 'single'
+    },
+    {
+      id: 'shipping-coordination',
+      name: 'Shipping Coordination Agent',
+      description: 'Coordinates shipping and logistics',
+      icon: '🚚',
+      useCase: 'shipping-coordination',
+      triggerCondition: 'When order ready for shipment',
+      architectureType: 'multi-agent'
+    }
+  ],
+  'manufacturing-onboarding': [
+    {
+      id: 'supplier-verification',
+      name: 'Supplier Verification Agent',
+      description: 'Verifies supplier credentials and certifications',
+      icon: '✅',
+      useCase: 'supplier-verification',
+      triggerCondition: 'During supplier onboarding',
+      architectureType: 'agentic'
+    },
+    {
+      id: 'quality-compliance',
+      name: 'Quality Compliance Agent',
+      description: 'Checks manufacturing quality standards compliance',
+      icon: '🏭',
+      useCase: 'quality-compliance',
+      triggerCondition: 'When quality docs submitted',
+      architectureType: 'multi-agent'
+    },
+    {
+      id: 'contract-processing',
+      name: 'Contract Processing Agent',
+      description: 'Automates contract review and approval workflows',
+      icon: '📋',
+      useCase: 'contract-processing',
+      triggerCondition: 'When contracts submitted',
+      architectureType: 'agentic'
+    }
   ]
 };
+
+// Get fallback/generic sub-agents for any document type not explicitly defined
+const getGenericSubAgents = (documentTypeId: string): SubAgentSuggestion[] => [
+  {
+    id: 'data-extraction',
+    name: 'Data Extraction Agent',
+    description: 'Advanced data extraction and field mapping',
+    icon: '📤',
+    useCase: 'data-extraction',
+    triggerCondition: `When ${documentTypeId} document processed`,
+    architectureType: 'agentic'
+  },
+  {
+    id: 'validation-agent',
+    name: 'Validation Agent',
+    description: 'Validates extracted data against business rules',
+    icon: '✅',
+    useCase: 'data-validation',
+    triggerCondition: 'After data extraction',
+    architectureType: 'single'
+  },
+  {
+    id: 'crm-sync',
+    name: 'CRM Sync Agent',
+    description: 'Syncs extracted data to CRM systems (Salesforce, HubSpot)',
+    icon: '🔄',
+    useCase: 'crm-sync',
+    triggerCondition: 'When data ready for export',
+    architectureType: 'a2a'
+  }
+];
 
 const getArchitectureBadge = (type: string) => {
   switch (type) {
@@ -306,9 +548,14 @@ export default function SubAgentRecommendationDialog({
   const navigate = useNavigate();
   const [selectedAgents, setSelectedAgents] = useState<string[]>([]);
 
-  // Get suggestions for current document type
+  // Get suggestions for current document type - with fallback for any unknown types
   const suggestions = useMemo(() => {
-    return DOCUMENT_TYPE_SUBAGENTS[documentType.id] || [];
+    const docTypeAgents = DOCUMENT_TYPE_SUBAGENTS[documentType.id];
+    if (docTypeAgents && docTypeAgents.length > 0) {
+      return docTypeAgents;
+    }
+    // Fallback to generic agents for any document type
+    return getGenericSubAgents(documentType.id);
   }, [documentType.id]);
 
   const toggleAgent = (agentId: string) => {
@@ -322,9 +569,9 @@ export default function SubAgentRecommendationDialog({
   const handleBuildAgents = () => {
     const selectedSubAgents = suggestions.filter(s => selectedAgents.includes(s.id));
     
-    // Auto-generate workflow nodes from selected sub-agents
+    // Auto-generate workflow nodes with BIDIRECTIONAL linking back to document processing
     const generatedNodes = [
-      // Start node
+      // Start node - Document Input from Document Processing
       {
         id: 'start-node',
         type: 'enhanced',
@@ -333,7 +580,11 @@ export default function SubAgentRecommendationDialog({
           label: 'Document Input',
           type_key: 'trigger',
           intent: `Receive ${documentType.title} document for processing`,
-          configuration: { documentType: documentType.id }
+          configuration: { 
+            documentType: documentType.id,
+            sourceModule: 'document-processing',
+            bidirectional: true
+          }
         }
       },
       // Sub-agent nodes
@@ -351,15 +602,34 @@ export default function SubAgentRecommendationDialog({
           configuration: {
             useCase: agent.useCase,
             architectureType: agent.architectureType,
-            description: agent.description
+            description: agent.description,
+            linkedDocumentType: documentType.id
           }
         }
       })),
+      // Return to Document Processing node - BIDIRECTIONAL LINK BACK
+      {
+        id: 'return-doc-node',
+        type: 'enhanced',
+        position: { x: 400 + Math.ceil(selectedSubAgents.length / 2) * 300, y: 100 },
+        data: {
+          label: '↩️ Return to Document Processing',
+          type_key: 'connector',
+          intent: 'Send results back to document processing workflow',
+          configuration: {
+            targetModule: 'document-processing',
+            targetDocumentType: documentType.id,
+            returnPath: '/document-processing',
+            syncFields: true,
+            bidirectional: true
+          }
+        }
+      },
       // End node
       {
         id: 'end-node',
         type: 'enhanced',
-        position: { x: 400 + Math.ceil(selectedSubAgents.length / 2) * 300, y: 200 },
+        position: { x: 400 + Math.ceil(selectedSubAgents.length / 2) * 300 + 200, y: 200 },
         data: {
           label: 'Process Complete',
           type_key: 'output',
@@ -369,7 +639,7 @@ export default function SubAgentRecommendationDialog({
       }
     ];
 
-    // Generate edges connecting nodes
+    // Generate edges with bidirectional support
     const generatedEdges = [
       // Connect start to first agent
       ...(selectedSubAgents.length > 0 ? [{
@@ -377,7 +647,8 @@ export default function SubAgentRecommendationDialog({
         source: 'start-node',
         target: `agent-${selectedSubAgents[0].id}`,
         type: 'smoothstep',
-        animated: true
+        animated: true,
+        label: 'Document Data'
       }] : []),
       // Connect agents in sequence
       ...selectedSubAgents.slice(0, -1).map((agent, idx) => ({
@@ -387,14 +658,23 @@ export default function SubAgentRecommendationDialog({
         type: 'smoothstep',
         animated: true
       })),
-      // Connect last agent to end
+      // Connect last agent to return node (bidirectional link back)
       ...(selectedSubAgents.length > 0 ? [{
-        id: 'e-last-end',
+        id: 'e-last-return',
         source: `agent-${selectedSubAgents[selectedSubAgents.length - 1].id}`,
+        target: 'return-doc-node',
+        type: 'smoothstep',
+        animated: true,
+        label: 'Results'
+      }] : []),
+      // Connect return node to end
+      {
+        id: 'e-return-end',
+        source: 'return-doc-node',
         target: 'end-node',
         type: 'smoothstep',
         animated: true
-      }] : [])
+      }
     ];
     
     navigate('/agents/canvas', {
