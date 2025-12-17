@@ -5,7 +5,7 @@
  * Supports adding new document types via config/documentTypes.ts
  */
 
-import React, { useState, useCallback, useEffect } from 'react';
+import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -595,7 +595,16 @@ export default function DocumentProcessing() {
   const parseSigToSelectors = useCallback((sigText: string) => {
     if (!sigText) return;
     
+    // Mark that we're extracting to prevent useEffect cascading updates
+    isExtractingRef.current = true;
+    
     const lowerSig = sigText.toLowerCase();
+    
+    // Collect all values first, then update states once
+    let newDose = selectedDose;
+    let newRoute = selectedRoute;
+    let newFrequency = selectedFrequency;
+    let newDuration = selectedDuration;
     
     // Parse dose amount (e.g., "take 1 tablet", "take 2 capsules", "1 cap", "2 tabs")
     const dosePatterns = [
@@ -622,7 +631,7 @@ export default function DocumentProcessing() {
           doseValue = qty === '1' ? '1 puff' : `${qty} puffs`;
         }
         if (doseValue && doseOptions.includes(doseValue)) {
-          setSelectedDose(doseValue);
+          newDose = doseValue;
           break;
         }
       }
@@ -657,7 +666,7 @@ export default function DocumentProcessing() {
     
     for (const [keyword, routeLabel] of Object.entries(routeMapping)) {
       if (lowerSig.includes(keyword)) {
-        setSelectedRoute(routeLabel);
+        newRoute = routeLabel;
         break;
       }
     }
@@ -696,7 +705,7 @@ export default function DocumentProcessing() {
     
     for (const [keyword, freqLabel] of Object.entries(freqMapping)) {
       if (lowerSig.includes(keyword)) {
-        setSelectedFrequency(freqLabel);
+        newFrequency = freqLabel;
         break;
       }
     }
@@ -721,11 +730,35 @@ export default function DocumentProcessing() {
           const dDays = parseInt(d.match(/(\d+)/)?.[1] || '0');
           return dDays >= days;
         }) || '30 days';
-        setSelectedDuration(closestDuration);
+        newDuration = closestDuration;
         break;
       }
     }
-  }, [doseOptions, durationOptions]);
+    
+    // Batch all state updates together
+    setSelectedDose(newDose);
+    setSelectedRoute(newRoute);
+    setSelectedFrequency(newFrequency);
+    setSelectedDuration(newDuration);
+    
+    // Calculate quantity immediately with new values
+    const doseMatch = newDose.match(/^(\d+(?:\.\d+)?)/);
+    const doseAmount = doseMatch ? parseFloat(doseMatch[1]) : 1;
+    const freqOption = frequencyOptions.find(f => f.label === newFrequency);
+    const timesPerDay = freqOption?.timesPerDay || 1;
+    const durationMatch = newDuration.match(/(\d+)\s*days?/i);
+    const days = durationMatch ? parseInt(durationMatch[1]) : 30;
+    const dailyDose = doseAmount * timesPerDay;
+    const totalQuantity = Math.ceil(dailyDose * days);
+    
+    setCalculatedQuantity({ totalQuantity, dailyDose, daysSupply: days });
+    setCombinedSig(`Take ${newDose} ${newRoute} ${newFrequency} for ${newDuration}`);
+    
+    // Allow useEffect to run again after a delay
+    setTimeout(() => {
+      isExtractingRef.current = false;
+    }, 200);
+  }, [doseOptions, durationOptions, frequencyOptions, selectedDose, selectedRoute, selectedFrequency, selectedDuration]);
 
   // Normalize drug name for API lookup - strip strength, dosage form, extras
   const normalizeDrugName = useCallback((rawName: string): { baseName: string; extractedStrength: string } => {
@@ -936,38 +969,46 @@ export default function DocumentProcessing() {
   // State for calculated quantity from SIG components
   const [calculatedQuantity, setCalculatedQuantity] = useState<{ totalQuantity: number; dailyDose: number; daysSupply: number } | null>(null);
   const [combinedSig, setCombinedSig] = useState('');
+  
+  // Ref to track if we're in extraction mode (to prevent flickering from cascading updates)
+  const isExtractingRef = useRef(false);
 
   // Auto-calculate total quantity when dose, frequency, or duration changes
+  // Uses a ref to debounce and prevent flickering
   useEffect(() => {
-    // Parse dose amount (e.g., "1 tablet" -> 1, "2 capsules" -> 2)
-    const doseMatch = selectedDose.match(/^(\d+(?:\.\d+)?)/);
-    const doseAmount = doseMatch ? parseFloat(doseMatch[1]) : 1;
+    // Skip if we're currently extracting (parseSigToSelectors is running)
+    if (isExtractingRef.current) return;
     
-    // Parse frequency to get times per day
-    const freqOption = frequencyOptions.find(f => f.label === selectedFrequency);
-    const timesPerDay = freqOption?.timesPerDay || 1;
+    // Use a small debounce to batch state updates
+    const timeoutId = setTimeout(() => {
+      // Parse dose amount (e.g., "1 tablet" -> 1, "2 capsules" -> 2)
+      const doseMatch = selectedDose.match(/^(\d+(?:\.\d+)?)/);
+      const doseAmount = doseMatch ? parseFloat(doseMatch[1]) : 1;
+      
+      // Parse frequency to get times per day
+      const freqOption = frequencyOptions.find(f => f.label === selectedFrequency);
+      const timesPerDay = freqOption?.timesPerDay || 1;
+      
+      // Parse duration to get days (e.g., "30 days" -> 30, "7 days" -> 7)
+      const durationMatch = selectedDuration.match(/(\d+)\s*days?/i);
+      const days = durationMatch ? parseInt(durationMatch[1]) : 30;
+      
+      // Calculate
+      const dailyDose = doseAmount * timesPerDay;
+      const totalQuantity = Math.ceil(dailyDose * days);
+      
+      setCalculatedQuantity({
+        totalQuantity,
+        dailyDose,
+        daysSupply: days
+      });
+      
+      // Build combined SIG string
+      const sig = `Take ${selectedDose} ${selectedRoute} ${selectedFrequency} for ${selectedDuration}`;
+      setCombinedSig(sig);
+    }, 100);
     
-    // Parse duration to get days (e.g., "30 days" -> 30, "7 days" -> 7)
-    const durationMatch = selectedDuration.match(/(\d+)\s*days?/i);
-    const days = durationMatch ? parseInt(durationMatch[1]) : 30;
-    
-    // Calculate
-    const dailyDose = doseAmount * timesPerDay;
-    const totalQuantity = Math.ceil(dailyDose * days);
-    
-    setCalculatedQuantity({
-      totalQuantity,
-      dailyDose,
-      daysSupply: days
-    });
-    
-    // Build combined SIG string
-    const sig = `Take ${selectedDose} ${selectedRoute} ${selectedFrequency} for ${selectedDuration}`;
-    setCombinedSig(sig);
-    
-    // Update sigInstructions to keep in sync
-    setSigInstructions(sig);
-    
+    return () => clearTimeout(timeoutId);
   }, [selectedDose, selectedRoute, selectedFrequency, selectedDuration, frequencyOptions]);
 
   // Document upload and auto-processing
