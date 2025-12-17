@@ -619,33 +619,67 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   );
 }
 
-// Build DYNAMIC extraction prompt - ZERO HARDCODING, extract only what's visible
+// Build DYNAMIC extraction prompt - extract what's visible but use standardized field names for known document types
 function buildExtractionPrompt(documentType: string, targetFields?: string[]): string {
-  // NO document type hints - let the AI determine everything from the actual document content
-  
-  return `You are an expert document analyzer. Your task is to extract information ONLY from what is ACTUALLY VISIBLE in this document image.
+  // Document-type-specific extraction hints
+  const documentTypeHints: Record<string, string> = {
+    'prescription': `
+PRESCRIPTION-SPECIFIC EXTRACTION:
+- Look for medication/drug names and extract as "medication_name" 
+- Look for dosage instructions (SIG) and extract as "sig"
+- Look for strength (e.g., 500mg) and extract as "strength"
+- Look for quantity and extract as "quantity"
+- Look for refills and extract as "refills"
+- Look for prescriber name and extract as "prescriber_name"
+- Look for patient name and extract as "patient_name"
+- Look for DEA number and extract as "dea_number"
+- Look for NPI and extract as "npi"
+`,
+    'insurance_card': `
+INSURANCE CARD EXTRACTION:
+- Look for Member ID and extract as "member_id"
+- Look for Group Number and extract as "group_number"
+- Look for BIN (Bank ID Number) and extract as "bin"
+- Look for PCN (Processor Control Number) and extract as "pcn"
+- Look for Insurance company name and extract as "insurance_name"
+- Look for copay amounts and extract as "copay"
+- Look for deductible and extract as "deductible"
+`,
+    'invoice': `
+INVOICE EXTRACTION:
+- Look for Invoice Number and extract as "invoice_number"
+- Look for Invoice Date and extract as "invoice_date"
+- Look for Due Date and extract as "due_date"
+- Look for Total Amount and extract as "total_amount"
+- Look for line items with description, quantity, unit price, amount
+`,
+  };
 
-ABSOLUTE REQUIREMENTS - YOU MUST FOLLOW THESE:
-1. Extract ONLY text, numbers, dates, and values that are LITERALLY VISIBLE in the document
-2. DO NOT add ANY fields based on what you think a document "should" contain
-3. DO NOT add standard fields like "patient_name", "payer_id", "claim_number", "vendor_npi", "icd_codes", "cpt_codes" unless they are ACTUALLY PRINTED on the document
-4. If a field is not visible in the document image, DO NOT include it
-5. Use the EXACT labels from the document as field names (convert to snake_case)
-6. Return EMPTY objects if nothing is visible
+  const typeHint = documentTypeHints[documentType] || '';
+  
+  return `You are an expert document analyzer. Your task is to extract information from this document image using STANDARDIZED field names.
+
+EXTRACTION REQUIREMENTS:
+1. Extract ALL text, numbers, dates, and values that are VISIBLE in the document
+2. Use the STANDARDIZED field names specified below when applicable
+3. For fields not in the standard list, use the document's own label (convert to snake_case)
+4. If a field is not visible, DO NOT include it
+5. Extract the ACTUAL values you can read
+${typeHint}
 
 EXTRACTION PROCESS:
 1. Look at the document image carefully
 2. Read every piece of text that is actually printed/visible
-3. For each visible label-value pair, extract it using the document's own label
+3. For each visible label-value pair, extract it using standardized field name if applicable
 4. For tables, extract only rows that are actually visible
 5. For totals/amounts, extract only what is printed
 
-CRITICAL: If you cannot read something clearly, DO NOT guess or assume. Skip it.
+CRITICAL: If you cannot read something clearly, DO NOT guess. Skip it.
 
-Return ONLY this JSON structure with ACTUALLY extracted data:
+Return ONLY this JSON structure with extracted data:
 {
   "fields": {
-    "label_from_document_in_snake_case": "value_read_from_document"
+    "field_name_in_snake_case": "value_read_from_document"
   },
   "line_items": [
     {"description": "...", "quantity": 1, "amount": 0}
@@ -660,7 +694,7 @@ Return ONLY this JSON structure with ACTUALLY extracted data:
   "confidence": 0.0
 }
 
-REMEMBER: Only include fields that have ACTUAL values extracted from the document. An empty response is better than inventing data.`;
+IMPORTANT: Include "medication_name" field for prescriptions with the actual drug name extracted from the document.`;
 }
 
 // CSV extraction - parse CSV files and extract structured data
