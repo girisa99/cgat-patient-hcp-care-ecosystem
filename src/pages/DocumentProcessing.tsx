@@ -3310,6 +3310,12 @@ export default function DocumentProcessing() {
                 onExport={(format, data) => {
                   toast.success(`Exported ${format.toUpperCase()} file`);
                 }}
+                onLineItemsChange={(lineItems) => {
+                  // Sync line items back to processingResult for saving
+                  if (processingResult) {
+                    setProcessingResult(prev => prev ? { ...prev, lineItems } : prev);
+                  }
+                }}
               />
             </TabsContent>
           )}

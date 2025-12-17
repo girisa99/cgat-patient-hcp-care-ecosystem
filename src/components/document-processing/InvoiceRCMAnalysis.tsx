@@ -337,6 +337,7 @@ interface InvoiceRCMAnalysisProps {
   extractedData: Record<string, any>;
   processingHistory?: any[];
   onExport?: (format: 'csv' | 'json', data: any) => void;
+  onLineItemsChange?: (lineItems: LineItem[]) => void;
 }
 
 // Intelligent field matcher - maps any extracted field to expected RCM fields
@@ -375,7 +376,8 @@ const findNumericValue = (data: Record<string, any>, ...patterns: string[]): num
 export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   extractedData,
   processingHistory = [],
-  onExport
+  onExport,
+  onLineItemsChange
 }) => {
   const [activeTab, setActiveTab] = useState('overview');
   const [rcmSummary, setRcmSummary] = useState<RCMSummary | null>(null);
@@ -383,21 +385,41 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
   const [editingLineItemIdx, setEditingLineItemIdx] = useState<number | null>(null);
+  const [hasRestoredState, setHasRestoredState] = useState(false);
+  const [hasUserEdits, setHasUserEdits] = useState(false);
 
-  // State persistence key
+  // State persistence key - include a unique identifier from extractedData
+  const dataHash = React.useMemo(() => {
+    const inv = extractedData?.invoice_number || extractedData?.claim_number || '';
+    return `invoiceRCM_${inv || 'current'}`;
+  }, [extractedData?.invoice_number, extractedData?.claim_number]);
+  
   const STORAGE_KEY = 'invoiceRCM_state';
 
-  // Save state to sessionStorage when line items change
+  // Save state to sessionStorage when line items change (with user edits flag)
+  // Also notify parent when line items change
   useEffect(() => {
-    if (lineItems.length > 0) {
+    if (lineItems.length > 0 && hasRestoredState) {
       const stateToSave = {
         lineItems,
         activeTab,
+        invoiceData: {
+          invoice_number: extractedData?.invoice_number,
+          claim_number: extractedData?.claim_number,
+          billed_amount: extractedData?.billed_amount,
+          balance_due: extractedData?.balance_due
+        },
+        hasUserEdits,
         timestamp: Date.now()
       };
       sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+      
+      // Notify parent of line items changes for saving
+      if (onLineItemsChange) {
+        onLineItemsChange(lineItems);
+      }
     }
-  }, [lineItems, activeTab]);
+  }, [lineItems, activeTab, hasRestoredState, hasUserEdits, extractedData?.invoice_number, extractedData?.claim_number, onLineItemsChange]);
 
   // Restore state from sessionStorage on mount
   useEffect(() => {
@@ -405,10 +427,11 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
-        // Only restore if saved within last 30 minutes
-        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 30 * 60 * 1000) {
-          if (parsed.lineItems?.length > 0 && lineItems.length === 0) {
+        // Only restore if saved within last 60 minutes
+        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 60 * 60 * 1000) {
+          if (parsed.lineItems?.length > 0) {
             setLineItems(parsed.lineItems);
+            setHasUserEdits(parsed.hasUserEdits || false);
           }
           if (parsed.activeTab) {
             setActiveTab(parsed.activeTab);
@@ -418,6 +441,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         console.warn('Failed to restore invoice state:', e);
       }
     }
+    setHasRestoredState(true);
   }, []);
 
   // Handle ICD code selection for a line item
@@ -435,6 +459,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
       return updated;
     });
     setEditingLineItemIdx(null);
+    setHasUserEdits(true);
     toast.success(`ICD-10 code ${result.code} applied with billing rates`);
   }, []);
 
@@ -452,6 +477,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
       return updated;
     });
     setEditingLineItemIdx(null);
+    setHasUserEdits(true);
     toast.success(`CPT code ${result.code} applied - ${result.category}`);
   }, []);
 
@@ -469,6 +495,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
       return updated;
     });
     setEditingLineItemIdx(null);
+    setHasUserEdits(true);
     toast.success(`NDC ${result.ndc_code} applied - ${result.brand_name || result.generic_name}`);
   }, []);
   
@@ -533,7 +560,26 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   }, [activeData]);
 
   // Parse line items from extracted data using intelligent field matching
+  // Only parse if we don't have user edits and haven't restored saved state with items
   useEffect(() => {
+    // Skip parsing if user has made edits
+    if (hasUserEdits) {
+      console.log('RCM Analysis - Skipping parse, user has edits');
+      return;
+    }
+    
+    // Skip if we haven't finished restoring state yet
+    if (!hasRestoredState) {
+      console.log('RCM Analysis - Skipping parse, state not yet restored');
+      return;
+    }
+    
+    // Skip if we already have line items from restored state
+    if (lineItems.length > 0) {
+      console.log('RCM Analysis - Skipping parse, already have', lineItems.length, 'items');
+      return;
+    }
+    
     const items: LineItem[] = [];
     
     console.log('RCM Analysis - Full activeData:', JSON.stringify(activeData, null, 2));
@@ -661,8 +707,10 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     }
 
     console.log('RCM Analysis - Final parsed line items:', items.length, items);
-    setLineItems(items);
-  }, [extractedData]);
+    if (items.length > 0) {
+      setLineItems(items);
+    }
+  }, [activeData, hasUserEdits, hasRestoredState, lineItems.length]);
 
   // Calculate RCM Summary
   useEffect(() => {
@@ -839,41 +887,55 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5">
-          <CardContent className="pt-4">
-            <div className="text-sm text-muted-foreground">Billed Amount</div>
-            <div className="text-2xl font-bold text-blue-600">
-              {formatCurrency(invoiceData.billed_amount || 0)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5">
-          <CardContent className="pt-4">
-            <div className="text-sm text-muted-foreground">Paid Amount</div>
-            <div className="text-2xl font-bold text-green-600">
-              {formatCurrency(invoiceData.paid_amount || 0)}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5">
-          <CardContent className="pt-4">
-            <div className="text-sm text-muted-foreground">Balance Due</div>
-            <div className="text-2xl font-bold text-orange-600">
-              {formatCurrency(invoiceData.balance_due || (invoiceData.billed_amount || 0) - (invoiceData.paid_amount || 0))}
-            </div>
-          </CardContent>
-        </Card>
-        <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5">
-          <CardContent className="pt-4">
-            <div className="text-sm text-muted-foreground">Collection Rate</div>
-            <div className="text-2xl font-bold text-purple-600">
-              {rcmSummary?.collectionRate.toFixed(1) || 0}%
-            </div>
-          </CardContent>
-        </Card>
-      </div>
+      {/* Summary Cards - Use line items totals when available */}
+      {(() => {
+        const lineItemsBilled = lineItems.reduce((sum, item) => sum + (item.total || 0), 0);
+        const lineItemsAdjustment = lineItems.reduce((sum, item) => sum + (item.adjustment || 0), 0);
+        const billedAmount = lineItemsBilled > 0 ? lineItemsBilled : (invoiceData.billed_amount || 0);
+        const paidAmount = invoiceData.paid_amount || 0;
+        const adjustmentAmount = lineItemsAdjustment > 0 ? lineItemsAdjustment : (invoiceData.adjustment_amount || 0);
+        const balanceDue = invoiceData.balance_due || (billedAmount - adjustmentAmount - paidAmount);
+        
+        return (
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+            <Card className="bg-gradient-to-br from-blue-500/10 to-blue-600/5">
+              <CardContent className="pt-4">
+                <div className="text-sm text-muted-foreground">Billed Amount</div>
+                <div className="text-2xl font-bold text-blue-600">
+                  {formatCurrency(billedAmount)}
+                </div>
+                {lineItemsBilled > 0 && (
+                  <div className="text-xs text-muted-foreground mt-1">From {lineItems.length} items</div>
+                )}
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-green-500/10 to-green-600/5">
+              <CardContent className="pt-4">
+                <div className="text-sm text-muted-foreground">Paid Amount</div>
+                <div className="text-2xl font-bold text-green-600">
+                  {formatCurrency(paidAmount)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-orange-500/10 to-orange-600/5">
+              <CardContent className="pt-4">
+                <div className="text-sm text-muted-foreground">Balance Due</div>
+                <div className="text-2xl font-bold text-orange-600">
+                  {formatCurrency(balanceDue > 0 ? balanceDue : 0)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="bg-gradient-to-br from-purple-500/10 to-purple-600/5">
+              <CardContent className="pt-4">
+                <div className="text-sm text-muted-foreground">Adjustments</div>
+                <div className="text-2xl font-bold text-purple-600">
+                  {formatCurrency(adjustmentAmount)}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        );
+      })()}
 
       {/* Tabs for detailed analysis */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -973,38 +1035,63 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
             </Alert>
           )}
 
-          {/* Billing Breakdown */}
+          {/* Billing Breakdown - Uses line items totals when available */}
           <Card>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm">Billing Breakdown</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center">
-                  <span>Billed Amount</span>
-                  <span className="font-semibold">{formatCurrency(invoiceData.billed_amount || 0)}</span>
-                </div>
-                <div className="flex justify-between items-center text-green-600">
-                  <span>Allowed Amount</span>
-                  <span className="font-semibold">{formatCurrency(invoiceData.allowed_amount || 0)}</span>
-                </div>
-                <div className="flex justify-between items-center text-orange-600">
-                  <span>Adjustments</span>
-                  <span className="font-semibold">-{formatCurrency(invoiceData.adjustment_amount || 0)}</span>
-                </div>
-                <div className="flex justify-between items-center text-blue-600">
-                  <span>Paid by Payer</span>
-                  <span className="font-semibold">{formatCurrency(invoiceData.paid_amount || 0)}</span>
-                </div>
-                <div className="flex justify-between items-center text-purple-600">
-                  <span>Patient Responsibility</span>
-                  <span className="font-semibold">{formatCurrency(invoiceData.patient_responsibility || 0)}</span>
-                </div>
-                <div className="border-t pt-2 flex justify-between items-center font-bold">
-                  <span>Balance Due</span>
-                  <span className="text-red-600">{formatCurrency(invoiceData.balance_due || 0)}</span>
-                </div>
-              </div>
+              {(() => {
+                // Calculate totals from line items if available
+                const lineItemsBilled = lineItems.reduce((sum, item) => sum + (item.total || 0), 0);
+                const lineItemsAllowed = lineItems.reduce((sum, item) => sum + (item.allowed_amount || 0), 0);
+                const lineItemsAdjustment = lineItems.reduce((sum, item) => sum + (item.adjustment || 0), 0);
+                
+                // Use line items totals if we have them, otherwise fall back to invoice data
+                const billedAmount = lineItemsBilled > 0 ? lineItemsBilled : (invoiceData.billed_amount || 0);
+                const allowedAmount = lineItemsAllowed > 0 ? lineItemsAllowed : (invoiceData.allowed_amount || 0);
+                const adjustmentAmount = lineItemsAdjustment > 0 ? lineItemsAdjustment : (invoiceData.adjustment_amount || 0);
+                const paidAmount = invoiceData.paid_amount || 0;
+                const patientResponsibility = invoiceData.patient_responsibility || 0;
+                
+                // Calculate balance: Billed - Adjustments - Paid = Balance Due
+                const calculatedBalance = billedAmount - adjustmentAmount - paidAmount;
+                const balanceDue = invoiceData.balance_due || calculatedBalance;
+                
+                return (
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span>Billed Amount</span>
+                      <span className="font-semibold">{formatCurrency(billedAmount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-green-600">
+                      <span>Allowed Amount</span>
+                      <span className="font-semibold">{formatCurrency(allowedAmount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-orange-600">
+                      <span>Adjustments</span>
+                      <span className="font-semibold">-{formatCurrency(adjustmentAmount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-blue-600">
+                      <span>Paid by Payer</span>
+                      <span className="font-semibold">{formatCurrency(paidAmount)}</span>
+                    </div>
+                    <div className="flex justify-between items-center text-purple-600">
+                      <span>Patient Responsibility</span>
+                      <span className="font-semibold">{formatCurrency(patientResponsibility)}</span>
+                    </div>
+                    <div className="border-t pt-2 flex justify-between items-center font-bold">
+                      <span>Balance Due</span>
+                      <span className="text-red-600">{formatCurrency(balanceDue > 0 ? balanceDue : 0)}</span>
+                    </div>
+                    {lineItemsBilled > 0 && (
+                      <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-dashed">
+                        Calculated from {lineItems.length} line item(s)
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1027,6 +1114,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                       status: 'pending'
                     }]);
                     setEditingLineItemIdx(lineItems.length);
+                    setHasUserEdits(true);
                   }}
                 >
                   + Add Line Item
