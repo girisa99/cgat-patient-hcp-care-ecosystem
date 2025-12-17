@@ -727,6 +727,35 @@ export function FieldMappingDialog({
   const [showAllFields, setShowAllFields] = useState(false);
   const [selectedObject, setSelectedObject] = useState<string>('all');
   
+  // Priority order for Salesforce objects based on document type
+  const getObjectPriority = (objectName: string, docType?: string): number => {
+    const prescriptionPriority: Record<string, number> = {
+      'Prescription': 1,
+      'Patient': 2,
+      'Contact': 3,
+      'Prescriber': 4,
+      'Provider': 5,
+      'Account': 6,
+      'General': 100
+    };
+    
+    const insurancePriority: Record<string, number> = {
+      'Insurance': 1,
+      'Coverage': 2,
+      'Patient': 3,
+      'Contact': 4,
+      'Account': 5,
+      'General': 100
+    };
+    
+    if (docType === 'prescription' || docType === 'rx') {
+      return prescriptionPriority[objectName] ?? 50;
+    } else if (docType === 'insurance_card' || docType?.includes('insurance')) {
+      return insurancePriority[objectName] ?? 50;
+    }
+    return 50;
+  };
+  
   // Get all target fields with object grouping
   const allTargetFields = useMemo(() => {
     const base = getBaseTargetSchema(targetSystem);
@@ -736,10 +765,10 @@ export function FieldMappingDialog({
     }));
   }, [targetSystem, customFields]);
   
-  // Separate into recommended and optional based on document type
+  // Separate into recommended and optional based on document type, with object priority sorting
   const { recommendedFields, optionalFields, objectGroups } = useMemo(() => {
-    const recommended: TargetField[] = [];
-    const optional: TargetField[] = [];
+    const recommended: (TargetField & { objectName?: string })[] = [];
+    const optional: (TargetField & { objectName?: string })[] = [];
     const groups = new Map<string, TargetField[]>();
     
     allTargetFields.forEach(field => {
@@ -761,6 +790,15 @@ export function FieldMappingDialog({
       groups.get(objName)!.push(field);
     });
     
+    // Sort recommended fields by object priority
+    recommended.sort((a, b) => {
+      const priorityA = getObjectPriority(a.objectName || 'General', documentType);
+      const priorityB = getObjectPriority(b.objectName || 'General', documentType);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      // Within same object, sort alphabetically by label
+      return a.label.localeCompare(b.label);
+    });
+    
     return { 
       recommendedFields: recommended, 
       optionalFields: optional,
@@ -768,7 +806,7 @@ export function FieldMappingDialog({
     };
   }, [allTargetFields, documentType]);
   
-  // Get visible target fields based on filters
+  // Get visible target fields based on filters, grouped by object
   const visibleTargetFields = useMemo(() => {
     let fields = showAllFields ? allTargetFields : recommendedFields;
     
@@ -786,15 +824,25 @@ export function FieldMappingDialog({
       );
     }
     
-    return fields;
-  }, [allTargetFields, recommendedFields, showAllFields, selectedObject, searchFilter]);
+    // Sort by object priority
+    return [...fields].sort((a: any, b: any) => {
+      const priorityA = getObjectPriority(a.objectName || 'General', documentType);
+      const priorityB = getObjectPriority(b.objectName || 'General', documentType);
+      if (priorityA !== priorityB) return priorityA - priorityB;
+      return a.label.localeCompare(b.label);
+    });
+  }, [allTargetFields, recommendedFields, showAllFields, selectedObject, searchFilter, documentType]);
   
-  // Get unique objects for filter dropdown
+  // Get unique objects for filter dropdown, sorted by priority
   const availableObjects = useMemo(() => {
     const fields = showAllFields ? allTargetFields : recommendedFields;
-    const objects = new Set(fields.map(f => f.objectName || 'General'));
-    return Array.from(objects).sort();
-  }, [allTargetFields, recommendedFields, showAllFields]);
+    const objects = new Set(fields.map(f => (f as any).objectName || 'General'));
+    return Array.from(objects).sort((a, b) => {
+      const priorityA = getObjectPriority(a, documentType);
+      const priorityB = getObjectPriority(b, documentType);
+      return priorityA - priorityB;
+    });
+  }, [allTargetFields, recommendedFields, showAllFields, documentType]);
   
   // Initialize mappings when dialog opens
   useEffect(() => {
@@ -1036,18 +1084,38 @@ export function FieldMappingDialog({
                           <SelectTrigger className="h-7 text-xs">
                             <SelectValue placeholder="Select target" />
                           </SelectTrigger>
-                          <SelectContent className="max-h-[300px]">
+                          <SelectContent className="max-h-[350px]">
                             <SelectItem value="__skip__">-- Skip --</SelectItem>
-                            {visibleTargetFields.length > 0 && (
-                              <div className="px-2 py-1 text-[10px] text-muted-foreground font-semibold border-b">
-                                Recommended ({recommendedFields.length})
-                              </div>
-                            )}
-                            {visibleTargetFields.map(tf => (
-                              <SelectItem key={tf.name} value={tf.name}>
-                                <span className="text-xs">{tf.label}</span>
-                              </SelectItem>
-                            ))}
+                            {/* Group fields by Salesforce Object */}
+                            {(() => {
+                              const grouped = new Map<string, typeof visibleTargetFields>();
+                              visibleTargetFields.forEach((tf: any) => {
+                                const obj = tf.objectName || 'General';
+                                if (!grouped.has(obj)) grouped.set(obj, []);
+                                grouped.get(obj)!.push(tf);
+                              });
+                              
+                              // Sort groups by priority
+                              const sortedGroups = Array.from(grouped.entries()).sort((a, b) => {
+                                const priorityOrder = ['Prescription', 'Patient', 'Contact', 'Provider', 'Account', 'General'];
+                                const idxA = priorityOrder.indexOf(a[0]);
+                                const idxB = priorityOrder.indexOf(b[0]);
+                                return (idxA === -1 ? 100 : idxA) - (idxB === -1 ? 100 : idxB);
+                              });
+                              
+                              return sortedGroups.map(([objectName, fields]) => (
+                                <div key={objectName}>
+                                  <div className="px-2 py-1.5 text-[10px] text-primary font-bold border-b bg-primary/5 sticky top-0">
+                                    {targetSystem === 'salesforce' ? `${objectName}__c` : objectName} ({fields.length})
+                                  </div>
+                                  {fields.map(tf => (
+                                    <SelectItem key={tf.name} value={tf.name}>
+                                      <span className="text-xs">{tf.label}</span>
+                                    </SelectItem>
+                                  ))}
+                                </div>
+                              ));
+                            })()}
                             {!showAllFields && optionalFields.length > 0 && (
                               <>
                                 <div className="px-2 py-1 text-[10px] text-muted-foreground font-semibold border-t border-b">
