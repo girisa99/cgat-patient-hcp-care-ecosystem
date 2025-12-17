@@ -38,8 +38,8 @@ const CPT_CODE_DATABASE: Record<string, { description: string; category: string;
   '90847': { description: 'Family psychotherapy, conjoint', category: 'Mental Health', avgReimbursement: 110 },
   // Injections & Infusions
   '96372': { description: 'Therapeutic injection, subcutaneous/intramuscular', category: 'Injections', avgReimbursement: 25 },
-  '96374': { description: 'Therapeutic IV infusion, initial', category: 'Infusions', avgReimbursement: 55 },
-  '96375': { description: 'Therapeutic IV infusion, additional hour', category: 'Infusions', avgReimbursement: 35 },
+  '96374': { description: 'Therapeutic IV push, initial', category: 'Infusions', avgReimbursement: 55 },
+  '96375': { description: 'Therapeutic IV push, additional', category: 'Infusions', avgReimbursement: 35 },
   '96376': { description: 'Therapeutic IV push, additional drug', category: 'Infusions', avgReimbursement: 25 },
   // Lab
   '80048': { description: 'Basic metabolic panel', category: 'Lab', avgReimbursement: 11 },
@@ -47,11 +47,12 @@ const CPT_CODE_DATABASE: Record<string, { description: string; category: string;
   '80053': { description: 'Comprehensive metabolic panel', category: 'Lab', avgReimbursement: 14 },
   '80061': { description: 'Lipid panel', category: 'Lab', avgReimbursement: 18 },
   '81001': { description: 'Urinalysis, automated', category: 'Lab', avgReimbursement: 5 },
-  '81003': { description: 'Urinalysis, manual', category: 'Lab', avgReimbursement: 4 },
+  '81003': { description: 'Urinalysis, auto w/o scope', category: 'Lab', avgReimbursement: 4 },
+  '81025': { description: 'Urine pregnancy test, visual', category: 'Lab', avgReimbursement: 10 },
   '82947': { description: 'Glucose, quantitative', category: 'Lab', avgReimbursement: 6 },
   '83036': { description: 'Hemoglobin A1c', category: 'Lab', avgReimbursement: 13 },
   '84443': { description: 'Thyroid stimulating hormone (TSH)', category: 'Lab', avgReimbursement: 22 },
-  '85025': { description: 'Complete blood count (CBC)', category: 'Lab', avgReimbursement: 11 },
+  '85025': { description: 'Complete blood count (CBC) with auto diff', category: 'Lab', avgReimbursement: 11 },
   '85027': { description: 'Complete blood count, automated', category: 'Lab', avgReimbursement: 9 },
   '87880': { description: 'Strep test, rapid', category: 'Lab', avgReimbursement: 17 },
   // Radiology
@@ -76,14 +77,24 @@ const CPT_CODE_DATABASE: Record<string, { description: string; category: string;
   '20610': { description: 'Joint injection/aspiration, major', category: 'Surgery', avgReimbursement: 65 },
   '27447': { description: 'Total knee arthroplasty', category: 'Surgery', avgReimbursement: 1500 },
   '29881': { description: 'Knee arthroscopy, meniscectomy', category: 'Surgery', avgReimbursement: 850 },
+  // Emergency Department
+  '99281': { description: 'ED visit, self-limited minor', category: 'Emergency', avgReimbursement: 75 },
+  '99282': { description: 'ED visit, low severity', category: 'Emergency', avgReimbursement: 125 },
+  '99283': { description: 'ED visit, moderate severity', category: 'Emergency', avgReimbursement: 200 },
+  '99284': { description: 'ED visit, high severity', category: 'Emergency', avgReimbursement: 350 },
+  '99285': { description: 'ED visit, high severity with significant threat', category: 'Emergency', avgReimbursement: 500 },
   // HCPCS Drugs
   'J0129': { description: 'Abatacept injection', category: 'Drugs', avgReimbursement: 950 },
   'J0585': { description: 'Botulinum toxin A injection', category: 'Drugs', avgReimbursement: 550 },
   'J1030': { description: 'Methylprednisolone injection, 40mg', category: 'Drugs', avgReimbursement: 12 },
   'J1100': { description: 'Dexamethasone injection', category: 'Drugs', avgReimbursement: 8 },
   'J2001': { description: 'Lidocaine injection', category: 'Drugs', avgReimbursement: 5 },
+  'J2405': { description: 'Ondansetron HCl injection', category: 'Drugs', avgReimbursement: 12 },
+  'J2550': { description: 'Promethazine HCl injection', category: 'Drugs', avgReimbursement: 15 },
   'J3420': { description: 'Vitamin B12 injection', category: 'Drugs', avgReimbursement: 8 },
   'J7030': { description: 'Normal saline infusion, 1000ml', category: 'Drugs', avgReimbursement: 6 },
+  // S codes (private payer)
+  'S0028': { description: 'Famotidine injection', category: 'Private Payer Drugs', avgReimbursement: 20 },
   // DME
   'E0601': { description: 'CPAP device', category: 'DME', avgReimbursement: 450 },
   'E0260': { description: 'Hospital bed, semi-electric', category: 'DME', avgReimbursement: 600 },
@@ -601,20 +612,48 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     if (lineItemsData && Array.isArray(lineItemsData)) {
       console.log('RCM Analysis - Found line_items array:', lineItemsData.length, 'items');
       lineItemsData.forEach((item: any) => {
-        const billedAmount = parseFloat(String(item.total || item.amount || item.charge || item.billed || '0').replace(/[^0-9.-]/g, '')) || 0;
+        // Parse amount - handle various formats
+        const billedAmount = parseFloat(String(
+          item.total || item.amount || item.charge || item.billed || 
+          item.Amount || item.AMOUNT || item.price || '0'
+        ).replace(/[^0-9.-]/g, '')) || 0;
+        
         const allowedAmount = parseFloat(String(item.allowed_amount || item.allowed || '0').replace(/[^0-9.-]/g, '')) || 0;
         const adjustment = parseFloat(String(item.adjustment || item.adj || item.write_off || '0').replace(/[^0-9.-]/g, '')) || 0;
         
+        // Get CPT code from various fields
+        const rawCptCode = item.cpt_code || item.cpt || item.procedure_code || 
+          item['cpt_/_hcpcs_code'] || item['cpt_hcpcs_code'] || item['CPT / HCPCS Code'] ||
+          item.hcpcs || item.HCPCS || item.code || item.Code;
+        
+        // Get NDC code
+        const rawNdcCode = item.ndc_code || item.ndc || item.NDC || 
+          item.national_drug_code || item.drug_code;
+        
+        // Get qty/units
+        const units = parseFloat(String(item.units || item.quantity || item.qty || item.Qty || item.QTY || '1').replace(/[^0-9.-]/g, '')) || 1;
+        
+        // Get description
+        const description = item.description || item.Description || item.DESCRIPTION || 
+          item.service || item.Service || item.item || item.name || '';
+        
+        // Clean codes
+        const cptCode = rawCptCode ? String(rawCptCode).trim().replace(/[^A-Za-z0-9]/g, '') : undefined;
+        const ndcCode = rawNdcCode ? String(rawNdcCode).trim().replace(/[^0-9]/g, '') : undefined;
+        
+        // Get CPT info for known codes to auto-populate description
+        const cptInfo = cptCode ? getCPTInfo(cptCode, description) : null;
+        
         items.push({
-          description: item.description || item.service || item.item || item.name || '',
-          cpt_code: item.cpt_code || item.cpt || item.procedure_code || item.code || item['cpt_/_hcpcs_code'] || item.hcpcs,
+          description: description || (cptInfo?.description || ''),
+          cpt_code: cptCode,
           icd_code: item.icd_code || item.icd || item.diagnosis_code || item.dx_code || item.icd10,
-          ndc_code: item.ndc_code || item.ndc || item.national_drug_code || item.drug_code,
-          units: parseFloat(item.units || item.quantity || item.qty || '1') || 1,
-          unit_price: parseFloat(String(item.unit_price || item.price || item.rate || '0').replace(/[^0-9.-]/g, '')) || 0,
+          ndc_code: ndcCode,
+          units: units,
+          unit_price: billedAmount / units,
           total: billedAmount,
           allowed_amount: allowedAmount,
-          adjustment: adjustment || (billedAmount - allowedAmount > 0 ? billedAmount - allowedAmount : 0),
+          adjustment: adjustment,
           modifier: item.modifier || item.mod,
           status: item.status || 'pending'
         });
@@ -645,22 +684,32 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         };
         
         const descIdx = findColumnIndex(['description', 'service', 'item', 'name']);
-        const cptIdx = findColumnIndex(['cpt', 'hcpcs', 'procedure', 'code']);
-        const icdIdx = findColumnIndex(['icd', 'diagnosis', 'dx']);
+        const cptIdx = findColumnIndex(['cpt', 'hcpcs', 'procedure']);
+        const codeIdx = findColumnIndex(['code']); // Separate code column  
         const ndcIdx = findColumnIndex(['ndc', 'drug_code', 'national_drug']);
         const qtyIdx = findColumnIndex(['qty', 'quantity', 'units']);
         const amountIdx = findColumnIndex(['amount', 'total', 'charge', 'price', 'billed']);
         const allowedIdx = findColumnIndex(['allowed', 'approved', 'contracted']);
         const adjustIdx = findColumnIndex(['adjustment', 'adj', 'write_off', 'discount']);
+        const svcDateIdx = findColumnIndex(['svc dt', 'service date', 'date', 'dos']);
         
-        console.log('RCM Analysis - Table column indices:', { descIdx, cptIdx, icdIdx, ndcIdx, qtyIdx, amountIdx, header });
+        console.log('RCM Analysis - Table column indices:', { descIdx, cptIdx, codeIdx, ndcIdx, qtyIdx, amountIdx, header });
         
         rows.forEach((row: any[]) => {
           if (!Array.isArray(row) || row.length === 0) return;
           
           const description = descIdx >= 0 ? String(row[descIdx] || '') : String(row[0] || '');
-          const cptCode = cptIdx >= 0 ? String(row[cptIdx] || '') : '';
-          const icdCode = icdIdx >= 0 ? String(row[icdIdx] || '') : '';
+          
+          // Get CPT code - prefer dedicated CPT column over general code column
+          let cptCode = cptIdx >= 0 ? String(row[cptIdx] || '') : '';
+          if (!cptCode && codeIdx >= 0) {
+            const codeVal = String(row[codeIdx] || '');
+            // Only use code column if it looks like a CPT/HCPCS (not internal codes)
+            if (/^[A-Z]?\d{4,5}$/i.test(codeVal.trim())) {
+              cptCode = codeVal;
+            }
+          }
+          
           const ndcCode = ndcIdx >= 0 ? String(row[ndcIdx] || '') : '';
           const qty = qtyIdx >= 0 ? parseFloat(String(row[qtyIdx]).replace(/[^0-9.-]/g, '')) || 1 : 1;
           const amount = amountIdx >= 0 
@@ -669,17 +718,23 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
           const allowed = allowedIdx >= 0 ? parseFloat(String(row[allowedIdx]).replace(/[^0-9.-]/g, '')) || 0 : 0;
           const adjustment = adjustIdx >= 0 ? parseFloat(String(row[adjustIdx]).replace(/[^0-9.-]/g, '')) || 0 : 0;
           
-          if (description && !items.some(i => i.description === description && i.cpt_code === cptCode)) {
+          // Clean and validate codes
+          const cleanCpt = cptCode ? cptCode.trim().replace(/[^A-Za-z0-9]/g, '') : '';
+          const cleanNdc = ndcCode ? ndcCode.trim().replace(/[^0-9]/g, '') : '';
+          
+          // Get CPT info for known codes
+          const cptInfo = cleanCpt ? getCPTInfo(cleanCpt, description) : null;
+          
+          if ((description || cleanCpt) && !items.some(i => i.description === description && i.cpt_code === cleanCpt)) {
             items.push({
-              description,
-              cpt_code: cptCode || undefined,
-              icd_code: icdCode || undefined,
-              ndc_code: ndcCode || undefined,
+              description: description || (cptInfo?.description || ''),
+              cpt_code: cleanCpt || undefined,
+              ndc_code: cleanNdc || undefined,
               units: qty,
               unit_price: amount / qty,
               total: amount,
               allowed_amount: allowed,
-              adjustment: adjustment || (amount - allowed > 0 ? amount - allowed : 0),
+              adjustment: adjustment,
               status: 'pending'
             });
           }
@@ -712,38 +767,51 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     }
   }, [activeData, hasUserEdits, hasRestoredState, lineItems.length]);
 
-  // Calculate RCM Summary
+  // Calculate RCM Summary - use line items as source of truth when available
   useEffect(() => {
     const allInvoices = processingHistory.filter(h => 
       h.document_type === 'invoice' || h.extracted_data?.invoice_number
     );
 
-    const totalBilled = allInvoices.reduce((sum, inv) => 
-      sum + parseFloat(inv.extracted_data?.billed_amount || inv.extracted_data?.total || '0'), 0);
-    const totalPaid = allInvoices.reduce((sum, inv) => 
-      sum + parseFloat(inv.extracted_data?.paid_amount || '0'), 0);
-    const totalAdjustments = allInvoices.reduce((sum, inv) => 
-      sum + parseFloat(inv.extracted_data?.adjustment_amount || '0'), 0);
+    // Calculate from line items if available
+    const lineItemsBilled = lineItems.reduce((sum, i) => sum + (i.total || 0), 0);
+    const lineItemsAllowed = lineItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0);
+    const lineItemsAdjustments = lineItems.reduce((sum, i) => sum + (i.adjustment || 0), 0);
 
-    // Include current invoice
-    const currentBilled = invoiceData.billed_amount || 0;
+    // Use line items totals if available, otherwise fall back to invoice data
+    const currentBilled = lineItemsBilled > 0 ? lineItemsBilled : (invoiceData.billed_amount || 0);
     const currentPaid = invoiceData.paid_amount || 0;
+    const currentAdjustments = lineItemsAdjustments > 0 ? lineItemsAdjustments : (invoiceData.adjustment_amount || 0);
+    
+    // Balance due: from invoice or calculate as Billed - Adjustments - Paid
+    const currentBalanceDue = invoiceData.balance_due || (currentBilled - currentAdjustments - currentPaid);
+    
+    // Calculate adjustments from billed vs balance if not extracted
+    const calculatedAdjustments = currentAdjustments > 0 ? currentAdjustments : 
+      (currentBilled - currentBalanceDue - currentPaid);
+
+    const totalBilled = allInvoices.reduce((sum, inv) => 
+      sum + parseFloat(inv.extracted_data?.billed_amount || inv.extracted_data?.total || '0'), 0) + currentBilled;
+    const totalPaid = allInvoices.reduce((sum, inv) => 
+      sum + parseFloat(inv.extracted_data?.paid_amount || '0'), 0) + currentPaid;
+    const totalAdjustments = allInvoices.reduce((sum, inv) => 
+      sum + parseFloat(inv.extracted_data?.adjustment_amount || '0'), 0) + calculatedAdjustments;
 
     const summary: RCMSummary = {
-      totalBilled: totalBilled + currentBilled,
-      totalPaid: totalPaid + currentPaid,
-      totalOutstanding: (totalBilled + currentBilled) - (totalPaid + currentPaid) - totalAdjustments,
+      totalBilled,
+      totalPaid,
+      totalOutstanding: currentBalanceDue,
       totalDenied: allInvoices.filter(i => i.extracted_data?.payment_status === 'denied').length * 100,
-      totalAdjustments,
-      collectionRate: totalBilled > 0 ? ((totalPaid / totalBilled) * 100) : 0,
+      totalAdjustments: calculatedAdjustments,
+      collectionRate: currentBilled > 0 ? ((currentPaid / currentBilled) * 100) : 0,
       avgDaysToPayment: 32,
       agingBreakdown: [
-        { bucket: '0-30 days', amount: currentBilled * 0.4, count: Math.ceil(allInvoices.length * 0.4) + 1 },
-        { bucket: '31-60 days', amount: currentBilled * 0.3, count: Math.ceil(allInvoices.length * 0.3) },
-        { bucket: '61-90 days', amount: currentBilled * 0.2, count: Math.ceil(allInvoices.length * 0.2) },
-        { bucket: '90+ days', amount: currentBilled * 0.1, count: Math.ceil(allInvoices.length * 0.1) },
+        { bucket: '0-30 days', amount: currentBalanceDue, count: 1 },
+        { bucket: '31-60 days', amount: 0, count: 0 },
+        { bucket: '61-90 days', amount: 0, count: 0 },
+        { bucket: '90+ days', amount: 0, count: 0 },
       ],
-      cptBreakdown: lineItems.map(item => ({
+      cptBreakdown: lineItems.filter(i => i.cpt_code).map(item => ({
         code: item.cpt_code || 'N/A',
         description: item.description,
         count: item.units,
@@ -754,13 +822,13 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         code: invoiceData.denial_reason,
         reason: DENIAL_CODES[invoiceData.denial_reason] || 'Unknown denial reason',
         count: 1,
-        amount: invoiceData.billed_amount || 0
+        amount: currentBilled
       }] : [],
       vendorBreakdown: [{
         vendor: invoiceData.vendor_name || 'Unknown Vendor',
-        billed: invoiceData.billed_amount || 0,
-        paid: invoiceData.paid_amount || 0,
-        outstanding: (invoiceData.billed_amount || 0) - (invoiceData.paid_amount || 0)
+        billed: currentBilled,
+        paid: currentPaid,
+        outstanding: currentBalanceDue
       }]
     };
 
@@ -1359,91 +1427,36 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                 </TableBody>
               </Table>
 
-              {/* ICD-10 Codes Section with Search */}
-              <div className="mt-4 p-4 bg-muted rounded-lg">
-                <div className="flex items-center justify-between mb-3">
-                  <h4 className="font-medium">ICD-10 Diagnosis Codes</h4>
-                  <ICDCodeSearch
-                    placeholder="Add ICD-10 code..."
-                    onSelect={(result) => {
-                      // Add as a new line item with the ICD code
-                      setLineItems(prev => [...prev, {
-                        description: result.description,
-                        icd_code: result.code,
-                        units: 1,
-                        unit_price: result.avgBilled,
-                        total: result.avgBilled,
-                        allowed_amount: result.avgAllowed,
-                        adjustment: result.avgAdjustment,
-                        status: 'pending'
-                      }]);
-                      toast.success(`Added ICD-10 code ${result.code} as new line item`);
-                    }}
-                    className="w-64"
-                  />
-                </div>
-                
-                {/* Existing ICD codes from extraction */}
-                {invoiceData.icd_codes && (
-                  <div className="mb-3">
-                    <p className="text-sm text-muted-foreground mb-2">Extracted from document:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {invoiceData.icd_codes.split(/[,;\s]+/).filter(c => c.trim()).map((code, idx) => {
-                        const icdInfo = getICDInfo(code.trim());
-                        return (
-                          <Badge key={idx} variant="outline" className="font-mono cursor-pointer hover:bg-primary/10" title={icdInfo.description}>
-                            {code.trim()} - {icdInfo.category}
-                          </Badge>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-                
-                {/* ICD codes from line items */}
-                {lineItems.filter(i => i.icd_code).length > 0 && (
-                  <div>
-                    <p className="text-sm text-muted-foreground mb-2">From line items:</p>
-                    <Table>
-                      <TableHeader>
-                        <TableRow>
-                          <TableHead>ICD-10 Code</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Category</TableHead>
-                          <TableHead className="text-right">Billed</TableHead>
-                          <TableHead className="text-right">Allowed</TableHead>
-                          <TableHead className="text-right">Adjustment</TableHead>
+              {/* NDC Codes Section */}
+              {lineItems.filter(i => i.ndc_code).length > 0 && (
+                <div className="mt-4 p-4 bg-muted rounded-lg">
+                  <h4 className="font-medium mb-3">NDC (Drug) Codes</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>NDC Code</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Qty</TableHead>
+                        <TableHead className="text-right">Unit Price</TableHead>
+                        <TableHead className="text-right">Total</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {lineItems.filter(i => i.ndc_code).map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <Badge variant="outline" className="font-mono bg-blue-50">{item.ndc_code}</Badge>
+                          </TableCell>
+                          <TableCell className="max-w-[200px]">{item.description}</TableCell>
+                          <TableCell className="text-right">{item.units}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                          <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
                         </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                        {lineItems.filter(i => i.icd_code).map((item, idx) => {
-                          const icdInfo = getICDInfo(item.icd_code!);
-                          return (
-                            <TableRow key={idx}>
-                              <TableCell>
-                                <Badge variant="secondary" className="font-mono">{item.icd_code}</Badge>
-                              </TableCell>
-                              <TableCell className="max-w-[200px]">{icdInfo.description}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline">{icdInfo.category}</Badge>
-                              </TableCell>
-                              <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
-                              <TableCell className="text-right text-green-600">{formatCurrency(item.allowed_amount || 0)}</TableCell>
-                              <TableCell className="text-right text-orange-600">-{formatCurrency(item.adjustment || 0)}</TableCell>
-                            </TableRow>
-                          );
-                        })}
-                      </TableBody>
-                    </Table>
-                  </div>
-                )}
-                
-                {!invoiceData.icd_codes && lineItems.filter(i => i.icd_code).length === 0 && (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No ICD-10 codes found. Use the search above to add diagnosis codes.
-                  </p>
-                )}
-              </div>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
