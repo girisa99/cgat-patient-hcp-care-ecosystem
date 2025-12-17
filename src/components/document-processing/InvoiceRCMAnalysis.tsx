@@ -1462,42 +1462,53 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                 </Table>
               </div>
               
-              {/* Line Item Totals with Variance Breakdown */}
+              {/* Line Item Totals - Dynamic based on invoice extraction */}
               {lineItems.length > 0 && (() => {
                 const totalBilled = lineItems.reduce((sum, i) => sum + (i.total || 0), 0);
-                const totalAllowed = lineItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0);
-                const totalAdjustment = lineItems.reduce((sum, i) => sum + (i.adjustment || 0), 0);
-                // Calculate variance from billed and balance if available
-                const variance = totalBilled - totalAllowed;
+                const totalAllowedFromCPT = lineItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0);
+                
+                // Use EXTRACTED invoice values as source of truth when available
+                const extractedBalance = invoiceData.balance_due || 0;
+                const extractedBilled = invoiceData.billed_amount || totalBilled;
+                const paidAmount = invoiceData.paid_amount || 0;
+                
+                // Calculate REAL adjustment from invoice: Billed - Balance - Paid
+                const realAdjustment = extractedBalance > 0 && extractedBilled > 0
+                  ? (extractedBilled - extractedBalance - paidAmount)
+                  : (totalBilled - totalAllowedFromCPT);
+                
+                // Real allowed = Billed - Adjustment
+                const realAllowed = extractedBilled - realAdjustment;
                 
                 return (
                   <div className="mt-4 p-4 bg-muted rounded-lg space-y-3">
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                       <div>
                         <span className="text-muted-foreground block text-xs">Total Billed</span>
-                        <span className="font-bold text-lg">{formatCurrency(totalBilled)}</span>
+                        <span className="font-bold text-lg">{formatCurrency(extractedBilled)}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs">Total Allowed (Avg Reimb.)</span>
-                        <span className="font-bold text-lg text-green-600">{formatCurrency(totalAllowed)}</span>
+                        <span className="text-muted-foreground block text-xs">Allowed Amount</span>
+                        <span className="font-bold text-lg text-green-600">{formatCurrency(realAllowed)}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs">Contractual Adjustment</span>
-                        <span className="font-bold text-lg text-orange-600">-{formatCurrency(totalAdjustment)}</span>
+                        <span className="text-muted-foreground block text-xs">Adjustment (Write-off)</span>
+                        <span className="font-bold text-lg text-orange-600">-{formatCurrency(realAdjustment)}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs">Variance (Billed - Allowed)</span>
-                        <span className="font-bold text-lg text-red-600">{formatCurrency(variance)}</span>
+                        <span className="text-muted-foreground block text-xs">Balance Due</span>
+                        <span className="font-bold text-lg text-red-600">{formatCurrency(extractedBalance || (totalBilled - realAdjustment - paidAmount))}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground block text-xs">Line Items</span>
                         <span className="font-bold text-lg">{lineItems.length}</span>
                       </div>
                     </div>
-                    <div className="text-xs text-muted-foreground pt-2 border-t border-dashed">
-                      <strong>Note:</strong> Allowed amounts based on CPT/HCPCS average reimbursement rates. 
-                      Adjustment = Billed - Allowed (contractual write-off).
-                    </div>
+                    {extractedBalance > 0 && (
+                      <div className="text-xs text-muted-foreground pt-2 border-t border-dashed">
+                        <strong>From Invoice:</strong> ${formatCurrency(extractedBilled)} (Billed) - ${formatCurrency(realAdjustment)} (Adj) = ${formatCurrency(extractedBalance)} (Balance)
+                      </div>
+                    )}
                   </div>
                 );
               })()}
@@ -1580,36 +1591,57 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                 </TableBody>
               </Table>
 
-              {/* NDC Codes Section */}
-              {lineItems.filter(i => i.ndc_code).length > 0 && (
-                <div className="mt-4 p-4 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-3">NDC (Drug) Codes</h4>
-                  <Table>
-                    <TableHeader>
-                      <TableRow>
-                        <TableHead>NDC Code</TableHead>
-                        <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Qty</TableHead>
-                        <TableHead className="text-right">Unit Price</TableHead>
-                        <TableHead className="text-right">Total</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {lineItems.filter(i => i.ndc_code).map((item, idx) => (
-                        <TableRow key={idx}>
-                          <TableCell>
-                            <Badge variant="outline" className="font-mono bg-blue-50">{item.ndc_code}</Badge>
-                          </TableCell>
-                          <TableCell className="max-w-[200px]">{item.description}</TableCell>
-                          <TableCell className="text-right">{item.units}</TableCell>
-                          <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                          <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
+              {/* NDC Codes Section with Totals */}
+              {lineItems.filter(i => i.ndc_code).length > 0 && (() => {
+                const ndcItems = lineItems.filter(i => i.ndc_code);
+                const ndcTotalQty = ndcItems.reduce((sum, i) => sum + (i.units || 0), 0);
+                const ndcTotalAmount = ndcItems.reduce((sum, i) => sum + (i.total || 0), 0);
+                const ndcTotalAllowed = ndcItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0);
+                const ndcTotalAdjustment = ndcItems.reduce((sum, i) => sum + (i.adjustment || 0), 0);
+                
+                return (
+                  <div className="mt-4 p-4 bg-muted rounded-lg">
+                    <h4 className="font-medium mb-3">NDC (Drug) Codes - {ndcItems.length} item(s)</h4>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>NDC Code</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead className="text-right">Qty</TableHead>
+                          <TableHead className="text-right">Unit Price</TableHead>
+                          <TableHead className="text-right">Billed</TableHead>
+                          <TableHead className="text-right">Allowed</TableHead>
+                          <TableHead className="text-right">Adjustment</TableHead>
                         </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                </div>
-              )}
+                      </TableHeader>
+                      <TableBody>
+                        {ndcItems.map((item, idx) => (
+                          <TableRow key={idx}>
+                            <TableCell>
+                              <Badge variant="outline" className="font-mono bg-blue-50">{item.ndc_code}</Badge>
+                            </TableCell>
+                            <TableCell className="max-w-[200px]">{item.description}</TableCell>
+                            <TableCell className="text-right">{item.units}</TableCell>
+                            <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
+                            <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
+                            <TableCell className="text-right text-green-600">{item.allowed_amount ? formatCurrency(item.allowed_amount) : '-'}</TableCell>
+                            <TableCell className="text-right text-orange-600">{item.adjustment && item.adjustment > 0 ? `-${formatCurrency(item.adjustment)}` : '-'}</TableCell>
+                          </TableRow>
+                        ))}
+                        {/* Totals Row */}
+                        <TableRow className="bg-muted/50 font-semibold border-t-2">
+                          <TableCell colSpan={2}>Total NDC Items</TableCell>
+                          <TableCell className="text-right">{ndcTotalQty}</TableCell>
+                          <TableCell className="text-right">-</TableCell>
+                          <TableCell className="text-right">{formatCurrency(ndcTotalAmount)}</TableCell>
+                          <TableCell className="text-right text-green-600">{ndcTotalAllowed > 0 ? formatCurrency(ndcTotalAllowed) : '-'}</TableCell>
+                          <TableCell className="text-right text-orange-600">{ndcTotalAdjustment > 0 ? `-${formatCurrency(ndcTotalAdjustment)}` : '-'}</TableCell>
+                        </TableRow>
+                      </TableBody>
+                    </Table>
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
