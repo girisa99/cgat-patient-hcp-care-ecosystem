@@ -548,51 +548,10 @@ export default function DocumentProcessing() {
     strength: string;
   } | null>(null);
   
-  // Restore full processing state from sessionStorage on mount (preserves state when navigating to/from canvas)
-  // This works for ALL document types - prescription, insurance, invoice, medical imaging, etc.
-  useEffect(() => {
-    const savedState = sessionStorage.getItem('docProcessing_fullState');
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        
-        // Restore universal processing result (applies to ALL document types)
-        if (parsed.processingResult) {
-          parsed.processingResult.processedAt = new Date(parsed.processingResult.processedAt);
-          if (parsed.processingResult.exportedAt) {
-            parsed.processingResult.exportedAt = new Date(parsed.processingResult.exportedAt);
-          }
-          setProcessingResult(parsed.processingResult);
-        }
-        
-        // Restore pending result if any
-        if (parsed.pendingResult) {
-          parsed.pendingResult.processedAt = new Date(parsed.pendingResult.processedAt);
-          setPendingResult(parsed.pendingResult);
-        }
-        
-        // Restore prescription/medication-specific states
-        if (parsed.searchResults) setSearchResults(parsed.searchResults);
-        if (parsed.drugSearchQuery) setDrugSearchQuery(parsed.drugSearchQuery);
-        if (parsed.sigInstructions) setSigInstructions(parsed.sigInstructions);
-        if (parsed.selectedNdc) setSelectedNdc(parsed.selectedNdc);
-        if (parsed.parsedSig) setParsedSig(parsed.parsedSig);
-        if (parsed.selectedDose) setSelectedDose(parsed.selectedDose);
-        if (parsed.selectedRoute) setSelectedRoute(parsed.selectedRoute);
-        if (parsed.selectedFrequency) setSelectedFrequency(parsed.selectedFrequency);
-        if (parsed.selectedDuration) setSelectedDuration(parsed.selectedDuration);
-        if (parsed.ndcDosageInfo) setNdcDosageInfo(parsed.ndcDosageInfo);
-        
-        // Note: Don't remove sessionStorage here - medical imaging useEffect needs it
-        // It will be cleared after medical imaging states are restored
-        
-        // Show toast to indicate state was restored
-        toast.success('Document processing state restored');
-      } catch (e) {
-        console.warn('Failed to restore document processing state:', e);
-      }
-    }
-  }, []);
+  // Flag to track if state restoration is pending (for medical imaging states)
+  const [stateRestorationPending, setStateRestorationPending] = useState<string | null>(() => {
+    return sessionStorage.getItem('docProcessing_fullState');
+  });
   
   const { calculateQuantityAndDaySupply, matchDrugToCode, checkControlledSubstance, parseSig } = useMedicationProcessing();
   
@@ -871,22 +830,57 @@ export default function DocumentProcessing() {
   const [medicalImageBase64, setMedicalImageBase64] = useState<string>('');
   const [medicalImageMimeType, setMedicalImageMimeType] = useState<string>('');
   
-  // Restore medical imaging states from sessionStorage (needs separate effect since states are declared here)
+  // Single consolidated useEffect to restore ALL states from sessionStorage
+  // This runs once on mount and restores all document type states in one pass
   useEffect(() => {
-    const savedState = sessionStorage.getItem('docProcessing_fullState');
-    if (savedState) {
+    if (stateRestorationPending) {
       try {
-        const parsed = JSON.parse(savedState);
+        const parsed = JSON.parse(stateRestorationPending);
+        
+        // Restore universal processing result (applies to ALL document types)
+        if (parsed.processingResult) {
+          parsed.processingResult.processedAt = new Date(parsed.processingResult.processedAt);
+          if (parsed.processingResult.exportedAt) {
+            parsed.processingResult.exportedAt = new Date(parsed.processingResult.exportedAt);
+          }
+          setProcessingResult(parsed.processingResult);
+        }
+        
+        // Restore pending result if any
+        if (parsed.pendingResult) {
+          parsed.pendingResult.processedAt = new Date(parsed.pendingResult.processedAt);
+          setPendingResult(parsed.pendingResult);
+        }
+        
+        // Restore prescription/medication-specific states
+        if (parsed.searchResults) setSearchResults(parsed.searchResults);
+        if (parsed.drugSearchQuery) setDrugSearchQuery(parsed.drugSearchQuery);
+        if (parsed.sigInstructions) setSigInstructions(parsed.sigInstructions);
+        if (parsed.selectedNdc) setSelectedNdc(parsed.selectedNdc);
+        if (parsed.parsedSig) setParsedSig(parsed.parsedSig);
+        if (parsed.selectedDose) setSelectedDose(parsed.selectedDose);
+        if (parsed.selectedRoute) setSelectedRoute(parsed.selectedRoute);
+        if (parsed.selectedFrequency) setSelectedFrequency(parsed.selectedFrequency);
+        if (parsed.selectedDuration) setSelectedDuration(parsed.selectedDuration);
+        if (parsed.ndcDosageInfo) setNdcDosageInfo(parsed.ndcDosageInfo);
+        
+        // Restore medical imaging states
         if (parsed.medicalImageBase64) setMedicalImageBase64(parsed.medicalImageBase64);
         if (parsed.medicalImageMimeType) setMedicalImageMimeType(parsed.medicalImageMimeType);
         
-        // Clear saved state after ALL restoration is complete (this runs after main restoration)
+        // Clear sessionStorage after restoration
         sessionStorage.removeItem('docProcessing_fullState');
+        setStateRestorationPending(null);
+        
+        // Show toast to indicate state was restored
+        toast.success('Document processing state restored');
       } catch (e) {
-        // Silent fail - main restoration handles errors
+        console.warn('Failed to restore document processing state:', e);
+        sessionStorage.removeItem('docProcessing_fullState');
+        setStateRestorationPending(null);
       }
     }
-  }, []);
+  }, [stateRestorationPending]);
 
   const runAutoProcessing = async (result: ProcessingResult, file: File) => {
     try {
