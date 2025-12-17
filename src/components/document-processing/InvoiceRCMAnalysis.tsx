@@ -788,14 +788,17 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     if (cptData) {
       const cptCodes = cptData.split(/[,;\s]+/).filter((c: string) => c.trim());
       cptCodes.forEach((code: string) => {
-        const cptInfo = CPT_CODE_DATABASE[code.trim()];
+        const cptInfo = getCPTInfo(code.trim());
         if (cptInfo && !items.some(i => i.cpt_code === code.trim())) {
+          // For standalone CPT codes, use avgReimbursement as both billed and allowed
           items.push({
             description: cptInfo.description,
             cpt_code: code.trim(),
             units: 1,
             unit_price: cptInfo.avgReimbursement,
             total: cptInfo.avgReimbursement,
+            allowed_amount: cptInfo.avgReimbursement,
+            adjustment: 0, // No adjustment when billed = allowed
             status: 'pending'
           });
         }
@@ -807,6 +810,43 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
       setLineItems(items);
     }
   }, [activeData, hasUserEdits, hasRestoredState, lineItems.length]);
+
+  // CRITICAL: Recalculate allowed_amount and adjustment for restored line items
+  // This ensures items restored from sessionStorage get proper CPT-based calculations
+  useEffect(() => {
+    if (!hasRestoredState || lineItems.length === 0) return;
+    
+    // Check if any items are missing allowed_amount calculation
+    const needsRecalculation = lineItems.some(item => 
+      item.cpt_code && item.total > 0 && (!item.allowed_amount || item.allowed_amount === 0)
+    );
+    
+    if (needsRecalculation) {
+      console.log('RCM Analysis - Recalculating allowed/adjustment for restored items');
+      setLineItems(prev => prev.map(item => {
+        // Skip items without CPT code or already calculated
+        if (!item.cpt_code || (item.allowed_amount && item.allowed_amount > 0)) {
+          return item;
+        }
+        
+        const cptInfo = getCPTInfo(item.cpt_code);
+        const units = item.units || 1;
+        const billedAmount = item.total || 0;
+        
+        // Calculate allowed from CPT avgReimbursement
+        const allowedAmount = cptInfo.avgReimbursement * units;
+        
+        // Calculate adjustment = billed - allowed (contractual write-off)
+        const adjustment = billedAmount > allowedAmount ? (billedAmount - allowedAmount) : 0;
+        
+        return {
+          ...item,
+          allowed_amount: allowedAmount,
+          adjustment: adjustment
+        };
+      }));
+    }
+  }, [hasRestoredState, lineItems.length]);
 
   // Calculate RCM Summary - use line items as source of truth when available
   useEffect(() => {
@@ -1211,23 +1251,54 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <CardTitle className="text-sm">Line Items & Services</CardTitle>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setLineItems(prev => [...prev, {
-                      description: 'New line item',
-                      units: 1,
-                      unit_price: 0,
-                      total: 0,
-                      status: 'pending'
-                    }]);
-                    setEditingLineItemIdx(lineItems.length);
-                    setHasUserEdits(true);
-                  }}
-                >
-                  + Add Line Item
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="secondary"
+                    size="sm"
+                    onClick={() => {
+                      // Force recalculate allowed/adjustment for all items with CPT codes
+                      setLineItems(prev => prev.map(item => {
+                        if (!item.cpt_code) return item;
+                        
+                        const cptInfo = getCPTInfo(item.cpt_code);
+                        const units = item.units || 1;
+                        const billedAmount = item.total || 0;
+                        const allowedAmount = cptInfo.avgReimbursement * units;
+                        const adjustment = billedAmount > allowedAmount ? (billedAmount - allowedAmount) : 0;
+                        
+                        return {
+                          ...item,
+                          allowed_amount: allowedAmount,
+                          adjustment: adjustment
+                        };
+                      }));
+                      setHasUserEdits(true);
+                      toast.success('Recalculated allowed amounts and adjustments based on CPT codes');
+                    }}
+                  >
+                    <TrendingDown className="h-4 w-4 mr-1" />
+                    Recalculate
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setLineItems(prev => [...prev, {
+                        description: 'New line item',
+                        units: 1,
+                        unit_price: 0,
+                        total: 0,
+                        allowed_amount: 0,
+                        adjustment: 0,
+                        status: 'pending'
+                      }]);
+                      setEditingLineItemIdx(lineItems.length);
+                      setHasUserEdits(true);
+                    }}
+                  >
+                    + Add Line Item
+                  </Button>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
