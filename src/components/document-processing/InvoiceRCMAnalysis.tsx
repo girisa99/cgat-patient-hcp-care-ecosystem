@@ -618,18 +618,20 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     
     // Enhanced vendor extraction - look for facility/hospital/company names
     const vendorName = findFieldValue(activeData, 'vendor_name', 'company_name', 'provider_name', 
-      'facility_name', 'hospital_name', 'clinic_name', 'medical_center', 'from', 'vendor', 
-      'company', 'provider', 'biller', 'billing_provider', 'remit_to', 'pay_to');
+      'facility_name', 'hospital_name', 'clinic_name', 'medical_center', 'organization_name',
+      'from', 'vendor', 'company', 'provider', 'biller', 'billing_provider', 'remit_to', 
+      'pay_to', 'remit_to_organization_name');
     
     // Enhanced payer extraction - look for insurance/coverage info
     const payerName = findFieldValue(activeData, 'payer_name', 'payer', 'insurance_name', 
       'insurance', 'insurance_company', 'carrier', 'payor', 'health_plan', 'visit_coverages',
-      'coverage', 'medicare', 'medicaid', 'plan_name', 'insurance_carrier');
+      'coverage', 'medicare', 'medicaid', 'plan_name', 'insurance_carrier', 'patient_information');
     
     // Extract billed amount from various fields - NO hardcoding
+    // Added summary_total_amount for Gemini extraction format
     const billedAmount = findNumericValue(activeData, 'billed_amount', 'total_charges', 
       'charges', 'total_billed', 'gross_charges', 'total_amount', 'amount_billed',
-      'total', 'hospital_charges', 'charges_total');
+      'total', 'hospital_charges', 'charges_total', 'summary_total_amount');
     
     // Extract balance from invoice - NO hardcoding
     const balanceDue = findNumericValue(activeData, 'balance_due', 'balance', 'amount_due', 
@@ -733,20 +735,27 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         const cptCode = rawCptCode ? String(rawCptCode).trim().replace(/[^A-Za-z0-9]/g, '') : undefined;
         const ndcCode = rawNdcCode ? String(rawNdcCode).trim().replace(/[^0-9]/g, '') : undefined;
         
-        // Get CPT info for known codes to auto-populate description AND calculate allowed amount
-        const cptInfo = cptCode ? getCPTInfo(cptCode, description) : null;
+        // Get CPT info ONLY if it's a recognized CPT code (5 digits or J/A/E/G/etc prefix)
+        // Revenue codes (3-digit like 121, 251) are NOT CPT codes - don't calculate allowed from them
+        const isValidCPT = cptCode && (
+          CPT_CODE_DATABASE[cptCode] || // Exact match in database
+          /^[JAEGQLST]\d{4}$/.test(cptCode) || // HCPCS codes (J0129, A4253, etc.)
+          /^\d{5}$/.test(cptCode) // 5-digit CPT codes
+        );
+        const cptInfo = isValidCPT ? getCPTInfo(cptCode, description) : null;
         
-        // CRITICAL: Calculate allowed amount from CPT avgReimbursement if not extracted
-        // allowed = avgReimbursement per unit * units
+        // ONLY use extracted allowed/adjustment values from invoice
+        // Do NOT auto-calculate from CPT avgReimbursement for unrecognized codes
         const extractedAllowed = parseFloat(String(item.allowed_amount || item.allowed || '0').replace(/[^0-9.-]/g, '')) || 0;
-        const calculatedAllowed = cptInfo ? (cptInfo.avgReimbursement * units) : 0;
-        const allowedAmount = extractedAllowed > 0 ? extractedAllowed : calculatedAllowed;
-        
-        // CRITICAL: Calculate adjustment as difference between billed and allowed
-        // adjustment = billed - allowed (what insurance won't pay = contractual write-off)
         const extractedAdjustment = parseFloat(String(item.adjustment || item.adj || item.write_off || '0').replace(/[^0-9.-]/g, '')) || 0;
-        const calculatedAdjustment = billedAmount > allowedAmount ? (billedAmount - allowedAmount) : 0;
-        const adjustment = extractedAdjustment > 0 ? extractedAdjustment : calculatedAdjustment;
+        
+        // Only calculate allowed from CPT if it's a valid/recognized CPT code
+        const allowedAmount = extractedAllowed > 0 ? extractedAllowed : 
+          (isValidCPT && cptInfo ? (cptInfo.avgReimbursement * units) : 0);
+        
+        // Only calculate adjustment if we have a valid allowed amount
+        const adjustment = extractedAdjustment > 0 ? extractedAdjustment : 
+          (allowedAmount > 0 && billedAmount > allowedAmount ? (billedAmount - allowedAmount) : 0);
         
         items.push({
           description: description || (cptInfo?.description || ''),
@@ -756,8 +765,8 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
           units: units,
           unit_price: billedAmount / units,
           total: billedAmount,
-          allowed_amount: allowedAmount,
-          adjustment: adjustment,
+          allowed_amount: allowedAmount > 0 ? allowedAmount : undefined, // Don't set 0, leave undefined
+          adjustment: adjustment > 0 ? adjustment : undefined, // Don't set 0, leave undefined
           modifier: item.modifier || item.mod,
           status: item.status || 'pending'
         });
@@ -1107,22 +1116,22 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         </div>
       </div>
 
-      {/* Summary Cards - Use extracted balance to calculate real adjustment */}
+      {/* Summary Cards - Use ONLY extracted invoice values, no line item calculations */}
       {(() => {
-        const lineItemsBilled = lineItems.reduce((sum, item) => sum + (item.total || 0), 0);
-        const lineItemsAdjustment = lineItems.reduce((sum, item) => sum + (item.adjustment || 0), 0);
-        const billedAmount = lineItemsBilled > 0 ? lineItemsBilled : (invoiceData.billed_amount || 0);
+        // CRITICAL: Use ONLY extracted values from invoice - no calculations from line items
+        const billedAmount = invoiceData.billed_amount || 0;
         const paidAmount = invoiceData.paid_amount || 0;
-        
-        // CRITICAL: Use extracted balance_due as source of truth
         const extractedBalance = invoiceData.balance_due || 0;
+        const extractedAdjustment = invoiceData.adjustment_amount || 0;
         
-        // Calculate REAL adjustment: Billed - Balance - Paid
-        const realAdjustment = extractedBalance > 0 && billedAmount > 0 
+        // Calculate adjustment ONLY if we have both billed and balance from invoice
+        // Adjustment = Billed - Balance - Paid (what was written off)
+        const calculatedAdjustment = (billedAmount > 0 && extractedBalance > 0)
           ? (billedAmount - extractedBalance - paidAmount)
-          : (lineItemsAdjustment > 0 ? lineItemsAdjustment : (invoiceData.adjustment_amount || 0));
+          : extractedAdjustment;
         
-        const balanceDue = extractedBalance > 0 ? extractedBalance : (billedAmount - realAdjustment - paidAmount);
+        // Use extracted balance if available, otherwise show 0
+        const balanceDue = extractedBalance;
         
         return (
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -1130,10 +1139,10 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
               <CardContent className="pt-4">
                 <div className="text-sm text-muted-foreground">Total Billed</div>
                 <div className="text-2xl font-bold text-blue-600">
-                  {formatCurrency(billedAmount)}
+                  {billedAmount > 0 ? formatCurrency(billedAmount) : 'N/A'}
                 </div>
-                {lineItemsBilled > 0 && (
-                  <div className="text-xs text-muted-foreground mt-1">From {lineItems.length} items</div>
+                {lineItems.length > 0 && (
+                  <div className="text-xs text-muted-foreground mt-1">{lineItems.length} line items</div>
                 )}
               </CardContent>
             </Card>
@@ -1141,7 +1150,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
               <CardContent className="pt-4">
                 <div className="text-sm text-muted-foreground">Insurance Paid</div>
                 <div className="text-2xl font-bold text-green-600">
-                  {formatCurrency(paidAmount)}
+                  {paidAmount > 0 ? formatCurrency(paidAmount) : '$0.00'}
                 </div>
               </CardContent>
             </Card>
@@ -1149,7 +1158,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
               <CardContent className="pt-4">
                 <div className="text-sm text-muted-foreground">Balance Due</div>
                 <div className="text-2xl font-bold text-orange-600">
-                  {formatCurrency(balanceDue)}
+                  {balanceDue > 0 ? formatCurrency(balanceDue) : 'N/A'}
                 </div>
                 {extractedBalance > 0 && (
                   <div className="text-xs text-muted-foreground mt-1">From invoice</div>
@@ -1160,10 +1169,10 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
               <CardContent className="pt-4">
                 <div className="text-sm text-muted-foreground">Adj./Write-off</div>
                 <div className="text-2xl font-bold text-purple-600">
-                  {formatCurrency(realAdjustment)}
+                  {calculatedAdjustment > 0 ? formatCurrency(calculatedAdjustment) : 'N/A'}
                 </div>
-                {extractedBalance > 0 && (
-                  <div className="text-xs text-muted-foreground mt-1">Billed - Balance</div>
+                {billedAmount > 0 && extractedBalance > 0 && (
+                  <div className="text-xs text-muted-foreground mt-1">Calculated</div>
                 )}
               </CardContent>
             </Card>
@@ -1276,45 +1285,36 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
             </CardHeader>
             <CardContent>
               {(() => {
-                // Calculate totals from line items
-                const lineItemsBilled = lineItems.reduce((sum, item) => sum + (item.total || 0), 0);
-                const lineItemsAllowed = lineItems.reduce((sum, item) => sum + (item.allowed_amount || 0), 0);
-                const lineItemsAdjustment = lineItems.reduce((sum, item) => sum + (item.adjustment || 0), 0);
-                
-                // Use invoice data for billed, prefer extracted balance
-                const billedAmount = lineItemsBilled > 0 ? lineItemsBilled : (invoiceData.billed_amount || 0);
+                // CRITICAL: Use ONLY extracted values from invoice - no line item calculations
+                const billedAmount = invoiceData.billed_amount || 0;
                 const paidAmount = invoiceData.paid_amount || 0;
                 const patientResponsibility = invoiceData.patient_responsibility || 0;
-                
-                // CRITICAL: Use extracted balance_due from invoice if available
-                // This is the ACTUAL balance the patient owes, not a calculated value
                 const extractedBalance = invoiceData.balance_due || 0;
+                const extractedAdjustment = invoiceData.adjustment_amount || 0;
                 
-                // Calculate REAL adjustment: Billed - Balance - Paid = Adjustment
-                // This represents what insurance paid + contractual write-offs
-                const realAdjustment = extractedBalance > 0 && billedAmount > 0 
+                // Calculate adjustment ONLY if we have both billed and balance from invoice
+                const calculatedAdjustment = (billedAmount > 0 && extractedBalance > 0)
                   ? (billedAmount - extractedBalance - paidAmount)
-                  : (lineItemsAdjustment > 0 ? lineItemsAdjustment : (invoiceData.adjustment_amount || 0));
+                  : extractedAdjustment;
                 
-                // Allowed = Billed - Adjustment (what insurance will pay + patient responsibility)
-                const allowedAmount = billedAmount - realAdjustment;
-                
-                // Use extracted balance, or calculate if not available
-                const balanceDue = extractedBalance > 0 ? extractedBalance : (billedAmount - realAdjustment - paidAmount);
+                // Allowed = Billed - Adjustment (only if we have real data)
+                const allowedAmount = (billedAmount > 0 && calculatedAdjustment > 0) 
+                  ? (billedAmount - calculatedAdjustment) 
+                  : 0;
                 
                 return (
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span>Total Billed (Charges)</span>
-                      <span className="font-semibold">{formatCurrency(billedAmount)}</span>
+                      <span className="font-semibold">{billedAmount > 0 ? formatCurrency(billedAmount) : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center text-green-600">
                       <span>Allowed Amount</span>
-                      <span className="font-semibold">{formatCurrency(allowedAmount)}</span>
+                      <span className="font-semibold">{allowedAmount > 0 ? formatCurrency(allowedAmount) : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center text-orange-600">
-                      <span>Insurance Adj./Payments</span>
-                      <span className="font-semibold">-{formatCurrency(realAdjustment)}</span>
+                      <span>Adjustment/Write-off</span>
+                      <span className="font-semibold">{calculatedAdjustment > 0 ? `-${formatCurrency(calculatedAdjustment)}` : 'N/A'}</span>
                     </div>
                     <div className="flex justify-between items-center text-blue-600">
                       <span>Insurance Paid</span>
@@ -1322,15 +1322,15 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                     </div>
                     <div className="flex justify-between items-center text-purple-600">
                       <span>Patient Responsibility</span>
-                      <span className="font-semibold">{formatCurrency(patientResponsibility)}</span>
+                      <span className="font-semibold">{patientResponsibility > 0 ? formatCurrency(patientResponsibility) : 'N/A'}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between items-center font-bold">
                       <span>Balance Due (from Invoice)</span>
-                      <span className="text-red-600">{formatCurrency(balanceDue)}</span>
+                      <span className="text-red-600">{extractedBalance > 0 ? formatCurrency(extractedBalance) : 'N/A'}</span>
                     </div>
-                    {extractedBalance > 0 && (
+                    {billedAmount > 0 && extractedBalance > 0 && (
                       <div className="text-xs text-muted-foreground mt-2 pt-2 border-t border-dashed">
-                        <strong>Calculation:</strong> ${formatCurrency(billedAmount)} (Billed) - ${formatCurrency(realAdjustment)} (Adj) = ${formatCurrency(balanceDue)} (Balance)
+                        <strong>Calculation:</strong> {formatCurrency(billedAmount)} (Billed) - {formatCurrency(calculatedAdjustment)} (Adj) = {formatCurrency(extractedBalance)} (Balance)
                       </div>
                     )}
                   </div>
@@ -1533,51 +1533,56 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                 </Table>
               </div>
               
-              {/* Line Item Totals - Dynamic based on invoice extraction */}
+              {/* Line Item Totals - Use ONLY extracted invoice values, show line item sum separately */}
               {lineItems.length > 0 && (() => {
-                const totalBilled = lineItems.reduce((sum, i) => sum + (i.total || 0), 0);
-                const totalAllowedFromCPT = lineItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0);
+                // Sum of line item billed amounts (for reference only)
+                const lineItemTotal = lineItems.reduce((sum, i) => sum + (i.total || 0), 0);
                 
-                // Use EXTRACTED invoice values as source of truth when available
+                // CRITICAL: Use ONLY extracted invoice values - no calculations from line items
+                const extractedBilled = invoiceData.billed_amount || 0;
                 const extractedBalance = invoiceData.balance_due || 0;
-                const extractedBilled = invoiceData.billed_amount || totalBilled;
                 const paidAmount = invoiceData.paid_amount || 0;
                 
-                // Calculate REAL adjustment from invoice: Billed - Balance - Paid
-                const realAdjustment = extractedBalance > 0 && extractedBilled > 0
+                // Calculate adjustment ONLY from extracted values
+                const calculatedAdjustment = (extractedBilled > 0 && extractedBalance > 0)
                   ? (extractedBilled - extractedBalance - paidAmount)
-                  : (totalBilled - totalAllowedFromCPT);
+                  : 0;
                 
-                // Real allowed = Billed - Adjustment
-                const realAllowed = extractedBilled - realAdjustment;
+                // Allowed = Billed - Adjustment (only if we have real data)
+                const allowedAmount = (extractedBilled > 0 && calculatedAdjustment > 0)
+                  ? (extractedBilled - calculatedAdjustment)
+                  : 0;
                 
                 return (
                   <div className="mt-4 p-4 bg-muted rounded-lg space-y-3">
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
                       <div>
-                        <span className="text-muted-foreground block text-xs">Total Billed</span>
-                        <span className="font-bold text-lg">{formatCurrency(extractedBilled)}</span>
+                        <span className="text-muted-foreground block text-xs">Invoice Total Billed</span>
+                        <span className="font-bold text-lg">{extractedBilled > 0 ? formatCurrency(extractedBilled) : 'N/A'}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground block text-xs">Allowed Amount</span>
-                        <span className="font-bold text-lg text-green-600">{formatCurrency(realAllowed)}</span>
+                        <span className="font-bold text-lg text-green-600">{allowedAmount > 0 ? formatCurrency(allowedAmount) : 'N/A'}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs">Adjustment (Write-off)</span>
-                        <span className="font-bold text-lg text-orange-600">-{formatCurrency(realAdjustment)}</span>
+                        <span className="text-muted-foreground block text-xs">Adjustment</span>
+                        <span className="font-bold text-lg text-orange-600">{calculatedAdjustment > 0 ? `-${formatCurrency(calculatedAdjustment)}` : 'N/A'}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground block text-xs">Balance Due</span>
-                        <span className="font-bold text-lg text-red-600">{formatCurrency(extractedBalance || (totalBilled - realAdjustment - paidAmount))}</span>
+                        <span className="font-bold text-lg text-red-600">{extractedBalance > 0 ? formatCurrency(extractedBalance) : 'N/A'}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground block text-xs">Line Items</span>
                         <span className="font-bold text-lg">{lineItems.length}</span>
+                        {lineItemTotal > 0 && (
+                          <span className="text-xs text-muted-foreground block">Sum: {formatCurrency(lineItemTotal)}</span>
+                        )}
                       </div>
                     </div>
-                    {extractedBalance > 0 && (
+                    {extractedBilled > 0 && extractedBalance > 0 && (
                       <div className="text-xs text-muted-foreground pt-2 border-t border-dashed">
-                        <strong>From Invoice:</strong> ${formatCurrency(extractedBilled)} (Billed) - ${formatCurrency(realAdjustment)} (Adj) = ${formatCurrency(extractedBalance)} (Balance)
+                        <strong>From Invoice:</strong> {formatCurrency(extractedBilled)} (Billed) - {formatCurrency(calculatedAdjustment)} (Adj) = {formatCurrency(extractedBalance)} (Balance)
                       </div>
                     )}
                   </div>
