@@ -1107,17 +1107,30 @@ export default function DocumentProcessing() {
           }
         }
         
+        // Extract drug name from various possible field names - keep full name, don't split
         const drugName = extractedDrugName || 
-                         extractedFields['medication_name']?.value?.split(' ')[0] || 
-                         extractedFields['medication']?.value?.split(' ')[0] ||
+                         extractedFields['medication_name']?.value?.trim() || 
+                         extractedFields['medication']?.value?.trim() ||
+                         extractedFields['drug_name']?.value?.trim() ||
+                         extractedFields['drug']?.value?.trim() ||
                          extractedFields['rx']?.value?.replace(/[()]/g, '')?.trim() ||
-                         extractedFields['drug_name']?.value?.split(' ')[0] ||
+                         extractedFields['prescription']?.value?.trim() ||
+                         extractedFields['medicine']?.value?.trim() ||
+                         extractedFields['med_name']?.value?.trim() ||
                          drugNameFromLineItems ||
                          'Unknown';
+        
+        // Debug log to help troubleshoot extraction issues
+        console.log('Prescription extraction - available fields:', Object.keys(extractedFields));
+        console.log('Prescription extraction - looking for medication_name:', extractedFields['medication_name']);
+        console.log('Prescription extraction - resolved drugName:', drugName);
+        
         const sigText = extractedSig || 
                         extractedFields['sig']?.value || 
                         extractedFields['signature']?.value || 
                         extractedFields['directions']?.value ||
+                        extractedFields['instructions']?.value ||
+                        extractedFields['dosage_instructions']?.value ||
                         'Take as directed';
         const calculation = calculateQuantityAndDaySupply(sigText);
         
