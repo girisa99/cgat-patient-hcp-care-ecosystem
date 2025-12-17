@@ -153,9 +153,28 @@ export default function ProcessingHistoryWithExport({
     const useCurrentFields = currentExtractedFields && currentProcessingResultId && 
       selectedItems.length === 1 && selectedItems[0] === currentProcessingResultId;
     
+    // Detect document type to apply appropriate priority
+    const documentType = selectedData[0]?.documentType || '';
+    const isImagingDocument = ['xray', 'x-ray', 'ct_scan', 'ct-scan', 'mri', 'ecg', 'ultrasound', 'mammogram'].includes(documentType);
     
-    // Priority order for field display - prescription fields first
-    const priorityOrder = [
+    // Priority order - imaging-specific fields first if it's an imaging document
+    const imagingPriorityOrder = [
+      // Patient details (highest priority for imaging)
+      'patient_name', 'patient_id', 'patient_dob', 'referring_physician', 'study_date',
+      // Provider details
+      'provider_name', 'provider_npi', 'facility_name', 'facility_address', 'report_date',
+      // Clinical findings (from AI analysis)
+      'findings_summary', 'abnormal_findings', 'abnormal_count', 'clinical_notes',
+      // Individual findings (these will be dynamically added)
+      'finding_1_category', 'finding_1_description', 'finding_1_region', 'finding_1_significance', 'finding_1_status', 'finding_1_measurement',
+      'finding_2_category', 'finding_2_description', 'finding_2_region', 'finding_2_significance',
+      'finding_3_category', 'finding_3_description', 'finding_3_region', 'finding_3_significance',
+      // Full insights JSON (low priority as it's the raw data)
+      'ai_insights_json'
+    ];
+    
+    // Priority order for prescription/general documents
+    const prescriptionPriorityOrder = [
       'patient_name', 'patient_first_name', 'patient_last_name', 'date_of_birth', 'dob',
       'medication_name', 'drug_name', 'medication', 'dosage', 'dose', 'strength',
       'frequency', 'directions', 'sig', 'sig_text', 'sig_code', 'route',
@@ -167,6 +186,9 @@ export default function ProcessingHistoryWithExport({
       'prescription_date', 'fill_date', 'expiration_date',
       'clinical_recommendations', 'alternatives', 'drug_interactions'
     ];
+    
+    // Select appropriate priority order based on document type
+    const priorityOrder = isImagingDocument ? imagingPriorityOrder : prescriptionPriorityOrder;
     
     // Helper to add field with normalized key
     const addField = (key: string, value: any, priority?: number) => {
