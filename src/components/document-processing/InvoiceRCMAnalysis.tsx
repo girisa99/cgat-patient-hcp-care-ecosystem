@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { 
   DollarSign, FileText, AlertTriangle, CheckCircle, Clock, 
   Download, TrendingUp, TrendingDown, BarChart3, PieChart,
-  FileSpreadsheet, FileJson, Building2, Receipt
+  FileSpreadsheet, FileJson, Building2, Receipt, Edit2, Save
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { ICDCodeSearch, ICDCodeResult } from './ICDCodeSearch';
 
 // CPT Code Database (expanded with common codes)
 const CPT_CODE_DATABASE: Record<string, { description: string; category: string; avgReimbursement: number }> = {
@@ -379,6 +380,61 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   const [lineItems, setLineItems] = useState<LineItem[]>([]);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null);
+  const [editingLineItemIdx, setEditingLineItemIdx] = useState<number | null>(null);
+
+  // State persistence key
+  const STORAGE_KEY = 'invoiceRCM_state';
+
+  // Save state to sessionStorage when line items change
+  useEffect(() => {
+    if (lineItems.length > 0) {
+      const stateToSave = {
+        lineItems,
+        activeTab,
+        timestamp: Date.now()
+      };
+      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+    }
+  }, [lineItems, activeTab]);
+
+  // Restore state from sessionStorage on mount
+  useEffect(() => {
+    const savedState = sessionStorage.getItem(STORAGE_KEY);
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        // Only restore if saved within last 30 minutes
+        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 30 * 60 * 1000) {
+          if (parsed.lineItems?.length > 0 && lineItems.length === 0) {
+            setLineItems(parsed.lineItems);
+          }
+          if (parsed.activeTab) {
+            setActiveTab(parsed.activeTab);
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to restore invoice state:', e);
+      }
+    }
+  }, []);
+
+  // Handle ICD code selection for a line item
+  const handleICDSelect = useCallback((idx: number, result: ICDCodeResult) => {
+    setLineItems(prev => {
+      const updated = [...prev];
+      updated[idx] = {
+        ...updated[idx],
+        icd_code: result.code,
+        // Update amounts based on ICD category rates
+        total: result.avgBilled,
+        allowed_amount: result.avgAllowed,
+        adjustment: result.avgAdjustment
+      };
+      return updated;
+    });
+    setEditingLineItemIdx(null);
+    toast.success(`ICD-10 code ${result.code} applied with billing rates`);
+  }, []);
   
   // Filter invoice history only
   const invoiceHistory = processingHistory.filter(h => 
@@ -921,7 +977,25 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         <TabsContent value="line-items">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">Line Items & Services</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">Line Items & Services</CardTitle>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setLineItems(prev => [...prev, {
+                      description: 'New line item',
+                      units: 1,
+                      unit_price: 0,
+                      total: 0,
+                      status: 'pending'
+                    }]);
+                    setEditingLineItemIdx(lineItems.length);
+                  }}
+                >
+                  + Add Line Item
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -930,20 +1004,22 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                     <TableRow>
                       <TableHead className="min-w-[150px]">Description</TableHead>
                       <TableHead>CPT/HCPCS</TableHead>
-                      <TableHead>ICD-10</TableHead>
+                      <TableHead className="min-w-[200px]">ICD-10</TableHead>
                       <TableHead>NDC</TableHead>
                       <TableHead className="text-right">Units</TableHead>
                       <TableHead className="text-right">Billed</TableHead>
                       <TableHead className="text-right">Allowed</TableHead>
                       <TableHead className="text-right">Adjustment</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead className="w-[50px]">Action</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {lineItems.length > 0 ? lineItems.map((item, idx) => {
                       const adjustment = item.adjustment || (item.total - (item.allowed_amount || 0));
+                      const isEditing = editingLineItemIdx === idx;
                       return (
-                        <TableRow key={idx}>
+                        <TableRow key={idx} className={isEditing ? 'bg-muted/50' : ''}>
                           <TableCell className="max-w-[200px] truncate" title={item.description}>{item.description}</TableCell>
                           <TableCell>
                             {item.cpt_code && (
@@ -951,12 +1027,28 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                             )}
                           </TableCell>
                           <TableCell>
-                            {item.icd_code ? (
+                            {isEditing ? (
+                              <ICDCodeSearch
+                                value={item.icd_code}
+                                onSelect={(result) => handleICDSelect(idx, result)}
+                                placeholder="Search ICD-10..."
+                                className="w-full"
+                              />
+                            ) : item.icd_code ? (
                               <div className="flex flex-col gap-1">
                                 <Badge variant="secondary" className="font-mono text-xs">{item.icd_code}</Badge>
                                 <span className="text-xs text-muted-foreground">{getICDInfo(item.icd_code).category}</span>
                               </div>
-                            ) : '-'}
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-muted-foreground hover:text-primary"
+                                onClick={() => setEditingLineItemIdx(idx)}
+                              >
+                                + Add ICD
+                              </Button>
+                            )}
                           </TableCell>
                           <TableCell>
                             {item.ndc_code ? (
@@ -976,11 +1068,30 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                               {item.status || 'pending'}
                             </Badge>
                           </TableCell>
+                          <TableCell>
+                            {isEditing ? (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingLineItemIdx(null)}
+                              >
+                                <Save className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setEditingLineItemIdx(idx)}
+                              >
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                          </TableCell>
                         </TableRow>
                       );
                     }) : (
                       <TableRow>
-                        <TableCell colSpan={9} className="text-center text-muted-foreground">
+                        <TableCell colSpan={10} className="text-center text-muted-foreground">
                           No line items extracted. Upload an invoice with detailed line items.
                         </TableCell>
                       </TableRow>
@@ -1073,19 +1184,91 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                 </TableBody>
               </Table>
 
-              {/* ICD Codes if present */}
-              {invoiceData.icd_codes && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <h4 className="font-medium mb-2">ICD-10 Diagnosis Codes</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {invoiceData.icd_codes.split(/[,;\s]+/).map((code, idx) => (
-                      <Badge key={idx} variant="outline" className="font-mono">
-                        {code.trim()}
-                      </Badge>
-                    ))}
-                  </div>
+              {/* ICD-10 Codes Section with Search */}
+              <div className="mt-4 p-4 bg-muted rounded-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium">ICD-10 Diagnosis Codes</h4>
+                  <ICDCodeSearch
+                    placeholder="Add ICD-10 code..."
+                    onSelect={(result) => {
+                      // Add as a new line item with the ICD code
+                      setLineItems(prev => [...prev, {
+                        description: result.description,
+                        icd_code: result.code,
+                        units: 1,
+                        unit_price: result.avgBilled,
+                        total: result.avgBilled,
+                        allowed_amount: result.avgAllowed,
+                        adjustment: result.avgAdjustment,
+                        status: 'pending'
+                      }]);
+                      toast.success(`Added ICD-10 code ${result.code} as new line item`);
+                    }}
+                    className="w-64"
+                  />
                 </div>
-              )}
+                
+                {/* Existing ICD codes from extraction */}
+                {invoiceData.icd_codes && (
+                  <div className="mb-3">
+                    <p className="text-sm text-muted-foreground mb-2">Extracted from document:</p>
+                    <div className="flex flex-wrap gap-2">
+                      {invoiceData.icd_codes.split(/[,;\s]+/).filter(c => c.trim()).map((code, idx) => {
+                        const icdInfo = getICDInfo(code.trim());
+                        return (
+                          <Badge key={idx} variant="outline" className="font-mono cursor-pointer hover:bg-primary/10" title={icdInfo.description}>
+                            {code.trim()} - {icdInfo.category}
+                          </Badge>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+                
+                {/* ICD codes from line items */}
+                {lineItems.filter(i => i.icd_code).length > 0 && (
+                  <div>
+                    <p className="text-sm text-muted-foreground mb-2">From line items:</p>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>ICD-10 Code</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Category</TableHead>
+                          <TableHead className="text-right">Billed</TableHead>
+                          <TableHead className="text-right">Allowed</TableHead>
+                          <TableHead className="text-right">Adjustment</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {lineItems.filter(i => i.icd_code).map((item, idx) => {
+                          const icdInfo = getICDInfo(item.icd_code!);
+                          return (
+                            <TableRow key={idx}>
+                              <TableCell>
+                                <Badge variant="secondary" className="font-mono">{item.icd_code}</Badge>
+                              </TableCell>
+                              <TableCell className="max-w-[200px]">{icdInfo.description}</TableCell>
+                              <TableCell>
+                                <Badge variant="outline">{icdInfo.category}</Badge>
+                              </TableCell>
+                              <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
+                              <TableCell className="text-right text-green-600">{formatCurrency(item.allowed_amount || 0)}</TableCell>
+                              <TableCell className="text-right text-orange-600">-{formatCurrency(item.adjustment || 0)}</TableCell>
+                            </TableRow>
+                          );
+                        })}
+                      </TableBody>
+                    </Table>
+                  </div>
+                )}
+                
+                {!invoiceData.icd_codes && lineItems.filter(i => i.icd_code).length === 0 && (
+                  <p className="text-sm text-muted-foreground text-center py-4">
+                    No ICD-10 codes found. Use the search above to add diagnosis codes.
+                  </p>
+                )}
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
