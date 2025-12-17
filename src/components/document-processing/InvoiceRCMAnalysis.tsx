@@ -475,39 +475,63 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   }, []);
 
   // Handle CPT code selection for a line item
+  // CRITICAL: Calculate allowed_amount from avgReimbursement, then adjustment = billed - allowed
   const handleCPTSelect = useCallback((idx: number, result: CPTCodeResult) => {
     setLineItems(prev => {
       const updated = [...prev];
+      const currentItem = updated[idx];
+      const billedAmount = currentItem.total || 0;
+      const units = currentItem.units || 1;
+      
+      // Allowed = avgReimbursement * units (what insurance will actually pay per CPT)
+      const allowedAmount = result.avgReimbursement * units;
+      
+      // Adjustment = billed - allowed (contractual write-off)
+      const adjustment = billedAmount > allowedAmount ? (billedAmount - allowedAmount) : 0;
+      
       updated[idx] = {
-        ...updated[idx],
+        ...currentItem,
         cpt_code: result.code,
-        description: result.description || updated[idx].description,
-        total: result.avgReimbursement,
-        unit_price: result.avgReimbursement
+        description: result.description || currentItem.description,
+        // Keep original billed amount, set calculated allowed and adjustment
+        allowed_amount: allowedAmount,
+        adjustment: adjustment,
+        unit_price: billedAmount / units
       };
       return updated;
     });
     setEditingLineItemIdx(null);
     setHasUserEdits(true);
-    toast.success(`CPT code ${result.code} applied - ${result.category}`);
+    toast.success(`CPT ${result.code} applied - Allowed: $${result.avgReimbursement}/unit`);
   }, []);
 
   // Handle NDC code selection for a line item
+  // Keep original billed, calculate allowed from avgCost, then adjustment
   const handleNDCSelect = useCallback((idx: number, result: NDCCodeResult) => {
     setLineItems(prev => {
       const updated = [...prev];
+      const currentItem = updated[idx];
+      const billedAmount = currentItem.total || 0;
+      const units = currentItem.units || 1;
+      
+      // Allowed = avgCost * units
+      const allowedAmount = result.avgCost * units;
+      
+      // Adjustment = billed - allowed
+      const adjustment = billedAmount > allowedAmount ? (billedAmount - allowedAmount) : 0;
+      
       updated[idx] = {
-        ...updated[idx],
+        ...currentItem,
         ndc_code: result.ndc_code,
-        description: result.brand_name || result.generic_name || updated[idx].description,
-        total: result.avgCost,
-        unit_price: result.avgCost
+        description: result.brand_name || result.generic_name || currentItem.description,
+        allowed_amount: allowedAmount,
+        adjustment: adjustment
       };
       return updated;
     });
     setEditingLineItemIdx(null);
     setHasUserEdits(true);
-    toast.success(`NDC ${result.ndc_code} applied - ${result.brand_name || result.generic_name}`);
+    toast.success(`NDC ${result.ndc_code} applied - Allowed: $${result.avgCost}/unit`);
   }, []);
   
   // Filter invoice history only
@@ -618,9 +642,6 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
           item.Amount || item.AMOUNT || item.price || '0'
         ).replace(/[^0-9.-]/g, '')) || 0;
         
-        const allowedAmount = parseFloat(String(item.allowed_amount || item.allowed || '0').replace(/[^0-9.-]/g, '')) || 0;
-        const adjustment = parseFloat(String(item.adjustment || item.adj || item.write_off || '0').replace(/[^0-9.-]/g, '')) || 0;
-        
         // Get CPT code from various fields
         const rawCptCode = item.cpt_code || item.cpt || item.procedure_code || 
           item['cpt_/_hcpcs_code'] || item['cpt_hcpcs_code'] || item['CPT / HCPCS Code'] ||
@@ -641,8 +662,20 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         const cptCode = rawCptCode ? String(rawCptCode).trim().replace(/[^A-Za-z0-9]/g, '') : undefined;
         const ndcCode = rawNdcCode ? String(rawNdcCode).trim().replace(/[^0-9]/g, '') : undefined;
         
-        // Get CPT info for known codes to auto-populate description
+        // Get CPT info for known codes to auto-populate description AND calculate allowed amount
         const cptInfo = cptCode ? getCPTInfo(cptCode, description) : null;
+        
+        // CRITICAL: Calculate allowed amount from CPT avgReimbursement if not extracted
+        // allowed = avgReimbursement per unit * units
+        const extractedAllowed = parseFloat(String(item.allowed_amount || item.allowed || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const calculatedAllowed = cptInfo ? (cptInfo.avgReimbursement * units) : 0;
+        const allowedAmount = extractedAllowed > 0 ? extractedAllowed : calculatedAllowed;
+        
+        // CRITICAL: Calculate adjustment as difference between billed and allowed
+        // adjustment = billed - allowed (what insurance won't pay = contractual write-off)
+        const extractedAdjustment = parseFloat(String(item.adjustment || item.adj || item.write_off || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const calculatedAdjustment = billedAmount > allowedAmount ? (billedAmount - allowedAmount) : 0;
+        const adjustment = extractedAdjustment > 0 ? extractedAdjustment : calculatedAdjustment;
         
         items.push({
           description: description || (cptInfo?.description || ''),
@@ -722,8 +755,16 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
           const cleanCpt = cptCode ? cptCode.trim().replace(/[^A-Za-z0-9]/g, '') : '';
           const cleanNdc = ndcCode ? ndcCode.trim().replace(/[^0-9]/g, '') : '';
           
-          // Get CPT info for known codes
+          // Get CPT info for known codes - calculate allowed from avgReimbursement
           const cptInfo = cleanCpt ? getCPTInfo(cleanCpt, description) : null;
+          
+          // Calculate allowed from CPT avgReimbursement if not extracted
+          const calculatedAllowed = cptInfo ? (cptInfo.avgReimbursement * qty) : 0;
+          const finalAllowed = allowed > 0 ? allowed : calculatedAllowed;
+          
+          // Calculate adjustment as billed - allowed
+          const calculatedAdjustment = amount > finalAllowed ? (amount - finalAllowed) : 0;
+          const finalAdjustment = adjustment > 0 ? adjustment : calculatedAdjustment;
           
           if ((description || cleanCpt) && !items.some(i => i.description === description && i.cpt_code === cleanCpt)) {
             items.push({
@@ -733,8 +774,8 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
               units: qty,
               unit_price: amount / qty,
               total: amount,
-              allowed_amount: allowed,
-              adjustment: adjustment,
+              allowed_amount: finalAllowed,
+              adjustment: finalAdjustment,
               status: 'pending'
             });
           }
@@ -1326,31 +1367,45 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                 </Table>
               </div>
               
-              {/* Line Item Totals */}
-              {lineItems.length > 0 && (
-                <div className="mt-4 p-3 bg-muted rounded-lg">
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-muted-foreground">Total Billed:</span>
-                      <span className="ml-2 font-semibold">{formatCurrency(lineItems.reduce((sum, i) => sum + i.total, 0))}</span>
+              {/* Line Item Totals with Variance Breakdown */}
+              {lineItems.length > 0 && (() => {
+                const totalBilled = lineItems.reduce((sum, i) => sum + (i.total || 0), 0);
+                const totalAllowed = lineItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0);
+                const totalAdjustment = lineItems.reduce((sum, i) => sum + (i.adjustment || 0), 0);
+                // Calculate variance from billed and balance if available
+                const variance = totalBilled - totalAllowed;
+                
+                return (
+                  <div className="mt-4 p-4 bg-muted rounded-lg space-y-3">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 text-sm">
+                      <div>
+                        <span className="text-muted-foreground block text-xs">Total Billed</span>
+                        <span className="font-bold text-lg">{formatCurrency(totalBilled)}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs">Total Allowed (Avg Reimb.)</span>
+                        <span className="font-bold text-lg text-green-600">{formatCurrency(totalAllowed)}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs">Contractual Adjustment</span>
+                        <span className="font-bold text-lg text-orange-600">-{formatCurrency(totalAdjustment)}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs">Variance (Billed - Allowed)</span>
+                        <span className="font-bold text-lg text-red-600">{formatCurrency(variance)}</span>
+                      </div>
+                      <div>
+                        <span className="text-muted-foreground block text-xs">Line Items</span>
+                        <span className="font-bold text-lg">{lineItems.length}</span>
+                      </div>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground">Total Allowed:</span>
-                      <span className="ml-2 font-semibold text-green-600">{formatCurrency(lineItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0))}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Total Adjustments:</span>
-                      <span className="ml-2 font-semibold text-orange-600">
-                        -{formatCurrency(lineItems.reduce((sum, i) => sum + (i.adjustment || 0), 0))}
-                      </span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground">Line Items:</span>
-                      <span className="ml-2 font-semibold">{lineItems.length}</span>
+                    <div className="text-xs text-muted-foreground pt-2 border-t border-dashed">
+                      <strong>Note:</strong> Allowed amounts based on CPT/HCPCS average reimbursement rates. 
+                      Adjustment = Billed - Allowed (contractual write-off).
                     </div>
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1364,15 +1419,19 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                 <CPTCodeSearch
                   placeholder="Add CPT/HCPCS code..."
                   onSelect={(result) => {
+                    // When adding new CPT code, use avgReimbursement as both billed AND allowed
+                    // (since it's a new item, billed = allowed = no adjustment)
                     setLineItems(prev => [...prev, {
                       description: result.description,
                       cpt_code: result.code,
                       units: 1,
                       unit_price: result.avgReimbursement,
-                      total: result.avgReimbursement,
+                      total: result.avgReimbursement, // billed
+                      allowed_amount: result.avgReimbursement, // allowed from CPT
+                      adjustment: 0, // no adjustment when adding from CPT lookup
                       status: 'pending'
                     }]);
-                    toast.success(`Added CPT code ${result.code} as new line item`);
+                    toast.success(`Added CPT ${result.code} - $${result.avgReimbursement} avg reimbursement`);
                   }}
                   className="w-64"
                 />
@@ -1385,16 +1444,17 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                     <TableHead>Code</TableHead>
                     <TableHead>Description</TableHead>
                     <TableHead>Category</TableHead>
-                    <TableHead className="text-right">Avg Reimbursement</TableHead>
+                    <TableHead className="text-right">Allowed Amount</TableHead>
                     <TableHead className="text-right">Billed</TableHead>
-                    <TableHead className="text-right">Variance</TableHead>
+                    <TableHead className="text-right">Adjustment</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {lineItems.filter(i => i.cpt_code).length > 0 ? 
                     lineItems.filter(i => i.cpt_code).map((item, idx) => {
                       const cptInfo = getCPTInfo(item.cpt_code!, item.description);
-                      const variance = item.total - cptInfo.avgReimbursement;
+                      // Use stored adjustment or calculate: billed - allowed
+                      const adjustment = item.adjustment || (item.total - (item.allowed_amount || cptInfo.avgReimbursement * (item.units || 1)));
                       return (
                         <TableRow key={idx}>
                           <TableCell>
@@ -1404,16 +1464,14 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                           <TableCell>
                             <Badge variant="secondary">{cptInfo.category}</Badge>
                           </TableCell>
-                          <TableCell className="text-right">
-                            {formatCurrency(cptInfo.avgReimbursement)}
+                          <TableCell className="text-right text-green-600">
+                            {formatCurrency(item.allowed_amount || cptInfo.avgReimbursement * (item.units || 1))}
                           </TableCell>
                           <TableCell className="text-right font-semibold">
                             {formatCurrency(item.total)}
                           </TableCell>
-                          <TableCell className="text-right">
-                            <span className={variance >= 0 ? 'text-green-600' : 'text-red-600'}>
-                              {variance >= 0 ? '+' : ''}{formatCurrency(variance)}
-                            </span>
+                          <TableCell className="text-right text-orange-600">
+                            {adjustment > 0 ? `-${formatCurrency(adjustment)}` : '-'}
                           </TableCell>
                         </TableRow>
                       );
