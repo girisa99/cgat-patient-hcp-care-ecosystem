@@ -143,6 +143,9 @@ export default function ProcessingHistoryWithExport({
     if (selectedItems.length === 0) return [];
     
     const selectedData = history.filter(h => selectedItems.includes(h.id));
+    console.log('[sourceFieldsForMapping] Selected history items:', selectedData);
+    console.log('[sourceFieldsForMapping] extractedFields for each:', selectedData.map(d => ({ id: d.id, fields: d.extractedFields, medications: d.medications })));
+    
     const allFields = new Map<string, any>();
     
     // Priority order for field display - prescription fields first
