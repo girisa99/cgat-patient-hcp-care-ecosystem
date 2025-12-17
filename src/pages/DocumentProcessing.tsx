@@ -441,17 +441,44 @@ export default function DocumentProcessing() {
           const tables = processingConfig.tables || metadata.tables || [];
           
           // Override extractedFields with verified fields from processing_config if available
-          if (processingConfig.extractedFields && Object.keys(processingConfig.extractedFields).length > 0) {
+          // This is the PRIMARY source of extracted fields as they're saved during "Confirm & Save"
+          if (processingConfig.extractedFields) {
+            console.log('[loadHistory] Found extractedFields in processing_config:', processingConfig.extractedFields);
             Object.entries(processingConfig.extractedFields).forEach(([key, field]: [string, any]) => {
-              if (field && field.value) {
-                extractedFields[key] = {
-                  value: String(field.value),
-                  confidence: field.confidence ?? 0.9,
-                  verified: true,
-                };
+              // Handle both formats: { value: "..." } and direct value
+              if (field !== null && field !== undefined) {
+                const value = typeof field === 'object' && field !== null && 'value' in field 
+                  ? field.value 
+                  : field;
+                if (value !== null && value !== undefined && value !== '') {
+                  extractedFields[key] = {
+                    value: String(value),
+                    confidence: (typeof field === 'object' && field?.confidence) || 0.9,
+                    verified: true,
+                  };
+                }
               }
             });
           }
+          
+          // Also check for medications in processing_config and extract medication fields
+          const medications = processingConfig.medications || metadata.medications || [];
+          if (medications.length > 0) {
+            console.log('[loadHistory] Found medications:', medications);
+            medications.forEach((med: any, idx: number) => {
+              const prefix = medications.length > 1 ? `medication_${idx + 1}_` : '';
+              if (med.name) extractedFields[`${prefix}medication_name`] = { value: med.name, confidence: 0.9, verified: true };
+              if (med.dosage) extractedFields[`${prefix}dosage`] = { value: med.dosage, confidence: 0.9, verified: true };
+              if (med.strength) extractedFields[`${prefix}strength`] = { value: med.strength, confidence: 0.9, verified: true };
+              if (med.frequency) extractedFields[`${prefix}frequency`] = { value: med.frequency, confidence: 0.9, verified: true };
+              if (med.directions || med.sig) extractedFields[`${prefix}sig`] = { value: med.directions || med.sig, confidence: 0.9, verified: true };
+              if (med.quantity) extractedFields[`${prefix}quantity`] = { value: String(med.quantity), confidence: 0.9, verified: true };
+              if (med.refills) extractedFields[`${prefix}refills`] = { value: String(med.refills), confidence: 0.9, verified: true };
+              if (med.ndc || med.ndcCode) extractedFields[`${prefix}ndc_code`] = { value: med.ndc || med.ndcCode, confidence: 0.9, verified: true };
+            });
+          }
+          
+          console.log('[loadHistory] Final extractedFields:', extractedFields);
 
           return {
             id: job.id,
@@ -2170,6 +2197,9 @@ export default function DocumentProcessing() {
                                       return;
                                     }
                                     
+                                    console.log('[Save to History] processingResult.extractedFields:', processingResult.extractedFields);
+                                    console.log('[Save to History] processingResult.medications:', processingResult.medications);
+                                    
                                     const processingConfig: Record<string, unknown> = {
                                       extractedFields: JSON.parse(JSON.stringify(processingResult.extractedFields || {})),
                                       lineItems: JSON.parse(JSON.stringify(processingResult.lineItems || [])),
@@ -2179,6 +2209,8 @@ export default function DocumentProcessing() {
                                       imageUrl: processingResult.imageUrl,
                                       savedAt: new Date().toISOString()
                                     };
+                                    
+                                    console.log('[Save to History] processingConfig being saved:', processingConfig);
                                     
                                     const { error } = await supabase
                                       .from('document_processing_jobs')
