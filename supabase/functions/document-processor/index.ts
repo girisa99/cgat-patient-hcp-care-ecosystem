@@ -646,12 +646,53 @@ INSURANCE CARD EXTRACTION:
 - Look for deductible and extract as "deductible"
 `,
     'invoice': `
-INVOICE EXTRACTION:
-- Look for Invoice Number and extract as "invoice_number"
-- Look for Invoice Date and extract as "invoice_date"
+INVOICE/BILLING EXTRACTION - Extract ALL visible fields:
+
+VENDOR/PROVIDER INFO (from letterhead/header):
+- Look for facility/hospital/clinic name at top and extract as "vendor_name" (e.g., "Yuma Regional Medical Center", "Atrium Health")
+- Look for vendor address and extract as "vendor_address"
+- Look for vendor Tax ID/EIN and extract as "vendor_tax_id"
+- Look for vendor NPI and extract as "vendor_npi"
+- Look for vendor phone and extract as "vendor_phone"
+
+PATIENT INFO:
+- Look for Patient Name and extract as "patient_name"
+- Look for Account Number and extract as "account_number"
+- Look for Patient Information and extract as "patient_information"
+
+PAYER/INSURANCE INFO:
+- Look for Insurance/Payer/Coverage name and extract as "payer_name" (e.g., "Medicare HMO", "UHC Golden Rule", "Blue Cross")
+- Look for Visit Coverages and extract as "visit_coverages"
+- Look for insurance member ID and extract as "member_id"
+
+KEY DATES:
+- Look for Statement/Invoice Date and extract as "invoice_date"
 - Look for Due Date and extract as "due_date"
-- Look for Total Amount and extract as "total_amount"
-- Look for line items with description, quantity, unit price, amount
+- Look for Service/Admit Date and extract as "service_from" or "admit_date"
+- Look for Discharge Date and extract as "service_to" or "discharge_date"
+
+FINANCIAL AMOUNTS (CRITICAL - extract exact values):
+- Look for Total Charges/Total Billed and extract as "billed_amount"
+- Look for Balance Due/Unpaid Balance/Current Account Balance and extract as "balance_due"
+- Look for Total Payments/Adjustments and extract as "adjustment_amount"
+- Look for Insurance Paid and extract as "paid_amount"
+- Look for Patient Responsibility and extract as "patient_responsibility"
+
+LINE ITEMS/SERVICES:
+- For each service line, extract: Code (3-digit), Description, CPT/HCPCS Code, NDC code, Qty, Amount
+- Extract ALL rows from the charges table
+`,
+    'billing': `
+BILLING DOCUMENT EXTRACTION - Same as invoice, extract ALL fields:
+- vendor_name (facility/provider at top)
+- payer_name (insurance/coverage)
+- patient_name
+- account_number
+- billed_amount (total charges)
+- balance_due (unpaid balance)
+- adjustment_amount
+- paid_amount
+- All line items with codes and amounts
 `,
   };
 

@@ -399,61 +399,111 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   const [hasRestoredState, setHasRestoredState] = useState(false);
   const [hasUserEdits, setHasUserEdits] = useState(false);
 
-  // State persistence key - include a unique identifier from extractedData
-  const dataHash = React.useMemo(() => {
-    const inv = extractedData?.invoice_number || extractedData?.claim_number || '';
-    return `invoiceRCM_${inv || 'current'}`;
-  }, [extractedData?.invoice_number, extractedData?.claim_number]);
-  
-  const STORAGE_KEY = 'invoiceRCM_state';
+  // Create unique key based on invoice identifiers to prevent data carryover
+  // Uses invoice-specific data to ensure each invoice has isolated state
+  const currentInvoiceKey = React.useMemo(() => {
+    // Create unique key from multiple invoice identifiers
+    const inv = extractedData?.invoice_number || '';
+    const claim = extractedData?.claim_number || '';
+    const acct = extractedData?.account_number || '';
+    const billed = extractedData?.billed_amount || extractedData?.total_charges || '';
+    const balance = extractedData?.balance_due || '';
+    
+    // Combine identifiers to create unique key
+    const combined = `${inv}_${claim}_${acct}_${billed}_${balance}`.replace(/[^a-zA-Z0-9]/g, '');
+    return `invoiceRCM_${combined || 'empty'}`;
+  }, [extractedData?.invoice_number, extractedData?.claim_number, extractedData?.account_number, 
+      extractedData?.billed_amount, extractedData?.total_charges, extractedData?.balance_due]);
+
+  // Track previous invoice key to detect when invoice changes
+  const prevInvoiceKeyRef = React.useRef<string | null>(null);
+
+  // Clear state when switching to a different invoice
+  useEffect(() => {
+    if (prevInvoiceKeyRef.current && prevInvoiceKeyRef.current !== currentInvoiceKey) {
+      // New invoice loaded - clear old state
+      console.log('RCM Analysis - New invoice detected, clearing old state');
+      console.log('Previous key:', prevInvoiceKeyRef.current, 'New key:', currentInvoiceKey);
+      setLineItems([]);
+      setHasUserEdits(false);
+      setActiveTab('overview');
+      // Remove old state from session storage
+      sessionStorage.removeItem(prevInvoiceKeyRef.current);
+    }
+    prevInvoiceKeyRef.current = currentInvoiceKey;
+  }, [currentInvoiceKey]);
 
   // Save state to sessionStorage when line items change (with user edits flag)
-  // Also notify parent when line items change
+  // Uses invoice-specific key to isolate state per invoice
   useEffect(() => {
-    if (lineItems.length > 0 && hasRestoredState) {
+    if (lineItems.length > 0 && hasRestoredState && currentInvoiceKey) {
       const stateToSave = {
         lineItems,
         activeTab,
-        invoiceData: {
+        invoiceIdentifiers: {
           invoice_number: extractedData?.invoice_number,
           claim_number: extractedData?.claim_number,
+          account_number: extractedData?.account_number,
           billed_amount: extractedData?.billed_amount,
           balance_due: extractedData?.balance_due
         },
         hasUserEdits,
         timestamp: Date.now()
       };
-      sessionStorage.setItem(STORAGE_KEY, JSON.stringify(stateToSave));
+      sessionStorage.setItem(currentInvoiceKey, JSON.stringify(stateToSave));
       
       // Notify parent of line items changes for saving
       if (onLineItemsChange) {
         onLineItemsChange(lineItems);
       }
     }
-  }, [lineItems, activeTab, hasRestoredState, hasUserEdits, extractedData?.invoice_number, extractedData?.claim_number, onLineItemsChange]);
+  }, [lineItems, activeTab, hasRestoredState, hasUserEdits, currentInvoiceKey, extractedData, onLineItemsChange]);
 
-  // Restore state from sessionStorage on mount
+  // Restore state from sessionStorage on mount - uses invoice-specific key
   useEffect(() => {
-    const savedState = sessionStorage.getItem(STORAGE_KEY);
+    if (!currentInvoiceKey || currentInvoiceKey === 'invoiceRCM_empty') {
+      // No valid invoice key yet, mark as restored and let parsing happen
+      setHasRestoredState(true);
+      return;
+    }
+    
+    const savedState = sessionStorage.getItem(currentInvoiceKey);
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
-        // Only restore if saved within last 60 minutes
+        // Only restore if saved within last 60 minutes AND matches current invoice
         if (parsed.timestamp && (Date.now() - parsed.timestamp) < 60 * 60 * 1000) {
-          if (parsed.lineItems?.length > 0) {
-            setLineItems(parsed.lineItems);
-            setHasUserEdits(parsed.hasUserEdits || false);
+          // Verify invoice identifiers match
+          const savedInv = parsed.invoiceIdentifiers?.invoice_number || '';
+          const savedClaim = parsed.invoiceIdentifiers?.claim_number || '';
+          const currentInv = extractedData?.invoice_number || '';
+          const currentClaim = extractedData?.claim_number || '';
+          
+          if ((savedInv && savedInv === currentInv) || (savedClaim && savedClaim === currentClaim) || 
+              (!savedInv && !savedClaim && !currentInv && !currentClaim)) {
+            console.log('RCM Analysis - Restoring state for invoice:', currentInvoiceKey);
+            if (parsed.lineItems?.length > 0) {
+              setLineItems(parsed.lineItems);
+              setHasUserEdits(parsed.hasUserEdits || false);
+            }
+            if (parsed.activeTab) {
+              setActiveTab(parsed.activeTab);
+            }
+          } else {
+            console.log('RCM Analysis - Invoice identifiers mismatch, not restoring');
+            sessionStorage.removeItem(currentInvoiceKey);
           }
-          if (parsed.activeTab) {
-            setActiveTab(parsed.activeTab);
-          }
+        } else {
+          // Expired state - remove it
+          sessionStorage.removeItem(currentInvoiceKey);
         }
       } catch (e) {
         console.warn('Failed to restore invoice state:', e);
+        sessionStorage.removeItem(currentInvoiceKey);
       }
     }
     setHasRestoredState(true);
-  }, []);
+  }, [currentInvoiceKey, extractedData?.invoice_number, extractedData?.claim_number]);
 
   // Handle ICD code selection for a line item
   const handleICDSelect = useCallback((idx: number, result: ICDCodeResult) => {
@@ -562,32 +612,53 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
   }, [selectedHistoryId, invoiceHistory, extractedData]);
 
   // Parse extracted data into invoice structure using intelligent field mapping
+  // CRITICAL: All values come ONLY from extracted data - no hardcoding
   const invoiceData = React.useMemo<InvoiceData>(() => {
     console.log('RCM Analysis - Received activeData:', activeData);
     
+    // Enhanced vendor extraction - look for facility/hospital/company names
+    const vendorName = findFieldValue(activeData, 'vendor_name', 'company_name', 'provider_name', 
+      'facility_name', 'hospital_name', 'clinic_name', 'medical_center', 'from', 'vendor', 
+      'company', 'provider', 'biller', 'billing_provider', 'remit_to', 'pay_to');
+    
+    // Enhanced payer extraction - look for insurance/coverage info
+    const payerName = findFieldValue(activeData, 'payer_name', 'payer', 'insurance_name', 
+      'insurance', 'insurance_company', 'carrier', 'payor', 'health_plan', 'visit_coverages',
+      'coverage', 'medicare', 'medicaid', 'plan_name', 'insurance_carrier');
+    
+    // Extract billed amount from various fields - NO hardcoding
+    const billedAmount = findNumericValue(activeData, 'billed_amount', 'total_charges', 
+      'charges', 'total_billed', 'gross_charges', 'total_amount', 'amount_billed',
+      'total', 'hospital_charges', 'charges_total');
+    
+    // Extract balance from invoice - NO hardcoding
+    const balanceDue = findNumericValue(activeData, 'balance_due', 'balance', 'amount_due', 
+      'total_due', 'amount_owed', 'outstanding_balance', 'current_account_balance',
+      'unpaid_balance', 'patient_balance', 'account_balance');
+    
     return {
-      invoice_number: findFieldValue(activeData, 'invoice_number', 'invoice_no', 'invoiceno', 'invoice', 'inv_number', 'inv_no', 'bill_number'),
+      invoice_number: findFieldValue(activeData, 'invoice_number', 'invoice_no', 'invoiceno', 'invoice', 'inv_number', 'inv_no', 'bill_number', 'statement_number'),
       claim_number: findFieldValue(activeData, 'claim_number', 'claim_no', 'claimno', 'claim', 'claim_id', 'claim_ref'),
-      account_number: findFieldValue(activeData, 'account_number', 'account_no', 'accountno', 'acct_number', 'acct_no', 'patient_account_number'),
-      vendor_name: findFieldValue(activeData, 'vendor_name', 'company_name', 'provider_name', 'from', 'vendor', 'company', 'provider', 'biller', 'billing_provider'),
+      account_number: findFieldValue(activeData, 'account_number', 'account_no', 'accountno', 'acct_number', 'acct_no', 'patient_account_number', 'account'),
+      vendor_name: vendorName,
       vendor_tax_id: findFieldValue(activeData, 'vendor_tax_id', 'tax_id', 'ein', 'taxid', 'federal_tax_id', 'fein'),
       vendor_npi: findFieldValue(activeData, 'vendor_npi', 'npi', 'provider_npi', 'national_provider_identifier', 'billing_npi'),
-      patient_name: findFieldValue(activeData, 'patient_name', 'patient', 'member_name', 'subscriber_name', 'name', 'insured_name'),
+      patient_name: findFieldValue(activeData, 'patient_name', 'patient', 'member_name', 'subscriber_name', 'name', 'insured_name', 'addressee'),
       patient_account: findFieldValue(activeData, 'patient_account', 'account_number', 'account', 'member_id', 'accountno', 'patient_id'),
       invoice_date: findFieldValue(activeData, 'invoice_date', 'date', 'service_date', 'statement_date', 'bill_date', 'billing_date'),
       due_date: findFieldValue(activeData, 'due_date', 'please_pay_by', 'payment_due', 'pay_by', 'due', 'payment_due_date', 'due_by'),
-      service_from: findFieldValue(activeData, 'service_from', 'service_date_from', 'from_date', 'start_date', 'dos_from', 'date_of_service'),
-      service_to: findFieldValue(activeData, 'service_to', 'service_date_to', 'to_date', 'end_date', 'dos_to'),
+      service_from: findFieldValue(activeData, 'service_from', 'service_date_from', 'from_date', 'start_date', 'dos_from', 'date_of_service', 'admit_date'),
+      service_to: findFieldValue(activeData, 'service_to', 'service_date_to', 'to_date', 'end_date', 'dos_to', 'discharge_date'),
       cpt_codes: findFieldValue(activeData, 'cpt_codes', 'cpt', 'cpt_code', 'procedure_code', 'hcpcs', 'hcpcs_code', 'procedure_codes'),
       icd_codes: findFieldValue(activeData, 'icd_codes', 'icd', 'icd_code', 'diagnosis_code', 'icd10', 'icd_10', 'diagnosis_codes', 'dx_codes'),
       ndc_codes: findFieldValue(activeData, 'ndc_codes', 'ndc', 'ndc_code', 'national_drug_code', 'drug_code'),
-      billed_amount: findNumericValue(activeData, 'billed_amount', 'total_charges', 'charges', 'total_billed', 'gross_charges'),
+      billed_amount: billedAmount,
       allowed_amount: findNumericValue(activeData, 'allowed_amount', 'allowed', 'approved_amount', 'contracted_amount', 'allowable'),
-      adjustment_amount: findNumericValue(activeData, 'adjustment_amount', 'adjustment', 'adjustments', 'write_off', 'contractual_adjustment', 'discount'),
+      adjustment_amount: findNumericValue(activeData, 'adjustment_amount', 'adjustment', 'adjustments', 'write_off', 'contractual_adjustment', 'discount', 'total_payments_adjustments'),
       paid_amount: findNumericValue(activeData, 'paid_amount', 'paid', 'payment', 'amount_paid', 'payments_received', 'insurance_paid'),
       patient_responsibility: findNumericValue(activeData, 'patient_responsibility', 'patient_due', 'patient_balance', 'your_responsibility', 'patient_portion', 'copay', 'coinsurance', 'deductible'),
-      balance_due: findNumericValue(activeData, 'balance_due', 'balance', 'amount_due', 'total_due', 'amount_owed', 'outstanding_balance'),
-      payer_name: findFieldValue(activeData, 'payer_name', 'payer', 'insurance_name', 'insurance', 'insurance_company', 'carrier', 'payor', 'health_plan'),
+      balance_due: balanceDue,
+      payer_name: payerName,
       payment_status: findFieldValue(activeData, 'payment_status', 'status', 'claim_status') || 'pending',
       denial_reason: findFieldValue(activeData, 'denial_reason', 'denial_code', 'reason_code', 'rejection_reason', 'remark_code'),
       aging_bucket: findFieldValue(activeData, 'aging_bucket', 'aging', 'days_outstanding', 'age'),
