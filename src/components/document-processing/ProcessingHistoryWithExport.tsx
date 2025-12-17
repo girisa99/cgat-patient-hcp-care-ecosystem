@@ -4,7 +4,7 @@
  * Includes Field Mapping Dialog for source-to-target field mapping
  */
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -96,6 +96,7 @@ interface ProcessingHistoryWithExportProps {
   documentTypes?: string[];
   currentExtractedFields?: Record<string, { value: string; confidence: number; verified?: boolean }>;
   currentProcessingResultId?: string;
+  filterByDocType?: string; // Auto-filter history by this document type
 }
 
 interface MCPExportTarget {
@@ -124,6 +125,7 @@ export default function ProcessingHistoryWithExport({
   documentTypes = [],
   currentExtractedFields,
   currentProcessingResultId,
+  filterByDocType,
 }: ProcessingHistoryWithExportProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -286,6 +288,13 @@ export default function ProcessingHistoryWithExport({
   const [filterDateFrom, setFilterDateFrom] = useState<Date | undefined>(undefined);
   const [filterDateTo, setFilterDateTo] = useState<Date | undefined>(undefined);
   const [showFilters, setShowFilters] = useState(false);
+
+  // Auto-apply document type filter when prop changes
+  useEffect(() => {
+    if (filterByDocType && filterByDocType !== 'all') {
+      setFilterDocType(filterByDocType);
+    }
+  }, [filterByDocType]);
 
   // Get unique document types from history if not provided
   const availableDocTypes = documentTypes.length > 0 
