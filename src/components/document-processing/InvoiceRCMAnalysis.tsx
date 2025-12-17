@@ -13,6 +13,8 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { ICDCodeSearch, ICDCodeResult } from './ICDCodeSearch';
+import { CPTCodeSearch, CPTCodeResult } from './CPTCodeSearch';
+import { NDCCodeSearch, NDCCodeResult } from './NDCCodeSearch';
 
 // CPT Code Database (expanded with common codes)
 const CPT_CODE_DATABASE: Record<string, { description: string; category: string; avgReimbursement: number }> = {
@@ -434,6 +436,40 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     });
     setEditingLineItemIdx(null);
     toast.success(`ICD-10 code ${result.code} applied with billing rates`);
+  }, []);
+
+  // Handle CPT code selection for a line item
+  const handleCPTSelect = useCallback((idx: number, result: CPTCodeResult) => {
+    setLineItems(prev => {
+      const updated = [...prev];
+      updated[idx] = {
+        ...updated[idx],
+        cpt_code: result.code,
+        description: result.description || updated[idx].description,
+        total: result.avgReimbursement,
+        unit_price: result.avgReimbursement
+      };
+      return updated;
+    });
+    setEditingLineItemIdx(null);
+    toast.success(`CPT code ${result.code} applied - ${result.category}`);
+  }, []);
+
+  // Handle NDC code selection for a line item
+  const handleNDCSelect = useCallback((idx: number, result: NDCCodeResult) => {
+    setLineItems(prev => {
+      const updated = [...prev];
+      updated[idx] = {
+        ...updated[idx],
+        ndc_code: result.ndc_code,
+        description: result.brand_name || result.generic_name || updated[idx].description,
+        total: result.avgCost,
+        unit_price: result.avgCost
+      };
+      return updated;
+    });
+    setEditingLineItemIdx(null);
+    toast.success(`NDC ${result.ndc_code} applied - ${result.brand_name || result.generic_name}`);
   }, []);
   
   // Filter invoice history only
@@ -1021,12 +1057,31 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                       return (
                         <TableRow key={idx} className={isEditing ? 'bg-muted/50' : ''}>
                           <TableCell className="max-w-[200px] truncate" title={item.description}>{item.description}</TableCell>
-                          <TableCell>
-                            {item.cpt_code && (
-                              <Badge variant="outline" className="font-mono text-xs">{item.cpt_code}</Badge>
+                          <TableCell className="min-w-[180px]">
+                            {isEditing ? (
+                              <CPTCodeSearch
+                                value={item.cpt_code}
+                                onSelect={(result) => handleCPTSelect(idx, result)}
+                                placeholder="Search CPT..."
+                                className="w-full"
+                              />
+                            ) : item.cpt_code ? (
+                              <div className="flex flex-col gap-1">
+                                <Badge variant="outline" className="font-mono text-xs">{item.cpt_code}</Badge>
+                                <span className="text-xs text-muted-foreground">{getCPTInfo(item.cpt_code).category}</span>
+                              </div>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-muted-foreground hover:text-primary"
+                                onClick={() => setEditingLineItemIdx(idx)}
+                              >
+                                + Add CPT
+                              </Button>
                             )}
                           </TableCell>
-                          <TableCell>
+                          <TableCell className="min-w-[180px]">
                             {isEditing ? (
                               <ICDCodeSearch
                                 value={item.icd_code}
@@ -1050,11 +1105,26 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                               </Button>
                             )}
                           </TableCell>
-                          <TableCell>
-                            {item.ndc_code ? (
+                          <TableCell className="min-w-[180px]">
+                            {isEditing ? (
+                              <NDCCodeSearch
+                                value={item.ndc_code}
+                                onSelect={(result) => handleNDCSelect(idx, result)}
+                                placeholder="Search NDC..."
+                                className="w-full"
+                              />
+                            ) : item.ndc_code ? (
                               <Badge variant="outline" className="font-mono text-xs bg-blue-50">{item.ndc_code}</Badge>
-                            ) : '-'}
-                          </TableCell>
+                            ) : (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-xs text-muted-foreground hover:text-primary"
+                                onClick={() => setEditingLineItemIdx(idx)}
+                              >
+                                + Add NDC
+                              </Button>
+                            )}</TableCell>
                           <TableCell className="text-right">{item.units}</TableCell>
                           <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
                           <TableCell className="text-right text-green-600">
@@ -1133,7 +1203,24 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         <TabsContent value="cpt-codes">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm">CPT/HCPCS Code Analysis</CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-sm">CPT/HCPCS Code Analysis</CardTitle>
+                <CPTCodeSearch
+                  placeholder="Add CPT/HCPCS code..."
+                  onSelect={(result) => {
+                    setLineItems(prev => [...prev, {
+                      description: result.description,
+                      cpt_code: result.code,
+                      units: 1,
+                      unit_price: result.avgReimbursement,
+                      total: result.avgReimbursement,
+                      status: 'pending'
+                    }]);
+                    toast.success(`Added CPT code ${result.code} as new line item`);
+                  }}
+                  className="w-64"
+                />
+              </div>
             </CardHeader>
             <CardContent>
               <Table>
