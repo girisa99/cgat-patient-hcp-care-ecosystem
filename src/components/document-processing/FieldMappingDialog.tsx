@@ -536,12 +536,14 @@ const DOCUMENT_TYPE_OBJECTS: Record<string, string[]> = {
   invoice: ['Invoice', 'Billing', 'Payment', 'Account', 'Vendor', 'Amount', 'Tax', 'Total', 'Due', 'PO', 'Line'],
   passport: ['Identity', 'Patient', 'Document', 'Contact', 'Name', 'Nationality', 'Birth', 'Issue', 'Expiry', 'MRZ'],
   'drivers-license': ['Identity', 'License', 'Patient', 'Document', 'Contact', 'Name', 'Address', 'Birth', 'Issue', 'Expiry', 'Donor'],
-  xray: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Radiologist'],
-  'x-ray': ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Radiologist'],
-  ct_scan: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Contrast'],
-  'ct-scan': ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Contrast'],
-  mri: ['Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Sequence'],
+  xray: ['Imaging Study', 'Imaging_Study', 'Radiology Report', 'Radiology_Report', 'Imaging Finding', 'Imaging_Finding', 'Imaging Facility', 'Imaging_Facility', 'Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Radiologist', 'Body', 'Modality', 'Abnormal'],
+  'x-ray': ['Imaging Study', 'Imaging_Study', 'Radiology Report', 'Radiology_Report', 'Imaging Finding', 'Imaging_Finding', 'Imaging Facility', 'Imaging_Facility', 'Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Radiologist', 'Body', 'Modality', 'Abnormal'],
+  ct_scan: ['Imaging Study', 'Imaging_Study', 'Radiology Report', 'Radiology_Report', 'Imaging Finding', 'Imaging_Finding', 'Imaging Facility', 'Imaging_Facility', 'Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Contrast', 'Body', 'Modality', 'Abnormal'],
+  'ct-scan': ['Imaging Study', 'Imaging_Study', 'Radiology Report', 'Radiology_Report', 'Imaging Finding', 'Imaging_Finding', 'Imaging Facility', 'Imaging_Facility', 'Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Contrast', 'Body', 'Modality', 'Abnormal'],
+  mri: ['Imaging Study', 'Imaging_Study', 'Radiology Report', 'Radiology_Report', 'Imaging Finding', 'Imaging_Finding', 'Imaging Facility', 'Imaging_Facility', 'Imaging', 'Radiology', 'Patient', 'Order', 'Diagnosis', 'Study', 'Findings', 'Impression', 'Sequence', 'Body', 'Modality', 'Abnormal'],
   ecg: ['Cardiology', 'Patient', 'Order', 'Result', 'ECG', 'EKG', 'Heart', 'Rhythm', 'Interval', 'Axis'],
+  ultrasound: ['Imaging Study', 'Imaging_Study', 'Radiology Report', 'Radiology_Report', 'Imaging Finding', 'Imaging_Finding', 'Imaging', 'Radiology', 'Patient', 'Sonography', 'Ultrasound', 'Findings', 'Impression', 'Body', 'Modality'],
+  mammogram: ['Imaging Study', 'Imaging_Study', 'Radiology Report', 'Radiology_Report', 'Imaging Finding', 'Imaging_Finding', 'Imaging', 'Radiology', 'Patient', 'Breast', 'BI-RADS', 'Findings', 'Impression', 'Modality'],
   'order-management': ['Order', 'Purchase', 'Sales', 'Shipping', 'Item', 'SKU', 'Quantity', 'Price', 'Tracking'],
   'treatment-center': ['Facility', 'License', 'DEA', 'NPI', 'Accreditation', 'Address', 'Administrator', 'Services'],
   'customer-onboarding': ['Company', 'Contact', 'Account', 'Tax', 'EIN', 'DUNS', 'Credit', 'Bank', 'Address'],
@@ -794,10 +796,26 @@ export function FieldMappingDialog({
       'General': 100
     };
     
+    const imagingPriority: Record<string, number> = {
+      'Imaging Study': 1,
+      'Radiology Report': 2,
+      'Imaging Finding': 3,
+      'Imaging Facility': 4,
+      'Patient': 5,
+      'Contact': 6,
+      'Provider': 7,
+      'Account': 8,
+      'General': 100
+    };
+    
     if (docType === 'prescription' || docType === 'rx') {
       return prescriptionPriority[objectName] ?? 50;
     } else if (docType === 'insurance_card' || docType?.includes('insurance')) {
       return insurancePriority[objectName] ?? 50;
+    } else if (docType === 'xray' || docType === 'x-ray' || docType === 'ct_scan' || docType === 'ct-scan' || 
+               docType === 'mri' || docType === 'ultrasound' || docType === 'mammogram' || 
+               docType?.includes('imaging') || docType?.includes('radiology')) {
+      return imagingPriority[objectName] ?? 50;
     }
     return 50;
   };
