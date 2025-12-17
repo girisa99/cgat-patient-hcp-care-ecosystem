@@ -1508,6 +1508,7 @@ export default function DocumentProcessing() {
 
       const finalResult: ProcessingResult = {
         ...result,
+        id: documentId, // Use server-returned ID to match database record
         stage: 'complete',
         progress: 100,
         extractedFields,
@@ -3266,6 +3267,8 @@ export default function DocumentProcessing() {
           <TabsContent value="history">
             <ProcessingHistoryWithExport
               history={processingHistory}
+              currentExtractedFields={processingResult?.extractedFields}
+              currentProcessingResultId={processingResult?.id}
               onViewResult={(result: any) => {
                 setProcessingResult(result as any);
                 

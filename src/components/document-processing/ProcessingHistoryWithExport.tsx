@@ -94,6 +94,8 @@ interface ProcessingHistoryWithExportProps {
   onViewResult?: (result: ProcessingResult) => void;
   onDeleteItems?: (ids: string[]) => void;
   documentTypes?: string[];
+  currentExtractedFields?: Record<string, { value: string; confidence: number; verified?: boolean }>;
+  currentProcessingResultId?: string;
 }
 
 interface MCPExportTarget {
@@ -120,6 +122,8 @@ export default function ProcessingHistoryWithExport({
   onViewResult,
   onDeleteItems,
   documentTypes = [],
+  currentExtractedFields,
+  currentProcessingResultId,
 }: ProcessingHistoryWithExportProps) {
   const [selectedItems, setSelectedItems] = useState<string[]>([]);
   const [showExportDialog, setShowExportDialog] = useState(false);
@@ -138,15 +142,17 @@ export default function ProcessingHistoryWithExport({
   }, [selectedItems, history]);
   
   // Extract ALL source fields from selected items for mapping - comprehensive extraction
-  // Also accepts external extracted fields from parent context
+  // Uses currentExtractedFields if the selected item matches currentProcessingResultId
   const sourceFieldsForMapping = useMemo<SourceField[]>(() => {
     if (selectedItems.length === 0) return [];
     
     const selectedData = history.filter(h => selectedItems.includes(h.id));
-    console.log('[sourceFieldsForMapping] Selected history items:', selectedData);
-    console.log('[sourceFieldsForMapping] extractedFields for each:', selectedData.map(d => ({ id: d.id, fields: d.extractedFields, medications: d.medications })));
-    
     const allFields = new Map<string, any>();
+    
+    // If we have current extracted fields and the selected item matches, use those
+    const useCurrentFields = currentExtractedFields && currentProcessingResultId && 
+      selectedItems.length === 1 && selectedItems[0] === currentProcessingResultId;
+    
     
     // Priority order for field display - prescription fields first
     const priorityOrder = [
@@ -181,8 +187,12 @@ export default function ProcessingHistoryWithExport({
     
     // Aggregate ALL fields from selected items
     for (const item of selectedData) {
-      // 1. All extracted fields - these are the ACTUAL extracted prescription fields
-      for (const [key, fieldData] of Object.entries(item.extractedFields || {})) {
+      // 1. Use currentExtractedFields if available for this item, otherwise use item.extractedFields
+      const fieldsToUse = (useCurrentFields && item.id === currentProcessingResultId) 
+        ? currentExtractedFields 
+        : item.extractedFields;
+      
+      for (const [key, fieldData] of Object.entries(fieldsToUse || {})) {
         const value = typeof fieldData === 'object' && fieldData !== null && 'value' in fieldData 
           ? fieldData.value 
           : fieldData;
@@ -246,7 +256,7 @@ export default function ProcessingHistoryWithExport({
         value: data.value,
         type: typeof data.value === 'number' ? 'number' : typeof data.value === 'boolean' ? 'boolean' : 'string'
       }));
-  }, [selectedItems, history]);
+  }, [selectedItems, history, currentExtractedFields, currentProcessingResultId]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
   const [filterDocType, setFilterDocType] = useState<string>('all');
