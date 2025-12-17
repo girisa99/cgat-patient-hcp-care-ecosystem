@@ -210,20 +210,87 @@ const DENIAL_CODES: Record<string, string> = {
   'OA-23': 'Benefit for this service is included in payment/allowance for another service',
 };
 
+// ICD-10 Code Database (common diagnosis codes)
+const ICD_CODE_DATABASE: Record<string, { description: string; category: string }> = {
+  // Common diagnoses
+  'E11.9': { description: 'Type 2 diabetes mellitus without complications', category: 'Endocrine' },
+  'E11.65': { description: 'Type 2 diabetes mellitus with hyperglycemia', category: 'Endocrine' },
+  'I10': { description: 'Essential (primary) hypertension', category: 'Cardiovascular' },
+  'I25.10': { description: 'Atherosclerotic heart disease of native coronary artery', category: 'Cardiovascular' },
+  'J06.9': { description: 'Acute upper respiratory infection, unspecified', category: 'Respiratory' },
+  'J18.9': { description: 'Pneumonia, unspecified organism', category: 'Respiratory' },
+  'J44.9': { description: 'Chronic obstructive pulmonary disease, unspecified', category: 'Respiratory' },
+  'M54.5': { description: 'Low back pain', category: 'Musculoskeletal' },
+  'M79.3': { description: 'Panniculitis, unspecified', category: 'Musculoskeletal' },
+  'K21.0': { description: 'Gastro-esophageal reflux disease with esophagitis', category: 'Digestive' },
+  'F32.9': { description: 'Major depressive disorder, single episode, unspecified', category: 'Mental Health' },
+  'F41.1': { description: 'Generalized anxiety disorder', category: 'Mental Health' },
+  'N39.0': { description: 'Urinary tract infection, site not specified', category: 'Genitourinary' },
+  'R05': { description: 'Cough', category: 'Symptoms' },
+  'R50.9': { description: 'Fever, unspecified', category: 'Symptoms' },
+  'Z23': { description: 'Encounter for immunization', category: 'Preventive' },
+  'Z00.00': { description: 'Encounter for general adult medical examination', category: 'Preventive' },
+  'Z12.31': { description: 'Encounter for screening mammogram', category: 'Preventive' },
+  // Add more common codes
+  'R10.9': { description: 'Unspecified abdominal pain', category: 'Symptoms' },
+  'G43.909': { description: 'Migraine, unspecified, not intractable', category: 'Neurological' },
+  'L30.9': { description: 'Dermatitis, unspecified', category: 'Dermatology' },
+  'B34.9': { description: 'Viral infection, unspecified', category: 'Infectious' },
+};
+
+// Get ICD info with fallback
+const getICDInfo = (code: string): { description: string; category: string } => {
+  const normalized = code.trim().toUpperCase();
+  const dbInfo = ICD_CODE_DATABASE[normalized];
+  if (dbInfo) return dbInfo;
+  
+  // Infer category from code prefix
+  if (normalized.startsWith('A') || normalized.startsWith('B')) return { description: `Infection code ${code}`, category: 'Infectious' };
+  if (normalized.startsWith('C') || normalized.startsWith('D')) return { description: `Neoplasm code ${code}`, category: 'Oncology' };
+  if (normalized.startsWith('E')) return { description: `Endocrine code ${code}`, category: 'Endocrine' };
+  if (normalized.startsWith('F')) return { description: `Mental health code ${code}`, category: 'Mental Health' };
+  if (normalized.startsWith('G')) return { description: `Neurological code ${code}`, category: 'Neurological' };
+  if (normalized.startsWith('H')) return { description: `Eye/Ear code ${code}`, category: 'Sensory' };
+  if (normalized.startsWith('I')) return { description: `Cardiovascular code ${code}`, category: 'Cardiovascular' };
+  if (normalized.startsWith('J')) return { description: `Respiratory code ${code}`, category: 'Respiratory' };
+  if (normalized.startsWith('K')) return { description: `Digestive code ${code}`, category: 'Digestive' };
+  if (normalized.startsWith('L')) return { description: `Dermatology code ${code}`, category: 'Dermatology' };
+  if (normalized.startsWith('M')) return { description: `Musculoskeletal code ${code}`, category: 'Musculoskeletal' };
+  if (normalized.startsWith('N')) return { description: `Genitourinary code ${code}`, category: 'Genitourinary' };
+  if (normalized.startsWith('R')) return { description: `Symptom code ${code}`, category: 'Symptoms' };
+  if (normalized.startsWith('S') || normalized.startsWith('T')) return { description: `Injury code ${code}`, category: 'Injury' };
+  if (normalized.startsWith('Z')) return { description: `Health status code ${code}`, category: 'Preventive' };
+  
+  return { description: `Diagnosis code ${code}`, category: 'Unknown' };
+};
+
+// NDC Code format validator and normalizer
+const normalizeNDCCode = (code: string): string => {
+  if (!code) return '';
+  // Remove dashes and spaces, get digits only
+  const digits = code.replace(/[\s-]/g, '');
+  // Standard NDC is 11 digits
+  return digits;
+};
+
 interface LineItem {
   description: string;
   cpt_code?: string;
   icd_code?: string;
+  ndc_code?: string;
   units: number;
   unit_price: number;
   total: number;
   modifier?: string;
   status?: 'paid' | 'pending' | 'denied' | 'partial';
+  allowed_amount?: number;
+  adjustment?: number;
 }
 
 interface InvoiceData {
   invoice_number?: string;
   claim_number?: string;
+  account_number?: string;
   vendor_name?: string;
   vendor_tax_id?: string;
   vendor_npi?: string;
@@ -236,6 +303,7 @@ interface InvoiceData {
   line_items?: LineItem[];
   cpt_codes?: string;
   icd_codes?: string;
+  ndc_codes?: string;
   billed_amount?: number;
   allowed_amount?: number;
   adjustment_amount?: number;
@@ -344,29 +412,31 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     console.log('RCM Analysis - Received activeData:', activeData);
     
     return {
-      invoice_number: findFieldValue(activeData, 'invoice_number', 'invoice_no', 'invoiceno', 'invoice', 'claim_number', 'claimno'),
-      claim_number: findFieldValue(activeData, 'claim_number', 'claim_no', 'claimno', 'claim'),
-      vendor_name: findFieldValue(activeData, 'vendor_name', 'company_name', 'provider_name', 'from', 'vendor', 'company', 'provider', 'biller'),
-      vendor_tax_id: findFieldValue(activeData, 'vendor_tax_id', 'tax_id', 'ein', 'taxid', 'federal_tax_id'),
-      vendor_npi: findFieldValue(activeData, 'vendor_npi', 'npi', 'provider_npi', 'national_provider_identifier'),
-      patient_name: findFieldValue(activeData, 'patient_name', 'patient', 'member_name', 'subscriber_name', 'name'),
-      patient_account: findFieldValue(activeData, 'patient_account', 'account_number', 'account', 'member_id', 'accountno'),
-      invoice_date: findFieldValue(activeData, 'invoice_date', 'date', 'service_date', 'statement_date', 'bill_date'),
-      due_date: findFieldValue(activeData, 'due_date', 'please_pay_by', 'payment_due', 'pay_by', 'due'),
-      service_from: findFieldValue(activeData, 'service_from', 'service_date_from', 'from_date', 'start_date', 'dos_from'),
+      invoice_number: findFieldValue(activeData, 'invoice_number', 'invoice_no', 'invoiceno', 'invoice', 'inv_number', 'inv_no', 'bill_number'),
+      claim_number: findFieldValue(activeData, 'claim_number', 'claim_no', 'claimno', 'claim', 'claim_id', 'claim_ref'),
+      account_number: findFieldValue(activeData, 'account_number', 'account_no', 'accountno', 'acct_number', 'acct_no', 'patient_account_number'),
+      vendor_name: findFieldValue(activeData, 'vendor_name', 'company_name', 'provider_name', 'from', 'vendor', 'company', 'provider', 'biller', 'billing_provider'),
+      vendor_tax_id: findFieldValue(activeData, 'vendor_tax_id', 'tax_id', 'ein', 'taxid', 'federal_tax_id', 'fein'),
+      vendor_npi: findFieldValue(activeData, 'vendor_npi', 'npi', 'provider_npi', 'national_provider_identifier', 'billing_npi'),
+      patient_name: findFieldValue(activeData, 'patient_name', 'patient', 'member_name', 'subscriber_name', 'name', 'insured_name'),
+      patient_account: findFieldValue(activeData, 'patient_account', 'account_number', 'account', 'member_id', 'accountno', 'patient_id'),
+      invoice_date: findFieldValue(activeData, 'invoice_date', 'date', 'service_date', 'statement_date', 'bill_date', 'billing_date'),
+      due_date: findFieldValue(activeData, 'due_date', 'please_pay_by', 'payment_due', 'pay_by', 'due', 'payment_due_date', 'due_by'),
+      service_from: findFieldValue(activeData, 'service_from', 'service_date_from', 'from_date', 'start_date', 'dos_from', 'date_of_service'),
       service_to: findFieldValue(activeData, 'service_to', 'service_date_to', 'to_date', 'end_date', 'dos_to'),
-      cpt_codes: findFieldValue(activeData, 'cpt_codes', 'cpt', 'cpt_code', 'procedure_code', 'hcpcs', 'hcpcs_code'),
-      icd_codes: findFieldValue(activeData, 'icd_codes', 'icd', 'icd_code', 'diagnosis_code', 'icd10', 'icd_10'),
-      billed_amount: findNumericValue(activeData, 'billed_amount', 'total', 'amount', 'total_amount', 'amount_due', 'balance', 'total_due', 'grand_total'),
-      allowed_amount: findNumericValue(activeData, 'allowed_amount', 'allowed', 'approved_amount'),
-      adjustment_amount: findNumericValue(activeData, 'adjustment_amount', 'adjustment', 'adjustments', 'write_off'),
-      paid_amount: findNumericValue(activeData, 'paid_amount', 'paid', 'payment', 'amount_paid', 'payments_received'),
-      patient_responsibility: findNumericValue(activeData, 'patient_responsibility', 'patient_due', 'patient_balance', 'your_responsibility'),
-      balance_due: findNumericValue(activeData, 'balance_due', 'balance', 'amount_due', 'total_due', 'total', 'amount'),
-      payer_name: findFieldValue(activeData, 'payer_name', 'payer', 'insurance_name', 'insurance', 'insurance_company', 'carrier'),
-      payment_status: findFieldValue(activeData, 'payment_status', 'status') || 'pending',
-      denial_reason: findFieldValue(activeData, 'denial_reason', 'denial_code', 'reason_code'),
-      aging_bucket: findFieldValue(activeData, 'aging_bucket', 'aging', 'days_outstanding'),
+      cpt_codes: findFieldValue(activeData, 'cpt_codes', 'cpt', 'cpt_code', 'procedure_code', 'hcpcs', 'hcpcs_code', 'procedure_codes'),
+      icd_codes: findFieldValue(activeData, 'icd_codes', 'icd', 'icd_code', 'diagnosis_code', 'icd10', 'icd_10', 'diagnosis_codes', 'dx_codes'),
+      ndc_codes: findFieldValue(activeData, 'ndc_codes', 'ndc', 'ndc_code', 'national_drug_code', 'drug_code'),
+      billed_amount: findNumericValue(activeData, 'billed_amount', 'total_charges', 'charges', 'total_billed', 'gross_charges'),
+      allowed_amount: findNumericValue(activeData, 'allowed_amount', 'allowed', 'approved_amount', 'contracted_amount', 'allowable'),
+      adjustment_amount: findNumericValue(activeData, 'adjustment_amount', 'adjustment', 'adjustments', 'write_off', 'contractual_adjustment', 'discount'),
+      paid_amount: findNumericValue(activeData, 'paid_amount', 'paid', 'payment', 'amount_paid', 'payments_received', 'insurance_paid'),
+      patient_responsibility: findNumericValue(activeData, 'patient_responsibility', 'patient_due', 'patient_balance', 'your_responsibility', 'patient_portion', 'copay', 'coinsurance', 'deductible'),
+      balance_due: findNumericValue(activeData, 'balance_due', 'balance', 'amount_due', 'total_due', 'amount_owed', 'outstanding_balance'),
+      payer_name: findFieldValue(activeData, 'payer_name', 'payer', 'insurance_name', 'insurance', 'insurance_company', 'carrier', 'payor', 'health_plan'),
+      payment_status: findFieldValue(activeData, 'payment_status', 'status', 'claim_status') || 'pending',
+      denial_reason: findFieldValue(activeData, 'denial_reason', 'denial_code', 'reason_code', 'rejection_reason', 'remark_code'),
+      aging_bucket: findFieldValue(activeData, 'aging_bucket', 'aging', 'days_outstanding', 'age'),
     };
   }, [activeData]);
 
@@ -393,15 +463,22 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     if (lineItemsData && Array.isArray(lineItemsData)) {
       console.log('RCM Analysis - Found line_items array:', lineItemsData.length, 'items');
       lineItemsData.forEach((item: any) => {
+        const billedAmount = parseFloat(String(item.total || item.amount || item.charge || item.billed || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const allowedAmount = parseFloat(String(item.allowed_amount || item.allowed || '0').replace(/[^0-9.-]/g, '')) || 0;
+        const adjustment = parseFloat(String(item.adjustment || item.adj || item.write_off || '0').replace(/[^0-9.-]/g, '')) || 0;
+        
         items.push({
           description: item.description || item.service || item.item || item.name || '',
           cpt_code: item.cpt_code || item.cpt || item.procedure_code || item.code || item['cpt_/_hcpcs_code'] || item.hcpcs,
-          icd_code: item.icd_code || item.icd || item.diagnosis_code,
+          icd_code: item.icd_code || item.icd || item.diagnosis_code || item.dx_code || item.icd10,
+          ndc_code: item.ndc_code || item.ndc || item.national_drug_code || item.drug_code,
           units: parseFloat(item.units || item.quantity || item.qty || '1') || 1,
           unit_price: parseFloat(String(item.unit_price || item.price || item.rate || '0').replace(/[^0-9.-]/g, '')) || 0,
-          total: parseFloat(String(item.total || item.amount || item.charge || '0').replace(/[^0-9.-]/g, '')) || 0,
+          total: billedAmount,
+          allowed_amount: allowedAmount,
+          adjustment: adjustment || (billedAmount - allowedAmount > 0 ? billedAmount - allowedAmount : 0),
           modifier: item.modifier || item.mod,
-          status: 'pending'
+          status: item.status || 'pending'
         });
       });
     }
@@ -431,29 +508,40 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         
         const descIdx = findColumnIndex(['description', 'service', 'item', 'name']);
         const cptIdx = findColumnIndex(['cpt', 'hcpcs', 'procedure', 'code']);
+        const icdIdx = findColumnIndex(['icd', 'diagnosis', 'dx']);
+        const ndcIdx = findColumnIndex(['ndc', 'drug_code', 'national_drug']);
         const qtyIdx = findColumnIndex(['qty', 'quantity', 'units']);
-        const amountIdx = findColumnIndex(['amount', 'total', 'charge', 'price']);
-        const ndcIdx = findColumnIndex(['ndc']);
+        const amountIdx = findColumnIndex(['amount', 'total', 'charge', 'price', 'billed']);
+        const allowedIdx = findColumnIndex(['allowed', 'approved', 'contracted']);
+        const adjustIdx = findColumnIndex(['adjustment', 'adj', 'write_off', 'discount']);
         
-        console.log('RCM Analysis - Table column indices:', { descIdx, cptIdx, qtyIdx, amountIdx, ndcIdx, header });
+        console.log('RCM Analysis - Table column indices:', { descIdx, cptIdx, icdIdx, ndcIdx, qtyIdx, amountIdx, header });
         
         rows.forEach((row: any[]) => {
           if (!Array.isArray(row) || row.length === 0) return;
           
           const description = descIdx >= 0 ? String(row[descIdx] || '') : String(row[0] || '');
           const cptCode = cptIdx >= 0 ? String(row[cptIdx] || '') : '';
+          const icdCode = icdIdx >= 0 ? String(row[icdIdx] || '') : '';
+          const ndcCode = ndcIdx >= 0 ? String(row[ndcIdx] || '') : '';
           const qty = qtyIdx >= 0 ? parseFloat(String(row[qtyIdx]).replace(/[^0-9.-]/g, '')) || 1 : 1;
           const amount = amountIdx >= 0 
             ? parseFloat(String(row[amountIdx]).replace(/[^0-9.-]/g, '')) || 0 
             : parseFloat(String(row[row.length - 1]).replace(/[^0-9.-]/g, '')) || 0;
+          const allowed = allowedIdx >= 0 ? parseFloat(String(row[allowedIdx]).replace(/[^0-9.-]/g, '')) || 0 : 0;
+          const adjustment = adjustIdx >= 0 ? parseFloat(String(row[adjustIdx]).replace(/[^0-9.-]/g, '')) || 0 : 0;
           
           if (description && !items.some(i => i.description === description && i.cpt_code === cptCode)) {
             items.push({
               description,
               cpt_code: cptCode || undefined,
+              icd_code: icdCode || undefined,
+              ndc_code: ndcCode || undefined,
               units: qty,
               unit_price: amount / qty,
               total: amount,
+              allowed_amount: allowed,
+              adjustment: adjustment || (amount - allowed > 0 ? amount - allowed : 0),
               status: 'pending'
             });
           }
@@ -723,12 +811,20 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                   <span className="font-medium">{invoiceData.claim_number || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">Account #:</span>
+                  <span className="font-medium">{invoiceData.account_number || invoiceData.patient_account || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">Invoice Date:</span>
                   <span className="font-medium">{invoiceData.invoice_date || 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Due Date:</span>
                   <span className="font-medium">{invoiceData.due_date || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Service Date:</span>
+                  <span className="font-medium">{invoiceData.service_from ? `${invoiceData.service_from}${invoiceData.service_to ? ` - ${invoiceData.service_to}` : ''}` : 'N/A'}</span>
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Status:</span>
@@ -764,6 +860,10 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">Patient:</span>
                   <span className="font-medium">{invoiceData.patient_name || 'N/A'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Patient Account:</span>
+                  <span className="font-medium">{invoiceData.patient_account || 'N/A'}</span>
                 </div>
               </CardContent>
             </Card>
@@ -824,50 +924,96 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
               <CardTitle className="text-sm">Line Items & Services</CardTitle>
             </CardHeader>
             <CardContent>
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Description</TableHead>
-                    <TableHead>CPT Code</TableHead>
-                    <TableHead>ICD-10</TableHead>
-                    <TableHead className="text-right">Units</TableHead>
-                    <TableHead className="text-right">Unit Price</TableHead>
-                    <TableHead className="text-right">Total</TableHead>
-                    <TableHead>Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {lineItems.length > 0 ? lineItems.map((item, idx) => (
-                    <TableRow key={idx}>
-                      <TableCell className="max-w-[200px] truncate">{item.description}</TableCell>
-                      <TableCell>
-                        {item.cpt_code && (
-                          <Badge variant="outline" className="font-mono">{item.cpt_code}</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell>
-                        {item.icd_code && (
-                          <Badge variant="secondary" className="font-mono">{item.icd_code}</Badge>
-                        )}
-                      </TableCell>
-                      <TableCell className="text-right">{item.units}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(item.unit_price)}</TableCell>
-                      <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
-                      <TableCell>
-                        <Badge className={getStatusColor(item.status || 'pending')}>
-                          {item.status || 'pending'}
-                        </Badge>
-                      </TableCell>
-                    </TableRow>
-                  )) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
                     <TableRow>
-                      <TableCell colSpan={7} className="text-center text-muted-foreground">
-                        No line items extracted. Upload an invoice with detailed line items.
-                      </TableCell>
+                      <TableHead className="min-w-[150px]">Description</TableHead>
+                      <TableHead>CPT/HCPCS</TableHead>
+                      <TableHead>ICD-10</TableHead>
+                      <TableHead>NDC</TableHead>
+                      <TableHead className="text-right">Units</TableHead>
+                      <TableHead className="text-right">Billed</TableHead>
+                      <TableHead className="text-right">Allowed</TableHead>
+                      <TableHead className="text-right">Adjustment</TableHead>
+                      <TableHead>Status</TableHead>
                     </TableRow>
-                  )}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {lineItems.length > 0 ? lineItems.map((item, idx) => {
+                      const adjustment = item.adjustment || (item.total - (item.allowed_amount || 0));
+                      return (
+                        <TableRow key={idx}>
+                          <TableCell className="max-w-[200px] truncate" title={item.description}>{item.description}</TableCell>
+                          <TableCell>
+                            {item.cpt_code && (
+                              <Badge variant="outline" className="font-mono text-xs">{item.cpt_code}</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            {item.icd_code ? (
+                              <div className="flex flex-col gap-1">
+                                <Badge variant="secondary" className="font-mono text-xs">{item.icd_code}</Badge>
+                                <span className="text-xs text-muted-foreground">{getICDInfo(item.icd_code).category}</span>
+                              </div>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell>
+                            {item.ndc_code ? (
+                              <Badge variant="outline" className="font-mono text-xs bg-blue-50">{item.ndc_code}</Badge>
+                            ) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right">{item.units}</TableCell>
+                          <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
+                          <TableCell className="text-right text-green-600">
+                            {item.allowed_amount ? formatCurrency(item.allowed_amount) : '-'}
+                          </TableCell>
+                          <TableCell className="text-right text-orange-600">
+                            {adjustment > 0 ? `-${formatCurrency(adjustment)}` : '-'}
+                          </TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(item.status || 'pending')}>
+                              {item.status || 'pending'}
+                            </Badge>
+                          </TableCell>
+                        </TableRow>
+                      );
+                    }) : (
+                      <TableRow>
+                        <TableCell colSpan={9} className="text-center text-muted-foreground">
+                          No line items extracted. Upload an invoice with detailed line items.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+              
+              {/* Line Item Totals */}
+              {lineItems.length > 0 && (
+                <div className="mt-4 p-3 bg-muted rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                      <span className="text-muted-foreground">Total Billed:</span>
+                      <span className="ml-2 font-semibold">{formatCurrency(lineItems.reduce((sum, i) => sum + i.total, 0))}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Total Allowed:</span>
+                      <span className="ml-2 font-semibold text-green-600">{formatCurrency(lineItems.reduce((sum, i) => sum + (i.allowed_amount || 0), 0))}</span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Total Adjustments:</span>
+                      <span className="ml-2 font-semibold text-orange-600">
+                        -{formatCurrency(lineItems.reduce((sum, i) => sum + (i.adjustment || 0), 0))}
+                      </span>
+                    </div>
+                    <div>
+                      <span className="text-muted-foreground">Line Items:</span>
+                      <span className="ml-2 font-semibold">{lineItems.length}</span>
+                    </div>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
