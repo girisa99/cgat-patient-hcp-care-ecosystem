@@ -1729,10 +1729,11 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                                   className="text-xs text-muted-foreground hover:text-primary"
                                   onClick={() => setEditingLineItemIdx(idx)}
                                 >
-                                + Add CPT
-                              </Button>
-                            )}
-                          </TableCell>
+                                  + Add CPT
+                                </Button>
+                              )}
+                            </TableCell>
+                          )}
                           <TableCell className="min-w-[180px]">
                             {isEditing ? (
                               <ICDCodeSearch
@@ -1776,7 +1777,8 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                               >
                                 + Add NDC
                               </Button>
-                            )}</TableCell>
+                            )}
+                          </TableCell>
                           <TableCell className="text-right">{item.units}</TableCell>
                           <TableCell className="text-right font-semibold">{formatCurrency(item.total)}</TableCell>
                           <TableCell className="text-right text-green-600">
