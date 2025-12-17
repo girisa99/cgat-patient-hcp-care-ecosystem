@@ -797,6 +797,43 @@ export default function DocumentProcessing() {
     }
   }, [selectedNdc, searchResults]);
 
+  // State for calculated quantity from SIG components
+  const [calculatedQuantity, setCalculatedQuantity] = useState<{ totalQuantity: number; dailyDose: number; daysSupply: number } | null>(null);
+  const [combinedSig, setCombinedSig] = useState('');
+
+  // Auto-calculate total quantity when dose, frequency, or duration changes
+  useEffect(() => {
+    // Parse dose amount (e.g., "1 tablet" -> 1, "2 capsules" -> 2)
+    const doseMatch = selectedDose.match(/^(\d+(?:\.\d+)?)/);
+    const doseAmount = doseMatch ? parseFloat(doseMatch[1]) : 1;
+    
+    // Parse frequency to get times per day
+    const freqOption = frequencyOptions.find(f => f.label === selectedFrequency);
+    const timesPerDay = freqOption?.timesPerDay || 1;
+    
+    // Parse duration to get days (e.g., "30 days" -> 30, "7 days" -> 7)
+    const durationMatch = selectedDuration.match(/(\d+)\s*days?/i);
+    const days = durationMatch ? parseInt(durationMatch[1]) : 30;
+    
+    // Calculate
+    const dailyDose = doseAmount * timesPerDay;
+    const totalQuantity = Math.ceil(dailyDose * days);
+    
+    setCalculatedQuantity({
+      totalQuantity,
+      dailyDose,
+      daysSupply: days
+    });
+    
+    // Build combined SIG string
+    const sig = `Take ${selectedDose} ${selectedRoute} ${selectedFrequency} for ${selectedDuration}`;
+    setCombinedSig(sig);
+    
+    // Update sigInstructions to keep in sync
+    setSigInstructions(sig);
+    
+  }, [selectedDose, selectedRoute, selectedFrequency, selectedDuration, frequencyOptions]);
+
   // Document upload and auto-processing
   const onDrop = useCallback(async (acceptedFiles: File[]) => {
     if (acceptedFiles.length === 0) return;
@@ -2241,18 +2278,37 @@ export default function DocumentProcessing() {
                     </div>
                   </div>
 
-                  {/* Sig / Instructions - Read-only Summary */}
+                  {/* Sig / Instructions - Read-only Summary with Calculated Quantity */}
                   <div className="space-y-2">
                     <Label className="text-sm font-medium flex items-center gap-2">
                       <Stethoscope className="h-4 w-4" />
                       Sig / Instructions (Generated)
                     </Label>
-                    <div className="p-3 bg-primary/5 border border-primary/30 rounded-lg">
+                    <div className="p-3 bg-primary/5 border border-primary/30 rounded-lg space-y-3">
                       <p className="text-sm text-primary font-medium">
                         Take {selectedDose} {selectedRoute} {selectedFrequency} for {selectedDuration}
                       </p>
+                      
+                      {/* Calculated Quantity Display */}
+                      {calculatedQuantity && (
+                        <div className="grid grid-cols-3 gap-2 pt-2 border-t border-primary/20">
+                          <div className="text-center p-2 bg-background/50 rounded">
+                            <p className="text-xl font-bold text-green-600">{calculatedQuantity.totalQuantity}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase">Total Tablets</p>
+                          </div>
+                          <div className="text-center p-2 bg-background/50 rounded">
+                            <p className="text-xl font-bold text-blue-600">{calculatedQuantity.dailyDose}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase">Per Day</p>
+                          </div>
+                          <div className="text-center p-2 bg-background/50 rounded">
+                            <p className="text-xl font-bold text-purple-600">{calculatedQuantity.daysSupply}</p>
+                            <p className="text-[10px] text-muted-foreground uppercase">Days Supply</p>
+                          </div>
+                        </div>
+                      )}
+                      
                       {ndcDosageInfo && (
-                        <div className="mt-2 flex items-center gap-2 text-xs text-muted-foreground">
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Badge variant="outline" className="text-xs">{ndcDosageInfo.dosageForm}</Badge>
                           {ndcDosageInfo.strength && (
                             <Badge variant="secondary" className="text-xs">{ndcDosageInfo.strength}</Badge>
@@ -2261,7 +2317,7 @@ export default function DocumentProcessing() {
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground">
-                      Auto-generated from dropdown selections. Fields auto-update when NDC is selected.
+                      Quantity auto-calculated: {selectedDose.match(/^(\d+)/)?.[1] || 1} × {frequencyOptions.find(f => f.label === selectedFrequency)?.timesPerDay || 1} times/day × {selectedDuration.match(/(\d+)/)?.[1] || 30} days
                     </p>
                   </div>
 
