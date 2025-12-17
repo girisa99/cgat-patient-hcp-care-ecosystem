@@ -138,60 +138,89 @@ export default function ProcessingHistoryWithExport({
   }, [selectedItems, history]);
   
   // Extract ALL source fields from selected items for mapping - comprehensive extraction
+  // Also accepts external extracted fields from parent context
   const sourceFieldsForMapping = useMemo<SourceField[]>(() => {
     if (selectedItems.length === 0) return [];
     
     const selectedData = history.filter(h => selectedItems.includes(h.id));
     const allFields = new Map<string, any>();
     
+    // Priority order for field display - prescription fields first
+    const priorityOrder = [
+      'patient_name', 'patient_first_name', 'patient_last_name', 'date_of_birth', 'dob',
+      'medication_name', 'drug_name', 'medication', 'dosage', 'dose', 'strength',
+      'frequency', 'directions', 'sig', 'sig_text', 'sig_code', 'route',
+      'quantity', 'qty', 'days_supply', 'refills', 'refill',
+      'ndc_code', 'ndc', 'rx_number',
+      'prescriber', 'prescriber_name', 'physician', 'doctor_name', 'provider_name',
+      'npi', 'npi_number', 'dea_number', 'dea',
+      'pharmacy_name', 'pharmacy_address', 'pharmacy_phone',
+      'prescription_date', 'fill_date', 'expiration_date',
+      'clinical_recommendations', 'alternatives', 'drug_interactions'
+    ];
+    
     // Helper to add field with normalized key
-    const addField = (key: string, value: any) => {
+    const addField = (key: string, value: any, priority?: number) => {
       if (value !== null && value !== undefined && value !== '') {
         const normalizedKey = key.toLowerCase().replace(/\s+/g, '_');
         if (!allFields.has(normalizedKey)) {
-          allFields.set(normalizedKey, value);
+          allFields.set(normalizedKey, { value, priority: priority ?? 999 });
         }
       }
     };
     
+    // Get priority for a field name
+    const getPriority = (fieldName: string): number => {
+      const normalized = fieldName.toLowerCase().replace(/\s+/g, '_');
+      const idx = priorityOrder.findIndex(p => normalized.includes(p) || p.includes(normalized));
+      return idx >= 0 ? idx : 999;
+    };
+    
     // Aggregate ALL fields from selected items
     for (const item of selectedData) {
-      // 1. All extracted fields
+      // 1. All extracted fields - these are the ACTUAL extracted prescription fields
       for (const [key, fieldData] of Object.entries(item.extractedFields || {})) {
-        addField(key, fieldData.value);
+        const value = typeof fieldData === 'object' && fieldData !== null && 'value' in fieldData 
+          ? fieldData.value 
+          : fieldData;
+        addField(key, value, getPriority(key));
       }
       
       // 2. All medication fields (support multiple medications)
       if (item.medications && item.medications.length > 0) {
         item.medications.forEach((med, idx) => {
           const prefix = item.medications!.length > 1 ? `medication_${idx + 1}_` : '';
-          if (med.name) addField(`${prefix}medication_name`, med.name);
-          if (med.dosage) addField(`${prefix}dosage`, med.dosage);
-          if (med.strength) addField(`${prefix}strength`, med.strength);
-          if (med.frequency) addField(`${prefix}frequency`, med.frequency);
-          if (med.directions) addField(`${prefix}directions`, med.directions);
-          if (med.quantity) addField(`${prefix}quantity`, med.quantity);
-          if (med.refills) addField(`${prefix}refills`, med.refills);
-          if (med.ndc) addField(`${prefix}ndc_code`, med.ndc);
-          if (med.ndcCode) addField(`${prefix}ndc_code`, med.ndcCode);
-          if (med.rxNumber) addField(`${prefix}rx_number`, med.rxNumber);
+          if (med.name) addField(`${prefix}medication_name`, med.name, getPriority('medication_name'));
+          if (med.dosage) addField(`${prefix}dosage`, med.dosage, getPriority('dosage'));
+          if (med.strength) addField(`${prefix}strength`, med.strength, getPriority('strength'));
+          if (med.frequency) addField(`${prefix}frequency`, med.frequency, getPriority('frequency'));
+          if (med.directions) addField(`${prefix}directions`, med.directions, getPriority('directions'));
+          if (med.sig) addField(`${prefix}sig`, med.sig, getPriority('sig'));
+          if (med.route) addField(`${prefix}route`, med.route, getPriority('route'));
+          if (med.quantity) addField(`${prefix}quantity`, med.quantity, getPriority('quantity'));
+          if (med.daysSupply) addField(`${prefix}days_supply`, med.daysSupply, getPriority('days_supply'));
+          if (med.refills) addField(`${prefix}refills`, med.refills, getPriority('refills'));
+          if (med.ndc) addField(`${prefix}ndc_code`, med.ndc, getPriority('ndc_code'));
+          if (med.ndcCode) addField(`${prefix}ndc_code`, med.ndcCode, getPriority('ndc_code'));
+          if (med.rxNumber) addField(`${prefix}rx_number`, med.rxNumber, getPriority('rx_number'));
           // Add clinical data if present
-          if (med.clinicalRecommendations) addField(`${prefix}clinical_recommendations`, med.clinicalRecommendations);
-          if (med.alternatives) addField(`${prefix}alternatives`, JSON.stringify(med.alternatives));
+          if (med.clinicalRecommendations) addField(`${prefix}clinical_recommendations`, med.clinicalRecommendations, getPriority('clinical_recommendations'));
+          if (med.alternatives) addField(`${prefix}alternatives`, JSON.stringify(med.alternatives), getPriority('alternatives'));
+          if (med.drugInteractions) addField(`${prefix}drug_interactions`, JSON.stringify(med.drugInteractions), getPriority('drug_interactions'));
         });
       }
       
-      // 3. Validation results as fields
+      // 3. Validation results as fields (low priority)
       if (item.validationResults) {
-        addField('validation_passed', item.validationResults.passed);
-        addField('validation_failed', item.validationResults.failed);
-        addField('validation_warnings', item.validationResults.warnings);
+        addField('validation_passed', item.validationResults.passed, 900);
+        addField('validation_failed', item.validationResults.failed, 901);
+        addField('validation_warnings', item.validationResults.warnings, 902);
       }
       
-      // 4. Document metadata
-      addField('document_type', item.documentType);
-      addField('file_name', item.fileName);
-      addField('processed_at', item.processedAt);
+      // 4. Document metadata (lowest priority - at the end)
+      addField('document_type', item.documentType, 990);
+      addField('file_name', item.fileName, 991);
+      addField('processed_at', item.processedAt, 992);
       
       // 5. Deep scan for any nested objects in extractedFields
       for (const [key, fieldData] of Object.entries(item.extractedFields || {})) {
@@ -199,18 +228,21 @@ export default function ProcessingHistoryWithExport({
           // Handle nested objects
           for (const [nestedKey, nestedVal] of Object.entries(fieldData)) {
             if (nestedKey !== 'value' && nestedKey !== 'confidence' && nestedKey !== 'verified') {
-              addField(`${key}_${nestedKey}`, nestedVal);
+              addField(`${key}_${nestedKey}`, nestedVal, getPriority(`${key}_${nestedKey}`));
             }
           }
         }
       }
     }
     
-    return Array.from(allFields.entries()).map(([name, value]) => ({ 
-      name, 
-      value,
-      type: typeof value === 'number' ? 'number' : typeof value === 'boolean' ? 'boolean' : 'string'
-    }));
+    // Sort by priority and return
+    return Array.from(allFields.entries())
+      .sort((a, b) => a[1].priority - b[1].priority)
+      .map(([name, data]) => ({ 
+        name, 
+        value: data.value,
+        type: typeof data.value === 'number' ? 'number' : typeof data.value === 'boolean' ? 'boolean' : 'string'
+      }));
   }, [selectedItems, history]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [webhookUrl, setWebhookUrl] = useState('');
