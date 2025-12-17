@@ -16,6 +16,223 @@ import { ICDCodeSearch, ICDCodeResult } from './ICDCodeSearch';
 import { CPTCodeSearch, CPTCodeResult } from './CPTCodeSearch';
 import { NDCCodeSearch, NDCCodeResult } from './NDCCodeSearch';
 
+// UB-04 Revenue Code Database (3-digit codes for hospital facility billing)
+const REVENUE_CODE_DATABASE: Record<string, { description: string; category: string }> = {
+  // Room & Board (10x-21x)
+  '100': { description: 'All-Inclusive Room & Board', category: 'Room & Board' },
+  '101': { description: 'All-Inclusive Room & Board, Private', category: 'Room & Board' },
+  '110': { description: 'Room & Board, Private, General', category: 'Room & Board' },
+  '111': { description: 'Room & Board, Private, Medical/Surgical', category: 'Room & Board' },
+  '120': { description: 'Room & Board, Semi-Private, General', category: 'Room & Board' },
+  '121': { description: 'Room & Board, Semi-Private, Med/Surg', category: 'Room & Board' },
+  '122': { description: 'Room & Board, Semi-Private, OB', category: 'Room & Board' },
+  '123': { description: 'Room & Board, Semi-Private, Pediatric', category: 'Room & Board' },
+  '130': { description: 'Room & Board, Ward, General', category: 'Room & Board' },
+  '140': { description: 'Private Deluxe', category: 'Room & Board' },
+  '150': { description: 'Room & Board, Skilled Nursing', category: 'Room & Board' },
+  '160': { description: 'Room & Board, Other', category: 'Room & Board' },
+  '170': { description: 'Nursery', category: 'Room & Board' },
+  '171': { description: 'Nursery, Newborn, Level I', category: 'Room & Board' },
+  '172': { description: 'Nursery, Newborn, Level II', category: 'Room & Board' },
+  '173': { description: 'Nursery, Newborn, Level III', category: 'Room & Board' },
+  '174': { description: 'Nursery, Newborn, Level IV', category: 'Room & Board' },
+  '180': { description: 'Leave of Absence', category: 'Room & Board' },
+  '190': { description: 'Subacute Care', category: 'Room & Board' },
+  '200': { description: 'Intensive Care', category: 'Room & Board' },
+  '201': { description: 'ICU, Surgical', category: 'Room & Board' },
+  '202': { description: 'ICU, Medical', category: 'Room & Board' },
+  '203': { description: 'ICU, Pediatric', category: 'Room & Board' },
+  '204': { description: 'ICU, Psychiatric', category: 'Room & Board' },
+  '206': { description: 'ICU, Intermediate', category: 'Room & Board' },
+  '207': { description: 'ICU, Burn Care', category: 'Room & Board' },
+  '208': { description: 'ICU, Trauma', category: 'Room & Board' },
+  '210': { description: 'Coronary Care', category: 'Room & Board' },
+  '211': { description: 'CCU, Myocardial Infarction', category: 'Room & Board' },
+  '212': { description: 'CCU, Pulmonary Care', category: 'Room & Board' },
+  '213': { description: 'CCU, Heart Transplant', category: 'Room & Board' },
+  '219': { description: 'CCU, Other', category: 'Room & Board' },
+  // Pharmacy (25x)
+  '250': { description: 'Pharmacy, General', category: 'Pharmacy' },
+  '251': { description: 'Pharmacy, Generic Drugs', category: 'Pharmacy' },
+  '252': { description: 'Pharmacy, Non-Generic Drugs', category: 'Pharmacy' },
+  '253': { description: 'Pharmacy, Take Home Drugs', category: 'Pharmacy' },
+  '254': { description: 'Pharmacy, Drugs Incident to Other DX', category: 'Pharmacy' },
+  '255': { description: 'Pharmacy, Drugs Incident to Radiology', category: 'Pharmacy' },
+  '256': { description: 'Pharmacy, Experimental Drugs', category: 'Pharmacy' },
+  '257': { description: 'Pharmacy, Non-Prescription', category: 'Pharmacy' },
+  '258': { description: 'Pharmacy, IV Solutions', category: 'Pharmacy' },
+  '259': { description: 'Pharmacy, Other', category: 'Pharmacy' },
+  // IV Therapy (26x)
+  '260': { description: 'IV Therapy, General', category: 'IV Therapy' },
+  '261': { description: 'IV Therapy, Infusion Pump', category: 'IV Therapy' },
+  '262': { description: 'IV Therapy, Administration', category: 'IV Therapy' },
+  '263': { description: 'IV Therapy, Supplies', category: 'IV Therapy' },
+  '264': { description: 'IV Therapy, Midline', category: 'IV Therapy' },
+  '269': { description: 'IV Therapy, Other', category: 'IV Therapy' },
+  // Medical/Surgical Supplies (27x)
+  '270': { description: 'Med-Sur Supplies, General', category: 'Supplies' },
+  '271': { description: 'Med-Sur Supplies, Non-Sterile', category: 'Supplies' },
+  '272': { description: 'Med-Sur Supplies, Sterile', category: 'Supplies' },
+  '273': { description: 'Med-Sur Supplies, Take Home', category: 'Supplies' },
+  '274': { description: 'Med-Sur Supplies, Prosthetic/Orthotic', category: 'Supplies' },
+  '275': { description: 'Med-Sur Supplies, Pacemaker', category: 'Supplies' },
+  '276': { description: 'Med-Sur Supplies, Intraocular Lens', category: 'Supplies' },
+  '277': { description: 'Med-Sur Supplies, Oxygen, Take Home', category: 'Supplies' },
+  '278': { description: 'Med-Sur Supplies, Other Implants', category: 'Supplies' },
+  '279': { description: 'Med-Sur Supplies, Other', category: 'Supplies' },
+  // Laboratory (30x-31x)
+  '300': { description: 'Laboratory, General', category: 'Laboratory' },
+  '301': { description: 'Laboratory, Chemistry', category: 'Laboratory' },
+  '302': { description: 'Laboratory, Immunology', category: 'Laboratory' },
+  '303': { description: 'Laboratory, Renal Patient Home', category: 'Laboratory' },
+  '304': { description: 'Laboratory, Non-Routine Dialysis', category: 'Laboratory' },
+  '305': { description: 'Laboratory, Hematology', category: 'Laboratory' },
+  '306': { description: 'Laboratory, Bacteriology/Microbiology', category: 'Laboratory' },
+  '307': { description: 'Laboratory, Urology', category: 'Laboratory' },
+  '309': { description: 'Laboratory, Other', category: 'Laboratory' },
+  '310': { description: 'Laboratory Pathology, General', category: 'Laboratory' },
+  '311': { description: 'Laboratory Pathology, Cytology', category: 'Laboratory' },
+  '312': { description: 'Laboratory Pathology, Histology', category: 'Laboratory' },
+  '314': { description: 'Laboratory Pathology, Biopsy', category: 'Laboratory' },
+  '319': { description: 'Laboratory Pathology, Other', category: 'Laboratory' },
+  // Radiology (32x-35x)
+  '320': { description: 'Radiology, Diagnostic, General', category: 'Radiology' },
+  '321': { description: 'Radiology, Diagnostic, Angiography', category: 'Radiology' },
+  '322': { description: 'Radiology, Diagnostic, Arthrography', category: 'Radiology' },
+  '323': { description: 'Radiology, Diagnostic, Chest X-ray', category: 'Radiology' },
+  '324': { description: 'Radiology, Diagnostic, Tomography', category: 'Radiology' },
+  '329': { description: 'Radiology, Diagnostic, Other', category: 'Radiology' },
+  '330': { description: 'Radiology, Therapeutic, General', category: 'Radiology' },
+  '331': { description: 'Radiology, Therapeutic, Chemotherapy Admin', category: 'Radiology' },
+  '332': { description: 'Radiology, Therapeutic, Chemotherapy IV', category: 'Radiology' },
+  '333': { description: 'Radiology, Therapeutic, Radiation', category: 'Radiology' },
+  '339': { description: 'Radiology, Therapeutic, Other', category: 'Radiology' },
+  '340': { description: 'Nuclear Medicine, General', category: 'Nuclear Medicine' },
+  '341': { description: 'Nuclear Medicine, Diagnostic', category: 'Nuclear Medicine' },
+  '342': { description: 'Nuclear Medicine, Therapeutic', category: 'Nuclear Medicine' },
+  '343': { description: 'Nuclear Medicine, Diagnostic Radiopharm', category: 'Nuclear Medicine' },
+  '344': { description: 'Nuclear Medicine, Therapeutic Radiopharm', category: 'Nuclear Medicine' },
+  '350': { description: 'CT Scan, General', category: 'CT Scan' },
+  '351': { description: 'CT Scan, Head', category: 'CT Scan' },
+  '352': { description: 'CT Scan, Body', category: 'CT Scan' },
+  '359': { description: 'CT Scan, Other', category: 'CT Scan' },
+  // Operating Room (36x-37x)
+  '360': { description: 'Operating Room, General', category: 'Surgery' },
+  '361': { description: 'Operating Room, Minor Surgery', category: 'Surgery' },
+  '362': { description: 'Operating Room, Organ Transplant', category: 'Surgery' },
+  '367': { description: 'Operating Room, Kidney Transplant', category: 'Surgery' },
+  '369': { description: 'Operating Room, Other', category: 'Surgery' },
+  '370': { description: 'Anesthesia, General', category: 'Anesthesia' },
+  '371': { description: 'Anesthesia, Incident to Radiology', category: 'Anesthesia' },
+  '372': { description: 'Anesthesia, Incident to Other DX', category: 'Anesthesia' },
+  '374': { description: 'Anesthesia, Acupuncture', category: 'Anesthesia' },
+  '379': { description: 'Anesthesia, Other', category: 'Anesthesia' },
+  // Blood (38x)
+  '380': { description: 'Blood, General', category: 'Blood' },
+  '381': { description: 'Blood, Packed Red Cells', category: 'Blood' },
+  '382': { description: 'Blood, Whole Blood', category: 'Blood' },
+  '383': { description: 'Blood, Plasma', category: 'Blood' },
+  '384': { description: 'Blood, Platelets', category: 'Blood' },
+  '385': { description: 'Blood, Leukocytes', category: 'Blood' },
+  '386': { description: 'Blood, Other Components', category: 'Blood' },
+  '387': { description: 'Blood, Other Derivatives', category: 'Blood' },
+  '389': { description: 'Blood, Other', category: 'Blood' },
+  // Respiratory Therapy (41x)
+  '410': { description: 'Respiratory Services, General', category: 'Respiratory' },
+  '411': { description: 'Respiratory Services, Inhalation', category: 'Respiratory' },
+  '412': { description: 'Respiratory Services, Hyperbaric Oxygen', category: 'Respiratory' },
+  '413': { description: 'Respiratory Services, CPAP', category: 'Respiratory' },
+  '419': { description: 'Respiratory Services, Other', category: 'Respiratory' },
+  // Physical/Occupational Therapy (42x-44x)
+  '420': { description: 'Physical Therapy, General', category: 'Therapy' },
+  '421': { description: 'Physical Therapy, Visit Charge', category: 'Therapy' },
+  '422': { description: 'Physical Therapy, Hourly Charge', category: 'Therapy' },
+  '423': { description: 'Physical Therapy, Group Rate', category: 'Therapy' },
+  '424': { description: 'Physical Therapy, Evaluation', category: 'Therapy' },
+  '429': { description: 'Physical Therapy, Other', category: 'Therapy' },
+  '430': { description: 'Occupational Therapy, General', category: 'Therapy' },
+  '431': { description: 'Occupational Therapy, Visit Charge', category: 'Therapy' },
+  '432': { description: 'Occupational Therapy, Hourly Charge', category: 'Therapy' },
+  '433': { description: 'Occupational Therapy, Group Rate', category: 'Therapy' },
+  '434': { description: 'Occupational Therapy, Evaluation', category: 'Therapy' },
+  '439': { description: 'Occupational Therapy, Other', category: 'Therapy' },
+  '440': { description: 'Speech-Language Pathology, General', category: 'Therapy' },
+  '441': { description: 'Speech-Language Pathology, Visit Charge', category: 'Therapy' },
+  '442': { description: 'Speech-Language Pathology, Hourly Charge', category: 'Therapy' },
+  '443': { description: 'Speech-Language Pathology, Group Rate', category: 'Therapy' },
+  '449': { description: 'Speech-Language Pathology, Other', category: 'Therapy' },
+  // Emergency Room (45x)
+  '450': { description: 'Emergency Room, General', category: 'Emergency' },
+  '451': { description: 'Emergency Room, EMTALA Screening', category: 'Emergency' },
+  '452': { description: 'Emergency Room, ER Beyond EMTALA', category: 'Emergency' },
+  '456': { description: 'Emergency Room, Urgent Care', category: 'Emergency' },
+  '459': { description: 'Emergency Room, Other', category: 'Emergency' },
+  // Cardiology (48x)
+  '480': { description: 'Cardiology, General', category: 'Cardiology' },
+  '481': { description: 'Cardiology, Cardiac Catheterization Lab', category: 'Cardiology' },
+  '482': { description: 'Cardiology, Stress Test', category: 'Cardiology' },
+  '483': { description: 'Cardiology, Echocardiology', category: 'Cardiology' },
+  '489': { description: 'Cardiology, Other', category: 'Cardiology' },
+  // MRI (61x)
+  '610': { description: 'MRI, General', category: 'MRI' },
+  '611': { description: 'MRI, Brain', category: 'MRI' },
+  '612': { description: 'MRI, Spinal Canal', category: 'MRI' },
+  '614': { description: 'MRI, Other', category: 'MRI' },
+  '615': { description: 'MRI, Under 4', category: 'MRI' },
+  '619': { description: 'MRI, Other', category: 'MRI' },
+  // Dialysis (82x)
+  '820': { description: 'Hemodialysis, General', category: 'Dialysis' },
+  '821': { description: 'Hemodialysis, Inpatient', category: 'Dialysis' },
+  '822': { description: 'Hemodialysis, Outpatient', category: 'Dialysis' },
+  '823': { description: 'Peritoneal Dialysis, Inpatient', category: 'Dialysis' },
+  '824': { description: 'Peritoneal Dialysis, Outpatient', category: 'Dialysis' },
+  '829': { description: 'Dialysis, Other', category: 'Dialysis' },
+  // Other (9xx)
+  '900': { description: 'Behavioral Health Treatment', category: 'Behavioral Health' },
+  '901': { description: 'Electroshock Treatment', category: 'Behavioral Health' },
+  '902': { description: 'Milieu Therapy', category: 'Behavioral Health' },
+  '903': { description: 'Play Therapy', category: 'Behavioral Health' },
+  '904': { description: 'Activity Therapy', category: 'Behavioral Health' },
+  '905': { description: 'Intensive Outpatient Services, Psych', category: 'Behavioral Health' },
+  '906': { description: 'Intensive Outpatient Services, Chem Dep', category: 'Behavioral Health' },
+  '910': { description: 'Psych/Detox, General', category: 'Behavioral Health' },
+  '942': { description: 'Education/Training', category: 'Other' },
+  '943': { description: 'Hospice Services', category: 'Hospice' },
+};
+
+// Get Revenue Code info
+const getRevenueCodeInfo = (code: string): { description: string; category: string } => {
+  const normalized = code.trim().replace(/^0+/, ''); // Remove leading zeros
+  const paddedCode = normalized.padStart(3, '0'); // Ensure 3 digits
+  
+  // Try exact match
+  const dbInfo = REVENUE_CODE_DATABASE[normalized] || REVENUE_CODE_DATABASE[paddedCode];
+  if (dbInfo) return dbInfo;
+  
+  // Infer category from first digit
+  const firstDigit = normalized[0];
+  switch (firstDigit) {
+    case '1': return { description: `Room & Board (${code})`, category: 'Room & Board' };
+    case '2': return { description: `Ancillary Services (${code})`, category: 'Ancillary' };
+    case '3': return { description: `Diagnostic Services (${code})`, category: 'Diagnostic' };
+    case '4': return { description: `Therapeutic Services (${code})`, category: 'Therapeutic' };
+    case '5': return { description: `Clinic Services (${code})`, category: 'Clinic' };
+    case '6': return { description: `Advanced Imaging (${code})`, category: 'Imaging' };
+    case '7': return { description: `Other Services (${code})`, category: 'Other' };
+    case '8': return { description: `Outpatient Services (${code})`, category: 'Outpatient' };
+    case '9': return { description: `Behavioral/Other (${code})`, category: 'Other' };
+    default: return { description: `Unknown (${code})`, category: 'Unknown' };
+  }
+};
+
+// Detect if a code is a Revenue Code (3 digits, 001-999)
+const isRevenueCode = (code: string): boolean => {
+  if (!code) return false;
+  const cleaned = code.trim().replace(/^0+/, '');
+  const num = parseInt(cleaned, 10);
+  return /^\d{1,3}$/.test(cleaned) && num >= 1 && num <= 999 && cleaned.length <= 3;
+};
+
 // CPT Code Database (expanded with common codes)
 const CPT_CODE_DATABASE: Record<string, { description: string; category: string; avgReimbursement: number }> = {
   // E/M - Evaluation & Management
@@ -289,7 +506,9 @@ const normalizeNDCCode = (code: string): string => {
 
 interface LineItem {
   description: string;
-  cpt_code?: string;
+  revenue_code?: string;  // 3-digit UB-04 hospital revenue codes
+  cpt_code?: string;      // 5-digit CPT codes
+  hcpcs_code?: string;    // HCPCS Level II codes (J, A, E, G prefixes)
   icd_code?: string;
   ndc_code?: string;
   units: number;
@@ -300,6 +519,27 @@ interface LineItem {
   allowed_amount?: number;
   adjustment?: number;
 }
+
+// Detect what code type is present in line items
+type CodeType = 'revenue' | 'cpt' | 'hcpcs' | 'mixed' | 'none';
+
+const detectCodeType = (items: LineItem[]): CodeType => {
+  let hasRevenue = false;
+  let hasCPT = false;
+  let hasHCPCS = false;
+  
+  items.forEach(item => {
+    if (item.revenue_code) hasRevenue = true;
+    if (item.cpt_code && /^\d{5}$/.test(item.cpt_code)) hasCPT = true;
+    if (item.hcpcs_code || (item.cpt_code && /^[JAEGQLST]\d{4}$/i.test(item.cpt_code))) hasHCPCS = true;
+  });
+  
+  if (hasRevenue && (hasCPT || hasHCPCS)) return 'mixed';
+  if (hasRevenue) return 'revenue';
+  if (hasCPT) return 'cpt';
+  if (hasHCPCS) return 'hcpcs';
+  return 'none';
+};
 
 interface InvoiceData {
   invoice_number?: string;
@@ -715,10 +955,11 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
           item.Amount || item.AMOUNT || item.price || '0'
         ).replace(/[^0-9.-]/g, '')) || 0;
         
-        // Get CPT code from various fields
-        const rawCptCode = item.cpt_code || item.cpt || item.procedure_code || 
+        // Get code from various fields - could be Revenue, CPT, or HCPCS
+        const rawCode = item.cpt_code || item.cpt || item.procedure_code || 
           item['cpt_/_hcpcs_code'] || item['cpt_hcpcs_code'] || item['CPT / HCPCS Code'] ||
-          item.hcpcs || item.HCPCS || item.code || item.Code;
+          item.hcpcs || item.HCPCS || item.code || item.Code || 
+          item.revenue_code || item.rev_code || item.REV || item['Rev Code'];
         
         // Get NDC code
         const rawNdcCode = item.ndc_code || item.ndc || item.NDC || 
@@ -731,42 +972,59 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         const description = item.description || item.Description || item.DESCRIPTION || 
           item.service || item.Service || item.item || item.name || '';
         
-        // Clean codes
-        const cptCode = rawCptCode ? String(rawCptCode).trim().replace(/[^A-Za-z0-9]/g, '') : undefined;
+        // Clean code
+        const cleanedCode = rawCode ? String(rawCode).trim().replace(/[^A-Za-z0-9]/g, '') : undefined;
         const ndcCode = rawNdcCode ? String(rawNdcCode).trim().replace(/[^0-9]/g, '') : undefined;
         
-        // Get CPT info ONLY if it's a recognized CPT code (5 digits or J/A/E/G/etc prefix)
-        // Revenue codes (3-digit like 121, 251) are NOT CPT codes - don't calculate allowed from them
-        const isValidCPT = cptCode && (
-          CPT_CODE_DATABASE[cptCode] || // Exact match in database
-          /^[JAEGQLST]\d{4}$/.test(cptCode) || // HCPCS codes (J0129, A4253, etc.)
-          /^\d{5}$/.test(cptCode) // 5-digit CPT codes
-        );
-        const cptInfo = isValidCPT ? getCPTInfo(cptCode, description) : null;
+        // Detect code type
+        let revenueCode: string | undefined;
+        let cptCode: string | undefined;
+        let hcpcsCode: string | undefined;
+        
+        if (cleanedCode) {
+          if (isRevenueCode(cleanedCode)) {
+            // It's a 3-digit revenue code
+            revenueCode = cleanedCode;
+          } else if (/^[JAEGQLST]\d{4}$/i.test(cleanedCode)) {
+            // HCPCS code (letter + 4 digits)
+            hcpcsCode = cleanedCode.toUpperCase();
+          } else if (/^\d{5}$/.test(cleanedCode)) {
+            // 5-digit CPT code
+            cptCode = cleanedCode;
+          } else {
+            // Default to CPT for unknown patterns
+            cptCode = cleanedCode;
+          }
+        }
+        
+        // Get CPT info ONLY for valid 5-digit CPT or HCPCS codes
+        const cptInfo = cptCode ? getCPTInfo(cptCode, description) : 
+          (hcpcsCode ? getCPTInfo(hcpcsCode, description) : null);
         
         // ONLY use extracted allowed/adjustment values from invoice
-        // Do NOT auto-calculate from CPT avgReimbursement for unrecognized codes
         const extractedAllowed = parseFloat(String(item.allowed_amount || item.allowed || '0').replace(/[^0-9.-]/g, '')) || 0;
         const extractedAdjustment = parseFloat(String(item.adjustment || item.adj || item.write_off || '0').replace(/[^0-9.-]/g, '')) || 0;
         
-        // Only calculate allowed from CPT if it's a valid/recognized CPT code
+        // Only calculate allowed from CPT/HCPCS if valid, not for revenue codes
         const allowedAmount = extractedAllowed > 0 ? extractedAllowed : 
-          (isValidCPT && cptInfo ? (cptInfo.avgReimbursement * units) : 0);
+          ((cptCode || hcpcsCode) && cptInfo ? (cptInfo.avgReimbursement * units) : 0);
         
-        // Only calculate adjustment if we have a valid allowed amount
+        // Calculate adjustment if we have allowed amount
         const adjustment = extractedAdjustment > 0 ? extractedAdjustment : 
           (allowedAmount > 0 && billedAmount > allowedAmount ? (billedAmount - allowedAmount) : 0);
         
         items.push({
-          description: description || (cptInfo?.description || ''),
+          description: description || (revenueCode ? getRevenueCodeInfo(revenueCode).description : (cptInfo?.description || '')),
+          revenue_code: revenueCode,
           cpt_code: cptCode,
+          hcpcs_code: hcpcsCode,
           icd_code: item.icd_code || item.icd || item.diagnosis_code || item.dx_code || item.icd10,
           ndc_code: ndcCode,
           units: units,
           unit_price: billedAmount / units,
           total: billedAmount,
-          allowed_amount: allowedAmount > 0 ? allowedAmount : undefined, // Don't set 0, leave undefined
-          adjustment: adjustment > 0 ? adjustment : undefined, // Don't set 0, leave undefined
+          allowed_amount: allowedAmount > 0 ? allowedAmount : undefined,
+          adjustment: adjustment > 0 ? adjustment : undefined,
           modifier: item.modifier || item.mod,
           status: item.status || 'pending'
         });
@@ -1402,7 +1660,13 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                   <TableHeader>
                     <TableRow>
                       <TableHead className="min-w-[150px]">Description</TableHead>
-                      <TableHead>CPT/HCPCS</TableHead>
+                      {/* Dynamic code column based on what's detected */}
+                      {(() => {
+                        const codeType = detectCodeType(lineItems);
+                        if (codeType === 'revenue') return <TableHead>Revenue Code</TableHead>;
+                        if (codeType === 'mixed') return <><TableHead>Rev Code</TableHead><TableHead>CPT/HCPCS</TableHead></>;
+                        return <TableHead>CPT/HCPCS</TableHead>;
+                      })()}
                       <TableHead className="min-w-[200px]">ICD-10</TableHead>
                       <TableHead>NDC</TableHead>
                       <TableHead className="text-right">Units</TableHead>
@@ -1417,29 +1681,54 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                     {lineItems.length > 0 ? lineItems.map((item, idx) => {
                       const adjustment = item.adjustment || (item.total - (item.allowed_amount || 0));
                       const isEditing = editingLineItemIdx === idx;
+                      const codeType = detectCodeType(lineItems);
                       return (
                         <TableRow key={idx} className={isEditing ? 'bg-muted/50' : ''}>
                           <TableCell className="max-w-[200px] truncate" title={item.description}>{item.description}</TableCell>
-                          <TableCell className="min-w-[180px]">
-                            {isEditing ? (
-                              <CPTCodeSearch
-                                value={item.cpt_code}
-                                onSelect={(result) => handleCPTSelect(idx, result)}
-                                placeholder="Search CPT..."
-                                className="w-full"
-                              />
-                            ) : item.cpt_code ? (
-                              <div className="flex flex-col gap-1">
-                                <Badge variant="outline" className="font-mono text-xs">{item.cpt_code}</Badge>
-                                <span className="text-xs text-muted-foreground">{getCPTInfo(item.cpt_code).category}</span>
-                              </div>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-xs text-muted-foreground hover:text-primary"
-                                onClick={() => setEditingLineItemIdx(idx)}
-                              >
+                          {/* Dynamic code cell */}
+                          {codeType === 'revenue' ? (
+                            <TableCell>
+                              {item.revenue_code ? (
+                                <div className="flex flex-col gap-1">
+                                  <Badge variant="outline" className="font-mono text-xs bg-amber-50">{item.revenue_code}</Badge>
+                                  <span className="text-xs text-muted-foreground">{getRevenueCodeInfo(item.revenue_code).category}</span>
+                                </div>
+                              ) : '-'}
+                            </TableCell>
+                          ) : codeType === 'mixed' ? (
+                            <>
+                              <TableCell>
+                                {item.revenue_code ? (
+                                  <Badge variant="outline" className="font-mono text-xs bg-amber-50">{item.revenue_code}</Badge>
+                                ) : '-'}
+                              </TableCell>
+                              <TableCell>
+                                {(item.cpt_code || item.hcpcs_code) ? (
+                                  <Badge variant="outline" className="font-mono text-xs">{item.cpt_code || item.hcpcs_code}</Badge>
+                                ) : '-'}
+                              </TableCell>
+                            </>
+                          ) : (
+                            <TableCell className="min-w-[180px]">
+                              {isEditing ? (
+                                <CPTCodeSearch
+                                  value={item.cpt_code || item.hcpcs_code}
+                                  onSelect={(result) => handleCPTSelect(idx, result)}
+                                  placeholder="Search CPT..."
+                                  className="w-full"
+                                />
+                              ) : (item.cpt_code || item.hcpcs_code) ? (
+                                <div className="flex flex-col gap-1">
+                                  <Badge variant="outline" className="font-mono text-xs">{item.cpt_code || item.hcpcs_code}</Badge>
+                                  <span className="text-xs text-muted-foreground">{getCPTInfo(item.cpt_code || item.hcpcs_code || '').category}</span>
+                                </div>
+                              ) : (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-xs text-muted-foreground hover:text-primary"
+                                  onClick={() => setEditingLineItemIdx(idx)}
+                                >
                                 + Add CPT
                               </Button>
                             )}
