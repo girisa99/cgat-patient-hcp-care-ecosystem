@@ -445,6 +445,52 @@ const getBaseTargetSchema = (targetSystem: string): TargetField[] => {
       { name: 'Benefit_Investigation_vod__c.Coverage_vod__c', type: 'string', required: false, label: 'Veeva: BI Coverage' },
       { name: 'Benefit_Investigation_vod__c.Copay_vod__c', type: 'number', required: false, label: 'Veeva: BI Copay' },
       { name: 'Benefit_Investigation_vod__c.Prior_Auth_vod__c', type: 'boolean', required: false, label: 'Veeva: BI Prior Auth' },
+      
+      // Salesforce Health Cloud - Imaging Study/Radiology Report Fields
+      { name: 'Imaging_Study__c.Name', type: 'string', required: false, label: 'SF: Imaging Study Name' },
+      { name: 'Imaging_Study__c.Patient__c', type: 'string', required: false, label: 'SF: Imaging Patient' },
+      { name: 'Imaging_Study__c.Study_Date__c', type: 'date', required: false, label: 'SF: Study Date' },
+      { name: 'Imaging_Study__c.Modality__c', type: 'string', required: false, label: 'SF: Imaging Modality' },
+      { name: 'Imaging_Study__c.Body_Part__c', type: 'string', required: false, label: 'SF: Body Part/Region' },
+      { name: 'Imaging_Study__c.Referring_Physician__c', type: 'string', required: false, label: 'SF: Referring Physician' },
+      { name: 'Imaging_Study__c.Radiologist__c', type: 'string', required: false, label: 'SF: Radiologist' },
+      { name: 'Imaging_Study__c.Accession_Number__c', type: 'string', required: false, label: 'SF: Accession Number' },
+      { name: 'Imaging_Study__c.Status__c', type: 'string', required: false, label: 'SF: Study Status' },
+      
+      // Radiology Report Object
+      { name: 'Radiology_Report__c.Name', type: 'string', required: false, label: 'SF: Radiology Report Name' },
+      { name: 'Radiology_Report__c.Imaging_Study__c', type: 'string', required: false, label: 'SF: Report Study Lookup' },
+      { name: 'Radiology_Report__c.Patient__c', type: 'string', required: false, label: 'SF: Report Patient' },
+      { name: 'Radiology_Report__c.Provider__c', type: 'string', required: false, label: 'SF: Report Provider' },
+      { name: 'Radiology_Report__c.Report_Date__c', type: 'date', required: false, label: 'SF: Report Date' },
+      { name: 'Radiology_Report__c.Findings__c', type: 'string', required: false, label: 'SF: Findings' },
+      { name: 'Radiology_Report__c.Findings_Summary__c', type: 'string', required: false, label: 'SF: Findings Summary' },
+      { name: 'Radiology_Report__c.Abnormal_Findings__c', type: 'string', required: false, label: 'SF: Abnormal Findings' },
+      { name: 'Radiology_Report__c.Impression__c', type: 'string', required: false, label: 'SF: Impression' },
+      { name: 'Radiology_Report__c.Recommendations__c', type: 'string', required: false, label: 'SF: Recommendations' },
+      { name: 'Radiology_Report__c.Clinical_Notes__c', type: 'string', required: false, label: 'SF: Clinical Notes' },
+      { name: 'Radiology_Report__c.AI_Confidence__c', type: 'number', required: false, label: 'SF: AI Confidence Score' },
+      { name: 'Radiology_Report__c.Critical_Finding__c', type: 'boolean', required: false, label: 'SF: Critical Finding' },
+      { name: 'Radiology_Report__c.Follow_Up_Required__c', type: 'boolean', required: false, label: 'SF: Follow Up Required' },
+      
+      // Individual Finding Object (for detailed findings)
+      { name: 'Imaging_Finding__c.Name', type: 'string', required: false, label: 'SF: Finding Name' },
+      { name: 'Imaging_Finding__c.Report__c', type: 'string', required: false, label: 'SF: Finding Report Lookup' },
+      { name: 'Imaging_Finding__c.Category__c', type: 'string', required: false, label: 'SF: Finding Category' },
+      { name: 'Imaging_Finding__c.Description__c', type: 'string', required: false, label: 'SF: Finding Description' },
+      { name: 'Imaging_Finding__c.Region__c', type: 'string', required: false, label: 'SF: Finding Region' },
+      { name: 'Imaging_Finding__c.Clinical_Significance__c', type: 'string', required: false, label: 'SF: Clinical Significance' },
+      { name: 'Imaging_Finding__c.Status__c', type: 'string', required: false, label: 'SF: Finding Status' },
+      { name: 'Imaging_Finding__c.Measurement__c', type: 'string', required: false, label: 'SF: Measurement Value' },
+      { name: 'Imaging_Finding__c.Normal_Range__c', type: 'string', required: false, label: 'SF: Normal Range' },
+      { name: 'Imaging_Finding__c.Confidence__c', type: 'number', required: false, label: 'SF: Finding Confidence' },
+      
+      // Provider/Facility for Imaging
+      { name: 'Imaging_Facility__c.Name', type: 'string', required: false, label: 'SF: Facility Name' },
+      { name: 'Imaging_Facility__c.Address__c', type: 'string', required: false, label: 'SF: Facility Address' },
+      { name: 'Imaging_Facility__c.NPI__c', type: 'string', required: false, label: 'SF: Facility NPI' },
+      { name: 'Imaging_Facility__c.Provider_Name__c', type: 'string', required: false, label: 'SF: Provider Name' },
+      { name: 'Imaging_Facility__c.Provider_NPI__c', type: 'string', required: false, label: 'SF: Provider NPI' },
     );
   }
   

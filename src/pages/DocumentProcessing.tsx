@@ -478,6 +478,57 @@ export default function DocumentProcessing() {
             });
           }
           
+          // Extract medical imaging fields from processing_config (patient, provider, AI insights)
+          const patientDetails = processingConfig.patientDetails || {};
+          const providerDetails = processingConfig.providerDetails || {};
+          const aiInsights = processingConfig.aiInsights || [];
+          const clinicalNotes = processingConfig.notes || '';
+          
+          // Patient Details for medical imaging
+          if (patientDetails.patient_name) extractedFields['patient_name'] = { value: patientDetails.patient_name, confidence: 1, verified: true };
+          if (patientDetails.patient_dob) extractedFields['patient_dob'] = { value: patientDetails.patient_dob, confidence: 1, verified: true };
+          if (patientDetails.patient_id) extractedFields['patient_id'] = { value: patientDetails.patient_id, confidence: 1, verified: true };
+          if (patientDetails.referring_physician) extractedFields['referring_physician'] = { value: patientDetails.referring_physician, confidence: 1, verified: true };
+          if (patientDetails.study_date) extractedFields['study_date'] = { value: patientDetails.study_date, confidence: 1, verified: true };
+          
+          // Provider Details for medical imaging
+          if (providerDetails.provider_name) extractedFields['provider_name'] = { value: providerDetails.provider_name, confidence: 1, verified: true };
+          if (providerDetails.provider_npi) extractedFields['provider_npi'] = { value: providerDetails.provider_npi, confidence: 1, verified: true };
+          if (providerDetails.facility_name) extractedFields['facility_name'] = { value: providerDetails.facility_name, confidence: 1, verified: true };
+          if (providerDetails.facility_address) extractedFields['facility_address'] = { value: providerDetails.facility_address, confidence: 1, verified: true };
+          if (providerDetails.report_date) extractedFields['report_date'] = { value: providerDetails.report_date, confidence: 1, verified: true };
+          
+          // Clinical notes
+          if (clinicalNotes) extractedFields['clinical_notes'] = { value: clinicalNotes, confidence: 1, verified: true };
+          
+          // AI Insights - extract key findings as structured fields
+          if (aiInsights.length > 0) {
+            // Store full insights as JSON
+            extractedFields['ai_insights_json'] = { value: JSON.stringify(aiInsights), confidence: 1, verified: true };
+            
+            // Extract individual findings with their details
+            aiInsights.forEach((insight: any, idx: number) => {
+              const prefix = `finding_${idx + 1}_`;
+              if (insight.category) extractedFields[`${prefix}category`] = { value: insight.category, confidence: insight.confidence || 0.9, verified: true };
+              if (insight.description) extractedFields[`${prefix}description`] = { value: insight.description, confidence: insight.confidence || 0.9, verified: true };
+              if (insight.region) extractedFields[`${prefix}region`] = { value: insight.region, confidence: insight.confidence || 0.9, verified: true };
+              if (insight.clinicalSignificance) extractedFields[`${prefix}significance`] = { value: insight.clinicalSignificance, confidence: insight.confidence || 0.9, verified: true };
+              if (insight.status) extractedFields[`${prefix}status`] = { value: insight.status, confidence: insight.confidence || 0.9, verified: true };
+              if (insight.measurementValue) extractedFields[`${prefix}measurement`] = { value: insight.measurementValue, confidence: insight.confidence || 0.9, verified: true };
+              if (insight.normalRange) extractedFields[`${prefix}normal_range`] = { value: insight.normalRange, confidence: insight.confidence || 0.9, verified: true };
+            });
+            
+            // Create summary fields
+            const findingsSummary = aiInsights.map((i: any) => i.description).filter(Boolean).join('; ');
+            if (findingsSummary) extractedFields['findings_summary'] = { value: findingsSummary, confidence: 0.9, verified: true };
+            
+            const abnormalFindings = aiInsights.filter((i: any) => i.status === 'abnormal' || i.clinicalSignificance === 'high' || i.clinicalSignificance === 'critical');
+            if (abnormalFindings.length > 0) {
+              extractedFields['abnormal_findings'] = { value: abnormalFindings.map((f: any) => f.description).join('; '), confidence: 0.9, verified: true };
+              extractedFields['abnormal_count'] = { value: String(abnormalFindings.length), confidence: 1, verified: true };
+            }
+          }
+          
           console.log('[loadHistory] Final extractedFields:', extractedFields);
 
           return {
