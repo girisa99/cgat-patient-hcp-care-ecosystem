@@ -118,6 +118,21 @@ export default function AIProcessingPipeline({
       });
     }
 
+    // Add Code Intelligence stage for invoice/billing documents
+    // Supports Revenue Codes (UB-04), CPT, HCPCS, ICD-10, NDC
+    if (documentConfig.category === 'financial' || 
+        documentConfig.id === 'invoice' || 
+        documentConfig.id === 'billing') {
+      baseStages.push({
+        id: 'code-intelligence',
+        label: 'Code Intel',
+        icon: <span className="text-lg">🏥</span>,
+        color: 'teal',
+        description: 'Revenue/CPT/ICD',
+        isActive: true,
+      });
+    }
+
     // Agent is always last and optional
     baseStages.push({
       id: 'agent',
@@ -141,6 +156,7 @@ export default function AIProcessingPipeline({
     orange: { bg: 'bg-orange-500/15', border: 'border-orange-500', text: 'text-orange-500' },
     red: { bg: 'bg-red-500/15', border: 'border-red-500', text: 'text-red-500' },
     cyan: { bg: 'bg-cyan-500/15', border: 'border-cyan-500', text: 'text-cyan-500' },
+    teal: { bg: 'bg-teal-500/15', border: 'border-teal-500', text: 'text-teal-500' },
     primary: { bg: 'bg-primary/15', border: 'border-primary', text: 'text-primary' },
   };
 
