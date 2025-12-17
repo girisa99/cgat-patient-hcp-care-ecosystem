@@ -3320,6 +3320,7 @@ export default function DocumentProcessing() {
               history={processingHistory}
               currentExtractedFields={processingResult?.extractedFields}
               currentProcessingResultId={processingResult?.id}
+              filterByDocType={selectedDocType}
               onViewResult={(result: any) => {
                 setProcessingResult(result as any);
                 
