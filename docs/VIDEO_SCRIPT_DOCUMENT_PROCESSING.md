@@ -1,21 +1,29 @@
 # Document Processing Platform - Video Script
 
 ## Video Title
-**"AI-Powered Document Processing: From Upload to Insights in Seconds"**
+**"AI-Powered Document Processing: Built in 64 Hours with Vibe Coding"**
 
 ---
 
-## INTRO (0:00 - 0:30)
+## INTRO - THE WEEKEND BUILD STORY (0:00 - 1:15)
 
-**[Screen: Platform logo/title card]**
+**[Screen: Simple workspace setup or platform logo]**
 
-> "Hey everyone! Today I'm walking you through our AI-powered document processing platform that transforms how healthcare organizations handle prescriptions, insurance cards, medical imaging, and invoices.
+> "Hey everyone! Before I dive into this platform demo, I want to share something about how this came together.
 >
-> If you haven't already, check out the detailed technical article linked in the description below. This video will show you the platform in action."
+> What you're about to see was built in less than 64 hours over a single weekend. And here's the thing - the actual development time was even shorter. Most of those hours went into testing, refining workflows, and making sure everything worked correctly.
+>
+> This is the power of vibe coding and AI-assisted development tools. Using platforms like Lovable, I was able to move from concept to working product at a pace that would have been unimaginable just a few years ago.
+>
+> The AI handles the heavy lifting - the boilerplate, component structure, integrations - while I focused on architecture decisions and user experience. It's like having a senior developer pair-programming with you around the clock.
+>
+> So if you've been curious about what's possible with these new development paradigms, this is a real-world example. A fully functional AI document processing platform - prescriptions, insurance cards, medical imaging, invoices - all built in a weekend.
+>
+> Let's dive in and see what it can do."
 
 ---
 
-## SECTION 1: THE TWO-STAGE PIPELINE (0:30 - 1:30)
+## SECTION 1: THE TWO-STAGE PIPELINE (1:15 - 2:15)
 
 **[Screen: Show NLPPipelineStepsDiagram or the pipeline image]**
 
@@ -29,7 +37,7 @@
 
 ---
 
-## SECTION 2: PRESCRIPTION PROCESSING DEMO (1:30 - 3:00)
+## SECTION 2: PRESCRIPTION PROCESSING DEMO (2:15 - 3:45)
 
 **[Screen: Navigate to Document Processing page, select Prescription]**
 
@@ -53,7 +61,7 @@
 
 ---
 
-## SECTION 3: INSURANCE CARD PROCESSING (3:00 - 4:00)
+## SECTION 3: INSURANCE CARD PROCESSING (3:45 - 4:45)
 
 **[Screen: Switch to Insurance Card document type]**
 
@@ -69,7 +77,7 @@
 
 ---
 
-## SECTION 4: MEDICAL IMAGING ANALYSIS (4:00 - 5:30)
+## SECTION 4: MEDICAL IMAGING ANALYSIS (4:45 - 6:15)
 
 **[Screen: Switch to Medical Imaging - X-ray]**
 
@@ -87,7 +95,7 @@
 
 ---
 
-## SECTION 5: INVOICE & RCM ANALYSIS (5:30 - 6:30)
+## SECTION 5: INVOICE & RCM ANALYSIS (6:15 - 7:15)
 
 **[Screen: Switch to Invoice/Billing]**
 
@@ -103,7 +111,7 @@
 
 ---
 
-## SECTION 6: MCP SDK EXPORT (6:30 - 7:30)
+## SECTION 6: MCP SDK EXPORT (7:15 - 8:15)
 
 **[Screen: Show Export/MCP SDK panel]**
 
@@ -119,7 +127,7 @@
 
 ---
 
-## SECTION 7: SUB-AGENT RECOMMENDATIONS (7:30 - 8:15)
+## SECTION 7: SUB-AGENT RECOMMENDATIONS (8:15 - 9:00)
 
 **[Screen: Show Sub-Agent Recommendation Dialog]**
 
@@ -133,7 +141,7 @@
 
 ---
 
-## SECTION 8: PROCESSING HISTORY (8:15 - 8:45)
+## SECTION 8: PROCESSING HISTORY (9:00 - 9:30)
 
 **[Screen: Show History tab]**
 
@@ -143,7 +151,7 @@
 
 ---
 
-## CLOSING (8:45 - 9:15)
+## CLOSING (9:30 - 10:00)
 
 **[Screen: Return to main dashboard or platform overview]**
 
@@ -158,9 +166,11 @@
 ## VIDEO DESCRIPTION TEMPLATE
 
 ```
-🏥 AI-Powered Document Processing for Healthcare
+🏥 AI-Powered Document Processing - Built in 64 Hours with Vibe Coding
 
-In this video, I walk through our intelligent document processing platform that handles:
+In this video, I share how I built a complete AI document processing platform over a single weekend using vibe coding tools like Lovable. Development was fast - testing took longer!
+
+The platform handles:
 ✅ Prescriptions with NDC lookup & clinical recommendations
 ✅ Insurance cards with auto-variant detection
 ✅ Medical imaging with AI-powered analysis
@@ -173,20 +183,21 @@ Tech Stack:
 - NLP: Google Gemini 2.5 Flash
 - Code Intelligence: OpenFDA, NLM Clinical Tables, RxNorm
 - Vision AI: ResNet, Vision Transformers
+- Built with: Lovable (AI-assisted development)
 
 Timestamps:
-0:00 - Introduction
-0:30 - Two-Stage AI Pipeline Explained
-1:30 - Prescription Processing Demo
-3:00 - Insurance Card Processing
-4:00 - Medical Imaging Analysis
-5:30 - Invoice & RCM Analysis
-6:30 - MCP SDK Export to CRM
-7:30 - Sub-Agent Recommendations
-8:15 - Processing History & Audit
-8:45 - Closing
+0:00 - The Weekend Build Story
+1:15 - Two-Stage AI Pipeline Explained
+2:15 - Prescription Processing Demo
+3:45 - Insurance Card Processing
+4:45 - Medical Imaging Analysis
+6:15 - Invoice & RCM Analysis
+7:15 - MCP SDK Export to CRM
+8:15 - Sub-Agent Recommendations
+9:00 - Processing History & Audit
+9:30 - Closing
 
-#HealthcareAI #DocumentProcessing #MachineLearning #HealthTech
+#VibeCoding #HealthcareAI #DocumentProcessing #Lovable #AITools #HealthTech #WeekendBuild
 ```
 
 ---
@@ -199,11 +210,13 @@ Timestamps:
 4. **Sample Documents**: Have clean, readable sample documents ready
 5. **Audio**: Record in a quiet space, use a decent microphone
 6. **B-Roll**: Consider adding the pipeline diagram images as overlays during technical explanations
+7. **Intro Energy**: Start with enthusiasm about the weekend build - it's a hook!
 
 ---
 
 ## ESTIMATED RUNTIME
 
-- Target: 8-9 minutes
+- Target: 9-10 minutes
+- The intro story adds engagement and context
 - Comfortable pace for complex technical content
 - Short enough to maintain engagement, long enough to show value
