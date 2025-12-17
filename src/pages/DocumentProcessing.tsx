@@ -591,6 +591,142 @@ export default function DocumentProcessing() {
   // Duration options
   const durationOptions = ['7 days', '10 days', '14 days', '21 days', '30 days', '60 days', '90 days'];
 
+  // Parse SIG text to auto-populate dose, route, frequency, duration selectors
+  const parseSigToSelectors = useCallback((sigText: string) => {
+    if (!sigText) return;
+    
+    const lowerSig = sigText.toLowerCase();
+    
+    // Parse dose amount (e.g., "take 1 tablet", "take 2 capsules", "1 cap", "2 tabs")
+    const dosePatterns = [
+      /take\s*(\d+)\s*(tablet|tab|capsule|cap|drop|ml|puff)s?/i,
+      /(\d+)\s*(tablet|tab|capsule|cap|drop|ml|puff)s?\s*(orally|by mouth|po|daily|twice|three)/i,
+      /^(\d+)\s*(tablet|tab|capsule|cap|drop|ml|puff)s?/i,
+    ];
+    
+    for (const pattern of dosePatterns) {
+      const match = sigText.match(pattern);
+      if (match) {
+        const qty = match[1];
+        const form = match[2].toLowerCase();
+        let doseValue = '';
+        if (form.startsWith('tab')) {
+          doseValue = qty === '1' ? '1 tablet' : `${qty} tablets`;
+        } else if (form.startsWith('cap')) {
+          doseValue = qty === '1' ? '1 capsule' : `${qty} capsules`;
+        } else if (form === 'drop') {
+          doseValue = qty === '1' ? '1 drop' : `${qty} drops`;
+        } else if (form === 'ml') {
+          doseValue = `${qty} ml`;
+        } else if (form === 'puff') {
+          doseValue = qty === '1' ? '1 puff' : `${qty} puffs`;
+        }
+        if (doseValue && doseOptions.includes(doseValue)) {
+          setSelectedDose(doseValue);
+          break;
+        }
+      }
+    }
+    
+    // Parse route (oral, by mouth, po, topically, etc.)
+    const routeMapping: Record<string, string> = {
+      'orally': 'by mouth (oral)',
+      'by mouth': 'by mouth (oral)',
+      'po': 'by mouth (oral)',
+      'oral': 'by mouth (oral)',
+      'sublingually': 'under the tongue (sublingual)',
+      'under tongue': 'under the tongue (sublingual)',
+      'sl': 'under the tongue (sublingual)',
+      'rectally': 'rectally',
+      'pr': 'rectally',
+      'intramuscular': 'intramuscular injection',
+      'im': 'intramuscular injection',
+      'intravenous': 'intravenous injection',
+      'iv': 'intravenous injection',
+      'subcutaneous': 'subcutaneous injection',
+      'sc': 'subcutaneous injection',
+      'topically': 'topically (on skin)',
+      'topical': 'topically (on skin)',
+      'inhale': 'by inhalation',
+      'inhalation': 'by inhalation',
+      'both eyes': 'both eyes',
+      'ou': 'both eyes',
+      'both ears': 'both ears',
+      'au': 'both ears',
+    };
+    
+    for (const [keyword, routeLabel] of Object.entries(routeMapping)) {
+      if (lowerSig.includes(keyword)) {
+        setSelectedRoute(routeLabel);
+        break;
+      }
+    }
+    
+    // Parse frequency (once daily, twice daily, three times a day, etc.)
+    const freqMapping: Record<string, string> = {
+      'once daily': 'once daily',
+      'once a day': 'once daily',
+      'qd': 'once daily',
+      'daily': 'once daily',
+      'twice daily': 'twice daily',
+      'twice a day': 'twice daily',
+      'bid': 'twice daily',
+      'two times a day': 'twice daily',
+      '2 times a day': 'twice daily',
+      'three times a day': 'three times a day',
+      'three times daily': 'three times a day',
+      'tid': 'three times a day',
+      '3 times a day': 'three times a day',
+      'four times a day': 'four times a day',
+      'qid': 'four times a day',
+      '4 times a day': 'four times a day',
+      'every 4 hours': 'every 4 hours',
+      'q4h': 'every 4 hours',
+      'every 6 hours': 'every 6 hours',
+      'q6h': 'every 6 hours',
+      'every 8 hours': 'every 8 hours',
+      'q8h': 'every 8 hours',
+      'every 12 hours': 'every 12 hours',
+      'q12h': 'every 12 hours',
+      'at bedtime': 'at bedtime',
+      'hs': 'at bedtime',
+      'as needed': 'as needed',
+      'prn': 'as needed',
+    };
+    
+    for (const [keyword, freqLabel] of Object.entries(freqMapping)) {
+      if (lowerSig.includes(keyword)) {
+        setSelectedFrequency(freqLabel);
+        break;
+      }
+    }
+    
+    // Parse duration (for X days)
+    const durationPatterns = [
+      /for\s*(\d+)\s*days?/i,
+      /(\d+)\s*days?\s*supply/i,
+      /x\s*(\d+)\s*days?/i,
+      /(\d+)\s*day\s*course/i,
+    ];
+    
+    for (const pattern of durationPatterns) {
+      const match = sigText.match(pattern);
+      if (match) {
+        const days = parseInt(match[1]);
+        // Find closest duration option
+        const closestDuration = durationOptions.find(d => {
+          const dDays = parseInt(d.match(/(\d+)/)?.[1] || '0');
+          return dDays === days;
+        }) || durationOptions.find(d => {
+          const dDays = parseInt(d.match(/(\d+)/)?.[1] || '0');
+          return dDays >= days;
+        }) || '30 days';
+        setSelectedDuration(closestDuration);
+        break;
+      }
+    }
+  }, [doseOptions, durationOptions]);
+
   // Normalize drug name for API lookup - strip strength, dosage form, extras
   const normalizeDrugName = useCallback((rawName: string): { baseName: string; extractedStrength: string } => {
     const original = rawName.trim();
@@ -1169,6 +1305,10 @@ export default function DocumentProcessing() {
                         extractedFields['instructions']?.value ||
                         extractedFields['dosage_instructions']?.value ||
                         'Take as directed';
+        
+        // Auto-populate dose, route, frequency, duration selectors from SIG
+        parseSigToSelectors(sigText);
+        
         const calculation = calculateQuantityAndDaySupply(sigText);
         
         medications = [{
