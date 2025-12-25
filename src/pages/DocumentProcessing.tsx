@@ -311,13 +311,47 @@ export default function DocumentProcessing() {
 
   const dynamicTabs = getTabsForDocumentType(selectedDocType);
   
-  // Reset to upload tab when document type changes if current tab is not available
+  // Track previous document type to detect changes
+  const prevDocTypeRef = useRef<string>(selectedDocType);
+  
+  // Reset to upload tab AND clear state when document type changes
   useEffect(() => {
     const validTabIds = dynamicTabs.map(t => t.id);
     if (!validTabIds.includes(activeTab)) {
       setActiveTab('upload');
     }
+    
+    // Clear extracted data when document type changes to prevent data carryover
+    if (prevDocTypeRef.current !== selectedDocType) {
+      console.log('DocumentProcessing - Document type changed from', prevDocTypeRef.current, 'to', selectedDocType);
+      
+      // Clear current processing result to prevent stale data
+      setProcessingResult(null);
+      setPendingResult(null);
+      
+      // Clear any document-type-specific sessionStorage
+      const keysToRemove: string[] = [];
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && (
+          key.startsWith('invoiceRCM_') || 
+          key.startsWith('prescriptionData_') || 
+          key.startsWith('insuranceCard_') ||
+          key.startsWith('medicalImage_') ||
+          key.startsWith('documentProcessing_')
+        )) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(key => {
+        console.log('DocumentProcessing - Removing sessionStorage key:', key);
+        sessionStorage.removeItem(key);
+      });
+      
+      prevDocTypeRef.current = selectedDocType;
+    }
   }, [selectedDocType, dynamicTabs, activeTab]);
+  
   const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);

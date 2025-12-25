@@ -648,27 +648,68 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     const acct = extractedData?.account_number || '';
     const billed = extractedData?.billed_amount || extractedData?.total_charges || '';
     const balance = extractedData?.balance_due || '';
+    const patient = extractedData?.patient_name || '';
+    const vendor = extractedData?.vendor_name || '';
     
-    // Combine identifiers to create unique key
-    const combined = `${inv}_${claim}_${acct}_${billed}_${balance}`.replace(/[^a-zA-Z0-9]/g, '');
-    return `invoiceRCM_${combined || 'empty'}`;
+    // Combine identifiers to create unique key - include more fields for uniqueness
+    const combined = `${inv}_${claim}_${acct}_${billed}_${balance}_${patient}_${vendor}`.replace(/[^a-zA-Z0-9]/g, '');
+    return combined ? `invoiceRCM_${combined}` : null;
   }, [extractedData?.invoice_number, extractedData?.claim_number, extractedData?.account_number, 
-      extractedData?.billed_amount, extractedData?.total_charges, extractedData?.balance_due]);
+      extractedData?.billed_amount, extractedData?.total_charges, extractedData?.balance_due,
+      extractedData?.patient_name, extractedData?.vendor_name]);
 
   // Track previous invoice key to detect when invoice changes
   const prevInvoiceKeyRef = React.useRef<string | null>(null);
+  const prevExtractedDataRef = React.useRef<Record<string, any> | null>(null);
 
-  // Clear state when switching to a different invoice
+  // Clear state when extracted data changes completely (new document uploaded)
   useEffect(() => {
-    if (prevInvoiceKeyRef.current && prevInvoiceKeyRef.current !== currentInvoiceKey) {
+    // Check if this is a completely new document (not just minor updates)
+    const hasNewData = extractedData && Object.keys(extractedData).length > 0;
+    const hadPreviousData = prevExtractedDataRef.current && Object.keys(prevExtractedDataRef.current).length > 0;
+    
+    // Detect if this is a new document upload
+    const isNewDocument = hasNewData && hadPreviousData && (
+      // Invoice number changed
+      (extractedData?.invoice_number !== prevExtractedDataRef.current?.invoice_number && extractedData?.invoice_number) ||
+      // Claim number changed
+      (extractedData?.claim_number !== prevExtractedDataRef.current?.claim_number && extractedData?.claim_number) ||
+      // Patient name changed
+      (extractedData?.patient_name !== prevExtractedDataRef.current?.patient_name && extractedData?.patient_name) ||
+      // Billed amount significantly changed
+      (Math.abs((extractedData?.billed_amount || 0) - (prevExtractedDataRef.current?.billed_amount || 0)) > 0.01 && extractedData?.billed_amount)
+    );
+    
+    if (isNewDocument) {
+      console.log('RCM Analysis - New document detected, clearing all state');
+      setLineItems([]);
+      setHasUserEdits(false);
+      setActiveTab('overview');
+      setRcmSummary(null);
+      setHasRestoredState(false);
+      
+      // Clear old sessionStorage if we have a new key
+      if (prevInvoiceKeyRef.current) {
+        sessionStorage.removeItem(prevInvoiceKeyRef.current);
+      }
+    }
+    
+    prevExtractedDataRef.current = extractedData ? { ...extractedData } : null;
+  }, [extractedData]);
+
+  // Clear state when switching to a different invoice (by key)
+  useEffect(() => {
+    if (prevInvoiceKeyRef.current && currentInvoiceKey && prevInvoiceKeyRef.current !== currentInvoiceKey) {
       // New invoice loaded - clear old state
-      console.log('RCM Analysis - New invoice detected, clearing old state');
+      console.log('RCM Analysis - Invoice key changed, clearing old state');
       console.log('Previous key:', prevInvoiceKeyRef.current, 'New key:', currentInvoiceKey);
       setLineItems([]);
       setHasUserEdits(false);
       setActiveTab('overview');
+      setRcmSummary(null);
       // Remove old state from session storage
       sessionStorage.removeItem(prevInvoiceKeyRef.current);
+      setHasRestoredState(false);
     }
     prevInvoiceKeyRef.current = currentInvoiceKey;
   }, [currentInvoiceKey]);
@@ -701,7 +742,7 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
 
   // Restore state from sessionStorage on mount - uses invoice-specific key
   useEffect(() => {
-    if (!currentInvoiceKey || currentInvoiceKey === 'invoiceRCM_empty') {
+    if (!currentInvoiceKey) {
       // No valid invoice key yet, mark as restored and let parsing happen
       setHasRestoredState(true);
       return;
@@ -711,8 +752,8 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
-        // Only restore if saved within last 60 minutes AND matches current invoice
-        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 60 * 60 * 1000) {
+        // Only restore if saved within last 30 minutes AND matches current invoice
+        if (parsed.timestamp && (Date.now() - parsed.timestamp) < 30 * 60 * 1000) {
           // Verify invoice identifiers match
           const savedInv = parsed.invoiceIdentifiers?.invoice_number || '';
           const savedClaim = parsed.invoiceIdentifiers?.claim_number || '';

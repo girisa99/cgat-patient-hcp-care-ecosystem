@@ -94,6 +94,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
     extractMetadata,
     mapToForm,
     cancelJob,
+    clearAllDocumentState,
     updateFieldValue,
     verifyField,
     flagForReview,
@@ -116,6 +117,25 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
   const [reviewReason, setReviewReason] = useState('');
   const [ocrProvider, setOcrProvider] = useState<'google' | 'azure' | 'aws'>('google');
   const [selectedDocumentType, setSelectedDocumentType] = useState<string>('prescription');
+  const [prevDocumentType, setPrevDocumentType] = useState<string>('prescription');
+
+  // Clear state when document type changes
+  useEffect(() => {
+    if (prevDocumentType !== selectedDocumentType) {
+      console.log('DocumentUploadProcessor - Document type changed from', prevDocumentType, 'to', selectedDocumentType);
+      
+      // Clear all document processing state
+      clearAllDocumentState();
+      
+      // Reset local state
+      setActiveTab('upload');
+      setEditingField(null);
+      setEditValue('');
+      setReviewReason('');
+      
+      setPrevDocumentType(selectedDocumentType);
+    }
+  }, [selectedDocumentType, prevDocumentType, clearAllDocumentState]);
 
   // Dynamic tabs based on document type
   const getTabsForDocumentType = (docType: string) => {
