@@ -262,6 +262,7 @@ export interface UseDocumentProcessingReturn {
   mapToForm: (documentId: string, targetFields: string[]) => Promise<FormMapping | null>;
   cancelJob: (documentId: string) => Promise<void>;
   clearJobs: () => void;
+  clearAllDocumentState: () => void;
   
   // Verification & Editing
   updateFieldValue: (documentId: string, fieldName: string, newValue: string) => Promise<boolean>;
@@ -534,6 +535,45 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     setFormMapping(null);
   }, []);
 
+  // Clear all document processing state including sessionStorage
+  const clearAllDocumentState = useCallback(() => {
+    console.log('Document Processing - Clearing all document state');
+    
+    // Clear component state
+    setJobs([]);
+    setActiveJob(null);
+    setFormMapping(null);
+    setIsProcessing(false);
+    setIsUploading(false);
+    setUploadProgress(0);
+    
+    // Clear all invoice/document related sessionStorage keys
+    const keysToRemove: string[] = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && (
+        key.startsWith('invoiceRCM_') || 
+        key.startsWith('prescriptionData_') || 
+        key.startsWith('insuranceCard_') ||
+        key.startsWith('medicalImage_') ||
+        key.startsWith('documentProcessing_')
+      )) {
+        keysToRemove.push(key);
+      }
+    }
+    keysToRemove.forEach(key => {
+      console.log('Document Processing - Removing sessionStorage key:', key);
+      sessionStorage.removeItem(key);
+    });
+    
+    // Unsubscribe from any active job
+    if (subscriptionRef.current) {
+      supabase.removeChannel(subscriptionRef.current);
+      subscriptionRef.current = null;
+    }
+    activeJobIdRef.current = null;
+  }, []);
+
   // Batch upload
   const [batchProgress, setBatchProgress] = useState<{ total: number; completed: number } | null>(null);
 
@@ -756,6 +796,7 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     mapToForm,
     cancelJob,
     clearJobs,
+    clearAllDocumentState,
     updateFieldValue,
     verifyField,
     flagForReview,
