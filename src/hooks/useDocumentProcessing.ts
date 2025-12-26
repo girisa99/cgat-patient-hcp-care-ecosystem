@@ -547,7 +547,7 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     setIsUploading(false);
     setUploadProgress(0);
     
-    // Clear all invoice/document related sessionStorage keys
+    // Clear all invoice/document related sessionStorage keys for ALL document types
     const keysToRemove: string[] = [];
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
@@ -556,7 +556,18 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
         key.startsWith('prescriptionData_') || 
         key.startsWith('insuranceCard_') ||
         key.startsWith('medicalImage_') ||
-        key.startsWith('documentProcessing_')
+        key.startsWith('documentProcessing_') ||
+        key.startsWith('docProcessing_') ||
+        key.startsWith('patientOnboarding_') ||
+        key.startsWith('orderManagement_') ||
+        key.startsWith('treatmentCenter_') ||
+        key.startsWith('customerOnboarding_') ||
+        key.startsWith('labResult_') ||
+        key.startsWith('xray_') ||
+        key.startsWith('ctScan_') ||
+        key.startsWith('mri_') ||
+        key.startsWith('ecg_') ||
+        key.startsWith('ultrasound_')
       )) {
         keysToRemove.push(key);
       }
