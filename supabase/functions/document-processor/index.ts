@@ -1266,7 +1266,7 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
 
 // Build DYNAMIC extraction prompt - extract what's visible but use standardized field names for known document types
 function buildExtractionPrompt(documentType: string, targetFields?: string[]): string {
-  // Document-type-specific extraction hints
+  // Document-type-specific extraction hints for ALL document types
   const documentTypeHints: Record<string, string> = {
     'prescription': `
 PRESCRIPTION DOCUMENT - CRITICAL EXTRACTION RULES:
@@ -1296,6 +1296,7 @@ PRESCRIPTION DOCUMENT - CRITICAL EXTRACTION RULES:
 - date_written: Date the prescription was written
 - pharmacy: Pharmacy name if specified
 - diagnosis: Diagnosis or ICD code if mentioned
+- ndc: NDC code if visible
 
 **CONTROLLED SUBSTANCE INDICATORS:**
 - Look for DEA number, schedule markings (II, III, IV, V), or controlled substance warnings
@@ -1303,15 +1304,305 @@ PRESCRIPTION DOCUMENT - CRITICAL EXTRACTION RULES:
 
 DO NOT skip the medication_name field - if you see ANY drug name, extract it.
 `,
+    'insurance': `
+INSURANCE DOCUMENT EXTRACTION:
+**CARD FRONT:**
+- insurance_name: Insurance company name (e.g., "Blue Cross Blue Shield", "UnitedHealthcare")
+- plan_name: Plan name (e.g., "Gold PPO", "Choice Plus")
+- plan_type: HMO, PPO, EPO, POS, or other plan type
+- member_name: Name of the insured member
+- member_id: Member ID number (required)
+- subscriber_id: Subscriber ID if different from member ID
+- group_number: Group number (Grp)
+- effective_date: Coverage effective date
+- expiration_date: Coverage end date
+
+**PHARMACY BENEFITS (RX):**
+- bin: BIN (Bank ID Number) - usually 6 digits
+- pcn: PCN (Processor Control Number)
+- rxgrp: RxGrp or Rx Group
+- copay_rx: Prescription copay amounts
+
+**COPAYS & DEDUCTIBLES:**
+- copay: Primary care copay amount
+- copay_specialist: Specialist copay amount
+- deductible: Annual deductible amount
+- oop_max: Out of pocket maximum
+
+**CONTACT INFO:**
+- customer_service: Customer service phone number
+- claims_address: Claims mailing address
+- payer_id: Electronic payer ID
+`,
     'insurance_card': `
 INSURANCE CARD EXTRACTION:
 - Look for Member ID and extract as "member_id"
 - Look for Group Number and extract as "group_number"
 - Look for BIN (Bank ID Number) and extract as "bin"
 - Look for PCN (Processor Control Number) and extract as "pcn"
+- Look for RxGrp and extract as "rxgrp"
 - Look for Insurance company name and extract as "insurance_name"
-- Look for copay amounts and extract as "copay"
+- Look for Plan Name and extract as "plan_name"
+- Look for copay amounts and extract as "copay", "copay_specialist", "copay_rx"
 - Look for deductible and extract as "deductible"
+- Look for member name and extract as "member_name"
+- Look for effective/expiration dates
+`,
+    'patient-onboarding': `
+PATIENT ONBOARDING/INTAKE FORM EXTRACTION:
+**PATIENT DEMOGRAPHICS:**
+- patient_name: Full name (first, middle, last)
+- dob: Date of birth
+- ssn: Social Security Number (last 4 if partial)
+- gender: Gender/Sex
+- address: Full street address
+- city, state, zip: City, state, and ZIP code
+- phone: Phone number(s) - home, cell, work
+- email: Email address
+- preferred_language: Preferred language
+
+**EMERGENCY CONTACT:**
+- emergency_contact: Emergency contact name
+- emergency_phone: Emergency contact phone
+- emergency_relationship: Relationship to patient
+
+**INSURANCE INFO:**
+- insurance_id: Insurance member ID
+- insurance_name: Insurance company name
+- group_number: Group number
+
+**MEDICAL HISTORY:**
+- allergies: Known allergies (medications, food, environmental)
+- current_medications: Current medications
+- medical_conditions: Existing medical conditions
+- primary_care_physician: PCP name
+
+**CONSENTS:**
+- consent_signed: Whether consent form was signed (true/false)
+- hipaa_signed: HIPAA authorization signed (true/false)
+- signature_date: Date of signature
+`,
+    'lab-results': `
+LAB RESULTS EXTRACTION:
+**PATIENT INFO:**
+- patient_name: Patient's full name (required)
+- patient_dob: Date of birth
+- patient_id: Patient ID or MRN
+
+**SPECIMEN INFO:**
+- specimen_id: Specimen/Accession number
+- collection_date: Date/time specimen collected
+- received_date: Date specimen received by lab
+- specimen_type: Type of specimen (blood, urine, tissue, etc.)
+
+**TEST RESULTS (extract ALL tests):**
+For each test, extract:
+- test_name: Name of the test (required)
+- result_value: Numeric or text result (required)
+- units: Units of measurement (e.g., mg/dL, mmol/L)
+- reference_range: Normal range (e.g., "70-100")
+- flag: Abnormal flag (H=High, L=Low, N=Normal, C=Critical)
+
+**LAB INFO:**
+- lab_name: Laboratory name
+- lab_address: Laboratory address
+- ordering_provider: Ordering physician name
+- performing_lab: Performing laboratory if different
+- report_date: Date results reported
+
+Extract ALL individual test results as separate entries in line_items.
+`,
+    'lab_result': `
+LAB RESULTS EXTRACTION:
+**PATIENT INFO:**
+- patient_name: Patient's full name (required)
+- patient_dob: Date of birth
+- patient_id: Patient ID or MRN
+
+**TEST RESULTS (extract ALL tests):**
+For each test, extract:
+- test_name: Name of the test (required)
+- result_value: Numeric or text result (required)
+- units: Units of measurement
+- reference_range: Normal range
+- flag: Abnormal flag (H/L/N/C)
+
+**LAB INFO:**
+- lab_name: Laboratory name
+- collection_date: Collection date
+- ordering_provider: Ordering physician
+`,
+    'medical_imaging': `
+MEDICAL IMAGING / DICOM EXTRACTION:
+**PATIENT INFO:**
+- patient_name: Patient name from DICOM header
+- patient_id: Patient ID/MRN
+- patient_dob: Date of birth
+
+**STUDY INFO:**
+- modality: Imaging modality (CT, MRI, XR, US, NM, PT, etc.)
+- study_date: Date of study/exam
+- study_description: Description of study
+- series_description: Series description
+- body_part: Body part examined
+- laterality: Left/Right/Bilateral if applicable
+
+**TECHNICAL:**
+- accession_number: Accession number
+- institution: Institution/facility name
+- referring_physician: Referring physician name
+- performing_physician: Performing/reading physician
+
+**DICOM TAGS:**
+- study_instance_uid: Study Instance UID
+- series_instance_uid: Series Instance UID
+- slice_thickness: Slice thickness (for CT/MRI)
+- pixel_spacing: Pixel spacing
+`,
+    'xray': `
+X-RAY REPORT EXTRACTION:
+**PATIENT INFO:**
+- patient_name: Patient's full name (required)
+- patient_dob: Date of birth
+- patient_id: Patient ID/MRN
+
+**EXAM INFO:**
+- study_date: Date of examination (required)
+- body_part: Body part examined (required) - e.g., Chest, Hand, Spine, Knee
+- laterality: Left, Right, or Bilateral
+- views: Number and types of views (e.g., "2 views PA and Lateral")
+- technique: Technique used
+- indication: Clinical indication/reason for exam
+
+**FINDINGS:**
+- findings: Detailed radiographic findings
+- impression: Radiologist's impression/diagnosis
+- comparison: Comparison to prior studies if mentioned
+- recommendations: Follow-up recommendations
+
+**PROVIDER INFO:**
+- radiologist: Reading radiologist name
+- accession_number: Accession/exam number
+`,
+    'ct-scan': `
+CT SCAN REPORT EXTRACTION:
+**PATIENT INFO:**
+- patient_name: Patient's full name (required)
+- patient_dob: Date of birth
+- patient_id: Patient ID/MRN
+
+**EXAM INFO:**
+- study_date: Date of examination (required)
+- body_region: Body region scanned (required) - Head, Chest, Abdomen, Pelvis, Spine, etc.
+- contrast: Whether contrast was used (true/false)
+- contrast_type: Type of contrast if used (IV, Oral, Rectal)
+- indication: Clinical indication
+- technique: Scan technique and parameters
+
+**FINDINGS:**
+- findings: Detailed findings organized by organ/system
+- impression: Summary impression/diagnosis
+- measurements: Key measurements (sizes, dimensions)
+- comparison: Comparison to prior studies
+
+**TECHNICAL:**
+- slice_thickness: Slice thickness in mm
+- radiation_dose: Radiation dose (DLP, CTDIvol)
+- radiologist: Reading radiologist
+- accession_number: Accession number
+`,
+    'ct_scan': `
+CT SCAN REPORT EXTRACTION:
+- patient_name, patient_dob, patient_id
+- study_date: Date of scan
+- body_region: Region scanned
+- contrast: Was contrast used (true/false)
+- indication: Clinical indication
+- findings: Detailed findings
+- impression: Diagnosis/impression
+- radiologist: Reading physician
+`,
+    'mri': `
+MRI REPORT EXTRACTION:
+**PATIENT INFO:**
+- patient_name: Patient's full name (required)
+- patient_dob: Date of birth
+- patient_id: Patient ID/MRN
+
+**EXAM INFO:**
+- study_date: Date of examination (required)
+- body_region: Body region imaged (required) - Brain, Spine, Knee, Shoulder, etc.
+- contrast: Whether contrast (gadolinium) was used (true/false)
+- indication: Clinical indication
+- sequences: MRI sequences performed (T1, T2, FLAIR, DWI, etc.)
+
+**FINDINGS:**
+- findings: Detailed findings
+- impression: Radiologist's impression/diagnosis
+- measurements: Key measurements
+- comparison: Comparison to prior MRIs
+
+**TECHNICAL:**
+- tesla_strength: Magnet strength (1.5T, 3T)
+- radiologist: Reading radiologist
+- accession_number: Accession number
+`,
+    'ecg': `
+ECG/EKG REPORT EXTRACTION:
+**PATIENT INFO:**
+- patient_name: Patient's full name (required)
+- patient_dob: Date of birth
+- patient_id: Patient ID/MRN
+
+**TEST INFO:**
+- test_date: Date of ECG (required)
+- test_time: Time of ECG
+
+**MEASUREMENTS (extract exact values):**
+- heart_rate: Heart rate in BPM (required)
+- pr_interval: PR interval in ms
+- qrs_duration: QRS duration in ms
+- qt_interval: QT interval in ms
+- qtc_interval: QTc (corrected QT) in ms
+- axis: QRS axis in degrees
+
+**RHYTHM & INTERPRETATION:**
+- rhythm: Cardiac rhythm (e.g., "Normal Sinus Rhythm", "Atrial Fibrillation")
+- interpretation: Full interpretation/findings
+- abnormalities: List of abnormalities if any
+- comparison: Comparison to prior ECGs
+
+**PROVIDER INFO:**
+- cardiologist: Interpreting cardiologist
+- confirmed_by: Confirmed by physician if different
+`,
+    'ultrasound': `
+ULTRASOUND REPORT EXTRACTION:
+**PATIENT INFO:**
+- patient_name: Patient's full name (required)
+- patient_dob: Date of birth
+- patient_id: Patient ID/MRN
+
+**EXAM INFO:**
+- study_date: Date of examination (required)
+- exam_type: Type of ultrasound (required) - Abdominal, Pelvic, OB, Cardiac, Vascular, etc.
+- indication: Clinical indication
+
+**FINDINGS:**
+- findings: Detailed sonographic findings
+- measurements: Key measurements (sizes, dimensions, velocities)
+- impression: Sonographer/physician impression
+- comparison: Comparison to prior studies
+
+**OB-SPECIFIC (if applicable):**
+- gestational_age: Gestational age
+- fetal_heart_rate: Fetal heart rate
+- estimated_due_date: EDD
+
+**PROVIDER INFO:**
+- sonographer: Performing sonographer
+- interpreting_physician: Interpreting physician
+- accession_number: Accession number
 `,
     'invoice': `
 INVOICE/BILLING EXTRACTION - Extract ALL visible fields:
@@ -1361,6 +1652,141 @@ BILLING DOCUMENT EXTRACTION - Same as invoice, extract ALL fields:
 - adjustment_amount
 - paid_amount
 - All line items with codes and amounts
+`,
+    'receipt': `
+RECEIPT EXTRACTION:
+**MERCHANT INFO:**
+- merchant_name: Store/business name (required)
+- merchant_address: Store address
+- merchant_phone: Store phone number
+- store_number: Store/location number
+
+**TRANSACTION INFO:**
+- transaction_date: Date of purchase (required)
+- transaction_time: Time of purchase
+- transaction_id: Transaction/receipt number
+- register_number: Register/terminal number
+- cashier: Cashier name or ID
+
+**ITEMS (extract ALL line items):**
+For each item:
+- item_description: Item name/description
+- quantity: Quantity purchased
+- unit_price: Price per unit
+- item_total: Total for this item
+
+**TOTALS:**
+- subtotal: Subtotal before tax
+- tax: Tax amount
+- tax_rate: Tax rate percentage
+- total: Total amount (required)
+- discount: Any discounts applied
+
+**PAYMENT:**
+- payment_method: Cash, Credit, Debit, etc.
+- card_last_four: Last 4 digits of card if applicable
+- change_due: Change given (for cash)
+`,
+    'passport': `
+PASSPORT EXTRACTION:
+**PERSONAL INFO:**
+- surname: Last name/Family name (required)
+- given_names: First and middle names (required)
+- nationality: Nationality/Citizenship
+- date_of_birth: Date of birth (required)
+- sex: Sex/Gender (M/F)
+- place_of_birth: Place of birth
+
+**DOCUMENT INFO:**
+- passport_number: Passport number (required)
+- issue_date: Date of issue
+- expiration_date: Date of expiry (required)
+- issuing_authority: Issuing authority
+- issuing_country: Country code
+
+**MRZ (Machine Readable Zone):**
+- mrz_line1: First line of MRZ
+- mrz_line2: Second line of MRZ
+
+Extract the full name, passport number, and dates accurately.
+`,
+    'drivers-license': `
+DRIVER'S LICENSE EXTRACTION:
+**PERSONAL INFO:**
+- full_name: Full name (required)
+- first_name: First name
+- last_name: Last name
+- date_of_birth: Date of birth (required)
+- address: Street address
+- city: City
+- state: State
+- zip_code: ZIP code
+- sex: Sex (M/F)
+- height: Height
+- weight: Weight
+- eye_color: Eye color
+- hair_color: Hair color
+
+**LICENSE INFO:**
+- license_number: Driver's license number (required)
+- class: License class
+- issue_date: Date of issue
+- expiration_date: Date of expiry (required)
+- issuing_state: State that issued the license
+- restrictions: Any restrictions
+- endorsements: Any endorsements
+- donor: Organ donor status
+
+**VEHICLE INFO (if CDL):**
+- vehicle_class: Vehicle class for CDL
+`,
+    'identification': `
+IDENTIFICATION DOCUMENT EXTRACTION:
+- document_type: Type of ID (Driver's License, State ID, Passport, etc.)
+- full_name: Full name on document
+- date_of_birth: Date of birth
+- document_number: ID/license number
+- issue_date: Date of issue
+- expiration_date: Expiration date
+- address: Address if shown
+- issuing_authority: Issuing state/country
+`,
+    'contract': `
+CONTRACT DOCUMENT EXTRACTION:
+**PARTIES:**
+- party_1_name: First party name (required)
+- party_1_address: First party address
+- party_2_name: Second party name (required)
+- party_2_address: Second party address
+
+**CONTRACT INFO:**
+- contract_title: Title/type of contract
+- contract_date: Date of contract
+- effective_date: Effective date
+- expiration_date: Expiration/end date
+- contract_value: Total contract value if specified
+
+**TERMS:**
+- term_length: Duration of contract
+- payment_terms: Payment terms
+- key_obligations: Key obligations/deliverables
+
+**SIGNATURES:**
+- signature_1_name: First signatory name
+- signature_1_date: First signature date
+- signature_2_name: Second signatory name
+- signature_2_date: Second signature date
+- witness_name: Witness name if applicable
+`,
+    'form': `
+GENERAL FORM EXTRACTION:
+- form_title: Title of the form
+- form_number: Form number/ID if shown
+- form_date: Date on form
+- Extract ALL labeled fields with their corresponding values
+- For checkboxes, indicate which are checked (true) or unchecked (false)
+- For tables, extract all rows and columns
+- For signatures, note "signature_present": true/false
 `,
   };
 
