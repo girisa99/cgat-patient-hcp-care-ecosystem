@@ -1732,10 +1732,17 @@ export default function DocumentProcessing() {
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
     accept: {
+      // Images
       'image/*': ['.png', '.jpg', '.jpeg', '.tiff', '.tif', '.heic', '.heif', '.bmp', '.gif'],
       'application/pdf': ['.pdf'],
       'image/tiff': ['.tiff', '.tif'],
-      'image/heic': ['.heic', '.heif']
+      'image/heic': ['.heic', '.heif'],
+      // Excel/Spreadsheets
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'text/csv': ['.csv'],
+      // DICOM Medical Imaging
+      'application/dicom': ['.dcm', '.dicom'],
     },
     maxFiles: 1
   });

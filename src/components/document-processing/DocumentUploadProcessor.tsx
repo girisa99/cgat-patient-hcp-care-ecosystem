@@ -219,6 +219,12 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
       'image/*': ['.png', '.jpg', '.jpeg', '.tiff', '.bmp', '.gif'],
       'application/msword': ['.doc'],
       'application/vnd.openxmlformats-officedocument.wordprocessingml.document': ['.docx'],
+      // Excel/Spreadsheet support
+      'application/vnd.ms-excel': ['.xls'],
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': ['.xlsx'],
+      'text/csv': ['.csv'],
+      // DICOM medical imaging support
+      'application/dicom': ['.dcm', '.dicom'],
     },
     disabled: isUploading || isProcessing
   });
