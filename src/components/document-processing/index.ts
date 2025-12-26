@@ -5,6 +5,10 @@
 
 export { DocumentUploadProcessor } from './DocumentUploadProcessor';
 export { AIModelIndicator } from './AIModelIndicator';
+export { TwoStagePipelineDiagram } from './TwoStagePipelineDiagram';
+export { FeaturesOverviewDiagram } from './FeaturesOverviewDiagram';
+export { DocumentProcessingArchitectureDiagram } from './DocumentProcessingArchitectureDiagram';
+export { MedicalImagingAIPipelineDiagram } from './MedicalImagingAIPipelineDiagram';
 export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
 export type { 
