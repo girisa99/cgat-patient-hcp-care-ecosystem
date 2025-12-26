@@ -1,5 +1,7 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+// SheetJS for Excel/XLSX parsing - Deno compatible
+import * as XLSX from "https://esm.sh/xlsx@0.18.5/xlsx.mjs";
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -316,14 +318,27 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
   const isImage = effectiveMimeType.startsWith('image/');
   const isPdf = effectiveMimeType === 'application/pdf';
   const isCsv = effectiveMimeType === 'text/csv' || effectiveMimeType.includes('csv') || filePath.endsWith('.csv');
-  const isExcel = effectiveMimeType.includes('spreadsheet') || effectiveMimeType.includes('excel') || filePath.match(/\.xlsx?$/);
+  const isExcel = effectiveMimeType.includes('spreadsheet') || effectiveMimeType.includes('excel') || filePath.match(/\.xlsx?$/i);
   const isJson = effectiveMimeType === 'application/json' || filePath.endsWith('.json');
+  const isDicom = effectiveMimeType === 'application/dicom' || filePath.match(/\.dcm$/i) || filePath.match(/\.dicom$/i);
   
-  console.log(`Processing file: ${filePath}, type: ${effectiveMimeType}, isImage: ${isImage}, isPdf: ${isPdf}, fileUrl exists: ${!!fileUrl}`);
+  console.log(`Processing file: ${filePath}, type: ${effectiveMimeType}, isImage: ${isImage}, isPdf: ${isPdf}, isExcel: ${isExcel}, isDicom: ${isDicom}, fileUrl exists: ${!!fileUrl}`);
   
   try {
+    // Handle Excel/XLSX files with SheetJS
+    if (isExcel && (fileUrl || filePath)) {
+      console.log('Processing Excel file with SheetJS...');
+      const excelExtracted = await extractFromExcel(supabase, fileUrl, filePath, documentType);
+      if (excelExtracted) {
+        Object.assign(formMapping, excelExtracted.fields);
+        lineItemsExtracted = excelExtracted.line_items || [];
+        tablesExtracted = excelExtracted.tables || [];
+        providerUsed = 'sheetjs_excel';
+        console.log(`Excel extraction complete: ${Object.keys(formMapping).length} fields, ${lineItemsExtracted.length} rows`);
+      }
+    }
     // Handle CSV files
-    if (isCsv && fileUrl) {
+    else if (isCsv && fileUrl) {
       const csvExtracted = await extractFromCSV(fileUrl, documentType);
       if (csvExtracted) {
         Object.assign(formMapping, csvExtracted.fields);
@@ -339,6 +354,18 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
         Object.assign(formMapping, jsonExtracted.fields);
         lineItemsExtracted = jsonExtracted.line_items || [];
         providerUsed = 'json_parser';
+      }
+    }
+    // Handle DICOM medical imaging files
+    else if (isDicom && (fileUrl || filePath)) {
+      console.log('Processing DICOM file with specialized handler...');
+      const dicomExtracted = await extractFromDicom(supabase, fileUrl, filePath, documentType);
+      if (dicomExtracted) {
+        Object.assign(formMapping, dicomExtracted.fields);
+        lineItemsExtracted = dicomExtracted.line_items || [];
+        tablesExtracted = dicomExtracted.tables || [];
+        providerUsed = 'dicom_parser';
+        console.log(`DICOM extraction complete: ${Object.keys(formMapping).length} fields`);
       }
     }
     // Handle images and PDFs with OCR/Vision AI
@@ -871,6 +898,367 @@ async function extractFromJSON(fileUrl: string, documentType?: string): Promise<
     };
   } catch (error) {
     console.error('JSON extraction error:', error);
+    return null;
+  }
+}
+
+// ============= EXCEL/XLSX EXTRACTION WITH SHEETJS =============
+async function extractFromExcel(supabase: any, fileUrl: string, filePath: string, documentType?: string): Promise<any> {
+  try {
+    let arrayBuffer: ArrayBuffer | null = null;
+    
+    // Try public URL first
+    if (fileUrl) {
+      console.log(`Fetching Excel from public URL: ${fileUrl}`);
+      const response = await fetch(fileUrl);
+      if (response.ok) {
+        arrayBuffer = await response.arrayBuffer();
+        console.log(`Excel file fetched: ${arrayBuffer.byteLength} bytes`);
+      }
+    }
+    
+    // Try signed URL if public failed
+    if (!arrayBuffer && filePath) {
+      console.log(`Trying signed URL for Excel: ${filePath}`);
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('document-processing')
+        .createSignedUrl(filePath, 300);
+      
+      if (!signedUrlError && signedUrlData?.signedUrl) {
+        const signedResponse = await fetch(signedUrlData.signedUrl);
+        if (signedResponse.ok) {
+          arrayBuffer = await signedResponse.arrayBuffer();
+          console.log(`Excel file fetched via signed URL: ${arrayBuffer.byteLength} bytes`);
+        }
+      }
+    }
+    
+    if (!arrayBuffer) {
+      console.error('Failed to fetch Excel file');
+      return null;
+    }
+    
+    // Parse Excel with SheetJS
+    const data = new Uint8Array(arrayBuffer);
+    const workbook = XLSX.read(data, { type: 'array', cellDates: true, cellNF: true, cellFormula: true });
+    
+    console.log(`Excel workbook parsed: ${workbook.SheetNames.length} sheets`);
+    
+    const fields: Record<string, { value: string; confidence: number; source: string }> = {};
+    const allRows: any[] = [];
+    const allTables: any[] = [];
+    
+    // Process each sheet
+    for (let sheetIdx = 0; sheetIdx < workbook.SheetNames.length; sheetIdx++) {
+      const sheetName = workbook.SheetNames[sheetIdx];
+      const worksheet = workbook.Sheets[sheetName];
+      
+      // Convert to JSON with headers
+      const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, defval: '' });
+      
+      if (jsonData.length === 0) continue;
+      
+      // First row is headers
+      const headers = (jsonData[0] as any[]).map((h, idx) => 
+        String(h || `column_${idx + 1}`).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '')
+      );
+      
+      // Data rows
+      const rows: any[] = [];
+      let totalAmount = 0;
+      let totalPaid = 0;
+      let totalOutstanding = 0;
+      
+      for (let i = 1; i < jsonData.length; i++) {
+        const rowData = jsonData[i] as any[];
+        if (rowData.every((cell: any) => !cell)) continue; // Skip empty rows
+        
+        const row: Record<string, any> = {};
+        headers.forEach((header, idx) => {
+          const value = rowData[idx];
+          row[header] = value !== undefined ? value : '';
+          
+          // Track numeric fields for totals
+          if (typeof value === 'number') {
+            if (header.includes('amount') || header.includes('total') || header.includes('billed') || header.includes('charged')) {
+              totalAmount += value;
+            }
+            if (header.includes('paid') || header.includes('collected') || header.includes('payment')) {
+              totalPaid += value;
+            }
+            if (header.includes('outstanding') || header.includes('balance') || header.includes('due')) {
+              totalOutstanding += value;
+            }
+          }
+        });
+        rows.push(row);
+      }
+      
+      allRows.push(...rows);
+      
+      // Add table for this sheet
+      allTables.push({
+        sheet_name: sheetName,
+        header: headers,
+        rows: rows.map(r => Object.values(r)),
+        row_count: rows.length
+      });
+      
+      // Add sheet-level summary fields
+      if (sheetIdx === 0) {
+        fields['sheet_name'] = { value: sheetName, confidence: 1, source: 'sheetjs_excel' };
+        fields['total_sheets'] = { value: String(workbook.SheetNames.length), confidence: 1, source: 'sheetjs_excel' };
+        fields['columns'] = { value: headers.join(', '), confidence: 1, source: 'sheetjs_excel' };
+        fields['total_records'] = { value: String(rows.length), confidence: 1, source: 'sheetjs_excel' };
+        
+        if (totalAmount > 0) {
+          fields['total_amount'] = { value: totalAmount.toFixed(2), confidence: 0.95, source: 'sheetjs_excel' };
+        }
+        if (totalPaid > 0) {
+          fields['total_paid'] = { value: totalPaid.toFixed(2), confidence: 0.95, source: 'sheetjs_excel' };
+        }
+        if (totalOutstanding > 0) {
+          fields['total_outstanding'] = { value: totalOutstanding.toFixed(2), confidence: 0.95, source: 'sheetjs_excel' };
+        }
+      }
+    }
+    
+    // Add all sheet names
+    fields['all_sheets'] = { 
+      value: workbook.SheetNames.join(', '), 
+      confidence: 1, 
+      source: 'sheetjs_excel' 
+    };
+    
+    return {
+      fields,
+      line_items: allRows,
+      tables: allTables,
+      detected_document_type: documentType || 'excel_spreadsheet',
+      document_category: 'data_import',
+      confidence: 0.98
+    };
+  } catch (error) {
+    console.error('Excel extraction error:', error);
+    return null;
+  }
+}
+
+// ============= DICOM MEDICAL IMAGE EXTRACTION =============
+async function extractFromDicom(supabase: any, fileUrl: string, filePath: string, documentType?: string): Promise<any> {
+  try {
+    let arrayBuffer: ArrayBuffer | null = null;
+    
+    // Fetch DICOM file
+    if (fileUrl) {
+      console.log(`Fetching DICOM from public URL: ${fileUrl}`);
+      const response = await fetch(fileUrl);
+      if (response.ok) {
+        arrayBuffer = await response.arrayBuffer();
+        console.log(`DICOM file fetched: ${arrayBuffer.byteLength} bytes`);
+      }
+    }
+    
+    if (!arrayBuffer && filePath) {
+      console.log(`Trying signed URL for DICOM: ${filePath}`);
+      const { data: signedUrlData, error: signedUrlError } = await supabase.storage
+        .from('document-processing')
+        .createSignedUrl(filePath, 300);
+      
+      if (!signedUrlError && signedUrlData?.signedUrl) {
+        const signedResponse = await fetch(signedUrlData.signedUrl);
+        if (signedResponse.ok) {
+          arrayBuffer = await signedResponse.arrayBuffer();
+          console.log(`DICOM file fetched via signed URL: ${arrayBuffer.byteLength} bytes`);
+        }
+      }
+    }
+    
+    if (!arrayBuffer) {
+      console.error('Failed to fetch DICOM file');
+      return null;
+    }
+    
+    const data = new Uint8Array(arrayBuffer);
+    const fields: Record<string, { value: string; confidence: number; source: string }> = {};
+    
+    // Parse DICOM header manually - look for standard DICOM tags
+    // DICOM files start with 128-byte preamble + "DICM" magic number
+    const hasDicomPrefix = data.length > 132 && 
+      String.fromCharCode(data[128], data[129], data[130], data[131]) === 'DICM';
+    
+    if (!hasDicomPrefix) {
+      console.log('No DICM prefix found, attempting raw DICOM parse');
+    }
+    
+    // Common DICOM tags to extract (Group, Element)
+    const dicomTags: Record<string, { group: number; element: number; name: string }> = {
+      patient_name: { group: 0x0010, element: 0x0010, name: 'Patient Name' },
+      patient_id: { group: 0x0010, element: 0x0020, name: 'Patient ID' },
+      patient_dob: { group: 0x0010, element: 0x0030, name: 'Patient Birth Date' },
+      patient_sex: { group: 0x0010, element: 0x0040, name: 'Patient Sex' },
+      study_date: { group: 0x0008, element: 0x0020, name: 'Study Date' },
+      study_time: { group: 0x0008, element: 0x0030, name: 'Study Time' },
+      study_description: { group: 0x0008, element: 0x1030, name: 'Study Description' },
+      series_description: { group: 0x0008, element: 0x103E, name: 'Series Description' },
+      modality: { group: 0x0008, element: 0x0060, name: 'Modality' },
+      body_part: { group: 0x0018, element: 0x0015, name: 'Body Part Examined' },
+      institution_name: { group: 0x0008, element: 0x0080, name: 'Institution Name' },
+      referring_physician: { group: 0x0008, element: 0x0090, name: 'Referring Physician' },
+      accession_number: { group: 0x0008, element: 0x0050, name: 'Accession Number' },
+      manufacturer: { group: 0x0008, element: 0x0070, name: 'Manufacturer' },
+      station_name: { group: 0x0008, element: 0x1010, name: 'Station Name' },
+      slice_thickness: { group: 0x0018, element: 0x0050, name: 'Slice Thickness' },
+      kvp: { group: 0x0018, element: 0x0060, name: 'KVP' },
+      exposure: { group: 0x0018, element: 0x1152, name: 'Exposure' },
+      rows: { group: 0x0028, element: 0x0010, name: 'Rows' },
+      columns: { group: 0x0028, element: 0x0011, name: 'Columns' },
+      bits_allocated: { group: 0x0028, element: 0x0100, name: 'Bits Allocated' },
+    };
+    
+    // Simple DICOM tag parser - looks for tag patterns in the binary data
+    // This is a simplified approach; production would use a full DICOM parser library
+    const startOffset = hasDicomPrefix ? 132 : 0;
+    let offset = startOffset;
+    const maxOffset = Math.min(data.length, 50000); // Scan first 50KB for metadata
+    
+    function readUInt16LE(arr: Uint8Array, pos: number): number {
+      return arr[pos] | (arr[pos + 1] << 8);
+    }
+    
+    function readUInt32LE(arr: Uint8Array, pos: number): number {
+      return arr[pos] | (arr[pos + 1] << 8) | (arr[pos + 2] << 16) | (arr[pos + 3] << 24);
+    }
+    
+    function readString(arr: Uint8Array, pos: number, len: number): string {
+      let str = '';
+      for (let i = 0; i < len && pos + i < arr.length; i++) {
+        const c = arr[pos + i];
+        if (c === 0) break;
+        if (c >= 32 && c < 127) str += String.fromCharCode(c);
+      }
+      return str.trim();
+    }
+    
+    // Scan for DICOM tags
+    const foundTags: Record<string, string> = {};
+    
+    while (offset < maxOffset - 8) {
+      const group = readUInt16LE(data, offset);
+      const element = readUInt16LE(data, offset + 2);
+      
+      // Check if this matches any tag we're looking for
+      for (const [key, tagInfo] of Object.entries(dicomTags)) {
+        if (group === tagInfo.group && element === tagInfo.element) {
+          // Read VR (Value Representation) - 2 characters
+          const vr = String.fromCharCode(data[offset + 4], data[offset + 5]);
+          
+          let valueLength = 0;
+          let valueOffset = offset + 8;
+          
+          // Short VRs have 2-byte length, long VRs have 4-byte length with 2-byte padding
+          if (['OB', 'OW', 'OF', 'SQ', 'UC', 'UR', 'UT', 'UN'].includes(vr)) {
+            valueLength = readUInt32LE(data, offset + 8);
+            valueOffset = offset + 12;
+          } else {
+            valueLength = readUInt16LE(data, offset + 6);
+          }
+          
+          if (valueLength > 0 && valueLength < 1000) {
+            const value = readString(data, valueOffset, valueLength);
+            if (value) {
+              foundTags[key] = value;
+            }
+          }
+          break;
+        }
+      }
+      
+      offset++;
+    }
+    
+    // Add extracted tags to fields
+    for (const [key, value] of Object.entries(foundTags)) {
+      fields[key] = { 
+        value, 
+        confidence: 0.9, 
+        source: 'dicom_parser' 
+      };
+    }
+    
+    // Add DICOM-specific metadata
+    fields['file_format'] = { value: 'DICOM', confidence: 1, source: 'dicom_parser' };
+    fields['file_size'] = { value: String(data.length), confidence: 1, source: 'dicom_parser' };
+    fields['has_dicm_prefix'] = { value: String(hasDicomPrefix), confidence: 1, source: 'dicom_parser' };
+    fields['tags_extracted'] = { value: String(Object.keys(foundTags).length), confidence: 1, source: 'dicom_parser' };
+    
+    // If we have Gemini API, use it for enhanced DICOM analysis
+    const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+    if (geminiApiKey && arrayBuffer) {
+      console.log('Attempting Gemini-based DICOM image analysis...');
+      try {
+        // Convert to base64 for Gemini (if small enough)
+        if (arrayBuffer.byteLength < 10 * 1024 * 1024) { // Under 10MB
+          let binaryString = '';
+          const bytes = new Uint8Array(arrayBuffer);
+          const chunkSize = 0x8000;
+          for (let i = 0; i < bytes.length; i += chunkSize) {
+            const chunk = bytes.subarray(i, i + chunkSize);
+            binaryString += String.fromCharCode.apply(null, Array.from(chunk));
+          }
+          const base64Data = btoa(binaryString);
+          
+          // Use Gemini to analyze DICOM image
+          const analysisPrompt = `Analyze this DICOM medical image. Extract:
+1. Modality type (X-Ray, CT, MRI, Ultrasound, etc.)
+2. Body part/region
+3. Any visible findings or abnormalities
+4. Image quality assessment
+5. Patient positioning
+
+Return JSON:
+{
+  "fields": {
+    "ai_modality": "detected modality",
+    "ai_body_region": "detected body region",
+    "ai_findings": "any visible findings",
+    "ai_quality": "image quality assessment",
+    "ai_positioning": "patient positioning"
+  },
+  "confidence": 0.8
+}`;
+          
+          const geminiResult = await extractWithGemini(base64Data, 'application/dicom', analysisPrompt);
+          if (geminiResult?.fields) {
+            for (const [key, value] of Object.entries(geminiResult.fields)) {
+              if (value) {
+                fields[key] = {
+                  value: String(value),
+                  confidence: 0.75,
+                  source: 'gemini_dicom_ai'
+                };
+              }
+            }
+          }
+        }
+      } catch (geminiError) {
+        console.error('Gemini DICOM analysis failed:', geminiError);
+      }
+    }
+    
+    return {
+      fields,
+      line_items: [],
+      tables: [{
+        header: ['Tag', 'Value'],
+        rows: Object.entries(foundTags).map(([k, v]) => [dicomTags[k]?.name || k, v])
+      }],
+      detected_document_type: documentType || fields['modality']?.value?.toLowerCase() || 'dicom_image',
+      document_category: 'medical_imaging',
+      confidence: 0.85
+    };
+  } catch (error) {
+    console.error('DICOM extraction error:', error);
     return null;
   }
 }
