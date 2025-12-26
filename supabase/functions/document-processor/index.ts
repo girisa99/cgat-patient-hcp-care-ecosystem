@@ -1269,16 +1269,39 @@ function buildExtractionPrompt(documentType: string, targetFields?: string[]): s
   // Document-type-specific extraction hints
   const documentTypeHints: Record<string, string> = {
     'prescription': `
-PRESCRIPTION-SPECIFIC EXTRACTION:
-- Look for medication/drug names and extract as "medication_name" 
-- Look for dosage instructions (SIG) and extract as "sig"
-- Look for strength (e.g., 500mg) and extract as "strength"
-- Look for quantity and extract as "quantity"
-- Look for refills and extract as "refills"
-- Look for prescriber name and extract as "prescriber_name"
-- Look for patient name and extract as "patient_name"
-- Look for DEA number and extract as "dea_number"
-- Look for NPI and extract as "npi"
+PRESCRIPTION DOCUMENT - CRITICAL EXTRACTION RULES:
+
+**MOST IMPORTANT - MEDICATION NAME:**
+- The medication/drug name is THE MOST CRITICAL field to extract
+- Look for it near labels like "Rx:", "Medication:", "Drug:", "Dispense:", or at the center of the prescription
+- Extract the FULL drug name including brand and generic names
+- Store it as "medication_name" - THIS FIELD IS REQUIRED
+- Examples: "Metformin 500mg", "Lisinopril", "Amoxicillin 250mg Capsules"
+
+**DOSAGE INSTRUCTIONS (SIG):**
+- Look for "Sig:", "Take:", "Directions:", or dosing instructions
+- Extract as "sig" - include FULL instructions
+- Example: "Take 1 tablet by mouth twice daily with meals for 30 days"
+
+**OTHER REQUIRED FIELDS:**
+- strength: The dosage strength (e.g., "500mg", "10mg/5ml")
+- quantity: Number to dispense (e.g., "30", "60 tablets")
+- refills: Number of refills authorized (e.g., "3", "0")
+- days_supply: How many days the medication should last (e.g., "30", "90")
+- prescriber_name: Doctor/prescriber name (e.g., "Dr. John Smith")
+- prescriber_npi: 10-digit NPI number
+- dea_number: DEA number for controlled substances
+- patient_name: Patient's full name
+- patient_dob: Patient's date of birth
+- date_written: Date the prescription was written
+- pharmacy: Pharmacy name if specified
+- diagnosis: Diagnosis or ICD code if mentioned
+
+**CONTROLLED SUBSTANCE INDICATORS:**
+- Look for DEA number, schedule markings (II, III, IV, V), or controlled substance warnings
+- If found, set "is_controlled": true
+
+DO NOT skip the medication_name field - if you see ANY drug name, extract it.
 `,
     'insurance_card': `
 INSURANCE CARD EXTRACTION:
