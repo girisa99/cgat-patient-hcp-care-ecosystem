@@ -6,6 +6,7 @@
 export { DocumentUploadProcessor } from './DocumentUploadProcessor';
 export { AIModelIndicator } from './AIModelIndicator';
 export { TwoStagePipelineDiagram } from './TwoStagePipelineDiagram';
+export { TwoStagePipelineSVG } from './TwoStagePipelineSVG';
 export { FeaturesOverviewDiagram } from './FeaturesOverviewDiagram';
 export { SolutionArchitectureDiagram } from './SolutionArchitectureDiagram';
 export { DocumentProcessingArchitectureDiagram } from './DocumentProcessingArchitectureDiagram';
