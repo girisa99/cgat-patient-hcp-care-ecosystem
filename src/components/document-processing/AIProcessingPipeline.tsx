@@ -177,7 +177,7 @@ export default function AIProcessingPipeline({
                 </Badge>
               </CardTitle>
               <CardDescription className="text-xs mt-0.5">
-                DocAI • OCR • Form Recognition • NLP
+                DocAI • OCR • Form Recognition • Vision AI
               </CardDescription>
             </div>
           </div>

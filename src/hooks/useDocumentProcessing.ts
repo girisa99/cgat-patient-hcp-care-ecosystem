@@ -108,10 +108,10 @@ export interface ExtractedMetadata {
 
 export interface ExtractionSummary {
   ocrFieldCount: number;
-  nlpFieldCount: number;
+  visionAiFieldCount: number;
   totalFields: number;
   ocrProvider: string;
-  nlpProvider: string;
+  visionAiProvider: string;
 }
 
 // Real-time extraction tracking interfaces
@@ -129,7 +129,7 @@ export interface LiveExtraction {
   fieldName: string;
   fieldValue: string;
   confidence: number;
-  source: 'ocr' | 'nlp';
+  source: 'ocr' | 'vision_ai';
   extractedAt: string;
   boundingBox?: BoundingBox;
 }
@@ -145,7 +145,7 @@ export interface EntityExtraction {
   confidence: number;
   boundingBox?: BoundingBox;
   verified?: boolean;
-  source?: 'ocr' | 'nlp';
+  source?: 'ocr' | 'vision_ai';
 }
 
 export interface FormFieldExtraction {

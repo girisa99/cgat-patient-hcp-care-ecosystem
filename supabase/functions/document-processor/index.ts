@@ -1063,132 +1063,183 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
         console.log(`[ModelRouting] Selected: ${routingConfig.primaryModel} (${routingReason}, confidence: ${(routingConfidence * 100).toFixed(1)}%)`);
         console.log(`[ModelRouting] Pipeline: ${routingConfig.pipelineType}, Fallback chain: ${routingConfig.fallbackChain.join(' → ')}`);
         
-        // Build provider chain: primary model first, then fallbacks
-        const providerChain: AIProvider[] = [routingConfig.primaryModel, ...routingConfig.fallbackChain];
+        // ============= USE HYBRID OCR + VISION AI PIPELINE =============
+        // Stage 1: Google Cloud Vision OCR, Stage 2: Vision AI for structuring
+        console.log(`[Extraction] Using hybrid OCR + Vision AI pipeline with primary: ${routingConfig.primaryModel}`);
+        
         let extractionSuccess = false;
         let extracted: any = null;
+        let ocrTextExtracted = '';
+        let ocrConfidenceValue = 0;
+        let pipelineTypeUsed = 'vision_ai_only';
         
-        for (const provider of providerChain) {
-          if (extractionSuccess) break;
+        try {
+          const hybridResult = await extractWithHybridPipeline(
+            fileBase64Data,
+            contentType,
+            extractionPrompt,
+            routingConfig.primaryModel,
+            MODEL_SYSTEM_PROMPTS[routingConfig.primaryModel]
+          );
           
-          console.log(`[Extraction] Trying provider: ${provider}`);
+          extracted = hybridResult.result;
+          providerUsed = hybridResult.provider;
+          ocrTextExtracted = hybridResult.ocrText;
+          ocrConfidenceValue = hybridResult.ocrConfidence;
+          pipelineTypeUsed = hybridResult.pipelineType;
           
-          try {
-            const systemPrompt = MODEL_SYSTEM_PROMPTS[provider];
+          console.log(`[Extraction] Hybrid pipeline completed: provider=${providerUsed}, pipeline=${pipelineTypeUsed}, ocrChars=${ocrTextExtracted.length}`);
+          
+          if (extracted) {
+            // Add pipeline metadata to formMapping
+            formMapping['_pipeline_type'] = {
+              value: pipelineTypeUsed,
+              confidence: 1.0,
+              source: 'pipeline_metadata'
+            };
             
-            switch (provider) {
-              case 'claude':
-                console.log('[Extraction] Calling Claude extraction...');
-                extracted = await extractWithClaude(fileBase64Data, contentType, extractionPrompt, systemPrompt);
-                providerUsed = 'claude';
-                console.log(`[Extraction] Claude returned: ${extracted ? 'data' : 'null'}`);
-                break;
-                
-              case 'openai':
-                console.log('[Extraction] Calling OpenAI extraction...');
-                extracted = await extractWithOpenAI(fileBase64Data, contentType, extractionPrompt, systemPrompt);
-                providerUsed = 'openai';
-                console.log(`[Extraction] OpenAI returned: ${extracted ? 'data' : 'null'}`);
-                break;
-                
-              case 'gemini':
-                console.log('[Extraction] Calling Gemini extraction...');
-                extracted = await extractWithGemini(fileBase64Data, contentType, extractionPrompt);
-                providerUsed = 'gemini';
-                console.log(`[Extraction] Gemini returned: ${extracted ? 'data' : 'null'}`);
-                break;
-                
-              default:
-                extracted = await extractWithGemini(fileBase64Data, contentType, extractionPrompt);
-                providerUsed = 'gemini';
+            if (ocrTextExtracted.length > 0) {
+              formMapping['_ocr_text_length'] = {
+                value: String(ocrTextExtracted.length),
+                confidence: ocrConfidenceValue,
+                source: 'google_vision_ocr'
+              };
+              formMapping['_ocr_confidence'] = {
+                value: String((ocrConfidenceValue * 100).toFixed(1)) + '%',
+                confidence: ocrConfidenceValue,
+                source: 'google_vision_ocr'
+              };
             }
             
-            if (extracted) {
-              // Map extracted fields to formMapping format
-              if (extracted.fields) {
-                for (const [key, value] of Object.entries(extracted.fields)) {
-                  if (value !== null && value !== undefined && String(value).trim()) {
-                    formMapping[key] = {
-                      value: String(value),
-                      confidence: extracted.confidence || 0.85,
-                      source: `${providerUsed}_extraction`
-                    };
-                    
-                    // Track ICD and CPT codes for crosswalk
-                    if (key === 'icd_codes' || key === 'icd_code' || key.includes('diagnosis')) {
-                      const codes = String(value).split(/[,;]/).map(c => c.trim()).filter(Boolean);
-                      icdCodesExtracted.push(...codes);
-                    }
-                    if (key === 'cpt_codes' || key === 'cpt_code' || key === 'procedure_code') {
-                      const codes = String(value).split(/[,;]/).map(c => c.trim()).filter(Boolean);
-                      cptCodesExtracted.push(...codes);
-                    }
+            // Map extracted fields to formMapping format
+            if (extracted.fields) {
+              for (const [key, value] of Object.entries(extracted.fields)) {
+                if (value !== null && value !== undefined && String(value).trim()) {
+                  formMapping[key] = {
+                    value: String(value),
+                    confidence: extracted.confidence || 0.85,
+                    source: `${providerUsed}_vision_ai`
+                  };
+                  
+                  // Track ICD and CPT codes for crosswalk
+                  if (key === 'icd_codes' || key === 'icd_code' || key.includes('diagnosis')) {
+                    const codes = String(value).split(/[,;]/).map(c => c.trim()).filter(Boolean);
+                    icdCodesExtracted.push(...codes);
+                  }
+                  if (key === 'cpt_codes' || key === 'cpt_code' || key === 'procedure_code') {
+                    const codes = String(value).split(/[,;]/).map(c => c.trim()).filter(Boolean);
+                    cptCodesExtracted.push(...codes);
                   }
                 }
               }
+            }
+            
+            // Add line items from extraction
+            if (extracted.line_items && Array.isArray(extracted.line_items)) {
+              lineItemsExtracted = extracted.line_items;
+              formMapping['line_items'] = {
+                value: JSON.stringify(extracted.line_items),
+                confidence: extracted.confidence || 0.85,
+                source: `${providerUsed}_vision_ai`
+              };
               
-              // Add line items from extraction
-              if (extracted.line_items && Array.isArray(extracted.line_items)) {
-                lineItemsExtracted = extracted.line_items;
-                formMapping['line_items'] = {
-                  value: JSON.stringify(extracted.line_items),
-                  confidence: extracted.confidence || 0.85,
-                  source: `${providerUsed}_extraction`
-                };
-                
-                // Extract CPT/ICD codes from line items
-                for (const item of extracted.line_items) {
-                  if (item.cpt_code) cptCodesExtracted.push(item.cpt_code);
-                  if (item.code) cptCodesExtracted.push(item.code);
-                  if (item.icd_code) icdCodesExtracted.push(item.icd_code);
+              // Extract CPT/ICD codes from line items
+              for (const item of extracted.line_items) {
+                if (item.cpt_code) cptCodesExtracted.push(item.cpt_code);
+                if (item.code) cptCodesExtracted.push(item.code);
+                if (item.icd_code) icdCodesExtracted.push(item.icd_code);
+              }
+            }
+            
+            // Add tables from extraction
+            if (extracted.tables && Array.isArray(extracted.tables)) {
+              tablesExtracted = extracted.tables;
+              formMapping['tables'] = {
+                value: JSON.stringify(extracted.tables),
+                confidence: extracted.confidence || 0.85,
+                source: `${providerUsed}_vision_ai`
+              };
+            }
+            
+            // Add summary info
+            if (extracted.summary) {
+              for (const [key, value] of Object.entries(extracted.summary)) {
+                if (value !== null && value !== undefined) {
+                  formMapping[`summary_${key}`] = {
+                    value: String(value),
+                    confidence: 0.9,
+                    source: `${providerUsed}_summary`
+                  };
                 }
               }
+            }
+            
+            // Add document category and detected type
+            if (extracted.detected_document_type) {
+              formMapping['detected_document_type'] = {
+                value: extracted.detected_document_type,
+                confidence: 0.9,
+                source: `${providerUsed}_classification`
+              };
+            }
+            if (extracted.document_category) {
+              formMapping['document_category'] = {
+                value: extracted.document_category,
+                confidence: 0.9,
+                source: `${providerUsed}_classification`
+              };
+            }
+            
+            extractionSuccess = true;
+            console.log(`Hybrid extraction completed with ${providerUsed} (${pipelineTypeUsed}): ${Object.keys(formMapping).length} fields, ${lineItemsExtracted.length} line items`);
+          }
+        } catch (hybridError) {
+          console.error(`[Extraction] Hybrid pipeline failed:`, hybridError instanceof Error ? hybridError.message : hybridError);
+          
+          // Fallback to direct Vision AI extraction without OCR
+          console.log(`[Extraction] Falling back to direct Vision AI extraction...`);
+          const providerChain: AIProvider[] = [routingConfig.primaryModel, ...routingConfig.fallbackChain];
+          
+          for (const provider of providerChain) {
+            if (extractionSuccess) break;
+            
+            try {
+              const systemPrompt = MODEL_SYSTEM_PROMPTS[provider];
               
-              // Add tables from extraction
-              if (extracted.tables && Array.isArray(extracted.tables)) {
-                tablesExtracted = extracted.tables;
-                formMapping['tables'] = {
-                  value: JSON.stringify(extracted.tables),
-                  confidence: extracted.confidence || 0.85,
-                  source: `${providerUsed}_extraction`
-                };
+              switch (provider) {
+                case 'claude':
+                  extracted = await extractWithClaude(fileBase64Data, contentType, extractionPrompt, systemPrompt);
+                  providerUsed = 'claude';
+                  break;
+                case 'openai':
+                  extracted = await extractWithOpenAI(fileBase64Data, contentType, extractionPrompt, systemPrompt);
+                  providerUsed = 'openai';
+                  break;
+                case 'gemini':
+                default:
+                  extracted = await extractWithGemini(fileBase64Data, contentType, extractionPrompt);
+                  providerUsed = 'gemini';
               }
               
-              // Add summary info
-              if (extracted.summary) {
-                for (const [key, value] of Object.entries(extracted.summary)) {
-                  if (value !== null && value !== undefined) {
-                    formMapping[`summary_${key}`] = {
-                      value: String(value),
-                      confidence: 0.9,
-                      source: `${providerUsed}_summary`
-                    };
+              if (extracted) {
+                // Map fields (simplified for fallback)
+                if (extracted.fields) {
+                  for (const [key, value] of Object.entries(extracted.fields)) {
+                    if (value !== null && value !== undefined && String(value).trim()) {
+                      formMapping[key] = {
+                        value: String(value),
+                        confidence: extracted.confidence || 0.85,
+                        source: `${providerUsed}_vision_ai_fallback`
+                      };
+                    }
                   }
                 }
+                extractionSuccess = true;
+                pipelineTypeUsed = 'vision_ai_fallback';
               }
-              
-              // Add document category and detected type
-              if (extracted.detected_document_type) {
-                formMapping['detected_document_type'] = {
-                  value: extracted.detected_document_type,
-                  confidence: 0.9,
-                  source: `${providerUsed}_classification`
-                };
-              }
-              if (extracted.document_category) {
-                formMapping['document_category'] = {
-                  value: extracted.document_category,
-                  confidence: 0.9,
-                  source: `${providerUsed}_classification`
-                };
-              }
-              
-              extractionSuccess = true;
-              console.log(`Extraction completed with ${providerUsed}: ${Object.keys(formMapping).length} fields, ${lineItemsExtracted.length} line items`);
+            } catch (providerError) {
+              console.error(`Provider ${provider} failed:`, providerError instanceof Error ? providerError.message : providerError);
             }
-          } catch (providerError) {
-            console.error(`Provider ${provider} failed with error:`, providerError instanceof Error ? providerError.message : providerError);
-            // Continue to next provider
           }
         }
       } else {
@@ -2588,6 +2639,212 @@ async function extractWithOpenAI(imageBase64: string, contentType: string, promp
     console.error("[OpenAI] Extraction error:", error);
     throw error;
   }
+}
+
+// ============= GOOGLE CLOUD VISION OCR =============
+// Pure OCR extraction using Google Cloud Vision API
+async function extractWithGoogleVisionOCR(imageBase64: string, contentType: string): Promise<{ text: string; confidence: number; blocks: any[] }> {
+  const googleApiKey = Deno.env.get("GOOGLE_API_KEY");
+  if (!googleApiKey) {
+    console.error("[GoogleVisionOCR] GOOGLE_API_KEY not configured");
+    throw new Error("GOOGLE_API_KEY not configured for OCR");
+  }
+  
+  console.log(`[GoogleVisionOCR] Starting OCR extraction, content type: ${contentType}, base64 length: ${imageBase64?.length || 0}`);
+  
+  try {
+    const apiUrl = `https://vision.googleapis.com/v1/images:annotate?key=${googleApiKey}`;
+    
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        requests: [{
+          image: { content: imageBase64 },
+          features: [
+            { type: 'TEXT_DETECTION', maxResults: 1 },
+            { type: 'DOCUMENT_TEXT_DETECTION', maxResults: 1 }
+          ]
+        }]
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[GoogleVisionOCR] API error: ${response.status} - ${errorText}`);
+      throw new Error(`Google Vision API error: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const annotations = data.responses?.[0];
+    
+    if (annotations?.error) {
+      console.error(`[GoogleVisionOCR] Vision API error:`, annotations.error);
+      throw new Error(`Vision API error: ${annotations.error.message}`);
+    }
+    
+    // Get full text from DOCUMENT_TEXT_DETECTION (better for structured docs)
+    const fullTextAnnotation = annotations?.fullTextAnnotation;
+    const textAnnotations = annotations?.textAnnotations;
+    
+    let extractedText = '';
+    let avgConfidence = 0;
+    const textBlocks: any[] = [];
+    
+    if (fullTextAnnotation) {
+      extractedText = fullTextAnnotation.text || '';
+      
+      // Extract confidence from pages
+      const pages = fullTextAnnotation.pages || [];
+      let totalConfidence = 0;
+      let blockCount = 0;
+      
+      for (const page of pages) {
+        for (const block of page.blocks || []) {
+          if (block.confidence) {
+            totalConfidence += block.confidence;
+            blockCount++;
+          }
+          
+          // Extract block text and bounding box
+          let blockText = '';
+          for (const paragraph of block.paragraphs || []) {
+            for (const word of paragraph.words || []) {
+              const wordText = word.symbols?.map((s: any) => s.text).join('') || '';
+              blockText += wordText + ' ';
+            }
+            blockText += '\n';
+          }
+          
+          textBlocks.push({
+            text: blockText.trim(),
+            confidence: block.confidence || 0.8,
+            boundingBox: block.boundingBox?.vertices
+          });
+        }
+      }
+      
+      avgConfidence = blockCount > 0 ? totalConfidence / blockCount : 0.85;
+    } else if (textAnnotations && textAnnotations.length > 0) {
+      // Fallback to simple TEXT_DETECTION
+      extractedText = textAnnotations[0]?.description || '';
+      avgConfidence = 0.8;
+      
+      // Add individual word blocks
+      for (let i = 1; i < textAnnotations.length; i++) {
+        textBlocks.push({
+          text: textAnnotations[i].description,
+          confidence: 0.8,
+          boundingBox: textAnnotations[i].boundingPoly?.vertices
+        });
+      }
+    }
+    
+    console.log(`[GoogleVisionOCR] Extracted ${extractedText.length} chars, ${textBlocks.length} blocks, avg confidence: ${(avgConfidence * 100).toFixed(1)}%`);
+    
+    return {
+      text: extractedText,
+      confidence: avgConfidence,
+      blocks: textBlocks
+    };
+  } catch (error) {
+    console.error("[GoogleVisionOCR] Extraction error:", error);
+    throw error;
+  }
+}
+
+// ============= HYBRID OCR + VISION AI EXTRACTION =============
+// Stage 1: OCR for raw text, Stage 2: Vision AI for structured extraction
+async function extractWithHybridPipeline(
+  imageBase64: string, 
+  contentType: string, 
+  extractionPrompt: string,
+  primaryProvider: AIProvider,
+  systemPrompt?: string
+): Promise<{ result: any; ocrText: string; ocrConfidence: number; provider: string; pipelineType: string }> {
+  
+  console.log(`[HybridPipeline] Starting hybrid extraction with primary provider: ${primaryProvider}`);
+  
+  let ocrText = '';
+  let ocrConfidence = 0;
+  let ocrSuccess = false;
+  
+  // Stage 1: Try Google Cloud Vision OCR
+  try {
+    const ocrResult = await extractWithGoogleVisionOCR(imageBase64, contentType);
+    ocrText = ocrResult.text;
+    ocrConfidence = ocrResult.confidence;
+    ocrSuccess = ocrText.length > 50; // Consider success if we got meaningful text
+    console.log(`[HybridPipeline] OCR Stage 1 ${ocrSuccess ? 'succeeded' : 'insufficient text'}: ${ocrText.length} chars`);
+  } catch (ocrError) {
+    console.warn(`[HybridPipeline] OCR Stage 1 failed, proceeding with Vision AI only:`, ocrError);
+  }
+  
+  // Stage 2: Vision AI with OCR context
+  // Enhance the prompt with OCR text if available
+  let enhancedPrompt = extractionPrompt;
+  if (ocrSuccess && ocrText.length > 50) {
+    enhancedPrompt = `${extractionPrompt}
+
+=== PRE-EXTRACTED OCR TEXT (use as reference) ===
+${ocrText.substring(0, 8000)}
+=== END OCR TEXT ===
+
+Use the OCR text above as a reference to validate and enhance your visual extraction. The OCR may have errors, so use the image as the primary source of truth.`;
+  }
+  
+  let extractionResult: any = null;
+  let providerUsed = primaryProvider;
+  
+  // Try primary provider first
+  try {
+    switch (primaryProvider) {
+      case 'claude':
+        extractionResult = await extractWithClaude(imageBase64, contentType, enhancedPrompt, systemPrompt);
+        break;
+      case 'openai':
+        extractionResult = await extractWithOpenAI(imageBase64, contentType, enhancedPrompt, systemPrompt);
+        break;
+      case 'gemini':
+      default:
+        extractionResult = await extractWithGemini(imageBase64, contentType, enhancedPrompt);
+        break;
+    }
+    console.log(`[HybridPipeline] Vision AI extraction with ${primaryProvider} succeeded`);
+  } catch (providerError) {
+    console.error(`[HybridPipeline] Primary provider ${primaryProvider} failed:`, providerError);
+    
+    // Fallback to Gemini if primary failed
+    if (primaryProvider !== 'gemini') {
+      try {
+        extractionResult = await extractWithGemini(imageBase64, contentType, enhancedPrompt);
+        providerUsed = 'gemini';
+        console.log(`[HybridPipeline] Fallback to Gemini succeeded`);
+      } catch (fallbackError) {
+        console.error(`[HybridPipeline] Gemini fallback also failed:`, fallbackError);
+      }
+    }
+  }
+  
+  // If Vision AI failed but OCR succeeded, create basic result from OCR
+  if (!extractionResult && ocrSuccess) {
+    console.log(`[HybridPipeline] Creating basic result from OCR text only`);
+    extractionResult = {
+      fields: { raw_text: ocrText },
+      confidence: ocrConfidence * 0.7, // Lower confidence for OCR-only
+      raw_text: ocrText,
+      extraction_method: 'ocr_only'
+    };
+    providerUsed = 'google_vision_ocr';
+  }
+  
+  return {
+    result: extractionResult,
+    ocrText,
+    ocrConfidence,
+    provider: providerUsed,
+    pipelineType: ocrSuccess ? 'hybrid_ocr_vision_ai' : 'vision_ai_only'
+  };
 }
 
 // ============= DOCUMENT CATEGORY HELPER =============

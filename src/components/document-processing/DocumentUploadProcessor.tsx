@@ -657,7 +657,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
                           <Label className="text-xs text-muted-foreground capitalize">{entity.type.replace(/_/g, ' ')}</Label>
                           <p className="font-medium">{entity.value}</p>
                           <Badge variant="secondary" className="text-[9px] mt-1">
-                            {Math.round(entity.confidence * 100)}% • {entity.source === 'nlp' ? '🧠 NLP' : '📷 OCR'}
+                            {Math.round(entity.confidence * 100)}% • {entity.source === 'vision_ai' ? '🤖 Vision AI' : '📷 OCR'}
                           </Badge>
                         </div>
                       ))}
@@ -691,7 +691,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
                           <Label className="text-xs text-muted-foreground capitalize">{entity.type.replace(/_/g, ' ')}</Label>
                           <p className="font-medium">{entity.value}</p>
                           <Badge variant="secondary" className="text-[9px] mt-1">
-                            {Math.round(entity.confidence * 100)}% • {entity.source === 'nlp' ? '🧠 NLP' : '📷 OCR'}
+                            {Math.round(entity.confidence * 100)}% • {entity.source === 'vision_ai' ? '🤖 Vision AI' : '📷 OCR'}
                           </Badge>
                         </div>
                       ))}
@@ -725,7 +725,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
                           <Label className="text-xs text-muted-foreground capitalize">{entity.type.replace(/_/g, ' ')}</Label>
                           <p className="font-medium">{entity.value}</p>
                           <Badge variant="secondary" className="text-[9px] mt-1">
-                            {Math.round(entity.confidence * 100)}% • {entity.source === 'nlp' ? '🧠 NLP' : '📷 OCR'}
+                            {Math.round(entity.confidence * 100)}% • {entity.source === 'vision_ai' ? '🤖 Vision AI' : '📷 OCR'}
                           </Badge>
                         </div>
                       ))}
@@ -815,11 +815,11 @@ const RealTimeExtractionDisplay: React.FC<{
                 variant="outline" 
                 className={cn(
                   "text-[9px] shrink-0",
-                  ext.source === 'nlp' && "border-purple-500 bg-purple-500/10",
+                  ext.source === 'vision_ai' && "border-purple-500 bg-purple-500/10",
                   ext.source === 'ocr' && "border-blue-500 bg-blue-500/10"
                 )}
               >
-                {ext.source === 'nlp' ? '🧠 NLP' : '📷 OCR'}
+                {ext.source === 'vision_ai' ? '🤖 Vision AI' : '📷 OCR'}
               </Badge>
               <span className="font-medium capitalize truncate">{ext.fieldName.replace(/_/g, ' ')}</span>
             </div>
@@ -1045,9 +1045,9 @@ const MetadataPreview: React.FC<{ metadata: ExtractedMetadata }> = ({ metadata }
             <p className="text-[10px] text-muted-foreground truncate">{metadata.extractionSummary.ocrProvider}</p>
           </div>
           <div className="bg-purple-500/10 border border-purple-500/20 p-2 rounded">
-            <span className="text-purple-600 dark:text-purple-400 font-medium">AI NLP</span>
-            <p className="font-bold text-lg">{metadata.extractionSummary.nlpFieldCount}</p>
-            <p className="text-[10px] text-muted-foreground truncate">{metadata.extractionSummary.nlpProvider}</p>
+            <span className="text-purple-600 dark:text-purple-400 font-medium">Vision AI</span>
+            <p className="font-bold text-lg">{metadata.extractionSummary.visionAiFieldCount}</p>
+            <p className="text-[10px] text-muted-foreground truncate">{metadata.extractionSummary.visionAiProvider}</p>
           </div>
           <div className="bg-green-500/10 border border-green-500/20 p-2 rounded">
             <span className="text-green-600 dark:text-green-400 font-medium">Total</span>
@@ -1107,11 +1107,11 @@ const MetadataPreview: React.FC<{ metadata: ExtractedMetadata }> = ({ metadata }
               variant="outline" 
               className={cn(
                 "text-[10px]",
-                e.source === 'nlp' && "border-purple-500/50 bg-purple-500/5",
+                e.source === 'vision_ai' && "border-purple-500/50 bg-purple-500/5",
                 e.source === 'ocr' && "border-blue-500/50 bg-blue-500/5"
               )}
             >
-              <span className="opacity-60">{e.source === 'nlp' ? '🧠' : '📷'}</span>
+              <span className="opacity-60">{e.source === 'vision_ai' ? '🤖' : '📷'}</span>
               {e.type}: {e.value.substring(0, 20)}
             </Badge>
           ))}
@@ -1396,7 +1396,7 @@ const JobHistoryItem: React.FC<{
                 <span className="text-blue-500">📷 {job.extracted_metadata.extractionSummary.ocrFieldCount}</span>
               </Badge>
               <Badge variant="secondary" className="text-[9px] gap-1">
-                <span className="text-purple-500">🧠 {job.extracted_metadata.extractionSummary.nlpFieldCount}</span>
+                <span className="text-purple-500">🤖 {job.extracted_metadata.extractionSummary.visionAiFieldCount}</span>
               </Badge>
               <span className="text-[10px] text-muted-foreground">
                 {job.extracted_metadata.extractionSummary.totalFields} fields
