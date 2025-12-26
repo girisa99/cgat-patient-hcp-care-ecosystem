@@ -2051,341 +2051,339 @@ export default function DocumentProcessing() {
                         {/* Show ONLY actually extracted fields with values */}
                         {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length > 0 ? (
                           <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
-                                {Object.entries(processingResult.extractedFields)
-                                  .filter(([_, field]) => field?.value)
-                                  .map(([key, field]) => {
-                                    const confidence = field?.confidence || 0;
-                                    const targetField = currentConfig.targetFields.find(f => f.key === key);
-                                    const label = targetField?.label || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-                                    
-                                    return (
-                                      <div key={key} className="p-2 border rounded-lg bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
-                                        <div className="flex items-center justify-between mb-1">
-                                          <span className="text-xs text-muted-foreground flex items-center gap-1">
-                                            {label}
-                                          </span>
-                                          <Badge variant={confidence > 0.9 ? 'default' : confidence > 0.7 ? 'secondary' : 'outline'} className="text-xs">
-                                            {Math.round(confidence * 100)}%
-                                          </Badge>
-                                        </div>
-                                        <Input
-                                          value={field?.value || ''}
-                                          placeholder={`Enter ${label.toLowerCase()}...`}
-                                          className="h-7 text-sm"
-                                          onChange={(e) => {
-                                            setProcessingResult(prev => {
-                                              if (!prev) return prev;
-                                              return {
-                                                ...prev,
-                                                extractedFields: {
-                                                  ...prev.extractedFields,
-                                                  [key]: {
-                                                    value: e.target.value,
-                                                    confidence: e.target.value ? (field?.confidence || 1.0) : 0,
-                                                    verified: true
-                                                  }
-                                                }
-                                              };
-                                            });
-                                          }}
-                                        />
-                                      </div>
-                                    );
-                                  })}
-                              </div>
-                            ) : (
-                              <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-center">
-                                <AlertCircle className="h-8 w-8 mx-auto text-amber-500 mb-2" />
-                                <p className="text-sm text-amber-700 dark:text-amber-400">No fields were extracted from this document.</p>
-                                <p className="text-xs text-muted-foreground mt-1">Try re-uploading with better image quality or different OCR provider.</p>
-                              </div>
-                            )}
-                            
-                            {/* Show line items / tables for invoices */}
-                            {processingResult.lineItems && processingResult.lineItems.length > 0 && (
-                              <div className="mt-4 border rounded-lg overflow-hidden">
-                                <div className="bg-muted px-3 py-2 font-medium text-sm flex items-center gap-2">
-                                  <Table2 className="h-4 w-4" />
-                                  Line Items ({processingResult.lineItems.length})
-                                </div>
-                                <div className="max-h-[200px] overflow-y-auto">
+                            {Object.entries(processingResult.extractedFields)
+                              .filter(([_, field]) => field?.value)
+                              .map(([key, field]) => {
+                                const confidence = field?.confidence || 0;
+                                const targetField = currentConfig.targetFields.find(f => f.key === key);
+                                const label = targetField?.label || key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+                                
+                                return (
+                                  <div key={key} className="p-2 border rounded-lg bg-green-50 dark:bg-green-950/20 border-green-200 dark:border-green-800">
+                                    <div className="flex items-center justify-between mb-1">
+                                      <span className="text-xs text-muted-foreground flex items-center gap-1">
+                                        {label}
+                                      </span>
+                                      <Badge variant={confidence > 0.9 ? 'default' : confidence > 0.7 ? 'secondary' : 'outline'} className="text-xs">
+                                        {Math.round(confidence * 100)}%
+                                      </Badge>
+                                    </div>
+                                    <Input
+                                      value={field?.value || ''}
+                                      placeholder={`Enter ${label.toLowerCase()}...`}
+                                      className="h-7 text-sm"
+                                      onChange={(e) => {
+                                        setProcessingResult(prev => {
+                                          if (!prev) return prev;
+                                          return {
+                                            ...prev,
+                                            extractedFields: {
+                                              ...prev.extractedFields,
+                                              [key]: {
+                                                value: e.target.value,
+                                                confidence: e.target.value ? (field?.confidence || 1.0) : 0,
+                                                verified: true
+                                              }
+                                            }
+                                          };
+                                        });
+                                      }}
+                                    />
+                                  </div>
+                                );
+                              })}
+                          </div>
+                        ) : (
+                          <div className="p-4 border rounded-lg bg-amber-50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800 text-center">
+                            <AlertCircle className="h-8 w-8 mx-auto text-amber-500 mb-2" />
+                            <p className="text-sm text-amber-700 dark:text-amber-400">No fields were extracted from this document.</p>
+                            <p className="text-xs text-muted-foreground mt-1">Try re-uploading with better image quality or different OCR provider.</p>
+                          </div>
+                        )}
+                        
+                        {/* Show line items / tables for invoices */}
+                        {processingResult.lineItems && processingResult.lineItems.length > 0 && (
+                          <div className="mt-4 border rounded-lg overflow-hidden">
+                            <div className="bg-muted px-3 py-2 font-medium text-sm flex items-center gap-2">
+                              <Table2 className="h-4 w-4" />
+                              Line Items ({processingResult.lineItems.length})
+                            </div>
+                            <div className="max-h-[200px] overflow-y-auto">
+                              <table className="w-full text-xs">
+                                <thead className="bg-muted/50 sticky top-0">
+                                  <tr>
+                                    <th className="text-left p-2">Description</th>
+                                    <th className="text-right p-2">Qty</th>
+                                    <th className="text-right p-2">Price</th>
+                                    <th className="text-right p-2">Total</th>
+                                    <th className="text-left p-2">Code</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {processingResult.lineItems.map((item: any, idx: number) => (
+                                    <tr key={idx} className="border-t">
+                                      <td className="p-2">{item.description || item.name || '-'}</td>
+                                      <td className="p-2 text-right">{item.quantity || item.qty || 1}</td>
+                                      <td className="p-2 text-right">{item.unit_price || item.price || '-'}</td>
+                                      <td className="p-2 text-right font-medium">{item.total || item.amount || '-'}</td>
+                                      <td className="p-2">{item.code || item.cpt || '-'}</td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                          </div>
+                        )}
+                        
+                        {/* Show tables extracted from document */}
+                        {processingResult.tables && processingResult.tables.length > 0 && (
+                          <div className="mt-4 space-y-3">
+                            {processingResult.tables.map((table: any, tableIdx: number) => (
+                              <div key={tableIdx} className="border rounded-lg overflow-hidden">
+                                <div className="bg-muted px-3 py-2 font-medium text-sm">Table {tableIdx + 1}</div>
+                                <div className="max-h-[200px] overflow-auto">
                                   <table className="w-full text-xs">
-                                    <thead className="bg-muted/50 sticky top-0">
-                                      <tr>
-                                        <th className="text-left p-2">Description</th>
-                                        <th className="text-right p-2">Qty</th>
-                                        <th className="text-right p-2">Price</th>
-                                        <th className="text-right p-2">Total</th>
-                                        <th className="text-left p-2">Code</th>
-                                      </tr>
-                                    </thead>
+                                    {table.header && (
+                                      <thead className="bg-muted/50 sticky top-0">
+                                        <tr>
+                                          {table.header.map((col: string, idx: number) => (
+                                            <th key={idx} className="text-left p-2 border-r last:border-r-0">{col}</th>
+                                          ))}
+                                        </tr>
+                                      </thead>
+                                    )}
                                     <tbody>
-                                      {processingResult.lineItems.map((item: any, idx: number) => (
-                                        <tr key={idx} className="border-t">
-                                          <td className="p-2">{item.description || item.name || '-'}</td>
-                                          <td className="p-2 text-right">{item.quantity || item.qty || 1}</td>
-                                          <td className="p-2 text-right">{item.unit_price || item.price || '-'}</td>
-                                          <td className="p-2 text-right font-medium">{item.total || item.amount || '-'}</td>
-                                          <td className="p-2">{item.code || item.cpt || '-'}</td>
+                                      {table.rows?.map((row: any[], rowIdx: number) => (
+                                        <tr key={rowIdx} className="border-t">
+                                          {row.map((cell: any, cellIdx: number) => (
+                                            <td key={cellIdx} className="p-2 border-r last:border-r-0">{cell}</td>
+                                          ))}
                                         </tr>
                                       ))}
                                     </tbody>
                                   </table>
                                 </div>
                               </div>
-                            )}
-                            
-                            {/* Show tables extracted from document */}
-                            {processingResult.tables && processingResult.tables.length > 0 && (
-                              <div className="mt-4 space-y-3">
-                                {processingResult.tables.map((table: any, tableIdx: number) => (
-                                  <div key={tableIdx} className="border rounded-lg overflow-hidden">
-                                    <div className="bg-muted px-3 py-2 font-medium text-sm">Table {tableIdx + 1}</div>
-                                    <div className="max-h-[200px] overflow-auto">
-                                      <table className="w-full text-xs">
-                                        {table.header && (
-                                          <thead className="bg-muted/50 sticky top-0">
-                                            <tr>
-                                              {table.header.map((col: string, idx: number) => (
-                                                <th key={idx} className="text-left p-2 border-r last:border-r-0">{col}</th>
-                                              ))}
-                                            </tr>
-                                          </thead>
-                                        )}
-                                        <tbody>
-                                          {table.rows?.map((row: any[], rowIdx: number) => (
-                                            <tr key={rowIdx} className="border-t">
-                                              {row.map((cell: any, cellIdx: number) => (
-                                                <td key={cellIdx} className="p-2 border-r last:border-r-0">{cell}</td>
-                                              ))}
-                                            </tr>
-                                          ))}
-                                        </tbody>
-                                      </table>
-                                    </div>
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                            
-                            {/* Universal Confirm & Save to History Button - For ALL document types */}
-                            <div className="flex gap-2 mt-4">
-                              {/* Prescription-specific: Also do NDC lookup */}
-                              {(selectedDocType === 'prescription' || selectedDocType === 'order-management') && (
-                                <Button 
-                                  variant="outline"
-                                  className="flex-1" 
-                                  onClick={async () => {
-                                    const medication = processingResult.extractedFields['medication']?.value || 
-                                                       processingResult.extractedFields['drug']?.value || '';
-                                    const sig = processingResult.extractedFields['sig']?.value || 
-                                               processingResult.extractedFields['instructions']?.value || '';
-                                    
-                                    if (medication) {
-                                      setDrugSearchQuery(medication);
-                                      if (sig) setSigInstructions(sig);
-                                      setActiveTab('medication');
-                                      toast.info('Searching for NDC codes...');
-                                      
-                                      const { baseName } = normalizeDrugName(medication);
-                                      try {
-                                        const { data, error } = await supabase.functions.invoke('drug-lookup', {
-                                          body: { drugName: baseName, searchType: 'all' }
-                                        });
-                                        
-                                        if (!error && data) {
-                                          const calculation = calculateQuantityAndDaySupply(sig || 'Take 1 tablet daily for 30 days');
-                                          const ndcOptions = (data.ndc || []).map((ndc: any) => ({
-                                            code: ndc.code,
-                                            name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
-                                            manufacturer: ndc.manufacturer,
-                                            dosageForm: ndc.dosageForm,
-                                            country: 'USA'
-                                          }));
-                                          
-                                          const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
-                                          if (data.isControlled) {
-                                            clinicalRecommendations.push({
-                                              type: 'warning',
-                                              title: 'Controlled Substance',
-                                              message: `Schedule ${data.schedule} controlled substance`
-                                            });
-                                          }
-                                          
-                                          const preservedStrength = processingResult.extractedFields['strength']?.value || '';
-                                          const primaryNdc = data.ndc?.[0];
-                                          
-                                          setSearchResults({
-                                            drugName: primaryNdc?.brandName || data.drugName || medication,
-                                            genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
-                                            strength: preservedStrength || primaryNdc?.strength || '',
-                                            sig: sig || 'Take as directed',
-                                            calculatedQuantity: calculation.totalQuantity,
-                                            daysSupply: calculation.daysSupply,
-                                            dailyDose: calculation.dailyDose,
-                                            ndc: primaryNdc?.code,
-                                            ndcOptions,
-                                            alternatives: (data.alternatives || []).map((alt: any) => ({
-                                              name: alt.name,
-                                              ndc: alt.rxcui,
-                                              inStock: Math.random() > 0.3,
-                                              stockQty: Math.floor(Math.random() * 500)
-                                            })),
-                                            clinicalRecommendations,
-                                            isControlled: data.isControlled,
-                                            schedule: data.schedule
-                                          });
-                                          
-                                          if (ndcOptions.length > 0) setSelectedNdc(ndcOptions[0].code);
-                                          toast.success(`Found ${ndcOptions.length} NDC codes`);
-                                        }
-                                      } catch (err) {
-                                        console.error('Drug lookup error:', err);
-                                        toast.error('Failed to lookup drug information');
-                                      }
-                                    } else {
-                                      toast.warning('Please enter a medication name first');
-                                    }
-                                  }}
-                                >
-                                  <Pill className="h-4 w-4 mr-2" />
-                                  Lookup NDC/Clinical Info
-                                </Button>
-                              )}
-                              
-                              {/* Universal Save Button for ALL document types */}
-                              <Button 
-                                className="flex-1" 
-                                onClick={async () => {
+                            ))}
+                          </div>
+                        )}
+                        
+                        {/* Universal Confirm & Save to History Button - For ALL document types */}
+                        <div className="flex gap-2 mt-4">
+                          {/* Prescription-specific: Also do NDC lookup */}
+                          {(selectedDocType === 'prescription' || selectedDocType === 'order-management') && (
+                            <Button 
+                              variant="outline"
+                              className="flex-1" 
+                              onClick={async () => {
+                                const medication = processingResult.extractedFields['medication']?.value || 
+                                                   processingResult.extractedFields['drug']?.value || '';
+                                const sig = processingResult.extractedFields['sig']?.value || 
+                                           processingResult.extractedFields['instructions']?.value || '';
+                                
+                                if (medication) {
+                                  setDrugSearchQuery(medication);
+                                  if (sig) setSigInstructions(sig);
+                                  setActiveTab('medication');
+                                  toast.info('Searching for NDC codes...');
+                                  
+                                  const { baseName } = normalizeDrugName(medication);
                                   try {
-                                    const { data: { user } } = await supabase.auth.getUser();
-                                    if (!user) {
-                                      toast.error('Please login to save');
-                                      return;
-                                    }
-                                    
-                                    console.log('[Save to History] processingResult.extractedFields:', processingResult.extractedFields);
-                                    console.log('[Save to History] processingResult.medications:', processingResult.medications);
-                                    
-                                    const processingConfig: Record<string, unknown> = {
-                                      extractedFields: JSON.parse(JSON.stringify(processingResult.extractedFields || {})),
-                                      lineItems: JSON.parse(JSON.stringify(processingResult.lineItems || [])),
-                                      tables: JSON.parse(JSON.stringify(processingResult.tables || [])),
-                                      medications: JSON.parse(JSON.stringify(processingResult.medications || [])),
-                                      validationResults: processingResult.validationResults ? JSON.parse(JSON.stringify(processingResult.validationResults)) : null,
-                                      imageUrl: processingResult.imageUrl,
-                                      savedAt: new Date().toISOString()
-                                    };
-                                    
-                                    console.log('[Save to History] processingConfig being saved:', processingConfig);
-                                    
-                                    const { error } = await supabase
-                                      .from('document_processing_jobs')
-                                      .upsert({
-                                        id: processingResult.id,
-                                        user_id: user.id,
-                                        document_type: selectedDocType,
-                                        file_name: processingResult.fileName,
-                                        file_path: processingResult.imageUrl || processingResult.fileName,
-                                        status: 'completed',
-                                        progress: 100,
-                                        processing_config: processingConfig as any
-                                      });
-                                    
-                                    if (error) throw error;
-                                    
-                                    setProcessingHistory(prev => {
-                                      const existing = prev.find(p => p.id === processingResult.id);
-                                      if (existing) {
-                                        return prev.map(p => p.id === processingResult.id ? processingResult : p);
-                                      }
-                                      return [processingResult, ...prev];
+                                    const { data, error } = await supabase.functions.invoke('drug-lookup', {
+                                      body: { drugName: baseName, searchType: 'all' }
                                     });
                                     
-                                    toast.success('Saved to history');
-                                    
-                                    // Show sub-agent recommendation popup
-                                    setShowSubAgentDialog(true);
+                                    if (!error && data) {
+                                      const calculation = calculateQuantityAndDaySupply(sig || 'Take 1 tablet daily for 30 days');
+                                      const ndcOptions = (data.ndc || []).map((ndc: any) => ({
+                                        code: ndc.code,
+                                        name: `${ndc.brandName || ndc.genericName} ${ndc.strength}`,
+                                        manufacturer: ndc.manufacturer,
+                                        dosageForm: ndc.dosageForm,
+                                        country: 'USA'
+                                      }));
+                                      
+                                      const clinicalRecommendations: { type: 'warning' | 'info' | 'error'; title?: string; message: string }[] = [];
+                                      if (data.isControlled) {
+                                        clinicalRecommendations.push({
+                                          type: 'warning',
+                                          title: 'Controlled Substance',
+                                          message: `Schedule ${data.schedule} controlled substance`
+                                        });
+                                      }
+                                      
+                                      const preservedStrength = processingResult.extractedFields['strength']?.value || '';
+                                      const primaryNdc = data.ndc?.[0];
+                                      
+                                      setSearchResults({
+                                        drugName: primaryNdc?.brandName || data.drugName || medication,
+                                        genericName: primaryNdc?.genericName || data.rxnorm?.[0]?.name,
+                                        strength: preservedStrength || primaryNdc?.strength || '',
+                                        sig: sig || 'Take as directed',
+                                        calculatedQuantity: calculation.totalQuantity,
+                                        daysSupply: calculation.daysSupply,
+                                        dailyDose: calculation.dailyDose,
+                                        ndc: primaryNdc?.code,
+                                        ndcOptions,
+                                        alternatives: (data.alternatives || []).map((alt: any) => ({
+                                          name: alt.name,
+                                          ndc: alt.rxcui,
+                                          inStock: Math.random() > 0.3,
+                                          stockQty: Math.floor(Math.random() * 500)
+                                        })),
+                                        clinicalRecommendations,
+                                        isControlled: data.isControlled,
+                                        schedule: data.schedule
+                                      });
+                                      
+                                      if (ndcOptions.length > 0) setSelectedNdc(ndcOptions[0].code);
+                                      toast.success(`Found ${ndcOptions.length} NDC codes`);
+                                    }
                                   } catch (err) {
-                                    console.error('Save error:', err);
-                                    toast.error('Failed to save');
+                                    console.error('Drug lookup error:', err);
+                                    toast.error('Failed to lookup drug information');
                                   }
-                                }}
-                              >
-                                <CheckCircle className="h-4 w-4 mr-2" />
-                                Confirm & Save to History
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Medication Results */}
-                          {processingResult.medications && processingResult.medications.length > 0 && (
-                            <>
-                              <Separator />
-                              <div className="space-y-3">
-                                <h4 className="font-medium flex items-center gap-2">
-                                  <Pill className="h-4 w-4" />
-                                  Medication Details
-                                </h4>
-                                {processingResult.medications.map((med, i) => (
-                                  <Card key={i} className="bg-muted/50">
-                                    <CardContent className="pt-4">
-                                      <div className="flex items-start justify-between">
-                                        <div>
-                                          <p className="font-semibold">{med.drugName} {med.strength}</p>
-                                          <p className="text-sm text-muted-foreground">{med.sig}</p>
-                                        </div>
-                                        <Badge>NDC: {med.ndc}</Badge>
-                                      </div>
-                                      <div className="grid grid-cols-3 gap-4 mt-4 text-center">
-                                        <div>
-                                          <p className="text-2xl font-bold text-primary">{med.calculatedQuantity}</p>
-                                          <p className="text-xs text-muted-foreground">Quantity</p>
-                                        </div>
-                                        <div>
-                                          <p className="text-2xl font-bold text-primary">{med.daysSupply}</p>
-                                          <p className="text-xs text-muted-foreground">Days Supply</p>
-                                        </div>
-                                        <div>
-                                          <p className="text-2xl font-bold text-primary">{med.dailyDose}</p>
-                                          <p className="text-xs text-muted-foreground">Daily Dose</p>
-                                        </div>
-                                      </div>
-                                    </CardContent>
-                                  </Card>
-                                ))}
-                              </div>
-                            </>
+                                } else {
+                                  toast.warning('Please enter a medication name first');
+                                }
+                              }}
+                            >
+                              <Pill className="h-4 w-4 mr-2" />
+                              Lookup NDC/Clinical Info
+                            </Button>
                           )}
-
-                          {/* Validation Summary with Failed Fields Details */}
-                          {processingResult.validationResults && (
-                            <>
-                              <Separator />
-                              <div className="space-y-3">
-                                <div className="flex items-center justify-between p-3 border rounded-lg">
-                                  <span className="font-medium">Validation Results</span>
-                                  <div className="flex items-center gap-3">
-                                    <Badge className="bg-green-500">{processingResult.validationResults.passed} Passed</Badge>
-                                    {processingResult.validationResults.warnings > 0 && (
-                                      <Badge variant="secondary">{processingResult.validationResults.warnings} Warnings</Badge>
-                                    )}
-                                    {processingResult.validationResults.failed > 0 && (
-                                      <Badge variant="destructive">{processingResult.validationResults.failed} Failed</Badge>
-                                    )}
-                                  </div>
-                                </div>
+                          
+                          {/* Universal Save Button for ALL document types */}
+                          <Button 
+                            className="flex-1" 
+                            onClick={async () => {
+                              try {
+                                const { data: { user } } = await supabase.auth.getUser();
+                                if (!user) {
+                                  toast.error('Please login to save');
+                                  return;
+                                }
                                 
-                                {/* Show extraction summary - no hardcoded field list */}
-                                <div className="p-3 border border-border/50 bg-muted/30 rounded-lg">
-                                  <p className="text-sm text-muted-foreground">
-                                    Extracted {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length} fields from document
-                                  </p>
+                                console.log('[Save to History] processingResult.extractedFields:', processingResult.extractedFields);
+                                console.log('[Save to History] processingResult.medications:', processingResult.medications);
+                                
+                                const processingConfig: Record<string, unknown> = {
+                                  extractedFields: JSON.parse(JSON.stringify(processingResult.extractedFields || {})),
+                                  lineItems: JSON.parse(JSON.stringify(processingResult.lineItems || [])),
+                                  tables: JSON.parse(JSON.stringify(processingResult.tables || [])),
+                                  medications: JSON.parse(JSON.stringify(processingResult.medications || [])),
+                                  validationResults: processingResult.validationResults ? JSON.parse(JSON.stringify(processingResult.validationResults)) : null,
+                                  imageUrl: processingResult.imageUrl,
+                                  savedAt: new Date().toISOString()
+                                };
+                                
+                                console.log('[Save to History] processingConfig being saved:', processingConfig);
+                                
+                                const { error } = await supabase
+                                  .from('document_processing_jobs')
+                                  .upsert({
+                                    id: processingResult.id,
+                                    user_id: user.id,
+                                    document_type: selectedDocType,
+                                    file_name: processingResult.fileName,
+                                    file_path: processingResult.imageUrl || processingResult.fileName,
+                                    status: 'completed',
+                                    progress: 100,
+                                    processing_config: processingConfig as any
+                                  });
+                                
+                                if (error) throw error;
+                                
+                                setProcessingHistory(prev => {
+                                  const existing = prev.find(p => p.id === processingResult.id);
+                                  if (existing) {
+                                    return prev.map(p => p.id === processingResult.id ? processingResult : p);
+                                  }
+                                  return [processingResult, ...prev];
+                                });
+                                
+                                toast.success('Saved to history');
+                                
+                                // Show sub-agent recommendation popup
+                                setShowSubAgentDialog(true);
+                              } catch (err) {
+                                console.error('Save error:', err);
+                                toast.error('Failed to save');
+                              }
+                            }}
+                          >
+                            <CheckCircle className="h-4 w-4 mr-2" />
+                            Confirm & Save to History
+                          </Button>
+                        </div>
+
+                        {/* Medication Results */}
+                        {processingResult.medications && processingResult.medications.length > 0 && (
+                          <>
+                            <Separator />
+                            <div className="space-y-3">
+                              <h4 className="font-medium flex items-center gap-2">
+                                <Pill className="h-4 w-4" />
+                                Medication Details
+                              </h4>
+                              {processingResult.medications.map((med, i) => (
+                                <Card key={i} className="bg-muted/50">
+                                  <CardContent className="pt-4">
+                                    <div className="flex items-start justify-between">
+                                      <div>
+                                        <p className="font-semibold">{med.drugName} {med.strength}</p>
+                                        <p className="text-sm text-muted-foreground">{med.sig}</p>
+                                      </div>
+                                      <Badge>NDC: {med.ndc}</Badge>
+                                    </div>
+                                    <div className="grid grid-cols-3 gap-4 mt-4 text-center">
+                                      <div>
+                                        <p className="text-2xl font-bold text-primary">{med.calculatedQuantity}</p>
+                                        <p className="text-xs text-muted-foreground">Quantity</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-2xl font-bold text-primary">{med.daysSupply}</p>
+                                        <p className="text-xs text-muted-foreground">Days Supply</p>
+                                      </div>
+                                      <div>
+                                        <p className="text-2xl font-bold text-primary">{med.dailyDose}</p>
+                                        <p className="text-xs text-muted-foreground">Daily Dose</p>
+                                      </div>
+                                    </div>
+                                  </CardContent>
+                                </Card>
+                              ))}
+                            </div>
+                          </>
+                        )}
+
+                        {/* Validation Summary with Failed Fields Details */}
+                        {processingResult.validationResults && (
+                          <>
+                            <Separator />
+                            <div className="space-y-3">
+                              <div className="flex items-center justify-between p-3 border rounded-lg">
+                                <span className="font-medium">Validation Results</span>
+                                <div className="flex items-center gap-3">
+                                  <Badge className="bg-green-500">{processingResult.validationResults.passed} Passed</Badge>
+                                  {processingResult.validationResults.warnings > 0 && (
+                                    <Badge variant="secondary">{processingResult.validationResults.warnings} Warnings</Badge>
+                                  )}
+                                  {processingResult.validationResults.failed > 0 && (
+                                    <Badge variant="destructive">{processingResult.validationResults.failed} Failed</Badge>
+                                  )}
                                 </div>
                               </div>
-                            </>
-                          )}
-                        </div>
+                              
+                              {/* Show extraction summary - no hardcoded field list */}
+                              <div className="p-3 border border-border/50 bg-muted/30 rounded-lg">
+                                <p className="text-sm text-muted-foreground">
+                                  Extracted {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length} fields from document
+                                </p>
+                              </div>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
@@ -3452,7 +3450,7 @@ export default function DocumentProcessing() {
                     </div>
                     <Switch checked={enableTableExtraction} onCheckedChange={setEnableTableExtraction} />
                   </div>
-                  <div className="flex items-center justify_between p-2 rounded-lg hover:bg-muted/50">
+                  <div className="flex items-center justify-between p-2 rounded-lg hover:bg-muted/50">
                     <div>
                       <Label>Signature Detection</Label>
                       <p className="text-xs text-muted-foreground">Identify signature regions in documents</p>
