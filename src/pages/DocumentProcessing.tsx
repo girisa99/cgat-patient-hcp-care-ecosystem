@@ -96,6 +96,7 @@ import ProcessingHistoryWithExport from '@/components/document-processing/Proces
 import MedicalImageAnalysis from '@/components/document-processing/MedicalImageAnalysis';
 import InvoiceRCMAnalysis from '@/components/document-processing/InvoiceRCMAnalysis';
 import SubAgentRecommendationDialog from '@/components/document-processing/SubAgentRecommendationDialog';
+import RealTimeExtractionTracker from '@/components/document-processing/RealTimeExtractionTracker';
 import { ArchitectureRecommendation } from '@/services/agentArchitectureIntelligence';
 
 // Healthcare abbreviation expansion dictionary
@@ -2014,62 +2015,42 @@ export default function DocumentProcessing() {
                   </CardContent>
                 </Card>
 
-                {/* Processing Status */}
-                {processingResult && (
+                {/* Processing Status - Real-Time Extraction Tracker */}
+                {processingResult && processingResult.stage !== 'idle' && (
+                  <RealTimeExtractionTracker
+                    currentStage={processingResult.stage}
+                    progress={processingResult.progress}
+                    extractedFields={processingResult.extractedFields}
+                    documentType={selectedDocType}
+                    isProcessing={processingResult.stage !== 'complete' && processingResult.stage !== 'error'}
+                    fileName={processingResult.fileName}
+                    ocrProvider={ocrProvider === 'google' ? 'Google Vision' : ocrProvider === 'azure' ? 'Azure Form Recognizer' : 'AWS Textract'}
+                    nlpProvider="Gemini 2.5 Flash"
+                  />
+                )}
+
+                {/* Extracted Fields Card - Show ONLY when processing is complete */}
+                {processingResult && processingResult.stage === 'complete' && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        {getStageIcon(processingResult.stage)}
-                        Processing: {processingResult.fileName}
+                        <CheckCircle className="h-5 w-5 text-green-500" />
+                        Extraction Complete: {processingResult.fileName}
                       </CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{processingResult.progress}%</span>
+                      <div className="space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-medium flex items-center gap-2">
+                            <Table2 className="h-4 w-4" />
+                            Extracted Data ({Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length} fields found)
+                          </h4>
+                          <p className="text-xs text-muted-foreground">Edit fields below, then confirm to proceed</p>
                         </div>
-                        <Progress value={processingResult.progress} />
-                      </div>
-
-                      {/* Processing Stages */}
-                      <div className="flex items-center justify-between">
-                        {['uploading', 'ocr', 'extraction', 'mapping', 'validation'].map((stage, i) => {
-                          const isActive = processingResult.stage === stage;
-                          const isComplete = ['uploading', 'ocr', 'extraction', 'mapping', 'validation'].indexOf(processingResult.stage) > i || processingResult.stage === 'complete';
-                          return (
-                            <div key={stage} className="flex flex-col items-center gap-1">
-                              <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                                isComplete ? 'bg-green-500 text-white' : 
-                                isActive ? 'bg-primary text-primary-foreground animate-pulse' : 
-                                'bg-muted'
-                              }`}>
-                                {isComplete ? <CheckCircle className="h-4 w-4" /> : 
-                                 isActive ? <Loader2 className="h-4 w-4 animate-spin" /> :
-                                 <span className="text-xs">{i + 1}</span>}
-                              </div>
-                              <span className="text-xs capitalize">{stage}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
-
-                      {/* Extracted Fields - Show ONLY actually extracted fields, not hardcoded target fields */}
-                      {processingResult.stage === 'complete' && (
-                        <>
-                          <Separator />
-                          <div className="space-y-3">
-                            <div className="flex items-center justify-between">
-                              <h4 className="font-medium flex items-center gap-2">
-                                <Table2 className="h-4 w-4" />
-                                Extracted Data ({Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length} fields found)
-                              </h4>
-                              <p className="text-xs text-muted-foreground">Edit fields below, then confirm to proceed</p>
-                            </div>
-                            
-                            {/* Show ONLY actually extracted fields with values */}
-                            {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length > 0 ? (
-                              <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
+                        
+                        {/* Show ONLY actually extracted fields with values */}
+                        {Object.keys(processingResult.extractedFields).filter(k => processingResult.extractedFields[k]?.value).length > 0 ? (
+                          <div className="grid grid-cols-2 gap-2 max-h-[300px] overflow-y-auto pr-1">
                                 {Object.entries(processingResult.extractedFields)
                                   .filter(([_, field]) => field?.value)
                                   .map(([key, field]) => {
@@ -2404,8 +2385,8 @@ export default function DocumentProcessing() {
                               </div>
                             </>
                           )}
-                        </>
-                      )}
+                        </div>
+                      </div>
                     </CardContent>
                   </Card>
                 )}
