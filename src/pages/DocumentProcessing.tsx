@@ -87,6 +87,10 @@ import {
   getAllCategories,
   getCategoryLabel,
   getCategoryIcon,
+  getAllSessionStoragePrefixes,
+  getFieldsForDocumentType,
+  getSpecialTabForDocumentType,
+  DOCUMENT_TYPE_FIELDS,
   DOCUMENT_TYPE_CONFIGS as BASE_DOCUMENT_TYPE_CONFIGS
 } from '@/config/documentTypes';
 import ProcessingOptionsPanel from '@/components/document-processing/ProcessingOptionsPanel';
@@ -330,31 +334,18 @@ export default function DocumentProcessing() {
       setProcessingResult(null);
       setPendingResult(null);
       
-      // Clear any document-type-specific sessionStorage for ALL document types
+      // Clear any document-type-specific sessionStorage using DYNAMIC prefixes
+      // This ensures new document types added to documentTypes.ts are automatically handled
+      const allPrefixes = getAllSessionStoragePrefixes();
       const keysToRemove: string[] = [];
+      
       for (let i = 0; i < sessionStorage.length; i++) {
         const key = sessionStorage.key(i);
-        if (key && (
-          key.startsWith('invoiceRCM_') || 
-          key.startsWith('prescriptionData_') || 
-          key.startsWith('insuranceCard_') ||
-          key.startsWith('medicalImage_') ||
-          key.startsWith('documentProcessing_') ||
-          key.startsWith('docProcessing_') ||
-          key.startsWith('patientOnboarding_') ||
-          key.startsWith('orderManagement_') ||
-          key.startsWith('treatmentCenter_') ||
-          key.startsWith('customerOnboarding_') ||
-          key.startsWith('labResult_') ||
-          key.startsWith('xray_') ||
-          key.startsWith('ctScan_') ||
-          key.startsWith('mri_') ||
-          key.startsWith('ecg_') ||
-          key.startsWith('ultrasound_')
-        )) {
+        if (key && allPrefixes.some(prefix => key.startsWith(prefix))) {
           keysToRemove.push(key);
         }
       }
+      
       keysToRemove.forEach(key => {
         console.log('DocumentProcessing - Removing sessionStorage key:', key);
         sessionStorage.removeItem(key);

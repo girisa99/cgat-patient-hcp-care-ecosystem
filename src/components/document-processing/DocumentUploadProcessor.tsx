@@ -34,10 +34,16 @@ import {
   ProcessingConfig,
   FormFieldExtraction,
   ExportOptions,
-  DOCUMENT_TYPE_FIELDS,
   LiveExtraction,
   ExtractionStage
 } from '@/hooks/useDocumentProcessing';
+import { 
+  DOCUMENT_TYPE_FIELDS, 
+  getFieldsForDocumentType,
+  getDocumentTypesForSelection,
+  getSpecialTabForDocumentType,
+  getAllSessionStoragePrefixes
+} from '@/config/documentTypes';
 import { toast } from 'sonner';
 
 interface DocumentUploadProcessorProps {
@@ -137,7 +143,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
     }
   }, [selectedDocumentType, prevDocumentType, clearAllDocumentState]);
 
-  // Dynamic tabs based on document type
+  // Dynamic tabs based on document type - uses config from documentTypes.ts
   const getTabsForDocumentType = (docType: string) => {
     const baseTabs = [
       { id: 'upload', label: 'Upload', icon: Upload },
@@ -146,13 +152,14 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
       { id: 'validation', label: 'Validation', icon: CheckCircle },
     ];
     
-    // Add document-type-specific tabs
-    if (docType === 'prescription') {
-      baseTabs.push({ id: 'medication', label: 'Medication', icon: FileType });
-    } else if (docType === 'insurance_card') {
-      baseTabs.push({ id: 'insurance', label: 'Insurance Details', icon: FileType });
-    } else if (docType === 'lab_result') {
-      baseTabs.push({ id: 'lab_results', label: 'Lab Results', icon: FileType });
+    // Add document-type-specific special tab from config (DYNAMIC)
+    const specialTab = getSpecialTabForDocumentType(docType);
+    if (specialTab) {
+      baseTabs.push({ 
+        id: specialTab.id, 
+        label: specialTab.label, 
+        icon: FileType 
+      });
     }
     
     // Always add history at the end
@@ -285,7 +292,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
       </CardHeader>
       <CardContent>
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          {/* Document Type Selection - Prominent */}
+          {/* Document Type Selection - DYNAMIC from config/documentTypes.ts */}
           <div className="mb-4 p-3 bg-gradient-to-r from-primary/10 via-background to-primary/5 border border-primary/20 rounded-lg">
             <div className="flex items-center gap-2 mb-2">
               <FileType className="h-4 w-4 text-primary" />
@@ -293,14 +300,8 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
               <Badge variant="outline" className="text-xs">Select to configure workflow</Badge>
             </div>
             <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
-              {[
-                { id: 'prescription', label: 'Prescription', icon: '💊' },
-                { id: 'insurance_card', label: 'Insurance', icon: '🏥' },
-                { id: 'lab_result', label: 'Lab Result', icon: '🔬' },
-                { id: 'medical_record', label: 'Medical Record', icon: '📋' },
-                { id: 'identification', label: 'ID Document', icon: '🪪' },
-                { id: 'form', label: 'General Form', icon: '📄' },
-              ].map(docType => (
+              {/* Use dynamic document types from config - add new types in documentTypes.ts */}
+              {getDocumentTypesForSelection().slice(0, 6).map(docType => (
                 <button
                   key={docType.id}
                   type="button"
@@ -320,24 +321,27 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
                 </button>
               ))}
             </div>
-            {/* Show expected fields for selected type */}
-            {DOCUMENT_TYPE_FIELDS[selectedDocumentType] && (
-              <div className="mt-2 pt-2 border-t border-primary/10">
-                <div className="flex items-center gap-1 flex-wrap">
-                  <span className="text-[10px] text-muted-foreground">Expected fields:</span>
-                  {DOCUMENT_TYPE_FIELDS[selectedDocumentType].slice(0, 5).map(field => (
-                    <Badge key={field} variant="secondary" className="text-[9px] h-4 px-1">
-                      {field.replace(/_/g, ' ')}
-                    </Badge>
-                  ))}
-                  {DOCUMENT_TYPE_FIELDS[selectedDocumentType].length > 5 && (
-                    <span className="text-[9px] text-muted-foreground">
-                      +{DOCUMENT_TYPE_FIELDS[selectedDocumentType].length - 5} more
-                    </span>
-                  )}
+            {/* Show expected fields for selected type - DYNAMIC from config */}
+            {(() => {
+              const fields = getFieldsForDocumentType(selectedDocumentType);
+              return fields.length > 0 && (
+                <div className="mt-2 pt-2 border-t border-primary/10">
+                  <div className="flex items-center gap-1 flex-wrap">
+                    <span className="text-[10px] text-muted-foreground">Expected fields:</span>
+                    {fields.slice(0, 5).map(field => (
+                      <Badge key={field} variant="secondary" className="text-[9px] h-4 px-1">
+                        {field.replace(/_/g, ' ')}
+                      </Badge>
+                    ))}
+                    {fields.length > 5 && (
+                      <span className="text-[9px] text-muted-foreground">
+                        +{fields.length - 5} more
+                      </span>
+                    )}
+                  </div>
                 </div>
-              </div>
-            )}
+              );
+            })()}
           </div>
 
           {/* Dynamic Tabs based on document type */}
