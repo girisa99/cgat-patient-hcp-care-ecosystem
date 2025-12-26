@@ -913,35 +913,51 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
         const extractionPrompt = buildExtractionPrompt(documentType || 'unknown', targetFields);
         console.log(`Extraction prompt built for document type: ${documentType}`);
         
-        // Try providers in order of preference
-        const providers = [configuredProvider, 'gemini', 'azure', 'aws'].filter((v, i, a) => a.indexOf(v) === i);
-        let extractionSuccess = false;
+        // ============= INTELLIGENT MODEL ROUTING =============
+        // Use the selectBestModel algorithm to determine optimal AI provider
+        const documentCategory = getDocumentCategory(documentType || 'unknown');
+        const { config: routingConfig, reason: routingReason, confidence: routingConfidence } = selectBestModel(
+          documentType || 'unknown',
+          documentCategory,
+          extractedOCRText
+        );
         
-        for (const provider of providers) {
+        console.log(`[ModelRouting] Selected: ${routingConfig.primaryModel} (${routingReason}, confidence: ${(routingConfidence * 100).toFixed(1)}%)`);
+        console.log(`[ModelRouting] Pipeline: ${routingConfig.pipelineType}, Fallback chain: ${routingConfig.fallbackChain.join(' → ')}`);
+        
+        // Build provider chain: primary model first, then fallbacks
+        const providerChain: AIProvider[] = [routingConfig.primaryModel, ...routingConfig.fallbackChain];
+        let extractionSuccess = false;
+        let extracted: any = null;
+        
+        for (const provider of providerChain) {
           if (extractionSuccess) break;
           
-          console.log(`Trying provider: ${provider}`);
+          console.log(`[Extraction] Trying provider: ${provider}`);
           
           try {
-            let extracted: any = null;
+            const systemPrompt = MODEL_SYSTEM_PROMPTS[provider];
             
             switch (provider) {
+              case 'claude':
+                console.log('[Extraction] Calling Claude extraction...');
+                extracted = await extractWithClaude(fileBase64Data, contentType, extractionPrompt, systemPrompt);
+                providerUsed = 'claude';
+                console.log(`[Extraction] Claude returned: ${extracted ? 'data' : 'null'}`);
+                break;
+                
+              case 'openai':
+                console.log('[Extraction] Calling OpenAI extraction...');
+                extracted = await extractWithOpenAI(fileBase64Data, contentType, extractionPrompt, systemPrompt);
+                providerUsed = 'openai';
+                console.log(`[Extraction] OpenAI returned: ${extracted ? 'data' : 'null'}`);
+                break;
+                
               case 'gemini':
-              case 'google':
-                console.log('Calling Gemini extraction...');
+                console.log('[Extraction] Calling Gemini extraction...');
                 extracted = await extractWithGemini(fileBase64Data, contentType, extractionPrompt);
                 providerUsed = 'gemini';
-                console.log(`Gemini returned: ${extracted ? 'data' : 'null'}`);
-                break;
-                
-              case 'azure':
-                extracted = await extractWithAzure(fileBase64Data, contentType, documentType);
-                providerUsed = 'azure';
-                break;
-                
-              case 'aws':
-                extracted = await extractWithAWS(fileBase64Data, contentType, documentType);
-                providerUsed = 'aws';
+                console.log(`[Extraction] Gemini returned: ${extracted ? 'data' : 'null'}`);
                 break;
                 
               default:
@@ -1795,6 +1811,235 @@ async function extractWithGemini(imageBase64: string, contentType: string, promp
     console.error("Gemini extraction error:", error);
     throw error;
   }
+}
+
+// ============= CLAUDE EXTRACTION =============
+// Uses Anthropic API for clinical/healthcare document extraction
+async function extractWithClaude(imageBase64: string, contentType: string, prompt: string, systemPrompt?: string): Promise<any> {
+  const anthropicApiKey = Deno.env.get("ANTHROPIC_API_KEY");
+  if (!anthropicApiKey) {
+    console.error("ANTHROPIC_API_KEY not configured");
+    throw new Error("ANTHROPIC_API_KEY not configured");
+  }
+  
+  console.log(`[Claude] Starting extraction with content type ${contentType}, base64 length: ${imageBase64?.length || 0}`);
+  
+  try {
+    // Determine media type for Claude's vision API
+    let mediaType = 'image/png';
+    if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+      mediaType = 'image/jpeg';
+    } else if (contentType.includes('webp')) {
+      mediaType = 'image/webp';
+    } else if (contentType.includes('gif')) {
+      mediaType = 'image/gif';
+    } else if (contentType.includes('pdf')) {
+      mediaType = 'application/pdf';
+    }
+    
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': anthropicApiKey,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 8192,
+        system: systemPrompt || 'You are an expert document analyst. Extract all relevant information accurately.',
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: mediaType,
+                data: imageBase64
+              }
+            },
+            {
+              type: 'text',
+              text: prompt
+            }
+          ]
+        }]
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[Claude] API error: ${response.status} - ${errorText}`);
+      throw new Error(`Claude API error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[Claude] Response received`);
+    
+    const responseText = data?.content?.[0]?.text || '';
+    console.log(`[Claude] Extracted text length: ${responseText.length}`);
+    
+    if (!responseText) {
+      console.error("[Claude] Returned empty response");
+      return null;
+    }
+    
+    // Try to extract JSON from response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log(`[Claude] Extraction successful: ${Object.keys(parsed.fields || {}).length} fields extracted`);
+        return parsed;
+      } catch (parseError) {
+        console.error("[Claude] Failed to parse JSON response:", parseError);
+        return { fields: {}, confidence: 0.3, raw_text: responseText };
+      }
+    }
+    
+    console.log("[Claude] No JSON found in response, returning raw text");
+    return { fields: {}, confidence: 0.3, raw_text: responseText };
+  } catch (error) {
+    console.error("[Claude] Extraction error:", error);
+    throw error;
+  }
+}
+
+// ============= OPENAI EXTRACTION =============
+// Uses OpenAI GPT-4o for financial/invoice document extraction
+async function extractWithOpenAI(imageBase64: string, contentType: string, prompt: string, systemPrompt?: string): Promise<any> {
+  const openaiApiKey = Deno.env.get("OPENAI_API_KEY");
+  if (!openaiApiKey) {
+    console.error("OPENAI_API_KEY not configured");
+    throw new Error("OPENAI_API_KEY not configured");
+  }
+  
+  console.log(`[OpenAI] Starting extraction with content type ${contentType}, base64 length: ${imageBase64?.length || 0}`);
+  
+  try {
+    // Determine media type for OpenAI's vision API
+    let mediaType = 'image/png';
+    if (contentType.includes('jpeg') || contentType.includes('jpg')) {
+      mediaType = 'image/jpeg';
+    } else if (contentType.includes('webp')) {
+      mediaType = 'image/webp';
+    } else if (contentType.includes('gif')) {
+      mediaType = 'image/gif';
+    }
+    
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o',
+        max_tokens: 8192,
+        temperature: 0.1,
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt || 'You are an expert document analyst. Extract all relevant information accurately.'
+          },
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'image_url',
+                image_url: {
+                  url: `data:${mediaType};base64,${imageBase64}`,
+                  detail: 'high'
+                }
+              },
+              {
+                type: 'text',
+                text: prompt
+              }
+            ]
+          }
+        ]
+      })
+    });
+    
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error(`[OpenAI] API error: ${response.status} - ${errorText}`);
+      throw new Error(`OpenAI API error: ${response.status} - ${errorText}`);
+    }
+    
+    const data = await response.json();
+    console.log(`[OpenAI] Response received`);
+    
+    const responseText = data?.choices?.[0]?.message?.content || '';
+    console.log(`[OpenAI] Extracted text length: ${responseText.length}`);
+    
+    if (!responseText) {
+      console.error("[OpenAI] Returned empty response");
+      return null;
+    }
+    
+    // Try to extract JSON from response
+    const jsonMatch = responseText.match(/\{[\s\S]*\}/);
+    
+    if (jsonMatch) {
+      try {
+        const parsed = JSON.parse(jsonMatch[0]);
+        console.log(`[OpenAI] Extraction successful: ${Object.keys(parsed.fields || {}).length} fields extracted`);
+        return parsed;
+      } catch (parseError) {
+        console.error("[OpenAI] Failed to parse JSON response:", parseError);
+        return { fields: {}, confidence: 0.3, raw_text: responseText };
+      }
+    }
+    
+    console.log("[OpenAI] No JSON found in response, returning raw text");
+    return { fields: {}, confidence: 0.3, raw_text: responseText };
+  } catch (error) {
+    console.error("[OpenAI] Extraction error:", error);
+    throw error;
+  }
+}
+
+// ============= DOCUMENT CATEGORY HELPER =============
+function getDocumentCategory(documentType: string): string {
+  const categoryMap: Record<string, string> = {
+    // Healthcare
+    'prescription': 'healthcare',
+    'insurance': 'healthcare',
+    'lab-results': 'healthcare',
+    'lab_result': 'healthcare',
+    'patient-onboarding': 'healthcare',
+    'medical_record': 'healthcare',
+    'insurance_card': 'healthcare',
+    
+    // Medical Imaging
+    'medical_imaging': 'medical-imaging',
+    'xray': 'medical-imaging',
+    'ct-scan': 'medical-imaging',
+    'ct_scan': 'medical-imaging',
+    'mri': 'medical-imaging',
+    'ecg': 'medical-imaging',
+    'ultrasound': 'medical-imaging',
+    
+    // Financial
+    'invoice': 'financial',
+    'receipt': 'financial',
+    'claim': 'financial',
+    
+    // Identity
+    'passport': 'identity',
+    'drivers-license': 'identity',
+    'identification': 'identity',
+    
+    // Business
+    'contract': 'business',
+    'form': 'business'
+  };
+  
+  return categoryMap[documentType] || 'general';
 }
 
 // Azure Form Recognizer extraction (stub - requires AZURE_FORM_RECOGNIZER_KEY)
