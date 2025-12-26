@@ -1052,10 +1052,12 @@ async function handleMapToForm(supabase: any, request: ProcessingRequest) {
         // ============= INTELLIGENT MODEL ROUTING =============
         // Use the selectBestModel algorithm to determine optimal AI provider
         const documentCategory = getDocumentCategory(documentType || 'unknown');
+        // Use ocrText from request if available, otherwise undefined for content-based routing
+        const ocrTextForRouting = request.ocrText || undefined;
         const { config: routingConfig, reason: routingReason, confidence: routingConfidence } = selectBestModel(
           documentType || 'unknown',
           documentCategory,
-          extractedOCRText
+          ocrTextForRouting
         );
         
         console.log(`[ModelRouting] Selected: ${routingConfig.primaryModel} (${routingReason}, confidence: ${(routingConfidence * 100).toFixed(1)}%)`);
