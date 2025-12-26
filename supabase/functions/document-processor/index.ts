@@ -274,10 +274,10 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
   const publicUrl = urlData?.publicUrl || null;
 
   // Determine file type
-  const isDicom = mimeType === 'application/dicom' || fileName.match(/\.(dcm|dicom)$/i);
-  const isImage = mimeType?.startsWith('image/');
+  const isDicom = mimeType === 'application/dicom' || !!fileName.match(/\.(dcm|dicom)$/i);
+  const isImage = mimeType?.startsWith('image/') || false;
   const isPdf = mimeType === 'application/pdf';
-  const isExcel = mimeType?.includes('spreadsheet') || mimeType?.includes('excel') || fileName.match(/\.xlsx?$/i);
+  const isExcel = mimeType?.includes('spreadsheet') || mimeType?.includes('excel') || !!fileName.match(/\.xlsx?$/i);
   const isCsv = mimeType === 'text/csv' || fileName.endsWith('.csv');
   const isMedicalImage = isDicom || (isImage && processingConfig?.isMedicalContext);
 
