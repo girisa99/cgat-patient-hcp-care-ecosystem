@@ -355,14 +355,87 @@ export default function DocumentProcessing() {
     }
   }, [selectedDocType, dynamicTabs, activeTab]);
   
-  const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(null);
+  // Track if we restored state from sessionStorage (for toast notification)
+  const [restoredFromStorage, setRestoredFromStorage] = useState(false);
+  
+  // Initialize processingResult from sessionStorage if available
+  const [processingResult, setProcessingResult] = useState<ProcessingResult | null>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_currentResult');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        // Restore Date objects
+        if (parsed.processedAt) parsed.processedAt = new Date(parsed.processedAt);
+        if (parsed.exportedAt) parsed.exportedAt = new Date(parsed.exportedAt);
+        return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to restore processing result from sessionStorage:', e);
+    }
+    return null;
+  });
   const [processingHistory, setProcessingHistory] = useState<ProcessingResult[]>([]);
   const [isAutoProcessing, setIsAutoProcessing] = useState(true);
   const [showSettingsDialog, setShowSettingsDialog] = useState(false);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [showVerificationDialog, setShowVerificationDialog] = useState(false);
-  const [pendingResult, setPendingResult] = useState<ProcessingResult | null>(null);
+  // Initialize pendingResult from sessionStorage if available
+  const [pendingResult, setPendingResult] = useState<ProcessingResult | null>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_pendingResult');
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (parsed.processedAt) parsed.processedAt = new Date(parsed.processedAt);
+        if (parsed.exportedAt) parsed.exportedAt = new Date(parsed.exportedAt);
+        return parsed;
+      }
+    } catch (e) {
+      console.warn('Failed to restore pending result from sessionStorage:', e);
+    }
+    return null;
+  });
   const [showSubAgentDialog, setShowSubAgentDialog] = useState(false);
+  
+  // Show toast if state was restored from sessionStorage
+  useEffect(() => {
+    const hadSavedResult = sessionStorage.getItem('docProcessing_currentResult');
+    if (hadSavedResult && processingResult && !restoredFromStorage) {
+      setRestoredFromStorage(true);
+      // Delay toast slightly to ensure UI is ready
+      setTimeout(() => {
+        toast.success('Previous document processing state restored', {
+          description: `Document: ${processingResult.fileName}`,
+          duration: 4000,
+        });
+      }, 500);
+    }
+  }, []);
+  
+  // Persist processingResult to sessionStorage whenever it changes
+  useEffect(() => {
+    if (processingResult) {
+      try {
+        sessionStorage.setItem('docProcessing_currentResult', JSON.stringify(processingResult));
+      } catch (e) {
+        console.warn('Failed to save processing result to sessionStorage:', e);
+      }
+    } else {
+      sessionStorage.removeItem('docProcessing_currentResult');
+    }
+  }, [processingResult]);
+  
+  // Persist pendingResult to sessionStorage whenever it changes
+  useEffect(() => {
+    if (pendingResult) {
+      try {
+        sessionStorage.setItem('docProcessing_pendingResult', JSON.stringify(pendingResult));
+      } catch (e) {
+        console.warn('Failed to save pending result to sessionStorage:', e);
+      }
+    } else {
+      sessionStorage.removeItem('docProcessing_pendingResult');
+    }
+  }, [pendingResult]);
   
   // Load processing history from database
   const loadHistory = useCallback(async () => {
@@ -638,20 +711,30 @@ export default function DocumentProcessing() {
     config => config.documentTypes.includes(selectedDocType)
   );
   
-  // Medication search state
-  const [drugSearchQuery, setDrugSearchQuery] = useState('');
-  const [sigInstructions, setSigInstructions] = useState('');
-  const [searchResults, setSearchResults] = useState<MedicationResult | null>(null);
+  // Medication search state - initialize from sessionStorage for persistence
+  const [drugSearchQuery, setDrugSearchQuery] = useState(() => sessionStorage.getItem('docProcessing_drugQuery') || '');
+  const [sigInstructions, setSigInstructions] = useState(() => sessionStorage.getItem('docProcessing_sigInstructions') || '');
+  const [searchResults, setSearchResults] = useState<MedicationResult | null>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_searchResults');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [isSearching, setIsSearching] = useState(false);
-  const [selectedNdc, setSelectedNdc] = useState<string | null>(null);
-  const [parsedSig, setParsedSig] = useState<any>(null);
+  const [selectedNdc, setSelectedNdc] = useState<string | null>(() => sessionStorage.getItem('docProcessing_selectedNdc'));
+  const [parsedSig, setParsedSig] = useState<any>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_parsedSig');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
   const [selectedRecommendation, setSelectedRecommendation] = useState<{ title: string; message: string; type: string } | null>(null);
   
-  // Separate editable fields for dose/route/frequency
-  const [selectedDose, setSelectedDose] = useState('1 tablet');
-  const [selectedRoute, setSelectedRoute] = useState('by mouth (oral)');
-  const [selectedFrequency, setSelectedFrequency] = useState('once daily');
-  const [selectedDuration, setSelectedDuration] = useState('30 days');
+  // Separate editable fields for dose/route/frequency - with sessionStorage persistence
+  const [selectedDose, setSelectedDose] = useState(() => sessionStorage.getItem('docProcessing_selectedDose') || '1 tablet');
+  const [selectedRoute, setSelectedRoute] = useState(() => sessionStorage.getItem('docProcessing_selectedRoute') || 'by mouth (oral)');
+  const [selectedFrequency, setSelectedFrequency] = useState(() => sessionStorage.getItem('docProcessing_selectedFrequency') || 'once daily');
+  const [selectedDuration, setSelectedDuration] = useState(() => sessionStorage.getItem('docProcessing_selectedDuration') || '30 days');
   
   // NDC-specific dosing info
   const [ndcDosageInfo, setNdcDosageInfo] = useState<{
@@ -661,7 +744,59 @@ export default function DocumentProcessing() {
     duration: string;
     dosageForm: string;
     strength: string;
-  } | null>(null);
+  } | null>(() => {
+    try {
+      const saved = sessionStorage.getItem('docProcessing_ndcDosageInfo');
+      return saved ? JSON.parse(saved) : null;
+    } catch { return null; }
+  });
+  
+  // Persist medication-related fields to sessionStorage
+  useEffect(() => {
+    if (drugSearchQuery) sessionStorage.setItem('docProcessing_drugQuery', drugSearchQuery);
+    else sessionStorage.removeItem('docProcessing_drugQuery');
+  }, [drugSearchQuery]);
+  
+  useEffect(() => {
+    if (sigInstructions) sessionStorage.setItem('docProcessing_sigInstructions', sigInstructions);
+    else sessionStorage.removeItem('docProcessing_sigInstructions');
+  }, [sigInstructions]);
+  
+  useEffect(() => {
+    if (searchResults) sessionStorage.setItem('docProcessing_searchResults', JSON.stringify(searchResults));
+    else sessionStorage.removeItem('docProcessing_searchResults');
+  }, [searchResults]);
+  
+  useEffect(() => {
+    if (selectedNdc) sessionStorage.setItem('docProcessing_selectedNdc', selectedNdc);
+    else sessionStorage.removeItem('docProcessing_selectedNdc');
+  }, [selectedNdc]);
+  
+  useEffect(() => {
+    if (parsedSig) sessionStorage.setItem('docProcessing_parsedSig', JSON.stringify(parsedSig));
+    else sessionStorage.removeItem('docProcessing_parsedSig');
+  }, [parsedSig]);
+  
+  useEffect(() => {
+    sessionStorage.setItem('docProcessing_selectedDose', selectedDose);
+  }, [selectedDose]);
+  
+  useEffect(() => {
+    sessionStorage.setItem('docProcessing_selectedRoute', selectedRoute);
+  }, [selectedRoute]);
+  
+  useEffect(() => {
+    sessionStorage.setItem('docProcessing_selectedFrequency', selectedFrequency);
+  }, [selectedFrequency]);
+  
+  useEffect(() => {
+    sessionStorage.setItem('docProcessing_selectedDuration', selectedDuration);
+  }, [selectedDuration]);
+  
+  useEffect(() => {
+    if (ndcDosageInfo) sessionStorage.setItem('docProcessing_ndcDosageInfo', JSON.stringify(ndcDosageInfo));
+    else sessionStorage.removeItem('docProcessing_ndcDosageInfo');
+  }, [ndcDosageInfo]);
   
   // Flag to track if state restoration is pending (for medical imaging states)
   const [stateRestorationPending, setStateRestorationPending] = useState<string | null>(() => {
@@ -1155,9 +1290,32 @@ export default function DocumentProcessing() {
     }
   }, [selectedDocType, isAutoProcessing]);
 
-  // Store base64 data for medical imaging analysis
-  const [medicalImageBase64, setMedicalImageBase64] = useState<string>('');
-  const [medicalImageMimeType, setMedicalImageMimeType] = useState<string>('');
+  // Store base64 data for medical imaging analysis - with sessionStorage persistence
+  const [medicalImageBase64, setMedicalImageBase64] = useState<string>(() => 
+    sessionStorage.getItem('docProcessing_medicalImageBase64') || ''
+  );
+  const [medicalImageMimeType, setMedicalImageMimeType] = useState<string>(() => 
+    sessionStorage.getItem('docProcessing_medicalImageMimeType') || ''
+  );
+  
+  // Persist medical imaging base64 to sessionStorage
+  useEffect(() => {
+    if (medicalImageBase64) {
+      try {
+        sessionStorage.setItem('docProcessing_medicalImageBase64', medicalImageBase64);
+      } catch (e) {
+        // Base64 images can be large, if it fails just log it
+        console.warn('Failed to save medical image to sessionStorage (may be too large):', e);
+      }
+    } else {
+      sessionStorage.removeItem('docProcessing_medicalImageBase64');
+    }
+  }, [medicalImageBase64]);
+  
+  useEffect(() => {
+    if (medicalImageMimeType) sessionStorage.setItem('docProcessing_medicalImageMimeType', medicalImageMimeType);
+    else sessionStorage.removeItem('docProcessing_medicalImageMimeType');
+  }, [medicalImageMimeType]);
   
   // Single consolidated useEffect to restore ALL states from sessionStorage
   // This runs once on mount and restores all document type states in one pass
