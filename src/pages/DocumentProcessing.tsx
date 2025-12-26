@@ -319,41 +319,7 @@ export default function DocumentProcessing() {
   // Track previous document type to detect changes
   const prevDocTypeRef = useRef<string>(selectedDocType);
   
-  // Reset to upload tab AND clear state when document type changes
-  useEffect(() => {
-    const validTabIds = dynamicTabs.map(t => t.id);
-    if (!validTabIds.includes(activeTab)) {
-      setActiveTab('upload');
-    }
-    
-    // Clear extracted data when document type changes to prevent data carryover
-    if (prevDocTypeRef.current !== selectedDocType) {
-      console.log('DocumentProcessing - Document type changed from', prevDocTypeRef.current, 'to', selectedDocType);
-      
-      // Clear current processing result to prevent stale data
-      setProcessingResult(null);
-      setPendingResult(null);
-      
-      // Clear any document-type-specific sessionStorage using DYNAMIC prefixes
-      // This ensures new document types added to documentTypes.ts are automatically handled
-      const allPrefixes = getAllSessionStoragePrefixes();
-      const keysToRemove: string[] = [];
-      
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key && allPrefixes.some(prefix => key.startsWith(prefix))) {
-          keysToRemove.push(key);
-        }
-      }
-      
-      keysToRemove.forEach(key => {
-        console.log('DocumentProcessing - Removing sessionStorage key:', key);
-        sessionStorage.removeItem(key);
-      });
-      
-      prevDocTypeRef.current = selectedDocType;
-    }
-  }, [selectedDocType, dynamicTabs, activeTab]);
+  // NOTE: Document type change cleanup moved to after all state definitions (see below)
   
   // Track if we restored state from sessionStorage (for toast notification)
   const [restoredFromStorage, setRestoredFromStorage] = useState(false);
@@ -1368,6 +1334,68 @@ export default function DocumentProcessing() {
       }
     }
   }, [stateRestorationPending]);
+  
+  // Reset to upload tab AND clear state when document type changes
+  // This effect is placed here after all state definitions to ensure all setters are available
+  useEffect(() => {
+    const validTabIds = dynamicTabs.map(t => t.id);
+    if (!validTabIds.includes(activeTab)) {
+      setActiveTab('upload');
+    }
+    
+    // Clear extracted data when document type changes to prevent data carryover
+    if (prevDocTypeRef.current !== selectedDocType) {
+      console.log('DocumentProcessing - Document type changed from', prevDocTypeRef.current, 'to', selectedDocType);
+      
+      // Clear current processing result to prevent stale data
+      setProcessingResult(null);
+      setPendingResult(null);
+      
+      // Reset medication-specific fields when switching away from prescription
+      setDrugSearchQuery('');
+      setSigInstructions('');
+      setSearchResults(null);
+      setSelectedNdc(null);
+      setParsedSig(null);
+      setSelectedDose('1 tablet');
+      setSelectedRoute('by mouth (oral)');
+      setSelectedFrequency('once daily');
+      setSelectedDuration('30 days');
+      setNdcDosageInfo(null);
+      
+      // Reset medical imaging fields
+      setMedicalImageBase64('');
+      setMedicalImageMimeType('');
+      
+      // Clear any document-type-specific sessionStorage using DYNAMIC prefixes
+      // BUT preserve the core docProcessing_ keys that are used for basic navigation
+      const allPrefixes = getAllSessionStoragePrefixes();
+      const keysToRemove: string[] = [];
+      
+      // Keys that should be preserved across document type switches
+      const preserveKeys = [
+        'docProcessing_selectedDocType',
+        'docProcessing_activeTab'
+      ];
+      
+      for (let i = 0; i < sessionStorage.length; i++) {
+        const key = sessionStorage.key(i);
+        if (key && allPrefixes.some(prefix => key.startsWith(prefix))) {
+          // Don't remove the preserve keys
+          if (!preserveKeys.includes(key)) {
+            keysToRemove.push(key);
+          }
+        }
+      }
+      
+      keysToRemove.forEach(key => {
+        console.log('DocumentProcessing - Removing sessionStorage key:', key);
+        sessionStorage.removeItem(key);
+      });
+      
+      prevDocTypeRef.current = selectedDocType;
+    }
+  }, [selectedDocType, dynamicTabs, activeTab]);
 
   const runAutoProcessing = async (result: ProcessingResult, file: File) => {
     try {
