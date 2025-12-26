@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import featuresImage from '@/assets/document-processing-features-overview.png';
+
+const PUBLIC_IMAGE_URL = '/diagrams/document-processing-features-overview.png';
 
 export const FeaturesOverviewDiagram = () => {
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = featuresImage;
+    link.href = PUBLIC_IMAGE_URL;
     link.download = 'document-processing-features-overview.png';
-    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -18,19 +18,7 @@ export const FeaturesOverviewDiagram = () => {
   };
 
   const handleOpenFullSize = () => {
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head><title>AI Document Processing Features Overview</title></head>
-          <body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;">
-            <img src="${featuresImage}" style="max-width:100%;height:auto;" alt="Features Overview" />
-          </body>
-        </html>
-      `);
-      newWindow.document.close();
-    }
+    window.open(PUBLIC_IMAGE_URL, '_blank');
   };
 
   return (
@@ -51,7 +39,7 @@ export const FeaturesOverviewDiagram = () => {
       <CardContent className="p-4">
         <div className="relative w-full overflow-auto rounded-lg border border-slate-700">
           <img 
-            src={featuresImage} 
+            src={PUBLIC_IMAGE_URL} 
             alt="AI Document Processing Solution Features - Auto-Detection, Multi-Model Routing, Analytics, Extraction, Fallback, Extensibility"
             className="w-full h-auto min-w-[800px]"
           />

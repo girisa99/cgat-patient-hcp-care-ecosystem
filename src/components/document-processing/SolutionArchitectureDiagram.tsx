@@ -3,14 +3,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Download, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
-import architectureImage from '@/assets/solution-architecture-overview.png';
+
+const PUBLIC_IMAGE_URL = '/diagrams/solution-architecture-overview.png';
 
 export const SolutionArchitectureDiagram = () => {
   const handleDownload = () => {
     const link = document.createElement('a');
-    link.href = architectureImage;
+    link.href = PUBLIC_IMAGE_URL;
     link.download = 'solution-architecture-overview.png';
-    link.target = '_blank';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -18,19 +18,7 @@ export const SolutionArchitectureDiagram = () => {
   };
 
   const handleOpenFullSize = () => {
-    const newWindow = window.open('', '_blank');
-    if (newWindow) {
-      newWindow.document.write(`
-        <!DOCTYPE html>
-        <html>
-          <head><title>AI Document Processing Solution Architecture</title></head>
-          <body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;">
-            <img src="${architectureImage}" style="max-width:100%;height:auto;" alt="Solution Architecture" />
-          </body>
-        </html>
-      `);
-      newWindow.document.close();
-    }
+    window.open(PUBLIC_IMAGE_URL, '_blank');
   };
 
   return (
@@ -51,7 +39,7 @@ export const SolutionArchitectureDiagram = () => {
       <CardContent className="p-4">
         <div className="relative w-full overflow-auto rounded-lg border border-slate-700">
           <img 
-            src={architectureImage} 
+            src={PUBLIC_IMAGE_URL} 
             alt="AI Document Processing Solution Architecture - Input Channels, Processing Layer, Data & Integrations"
             className="w-full h-auto min-w-[800px]"
           />
