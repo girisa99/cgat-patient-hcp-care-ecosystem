@@ -4,6 +4,8 @@
  */
 
 export { DocumentUploadProcessor } from './DocumentUploadProcessor';
+export { AIModelIndicator } from './AIModelIndicator';
+export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
 export { useDocumentProcessing, DOCUMENT_TYPE_FIELDS } from '@/hooks/useDocumentProcessing';
 export type { 
   DocumentJob, 
@@ -26,5 +28,6 @@ export type {
   ExportOptions,
   ExtractionSummary,
   ExtractionStage,
-  LiveExtraction
+  LiveExtraction,
+  ModelRoutingInfo
 } from '@/hooks/useDocumentProcessing';

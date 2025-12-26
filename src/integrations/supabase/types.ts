@@ -4550,6 +4550,81 @@ export type Database = {
         }
         Relationships: []
       }
+      document_ai_analytics: {
+        Row: {
+          confidence_score: number | null
+          created_at: string
+          document_category: string
+          document_id: string | null
+          document_type_id: string
+          error_message: string | null
+          estimated_cost: number | null
+          fallbacks_attempted: string[] | null
+          file_name: string | null
+          id: string
+          model_used: string
+          pipeline_type: string | null
+          primary_model: string
+          processing_time_ms: number
+          selection_confidence: number | null
+          selection_reason: string
+          stage1_model: string | null
+          stage2_model: string | null
+          success: boolean
+          tokens_used: number | null
+          user_id: string | null
+          warnings: string[] | null
+        }
+        Insert: {
+          confidence_score?: number | null
+          created_at?: string
+          document_category: string
+          document_id?: string | null
+          document_type_id: string
+          error_message?: string | null
+          estimated_cost?: number | null
+          fallbacks_attempted?: string[] | null
+          file_name?: string | null
+          id?: string
+          model_used: string
+          pipeline_type?: string | null
+          primary_model: string
+          processing_time_ms?: number
+          selection_confidence?: number | null
+          selection_reason: string
+          stage1_model?: string | null
+          stage2_model?: string | null
+          success?: boolean
+          tokens_used?: number | null
+          user_id?: string | null
+          warnings?: string[] | null
+        }
+        Update: {
+          confidence_score?: number | null
+          created_at?: string
+          document_category?: string
+          document_id?: string | null
+          document_type_id?: string
+          error_message?: string | null
+          estimated_cost?: number | null
+          fallbacks_attempted?: string[] | null
+          file_name?: string | null
+          id?: string
+          model_used?: string
+          pipeline_type?: string | null
+          primary_model?: string
+          processing_time_ms?: number
+          selection_confidence?: number | null
+          selection_reason?: string
+          stage1_model?: string | null
+          stage2_model?: string | null
+          success?: boolean
+          tokens_used?: number | null
+          user_id?: string | null
+          warnings?: string[] | null
+        }
+        Relationships: []
+      }
       document_processing_jobs: {
         Row: {
           completed_at: string | null

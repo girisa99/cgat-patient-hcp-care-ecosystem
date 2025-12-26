@@ -35,7 +35,8 @@ import {
   FormFieldExtraction,
   ExportOptions,
   LiveExtraction,
-  ExtractionStage
+  ExtractionStage,
+  ModelRoutingInfo
 } from '@/hooks/useDocumentProcessing';
 import { 
   DOCUMENT_TYPE_FIELDS, 
@@ -45,6 +46,7 @@ import {
   getAllSessionStoragePrefixes
 } from '@/config/documentTypes';
 import { toast } from 'sonner';
+import { AIModelIndicator, type ModelUsageInfo } from './AIModelIndicator';
 
 interface DocumentUploadProcessorProps {
   onFormMappingComplete?: (mapping: FormMapping) => void;
@@ -920,12 +922,31 @@ const ProcessingStatus: React.FC<{ job: DocumentJob; onCancel: () => void }> = (
             )}
           </div>
 
-          {/* Document Type & Expected Fields */}
+          {/* Document Type & Model Indicator */}
           {job.document_type && job.document_type !== 'unknown' && (
             <div className="bg-primary/5 border border-primary/20 rounded-lg p-3 space-y-2">
-              <div className="flex items-center gap-2">
-                <FileType className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">{DOCUMENT_TYPE_LABELS[job.document_type]}</span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <FileType className="h-4 w-4 text-primary" />
+                  <span className="text-sm font-medium">{DOCUMENT_TYPE_LABELS[job.document_type]}</span>
+                </div>
+                {/* AI Model Indicator */}
+                {job.model_routing && (
+                  <AIModelIndicator 
+                    modelInfo={{
+                      primaryModel: job.model_routing.primaryModel,
+                      modelUsed: job.model_routing.modelUsed,
+                      selectionReason: job.model_routing.selectionReason,
+                      confidence: job.model_routing.confidence,
+                      pipelineType: job.model_routing.pipelineType,
+                      stage1Model: job.model_routing.stage1Model,
+                      stage2Model: job.model_routing.stage2Model,
+                      fallbacksAttempted: job.model_routing.fallbacksAttempted,
+                      processingTimeMs: job.model_routing.processingTimeMs
+                    }}
+                    variant="compact"
+                  />
+                )}
               </div>
               <div className="flex flex-wrap gap-1">
                 {DOCUMENT_TYPE_FIELDS[job.document_type]?.slice(0, 6).map(field => (
