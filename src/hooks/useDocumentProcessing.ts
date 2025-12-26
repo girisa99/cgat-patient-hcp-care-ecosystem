@@ -398,7 +398,7 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
       setUploadProgress(60);
 
       // Determine if this is a medical imaging file
-      const isDicom = file.type === 'application/dicom' || file.name.match(/\.(dcm|dicom)$/i);
+      const isDicom = file.type === 'application/dicom' || !!file.name.match(/\.(dcm|dicom)$/i);
       const isImage = file.type.startsWith('image/');
       const effectiveIsMedicalContext = isMedicalContext || isDicom;
 
