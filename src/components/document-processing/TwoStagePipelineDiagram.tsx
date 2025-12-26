@@ -6,29 +6,31 @@ import { toast } from 'sonner';
 import pipelineImage from '@/assets/two-stage-ai-pipeline-architecture.png';
 
 export const TwoStagePipelineDiagram = () => {
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(pipelineImage);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'two-stage-ai-pipeline-architecture.png';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Two-Stage Pipeline diagram downloaded!');
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to download diagram');
-    }
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = pipelineImage;
+    link.download = 'two-stage-ai-pipeline-architecture.png';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Two-Stage Pipeline diagram downloaded!');
   };
 
   const handleOpenFullSize = () => {
-    window.open(pipelineImage, '_blank');
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>Two-Stage AI Pipeline Architecture</title></head>
+          <body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;">
+            <img src="${pipelineImage}" style="max-width:100%;height:auto;" alt="Two-Stage AI Pipeline" />
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
+    }
   };
 
   return (
