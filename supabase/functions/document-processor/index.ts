@@ -128,6 +128,7 @@ interface ProcessingRequest {
   processingConfig?: any;
   userId?: string;
   documentType?: string;
+  documentCategory?: string;
   imageUrl?: string;
   imageBase64?: string;
   imageMimeType?: string;
@@ -138,6 +139,151 @@ interface ProcessingRequest {
   cptCodes?: string[];
   autoDetect?: boolean;
   autoAnalyzeMedical?: boolean;
+  // Intelligent routing options
+  useIntelligentRouting?: boolean;
+  ocrText?: string;
+  targetFields?: string[];
+}
+
+// ============= INTELLIGENT MODEL ROUTING =============
+type AIProvider = 'claude' | 'gemini' | 'openai';
+type PipelineType = 'single' | 'sequential-hybrid';
+
+interface ModelRoutingConfig {
+  primaryModel: AIProvider;
+  fallbackChain: AIProvider[];
+  pipelineType: PipelineType;
+  stage2Model?: AIProvider;
+  timeoutMs: number;
+  minConfidence: number;
+  maxRetries: number;
+}
+
+interface ModelCapability {
+  strengths: string[];
+  categories: string[];
+  contentPatterns: RegExp[];
+  scoreWeight: number;
+}
+
+// Model capabilities for auto-selection
+const MODEL_CAPABILITIES: Record<AIProvider, ModelCapability> = {
+  claude: {
+    strengths: ['clinical_reasoning', 'medical_terminology', 'policy_analysis', 'drug_interactions'],
+    categories: ['healthcare'],
+    contentPatterns: [
+      /prescription|rx\b|medication|drug|dosage|refill/i,
+      /diagnosis|icd-?10|clinical|patient|allergy/i,
+      /coverage|deductible|copay|insurance|policy|benefit/i,
+      /ndc|dea|npi|prescriber|pharmacy/i
+    ],
+    scoreWeight: 1.5
+  },
+  openai: {
+    strengths: ['table_extraction', 'financial_calculations', 'structured_data'],
+    categories: ['financial', 'business'],
+    contentPatterns: [
+      /invoice|billing|claim|statement|balance|payment/i,
+      /cpt|hcpcs|revenue\s*code|modifier/i,
+      /total|amount|subtotal|tax|\$[\d,]+\.?\d*/i,
+      /billed|allowed|adjustment|paid|due/i
+    ],
+    scoreWeight: 1.3
+  },
+  gemini: {
+    strengths: ['vision_analysis', 'handwriting', 'form_fields', 'speed'],
+    categories: ['identity', 'medical-imaging', 'general'],
+    contentPatterns: [
+      /form|checkbox|signature|handwritten/i,
+      /x-?ray|ct\s*scan|mri|ultrasound|dicom|ecg/i,
+      /passport|license|id\s*card|photo/i
+    ],
+    scoreWeight: 1.2
+  }
+};
+
+// Document type to model mapping (per routing strategy doc)
+const DOCUMENT_TYPE_ROUTING: Record<string, ModelRoutingConfig> = {
+  'prescription': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.8, maxRetries: 2 },
+  'insurance': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.75, maxRetries: 2 },
+  'lab-results': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.75, maxRetries: 2 },
+  'patient-onboarding': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.7, maxRetries: 2 },
+  'medical_imaging': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
+  'xray': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
+  'ct-scan': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
+  'mri': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
+  'ecg': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 40000, minConfidence: 0.6, maxRetries: 2 },
+  'ultrasound': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
+  'invoice': { primaryModel: 'openai', fallbackChain: ['claude', 'gemini'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.8, maxRetries: 2 },
+  'receipt': { primaryModel: 'openai', fallbackChain: ['gemini', 'claude'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.7, maxRetries: 2 },
+  'passport': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.8, maxRetries: 2 },
+  'drivers-license': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.8, maxRetries: 2 }
+};
+
+// Category defaults
+const CATEGORY_DEFAULTS: Record<string, ModelRoutingConfig> = {
+  'healthcare': { primaryModel: 'claude', fallbackChain: ['gemini', 'openai'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.7, maxRetries: 2 },
+  'medical-imaging': { primaryModel: 'gemini', fallbackChain: ['claude'], pipelineType: 'sequential-hybrid', stage2Model: 'claude', timeoutMs: 45000, minConfidence: 0.6, maxRetries: 2 },
+  'financial': { primaryModel: 'openai', fallbackChain: ['claude', 'gemini'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.75, maxRetries: 2 },
+  'identity': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.7, maxRetries: 2 },
+  'business': { primaryModel: 'openai', fallbackChain: ['claude', 'gemini'], pipelineType: 'single', timeoutMs: 30000, minConfidence: 0.7, maxRetries: 2 },
+  'general': { primaryModel: 'gemini', fallbackChain: ['claude', 'openai'], pipelineType: 'single', timeoutMs: 25000, minConfidence: 0.6, maxRetries: 2 }
+};
+
+// Model system prompts
+const MODEL_SYSTEM_PROMPTS: Record<AIProvider, string> = {
+  claude: `You are a clinical document analysis expert. Extract medical information with high accuracy. Validate NDC, NPI, DEA numbers. Identify drug interactions and therapeutic alternatives.`,
+  openai: `You are a financial document extraction specialist. Extract structured data from invoices and billing with precision. Validate calculations and identify discrepancies.`,
+  gemini: `You are a multimodal document analysis expert. Extract form fields, handwritten text, and image content. For medical imaging, identify modality, anatomical regions, and findings.`
+};
+
+// Select best model for document
+function selectBestModel(documentTypeId: string, documentCategory: string, ocrText?: string): { config: ModelRoutingConfig; reason: string; confidence: number } {
+  // 1. Check explicit document type config
+  if (DOCUMENT_TYPE_ROUTING[documentTypeId]) {
+    console.log(`[ModelRouting] Using explicit config for: ${documentTypeId}`);
+    return { config: DOCUMENT_TYPE_ROUTING[documentTypeId], reason: 'explicit_config', confidence: 1.0 };
+  }
+
+  // 2. Content-based analysis
+  if (ocrText && ocrText.length > 50) {
+    const scores: Record<AIProvider, number> = { claude: 0, openai: 0, gemini: 0 };
+    
+    for (const [provider, capability] of Object.entries(MODEL_CAPABILITIES)) {
+      const providerKey = provider as AIProvider;
+      let matchCount = 0;
+      
+      for (const pattern of capability.contentPatterns) {
+        const matches = ocrText.match(pattern);
+        if (matches) matchCount += matches.length;
+      }
+      
+      scores[providerKey] = matchCount * capability.scoreWeight;
+    }
+    
+    const maxScore = Math.max(...Object.values(scores));
+    const totalScore = Object.values(scores).reduce((a, b) => a + b, 0);
+    
+    if (maxScore > 0) {
+      const winner = (Object.entries(scores).find(([_, s]) => s === maxScore)?.[0]) as AIProvider;
+      const confidence = totalScore > 0 ? maxScore / totalScore : 0;
+      
+      if (confidence >= 0.6 && winner) {
+        console.log(`[ModelRouting] Content analysis selected: ${winner} (confidence: ${(confidence * 100).toFixed(1)}%)`);
+        const categoryConfig = CATEGORY_DEFAULTS[documentCategory] || CATEGORY_DEFAULTS['general'];
+        return { 
+          config: { ...categoryConfig, primaryModel: winner, fallbackChain: categoryConfig.fallbackChain.filter(m => m !== winner) },
+          reason: 'content_analysis',
+          confidence 
+        };
+      }
+    }
+  }
+
+  // 3. Category default
+  const categoryConfig = CATEGORY_DEFAULTS[documentCategory] || CATEGORY_DEFAULTS['general'];
+  console.log(`[ModelRouting] Using category default for: ${documentCategory}`);
+  return { config: categoryConfig, reason: 'category_default', confidence: 0.8 };
 }
 
 serve(async (req) => {

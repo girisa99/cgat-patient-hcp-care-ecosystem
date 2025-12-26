@@ -5,6 +5,7 @@
  */
 
 import React from 'react';
+import { AIProvider, PipelineType } from './documentModelRouting';
 
 export interface DocumentField {
   key: string;
@@ -12,6 +13,17 @@ export interface DocumentField {
   required?: boolean;
   type?: 'text' | 'date' | 'number' | 'boolean' | 'currency';
   validation?: string; // regex pattern
+}
+
+/**
+ * AI Configuration for document type
+ * Defines which model to use and fallback chain
+ */
+export interface DocumentAIConfig {
+  primaryModel: AIProvider;
+  fallbackChain: AIProvider[];
+  pipelineType: PipelineType;
+  stage2Model?: AIProvider; // For hybrid pipelines
 }
 
 export interface DocumentTypeConfig {
@@ -36,6 +48,11 @@ export interface DocumentTypeConfig {
     requiresSpecialOCR?: boolean;
     enableRCMAnalysis?: boolean; // For invoices/claims - revenue cycle management
   };
+  /**
+   * AI model configuration for this document type
+   * If not specified, auto-detection will be used based on category and content
+   */
+  aiConfig?: DocumentAIConfig;
 }
 
 // ============= DOCUMENT TYPE DEFINITIONS =============
