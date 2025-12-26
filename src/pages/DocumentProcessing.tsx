@@ -2220,7 +2220,7 @@ export default function DocumentProcessing() {
                     isProcessing={processingResult.stage !== 'complete' && processingResult.stage !== 'error'}
                     fileName={processingResult.fileName}
                     ocrProvider={ocrProvider === 'google' ? 'Google Vision' : ocrProvider === 'azure' ? 'Azure Form Recognizer' : 'AWS Textract'}
-                    nlpProvider="Gemini 2.5 Flash"
+                    visionAiProvider="Gemini 2.5 Flash"
                   />
                 )}
 

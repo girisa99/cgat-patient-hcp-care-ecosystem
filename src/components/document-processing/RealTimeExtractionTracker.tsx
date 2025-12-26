@@ -38,7 +38,7 @@ export interface ExtractionStage {
   message?: string;
   startedAt?: Date;
   completedAt?: Date;
-  source: 'ocr' | 'nlp' | 'system';
+  source: 'ocr' | 'vision_ai' | 'system';
 }
 
 export interface ExtractedField {
@@ -46,7 +46,7 @@ export interface ExtractedField {
   fieldName: string;
   fieldValue: string;
   confidence: number;
-  source: 'ocr' | 'nlp';
+  source: 'ocr' | 'vision_ai';
   stage: string;
   extractedAt: Date;
   verified?: boolean;
@@ -60,7 +60,7 @@ interface RealTimeExtractionTrackerProps {
   isProcessing: boolean;
   fileName?: string;
   ocrProvider?: string;
-  nlpProvider?: string;
+  visionAiProvider?: string;
   className?: string;
 }
 
@@ -69,10 +69,10 @@ const PROCESSING_STAGES: Omit<ExtractionStage, 'status' | 'fieldsExtracted' | 's
   { id: 'uploading', name: 'uploading', label: 'Uploading Document', icon: <FileText className="h-4 w-4" />, source: 'system' },
   { id: 'ocr', name: 'ocr', label: 'OCR Text Extraction', icon: <Camera className="h-4 w-4" />, source: 'ocr' },
   { id: 'extraction', name: 'extraction', label: 'Data Extraction', icon: <FileType className="h-4 w-4" />, source: 'ocr' },
-  { id: 'entity_extraction', name: 'entity_extraction', label: 'NLP Entity Extraction', icon: <Brain className="h-4 w-4" />, source: 'nlp' },
+  { id: 'entity_extraction', name: 'entity_extraction', label: 'Vision AI Entity Extraction', icon: <Brain className="h-4 w-4" />, source: 'vision_ai' },
   { id: 'table_extraction', name: 'table_extraction', label: 'Table Recognition', icon: <Table2 className="h-4 w-4" />, source: 'ocr' },
   { id: 'signature_detection', name: 'signature_detection', label: 'Signature Detection', icon: <PenTool className="h-4 w-4" />, source: 'ocr' },
-  { id: 'mapping', name: 'mapping', label: 'Field Mapping', icon: <Database className="h-4 w-4" />, source: 'nlp' },
+  { id: 'mapping', name: 'mapping', label: 'Field Mapping', icon: <Database className="h-4 w-4" />, source: 'vision_ai' },
   { id: 'validation', name: 'validation', label: 'Validation & QA', icon: <Shield className="h-4 w-4" />, source: 'system' },
   { id: 'complete', name: 'complete', label: 'Complete', icon: <CheckCircle className="h-4 w-4" />, source: 'system' },
 ];
@@ -91,7 +91,7 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
   isProcessing,
   fileName,
   ocrProvider = 'Google Vision',
-  nlpProvider = 'Gemini 2.5 Flash',
+  visionAiProvider = 'Gemini 2.5 Flash',
   className
 }) => {
   // Track live extractions with animation
@@ -136,11 +136,11 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
     Object.entries(extractedFields).forEach(([key, data]) => {
       if (!prevFields[key] || prevFields[key].value !== data.value) {
         // Determine source from confidence or explicit source field
-        const source: 'ocr' | 'nlp' = data.source === 'nlp' || data.source === 'NLP' 
-          ? 'nlp' 
+        const source: 'ocr' | 'vision_ai' = data.source === 'vision_ai' || data.source === 'nlp' || data.source === 'NLP' 
+          ? 'vision_ai' 
           : data.source === 'ocr' || data.source === 'OCR'
           ? 'ocr'
-          : data.confidence >= 0.85 ? 'nlp' : 'ocr';
+          : data.confidence >= 0.85 ? 'vision_ai' : 'ocr';
         
         newExtractions.push({
           id: `${key}-${Date.now()}`,
@@ -161,10 +161,10 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
       setStages(prev => prev.map(stage => {
         if (stage.id === currentStage || stage.status === 'processing') {
           const ocrCount = newExtractions.filter(e => e.source === 'ocr').length;
-          const nlpCount = newExtractions.filter(e => e.source === 'nlp').length;
+          const visionAiCount = newExtractions.filter(e => e.source === 'vision_ai').length;
           return {
             ...stage,
-            fieldsExtracted: (stage.fieldsExtracted || 0) + ocrCount + nlpCount
+            fieldsExtracted: (stage.fieldsExtracted || 0) + ocrCount + visionAiCount
           };
         }
         return stage;
@@ -181,9 +181,9 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
     }
   }, [liveExtractions]);
 
-  // Count OCR vs NLP fields
+  // Count OCR vs Vision AI fields
   const ocrFieldCount = liveExtractions.filter(e => e.source === 'ocr').length;
-  const nlpFieldCount = liveExtractions.filter(e => e.source === 'nlp').length;
+  const visionAiFieldCount = liveExtractions.filter(e => e.source === 'vision_ai').length;
 
   const getStageIcon = (stage: ExtractionStage) => {
     if (stage.status === 'completed') {
@@ -211,7 +211,7 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
             </Badge>
             <Badge variant="outline" className="text-[10px] bg-purple-500/10 border-purple-500/30">
               <Brain className="h-3 w-3 mr-1" />
-              NLP: {nlpFieldCount}
+              Vision AI: {visionAiFieldCount}
             </Badge>
           </div>
         </div>
@@ -233,8 +233,8 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
           <ArrowRight className="h-3 w-3 text-muted-foreground" />
           <div className="flex items-center gap-2">
             <Brain className="h-3 w-3 text-purple-500" />
-            <span className="text-muted-foreground">NLP:</span>
-            <span className="font-medium">{nlpProvider}</span>
+            <span className="text-muted-foreground">Vision AI:</span>
+            <span className="font-medium">{visionAiProvider}</span>
           </div>
         </div>
 
@@ -278,7 +278,7 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
                     className={cn(
                       "text-[9px] h-4",
                       stage.source === 'ocr' && "bg-blue-500/10 border-blue-500/30 text-blue-600",
-                      stage.source === 'nlp' && "bg-purple-500/10 border-purple-500/30 text-purple-600",
+                      stage.source === 'vision_ai' && "bg-purple-500/10 border-purple-500/30 text-purple-600",
                       stage.source === 'system' && "bg-gray-500/10 border-gray-500/30"
                     )}
                   >
@@ -346,12 +346,12 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
                         variant="outline" 
                         className={cn(
                           "text-[8px] shrink-0 px-1.5",
-                          extraction.source === 'nlp' && "border-purple-500 bg-purple-500/10 text-purple-600",
+                          extraction.source === 'vision_ai' && "border-purple-500 bg-purple-500/10 text-purple-600",
                           extraction.source === 'ocr' && "border-blue-500 bg-blue-500/10 text-blue-600"
                         )}
                       >
-                        {extraction.source === 'nlp' ? (
-                          <><Brain className="h-2.5 w-2.5 mr-0.5" />NLP</>
+                        {extraction.source === 'vision_ai' ? (
+                          <><Brain className="h-2.5 w-2.5 mr-0.5" />AI</>
                         ) : (
                           <><Camera className="h-2.5 w-2.5 mr-0.5" />OCR</>
                         )}
@@ -399,8 +399,8 @@ export const RealTimeExtractionTracker: React.FC<RealTimeExtractionTrackerProps>
                 <div className="text-[10px] text-muted-foreground">From OCR</div>
               </div>
               <div className="p-2 bg-purple-500/10 rounded-lg">
-                <div className="text-lg font-bold text-purple-600">{nlpFieldCount}</div>
-                <div className="text-[10px] text-muted-foreground">From NLP</div>
+                <div className="text-lg font-bold text-purple-600">{visionAiFieldCount}</div>
+                <div className="text-[10px] text-muted-foreground">From Vision AI</div>
               </div>
             </div>
           </>
