@@ -10,6 +10,18 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { getAllSessionStoragePrefixes, DOCUMENT_TYPE_FIELDS } from '@/config/documentTypes';
+export interface ModelRoutingInfo {
+  primaryModel: 'claude' | 'gemini' | 'openai';
+  modelUsed: 'claude' | 'gemini' | 'openai';
+  selectionReason: 'explicit_config' | 'category_default' | 'content_analysis' | 'fallback';
+  confidence: number;
+  pipelineType: 'single' | 'sequential-hybrid';
+  stage1Model?: 'claude' | 'gemini' | 'openai';
+  stage2Model?: 'claude' | 'gemini' | 'openai';
+  fallbacksAttempted?: ('claude' | 'gemini' | 'openai')[];
+  processingTimeMs?: number;
+}
+
 export interface DocumentJob {
   id: string;
   file_name: string;
@@ -35,6 +47,8 @@ export interface DocumentJob {
   // Real-time extraction tracking
   extraction_stages?: ExtractionStage[];
   live_extractions?: LiveExtraction[];
+  // Model routing info
+  model_routing?: ModelRoutingInfo;
 }
 
 export type DocumentType = 
@@ -310,7 +324,13 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
         return;
       }
 
-      setJobs(data || []);
+      // Extract model_routing from processing_config for each job
+      const jobsWithRouting = (data || []).map((job: any) => ({
+        ...job,
+        model_routing: job.processing_config?.modelRouting || null
+      }));
+
+      setJobs(jobsWithRouting);
     } catch (e) {
       console.error('Error loading jobs:', e);
     }
@@ -337,10 +357,15 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
         },
         (payload) => {
           console.log('Real-time update received:', payload.new);
-          const updatedJob = payload.new as DocumentJob;
+          const rawJob = payload.new as any;
+          // Extract model_routing from processing_config
+          const updatedJob: DocumentJob = {
+            ...rawJob,
+            model_routing: rawJob.processing_config?.modelRouting || null
+          };
           
           setActiveJob(updatedJob);
-          setJobs(prev => prev.map(j => j.id === documentId ? updatedJob : j));
+          setJobs(prev => prev.map(j => j.id === updatedJob.id ? updatedJob : j));
           
           // Update processing state based on status
           if (updatedJob.status === 'completed') {

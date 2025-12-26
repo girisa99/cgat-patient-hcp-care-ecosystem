@@ -286,6 +286,67 @@ function selectBestModel(documentTypeId: string, documentCategory: string, ocrTe
   return { config: categoryConfig, reason: 'category_default', confidence: 0.8 };
 }
 
+// ============= ANALYTICS LOGGING =============
+interface AnalyticsEntry {
+  document_id?: string;
+  user_id?: string;
+  document_type_id: string;
+  document_category: string;
+  file_name?: string;
+  primary_model: string;
+  selection_reason: string;
+  selection_confidence: number;
+  model_used: string;
+  fallbacks_attempted: string[];
+  pipeline_type: string;
+  stage1_model?: string;
+  stage2_model?: string;
+  processing_time_ms: number;
+  tokens_used?: number;
+  estimated_cost?: number;
+  success: boolean;
+  confidence_score?: number;
+  error_message?: string;
+  warnings?: string[];
+}
+
+async function logModelAnalytics(supabase: any, entry: AnalyticsEntry): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('document_ai_analytics')
+      .insert({
+        document_id: entry.document_id,
+        user_id: entry.user_id,
+        document_type_id: entry.document_type_id,
+        document_category: entry.document_category,
+        file_name: entry.file_name,
+        primary_model: entry.primary_model,
+        selection_reason: entry.selection_reason,
+        selection_confidence: entry.selection_confidence,
+        model_used: entry.model_used,
+        fallbacks_attempted: entry.fallbacks_attempted,
+        pipeline_type: entry.pipeline_type,
+        stage1_model: entry.stage1_model,
+        stage2_model: entry.stage2_model,
+        processing_time_ms: entry.processing_time_ms,
+        tokens_used: entry.tokens_used,
+        estimated_cost: entry.estimated_cost,
+        success: entry.success,
+        confidence_score: entry.confidence_score,
+        error_message: entry.error_message,
+        warnings: entry.warnings
+      });
+    
+    if (error) {
+      console.warn('[Analytics] Failed to log model usage:', error.message);
+    } else {
+      console.log(`[Analytics] Logged: ${entry.model_used} for ${entry.document_type_id} (${entry.processing_time_ms}ms)`);
+    }
+  } catch (err) {
+    console.warn('[Analytics] Error logging:', err);
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -391,6 +452,7 @@ async function handleUpload(supabase: any, request: ProcessingRequest) {
 // NEW: Upload with automatic document type detection and medical imaging analysis
 async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequest) {
   const { fileBase64, fileName, mimeType, processingConfig, userId, autoAnalyzeMedical = true } = request;
+  const startTime = Date.now();
   
   if (!fileBase64 || !fileName) {
     throw new Error("Missing file data or filename");
@@ -429,10 +491,31 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
 
   console.log(`[AutoDetect] File analysis - isDicom: ${isDicom}, isImage: ${isImage}, isPdf: ${isPdf}, isMedicalImage: ${isMedicalImage}`);
 
+  // Determine document category for model routing
+  const getDocumentCategory = (type: string): string => {
+    if (['prescription', 'lab_result', 'medical_record', 'insurance_card'].includes(type)) return 'healthcare';
+    if (['xray', 'ct_scan', 'mri', 'ultrasound', 'ecg', 'medical_imaging'].includes(type)) return 'medical-imaging';
+    if (['invoice', 'receipt'].includes(type)) return 'financial';
+    if (['passport', 'drivers_license', 'identification'].includes(type)) return 'identity';
+    return 'general';
+  };
+
   // Auto-detect document type using Gemini Vision
   let detectedDocumentType = 'unknown';
   let autoDetectionResult: any = null;
   let medicalAnalysisResult: any = null;
+  
+  // Model routing info for analytics and UI
+  let modelRoutingInfo = {
+    primaryModel: 'gemini' as AIProvider,
+    modelUsed: 'gemini' as AIProvider,
+    selectionReason: 'category_default' as 'explicit_config' | 'category_default' | 'content_analysis' | 'fallback',
+    confidence: 0.8,
+    pipelineType: 'single' as PipelineType,
+    stage1Model: undefined as AIProvider | undefined,
+    stage2Model: undefined as AIProvider | undefined,
+    fallbacksAttempted: [] as AIProvider[]
+  };
 
   const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
   
@@ -451,6 +534,18 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
           dicom_metadata: dicomMetadata,
           confidence: 0.98,
           is_medical: true
+        };
+        
+        // Use two-stage pipeline for medical imaging
+        modelRoutingInfo = {
+          primaryModel: 'gemini',
+          modelUsed: 'gemini',
+          selectionReason: 'explicit_config',
+          confidence: 0.98,
+          pipelineType: 'sequential-hybrid',
+          stage1Model: 'gemini',
+          stage2Model: 'claude',
+          fallbacksAttempted: []
         };
         
         // Run medical image analysis if enabled
@@ -506,6 +601,21 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
             
             console.log(`[AutoDetect] Detected type: ${detectedDocumentType}, confidence: ${autoDetectionResult.confidence}`);
             
+            // Determine model routing based on detected type
+            const category = getDocumentCategory(detectedDocumentType);
+            const routingConfig = selectBestModel(detectedDocumentType, category);
+            
+            modelRoutingInfo = {
+              primaryModel: routingConfig.config.primaryModel,
+              modelUsed: routingConfig.config.primaryModel,
+              selectionReason: routingConfig.reason as any,
+              confidence: routingConfig.confidence,
+              pipelineType: routingConfig.config.pipelineType,
+              stage1Model: routingConfig.config.pipelineType === 'sequential-hybrid' ? 'gemini' : undefined,
+              stage2Model: routingConfig.config.stage2Model,
+              fallbacksAttempted: []
+            };
+            
             // Run medical image analysis if it's a medical image
             if (autoAnalyzeMedical && autoDetectionResult.is_medical) {
               console.log(`[AutoDetect] Medical content detected, running analysis...`);
@@ -525,6 +635,8 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
     }
   }
 
+  const processingTimeMs = Date.now() - startTime;
+
   // Create processing record with detected type and analysis
   const { data: record, error: recordError } = await supabase
     .from('document_processing_jobs')
@@ -543,7 +655,8 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
         isMedicalImage,
         autoDetected: true,
         autoDetectionResult,
-        medicalAnalysisResult
+        medicalAnalysisResult,
+        modelRouting: modelRoutingInfo
       },
       progress: autoDetectionResult ? 25 : 0,
       current_stage: autoDetectionResult ? 'classification' : 'upload',
@@ -563,7 +676,28 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
     throw new Error(`Failed to create processing record: ${recordError.message}`);
   }
 
-  console.log(`[AutoDetect] Upload complete. DocumentId: ${record.id}, DetectedType: ${detectedDocumentType}`);
+  // Log analytics
+  const category = getDocumentCategory(detectedDocumentType);
+  await logModelAnalytics(supabase, {
+    document_id: record.id,
+    user_id: userId,
+    document_type_id: detectedDocumentType,
+    document_category: category,
+    file_name: fileName,
+    primary_model: modelRoutingInfo.primaryModel,
+    selection_reason: modelRoutingInfo.selectionReason,
+    selection_confidence: modelRoutingInfo.confidence,
+    model_used: modelRoutingInfo.modelUsed,
+    fallbacks_attempted: modelRoutingInfo.fallbacksAttempted,
+    pipeline_type: modelRoutingInfo.pipelineType,
+    stage1_model: modelRoutingInfo.stage1Model,
+    stage2_model: modelRoutingInfo.stage2Model,
+    processing_time_ms: processingTimeMs,
+    success: true,
+    confidence_score: autoDetectionResult?.confidence
+  });
+
+  console.log(`[AutoDetect] Upload complete. DocumentId: ${record.id}, DetectedType: ${detectedDocumentType}, Model: ${modelRoutingInfo.modelUsed}`);
 
   return new Response(
     JSON.stringify({ 
@@ -574,7 +708,9 @@ async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequ
       detectedDocumentType,
       autoDetectionResult,
       medicalAnalysisResult,
-      isMedicalImage
+      isMedicalImage,
+      modelRouting: modelRoutingInfo,
+      processingTimeMs
     }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } }
   );
