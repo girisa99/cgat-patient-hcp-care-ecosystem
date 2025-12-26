@@ -2,12 +2,14 @@
  * REAL-TIME DOCUMENT PROCESSING HOOK
  * Handles document upload, processing, metadata extraction, and form mapping
  * with real-time progress updates via Supabase Realtime
+ * 
+ * SINGLE SOURCE OF TRUTH: Uses documentTypes.ts config for all field definitions
  */
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-
+import { getAllSessionStoragePrefixes, DOCUMENT_TYPE_FIELDS } from '@/config/documentTypes';
 export interface DocumentJob {
   id: string;
   file_name: string;
@@ -112,19 +114,10 @@ export interface LiveExtraction {
   boundingBox?: BoundingBox;
 }
 
-// Document type specific field configurations
-export const DOCUMENT_TYPE_FIELDS: Record<DocumentType, string[]> = {
-  prescription: ['patient_name', 'prescriber_name', 'medication_name', 'dosage', 'sig', 'quantity', 'refills', 'date', 'npi', 'dea_number'],
-  insurance_card: ['member_name', 'member_id', 'group_number', 'plan_name', 'rx_bin', 'rx_pcn', 'payer_id', 'effective_date', 'copay'],
-  medical_record: ['patient_name', 'date_of_birth', 'mrn', 'visit_date', 'diagnosis', 'provider_name', 'facility_name', 'notes'],
-  form: ['patient_name', 'date_of_birth', 'address', 'phone', 'email', 'signature', 'date', 'consent'],
-  contract: ['party_names', 'effective_date', 'expiration_date', 'terms', 'signatures', 'amount', 'payment_terms'],
-  invoice: ['vendor_name', 'invoice_number', 'date', 'due_date', 'line_items', 'subtotal', 'tax', 'total', 'payment_terms'],
-  receipt: ['vendor_name', 'date', 'items', 'subtotal', 'tax', 'total', 'payment_method', 'transaction_id'],
-  lab_result: ['patient_name', 'date_of_birth', 'test_name', 'result_value', 'reference_range', 'units', 'collection_date', 'ordering_provider'],
-  identification: ['full_name', 'date_of_birth', 'id_number', 'expiration_date', 'address', 'issue_date', 'issuing_authority'],
-  unknown: ['patient_name', 'date', 'content', 'notes']
-};
+// Document type specific field configurations - NOW IMPORTED FROM documentTypes.ts
+// Re-export for backwards compatibility (already imported at top of file)
+// See: src/config/documentTypes.ts for the single source of truth
+export { DOCUMENT_TYPE_FIELDS };
 
 export interface EntityExtraction {
   type: string;
@@ -547,28 +540,14 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
     setIsUploading(false);
     setUploadProgress(0);
     
-    // Clear all invoice/document related sessionStorage keys for ALL document types
+    // Clear all document related sessionStorage keys using DYNAMIC prefixes from config
+    // This ensures new document types added to documentTypes.ts are automatically handled
+    const allPrefixes = getAllSessionStoragePrefixes();
     const keysToRemove: string[] = [];
+    
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key && (
-        key.startsWith('invoiceRCM_') || 
-        key.startsWith('prescriptionData_') || 
-        key.startsWith('insuranceCard_') ||
-        key.startsWith('medicalImage_') ||
-        key.startsWith('documentProcessing_') ||
-        key.startsWith('docProcessing_') ||
-        key.startsWith('patientOnboarding_') ||
-        key.startsWith('orderManagement_') ||
-        key.startsWith('treatmentCenter_') ||
-        key.startsWith('customerOnboarding_') ||
-        key.startsWith('labResult_') ||
-        key.startsWith('xray_') ||
-        key.startsWith('ctScan_') ||
-        key.startsWith('mri_') ||
-        key.startsWith('ecg_') ||
-        key.startsWith('ultrasound_')
-      )) {
+      if (key && allPrefixes.some(prefix => key.startsWith(prefix))) {
         keysToRemove.push(key);
       }
     }

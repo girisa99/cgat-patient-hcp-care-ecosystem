@@ -517,5 +517,130 @@ export const getCategoryIcon = (category: DocumentTypeConfig['category']): strin
   return icons[category];
 };
 
+// ============= DYNAMIC FIELD & STORAGE UTILITIES =============
+
+/**
+ * Get field keys for a document type - SINGLE SOURCE OF TRUTH
+ * Use this instead of hardcoded DOCUMENT_TYPE_FIELDS
+ */
+export const getFieldsForDocumentType = (documentTypeId: string): string[] => {
+  const config = getDocumentTypeById(documentTypeId);
+  if (!config) {
+    console.warn(`Unknown document type: ${documentTypeId}, using default fields`);
+    return ['name', 'date', 'content', 'notes'];
+  }
+  return config.targetFields.map(field => field.key);
+};
+
+/**
+ * Get full field definitions for a document type
+ */
+export const getFieldDefinitionsForDocumentType = (documentTypeId: string): DocumentField[] => {
+  const config = getDocumentTypeById(documentTypeId);
+  return config?.targetFields || [];
+};
+
+/**
+ * Get required fields for a document type
+ */
+export const getRequiredFieldsForDocumentType = (documentTypeId: string): string[] => {
+  const config = getDocumentTypeById(documentTypeId);
+  if (!config) return [];
+  return config.targetFields.filter(f => f.required).map(f => f.key);
+};
+
+/**
+ * Convert document type ID to sessionStorage prefix
+ * e.g., 'patient-onboarding' -> 'patientOnboarding_'
+ */
+export const getSessionStoragePrefix = (documentTypeId: string): string => {
+  // Convert kebab-case to camelCase and add underscore
+  const camelCase = documentTypeId.replace(/-([a-z])/g, (_, letter) => letter.toUpperCase());
+  return `${camelCase}_`;
+};
+
+/**
+ * Get all possible sessionStorage prefixes from all document types
+ * Used for clearing state when switching document types
+ */
+export const getAllSessionStoragePrefixes = (): string[] => {
+  const prefixes = DOCUMENT_TYPE_CONFIGS.map(config => getSessionStoragePrefix(config.id));
+  
+  // Add additional common prefixes for backwards compatibility
+  const additionalPrefixes = [
+    'documentProcessing_',
+    'docProcessing_',
+    'invoiceRCM_',
+    'prescriptionData_',
+    'insuranceCard_',
+    'medicalImage_'
+  ];
+  
+  return [...new Set([...prefixes, ...additionalPrefixes])];
+};
+
+/**
+ * Get all document type IDs
+ */
+export const getAllDocumentTypeIds = (): string[] => {
+  return DOCUMENT_TYPE_CONFIGS.map(config => config.id);
+};
+
+/**
+ * Get document types for UI selection (with icon and label)
+ */
+export const getDocumentTypesForSelection = (): Array<{
+  id: string;
+  label: string;
+  icon: string;
+  category: string;
+}> => {
+  return DOCUMENT_TYPE_CONFIGS.map(config => ({
+    id: config.id,
+    label: config.title,
+    icon: config.icon,
+    category: config.category
+  }));
+};
+
+/**
+ * Get special tab config for a document type (if any)
+ */
+export const getSpecialTabForDocumentType = (documentTypeId: string): DocumentTypeConfig['specialTab'] | undefined => {
+  const config = getDocumentTypeById(documentTypeId);
+  return config?.specialTab;
+};
+
+/**
+ * Get processing hints for a document type
+ */
+export const getProcessingHintsForDocumentType = (documentTypeId: string): DocumentTypeConfig['processingHints'] | undefined => {
+  const config = getDocumentTypeById(documentTypeId);
+  return config?.processingHints;
+};
+
+/**
+ * Build dynamic DOCUMENT_TYPE_FIELDS map for backwards compatibility
+ * This generates the same structure as the old hardcoded map
+ */
+export const buildDocumentTypeFieldsMap = (): Record<string, string[]> => {
+  const map: Record<string, string[]> = {};
+  DOCUMENT_TYPE_CONFIGS.forEach(config => {
+    map[config.id] = config.targetFields.map(f => f.key);
+  });
+  // Add legacy aliases for backwards compatibility
+  map['insurance_card'] = map['insurance'] || [];
+  map['lab_result'] = map['lab-results'] || [];
+  map['medical_record'] = map['patient-onboarding'] || [];
+  map['form'] = map['general-form'] || [];
+  map['contract'] = map['order-management'] || [];
+  map['identification'] = map['drivers-license'] || map['passport'] || [];
+  map['unknown'] = ['name', 'date', 'content', 'notes'];
+  return map;
+};
+
+// Pre-built map for performance
+export const DOCUMENT_TYPE_FIELDS = buildDocumentTypeFieldsMap();
+
 // Type for compatibility with existing code
 export type DocumentTypeId = typeof DOCUMENT_TYPE_CONFIGS[number]['id'];
