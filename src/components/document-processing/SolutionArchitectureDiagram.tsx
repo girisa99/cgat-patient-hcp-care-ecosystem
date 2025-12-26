@@ -6,29 +6,31 @@ import { toast } from 'sonner';
 import architectureImage from '@/assets/solution-architecture-overview.png';
 
 export const SolutionArchitectureDiagram = () => {
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(architectureImage);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'solution-architecture-overview.png';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Solution Architecture diagram downloaded!');
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to download diagram');
-    }
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = architectureImage;
+    link.download = 'solution-architecture-overview.png';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Solution Architecture diagram downloaded!');
   };
 
   const handleOpenFullSize = () => {
-    window.open(architectureImage, '_blank');
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>AI Document Processing Solution Architecture</title></head>
+          <body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;">
+            <img src="${architectureImage}" style="max-width:100%;height:auto;" alt="Solution Architecture" />
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
+    }
   };
 
   return (

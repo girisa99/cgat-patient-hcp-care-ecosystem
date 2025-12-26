@@ -6,29 +6,31 @@ import { toast } from 'sonner';
 import featuresImage from '@/assets/document-processing-features-overview.png';
 
 export const FeaturesOverviewDiagram = () => {
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(featuresImage);
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = 'document-processing-features-overview.png';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(url);
-      
-      toast.success('Features Overview diagram downloaded!');
-    } catch (error) {
-      console.error('Download error:', error);
-      toast.error('Failed to download diagram');
-    }
+  const handleDownload = () => {
+    const link = document.createElement('a');
+    link.href = featuresImage;
+    link.download = 'document-processing-features-overview.png';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    toast.success('Features Overview diagram downloaded!');
   };
 
   const handleOpenFullSize = () => {
-    window.open(featuresImage, '_blank');
+    const newWindow = window.open('', '_blank');
+    if (newWindow) {
+      newWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+          <head><title>AI Document Processing Features Overview</title></head>
+          <body style="margin:0;background:#0f172a;display:flex;justify-content:center;align-items:center;min-height:100vh;">
+            <img src="${featuresImage}" style="max-width:100%;height:auto;" alt="Features Overview" />
+          </body>
+        </html>
+      `);
+      newWindow.document.close();
+    }
   };
 
   return (
