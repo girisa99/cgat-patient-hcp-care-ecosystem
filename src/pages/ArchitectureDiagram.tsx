@@ -3,12 +3,13 @@ import { ComprehensiveArchitectureDiagram } from '@/components/architecture';
 import { 
   TwoStagePipelineDiagram, 
   FeaturesOverviewDiagram,
+  SolutionArchitectureDiagram,
   DocumentProcessingArchitectureDiagram,
   MedicalImagingAIPipelineDiagram 
 } from '@/components/document-processing';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { ArrowLeft, Download, Maximize2, Layers, GitBranch, BarChart3, Eye, FileText } from 'lucide-react';
+import { ArrowLeft, Layers, GitBranch, BarChart3, Eye, FileText, Building } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import AppLayout from '@/components/layout/AppLayout';
 
@@ -29,8 +30,12 @@ const ArchitectureDiagram = () => {
         </div>
         
         <div className="p-4">
-          <Tabs defaultValue="two-stage" className="w-full">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+          <Tabs defaultValue="solution" className="w-full">
+            <TabsList className="grid w-full grid-cols-6 mb-6">
+              <TabsTrigger value="solution" className="flex items-center gap-2">
+                <Building className="h-4 w-4" />
+                Solution Architecture
+              </TabsTrigger>
               <TabsTrigger value="two-stage" className="flex items-center gap-2">
                 <GitBranch className="h-4 w-4" />
                 Two-Stage Pipeline
@@ -52,6 +57,10 @@ const ArchitectureDiagram = () => {
                 Medical Imaging
               </TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="solution" className="space-y-4">
+              <SolutionArchitectureDiagram />
+            </TabsContent>
             
             <TabsContent value="two-stage" className="space-y-4">
               <TwoStagePipelineDiagram />
