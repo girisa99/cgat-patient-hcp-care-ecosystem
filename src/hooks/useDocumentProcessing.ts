@@ -47,6 +47,12 @@ export type DocumentType =
   | 'prescription'
   | 'lab_result'
   | 'identification'
+  | 'medical_imaging'
+  | 'xray'
+  | 'ct_scan'
+  | 'mri'
+  | 'ultrasound'
+  | 'ecg'
   | 'unknown';
 
 export interface ValidationStatus {
@@ -248,7 +254,7 @@ export interface UseDocumentProcessingReturn {
   batchProgress: { total: number; completed: number } | null;
   
   // Actions
-  uploadDocument: (file: File, config?: ProcessingConfig) => Promise<string | null>;
+  uploadDocument: (file: File, config?: ProcessingConfig, options?: { autoDetect?: boolean; autoAnalyzeMedical?: boolean; isMedicalContext?: boolean }) => Promise<string | null>;
   uploadBatch: (files: File[], config?: ProcessingConfig) => Promise<BatchProcessingResult | null>;
   processDocument: (documentId: string) => Promise<boolean>;
   extractMetadata: (documentId: string) => Promise<ExtractedMetadata | null>;
@@ -363,10 +369,13 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
 
   const uploadDocument = useCallback(async (
     file: File, 
-    config?: ProcessingConfig
+    config?: ProcessingConfig,
+    options?: { autoDetect?: boolean; autoAnalyzeMedical?: boolean; isMedicalContext?: boolean }
   ): Promise<string | null> => {
     setIsUploading(true);
     setUploadProgress(0);
+
+    const { autoDetect = true, autoAnalyzeMedical = true, isMedicalContext = false } = options || {};
 
     try {
       // Convert file to base64
@@ -388,14 +397,29 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
       const fileBase64 = await base64Promise;
       setUploadProgress(60);
 
-      // Call edge function
+      // Determine if this is a medical imaging file
+      const isDicom = file.type === 'application/dicom' || file.name.match(/\.(dcm|dicom)$/i);
+      const isImage = file.type.startsWith('image/');
+      const effectiveIsMedicalContext = isMedicalContext || isDicom;
+
+      // Use auto-detect action for intelligent processing
+      const action = autoDetect ? 'upload_with_auto_detect' : 'upload';
+
+      console.log(`[useDocumentProcessing] Uploading with action: ${action}, autoDetect: ${autoDetect}, autoAnalyzeMedical: ${autoAnalyzeMedical}, isMedicalContext: ${effectiveIsMedicalContext}`);
+
+      // Call edge function with auto-detection
       const { data, error } = await supabase.functions.invoke('document-processor', {
         body: {
-          action: 'upload',
+          action,
           fileBase64,
           fileName: file.name,
           mimeType: file.type,
-          processingConfig: config
+          processingConfig: { 
+            ...config, 
+            isMedicalContext: effectiveIsMedicalContext 
+          },
+          autoDetect,
+          autoAnalyzeMedical
         }
       });
 
@@ -406,6 +430,20 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
       }
 
       const documentId = data.documentId;
+      
+      // Log auto-detection results
+      if (data.detectedDocumentType) {
+        console.log(`[useDocumentProcessing] Auto-detected type: ${data.detectedDocumentType}`);
+        if (data.autoDetectionResult) {
+          toast.success(`Document classified as: ${data.detectedDocumentType} (${Math.round((data.autoDetectionResult.confidence || 0) * 100)}% confidence)`);
+        }
+      }
+      
+      // Log medical analysis if performed
+      if (data.medicalAnalysisResult) {
+        console.log(`[useDocumentProcessing] Medical analysis completed:`, data.medicalAnalysisResult);
+        toast.info('Medical imaging analysis completed');
+      }
       
       // Refresh jobs and subscribe
       await loadJobs();

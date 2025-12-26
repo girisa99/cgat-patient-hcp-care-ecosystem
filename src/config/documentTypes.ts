@@ -156,6 +156,29 @@ export const DOCUMENT_TYPE_CONFIGS: DocumentTypeConfig[] = [
 
   // ========== MEDICAL IMAGING ==========
   {
+    id: 'medical_imaging',
+    title: 'Medical Image / DICOM',
+    icon: '🏥',
+    description: 'DICOM files, medical images with AI analysis',
+    color: 'bg-slate-700',
+    category: 'medical-imaging',
+    targetFields: [
+      { key: 'patient_name', label: 'Patient Name' },
+      { key: 'patient_id', label: 'Patient ID' },
+      { key: 'study_date', label: 'Study Date', type: 'date' },
+      { key: 'modality', label: 'Modality (CT/MRI/XR/US)' },
+      { key: 'body_part', label: 'Body Part' },
+      { key: 'study_description', label: 'Study Description' },
+      { key: 'series_description', label: 'Series Description' },
+      { key: 'institution', label: 'Institution' },
+      { key: 'referring_physician', label: 'Referring Physician' },
+      { key: 'accession_number', label: 'Accession Number' }
+    ],
+    subTypes: ['DICOM', 'Medical X-Ray', 'CT Image', 'MRI Image', 'Ultrasound Image'],
+    specialTab: { id: 'ai-analysis', label: 'AI Analysis', icon: '🤖' },
+    processingHints: { enableDicomViewer: true, enableImageEnhancement: true, enableImageAnalysis: true }
+  },
+  {
     id: 'xray',
     title: 'X-Ray Report',
     icon: '🩻',

@@ -199,7 +199,26 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
     const file = acceptedFiles[0];
     if (!file) return;
 
-    const documentId = await uploadDocument(file, getProcessingConfig());
+    // Determine if this is a medical context upload
+    const isDicom = file.type === 'application/dicom' || !!file.name.match(/\.(dcm|dicom)$/i);
+    const isMedicalContext = selectedDocumentType === 'medical_imaging' || 
+                             selectedDocumentType === 'xray' || 
+                             selectedDocumentType === 'ct_scan' ||
+                             selectedDocumentType === 'mri' ||
+                             selectedDocumentType === 'ultrasound' ||
+                             selectedDocumentType === 'ecg' ||
+                             isDicom;
+
+    // Use auto-detect with medical context awareness
+    const documentId = await uploadDocument(
+      file, 
+      getProcessingConfig(),
+      { 
+        autoDetect: true, 
+        autoAnalyzeMedical: true, 
+        isMedicalContext 
+      }
+    );
 
     if (documentId && autoProcess) {
       setActiveTab('processing');
@@ -210,7 +229,7 @@ export const DocumentUploadProcessor: React.FC<DocumentUploadProcessorProps> = (
         setActiveTab('mapping');
       }
     }
-  }, [uploadDocument, uploadBatch, processDocument, mapToForm, autoProcess, autoMap, targetFormFields, enableOCR, enableHandwriting, enableTableExtraction, enableSignatureDetection, enableDocumentClassification, confidenceThreshold]);
+  }, [uploadDocument, uploadBatch, processDocument, mapToForm, autoProcess, autoMap, targetFormFields, enableOCR, enableHandwriting, enableTableExtraction, enableSignatureDetection, enableDocumentClassification, confidenceThreshold, selectedDocumentType]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
