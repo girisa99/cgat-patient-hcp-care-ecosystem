@@ -120,7 +120,7 @@ const HCPCS_CODE_DATABASE: Record<string, { description: string; category: strin
 };
 
 interface ProcessingRequest {
-  action: 'upload' | 'process' | 'extract_metadata' | 'map_to_form' | 'validate' | 'classify' | 'analyze_medical_image' | 'lookup_medical_codes';
+  action: 'upload' | 'process' | 'extract_metadata' | 'map_to_form' | 'validate' | 'classify' | 'analyze_medical_image' | 'lookup_medical_codes' | 'upload_with_auto_detect';
   documentId?: string;
   fileBase64?: string;
   fileName?: string;
@@ -136,6 +136,8 @@ interface ProcessingRequest {
   modelType?: string;
   icdCodes?: string[];
   cptCodes?: string[];
+  autoDetect?: boolean;
+  autoAnalyzeMedical?: boolean;
 }
 
 serve(async (req) => {
@@ -154,6 +156,8 @@ serve(async (req) => {
     switch (request.action) {
       case 'upload':
         return await handleUpload(supabase, request);
+      case 'upload_with_auto_detect':
+        return await handleUploadWithAutoDetect(supabase, request);
       case 'process':
         return await handleProcess(supabase, request);
       case 'extract_metadata':
@@ -236,6 +240,322 @@ async function handleUpload(supabase: any, request: ProcessingRequest) {
     JSON.stringify({ success: true, documentId: record.id, filePath, publicUrl }),
     { headers: { "Content-Type": "application/json", ...corsHeaders } }
   );
+}
+
+// NEW: Upload with automatic document type detection and medical imaging analysis
+async function handleUploadWithAutoDetect(supabase: any, request: ProcessingRequest) {
+  const { fileBase64, fileName, mimeType, processingConfig, userId, autoAnalyzeMedical = true } = request;
+  
+  if (!fileBase64 || !fileName) {
+    throw new Error("Missing file data or filename");
+  }
+
+  console.log(`[AutoDetect] Starting upload with auto-detection for: ${fileName}, mimeType: ${mimeType}`);
+
+  const fileData = Uint8Array.from(atob(fileBase64), c => c.charCodeAt(0));
+  const filePath = `documents/${Date.now()}_${fileName}`;
+
+  // Upload file to storage
+  const { data: uploadData, error: uploadError } = await supabase.storage
+    .from('document-processing')
+    .upload(filePath, fileData, {
+      contentType: mimeType || 'application/octet-stream',
+      upsert: false
+    });
+
+  if (uploadError) {
+    throw new Error(`Upload failed: ${uploadError.message}`);
+  }
+
+  const { data: urlData } = await supabase.storage
+    .from('document-processing')
+    .getPublicUrl(filePath);
+  
+  const publicUrl = urlData?.publicUrl || null;
+
+  // Determine file type
+  const isDicom = mimeType === 'application/dicom' || fileName.match(/\.(dcm|dicom)$/i);
+  const isImage = mimeType?.startsWith('image/');
+  const isPdf = mimeType === 'application/pdf';
+  const isExcel = mimeType?.includes('spreadsheet') || mimeType?.includes('excel') || fileName.match(/\.xlsx?$/i);
+  const isCsv = mimeType === 'text/csv' || fileName.endsWith('.csv');
+  const isMedicalImage = isDicom || (isImage && processingConfig?.isMedicalContext);
+
+  console.log(`[AutoDetect] File analysis - isDicom: ${isDicom}, isImage: ${isImage}, isPdf: ${isPdf}, isMedicalImage: ${isMedicalImage}`);
+
+  // Auto-detect document type using Gemini Vision
+  let detectedDocumentType = 'unknown';
+  let autoDetectionResult: any = null;
+  let medicalAnalysisResult: any = null;
+
+  const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
+  
+  if (LOVABLE_API_KEY && (isImage || isPdf || isDicom)) {
+    try {
+      console.log(`[AutoDetect] Running Gemini Vision auto-detection...`);
+      
+      // For DICOM, extract metadata first then analyze
+      if (isDicom) {
+        detectedDocumentType = 'medical_imaging';
+        
+        // Parse DICOM metadata
+        const dicomMetadata = extractDicomMetadata(fileData);
+        autoDetectionResult = {
+          detected_type: 'medical_imaging',
+          dicom_metadata: dicomMetadata,
+          confidence: 0.98,
+          is_medical: true
+        };
+        
+        // Run medical image analysis if enabled
+        if (autoAnalyzeMedical) {
+          console.log(`[AutoDetect] Running medical imaging analysis for DICOM...`);
+          medicalAnalysisResult = await runMedicalImageAnalysis(fileBase64, mimeType || 'application/dicom', dicomMetadata, LOVABLE_API_KEY);
+        }
+      } else if (isImage || isPdf) {
+        // Use Gemini to classify the document
+        const classificationPrompt = `Analyze this document/image and classify it. Return ONLY a JSON object:
+{
+  "detected_type": "one of: invoice, receipt, prescription, lab_result, medical_record, insurance_card, identification, form, contract, medical_imaging, xray, ct_scan, mri, ultrasound, ecg, unknown",
+  "confidence": 0.0 to 1.0,
+  "is_medical": true/false,
+  "medical_modality": "if medical imaging, specify: xray, ct, mri, ultrasound, ecg, or null",
+  "key_indicators": ["list of visual cues that led to this classification"],
+  "suggested_fields": ["list of expected fields for this document type"]
+}`;
+
+        const classifyResponse = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${LOVABLE_API_KEY}`,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            model: "google/gemini-2.5-flash",
+            messages: [
+              {
+                role: "user",
+                content: [
+                  { type: "text", text: classificationPrompt },
+                  {
+                    type: "image_url",
+                    image_url: { url: `data:${mimeType || 'image/png'};base64,${fileBase64}` }
+                  }
+                ]
+              }
+            ],
+            max_tokens: 1000
+          })
+        });
+
+        if (classifyResponse.ok) {
+          const classifyData = await classifyResponse.json();
+          const content = classifyData.choices?.[0]?.message?.content || '';
+          
+          // Parse JSON from response
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            autoDetectionResult = JSON.parse(jsonMatch[0]);
+            detectedDocumentType = autoDetectionResult.detected_type || 'unknown';
+            
+            console.log(`[AutoDetect] Detected type: ${detectedDocumentType}, confidence: ${autoDetectionResult.confidence}`);
+            
+            // Run medical image analysis if it's a medical image
+            if (autoAnalyzeMedical && autoDetectionResult.is_medical) {
+              console.log(`[AutoDetect] Medical content detected, running analysis...`);
+              medicalAnalysisResult = await runMedicalImageAnalysis(
+                fileBase64, 
+                mimeType || 'image/png', 
+                { modality: autoDetectionResult.medical_modality },
+                LOVABLE_API_KEY
+              );
+            }
+          }
+        }
+      }
+    } catch (autoDetectError) {
+      console.error('[AutoDetect] Auto-detection error:', autoDetectError);
+      // Continue with upload even if detection fails
+    }
+  }
+
+  // Create processing record with detected type and analysis
+  const { data: record, error: recordError } = await supabase
+    .from('document_processing_jobs')
+    .insert({
+      file_name: fileName,
+      file_path: filePath,
+      mime_type: mimeType,
+      status: 'uploaded',
+      document_type: detectedDocumentType,
+      user_id: userId || null,
+      processing_config: { 
+        ...processingConfig, 
+        publicUrl, 
+        isImage,
+        isDicom,
+        isMedicalImage,
+        autoDetected: true,
+        autoDetectionResult,
+        medicalAnalysisResult
+      },
+      progress: autoDetectionResult ? 25 : 0,
+      current_stage: autoDetectionResult ? 'classification' : 'upload',
+      stage_message: autoDetectionResult 
+        ? `Document classified as: ${detectedDocumentType} (${Math.round((autoDetectionResult.confidence || 0) * 100)}% confidence)`
+        : 'Document uploaded successfully',
+      stages: { 
+        upload: { status: 'completed', timestamp: new Date().toISOString() },
+        ...(autoDetectionResult && { classification: { status: 'completed', result: autoDetectionResult, timestamp: new Date().toISOString() } }),
+        ...(medicalAnalysisResult && { medical_analysis: { status: 'completed', result: medicalAnalysisResult, timestamp: new Date().toISOString() } })
+      }
+    })
+    .select()
+    .single();
+
+  if (recordError) {
+    throw new Error(`Failed to create processing record: ${recordError.message}`);
+  }
+
+  console.log(`[AutoDetect] Upload complete. DocumentId: ${record.id}, DetectedType: ${detectedDocumentType}`);
+
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      documentId: record.id, 
+      filePath, 
+      publicUrl,
+      detectedDocumentType,
+      autoDetectionResult,
+      medicalAnalysisResult,
+      isMedicalImage
+    }),
+    { headers: { "Content-Type": "application/json", ...corsHeaders } }
+  );
+}
+
+// Helper: Run medical image analysis with Gemini
+async function runMedicalImageAnalysis(imageBase64: string, mimeType: string, metadata: any, apiKey: string): Promise<any> {
+  const modality = metadata?.modality || metadata?.Modality || 'unknown';
+  
+  const analysisPrompt = `You are a medical imaging AI assistant. Analyze this ${modality} medical image and provide a structured assessment.
+
+IMPORTANT: This is for educational/informational purposes only. Always recommend professional medical review.
+
+Provide analysis in this JSON format:
+{
+  "image_quality": "good/fair/poor",
+  "modality_detected": "xray/ct/mri/ultrasound/ecg/dicom/other",
+  "anatomical_region": "identified body region",
+  "technical_observations": ["list of technical image quality notes"],
+  "anatomical_findings": ["list of visible anatomical structures"],
+  "potential_observations": ["list of any notable findings - be conservative"],
+  "measurements": {"any measurable findings": "value"},
+  "comparison_notes": "notes about positioning, technique",
+  "recommendations": ["suggested follow-up or additional views if applicable"],
+  "confidence_level": 0.0 to 1.0,
+  "disclaimer": "This is an AI-assisted preliminary analysis. Professional radiologist review is required for clinical decisions."
+}`;
+
+  try {
+    const response = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "google/gemini-2.5-flash",
+        messages: [
+          {
+            role: "user",
+            content: [
+              { type: "text", text: analysisPrompt },
+              {
+                type: "image_url",
+                image_url: { url: `data:${mimeType};base64,${imageBase64}` }
+              }
+            ]
+          }
+        ],
+        max_tokens: 2000
+      })
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      const content = data.choices?.[0]?.message?.content || '';
+      const jsonMatch = content.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        const analysis = JSON.parse(jsonMatch[0]);
+        return {
+          ...analysis,
+          analyzed_at: new Date().toISOString(),
+          source_metadata: metadata
+        };
+      }
+    }
+    return null;
+  } catch (error) {
+    console.error('[MedicalAnalysis] Error:', error);
+    return null;
+  }
+}
+
+// Helper: Extract DICOM metadata from binary
+function extractDicomMetadata(fileData: Uint8Array): any {
+  const metadata: Record<string, any> = {};
+  
+  try {
+    // Check DICOM magic number
+    if (fileData.length > 132) {
+      const dicm = String.fromCharCode(...fileData.slice(128, 132));
+      if (dicm === 'DICM') {
+        metadata.valid_dicom = true;
+        
+        // Parse some common DICOM tags
+        const dataView = new DataView(fileData.buffer);
+        let offset = 132;
+        
+        while (offset < Math.min(fileData.length - 8, 4096)) {
+          try {
+            const group = dataView.getUint16(offset, true);
+            const element = dataView.getUint16(offset + 2, true);
+            const tagKey = `(${group.toString(16).padStart(4, '0')},${element.toString(16).padStart(4, '0')})`;
+            
+            // Common DICOM tags
+            if (group === 0x0010) {
+              if (element === 0x0010) metadata.PatientName = 'Present';
+              if (element === 0x0020) metadata.PatientID = 'Present';
+              if (element === 0x0030) metadata.PatientBirthDate = 'Present';
+              if (element === 0x0040) metadata.PatientSex = 'Present';
+            }
+            if (group === 0x0008) {
+              if (element === 0x0060) metadata.Modality = 'Present';
+              if (element === 0x0020) metadata.StudyDate = 'Present';
+              if (element === 0x1030) metadata.StudyDescription = 'Present';
+            }
+            if (group === 0x0020) {
+              if (element === 0x000D) metadata.StudyInstanceUID = 'Present';
+              if (element === 0x000E) metadata.SeriesInstanceUID = 'Present';
+            }
+            
+            offset += 8;
+          } catch {
+            break;
+          }
+        }
+      }
+    }
+  } catch (error) {
+    console.error('DICOM metadata extraction error:', error);
+  }
+  
+  return {
+    ...metadata,
+    file_size: fileData.length,
+    extracted_at: new Date().toISOString()
+  };
 }
 
 async function handleProcess(supabase: any, request: ProcessingRequest) {
