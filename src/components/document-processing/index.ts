@@ -7,6 +7,7 @@ export { DocumentUploadProcessor } from './DocumentUploadProcessor';
 export { AIModelIndicator } from './AIModelIndicator';
 export { TwoStagePipelineDiagram } from './TwoStagePipelineDiagram';
 export { FeaturesOverviewDiagram } from './FeaturesOverviewDiagram';
+export { SolutionArchitectureDiagram } from './SolutionArchitectureDiagram';
 export { DocumentProcessingArchitectureDiagram } from './DocumentProcessingArchitectureDiagram';
 export { MedicalImagingAIPipelineDiagram } from './MedicalImagingAIPipelineDiagram';
 export type { AIProvider, PipelineType, ModelUsageInfo } from './AIModelIndicator';
