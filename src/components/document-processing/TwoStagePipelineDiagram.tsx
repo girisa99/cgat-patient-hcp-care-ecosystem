@@ -7,14 +7,23 @@ import { toast } from 'sonner';
 const PUBLIC_IMAGE_URL = '/diagrams/two-stage-ai-pipeline-architecture.png';
 
 export const TwoStagePipelineDiagram = () => {
-  const handleDownload = () => {
-    const link = document.createElement('a');
-    link.href = PUBLIC_IMAGE_URL;
-    link.download = 'two-stage-ai-pipeline-architecture.png';
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    toast.success('Two-Stage Pipeline diagram downloaded!');
+  const handleDownload = async () => {
+    try {
+      const response = await fetch(PUBLIC_IMAGE_URL);
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'two-stage-ai-pipeline-architecture.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      toast.success('Two-Stage Pipeline diagram downloaded!');
+    } catch (error) {
+      console.error('Download failed:', error);
+      toast.error('Failed to download diagram');
+    }
   };
 
   const handleOpenFullSize = () => {
