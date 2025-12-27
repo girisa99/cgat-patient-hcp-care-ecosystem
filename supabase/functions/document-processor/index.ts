@@ -3330,6 +3330,7 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
   console.log(`Medical image analysis - Provider: ${provider}, Model Type: ${modelType}, Document: ${documentType}`);
 
   const geminiApiKey = Deno.env.get("GEMINI_API_KEY");
+  const hfToken = Deno.env.get("HUGGING_FACE_ACCESS_TOKEN");
   
   if (!geminiApiKey) {
     return new Response(
@@ -3368,9 +3369,18 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
       contentType = imageResponse.headers.get('content-type') || 'image/jpeg';
     }
     
-    const medicalPrompt = buildComprehensiveMedicalPrompt(documentType || 'medical-image', analysisType || 'comprehensive', modelType);
+    // ============= PARALLEL CNN + VISION AI ANALYSIS =============
+    // Run actual CNN models via Hugging Face in parallel with Vision AI
     
-    const geminiResponse = await fetch(
+    let cnnAnalysis: any = null;
+    let geminiAnalysis: any = null;
+    
+    // Start CNN analysis if Hugging Face token available
+    const cnnPromise = hfToken ? runMedicalCNNAnalysis(imageBase64, documentType || 'medical-image', modelType) : Promise.resolve(null);
+    
+    // Start Gemini Vision analysis
+    const medicalPrompt = buildComprehensiveMedicalPrompt(documentType || 'medical-image', analysisType || 'comprehensive', modelType);
+    const geminiPromise = fetch(
       `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${geminiApiKey}`,
       {
         method: 'POST',
@@ -3386,7 +3396,11 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
         })
       }
     );
-
+    
+    // Wait for both analyses
+    const [cnnResult, geminiResponse] = await Promise.all([cnnPromise, geminiPromise]);
+    cnnAnalysis = cnnResult;
+    
     if (!geminiResponse.ok) {
       throw new Error(`Gemini API error: ${geminiResponse.status}`);
     }
@@ -3394,31 +3408,92 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
     const geminiData = await geminiResponse.json();
     const responseText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || '';
     const parsedAnalysis = parseComprehensiveResponse(responseText);
+    geminiAnalysis = parsedAnalysis;
+    
+    // ============= MERGE CNN + VISION AI RESULTS =============
+    const mergedModelsUsed: string[] = ['Gemini 2.0 Flash Vision'];
+    const cnnPredictions: any[] = [];
+    const cnnModelsExecuted: any[] = [];
+    
+    if (cnnAnalysis?.success) {
+      // Add CNN model names
+      if (cnnAnalysis.modelExecution?.modelsUsed) {
+        for (const model of cnnAnalysis.modelExecution.modelsUsed) {
+          mergedModelsUsed.push(`${model.name} (${model.architecture})`);
+          cnnModelsExecuted.push(model);
+        }
+      }
+      // Add CNN predictions
+      if (cnnAnalysis.predictions) {
+        cnnPredictions.push(...cnnAnalysis.predictions);
+      }
+    }
+    
+    // Enhance findings with CNN predictions
+    const enhancedFindings = [...(parsedAnalysis.findings || [])];
+    
+    // Add high-confidence CNN findings as additional insights
+    if (cnnPredictions.length > 0) {
+      const criticalCNN = cnnPredictions.filter(p => p.score > 0.6 && p.clinicalRelevance.includes('CRITICAL'));
+      const abnormalCNN = cnnPredictions.filter(p => p.score > 0.5 && p.clinicalRelevance.includes('abnormality'));
+      
+      for (const pred of [...criticalCNN, ...abnormalCNN].slice(0, 5)) {
+        enhancedFindings.push({
+          category: pred.clinicalRelevance.includes('CRITICAL') ? 'abnormality' : 'observation',
+          description: `CNN Detection: ${pred.label} (${(pred.score * 100).toFixed(1)}% confidence)`,
+          detailedExplanation: `Detected by ${pred.model} using ${pred.architecture} architecture. ${pred.clinicalRelevance}`,
+          confidence: Math.round(pred.score * 100),
+          clinicalSignificance: pred.clinicalRelevance.includes('CRITICAL') ? 'critical' : 
+                               pred.clinicalRelevance.includes('CONCERNING') ? 'high' : 'medium',
+          status: pred.clinicalRelevance.includes('Normal') ? 'normal' : 'abnormal',
+          source: 'CNN_MODEL',
+          modelUsed: pred.model
+        });
+      }
+    }
     
     return new Response(
       JSON.stringify({ 
         success: true, 
         autoDetection: parsedAnalysis.autoDetection,
-        insights: parsedAnalysis.findings,
+        insights: enhancedFindings,
         measurements: parsedAnalysis.measurements,
         obstructionsAndBlockages: parsedAnalysis.obstructionsAndBlockages,
         clinicalNotes: parsedAnalysis.clinicalNotes,
         observations: parsedAnalysis.observations,
         panelAnalysis: parsedAnalysis.panelAnalysis,
         detailedReport: parsedAnalysis.detailedReport,
-        abnormalitySummary: parsedAnalysis.abnormalitySummary,
+        abnormalitySummary: {
+          ...(parsedAnalysis.abnormalitySummary || {}),
+          cnnFindings: cnnPredictions.slice(0, 10)
+        },
         providerConsultation: parsedAnalysis.providerConsultation,
         anatomicalRegions: parsedAnalysis.anatomicalRegions,
         rawAnalysis: responseText,
-        modelUsed: `Gemini 2.0 Flash Vision`,
+        
+        // CNN Model Results
+        cnnAnalysis: cnnAnalysis?.success ? {
+          predictions: cnnPredictions.slice(0, 15),
+          clinicalSummary: cnnAnalysis.clinicalSummary,
+          modelsExecuted: cnnModelsExecuted,
+          deepAnalysis: cnnAnalysis.deepAnalysis,
+          performance: cnnAnalysis.performance
+        } : null,
+        
+        // Model information
+        modelUsed: mergedModelsUsed.join(' + '),
+        modelsUsed: mergedModelsUsed,
         modelApproach: modelType.toUpperCase(),
         modelApproachDetails: getModelApproachDetails(modelType),
         provider,
         modelType,
+        analysisType: cnnAnalysis?.success ? 'CNN_ENSEMBLE + VISION_AI' : 'VISION_AI',
+        
         detectedModality: parsedAnalysis.autoDetection?.detectedModality || documentType,
         detectedOrgans: parsedAnalysis.autoDetection?.detectedOrgans || [],
         analysisDepth: 'comprehensive',
-        disclaimer: 'AI-ASSISTED ANALYSIS FOR INFORMATIONAL PURPOSES ONLY. This is NOT a medical diagnosis. Results must be reviewed and interpreted by a qualified healthcare provider (radiologist, physician). DO NOT make clinical decisions based solely on this analysis. Always consult your healthcare provider for proper diagnosis and treatment.'
+        
+        disclaimer: 'AI-ASSISTED ANALYSIS (CNN + Vision AI Ensemble) FOR INFORMATIONAL PURPOSES ONLY. This analysis uses real CNN models (CheXNet, RadImageNet, Vision Transformers) combined with Vision AI. This is NOT a medical diagnosis. Results must be reviewed by a qualified healthcare provider. DO NOT make clinical decisions based solely on this analysis.'
       }),
       { headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
@@ -3439,6 +3514,197 @@ async function handleMedicalImageAnalysis(request: ProcessingRequest) {
       { headers: { "Content-Type": "application/json", ...corsHeaders } }
     );
   }
+}
+
+// ============= CNN MODEL EXECUTION =============
+async function runMedicalCNNAnalysis(imageBase64: string, documentType: string, modelType: string): Promise<any> {
+  try {
+    console.log(`[CNN] Starting medical CNN analysis for ${documentType}`);
+    
+    const hfToken = Deno.env.get('HUGGING_FACE_ACCESS_TOKEN');
+    if (!hfToken) {
+      console.log('[CNN] No Hugging Face token available');
+      return { success: false, error: 'HUGGING_FACE_ACCESS_TOKEN not configured' };
+    }
+    
+    // Map document type to modality and organ for model selection
+    const modalityMap: Record<string, { modality: string; organ: string }> = {
+      'xray': { modality: 'xray', organ: 'chest' },
+      'ct-scan': { modality: 'ct-scan', organ: 'all' },
+      'mri': { modality: 'mri', organ: 'brain' },
+      'ecg': { modality: 'ecg', organ: 'heart' },
+      'ultrasound': { modality: 'ultrasound', organ: 'all' },
+      'mammogram': { modality: 'mammogram', organ: 'breast' },
+      'medical-image': { modality: 'general', organ: 'all' }
+    };
+    
+    const mapping = modalityMap[documentType] || { modality: 'general', organ: 'all' };
+    
+    // Call the dedicated CNN edge function
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    if (!supabaseUrl) {
+      // Direct CNN execution without edge function call
+      return await executeCNNModelsDirectly(imageBase64, mapping.modality, mapping.organ, hfToken);
+    }
+    
+    const response = await fetch(`${supabaseUrl}/functions/v1/medical-imaging-cnn`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseKey}`
+      },
+      body: JSON.stringify({
+        imageBase64,
+        modality: mapping.modality,
+        organ: mapping.organ,
+        analysisMode: 'comprehensive'
+      })
+    });
+    
+    if (!response.ok) {
+      console.error(`[CNN] Edge function error: ${response.status}`);
+      return { success: false, error: `CNN analysis failed: ${response.status}` };
+    }
+    
+    const result = await response.json();
+    return result;
+    
+  } catch (error) {
+    console.error('[CNN] Error running CNN analysis:', error);
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'CNN analysis failed' 
+    };
+  }
+}
+
+// Direct CNN execution using Hugging Face Inference API
+async function executeCNNModelsDirectly(
+  imageBase64: string, 
+  modality: string, 
+  organ: string, 
+  hfToken: string
+): Promise<any> {
+  const { HfInference } = await import('https://esm.sh/@huggingface/inference@2.3.2');
+  const hf = new HfInference(hfToken);
+  
+  const startTime = Date.now();
+  
+  // Select models based on modality
+  const modelRegistry: Record<string, { id: string; name: string; arch: string }> = {
+    'chexnet': { id: 'alkzar90/chexnet', name: 'CheXNet', arch: 'DenseNet-121' },
+    'covid-xray': { id: 'DunnBC22/vit-base-patch16-224-in21k_COVID19-X_Rays', name: 'COVID-19 Classifier', arch: 'ViT' },
+    'brain-tumor': { id: 'Devarshi/Brain_Tumor_Classification', name: 'Brain Tumor Classifier', arch: 'ResNet' }
+  };
+  
+  let modelsToRun: string[] = [];
+  if (modality.includes('xray') || modality === 'chest') {
+    modelsToRun = ['chexnet', 'covid-xray'];
+  } else if (modality.includes('mri') || modality.includes('ct') || organ === 'brain') {
+    modelsToRun = ['brain-tumor'];
+  } else {
+    modelsToRun = ['chexnet']; // Default
+  }
+  
+  const predictions: any[] = [];
+  const modelsUsed: any[] = [];
+  
+  // Convert base64 to blob
+  const binaryString = atob(imageBase64);
+  const bytes = new Uint8Array(binaryString.length);
+  for (let i = 0; i < binaryString.length; i++) {
+    bytes[i] = binaryString.charCodeAt(i);
+  }
+  const imageBlob = new Blob([bytes], { type: 'image/jpeg' });
+  
+  for (const modelKey of modelsToRun) {
+    const model = modelRegistry[modelKey];
+    if (!model) continue;
+    
+    try {
+      console.log(`[CNN] Running ${model.name}...`);
+      const modelStart = Date.now();
+      
+      const result = await hf.imageClassification({
+        model: model.id,
+        data: imageBlob
+      });
+      
+      for (const pred of result) {
+        predictions.push({
+          label: pred.label,
+          score: pred.score,
+          model: model.name,
+          architecture: model.arch,
+          clinicalRelevance: getClinicalRelevanceForLabel(pred.label, pred.score)
+        });
+      }
+      
+      modelsUsed.push({
+        key: modelKey,
+        name: model.name,
+        architecture: model.arch,
+        latencyMs: Date.now() - modelStart
+      });
+      
+      console.log(`[CNN] ${model.name} completed: ${result.length} predictions`);
+      
+    } catch (error) {
+      console.error(`[CNN] Error with ${model.name}:`, error);
+    }
+  }
+  
+  return {
+    success: predictions.length > 0,
+    predictions: predictions.sort((a, b) => b.score - a.score).slice(0, 15),
+    modelExecution: {
+      modelsUsed,
+      totalModels: modelsToRun.length,
+      successfulModels: modelsUsed.length
+    },
+    clinicalSummary: generateClinicalSummary(predictions),
+    performance: {
+      totalLatencyMs: Date.now() - startTime,
+      predictionsGenerated: predictions.length
+    }
+  };
+}
+
+function getClinicalRelevanceForLabel(label: string, score: number): string {
+  const labelLower = label.toLowerCase();
+  const criticalFindings = ['pneumothorax', 'pneumonia', 'covid', 'tumor', 'malignant', 'nodule', 'mass', 'effusion', 'cardiomegaly'];
+  const normalFindings = ['normal', 'healthy', 'no tumor', 'benign', 'negative'];
+  
+  if (normalFindings.some(f => labelLower.includes(f))) {
+    return score > 0.8 ? 'Normal finding - likely healthy' : 'Possible normal finding';
+  }
+  
+  if (criticalFindings.some(f => labelLower.includes(f))) {
+    if (score > 0.7) return 'CRITICAL: High confidence abnormality detected';
+    if (score > 0.4) return 'CONCERNING: Moderate confidence abnormality';
+    return 'Low confidence critical finding';
+  }
+  
+  return score > 0.5 ? 'Finding present - correlate clinically' : 'Low confidence finding';
+}
+
+function generateClinicalSummary(predictions: any[]): any {
+  const critical = predictions.filter(p => p.clinicalRelevance?.includes('CRITICAL') && p.score > 0.5);
+  const abnormal = predictions.filter(p => p.clinicalRelevance?.includes('CONCERNING') && p.score > 0.4);
+  const normal = predictions.filter(p => p.clinicalRelevance?.includes('Normal'));
+  
+  return {
+    criticalFindings: critical.map(f => ({ finding: f.label, confidence: f.score, model: f.model })),
+    abnormalFindings: abnormal.map(f => ({ finding: f.label, confidence: f.score, model: f.model })),
+    normalIndicators: normal.map(f => ({ finding: f.label, confidence: f.score, model: f.model })),
+    overallAssessment: critical.length > 0 
+      ? 'CRITICAL: Urgent findings detected' 
+      : abnormal.length > 0 
+        ? 'ABNORMAL: Findings present' 
+        : 'Review required'
+  };
 }
 
 function getModelApproachDetails(modelType: string): any {

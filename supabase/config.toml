@@ -125,3 +125,6 @@ verify_jwt = false
 
 [functions.mcp-data-sync]
 verify_jwt = false
+
+[functions.medical-imaging-cnn]
+verify_jwt = false
