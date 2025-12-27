@@ -1646,14 +1646,23 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
         );
       })()}
 
-      {/* Tabs for detailed analysis */}
+      {/* Tabs for detailed analysis - Dynamic based on invoice type */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-6">
           <TabsTrigger value="overview">Overview</TabsTrigger>
+          <TabsTrigger value="extracted-codes">
+            {invoiceClassification?.type === 'healthcare-rcm' ? 'Codes' : 'Fields'}
+          </TabsTrigger>
           <TabsTrigger value="line-items">Line Items</TabsTrigger>
-          <TabsTrigger value="cpt-codes">CPT Codes</TabsTrigger>
-          <TabsTrigger value="aging">Aging</TabsTrigger>
-          <TabsTrigger value="consolidated">Consolidated</TabsTrigger>
+          <TabsTrigger value="cpt-codes">
+            {invoiceClassification?.type === 'healthcare-rcm' ? 'CPT Analysis' : 'Details'}
+          </TabsTrigger>
+          <TabsTrigger value="aging">
+            {invoiceClassification?.type === 'healthcare-rcm' ? 'AR Aging' : 'Payment'}
+          </TabsTrigger>
+          <TabsTrigger value="consolidated">
+            {invoiceClassification?.type === 'healthcare-rcm' ? 'RCM Report' : 'Summary'}
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -1728,9 +1737,136 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                   <span className="text-muted-foreground">Patient Account:</span>
                   <span className="font-medium">{invoiceData.patient_account || 'N/A'}</span>
                 </div>
-              </CardContent>
+            </CardContent>
             </Card>
           </div>
+
+          {/* Extracted Healthcare Codes - NEW SECTION */}
+          {(invoiceData.cpt_codes || invoiceData.icd_codes || invoiceData.ndc_codes || lineItems.some(i => i.cpt_code || i.icd_code || i.ndc_code || i.revenue_code || i.hcpcs_code)) && (
+            <Card className="border-2 border-emerald-200 bg-emerald-50/30">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <FileText className="h-4 w-4 text-emerald-600" />
+                  Extracted Healthcare Codes
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {/* CPT Codes */}
+                  {(invoiceData.cpt_codes || lineItems.filter(i => i.cpt_code).length > 0) && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-emerald-700">CPT/HCPCS Codes</div>
+                      <div className="flex flex-wrap gap-1">
+                        {invoiceData.cpt_codes ? (
+                          invoiceData.cpt_codes.split(/[,;\s]+/).filter(Boolean).map((code, i) => (
+                            <Badge key={i} variant="outline" className="font-mono text-xs bg-white">{code}</Badge>
+                          ))
+                        ) : (
+                          lineItems.filter(i => i.cpt_code || i.hcpcs_code).map((item, i) => (
+                            <Badge key={i} variant="outline" className="font-mono text-xs bg-white">
+                              {item.cpt_code || item.hcpcs_code}
+                            </Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* ICD-10 Codes */}
+                  {(invoiceData.icd_codes || lineItems.filter(i => i.icd_code).length > 0) && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-blue-700">ICD-10 Diagnosis Codes</div>
+                      <div className="flex flex-wrap gap-1">
+                        {invoiceData.icd_codes ? (
+                          invoiceData.icd_codes.split(/[,;\s]+/).filter(Boolean).map((code, i) => (
+                            <Badge key={i} variant="secondary" className="font-mono text-xs">{code}</Badge>
+                          ))
+                        ) : (
+                          lineItems.filter(i => i.icd_code).map((item, i) => (
+                            <Badge key={i} variant="secondary" className="font-mono text-xs">{item.icd_code}</Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* NDC Codes */}
+                  {(invoiceData.ndc_codes || lineItems.filter(i => i.ndc_code).length > 0) && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-purple-700">NDC Drug Codes</div>
+                      <div className="flex flex-wrap gap-1">
+                        {invoiceData.ndc_codes ? (
+                          invoiceData.ndc_codes.split(/[,;\s]+/).filter(Boolean).map((code, i) => (
+                            <Badge key={i} variant="outline" className="font-mono text-xs bg-purple-50">{code}</Badge>
+                          ))
+                        ) : (
+                          lineItems.filter(i => i.ndc_code).map((item, i) => (
+                            <Badge key={i} variant="outline" className="font-mono text-xs bg-purple-50">{item.ndc_code}</Badge>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Revenue Codes */}
+                  {lineItems.filter(i => i.revenue_code).length > 0 && (
+                    <div className="space-y-2">
+                      <div className="text-sm font-medium text-amber-700">Revenue Codes (UB-04)</div>
+                      <div className="flex flex-wrap gap-1">
+                        {lineItems.filter(i => i.revenue_code).map((item, i) => (
+                          <Badge key={i} variant="outline" className="font-mono text-xs bg-amber-50">
+                            {item.revenue_code}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* All Extracted Fields - Show raw extracted data for transparency */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 justify-between">
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  All Extracted Fields
+                </span>
+                <Badge variant="outline">{Object.keys(activeData || {}).filter(k => activeData[k] && !['line_items', 'tables', 'lineitems', 'items'].includes(k)).length} fields</Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                {Object.entries(activeData || {})
+                  .filter(([key, value]) => 
+                    value !== null && 
+                    value !== undefined && 
+                    value !== '' && 
+                    !['line_items', 'tables', 'lineitems', 'items', 'services', 'charges', 'procedures'].includes(key) &&
+                    typeof value !== 'object'
+                  )
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([key, value]) => (
+                    <div key={key} className="flex flex-col p-2 bg-muted/50 rounded-md">
+                      <span className="text-xs text-muted-foreground capitalize">
+                        {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                      <span className="font-medium truncate" title={String(value)}>
+                        {String(value)}
+                      </span>
+                    </div>
+                  ))
+                }
+              </div>
+              {Object.keys(activeData || {}).filter(k => activeData[k] && !['line_items', 'tables', 'lineitems', 'items'].includes(k) && typeof activeData[k] !== 'object').length === 0 && (
+                <div className="text-center text-muted-foreground py-4">
+                  No extracted fields available. Upload an invoice to extract data.
+                </div>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Denial Alert */}
           {invoiceData.denial_reason && (
@@ -1802,6 +1938,225 @@ export const InvoiceRCMAnalysis: React.FC<InvoiceRCMAnalysisProps> = ({
                   </div>
                 );
               })()}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Extracted Codes Tab - NEW: Dedicated tab for all extracted codes and fields */}
+        <TabsContent value="extracted-codes" className="space-y-4">
+          {/* Healthcare Codes Section */}
+          <Card className="border-2 border-emerald-200 bg-emerald-50/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2">
+                <FileText className="h-4 w-4 text-emerald-600" />
+                {invoiceClassification?.type === 'healthcare-rcm' ? 'Healthcare Billing Codes' : 'Extracted Codes'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              {(invoiceData.cpt_codes || invoiceData.icd_codes || invoiceData.ndc_codes || lineItems.some(i => i.cpt_code || i.icd_code || i.ndc_code || i.revenue_code || i.hcpcs_code)) ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {/* CPT/HCPCS Codes with Details */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-emerald-500">CPT/HCPCS</Badge>
+                      <span className="text-sm text-muted-foreground">Procedure Codes</span>
+                    </div>
+                    {invoiceData.cpt_codes ? (
+                      <div className="space-y-2">
+                        {invoiceData.cpt_codes.split(/[,;\s]+/).filter(Boolean).map((code, i) => {
+                          const cptInfo = getCPTInfo(code);
+                          return (
+                            <div key={i} className="flex items-start gap-2 p-2 bg-white rounded border">
+                              <Badge variant="outline" className="font-mono shrink-0">{code}</Badge>
+                              <div className="text-sm">
+                                <div className="font-medium">{cptInfo.description}</div>
+                                <div className="text-muted-foreground text-xs">{cptInfo.category} • Est. ${cptInfo.avgReimbursement}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : lineItems.filter(i => i.cpt_code || i.hcpcs_code).length > 0 ? (
+                      <div className="space-y-2">
+                        {lineItems.filter(i => i.cpt_code || i.hcpcs_code).map((item, i) => {
+                          const code = item.cpt_code || item.hcpcs_code || '';
+                          const cptInfo = getCPTInfo(code);
+                          return (
+                            <div key={i} className="flex items-start gap-2 p-2 bg-white rounded border">
+                              <Badge variant="outline" className="font-mono shrink-0">{code}</Badge>
+                              <div className="text-sm">
+                                <div className="font-medium">{item.description || cptInfo.description}</div>
+                                <div className="text-muted-foreground text-xs">
+                                  {cptInfo.category} • Billed: {formatCurrency(item.total)} 
+                                  {item.allowed_amount ? ` • Allowed: ${formatCurrency(item.allowed_amount)}` : ''}
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground p-2">No CPT/HCPCS codes extracted</div>
+                    )}
+                  </div>
+
+                  {/* ICD-10 Codes with Details */}
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2">
+                      <Badge className="bg-blue-500">ICD-10</Badge>
+                      <span className="text-sm text-muted-foreground">Diagnosis Codes</span>
+                    </div>
+                    {invoiceData.icd_codes ? (
+                      <div className="space-y-2">
+                        {invoiceData.icd_codes.split(/[,;\s]+/).filter(Boolean).map((code, i) => {
+                          const icdInfo = getICDInfo(code);
+                          return (
+                            <div key={i} className="flex items-start gap-2 p-2 bg-white rounded border">
+                              <Badge variant="secondary" className="font-mono shrink-0">{code}</Badge>
+                              <div className="text-sm">
+                                <div className="font-medium">{icdInfo.description}</div>
+                                <div className="text-muted-foreground text-xs">{icdInfo.category}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : lineItems.filter(i => i.icd_code).length > 0 ? (
+                      <div className="space-y-2">
+                        {lineItems.filter(i => i.icd_code).map((item, i) => {
+                          const icdInfo = getICDInfo(item.icd_code || '');
+                          return (
+                            <div key={i} className="flex items-start gap-2 p-2 bg-white rounded border">
+                              <Badge variant="secondary" className="font-mono shrink-0">{item.icd_code}</Badge>
+                              <div className="text-sm">
+                                <div className="font-medium">{icdInfo.description}</div>
+                                <div className="text-muted-foreground text-xs">{icdInfo.category}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-sm text-muted-foreground p-2">No ICD-10 codes extracted</div>
+                    )}
+                  </div>
+
+                  {/* NDC Codes */}
+                  {(invoiceData.ndc_codes || lineItems.filter(i => i.ndc_code).length > 0) && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-purple-500">NDC</Badge>
+                        <span className="text-sm text-muted-foreground">Drug Codes</span>
+                      </div>
+                      <div className="space-y-2">
+                        {invoiceData.ndc_codes ? (
+                          invoiceData.ndc_codes.split(/[,;\s]+/).filter(Boolean).map((code, i) => (
+                            <div key={i} className="flex items-center gap-2 p-2 bg-white rounded border">
+                              <Badge variant="outline" className="font-mono bg-purple-50">{code}</Badge>
+                            </div>
+                          ))
+                        ) : (
+                          lineItems.filter(i => i.ndc_code).map((item, i) => (
+                            <div key={i} className="flex items-start gap-2 p-2 bg-white rounded border">
+                              <Badge variant="outline" className="font-mono bg-purple-50 shrink-0">{item.ndc_code}</Badge>
+                              <div className="text-sm">
+                                <div className="font-medium">{item.description}</div>
+                                <div className="text-muted-foreground text-xs">
+                                  Qty: {item.units} • {formatCurrency(item.total)}
+                                </div>
+                              </div>
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Revenue Codes (UB-04) */}
+                  {lineItems.filter(i => i.revenue_code).length > 0 && (
+                    <div className="space-y-3">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-amber-500">Revenue</Badge>
+                        <span className="text-sm text-muted-foreground">UB-04 Codes</span>
+                      </div>
+                      <div className="space-y-2">
+                        {lineItems.filter(i => i.revenue_code).map((item, i) => {
+                          const revInfo = getRevenueCodeInfo(item.revenue_code || '');
+                          return (
+                            <div key={i} className="flex items-start gap-2 p-2 bg-white rounded border">
+                              <Badge variant="outline" className="font-mono bg-amber-50 shrink-0">{item.revenue_code}</Badge>
+                              <div className="text-sm">
+                                <div className="font-medium">{revInfo.description}</div>
+                                <div className="text-muted-foreground text-xs">{revInfo.category} • {formatCurrency(item.total)}</div>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <div className="text-center text-muted-foreground py-8">
+                  <FileText className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <div>No healthcare codes extracted from this invoice.</div>
+                  <div className="text-xs mt-1">Upload a medical invoice with CPT, ICD-10, NDC, or Revenue codes.</div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* All Raw Extracted Fields */}
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 justify-between">
+                <span className="flex items-center gap-2">
+                  <FileText className="h-4 w-4" />
+                  All Extracted Data Fields
+                </span>
+                <Badge variant="outline">
+                  {Object.keys(activeData || {}).filter(k => 
+                    activeData[k] && 
+                    !['line_items', 'tables', 'lineitems', 'items', 'services', 'charges', 'procedures'].includes(k) &&
+                    typeof activeData[k] !== 'object'
+                  ).length} fields
+                </Badge>
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 text-sm">
+                {Object.entries(activeData || {})
+                  .filter(([key, value]) => 
+                    value !== null && 
+                    value !== undefined && 
+                    value !== '' && 
+                    !['line_items', 'tables', 'lineitems', 'items', 'services', 'charges', 'procedures'].includes(key) &&
+                    typeof value !== 'object'
+                  )
+                  .sort(([a], [b]) => a.localeCompare(b))
+                  .map(([key, value]) => (
+                    <div key={key} className="flex flex-col p-3 bg-muted/50 rounded-md border">
+                      <span className="text-xs text-muted-foreground capitalize font-medium">
+                        {key.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                      </span>
+                      <span className="font-medium truncate mt-1" title={String(value)}>
+                        {String(value)}
+                      </span>
+                    </div>
+                  ))
+                }
+              </div>
+              {Object.keys(activeData || {}).filter(k => 
+                activeData[k] && 
+                !['line_items', 'tables', 'lineitems', 'items'].includes(k) && 
+                typeof activeData[k] !== 'object'
+              ).length === 0 && (
+                <div className="text-center text-muted-foreground py-8">
+                  <FileText className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                  <div>No fields extracted yet.</div>
+                  <div className="text-xs mt-1">Upload an invoice to extract data fields.</div>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
