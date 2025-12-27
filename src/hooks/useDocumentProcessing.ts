@@ -555,13 +555,19 @@ export function useDocumentProcessing(): UseDocumentProcessingReturn {
         throw new Error(error?.message || data?.error || 'Form mapping failed');
       }
 
-      // Filter out internal metadata fields (starting with _) from display
-      // but keep them available in the full response
+      // Filter out internal metadata fields from display
+      // These include: fields starting with _, raw data fields, and system metadata
+      const EXCLUDED_FIELDS = [
+        'line_items', 'tables', 'raw_text', 
+        'detected_document_type', 'document_category',
+        '_pipeline_type', '_ocr_text_length', '_ocr_confidence'
+      ];
+      
       const cleanedMapping: FormMapping = {};
       if (data.formMapping) {
         Object.entries(data.formMapping).forEach(([key, value]) => {
-          // Skip internal metadata fields that start with _
-          if (!key.startsWith('_')) {
+          // Skip internal metadata fields that start with _ or are in exclusion list
+          if (!key.startsWith('_') && !EXCLUDED_FIELDS.includes(key)) {
             const fieldValue = value as any;
             cleanedMapping[key] = {
               value: fieldValue.value ?? '',
