@@ -1494,12 +1494,64 @@ export default function DocumentProcessing() {
         };
         
         setProcessingResult(imagingResult);
-        toast.success('Medical image uploaded! Ready for AI analysis.', {
-          description: 'Click "Analyze with Vision AI" to get clinical insights'
-        });
         
         // Auto-switch to image analysis tab
         setActiveTab('image-analysis');
+        
+        // Automatically run medical image analysis
+        toast.info('Analyzing medical image with Vision AI...', { duration: 3000 });
+        
+        try {
+          const { data: analysisResult, error: analysisError } = await supabase.functions.invoke('document-processor', {
+            body: {
+              action: 'analyze_medical_image',
+              imageBase64: fileBase64,
+              imageMimeType: file.type,
+              documentType: selectedDocType,
+              analysisType: 'comprehensive',
+              provider: 'gemini'
+            }
+          });
+          
+          if (analysisError) {
+            console.error('Auto medical analysis error:', analysisError);
+            toast.warning('Auto-analysis failed. Click "Analyze with Vision AI" to retry.', {
+              description: 'Manual analysis is available in the Image Analysis tab'
+            });
+          } else if (analysisResult?.success) {
+            // Store analysis results for the MedicalImageAnalysis component to pick up
+            const insights = analysisResult.insights || [];
+            const measurements = analysisResult.measurements || [];
+            const abnormalCount = insights.filter((i: any) => 
+              i.status === 'abnormal' || 
+              i.clinicalSignificance === 'high' || 
+              i.clinicalSignificance === 'critical'
+            ).length;
+            
+            // Update processing result with AI analysis data
+            setProcessingResult(prev => prev ? {
+              ...prev,
+              extractedFields: {
+                ...prev.extractedFields,
+                ai_analysis_complete: { value: 'true', confidence: 1 },
+                ai_insights_count: { value: String(insights.length), confidence: 1 },
+                ai_abnormal_count: { value: String(abnormalCount), confidence: 1 },
+                detected_modality: { value: analysisResult.detectedModality || selectedDocType, confidence: 0.9 },
+                model_used: { value: analysisResult.modelUsed || 'Vision AI', confidence: 1 }
+              }
+            } : prev);
+            
+            toast.success(`Medical image analyzed: ${insights.length} findings`, {
+              description: abnormalCount > 0 
+                ? `⚠️ ${abnormalCount} abnormal finding(s) detected` 
+                : 'View results in Image Analysis tab'
+            });
+          }
+        } catch (autoAnalysisError) {
+          console.error('Auto medical analysis exception:', autoAnalysisError);
+          toast.warning('Click "Analyze with Vision AI" for detailed analysis');
+        }
+        
         return;
       }
       
